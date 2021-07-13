@@ -1,0 +1,7 @@
+filters:
+  ".*":
+    reviewers:
+      - GuoRentong
+      - derekdqc
+    approvers:
+      - GuoRentong
