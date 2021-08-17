@@ -13,42 +13,6 @@
 # limitations under the License.
 
 
-def op_action(func):
-    """
-    Mark of the implementation of an Operator's callable part.
-
-    Examples:
-        Only interface Operator will use the @op_action mark. In most cases, method 
-        decorated by @op_action will be called by Operator's __call__. During an 
-        Operator's creation, OpMetaclass will check that method with @op_action in the 
-        interface Operator is overwritten by the subclass with identical input/output 
-        declarations.
-
-        Example of an interface Operator
-
-        class Img2VecOp(Operator):
-            @op_action
-            @abc.abstractmethod
-            def forward(self, img:Image) -> FloatVector:
-                pass
-
-            def __call__(self, img:Image):
-                return forward(img)
-
-        Example of a inherited Operator
-
-        class VGGAnimalImg2VecOp(Img2VecOp):
-            def forward(self, img:Image) -> FloatVector:
-                # do the real forward works ...
-
-        Note that Img2VecOp.forward is decorated by @op_action, and VGGAnimalImg2VecOp 
-        implements this function with identical input types and output types.
-
-        See OpMetaclass._op_callable_check for more explainations.
-    """
-    return func
-
-
 class OperatorMetaclass(type):
     '''
     Metaclass for creating Operators. 
@@ -77,15 +41,6 @@ class OperatorMetaclass(type):
 
                 def __call__(self, img:Image):
                     return forward(img)
-
-
-            // in pytorch
-            m.forward(xxx)
-            m(xxx)
-
-            // in towhee, pipeline definition
-            op = XXXFaceImg2Vec(init_params)
-            result = op(xxx)
 
             The forward function plays as the core functionality of Img2VecOp, and it 
             will be called by __call__. Note that the function is decorated by 
