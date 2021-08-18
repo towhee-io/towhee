@@ -13,10 +13,29 @@
 # limitations under the License.
 
 
+from operator_repr import OperatorRepr
+from utils import at_compile_phase
+from graph_builder import get_graph_builder
+
+
 class OperatorMetaclass(type):
     '''
     Metaclass for creating Operators. 
     '''
+
+    def __call__(self, *args, **kwargs):
+        """
+        Return: in compile-phase, an OperatorRepr will be returned, rather than an
+            Operator.
+        """
+        op = super().__call__(*args, **kwargs)
+
+        if (at_compile_phase()):
+            graph_builder = get_graph_builder()
+            op_repr = graph_builder.add_op(op)
+            return op_repr
+        else:
+            return op
 
     def _op_callable_check(self, op_dict):
         """

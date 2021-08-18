@@ -13,6 +13,10 @@
 # limitations under the License.
 
 
+from functools import wraps
+from variable_repr import VariableSet
+
+
 def op_action(func):
     """
     Mark of the implementation of an Operator's callable part.
@@ -75,8 +79,6 @@ def create_op_in_pipeline(func):
             z = op2(y.y1)
             return z
 
-    compiler.compile(my_pipeline)
-
     In this example, we have two operators in a pipeline, where op2 depends on the 
     results of op1. Behind the scene, Towhee's compiler will create a DAG during 
     the execution of my_pipeline. When the program executes the line y = op1(x), 
@@ -86,4 +88,13 @@ def create_op_in_pipeline(func):
     add op2 into the pipeline's context, and settle the dependency between op1 and op2 
     base on the fact that op2 takes op1's output as its input.
     """
-    raise NotImplementedError
+    @wraps(func)
+    def _create_op_in_pipeline(*args, **kwargs) -> VariableSet:
+        """
+        Solving the operator's dependency and return a VariableSet as the operator's
+        outputs.
+        """
+        raise NotImplementedError
+        return func(*args, **kwargs)
+
+    return _create_op_in_pipeline
