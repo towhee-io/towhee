@@ -13,13 +13,16 @@
 # limitations under the License.
 
 
-class IntermediateGraph:
+from variable_repr import VariableRepr, VariableSet
+
+
+class OperatorRepr:
     """
-    The intermediate representation of a pipeline.
+    The representation of an operator at compile-phase
     """
 
-    def from_yaml(self, yaml):
-        raise NotImplementedError
-
-    def to_yaml(self):
-        raise NotImplementedError
+    def __init__(self, unique_op_name: str, op = None):
+        self.op = op
+        self.unique_op_name = unique_op_name
+        self.inputs: VariableSet = None
+        self.outputs: VariableSet = None

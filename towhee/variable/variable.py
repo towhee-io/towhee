@@ -21,3 +21,6 @@ class Variable:
 
     def from_dict(self, dict):
         raise NotImplementedError
+
+
+pipeline = create_pipeline()
