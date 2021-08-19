@@ -13,10 +13,14 @@
 # limitations under the License.
 
 
-from typing import NamedTuple
+from dataclasses import dataclass
+from types import FunctionType
 
 
-class VariableMeta(NamedTuple):
-    op_id: int
-    var_name: str
-    var_type: type
+@dataclass
+class OperatorMeta:
+    """
+    The operator context in a pipeline.
+    """
+
+    function: FunctionType
