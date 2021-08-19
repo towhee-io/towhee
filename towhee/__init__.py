@@ -11,15 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-class IntermediateGraph:
-    """
-    The intermediate representation of a pipeline.
-    """
-
-    def from_yaml(self, yaml):
-        raise NotImplementedError
-
-    def to_yaml(self):
-        raise NotImplementedError

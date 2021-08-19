@@ -13,14 +13,14 @@
 # limitations under the License.
 
 
-def pipeline_compiler(target='local'):
-    """
-    The Pipeline compiler factory
-    """
-    raise NotImplementedError
+from dataclasses import dataclass
+from types import FunctionType
 
-def at_compile_phase() -> bool:
+
+@dataclass
+class OperatorMeta:
     """
-    Test whether we are at compile phase
+    The operator context in a pipeline.
     """
-    raise NotImplementedError
+
+    function: FunctionType

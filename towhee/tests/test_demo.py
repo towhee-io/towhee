@@ -13,14 +13,9 @@
 # limitations under the License.
 
 
-def pipeline_compiler(target='local'):
-    """
-    The Pipeline compiler factory
-    """
-    raise NotImplementedError
+import unittest
 
-def at_compile_phase() -> bool:
-    """
-    Test whether we are at compile phase
-    """
-    raise NotImplementedError
+
+class TestDemo(unittest.TestCase):
+    def test_demo(self):
+        self.assertTrue(True)

@@ -13,14 +13,24 @@
 # limitations under the License.
 
 
-def pipeline_compiler(target='local'):
-    """
-    The Pipeline compiler factory
-    """
-    raise NotImplementedError
+from setuptools import setup, find_packages
 
-def at_compile_phase() -> bool:
-    """
-    Test whether we are at compile phase
-    """
-    raise NotImplementedError
+import unittest
+def test_suite():
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.discover('towhee/tests', pattern='test_*.py')
+    return test_suite
+
+setup(
+    name="towhee",
+    version="0.1",
+    description="",
+    author="zilliz",
+    author_email="",
+    url="https://github.com/towhee-io/towhee",
+
+    test_suite="setup.test_suite",
+
+    packages=find_packages(),
+    license="http://www.apache.org/licenses/LICENSE-2.0"
+)

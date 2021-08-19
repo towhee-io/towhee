@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from operator_repr import OperatorRepr
 
-def pipeline_compiler(target='local'):
+class GraphRepr:
     """
-    The Pipeline compiler factory
+    The representation of a pipeline DAG.
     """
-    raise NotImplementedError
 
-def at_compile_phase() -> bool:
-    """
-    Test whether we are at compile phase
-    """
-    raise NotImplementedError
+    def __init__(self, builder_id: str):
+        self.builder_id = builder_id
+        self._op_dict = {}
+        self._var_dict = None
+
+    def op(self):
+        return self._op_dict
+
+    def from_yaml(self, yaml):
+        raise NotImplementedError
+
+    def to_yaml(self):
+        raise NotImplementedError

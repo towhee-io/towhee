@@ -11,16 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-def pipeline_compiler(target='local'):
-    """
-    The Pipeline compiler factory
-    """
-    raise NotImplementedError
-
-def at_compile_phase() -> bool:
-    """
-    Test whether we are at compile phase
-    """
-    raise NotImplementedError
