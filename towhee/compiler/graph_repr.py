@@ -12,11 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from operator_repr import OperatorRepr
 
-class IntermediateGraph:
+class GraphRepr:
     """
-    The intermediate representation of a pipeline.
+    The representation of a pipeline DAG.
     """
+
+    def __init__(self, builder_id: str):
+        self.builder_id = builder_id
+        self._op_dict = {}
+        self._var_dict = None
+
+    def op(self):
+        return self._op_dict
 
     def from_yaml(self, yaml):
         raise NotImplementedError

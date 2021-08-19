@@ -18,3 +18,9 @@ def pipeline_compiler(target='local'):
     The Pipeline compiler factory
     """
     raise NotImplementedError
+
+def at_compile_phase() -> bool:
+    """
+    Test whether we are at compile phase
+    """
+    raise NotImplementedError
