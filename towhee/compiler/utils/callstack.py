@@ -1,13 +1,13 @@
 # Copyright 2021 Zilliz. All rights reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -32,7 +32,6 @@ class Callstack:
         ignore += 1
         del self.frames[0:ignore]
         self.stack_size = len(self.frames)
-        return None
 
     def num_frames(self) -> int:
         """
@@ -101,36 +100,39 @@ class Callstack:
             None 
             >>> hash_val = s.hash(0,1,['attr_a'])
             >>> print(hash_val)
-            Traceback (most recent call last):
-              ...
-            AttributeError: {'attr_a'} not supported
+            ERROR:root:{'attr_a'} not supported
+            None
         """
         start = start or 0
         end = end or self.stack_size
 
         if end > self.stack_size or end <= 0 or start >= self.stack_size or start < 0 :
             logging.error(
-                f"index range [{start}, {end}) out of list range" 
-                f"[0, {self.stack_size})"
+                f'index range [{start}, {end}) out of list range' 
+                f'[0, {self.stack_size})'
             )
             return None
         if start >= end:
-            logging.error(f"end = {end} is less than or equal to start = {start}")
+            logging.error(f'end = {end} is less than or equal to start = {start}')
             return None
 
         full_item = {
-            "filename", "lineno", "function", "code_context", "position", "lasti"
+            'filename', 'lineno', 'function', 'code_context', 'position', 'lasti'
         }
         if not set(items).issubset(set(full_item)):
             invalid_item = set(items) - (set(items) & full_item)
-            raise AttributeError(f"{invalid_item} not supported")
+            logging.error(f'{invalid_item} not supported')
+            return None
 
         md5 = hashlib.md5()
         for i, frame in enumerate(self.frames[start:end]):
             frame_dict = frame._asdict()
-            frame_dict["position"] = i + start
-            frame_dict["lasti"] = frame_dict["frame"].f_lasti
-            frame_dict["code_context"] = "".join(frame_dict["code_context"])
+            frame_dict['position'] = i + start
+            frame_dict['lasti'] = frame_dict['frame'].f_lasti
+            frame_dict['code_context'] = (
+                ''.join(frame_dict['code_context']) if frame_dict['code_context']
+                else ''
+            )
             for item in items:
-                md5.update(str(frame_dict[item]).encode("utf-8"))
+                md5.update(str(frame_dict[item]).encode('utf-8'))
         return md5.hexdigest()
