@@ -29,7 +29,7 @@ class GraphBuilder:
     START_OP = '_start'
     END_OP = '_end'
 
-    def __init__(self, builder_id:str, pipeline_func):
+    def __init__(self, builder_id:str = None, pipeline_func = None):
         self.builder_id = builder_id
         self._pipeline_func = pipeline_func
         self._op_index = 0
@@ -57,7 +57,7 @@ class GraphBuilder:
         self._end_op.inputs = outputs
         self._end_op.outputs = self._end_op.inputs
  
-    def add_op(self, op: Operator) -> OperatorRepr:
+    def add_op(self, name: str, op: Operator) -> OperatorRepr:
         """
         Add an OperatorRepr to the graph
         """

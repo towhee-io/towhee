@@ -18,7 +18,7 @@ class VariableRepr:
     The representation of a variable at compile-phase
     """
 
-    def __init__(self, name: str, from_op: str):
+    def __init__(self, name: str, from_op: str = None):
         self.from_op = from_op
         self.to_op = []
         self.name = name
@@ -30,6 +30,11 @@ class VariableSet:
     """
     A set of VariableRepr
     """
+    def __init__(self, value):
+        if isinstance(value, list):
+            self.from_list(value)
+        elif isinstance(value, dict):
+            self._var_dict = value
 
     def __getattr__(self, name: str):
         raise NotImplementedError
