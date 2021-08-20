@@ -111,7 +111,7 @@ class Callstack:
         if end > self.stack_size or end <= 0 or start >= self.stack_size or start < 0 :
             logging.error(
                 f"index range [{start}, {end}) out of list range" 
-                f"[0, {len(self.frames)})"
+                f"[0, {self.stack_size})"
             )
             return None
         if start >= end:
