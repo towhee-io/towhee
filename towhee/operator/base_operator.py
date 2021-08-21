@@ -19,6 +19,19 @@ class Operator:
     """
     The base operator class.
     """
+    
+    def __init__(self):
+        self._params = {}
+        self.name = None
+
+    @property
+    def params(self):
+        return self._params
+    
+    @params.setter
+    def params(self, dict):
+        # todo update parameter dict
+        raise NotImplementedError
 
     @abstractclassmethod
     def op_class(cls):
