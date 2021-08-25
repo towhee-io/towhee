@@ -15,9 +15,10 @@
 
 class Variable:
     """
-    The Towhee's abstraction of variable. Typical variables are pipeline's inputs, 
-    outputs, and operators' inputs, outputs.
+    The base class of variable.
     """
+    def __init__(self):
+        self.extra_info = {}
 
-    def from_dict(self, dict):
+    def __iter__(self):    
         raise NotImplementedError

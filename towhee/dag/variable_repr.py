@@ -11,3 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+class VariableRepr:
+    """
+    The representation of a variable at compile-phase
+    """
+
+    def __init__(self, name: str, from_op: str = None):
+        self.from_op = from_op
+        self.to_op = []
+        self.name = name
+        self.type = None
+        self.dtype = None

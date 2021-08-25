@@ -14,7 +14,7 @@
 
 
 from functools import wraps
-from variable_repr import VariableSet
+from variable_repr import VariableReprSet
 
 
 def op_action(func):
@@ -89,9 +89,9 @@ def create_op_in_pipeline(func):
     base on the fact that op2 takes op1's output as its input.
     """
     @wraps(func)
-    def _create_op_in_pipeline(*args, **kwargs) -> VariableSet:
+    def _create_op_in_pipeline(*args, **kwargs) -> VariableReprSet:
         """
-        Solving the operator's dependency and return a VariableSet as the operator's
+        Solving the operator's dependency and return a VariableReprSet as the operator's
         outputs.
         """
         raise NotImplementedError
