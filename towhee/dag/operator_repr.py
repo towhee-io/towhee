@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from variable_repr import VariableRepr, VariableSet
+from variable_repr import VariableRepr, VariableReprSet
 
 
 class OperatorRepr(Operator):
@@ -35,7 +35,7 @@ class OperatorRepr(Operator):
     @inputs.setter
     def inputs(self, value):
         if isinstance(value, list):
-            self._inputs = VariableSet(value)
+            self._inputs = VariableReprSet(value)
         else:
             self._inputs = value
  
