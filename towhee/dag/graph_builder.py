@@ -15,7 +15,7 @@
 
 from graph_repr import GraphRepr
 from operator_repr import OperatorRepr
-from variable_repr import VariableSet, VariableRepr
+from variable_repr import VariableReprSet, VariableRepr
 
 
 class GraphBuilder:
@@ -44,7 +44,7 @@ class GraphBuilder:
         self._start_op.inputs
 
     @pipeline_inputs.setter
-    def pipeline_inputs(self, inputs: VariableSet):
+    def pipeline_inputs(self, inputs: VariableReprSet):
         self._start_op.inputs = inputs
         self._start_op.outputs = self._start_op.inputs
      
@@ -53,7 +53,7 @@ class GraphBuilder:
         self._end_op.outputs
 
     @pipeline_outputs.setter
-    def pipeline_outputs(self, outputs: VariableSet):
+    def pipeline_outputs(self, outputs: VariableReprSet):
         self._end_op.inputs = outputs
         self._end_op.outputs = self._end_op.inputs
  
