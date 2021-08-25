@@ -22,22 +22,36 @@ class Callstack:
         Initialize a Callstack.
 
         Args:
-            ignore: the number of frames to ignore on the top of the callstack.
+            `ignore (int)`: The number of frames to ignore on the top of the callstack.
 
         Returns:
-            a Callstack object ignoring a certain number of frames on th top.
+            A Callstack object ignoring a certain number of frames on the top.
+
+        Example:
+        >>> stack_1 = Callstack(ignore = 1)
+        >>> stack_1.frames
+        # show the frames here
+        >>> stack_2 = Callstack()
+        >>> stack_2.frames
+        # show the frames here
         """
         self.frames = inspect.stack()
         # ignore the frame of Callstack.__init__
         ignore += 1
+        if ignore > len(self.frames):
+            raise ValueError(f"ignore = {ignore-1} is out of frame range")
         del self.frames[0:ignore]
-        self.stack_size = len(self.frames)
+        self.size = len(self.frames)
+        
 
     def num_frames(self) -> int:
         """
         Get the number of frames.
+
+        Returns:
+            The size of current stack.
         """
-        return self.stack_size
+        return self.size
 
     def find_func(self, func_name: str) -> int:
         """
@@ -45,25 +59,32 @@ class Callstack:
         stack.
 
         Args:
-            func_name: the function name to find.
+            `func_name (str)`: The function name to find.
+
         Returns:
             If at least one matching frame exits, return the first-matched frame index.
-            else, return None.
+            Else, return None.
 
         Examples:
             Callstack class provides a function to find the first-match frame in
             current stack to a given function name, and return its index. If not
-            found, return None. Suppose we have a callstack obejct `s`.
-            When searching for an existing function `func_a`:
-            >>> index_1 = s.find_func('func_a')
-            >>> print(index_1)
-            0 
-            When searchiing for a function `func_b` does not exist:
-            >>> index_2 = s.find_func('func_b')
-            >>> print(index_2)
+            found, return None.
+
+            >>> def foo(): 
+            ...     return Callstack()
+            >>> def bar(): 
+            ...     return foo()
+            >>> stack = foo()
+            >>> stack.frames
+            # show the frames here
+            >>> foo_index = stack.find_func('foo')
+            >>> foo_index
+            0
+            >>> none_index = stack.find_func('non_exist_func')
+            >>> none_index
             None
         """
-        for i in range(self.stack_size - 1, -1, -1):
+        for i in range(self.size - 1, -1, -1):
             if self.frames[i].function == func_name:
                 return i
         return None
@@ -74,55 +95,58 @@ class Callstack:
         and `end` (includes `start`, excludes `end`).
 
         Args:
-            start: the index of the start frame.
-            end: the index of the end frame.
-            items: the items to be hashed. Supported items are {filename, lineno,
-                function, code_context, position, lasti}, where code_context denotes 
-                the current line of code of the context, position denotes the frame's 
-                index of the callstack, lasti denotes the index of last attempted 
-                instruction in bytecode.
+            `start (int)`: The index of the start frame.
+            
+            `end (int)`: The index of the end frame.
+
+            `items (list[str])`: The items to be hashed. Supported items are 
+            {filename, lineno, function, code_context, position, lasti}, where 
+            code_context denotes the current line of code of the context, position
+            denotes the frame's index of the callstack, lasti denotes the index of last
+            attempted instruction in bytecode.
 
         Returns:
             The hash value.
 
         Raises:
-            AttributeError: If an item in `items` is not supported, i.e. not one of
+            `IndexError`: If the args [`start`, `end`) is out of the frame range or 
+            `end` less than `start`.   
+
+            `ValueError`: If an item in `items` is not supported, i.e. not one of
             {filename, lineno, function, code_context, position, lasti}.
 
         Examples:
-            Suppose we have a callstack obejct `s` contains 2 frames.
-            >>> hash_val = s.hash(0,1,['filename'])
-            >>> print(hash_val)
-            b284a28710cce90d9d9be3a7f4cabc8e 
-            >>> hash_val = s.hash(0,5,['filename'])
-            >>> print(hash_val)
-            ERROR:root:index range [0, 4] out of list range [0, 1]
-            None 
-            >>> hash_val = s.hash(0,1,['attr_a'])
-            >>> print(hash_val)
-            ERROR:root:{'attr_a'} not supported
-            None
+            >>> def foo():
+            ...     return Callstack()
+            >>> def bar(): 
+            ...     return foo()
+            >>> stack = foo()
+            >>> stack.frames
+            # show the frames here
+            >>> hash_1 = stack.hash()
+            >>> hash_1
+            # show the hash value
+            >>> hash_2 = stack.hash(0, stack.size-1, {'lineno, function, lasti'})
+            >>> hash_2
+            # show the hash value
         """
         start = start or 0
-        end = end or self.stack_size
+        end = end or self.size
 
-        if end > self.stack_size or end <= 0 or start >= self.stack_size or start < 0 :
-            logging.error(
-                f'index range [{start}, {end}) out of list range' 
-                f'[0, {self.stack_size})'
+        if end > self.size or end <= 0 or start >= self.size or start < 0 :
+            raise IndexError(
+                f'index range [{start}, {end}) out of frame range' 
+                f'[0, {self.size})'
             )
-            return None
         if start >= end:
-            logging.error(f'end = {end} is less than or equal to start = {start}')
-            return None
+            raise IndexError(f'end = {end} is less than or equal to start = {start}')
 
         full_item = {
             'filename', 'lineno', 'function', 'code_context', 'position', 'lasti'
         }
         if not set(items).issubset(set(full_item)):
             invalid_item = set(items) - (set(items) & full_item)
-            logging.error(f'{invalid_item} not supported')
-            return None
+            raise ValueError(f'{invalid_item} not supported')
 
         md5 = hashlib.md5()
         for i, frame in enumerate(self.frames[start:end]):

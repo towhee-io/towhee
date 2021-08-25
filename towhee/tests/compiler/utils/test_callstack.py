@@ -13,7 +13,7 @@
 # limitations under the License.
 import unittest
 import sys,os
-sys.path.append(os.getcwd())
+# sys.path.append(os.getcwd())
 from towhee.compiler.utils.callstack import Callstack
 
 class TestCallStack(unittest.TestCase):
@@ -25,14 +25,14 @@ class TestCallStack(unittest.TestCase):
         f2 = s2.frames
         self.assertIsInstance(f1, list)
         self.assertIsInstance(f2, list)
-        self.assertEqual(s1.stack_size, s2.stack_size + 1)
-        self.assertEqual(s1.stack_size, s3.stack_size + 2)
+        self.assertEqual(s1.size, s2.size + 1)
+        self.assertEqual(s1.size, s3.size + 2)
 
     def test_num_frames(self):
         s1 = Callstack()
         s2 = Callstack(ignore = 3)
-        self.assertEqual(s1.stack_size, s1.num_frames())
-        self.assertEqual(s2.stack_size, s2.num_frames())
+        self.assertEqual(s1.size, s1.num_frames())
+        self.assertEqual(s2.size, s2.num_frames())
         self.assertEqual(s1.num_frames(), s2.num_frames() + 3)
 
     def test_find_func(self):
@@ -57,36 +57,41 @@ class TestCallStack(unittest.TestCase):
         )
         output_6 = s.hash(0, 8, ['filename'])
         self.assertEqual(len(output_5), len(output_6))
-        with self.assertLogs(level='ERROR') as cm:
-            output_7 = s.hash(-1, 1, ['filename'])
-            l = s.stack_size
-            self.assertIsNone(output_7)
-            self.assertIn(
-                f'index range [-1, 1) out of list range[0, {l})', "".join(cm.output))
-        with self.assertLogs(level='ERROR') as cm:
-            output_8 = s.hash(0, 100, ['filename'])
-            l = s.stack_size
-            self.assertIsNone(output_8)
-            self.assertIn(
-                f'index range [0, 100) out of list range[0, {l})', "".join(cm.output))
-        with self.assertLogs(level='ERROR') as cm:
-            output_9 = s.hash(1, 1, ['filename'])
-            self.assertIsNone(output_9)
-            self.assertIn(
-                'end = 1 is less than or equal to start = 1', "".join(cm.output)
-            )
-        with self.assertLogs(level='ERROR') as cm:
-            output_10 = s.hash(3, 1, ['filename'])
-            self.assertIsNone(output_10)
-            self.assertIn(
-                'end = 1 is less than or equal to start = 3', "".join(cm.output)
-            )
-        with self.assertLogs(level='ERROR') as cm:
-            output_11 = s.hash(0, 1, ['attribute_that_not_exists'])
-            l = s.stack_size
-            self.assertIsNone(output_11)
-            self.assertIn(
-                f'{{\'attribute_that_not_exists\'}} not supported', "".join(cm.output))
+        self.assertRaises(ValueError, s.hash, items=['attribute_that_not_exists'])
+        self.assertRaises(IndexError, s.hash, -1, 1, items=['filename'])
+        self.assertRaises(IndexError, s.hash, 0, 1000, items=['filename'])
+        self.assertRaises(IndexError, s.hash, 10, 1, items=['filename'])
+
+        # with self.assertLogs(level='ERROR') as cm:
+        #     output_7 = s.hash(-1, 1, ['filename'])
+        #     l = s.size
+        #     self.assertIsNone(output_7)
+        #     self.assertIn(
+        #         f'index range [-1, 1) out of list range[0, {l})', "".join(cm.output))
+        # with self.assertLogs(level='ERROR') as cm:
+        #     output_8 = s.hash(0, 100, ['filename'])
+        #     l = s.size
+        #     self.assertIsNone(output_8)
+        #     self.assertIn(
+        #         f'index range [0, 100) out of list range[0, {l})', "".join(cm.output))
+        # with self.assertLogs(level='ERROR') as cm:
+        #     output_9 = s.hash(1, 1, ['filename'])
+        #     self.assertIsNone(output_9)
+        #     self.assertIn(
+        #         'end = 1 is less than or equal to start = 1', "".join(cm.output)
+        #     )
+        # with self.assertLogs(level='ERROR') as cm:
+        #     output_10 = s.hash(3, 1, ['filename'])
+        #     self.assertIsNone(output_10)
+        #     self.assertIn(
+        #         'end = 1 is less than or equal to start = 3', "".join(cm.output)
+        #     )
+        # with self.assertLogs(level='ERROR') as cm:
+        #     output_11 = s.hash(0, 1, ['attribute_that_not_exists'])
+        #     l = s.size
+        #     self.assertIsNone(output_11)
+        #     self.assertIn(
+        #         f'{{\'attribute_that_not_exists\'}} not supported', "".join(cm.output))
                 
 
 if __name__ == '__main__':
