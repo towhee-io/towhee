@@ -35,14 +35,3 @@ class OperatorPool:
         raise NotImplementedError
 
 
-class OperatorLoader:
-    """Load operator from local, hub, http and so on.
-    """
-    @staticmethod
-    def load(path):
-        raise NotImplementedError
-
-    @staticmethod
-    def _load_local(path):
-        raise NotImplementedError
-
