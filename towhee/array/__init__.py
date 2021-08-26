@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from variable import Variable
-from variable_set import VariableSet
+
+from towhee.array.array import Array
 
 __all__ = [
-    'Variable', 'VariableSet'
+    'Array'
 ]
