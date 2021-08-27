@@ -13,37 +13,31 @@
 # limitations under the License.
 
 
-class VariableRepr:
+from towhee.dag.graph_repr import GraphRepr
+from towhee.data_source import DataSource
+from towhee.engine.runtime_graph import RuntimeGraph
+
+
+class LocalEngine:
     """
-    The representation of a variable at compile-phase
     """
+    def __init__(self, graph: GraphRepr, ds: DataSource) -> None:
+        self._graph = graph
+        self._ds = ds
 
-    def __init__(self, name: str, from_op: str):
-        self.from_op = from_op
-        self.to_op = []
-        self.name = name
-        self.type: type
-        self.dtype: type
-
-
-class VariableSet:
-    """
-    A set of VariableRepr
-    """
-
-    def __getattr__(self, name):
-        raise NotImplementedError
-        return self._var_dict[name]
-
-    def from_dict(self, var_dict: [str, VariableRepr]):
-        """
-        Add variable from dict
+    def _process(self):
+        """Control Parallelism of engine,
         """
         raise NotImplementedError
 
-    def add_var(self, key: str, var: VariableRepr):
-        """
-        Add a variable
+    def run(self):
+        """Read from data source, create & and run graph 
+
+           for data in self._ds:
+               # input_variable_set = VariableSet.add(data)
+               runtime_graph = RuntimeGraph(self._graph, data)
+               runtime_graph.build()
+               self._process(runtime_graph)
+
         """
         raise NotImplementedError
-

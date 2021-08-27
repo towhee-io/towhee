@@ -11,3 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+import abc
+from collections.abc import Iterable 
+
+
+class DataSource(Iterable):
+    """
+    """
+
+
+class InputData(metaclass=abc.ABCMeta):
+    """
+    """
+    @abc.abstractmethod
+    def get_data(self) -> dict:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def on_finish(self) -> bool:
+        raise NotImplementedError
+    

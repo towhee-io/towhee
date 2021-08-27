@@ -12,12 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
 
-class Variable:
-    """
-    The Towhee's abstraction of variable. Typical variables are pipeline's inputs, 
-    outputs, and operators' inputs, outputs.
-    """
 
-    def from_dict(self, dict):
+class OperatorPool:
+    """Entry to create operator
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = object.__new__(cls, *args, **kwargs)
+        return cls._instance
+            
+    def acquire(self):
         raise NotImplementedError
+
+    def release(self):
+        raise NotImplementedError
+
+

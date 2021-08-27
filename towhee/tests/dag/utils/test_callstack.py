@@ -14,7 +14,7 @@
 import unittest
 import sys,os
 # sys.path.append(os.getcwd())
-from towhee.compiler.utils.callstack import Callstack
+from towhee.dag.utils.callstack import Callstack
 
 class TestCallStack(unittest.TestCase):
     def test_init(self):

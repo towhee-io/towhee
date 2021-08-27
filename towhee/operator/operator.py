@@ -11,3 +11,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+from abc import abstractclassmethod
+
+class Operator:
+    """
+    The base operator class.
+    """
+    
+    def __init__(self):
+        self._params = {}
+        self.name = None
+
+    @property
+    def params(self):
+        return self._params
+    
+    @params.setter
+    def params(self, dict):
+        # todo update parameter dict
+        raise NotImplementedError
+
+    @abstractclassmethod
+    def op_class(cls):
+        """
+        Get the interface Operator class
+        """
+        raise NotImplementedError

@@ -13,16 +13,14 @@
 # limitations under the License.
 
 
-from abc import abstractclassmethod
-
-class Operator:
+class VariableRepr:
     """
-    The base operator class.
+    The representation of a variable at compile-phase
     """
 
-    @abstractclassmethod
-    def op_class(cls):
-        """
-        Get the interface Operator class
-        """
-        raise NotImplementedError
+    def __init__(self, name: str, from_op: str = None):
+        self.from_op = from_op
+        self.to_op = []
+        self.name = name
+        self.type = None
+        self.dtype = None

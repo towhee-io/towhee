@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataframe import DataFrame
 
-class LocalCompiler:
-    """
-    Compile a pipeline into local executables.
-    """
+__all__ = [
+    'DataFrame'
+]
