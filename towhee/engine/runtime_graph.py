@@ -20,6 +20,7 @@ from towhee.dag.graph_repr import GraphRepr
 from towhee.engine.operator_pool import OperatorPool
 from towhee.variable import VariableSet
 from towhee.engine.task_queue import TaskQueue
+from towhee.data_source import InputData
 
 
 class GraphContext:
@@ -30,11 +31,12 @@ class GraphContext:
 class RuntimeGraph:
     """Per subtask create one runtime graph
     """
-    def __init__(self, graph: GraphRepr) -> None:
+    def __init__(self, graph: GraphRepr, input_data: InputData) -> None:
         self._graph = graph
         self._graph_context = GraphContext()
         self._operator_pool = OperatorPool()
         self._task_queue = TaskQueue()
+        self._input_data = input_data
 
     def build(self):
         """create graph nodes and all variable sets
@@ -43,6 +45,13 @@ class RuntimeGraph:
 
     def start(self):
         """Put nodes to task queue
+        """
+        raise NotImplementedError
+
+    def on_finish(self):
+        """Something needs to do when the graph finished,
+           example:
+           if data source is from socket, do self._input_data.on_finish(output), return graph result
         """
         raise NotImplementedError
 
@@ -67,4 +76,3 @@ class Node:
                     output.add(result)
         """
         raise NotImplementedError
-
