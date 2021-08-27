@@ -13,39 +13,34 @@
 # limitations under the License.
 
 
-import threading
-from queue import Queue
-from typing import Optional
-
-
-from towhee.engine.runtime_graph import Node
+from towhee.engine.task import Task
 
 
 class TaskQueue:
-    """Has multi executors, task queue, 
-       executor get task from queue
     """
-    def put(self, node: Optional(Node)) -> None:
+    The queue where scheduler push tasks and executor pop tasks.
+    Each device has one TaskQueue.
+    """
+
+    def __init__(self)
+
+    @property
+    def empty(self) -> bool:
+        """
+        Indicator whether TaskQueue is empty.
+        True if the queue has no tasks.
+        """
+        raise NotImplementedError
+    
+    @property
+    def size(self) -> int:
+        """
+        Number of tasks in the TaskQueue.
+        """
         raise NotImplementedError
 
+    def push(self, task: Task) -> None:
+        raise NotImplementedError
 
-class TaskExecutor(threading.Thread):
-    """Executive layer
-    """
-    def __init__(self, name: str, queue: Queue):
-        threading.Thread.__init__(self)
-        self._name = name
-        self._need_stop = False
-        self._task_queue = queue
-        self.count = 0
-
-    def run(self):
-        """Get task from queue, call run function
-
-            while not self._need_stop:
-                node = self._task_queue.get()
-                if node is None:
-                    break
-                node.run()
-        """
+    def pop(self) -> Task:
         raise NotImplementedError
