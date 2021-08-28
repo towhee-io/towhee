@@ -14,12 +14,10 @@
 
 
 class OperatorLoader:
-    """Load operator from local, hub, http and so on.
     """
-    @staticmethod
-    def load(path):
-        raise NotImplementedError
+    Load operator from hub.
+    """
 
     @staticmethod
-    def _load_local(path):
+    def pull(url:str):
         raise NotImplementedError
