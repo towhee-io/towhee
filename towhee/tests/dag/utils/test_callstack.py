@@ -61,37 +61,6 @@ class TestCallStack(unittest.TestCase):
         self.assertRaises(IndexError, s.hash, -1, 1, items=['filename'])
         self.assertRaises(IndexError, s.hash, 0, 1000, items=['filename'])
         self.assertRaises(IndexError, s.hash, 10, 1, items=['filename'])
-
-        # with self.assertLogs(level='ERROR') as cm:
-        #     output_7 = s.hash(-1, 1, ['filename'])
-        #     l = s.size
-        #     self.assertIsNone(output_7)
-        #     self.assertIn(
-        #         f'index range [-1, 1) out of list range[0, {l})', "".join(cm.output))
-        # with self.assertLogs(level='ERROR') as cm:
-        #     output_8 = s.hash(0, 100, ['filename'])
-        #     l = s.size
-        #     self.assertIsNone(output_8)
-        #     self.assertIn(
-        #         f'index range [0, 100) out of list range[0, {l})', "".join(cm.output))
-        # with self.assertLogs(level='ERROR') as cm:
-        #     output_9 = s.hash(1, 1, ['filename'])
-        #     self.assertIsNone(output_9)
-        #     self.assertIn(
-        #         'end = 1 is less than or equal to start = 1', "".join(cm.output)
-        #     )
-        # with self.assertLogs(level='ERROR') as cm:
-        #     output_10 = s.hash(3, 1, ['filename'])
-        #     self.assertIsNone(output_10)
-        #     self.assertIn(
-        #         'end = 1 is less than or equal to start = 3', "".join(cm.output)
-        #     )
-        # with self.assertLogs(level='ERROR') as cm:
-        #     output_11 = s.hash(0, 1, ['attribute_that_not_exists'])
-        #     l = s.size
-        #     self.assertIsNone(output_11)
-        #     self.assertIn(
-        #         f'{{\'attribute_that_not_exists\'}} not supported', "".join(cm.output))
                 
 
 if __name__ == '__main__':
