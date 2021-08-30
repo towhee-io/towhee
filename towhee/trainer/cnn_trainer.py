@@ -137,7 +137,7 @@ if TYPE_CHECKING:
 logger = logging.get_logger(__name__)
 
 
-class Trainer:
+class TorchCNNTrainer:
     """
     Trainer is a simple but feature-complete training and eval loop for PyTorch.
 
