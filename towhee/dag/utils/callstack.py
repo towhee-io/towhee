@@ -11,55 +11,152 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import inspect
+from typing import List
+import hashlib
+import logging
 
 class Callstack:
+    def __init__(self, ignore: int = 0):
+        """
+        Initialize a Callstack.
 
-    def collect(self):
+        Args:
+            `ignore (int)`: The number of frames to ignore on the top of the callstack.
+
+        Returns:
+            A Callstack object ignoring a certain number of frames on the top.
+
+        Example:
+        >>> stack_1 = Callstack(ignore = 1)
+        >>> stack_1.frames
+        # show the frames here
+        >>> stack_2 = Callstack()
+        >>> stack_2.frames
+        # show the frames here
         """
-        Collect the frames of current callstack.
-        """
-        raise NotImplementedError
+        self.frames = inspect.stack()
+        # ignore the frame of Callstack.__init__
+        ignore += 1
+        if ignore > len(self.frames):
+            raise ValueError(f"ignore = {ignore-1} is out of frame range")
+        del self.frames[0:ignore]
+        self.size = len(self.frames)
+        
 
     def num_frames(self) -> int:
         """
-        Get the number of frames
+        Get the number of frames.
+
+        Returns:
+            The size of current stack.
         """
-        raise NotImplementedError
+        return self.size
 
     def find_func(self, func_name: str) -> int:
         """
-        Given a function name, find the first-match from the outermost frame
+        Given a function name, find the first-matched and outermost frame from current
+        stack.
 
         Args:
-            func_name: the function name to find.
-        Returns:
-            The first-matched frame index.
+            `func_name (str)`: The function name to find.
 
-        Raises:
+        Returns:
+            If at least one matching frame exits, return the first-matched frame index.
+            Else, return None.
 
         Examples:
-        """
-        raise NotImplementedError
+            Callstack class provides a function to find the first-match frame in
+            current stack to a given function name, and return its index. If not
+            found, return None.
 
-    def hash(self, start: int = None, end: int = None, items: list[str] = None) -> str:
+            >>> def foo(): 
+            ...     return Callstack()
+            >>> def bar(): 
+            ...     return foo()
+            >>> stack = foo()
+            >>> stack.frames
+            # show the frames here
+            >>> foo_index = stack.find_func('foo')
+            >>> foo_index
+            0
+            >>> none_index = stack.find_func('non_exist_func')
+            >>> none_index
+            None
         """
-        Get a hash value from frames.
+        for i in range(self.size - 1, -1, -1):
+            if self.frames[i].function == func_name:
+                return i
+        return None
+
+    def hash(self, start: int = None, end: int = None, items: List[str] = None) -> str:
+        """
+        Get the hash value of the attributes contained in `items` between index `start`
+        and `end` (includes `start`, excludes `end`).
 
         Args:
-            start: the index of the start frame.
-            end: the index of the end frame.
-            items: the items to be hashed. Supported items are {filename, lineno, 
-                funcname, codectx, index, lasti}, where codectx denotes the current
-                line of code of the context, index denotes the frame's index of the
-                callstack, lasti denotes the index of last attempted instruction in 
-                bytecode.
+            `start (int)`: The index of the start frame.
+            
+            `end (int)`: The index of the end frame.
+
+            `items (list[str])`: The items to be hashed. Supported items are 
+            {filename, lineno, function, code_context, position, lasti}, where 
+            code_context denotes the current line of code of the context, position
+            denotes the frame's index of the callstack, lasti denotes the index of last
+            attempted instruction in bytecode.
 
         Returns:
             The hash value.
 
         Raises:
+            `IndexError`: If the args [`start`, `end`) is out of the frame range or 
+            `end` less than `start`.   
+
+            `ValueError`: If an item in `items` is not supported, i.e. not one of
+            {filename, lineno, function, code_context, position, lasti}.
 
         Examples:
+            >>> def foo():
+            ...     return Callstack()
+            >>> def bar(): 
+            ...     return foo()
+            >>> stack = foo()
+            >>> stack.frames
+            # show the frames here
+            >>> hash_1 = stack.hash()
+            >>> hash_1
+            # show the hash value
+            >>> hash_2 = stack.hash(0, stack.size-1, {'lineno, function, lasti'})
+            >>> hash_2
+            # show the hash value
         """
-        raise NotImplementedError
+        start = start or 0
+        end = end or self.size
+
+        if end > self.size or end <= 0 or start >= self.size or start < 0 :
+            raise IndexError(
+                f'index range [{start}, {end}) out of frame range' 
+                f'[0, {self.size})'
+            )
+        if start >= end:
+            raise IndexError(f'end = {end} is less than or equal to start = {start}')
+
+        full_item = {
+            'filename', 'lineno', 'function', 'code_context', 'position', 'lasti'
+        }
+        if not set(items).issubset(set(full_item)):
+            invalid_item = set(items) - (set(items) & full_item)
+            raise ValueError(f'{invalid_item} not supported')
+
+        md5 = hashlib.md5()
+        for i, frame in enumerate(self.frames[start:end]):
+            frame_dict = frame._asdict()
+            frame_dict['position'] = i + start
+            frame_dict['lasti'] = frame_dict['frame'].f_lasti
+            frame_dict['code_context'] = (
+                ''.join(frame_dict['code_context']) if frame_dict['code_context']
+                else ''
+            )
+            for item in items:
+                md5.update(str(frame_dict[item]).encode('utf-8'))
+        return md5.hexdigest()
