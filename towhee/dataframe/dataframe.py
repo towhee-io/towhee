@@ -28,12 +28,7 @@ class DataFrame:
             data: a list of Array with same size
         """
         self.name = name
-        self.iter = DFIterator(self)
         self.columns = data
-
-    def __iter__(self):
-        return iter(self.iter)
-
 
 
 class DFIterator:
