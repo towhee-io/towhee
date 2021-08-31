@@ -26,14 +26,6 @@ class Callstack:
 
         Returns:
             A Callstack object ignoring a certain number of frames on the top.
-
-        Example:
-        >>> stack_1 = Callstack(ignore = 1)
-        >>> stack_1.frames
-        # show the frames here
-        >>> stack_2 = Callstack()
-        >>> stack_2.frames
-        # show the frames here
         """
         self.frames = inspect.stack()
         # ignore the frame of Callstack.__init__
@@ -64,25 +56,6 @@ class Callstack:
         Returns:
             If at least one matching frame exits, return the first-matched frame index.
             Else, return None.
-
-        Examples:
-            Callstack class provides a function to find the first-match frame in
-            current stack to a given function name, and return its index. If not
-            found, return None.
-
-            >>> def foo(): 
-            ...     return Callstack()
-            >>> def bar(): 
-            ...     return foo()
-            >>> stack = foo()
-            >>> stack.frames
-            # show the frames here
-            >>> foo_index = stack.find_func('foo')
-            >>> foo_index
-            0
-            >>> none_index = stack.find_func('non_exist_func')
-            >>> none_index
-            None
         """
         for i in range(self.size - 1, -1, -1):
             if self.frames[i].function == func_name:
@@ -114,21 +87,6 @@ class Callstack:
 
             `ValueError`: If an item in `items` is not supported, i.e. not one of
             {filename, lineno, function, code_context, position, lasti}.
-
-        Examples:
-            >>> def foo():
-            ...     return Callstack()
-            >>> def bar(): 
-            ...     return foo()
-            >>> stack = foo()
-            >>> stack.frames
-            # show the frames here
-            >>> hash_1 = stack.hash()
-            >>> hash_1
-            # show the hash value
-            >>> hash_2 = stack.hash(0, stack.size-1, {'lineno, function, lasti'})
-            >>> hash_2
-            # show the hash value
         """
         start = start or 0
         end = end or self.size
