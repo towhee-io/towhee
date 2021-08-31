@@ -23,6 +23,8 @@ class Operator:
     def __init__(self):
         self._params = {}
         self.name = None
+        self.executor = None
+        self.is_stateless = True
 
     @property
     def params(self):
