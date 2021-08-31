@@ -20,9 +20,9 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 
-class ImageDataset(Dataset):
+class PytorchImageDataset(Dataset):
     """
-        ImageDataset is a dataset class for PyTorch.
+        PytorchImageDataset is a dataset class for training.
 
         Args:
             image_path (:obj:`str`):
