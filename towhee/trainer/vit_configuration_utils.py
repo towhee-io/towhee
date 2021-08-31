@@ -50,10 +50,10 @@ class PretrainedConfig(PushToHubMixin):
     Class attributes (overridden by derived classes)
 
         - **model_type** (:obj:`str`) -- An identifier for the model type, serialized into the JSON file, and used to
-          recreate the correct object in :class:`~transformers.AutoConfig`.
+          recreate the correct object in :class:`~towhee.AutoConfig`.
         - **is_composition** (:obj:`bool`) -- Whether the config class is composed of multiple sub-configs. In this
           case the config has to be initialized from two or more configs of type
-          :class:`~transformers.PretrainedConfig` like: :class:`~transformers.EncoderDecoderConfig` or
+          :class:`~towhee.PretrainedConfig` like: :class:`~towhee.EncoderDecoderConfig` or
           :class:`~RagConfig`.
         - **keys_to_ignore_at_inference** (:obj:`List[str]`) -- A list of keys to ignore by default when looking at
           dictionary outputs of the model during inference.
@@ -69,15 +69,15 @@ class PretrainedConfig(PushToHubMixin):
 
     Args:
         name_or_path (:obj:`str`, `optional`, defaults to :obj:`""`):
-            Store the string that was passed to :func:`~transformers.PreTrainedModel.from_pretrained` or
-            :func:`~transformers.TFPreTrainedModel.from_pretrained` as ``pretrained_model_name_or_path`` if the
+            Store the string that was passed to :func:`~towhee.PreTrainedModel.from_pretrained` or
+            :func:`~towhee.TFPreTrainedModel.from_pretrained` as ``pretrained_model_name_or_path`` if the
             configuration was created with such a method.
         output_hidden_states (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether or not the model should return all hidden-states.
         output_attentions (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether or not the model should returns all attentions.
         return_dict (:obj:`bool`, `optional`, defaults to :obj:`True`):
-            Whether or not the model should return a :class:`~transformers.file_utils.ModelOutput` instead of a plain
+            Whether or not the model should return a :class:`~towhee.file_utils.ModelOutput` instead of a plain
             tuple.
         is_encoder_decoder (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether the model is used as an encoder/decoder or not.
@@ -85,7 +85,7 @@ class PretrainedConfig(PushToHubMixin):
             Whether the model is used as decoder or not (in which case it's used as an encoder).
         add_cross_attention (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether cross-attention layers should be added to the model. Note, this option is only relevant for models
-            that can be used as decoder models within the `:class:~transformers.EncoderDecoderModel` class, which
+            that can be used as decoder models within the `:class:~towhee.EncoderDecoderModel` class, which
             consists of all models in ``AUTO_MODELS_FOR_CAUSAL_LM``.
         tie_encoder_decoder (:obj:`bool`, `optional`, defaults to :obj:`False`)
             Whether all encoder weights should be tied to their equivalent decoder weights. This requires the encoder
@@ -148,7 +148,7 @@ class PretrainedConfig(PushToHubMixin):
         - **output_scores** (:obj:`bool`, `optional`, defaults to :obj:`False`) -- Whether the model should return the
           logits when used for generation
         - **return_dict_in_generate** (:obj:`bool`, `optional`, defaults to :obj:`False`) -- Whether the model should
-          return a :class:`~transformers.file_utils.ModelOutput` instead of a :obj:`torch.LongTensor`
+          return a :class:`~towhee.file_utils.ModelOutput` instead of a :obj:`torch.LongTensor`
         - **forced_bos_token_id** (:obj:`int`, `optional`) -- The id of the token to force as the first generated token
           after the :obj:`decoder_start_token_id`. Useful for multilingual models like :doc:`mBART
           <../model_doc/mbart>` where the first generated token needs to be the target language token.
@@ -230,7 +230,7 @@ class PretrainedConfig(PushToHubMixin):
     @property
     def use_return_dict(self) -> bool:
         """
-        :obj:`bool`: Whether or not return :class:`~transformers.file_utils.ModelOutput` instead of tuples.
+        :obj:`bool`: Whether or not return :class:`~towhee.file_utils.ModelOutput` instead of tuples.
         """
         raise NotImplementedError
 
@@ -248,7 +248,7 @@ class PretrainedConfig(PushToHubMixin):
     def save_pretrained(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = False, **kwargs):
         """
         Save a configuration object to the directory ``save_directory``, so that it can be re-loaded using the
-        :func:`~transformers.PretrainedConfig.from_pretrained` class method.
+        :func:`~towhee.PretrainedConfig.from_pretrained` class method.
 
         Args:
             save_directory (:obj:`str` or :obj:`os.PathLike`):
@@ -265,14 +265,14 @@ class PretrainedConfig(PushToHubMixin):
 
             kwargs:
                 Additional key word arguments passed along to the
-                :meth:`~transformers.file_utils.PushToHubMixin.push_to_hub` method.
+                :meth:`~towhee.file_utils.PushToHubMixin.push_to_hub` method.
         """
         raise NotImplementedError
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs) -> "PretrainedConfig":
         r"""
-        Instantiate a :class:`~transformers.PretrainedConfig` (or a derived class) from a pretrained model
+        Instantiate a :class:`~towhee.PretrainedConfig` (or a derived class) from a pretrained model
         configuration.
 
         Args:
@@ -281,7 +281,7 @@ class PretrainedConfig(PushToHubMixin):
 
                 - a string, the `model id` of a pretrained model configuration hosted inside a model repo like huggingface.
                 - a path to a `directory` containing a configuration file saved using the
-                  :func:`~transformers.PretrainedConfig.save_pretrained` method, e.g., ``./my_model_directory/``.
+                  :func:`~towhee.PretrainedConfig.save_pretrained` method, e.g., ``./my_model_directory/``.
                 - a path or url to a saved configuration JSON `file`, e.g.,
                   ``./my_model_directory/configuration.json``.
             cache_dir (:obj:`str` or :obj:`os.PathLike`, `optional`):
@@ -297,12 +297,9 @@ class PretrainedConfig(PushToHubMixin):
                 A dictionary of proxy servers to use by protocol or endpoint, e.g., :obj:`{'http': 'foo.bar:3128',
                 'http://hostname': 'foo.bar:4012'}.` The proxies are used on each request.
             use_auth_token (:obj:`str` or `bool`, `optional`):
-                The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-                generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
+                The token to use as HTTP bearer authorization for remote files.
             revision(:obj:`str`, `optional`, defaults to :obj:`"main"`):
-                The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
-                git-based system for storing models and other artifacts on huggingface.co, so ``revision`` can be any
-                identifier allowed by git.
+                The specific model version to use. It can be a branch name, a tag name, or a commit id
             return_unused_kwargs (:obj:`bool`, `optional`, defaults to :obj:`False`):
                 If :obj:`False`, then this function returns just the final configuration object.
 
@@ -345,7 +342,7 @@ class PretrainedConfig(PushToHubMixin):
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         From a ``pretrained_model_name_or_path``, resolve to a dictionary of parameters, to be used for instantiating a
-        :class:`~transformers.PretrainedConfig` using ``from_dict``.
+        :class:`~towhee.PretrainedConfig` using ``from_dict``.
 
 
 
@@ -368,7 +365,7 @@ class PretrainedConfig(PushToHubMixin):
             config_dict (:obj:`Dict[str, Any]`):
                 Dictionary that will be used to instantiate the configuration object. Such a dictionary can be
                 retrieved from a pretrained checkpoint by leveraging the
-                :func:`~transformers.PretrainedConfig.get_config_dict` method.
+                :func:`~towhee.PretrainedConfig.get_config_dict` method.
             kwargs (:obj:`Dict[str, Any]`):
                 Additional parameters from which to initialize the configuration object.
 
@@ -380,7 +377,7 @@ class PretrainedConfig(PushToHubMixin):
     @classmethod
     def from_json_file(cls, json_file: Union[str, os.PathLike]) -> "PretrainedConfig":
         """
-        Instantiates a :class:`~transformers.PretrainedConfig` from the path to a JSON file of parameters.
+        Instantiates a :class:`~towhee.PretrainedConfig` from the path to a JSON file of parameters.
 
         Args:
             json_file (:obj:`str` or :obj:`os.PathLike`):

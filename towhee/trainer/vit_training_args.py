@@ -1,7 +1,5 @@
 # coding=utf-8
-# Copyright 2021 Zilliz. All rights reserved.
-#
-# Copyright 2020-present the HuggingFace Inc. team.
+# Copyright 2021 Zilliz and the HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,21 +84,16 @@ class TrainingArguments:
             If :obj:`True`, overwrite the content of the output directory. Use this to continue training if
             :obj:`output_dir` points to a checkpoint directory.
         do_train (:obj:`bool`, `optional`, defaults to :obj:`False`):
-            Whether to run training or not. This argument is not directly used by :class:`~transformers.Trainer`, it's
-            intended to be used by your training/evaluation scripts instead. See the `example scripts
-            <https://github.com/huggingface/transformers/tree/master/examples>`__ for more details.
+            Whether to run training or not. This argument is not directly used by :class:`~towhee.Trainer`, it's
+            intended to be used by your training/evaluation scripts instead.
         do_eval (:obj:`bool`, `optional`):
             Whether to run evaluation on the validation set or not. Will be set to :obj:`True` if
             :obj:`evaluation_strategy` is different from :obj:`"no"`. This argument is not directly used by
-            :class:`~transformers.Trainer`, it's intended to be used by your training/evaluation scripts instead. See
-            the `example scripts <https://github.com/huggingface/transformers/tree/master/examples>`__ for more
-            details.
+            :class:`~towhee.Trainer`, it's intended to be used by your training/evaluation scripts instead.
         do_predict (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether to run predictions on the test set or not. This argument is not directly used by
-            :class:`~transformers.Trainer`, it's intended to be used by your training/evaluation scripts instead. See
-            the `example scripts <https://github.com/huggingface/transformers/tree/master/examples>`__ for more
-            details.
-        evaluation_strategy (:obj:`str` or :class:`~transformers.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"no"`):
+            :class:`~towhee.Trainer`, it's intended to be used by your training/evaluation scripts instead.
+        evaluation_strategy (:obj:`str` or :class:`~towhee.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"no"`):
             The evaluation strategy to adopt during training. Possible values are:
 
                 * :obj:`"no"`: No evaluation is done during training.
@@ -126,16 +119,16 @@ class TrainingArguments:
             left unset, the whole predictions are accumulated on GPU/TPU before being moved to the CPU (faster but
             requires more memory).
         learning_rate (:obj:`float`, `optional`, defaults to 5e-5):
-            The initial learning rate for :class:`~transformers.AdamW` optimizer.
+            The initial learning rate for :class:`~towhee.AdamW` optimizer.
         weight_decay (:obj:`float`, `optional`, defaults to 0):
             The weight decay to apply (if not zero) to all layers except all bias and LayerNorm weights in
-            :class:`~transformers.AdamW` optimizer.
+            :class:`~towhee.AdamW` optimizer.
         adam_beta1 (:obj:`float`, `optional`, defaults to 0.9):
-            The beta1 hyperparameter for the :class:`~transformers.AdamW` optimizer.
+            The beta1 hyperparameter for the :class:`~towhee.AdamW` optimizer.
         adam_beta2 (:obj:`float`, `optional`, defaults to 0.999):
-            The beta2 hyperparameter for the :class:`~transformers.AdamW` optimizer.
+            The beta2 hyperparameter for the :class:`~towhee.AdamW` optimizer.
         adam_epsilon (:obj:`float`, `optional`, defaults to 1e-8):
-            The epsilon hyperparameter for the :class:`~transformers.AdamW` optimizer.
+            The epsilon hyperparameter for the :class:`~towhee.AdamW` optimizer.
         max_grad_norm (:obj:`float`, `optional`, defaults to 1.0):
             Maximum gradient norm (for gradient clipping).
         num_train_epochs(:obj:`float`, `optional`, defaults to 3.0):
@@ -144,8 +137,8 @@ class TrainingArguments:
         max_steps (:obj:`int`, `optional`, defaults to -1):
             If set to a positive number, the total number of training steps to perform. Overrides
             :obj:`num_train_epochs`.
-        lr_scheduler_type (:obj:`str` or :class:`~transformers.SchedulerType`, `optional`, defaults to :obj:`"linear"`):
-            The scheduler type to use. See the documentation of :class:`~transformers.SchedulerType` for all possible
+        lr_scheduler_type (:obj:`str` or :class:`~towhee.SchedulerType`, `optional`, defaults to :obj:`"linear"`):
+            The scheduler type to use. See the documentation of :class:`~towhee.SchedulerType` for all possible
             values.
         warmup_ratio (:obj:`float`, `optional`, defaults to 0.0):
             Ratio of total training steps used for a linear warmup from 0 to :obj:`learning_rate`.
@@ -164,7 +157,7 @@ class TrainingArguments:
         logging_dir (:obj:`str`, `optional`):
             `TensorBoard <https://www.tensorflow.org/tensorboard>`__ log directory. Will default to
             `output_dir/runs/**CURRENT_DATETIME_HOSTNAME**`.
-        logging_strategy (:obj:`str` or :class:`~transformers.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"steps"`):
+        logging_strategy (:obj:`str` or :class:`~towhee.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"steps"`):
             The logging strategy to adopt during training. Possible values are:
 
                 * :obj:`"no"`: No logging is done during training.
@@ -175,7 +168,7 @@ class TrainingArguments:
             Whether to log and evaluate the first :obj:`global_step` or not.
         logging_steps (:obj:`int`, `optional`, defaults to 500):
             Number of update steps between two logs if :obj:`logging_strategy="steps"`.
-        save_strategy (:obj:`str` or :class:`~transformers.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"steps"`):
+        save_strategy (:obj:`str` or :class:`~towhee.trainer_utils.IntervalStrategy`, `optional`, defaults to :obj:`"steps"`):
             The checkpoint save strategy to adopt during training. Possible values are:
 
                 * :obj:`"no"`: No save is done during training.
@@ -196,7 +189,7 @@ class TrainingArguments:
             Whether to not use CUDA even when it is available or not.
         seed (:obj:`int`, `optional`, defaults to 42):
             Random seed that will be set at the beginning of training. To ensure reproducibility across runs, use the
-            :func:`~transformers.Trainer.model_init` function to instantiate the model if it has some randomly
+            :func:`~towhee.Trainer.model_init` function to instantiate the model if it has some randomly
             initialized parameters.
         fp16 (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether to use 16-bit (mixed) precision training instead of 32-bit training.
@@ -232,13 +225,13 @@ class TrainingArguments:
             A descriptor for the run. Typically used for `wandb <https://www.wandb.com/>`_ logging.
         disable_tqdm (:obj:`bool`, `optional`):
             Whether or not to disable the tqdm progress bars and table of metrics produced by
-            :class:`~transformers.notebook.NotebookTrainingTracker` in Jupyter Notebooks. Will default to :obj:`True`
+            :class:`~towhee.notebook.NotebookTrainingTracker` in Jupyter Notebooks. Will default to :obj:`True`
             if the logging level is set to warn or lower (default), :obj:`False` otherwise.
         remove_unused_columns (:obj:`bool`, `optional`, defaults to :obj:`True`):
             If using :obj:`datasets.Dataset` datasets, whether or not to automatically remove the columns unused by the
             model forward method.
 
-            (Note that this behavior is not implemented for :class:`~transformers.TFTrainer` yet.)
+            (Note that this behavior is not implemented for :class:`~towhee.TFTrainer` yet.)
         label_names (:obj:`List[str]`, `optional`):
             The list of keys in your dictionary of inputs that correspond to the labels.
 
@@ -272,7 +265,7 @@ class TrainingArguments:
             When resuming training, whether or not to skip the epochs and batches to get the data loading at the same
             stage as in the previous training. If set to :obj:`True`, the training will begin faster (as that skipping
             step can take a long time) but will not yield the same results as the interrupted training would have.
-        sharded_ddp (:obj:`bool`, :obj:`str` or list of :class:`~transformers.trainer_utils.ShardedDDPOption`, `optional`, defaults to :obj:`False`):
+        sharded_ddp (:obj:`bool`, :obj:`str` or list of :class:`~towhee.trainer_utils.ShardedDDPOption`, `optional`, defaults to :obj:`False`):
             Use Sharded DDP training from `FairScale <https://github.com/facebookresearch/fairscale>`__ (in distributed
             training only). This is an experimental feature.
 
@@ -296,7 +289,7 @@ class TrainingArguments:
             The label smoothing factor to use. Zero means no label smoothing, otherwise the underlying onehot-encoded
             labels are changed from 0s and 1s to :obj:`label_smoothing_factor/num_labels` and :obj:`1 -
             label_smoothing_factor + label_smoothing_factor/num_labels` respectively.
-        debug (:obj:`str` or list of :class:`~transformers.debug_utils.DebugOption`, `optional`, defaults to :obj:`""`):
+        debug (:obj:`str` or list of :class:`~towhee.debug_utils.DebugOption`, `optional`, defaults to :obj:`""`):
             Enable one or more debug features. This is an experimental feature.
 
             Possible options are:
@@ -307,8 +300,8 @@ class TrainingArguments:
 
             The options should be separated by whitespaces.
         adafactor (:obj:`bool`, `optional`, defaults to :obj:`False`):
-            Whether or not to use the :class:`~transformers.Adafactor` optimizer instead of
-            :class:`~transformers.AdamW`.
+            Whether or not to use the :class:`~towhee.Adafactor` optimizer instead of
+            :class:`~towhee.AdamW`.
         group_by_length (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether or not to group together samples of roughly the same length in the training dataset (to minimize
             padding applied and be more efficient). Only useful if applying dynamic padding.
@@ -332,20 +325,17 @@ class TrainingArguments:
         push_to_hub (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether or not to upload the trained model to the hub after training. If this is activated, and
             :obj:`output_dir` exists, it needs to be a local clone of the repository to which the
-            :class:`~transformers.Trainer` will be pushed.
+            :class:`~towhee.Trainer` will be pushed.
         resume_from_checkpoint (:obj:`str`, `optional`):
             The path to a folder with a valid checkpoint for your model. This argument is not directly used by
-            :class:`~transformers.Trainer`, it's intended to be used by your training/evaluation scripts instead. See
-            the `example scripts <https://github.com/huggingface/transformers/tree/master/examples>`__ for more
-            details.
+            :class:`~towhee.Trainer`, it's intended to be used by your training/evaluation scripts instead.
         push_to_hub_model_id (:obj:`str`, `optional`):
-            The name of the repository to which push the :class:`~transformers.Trainer` when :obj:`push_to_hub=True`.
+            The name of the repository to which push the :class:`~towhee.Trainer` when :obj:`push_to_hub=True`.
             Will default to the name of :obj:`output_dir`.
         push_to_hub_organization (:obj:`str`, `optional`):
-            The name of the organization in with to which push the :class:`~transformers.Trainer`.
+            The name of the organization in with to which push the :class:`~towhee.Trainer`.
         push_to_hub_token (:obj:`str`, `optional`):
-            The token to use to push the model to the Hub. Will default to the token in the cache folder obtained with
-            :obj:`huggingface-cli login`.
+            The token to use to push the model to the Hub.
     """
 
     def __post_init__(self):
