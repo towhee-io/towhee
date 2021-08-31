@@ -13,25 +13,25 @@
 # limitations under the License.
 
 import threading
+from towhee.operator.operator import Operator
 
 
 class OperatorPool:
-    """Entry to create operator
     """
-    _instance = None
-    _lock = threading.Lock()
+    OperatorPool manages Operator creation, acquisition, release, garbage collection.
+    Each TaskExecutor has one OperatorPool.
+    """
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = object.__new__(cls, *args, **kwargs)
-        return cls._instance
-            
-    def acquire(self):
+    def acquire(self, name: str):
+        """
+        Acquire an Operator by name.
+        """
         raise NotImplementedError
 
-    def release(self):
+    def release(self, op: Operator):
+        """
+        Release an Operator.
+        """
         raise NotImplementedError
 
 

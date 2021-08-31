@@ -19,10 +19,8 @@ from towhee.engine.task import Task
 class TaskQueue:
     """
     The queue where scheduler push tasks and executor pop tasks.
-    Each device has one TaskQueue.
+    Each TaskExecutor has one TaskQueue.
     """
-
-    def __init__(self)
 
     @property
     def empty(self) -> bool:
