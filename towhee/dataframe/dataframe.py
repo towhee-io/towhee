@@ -28,8 +28,18 @@ class DataFrame:
             data: a list of Array with same size
         """
         self.name = name
+<<<<<<< HEAD
         self.columns = data
 
+=======
+        self.iter = DFIterator(self)
+        self.columns = data
+
+    def __iter__(self):
+        return iter(self.iter)
+
+
+>>>>>>> 9ada236dd1ea0de151ebd569a018da7ffce5cac7
 
 class DFIterator:
     """

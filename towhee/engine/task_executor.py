@@ -14,7 +14,10 @@
 
 
 import threading
+<<<<<<< HEAD
 from towhee.engine.operator_pool import OperatorPool
+=======
+>>>>>>> 9ada236dd1ea0de151ebd569a018da7ffce5cac7
 from towhee.operator.operator import Operator
 from towhee.engine.task import Task
 from towhee.engine.task_queue import TaskQueue
@@ -29,6 +32,7 @@ class TaskExecutor(threading.Thread):
         threading.Thread.__init__(self)
         self.name = name
         self._task_queue = TaskQueue()
+<<<<<<< HEAD
         self._op_pool = OperatorPool()
         self._need_stop = False
     
@@ -51,13 +55,30 @@ class TaskExecutor(threading.Thread):
         """
         Set how many Operators with same name can be called concurrently.
         """
+=======
+        self._ops = []
+        self._need_stop = False
+    
+    def add_op(self, op: Operator):
+        """
+        Add an Operator to the TaskExecutor and load the Operator to device memory.
+        """
+        self._ops.append(op)
+>>>>>>> 9ada236dd1ea0de151ebd569a018da7ffce5cac7
         raise NotImplementedError
     
     def push_task(self, task: Task):
         """
         Push a task to task queue
         """
+<<<<<<< HEAD
         # todo self._task_queue.push(task)
+=======
+        op = self._get_op(task)
+        if op != None:
+            task.op = op
+            self._task_queue.push(task)
+>>>>>>> 9ada236dd1ea0de151ebd569a018da7ffce5cac7
         raise NotImplementedError
 
     def run(self):
