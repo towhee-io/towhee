@@ -144,9 +144,9 @@ class TorchCNNTrainer:
     Args:
         model:
             The model to train, evaluate or use for predictions. If not provided, a ``model_init`` must be passed.
-        args (:class:`~transformers.TrainingArguments`, `optional`):
+        args (:class:`~towhee.trainer.TrainingArguments`, `optional`):
             The arguments to tweak for training. Will default to a basic instance of
-            :class:`~transformers.TrainingArguments` with the ``output_dir`` set to a directory named `tmp_trainer` in
+            :class:`~towhee.trainer.TrainingArguments` with the ``output_dir`` set to a directory named `tmp_trainer` in
             the current directory if not provided.
         train_dataset (:obj:`torch.utils.data.dataset.Dataset`, `optional`):
             The dataset to use for training.
@@ -156,31 +156,28 @@ class TorchCNNTrainer:
              ``model.forward()`` method are automatically removed.
         model_init (:obj:`Callable[[], PreTrainedModel]`, `optional`):
             A function that instantiates the model to be used. If provided, each call to
-            :meth:`~transformers.Trainer.train` will start from a new instance of the model as given by this function.
+            :meth:`~towhee.trainer.Trainer.train` will start from a new instance of the model as given by this function.
 
         compute_metrics (:obj:`Callable[[EvalPrediction], Dict]`, `optional`):
             The function that will be used to compute metrics at evaluation.
-        callbacks (List of :obj:`~transformers.TrainerCallback`, `optional`):
+        callbacks (List of :obj:`~towhee.trainer.TrainerCallback`, `optional`):
             A list of callbacks to customize the training loop. Will add those to the list of default callbacks
             detailed in :doc:`here <callback>`.
 
             If you want to remove one of the default callbacks used, use the :meth:`Trainer.remove_callback` method.
         optimizers (:obj:`Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR`, `optional`): A tuple
             containing the optimizer and the scheduler to use. Will default to an instance of
-            :class:`~transformers.AdamW` on your model and a scheduler given by
-            :func:`~transformers.get_linear_schedule_with_warmup` controlled by :obj:`args`.
+            :class:`~towhee.trainer.AdamW` on your model and a scheduler given by
+            :func:`~towhee.trainer.get_linear_schedule_with_warmup` controlled by :obj:`args`.
 
     Important attributes:
 
         - **model** -- Always points to the core model.
         - **model_wrapped** -- Always points to the most external model in case one or more other modules wrap the
-          original model. This is the model that should be used for the forward pass. For example, under ``DeepSpeed``,
-          the inner model is wrapped in ``DeepSpeed`` and then again in ``torch.nn.DistributedDataParallel``. If the
-          inner model hasn't been wrapped, then ``self.model_wrapped`` is the same as ``self.model``.
+          original model. This is the model that should be used for the forward pass.
         - **is_model_parallel** -- Whether or not a model has been switched to a model parallel mode (different from
           data parallelism, this means some of the model layers are split on different GPUs).
-        - **place_model_on_device** -- Whether or not to automatically place the model on the device - it will be set
-          to :obj:`False` if model parallel or deepspeed is used, or if the default
+        - **place_model_on_device** -- Whether or not to automatically place the model on the device.
           ``TrainingArguments.place_model_on_device`` is overridden to return :obj:`False` .
         - **is_in_train** -- Whether or not a model is currently running ``train`` (e.g. when ``evaluate`` is called
           while in ``train``)
@@ -198,7 +195,11 @@ class TorchCNNTrainer:
         callbacks: Optional[List[TrainerCallback]] = None,
         optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (None, None),
     ):
-        raise NotImplementedError
+        self.model = model
+        self.optimizer, self.lr_scheduler = optimizers
+        self.callback_handler = CallbackHandler(
+            callbacks, self.model, self.optimizer, self.lr_scheduler
+        )
 
     def add_callback(self, callback):
         """
@@ -209,7 +210,7 @@ class TorchCNNTrainer:
                A :class:`~transformer.TrainerCallback` class or an instance of a :class:`~transformer.TrainerCallback`.
                In the first case, will instantiate a member of that class.
         """
-        raise NotImplementedError
+        self.callback_handler.add_callback(callback)
 
     def pop_callback(self, callback):
         """
@@ -225,7 +226,7 @@ class TorchCNNTrainer:
         Returns:
             :class:`~transformer.TrainerCallback`: The callback removed, if found.
         """
-        raise NotImplementedError
+        return self.callback_handler.pop_callback(callback)
 
     def remove_callback(self, callback):
         """
@@ -236,7 +237,7 @@ class TorchCNNTrainer:
                A :class:`~transformer.TrainerCallback` class or an instance of a :class:`~transformer.TrainerCallback`.
                In the first case, will remove the first member of that class found in the list of callbacks.
         """
-        raise NotImplementedError
+        self.callback_handler.remove_callback(callback)
 
     def get_train_dataloader(self) -> DataLoader:
         """
@@ -339,8 +340,8 @@ class TorchCNNTrainer:
         Args:
             resume_from_checkpoint (:obj:`str` or :obj:`bool`, `optional`):
                 If a :obj:`str`, local path to a saved checkpoint as saved by a previous instance of
-                :class:`~transformers.Trainer`. If a :obj:`bool` and equals `True`, load the last checkpoint in
-                `args.output_dir` as saved by a previous instance of :class:`~transformers.Trainer`. If present,
+                :class:`~towhee.trainer.Trainer`. If a :obj:`bool` and equals `True`, load the last checkpoint in
+                `args.output_dir` as saved by a previous instance of :class:`~towhee.trainer.Trainer`. If present,
                 training will resume from the model/optimizer/scheduler states loaded here.
             trial (:obj:`optuna.Trial` or :obj:`Dict[str, Any]`, `optional`):
                 The trial run or the hyperparameter dictionary for hyperparameter search.
@@ -585,7 +586,7 @@ class TorchCNNTrainer:
 
     def floating_point_ops(self, inputs: Dict[str, Union[torch.Tensor, Any]]):
         """
-        For models that inherit from :class:`~transformers.PreTrainedModel`, uses that method to compute the number of
+        For models that inherit from :class:`~towhee.trainer.PreTrainedModel`, uses that method to compute the number of
         floating point operations for every backward + forward pass. If using another model, either implement such a
         method in the model or subclass and override this method.
 
