@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import threading
-<<<<<<< HEAD
 from towhee.operator.operator import Operator
 
 
@@ -33,27 +32,6 @@ class OperatorPool:
         """
         Release an Operator.
         """
-=======
-
-
-class OperatorPool:
-    """Entry to create operator
-    """
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = object.__new__(cls, *args, **kwargs)
-        return cls._instance
-            
-    def acquire(self):
-        raise NotImplementedError
-
-    def release(self):
->>>>>>> 9ada236dd1ea0de151ebd569a018da7ffce5cac7
         raise NotImplementedError
 
 
