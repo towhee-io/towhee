@@ -13,16 +13,19 @@
 # limitations under the License.
 
 
-class Subjob:
+from towhee.engine.pipeline import Pipeline
+
+
+class GraphContext:
     """
-    Each row of a job's inputs will be processed individually by a pipeline, and 
-    each row's processing corresponds to a subjob.
+    Each row of a Pipeline's inputs will be processed individually by a pipeline, and 
+    each row's processing runs in a GraphContext.
     """
 
-    def __init__(self, job):
+    def __init__(self, pipeline):
         """
         Args:
-            job: the job this subjob belongs to.
+            pipeline: the Pipeline this GraphContext belongs to.
         """
         self._job = job
         self.idx = None # the subjob index
@@ -32,14 +35,14 @@ class Subjob:
  
     def on_start(self, handler: function):
         """
-        Set a custom handler that called before the execution of the subjob.
+        Set a custom handler that called before the execution of the graph.
         """
         self._on_start_handler = handler
         raise NotImplementedError
 
     def on_finish(self, handler: function):
         """
-        Set a custom handler that called after the execution of the subjob.
+        Set a custom handler that called after the execution of the graph.
         """
         self._on_finish_handler = handler
         raise NotImplementedError
