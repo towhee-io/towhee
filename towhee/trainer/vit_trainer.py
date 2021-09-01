@@ -72,87 +72,9 @@ from vit_trainer_callback import (
     TrainerState,
 )
 
-# todo:
-'''
-import file_utils
-from dependency_versions_check import dep_version_check
-from modelcard import TrainingSummary
-from vit_training_args import ParallelMode, TrainingArguments
-from vit_configuration_utils import PretrainedConfig
-from . import __version__
-from debug_utils import DebugOption, DebugUnderflowOverflow
-from deepspeed import deepspeed_init, is_deepspeed_zero3_enabled
-from optimization import Adafactor, AdamW, get_scheduler
-import logging
-'''
 
-'''
-
-
-from .vit_trainer_pt_utils import (
-    DistributedLengthGroupedSampler,
-    DistributedSamplerWithLoop,
-    DistributedTensorGatherer,
-    IterableDatasetShard,
-    LabelSmoother,
-    LengthGroupedSampler,
-    SequentialDistributedSampler,
-    ShardSampler,
-    distributed_broadcast_scalars,
-    distributed_concat,
-    find_batch_size,
-    get_parameter_names,
-    nested_concat,
-    nested_detach,
-    nested_numpify,
-    nested_truncate,
-    nested_xla_mesh_reduce,
-    reissue_pt_warnings,
-)
-from file_utils import (
-    CONFIG_NAME,
-    WEIGHTS_NAME,
-    PushToHubMixin,
-    is_apex_available,
-    is_datasets_available,
-    is_in_notebook,
-    is_sagemaker_dp_enabled,
-    is_sagemaker_mp_enabled,
-    is_torch_tpu_available,
-    is_training_run_on_sagemaker,
-)
-
-# Integrations must be imported before ML frameworks:
-from integrations import (  # isort: split
-    default_hp_search_backend,
-    get_reporting_integration_callbacks,
-    hp_params,
-    is_fairscale_available,
-    is_optuna_available,
-    is_ray_tune_available,
-    run_hp_search_optuna,
-    run_hp_search_ray,
-)
-'''
-
-'''
-if is_fairscale_available():
-    dep_version_check("fairscale")
-    import fairscale
-    from fairscale.nn.data_parallel import FullyShardedDataParallel as FullyShardedDDP
-    from fairscale.nn.data_parallel import ShardedDataParallel as ShardedDDP
-    from fairscale.nn.wrap import auto_wrap
-    from fairscale.optim import OSS
-    from fairscale.optim.grad_scaler import ShardedGradScaler
-
-if version.parse(torch.__version__) >= version.parse("1.6"):
-    _is_torch_generator_available = True
-    _is_native_amp_available = True
-    from torch.cuda.amp import autocast
-'''
-
-_is_torch_generator_available = False
-_is_native_amp_available = False
+import cnntrainer
+import vittrainer
 
 
 class Trainer(operator):
@@ -492,13 +414,6 @@ class Trainer(operator):
         """
         raise NotImplementedError
 
-    def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
-        """
-        Prepare :obj:`inputs` before feeding them to the model, converting them to tensors if they are not already and
-        handling potential state.
-        """
-        raise NotImplementedError
-
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
@@ -547,9 +462,6 @@ class Trainer(operator):
 
         Will only save from the main process.
         """
-        raise NotImplementedError
-
-    def _save_tpu(self, output_dir: Optional[str] = None):
         raise NotImplementedError
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
@@ -714,46 +626,6 @@ class Trainer(operator):
             return self.model.floating_point_ops(inputs)
         else:
             return 0
-
-    def init_git_repo(self):
-        """
-        Initializes a git repo in :obj:`self.args.push_to_hub_model_id`.
-        """
-        raise NotImplementedError
-
-    def create_model_card(
-        self,
-        language: Optional[str] = None,
-        license: Optional[str] = None,
-        tags: Optional[str] = None,
-        model_name: Optional[str] = None,
-        finetuned_from: Optional[str] = None,
-        tasks: Optional[str] = None,
-        dataset_tags: Optional[Union[str, List[str]]] = None,
-        dataset: Optional[Union[str, List[str]]] = None,
-        dataset_args: Optional[Union[str, List[str]]] = None,
-    ):
-        raise NotImplementedError
-
-    def push_to_hub(self, commit_message: Optional[str] = "add model", **kwargs) -> str:
-        """
-        Upload `self.model` and `self.tokenizer` to the  model hub on the repo `self.args.push_to_hub_model_id`.
-
-        Parameters:
-            commit_message (:obj:`str`, `optional`, defaults to :obj:`"add model"`):
-                Message to commit while pushing.
-            kwargs:
-                Additional keyword arguments passed along to :meth:`~transformers.Trainer.create_model_card`.
-
-        Returns:
-            The url of the commit of your model in the given repository.
-        """
-
-        raise NotImplementedError
-
-    #
-    # Deprecated code
-    #
 
     def prediction_loop(
         self,
