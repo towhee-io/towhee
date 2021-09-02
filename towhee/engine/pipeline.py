@@ -14,6 +14,7 @@
 
 
 from towhee.engine.graph_context import GraphContext
+from towhee.engine.engine import Engine
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dataframe.dataframe import DFIterator
 
