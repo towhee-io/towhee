@@ -26,12 +26,23 @@ def collect_frames(ignore: int = 0):
 def generate_callstack(ignore: int = 0):
     return collect_frames(ignore)
 
+# create a callstack contains 3 frames
+# the structure of the callstack (from top to bottom): 
+# `collect_frames` frame, `generate_callstack` frame, `<module>` frame
+s1 = generate_callstack()
+# create a callstack contains 2 frames
+s2 = generate_callstack(ignore = 1)
+# create a callstack contains 1 frames
+s3 = generate_callstack(ignore = 2)
+# create a callstack contains 0 frames
+s4 = generate_callstack(ignore = 3)
+
 class TestCallStack(unittest.TestCase):
     """
     In this class, we test the functions in Callstack class.
     We do not initialize the Callstack directly. Instead, we create two functions
     `generate_frames` and `collect_frames` to initialize the Callstack as well as
-    block the frames produced by the unittest. We do not care about_ the process of
+    block the frames produced by the unittest. We do not care about the process of
     tests, we want to focus only on the architectures that we designed, which in this
     case are `test_xxx`, `generate_callstack` and `collect_frames`. In this way, the 
     structure and depth of the callstack is stable and predictable.
@@ -40,15 +51,6 @@ class TestCallStack(unittest.TestCase):
     """
 
     def test_init(self):
-        # create a callstack contains 3 frames
-        s1 = generate_callstack()
-        # create a callstack contains 2 frames
-        s2 = generate_callstack(ignore = 1)
-        # create a callstack contains 1 frames
-        s3 = generate_callstack(ignore = 2)
-        # create a callstack contains 0 frames
-        s4 = generate_callstack(ignore = 3)
-
         # the callstacks are instances of Callstack class
         self.assertIsInstance(s1, Callstack)
         self.assertIsInstance(s2, Callstack)
@@ -62,15 +64,6 @@ class TestCallStack(unittest.TestCase):
         self.assertIsInstance(s4.frames, list)
 
     def test_num_frames(self):
-        # create a callstack contains 3 frames
-        s1 = generate_callstack()
-        # create a callstack contains 2 frames
-        s2 = generate_callstack(ignore = 1)
-        # create a callstack contains 1 frames
-        s3 = generate_callstack(ignore = 2)
-        # create a callstack contains 0 frames
-        s4 = generate_callstack(ignore = 3)
-          
         # assert the size of the callstacks, namely 3, 2, 1, 0
         self.assertEqual(s1.num_frames(), 3)
         self.assertEqual(s2.num_frames(), 2)

@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from typing import List
+from typing import List, Optional
 import hashlib
-import logging
 
 class Callstack:
     def __init__(self, ignore: int = 0):
@@ -45,7 +44,7 @@ class Callstack:
         """
         return self.size
 
-    def find_func(self, func_name: str) -> int:
+    def find_func(self, func_name: str) -> Optional[int]:
         """
         Given a function name, find the first-matched and outermost frame from current
         stack.
