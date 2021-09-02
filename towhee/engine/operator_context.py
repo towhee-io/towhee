@@ -20,15 +20,14 @@ from towhee.engine.variable import Variable
 
 class OperatorContext:
     """
-    The OperatorContext is a subjob-level component. It manages an operator's
-    input data and output data at runtime, as well as the operators' dependency
-    within a subjob.
+    The OperatorContext manages an operator's input data and output data at runtime, 
+    as well as the operators' dependency within a GraphContext.
     The abstraction of OperatorContext hides the complexity of Dataframe management, 
     input iteration, and data dependency between Operators. It offers a Task-based 
     scheduling context.
     """
 
-    def __init__(self, inputs: list, outputs: list):
+    def __init__(self, graph_ctx, inputs: list, outputs: list):
         """
         Args:
             inputs: a list of Variable.
