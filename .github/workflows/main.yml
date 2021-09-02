@@ -1,0 +1,26 @@
+name: Workflow for towhee
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup Python
+      uses: actions/setup-python@master
+      with:
+        python-version: 3.8
+    - name: Generate coverage report
+      run: |
+        pip install coverage
+        coverage erase
+        coverage run setup.py test
+        coverage xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+    - name: Python pylint
+      run: |
+        pip install pylint
+        pylint --rcfile=pylint.conf --output-format=colorized towhee
