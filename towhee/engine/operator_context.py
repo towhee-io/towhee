@@ -36,8 +36,11 @@ class OperatorContext:
         self._inputs = inputs
         self._outputs = outputs
         self.on_task_finish_handlers = []
+        # self.last_op = None
+        # self.is_op_stateless = True
+        # leave op acquire & release to scheduler
         raise NotImplementedError
-   
+    
     def pop_ready_tasks(self, n: int = 1) -> list:
         """
         Pop n ready Tasks if any. The number of returned Tasks may be less than n
@@ -47,7 +50,7 @@ class OperatorContext:
         """
 
         # create a new task
-        task.on_finish_handlers.append(self.on_task_finish_handlers)
+        # task.on_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
  
     @property

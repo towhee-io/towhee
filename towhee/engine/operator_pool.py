@@ -22,7 +22,7 @@ class OperatorPool:
     Each TaskExecutor has one OperatorPool.
     """
 
-    def acquire(self, name: str):
+    def acquire(self, name: str, init_args: dict):
         """
         Acquire an Operator by name.
         """
