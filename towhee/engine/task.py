@@ -21,13 +21,13 @@ class Task:
     A task is a wrapper of an Operator call. 
     """
 
-    def __init__(self, subjob, task_idx, op_idx, inputs, profiling_on = False):
+    def __init__(self, graph_ctx, task_idx, op, inputs, profiling_on = False):
         """
         Args:
-            subjob: the subjob this task belongs to.
+            graph_ctx: the GraphContext containing this Task
             task_idx: a new task will be constructed for each operator call. The tasks
                 are indexed individually on each opeartor, starting from 0.
-            op_idx: on which operator the task will perform.
+            op: on which operator the task will perform.
             inputs: the inputs of the operator call. It is a list of arguments, which
                 has the same argument order of Operator.__call__.
             profiling_on: open the task profiling or not. If open, the time consumption
@@ -37,24 +37,34 @@ class Task:
         self.op = None
         self.inputs = inputs
 
-        self._subjob = subjob
-        self._on_start_handler = None
-        self._on_finish_handler = None
+        self._graph_ctx = graph_ctx
+        self.on_ready_handlers = []
+        self.on_start_handlers = []
+        self.on_finish_handlers = []
 
         if profiling_on:
             self.time_cost = 0
         raise NotImplementedError
     
-    def on_start(self, handler: function):
+    def _on_ready(self):
         """
-        Set a custom handler that called before the execution of the task.
+        Callback when a task is ready.
+        """
+        for handler in self.on_ready_handlers:
+            handler(self)
+
+        raise NotImplementedError
+   
+    def _on_start(self, handler: function):
+        """
+        Callback before the execution of the task.
         """
         self._on_start_handler = handler
         raise NotImplementedError
 
-    def on_finish(self, handler: function):
+    def _on_finish(self, handler: function):
         """
-        Set a custom handler that called after the execution of the task.
+        Callback after the execution of the task.
         """
         self._on_finish_handler = handler
         raise NotImplementedError
@@ -63,13 +73,11 @@ class Task:
         """
         Run the task
         """
-        if self._on_start_handler != None:
-            self._on_start_handler(self)
+        self._on_start()
 
         self.outputs = self.op(*self.inputs)        
 
-        if self._on_finish_handler != None:
-            self._on_finish_handler(self)
+        self._on_finsh()
 
         raise NotImplementedError
 

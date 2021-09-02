@@ -33,11 +33,14 @@ class Pipeline:
         self._engine = engine
         self._graph_repr = graph_repr
         self._parallelism = parallelism
+        self.on_task_finish_handlers = []
 
     def build(self):
         """
         Create GraphContexts and set up input iterators.
         """
+        for g in self._graph_ctxs:
+            g.on_task_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
 
     def run(self, inputs: list) -> DFIterator:
@@ -48,6 +51,7 @@ class Pipeline:
             inputs: the input data, organized as a list of DataFrame, feeding 
                 to the Pipeline.
         """
+
         # while we still have pipeline inputs:
         #     input = inputs.next()
         #     for g in graph contexts:

@@ -35,37 +35,46 @@ class OperatorContext:
         """
         self._inputs = inputs
         self._outputs = outputs
+        self.on_task_finish_handlers = []
         raise NotImplementedError
-
-    @property
-    def ready_tasks(self) -> list:
+   
+    def pop_ready_tasks(self, n: int = 1) -> list:
         """
-        Get next Tasks if the inputs are ready.
-        Return: a list of ready Task
+        Pop n ready Tasks if any. The number of returned Tasks may be less than n
+        if there are not enough Tasks.
+
+        Return: a list of ready Tasks.
+        """
+
+        # create a new task
+        task.on_finish_handlers.append(self.on_task_finish_handlers)
+        raise NotImplementedError
+ 
+    @property
+    def num_ready_tasks(self) -> int:
+        """
+        Get the number of ready Tasks.
         """
         raise NotImplementedError
         # consider the thread-safe read write. This OperatorContext should be
         # self._ready_tasks' only monifier.
-        return self._ready_tasks
     
     @property
-    def finished_tasks(self) -> list:
+    def num_finished_tasks(self) -> int:
         """
-        Get finished tasks.
-        Return: a list of finished Task
+        Get the number of finished tasks.
         """
         raise NotImplementedError
         # consider the thread-safe read write. This OperatorContext should be
         # self._finished_tasks' only monifier.
-        return self._finished_tasks
 
-    def on_task_start(self, task: Task):
+    def _on_task_start_handler(self, task: Task):
         """
         The handler for the event of task start.
         """
         raise NotImplementedError
 
-    def on_task_finish(self, task: Task):
+    def _on_task_finish_handler(self, task: Task):
         """
         The handler for the event of task finish.
         Feed downstream operator's inputs with this task's results.
@@ -79,6 +88,12 @@ class OperatorContext:
 
         Return: a list of inputs, list element can be scalar or Array.
         """
+        raise NotImplementedError
+    
+    def _create_new_task(self, inputs: list):
+        #t = Task()
+        # todo: setup t
+        #t.on_start.append(self._on_task_start)
         raise NotImplementedError
     
     def _notify_downstream_op_ctx(self):

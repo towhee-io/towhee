@@ -27,22 +27,29 @@ class GraphContext:
         Args:
             pipeline: the Pipeline this GraphContext belongs to.
         """
-        self._job = job
+        self._pipeline = pipeline
         self.idx = None # the subjob index
         # todo: initialize OperatorContexts based on job.graph_repr
         self.op_contexts = None
+        self.on_start_handlers = []
+        self.on_finish_handlers = []
+        self.on_task_ready_handlers = []
+        self.on_task_start_handlers = []
+        self.on_task_finish_handlers = []
         raise NotImplementedError
  
-    def on_start(self, handler: function):
+    def _on_start(self):
         """
-        Set a custom handler that called before the execution of the graph.
+        Callback before the execution of the graph.
         """
-        self._on_start_handler = handler
+        for handler in self.on_start_handlers:
+            handler(self)
         raise NotImplementedError
 
-    def on_finish(self, handler: function):
+    def _on_finish(self, handler: function):
         """
-        Set a custom handler that called after the execution of the graph.
+        Callback after the execution of the graph.
         """
-        self._on_finish_handler = handler
+        for handler in self.on_finish_handlers:
+            handler(self)
         raise NotImplementedError

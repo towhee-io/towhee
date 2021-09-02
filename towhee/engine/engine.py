@@ -26,6 +26,20 @@ class Engine:
             config: the Engine configurations. 
         """
         self._config = config
+        self.on_task_ready_handlers = []
+        self.on_task_start_handlers = []
+        self.on_task_finish_handlers = []
+
+        # self._setup_task_executors()
+        # self._setup_task_scheduler()
+
+        raise NotImplementedError
+
+
+    def add_pipeline(self, pipeline):
+        pipeline.on_task_ready_handlers.append(self.on_task_ready_handlers)
+        pipeline.on_task_start_handlers.append(self.on_task_start_handlers)
+        pipeline.on_task_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
 
     def _setup_task_executors(self):
@@ -40,25 +54,5 @@ class Engine:
     def _setup_task_scheduler(self):
         # todo: parse engine configs
         # todo: create TaskScheduler
-        raise NotImplementedError
-    
-    def _on_task_ready_handler(self, task: Task):
-        """
-        The callback on task ready event.
-        """
-        self._task_scheduler.on_task_ready(task)
-        raise NotImplementedError
- 
-    def _on_task_start_handler(self, task: Task):
-        """
-        The callback on task start event.
-        """
-        self._task_scheduler.on_task_start(task)
-        raise NotImplementedError
- 
-    def _on_task_finish_handler(self, task: Task):
-        """
-        The callback on task finish event.
-        """
-        self._task_scheduler.on_task_finish(task)
+        # self._task_scheduler(self)
         raise NotImplementedError
