@@ -12,59 +12,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# builder = GraphBuilder()
+# data1 = data0.map(op1)
+# data2 = data1.batch(op2, bs=64)
+
 
 from collections import OrderedDict
+
+from towhee.base_repr import BaseRepr
 from towhee.dataframe.dataframe import DFIterator
 from towhee.dag.variable_repr import VariableRepr
 
 
-class DFRepr:
-    """
-    A collection of VariableRepr
-    """
-    def __init__(self, name = None, vars = None):
-        """
-        Args:
-            name: name of the DFRepr
-            vars: a list of VariableRepr
-        """
-        self.name = name
-        self.columns =  OrderedDict((var.name, var) for var in vars)
-        self._iter = DFIterator(df = None)
+class DataframeRepr(BaseRepr):
+    """`DataframeRepr` represents a single dataframe within a graph. A single dataframe
+    is composed of multiple individual variables, each of which is required in the next
+    operator stage within the graph.
 
-    def __getattr__(self, key: str):
-        """
-        Access a VariableRepr as DFRepr's attribute
+    Args:
+        name:
+            The representation name.
+        vars:
+            A list of variables that can be accessed from within the dataframe.
+        from_op:
+            `OperatorRepr` instance which represents the source operator.
+        to_op:
+            `OperatorRepr` instance which represents the destination operator.
+    """
+
+    def __init__(self, name: str, vars: list[VariableRepr]):
+        self._name = name
+
+    def __getitem__(self, key) -> VariableRepr:
+        """Access a variable representation via dictionary-like indexing.
+
         Args:
-            key: the name of the VariableRepr
+            key:
+                Name of the variable representation to access.
+
+        Returns:
+            The variable corresponding to the specified key, or None if an invalid key
+            was provided.
         """
-        return self.columns[key]
+        return self._columns.get(key)
 
     def __setitem__(self, key: str, value: VariableRepr):
-        """
-        Set a VariableRepr
+        """Sets a single variable representation within the dataframe.
+
         Args:
-            key: the name of the VariableRepr
-            value: the object of the VariableRepr
+            key:
+                Variable name.
+            value:
+                A pre-instantiated `VariableRepr` instance.
         """
-        self.columns[key] = value
-    
-    def __getitem__(self, key):
-        """
-        Get a VariableRepr by its name
-        Args:
-            key: the name of the VariableRepr
-        """
-        return self.columns[key]
-    
+        self._columns[key] = value
+
     def from_input_annotations(self, func: function):
+        """Parse variables from an operator's input annotations.
+
+        Args:
+            func:
         """
-        Parse variables from a function's input annotations
-        """
-        raise NotImplementedError
+        for (name, kind) in func.__annotations__.items():
+            if kind == Variable:
+                # Ignore return types in annotation dictionary.
+                if name == 'return':
+                    continue
+                # Create a valid variable representation based on each parameter
+                # name and type.
+                var_rep = VariableRepr()
 
     def from_output_annotations(self, func: function):
+        """Parse variables from an operator's output annotations.
         """
-        Parse variables from a function's output annotations
-        """
-        raise NotImplementedError
+        if func.__annotations__.get('return') == 'Variable':

@@ -13,34 +13,45 @@
 # limitations under the License.
 
 
-from variable_repr import VariableRepr, VariableReprSet
+#from towhee.dag.variable_repr import VariableRepr
+#from towhee.dag.variable_repr import VariableReprSet
 
 
-class OperatorRepr(Operator):
+class OperatorRepr(BaseRepr):
+    """This class encapsulates operator representations at compile-time.
+
+    Args:
+        name:
+            Name of the operator represented by this object.
+        df_in:
+            Input dataframes(s) to this object.
+        df_out:
+            This operator's output dataframe.
     """
-    The representation of an operator at compile-phase
-    """
 
-    def __init__(self, unique_op_name: str, op = None):
-        self.op = op
-        self.unique_op_name = unique_op_name
-        self._inputs = None
-        self._outputs = None
-        # todo parse op inputs & outputs
-    
-    @property
-    def inputs(self):
-        return self._inputs
-    
-    @inputs.setter
-    def inputs(self, value):
-        if isinstance(value, list):
-            self._inputs = VariableReprSet(value)
-        else:
-            self._inputs = value
- 
-    @property
-    def outputs(self):
-        return self._outputs
-    
+    def __init__(self, name: str, df_in: DataframeRepr, df_out: DataframeRepr):
+        super().__init__(name)
+        self._df_in = df_in
+        self._df_out = df_out
+        self._iter_in = None
+        self._iter_out = None
 
+    @property
+    def df_in(self):
+        return self._df_in
+
+    @property
+    def df_out(self):
+        return self._df_out
+
+    @df_in.setter
+    def df_in(self, value):
+        if not isinstance(value, DataframeRepr):
+            raise TypeError('The input value for an `Operator` must be an `Dataframe`.')
+        self._df_in = value
+
+    @df_out.setter
+    def df_out(self, value):
+        if not isinstance(value, DataframeRepr):
+            raise TypeError('The output value for an `Operator` must be an `Dataframe`.')
+        self._df_out = value

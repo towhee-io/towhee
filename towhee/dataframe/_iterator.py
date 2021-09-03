@@ -16,83 +16,90 @@
 from towhee.dataframe.dataframe import DataFrame
 
 
-class ScalarIterator:
-    """
-    Traverse the variable set with one row per move
+class _BaseIterator:
+    """Base iterator implementation. All iterators should be subclasses of
+    `_BaseIterator`.
+
+    Args:
+        df: The dataframe to iterate over.
     """
 
-    def __init__(self, var_set: VariableSet):
-        """
-        Args:
-            var_set: the variable set to loop through.
-        """
-        self._var_set = var_set
+    def __init__(self, df: DataFrame):
+        self._df = df
 
     def __iter__(self):
-        raise NotImplementedError
+        return self
 
+    def __next__(self):
+        # The base iterator is purposely defined to have exatly 0 elements.
+        raise StopIteration
+
+class MapIterator:
+    """Iterator implementation that traverses the dataframe line-by-line.
+
+    Args:
+        df: The dataframe to iterate over.
+    """
+
+    def __init__(self, df: DataFrame):
+        super().__init__(df)
+
+    def __next__(self):
+        raise NotImplementedError
 
 class BatchIterator:
-    """
-    Traverse the variable set with fixed-size-batch per move
+    """Iterator implementation that traverses the dataframe multiple rows at a time.
+
+    Args:
+        df:
+            The dataframe to iterate over.
+        size:
+            batch size. If size is None, then the whole variable set will be batched
+            together.
     """
 
-    def __init__(self, var_set: VariableSet, size: int = None):
-        """
-        Args:
-            var_set: the variable set to loop through.
-            size: batch size. If size is None, then the whole variable set will be
-                batched together.
-        """
-        self._var_set = var_set
-        self._batch_size = size
+    def __init__(self, df: DataFrame, size: int = None):
+        super().__init__(df)
+        self._size = size
 
-    def __iter__(self):
-        """
-        Examples:
-        """
+    def __next__(self):
         raise NotImplementedError
 
-
 class GroupIterator:
-    """
-    Traverse the variable set based on a custom group-by function
+    """Iterator implementation that traverses the dataframe based on a custom group-by
+    function.
+
+    Args:
+        df:
+            The dataframe to iterate over.
+        func:
+            The function used to return grouped data within the dataframe.
     """
 
-    def __init__(self, var_set: VariableSet, group_by_func: function):
-        """
-        Args:
-            var_set: the variable set to loop through.
-            group_by_func: the group by function.
-        """
-        self._var_set = var_set
-        self._group_by_func = group_by_func
+    def __init__(self, df: DataFrame, func: function):
+        super().__init__(df)
+        self._func = func
 
-    def __iter__(self):
-        """
-        Examples:
-        """
+    def __next__(self):
         raise NotImplementedError
 
 
 class RepeatIterator:
-    """
-    In the case that a variable set has only one row, *RepeatIterator* will repeatly
-    access this row.
-    """
+    """Iterator implementation that repeatedly accesses the first line of the dataframe.
 
-    def __init__(self, var_set: VariableSet, n: int = None):
-        """
         Args:
-            var_set: the variable set to loop through.
-            n: the repeat times. If not set, the iterator will never ends.
-        """
-        self._var_set = var_set
+            df:
+                The dataframe to iterate over.
+            n:
+                the repeat times. If `None`, the iterator will loop continuously.
+    """
+
+    def __init__(self, df: DataFrame, n: int = None):
+        super.__init__(df)
         self._n = n
+        self._i = 0
 
-    def __iter__(self):
-        """
-        Examples:
-        """
-        raise NotImplementedError
-
+    def __next__(self):
+        if self._i >= self._n:
+            raise StopIteration
+        return self._data[0]
