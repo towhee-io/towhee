@@ -1,0 +1,15 @@
+name: Workflow for pylint
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup Python
+      uses: actions/setup-python@master
+      with:
+        python-version: 3.8
+    - name: Python pylint
+      run: |
+        pip install pylint
+        pylint --rcfile=pylint.conf --output-format=colorized towhee
