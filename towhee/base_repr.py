@@ -48,5 +48,5 @@ class BaseRepr:
             if name[0] != '_' and not isinstance(value, function):
                 if isinstance(value, object):
                     value = value.__class__.__name__
-                out += name ': ' + str(value) + '/n'
+                out += name ': ' + str(value) + '\n'
         return out
