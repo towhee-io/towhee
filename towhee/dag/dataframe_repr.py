@@ -16,12 +16,10 @@
 # data1 = data0.map(op1)
 # data2 = data1.batch(op2, bs=64)
 
-
 from collections import OrderedDict
+from typing import NamedTuple
 
 from towhee.base_repr import BaseRepr
-from towhee.dataframe.dataframe import DFIterator
-from towhee.dag.variable_repr import VariableRepr
 
 
 class DataframeRepr(BaseRepr):
@@ -34,14 +32,12 @@ class DataframeRepr(BaseRepr):
             The representation name.
         vars:
             A list of variables that can be accessed from within the dataframe.
-        from_op:
-            `OperatorRepr` instance which represents the source operator.
-        to_op:
-            `OperatorRepr` instance which represents the destination operator.
     """
 
-    def __init__(self, name: str, vars: list[VariableRepr]):
-        self._name = name
+    def __init__(self, name: str):
+        super().__init__(name)
+        # `_columns` must be filled in after this representation is instantiated
+        self._columns = OrderedDict()
 
     def __getitem__(self, key) -> VariableRepr:
         """Access a variable representation via dictionary-like indexing.
@@ -68,21 +64,26 @@ class DataframeRepr(BaseRepr):
         self._columns[key] = value
 
     def from_input_annotations(self, func: function):
-        """Parse variables from an operator's input annotations.
+        """Parse variables from a function's input annotations.
 
         Args:
             func:
         """
         for (name, kind) in func.__annotations__.items():
-            if kind == Variable:
-                # Ignore return types in annotation dictionary.
-                if name == 'return':
-                    continue
-                # Create a valid variable representation based on each parameter
-                # name and type.
-                var_rep = VariableRepr()
+            # Ignore return types in annotation dictionary.
+            if name != 'return':
+                self._columns[name] = kind.__name__
 
     def from_output_annotations(self, func: function):
         """Parse variables from an operator's output annotations.
+
+        Args:
+            func: Target operator function, for which the return value will be parsed
+            and formatted into values.
         """
-        if func.__annotations__.get('return') == 'Variable':
+        retval = func.__annotations__.get('return')
+        if retval.__name__ == 'NamedTuple':
+            for (name, kind) in retval._field_types.items():
+                self._columns[name] = kind.__name__
+        else:
+            raise TypeError("Operator function return value must be a `NamedTuple`.")
