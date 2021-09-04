@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from operator_repr import OperatorRepr
+from towhee.dag.operator_repr import OperatorRepr
 
 
 class GraphRepr(BaseRepr):
@@ -24,10 +24,10 @@ class GraphRepr(BaseRepr):
 
     def __init__(self, builder_id: str):
         self.builder_id = builder_id
-        self._op_dict = []
-        self._df_dict = []
+        self._op_dict = {}
+        self._df_dict = {}
 
-    def op(self):
+    def get_op(self, name: str) -> OperatorRepr:
         return self._op_dict
 
     def from_yaml(self, yaml: str):
@@ -39,7 +39,7 @@ class GraphRepr(BaseRepr):
         """
         raise NotImplementedError
 
-    def to_yaml(self):
+    def to_yaml(self) -> str:
         """Export a YAML file describing this graph.
 
         Returns:
