@@ -13,7 +13,8 @@
 # limitations under the License.
 
 
-from operator_repr import OperatorRepr
+from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.operator_repr import OperatorRepr
 
 
 class GraphRepr(BaseRepr):
@@ -22,13 +23,18 @@ class GraphRepr(BaseRepr):
     are used during execution to load functions and pass data to the correct operators.
     """
 
-    def __init__(self, builder_id: str):
-        self.builder_id = builder_id
-        self._op_dict = []
-        self._df_dict = []
+    def __init__(self):
+        #TODO(Chiiizzzy)
+        self._ops = {}
+        self._dfs = {}
 
-    def op(self):
-        return self._op_dict
+    @property
+    def ops(self) -> Dict[str, OperatorRepr]:
+        return self._ops
+
+    @property
+    def dfs(self) -> Dict[str, DataframeRepr]:
+        return self._dfs
 
     def from_yaml(self, yaml: str):
         """Import a YAML file describing this graph.
@@ -37,12 +43,14 @@ class GraphRepr(BaseRepr):
             yaml:
                 YAML file (pre-loaded as string) to import.
         """
+        #TODO(Chiiizzzy)
         raise NotImplementedError
 
-    def to_yaml(self):
+    def to_yaml(self) -> str:
         """Export a YAML file describing this graph.
 
         Returns:
             A string with the graph's serialized contents.
         """
+        #TODO(Chiiizzzy)
         raise NotImplementedError
