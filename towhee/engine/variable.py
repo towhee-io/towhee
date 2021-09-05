@@ -22,7 +22,7 @@ class Variable:
     A Variable can be part of an Operator's inputs or outputs.
     """
 
-    def __init__(self, name: str, df: DataFrame, iter: DFIterator, op_ctx: OperatorContext):
+    def __init__(self, name: str, df: DataFrame, df_iter: DFIterator, op_ctx: OperatorContext):
         """
         Args:
             name: the Variable's name
@@ -32,5 +32,5 @@ class Variable:
         """
         self.name = name
         self.df = df
-        self.iter = iter
+        self.df_iter = df_iter
         self.op_ctx = op_ctx

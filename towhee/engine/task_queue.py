@@ -29,7 +29,7 @@ class TaskQueue:
         True if the queue has no tasks.
         """
         raise NotImplementedError
-    
+
     @property
     def size(self) -> int:
         """

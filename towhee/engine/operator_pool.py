@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
+
 from towhee.operator.operator import Operator
 
 
@@ -22,16 +22,14 @@ class OperatorPool:
     Each TaskExecutor has one OperatorPool.
     """
 
-    def acquire(self, name: str, init_args: dict):
+    def acquire(self, name: str, init_args: dict) -> Operator:
         """
         Acquire an Operator by name.
         """
         raise NotImplementedError
 
-    def release(self, op: Operator):
+    def release(self, op: Operator) -> None:
         """
         Release an Operator.
         """
         raise NotImplementedError
-
-

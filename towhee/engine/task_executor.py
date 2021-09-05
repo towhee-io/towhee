@@ -22,16 +22,17 @@ from towhee.engine.task_queue import TaskQueue
 
 class TaskExecutor(threading.Thread):
     """
-    A FIFO task executor. 
+    A FIFO task executor.
     Each device has one TaskExecutor.
     """
+
     def __init__(self, name: str):
         threading.Thread.__init__(self)
         self.name = name
         self._task_queue = TaskQueue()
         self._op_pool = OperatorPool()
         self._need_stop = False
-    
+
     def acquire_op(self, name: str, init_args: dict) -> Operator:
         """
         Get an Operator from pool by name
@@ -41,19 +42,19 @@ class TaskExecutor(threading.Thread):
             init_args: the Operator's initialization arguments
         """
         raise NotImplementedError
-    
+
     def release_op(self, op: Operator):
         """
         Release an Operator to pool
         """
         raise NotImplementedError
-    
+
     # def set_op_parallelism(self, name: str, parallel: int = 1):
     #     """
     #     Set how many Operators with same name can be called concurrently.
     #     """
     #     raise NotImplementedError
-    
+
     def push_task(self, task: Task):
         """
         Push a task to task queue
@@ -64,7 +65,7 @@ class TaskExecutor(threading.Thread):
     def run(self):
         while not self._need_stop:
             task = self._task_queue.pop()
-            if task != None:
+            if task is not None:
                 task.run()
         raise NotImplementedError
 

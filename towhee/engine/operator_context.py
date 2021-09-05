@@ -12,22 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Callable
 
-from collections import namedtuple
+# from collections import namedtuple
 from towhee.engine.task import Task
-from towhee.engine.variable import Variable
+from towhee.engine.graph_context import GraphContext
+# from towhee.engine.variable import Variable
 
 
 class OperatorContext:
     """
-    The OperatorContext manages an operator's input data and output data at runtime, 
+    The OperatorContext manages an operator's input data and output data at runtime,
     as well as the operators' dependency within a GraphContext.
-    The abstraction of OperatorContext hides the complexity of Dataframe management, 
-    input iteration, and data dependency between Operators. It offers a Task-based 
+    The abstraction of OperatorContext hides the complexity of Dataframe management,
+    input iteration, and data dependency between Operators. It offers a Task-based
     scheduling context.
     """
 
-    def __init__(self, graph_ctx, inputs: list, outputs: list):
+    def __init__(self, graph_ctx: GraphContext,
+                 inputs: List[
+                     Callable[[], None]
+                 ],
+                 outputs: List[
+                     Callable[[], None]
+                 ]) -> None:
         """
         Args:
             inputs: a list of Variable.
@@ -36,12 +44,13 @@ class OperatorContext:
         self._inputs = inputs
         self._outputs = outputs
         self.on_task_finish_handlers = []
+        self._graph_context = graph_ctx
         # self.last_op = None
         # self.is_op_stateless = True
         # leave op acquire & release to scheduler
         raise NotImplementedError
-    
-    def pop_ready_tasks(self, n: int = 1) -> list:
+
+    def pop_ready_tasks(self, n: int = 1) -> List:
         """
         Pop n ready Tasks if any. The number of returned Tasks may be less than n
         if there are not enough Tasks.
@@ -52,7 +61,7 @@ class OperatorContext:
         # create a new task
         # task.on_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
- 
+
     @property
     def num_ready_tasks(self) -> int:
         """
@@ -61,7 +70,7 @@ class OperatorContext:
         raise NotImplementedError
         # consider the thread-safe read write. This OperatorContext should be
         # self._ready_tasks' only monifier.
-    
+
     @property
     def num_finished_tasks(self) -> int:
         """
@@ -92,13 +101,13 @@ class OperatorContext:
         Return: a list of inputs, list element can be scalar or Array.
         """
         raise NotImplementedError
-    
+
     def _create_new_task(self, inputs: list):
         #t = Task()
         # todo: setup t
-        #t.on_start.append(self._on_task_start)
+        # t.on_start.append(self._on_task_start)
         raise NotImplementedError
-    
+
     def _notify_downstream_op_ctx(self):
         """
         When a Task at this Operator is finished, its outputs will be feeded to the
