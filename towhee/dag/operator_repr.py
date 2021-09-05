@@ -45,13 +45,9 @@ class OperatorRepr(BaseRepr):
         return self._df_out
 
     @df_in.setter
-    def df_in(self, value):
-        if not isinstance(value, DataframeRepr):
-            raise TypeError('The input value for an `Operator` must be an `Dataframe`.')
+    def df_in(self, value: DataframeRepr):
         self._df_in = value
 
     @df_out.setter
-    def df_out(self, value):
-        if not isinstance(value, DataframeRepr):
-            raise TypeError('The output value for an `Operator` must be an `Dataframe`.')
+    def df_out(self, value: DataframeRepr):
         self._df_out = value

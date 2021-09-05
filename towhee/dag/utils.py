@@ -13,6 +13,10 @@
 # limitations under the License.
 
 
+def arg_type_check():
+    #TODO(fzliu): should we use this or a library such as `mypy`?
+    raise NotImplementedError
+
 def pipeline_compiler(target='local'):
     """
     The Pipeline compiler factory
