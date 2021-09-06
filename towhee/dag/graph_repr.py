@@ -12,23 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from operator_repr import OperatorRepr
 
-class GraphRepr:
+from typing import Dict
+
+from towhee.base_repr import BaseRepr
+from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.operator_repr import OperatorRepr
+
+
+class GraphRepr(BaseRepr):
+    """This class presents a complete representation of a graph and its individual
+    subcomponents, including Operators, Dataframes, and Variables. Graph representations
+    are used during execution to load functions and pass data to the correct operators.
     """
-    The representation of a pipeline DAG.
-    """
 
-    def __init__(self, builder_id: str):
-        self.builder_id = builder_id
-        self._op_dict = {}
-        self._var_dict = None
+    def __init__(self, name: str):
+        #TODO(Chiiizzzy)
+        super().__init__(name)
+        self._operators = {}
+        self._dataframes = {}
 
-    def op(self):
-        return self._op_dict
+    @property
+    def operators(self) -> Dict[str, OperatorRepr]:
+        return self._operators
 
-    def from_yaml(self, yaml):
+    @property
+    def dataframes(self) -> Dict[str, DataframeRepr]:
+        return self._dataframes
+
+    def from_yaml(self, yaml: str):
+        """Import a YAML file describing this graph.
+
+        Args:
+            yaml:
+                YAML file (pre-loaded as string) to import.
+        """
+        #TODO(Chiiizzzy)
         raise NotImplementedError
 
-    def to_yaml(self):
+    def to_yaml(self) -> str:
+        """Export a YAML file describing this graph.
+
+        Returns:
+            A string with the graph's serialized contents.
+        """
+        #TODO(Chiiizzzy)
         raise NotImplementedError

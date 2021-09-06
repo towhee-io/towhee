@@ -20,7 +20,7 @@ from graph_builder import get_graph_builder
 
 class OperatorMetaclass(type):
     '''
-    Metaclass for creating Operators. 
+    Metaclass for creating Operators.
     '''
 
     def __call__(self, *args, **kwargs):
@@ -30,7 +30,7 @@ class OperatorMetaclass(type):
         """
         op = super().__call__(*args, **kwargs)
 
-        if (at_compile_phase()):
+        if at_compile_phase():
             graph_builder = get_graph_builder()
             op_repr = graph_builder.add_op(op)
             return op_repr
@@ -49,7 +49,7 @@ class OperatorMetaclass(type):
         Raises:
 
         Examples:
-            In Towhee, each Operator should be a callable. Each interface Operator will 
+            In Towhee, each Operator should be a callable. Each interface Operator will
             define an abstract method specifying its functionality. For example,
 
             class Img2VecOp(Operator):
@@ -61,11 +61,11 @@ class OperatorMetaclass(type):
                 def __call__(self, img:Image):
                     return forward(img)
 
-            The forward function plays as the core functionality of Img2VecOp, and it 
-            will be called by __call__. Note that the function is decorated by 
-            @op_action. _op_callable_check will go through Img2VecOp's __dict__, and 
-            find out the methods with @op_action decoration. For each decorated 
-            function, OpMetaclass will check and makesure that it is overwritten by 
+            The forward function plays as the core functionality of Img2VecOp, and it
+            will be called by __call__. Note that the function is decorated by
+            @op_action. _op_callable_check will go through Img2VecOp's __dict__, and
+            find out the methods with @op_action decoration. For each decorated
+            function, OpMetaclass will check and makesure that it is overwritten by
             the subclass with identical input/output declarations.
 
             Here is an example class inherited Img2VecOp.
@@ -75,8 +75,8 @@ class OperatorMetaclass(type):
                     # do the real forward works ...
 
             The strongly typed override mechanism guarantees that the inputs and outputs
-            standard of a interface Operator is strictly followed by its subclasses. 
-            If not, the OpMetaclass will find such inconsistency during the subclass's 
+            standard of a interface Operator is strictly followed by its subclasses.
+            If not, the OpMetaclass will find such inconsistency during the subclass's
             creation time.
 
             An Operator may have multiple outputs. For this case, the interface

@@ -12,15 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.base_repr import BaseRepr
 
-class VariableRepr:
-    """
-    The representation of a variable at compile-phase
+
+class VariableRepr(BaseRepr):
+    """The representation of a variable at compile-phase.
+
+    Args:
+        name:
+            Variable name.
+        vtype:
+            This can be one of many possible variable types, such as a numpy array or
+            PyTorch tensor.
+        dtype:
+            A string or instance of `numpy.dtype` indicating the internal data type for
+            this variable.
     """
 
-    def __init__(self, name: str, from_op: str = None):
-        self.from_op = from_op
-        self.to_op = []
-        self.name = name
-        self.type = None
-        self.dtype = None
+    def __init__(self, name: str, vtype: str, dtype: str):
+        super().__init__(name)
+        self._vtype = str(vtype)
+        self._dtype = str(dtype)
+
+    @property
+    def vtype(self):
+        return self._vtype
+
+    @property
+    def dtype(self):
+        return self._dtype
