@@ -17,8 +17,7 @@
 # data2 = data1.batch(op2, bs=64)
 
 from collections import OrderedDict
-from types import FunctionType
-from typing import NamedTuple
+from typing import Callable
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
@@ -65,7 +64,7 @@ class DataframeRepr(BaseRepr):
         """
         self._columns[key] = value
 
-    def from_input_annotations(self, func: FunctionType):
+    def from_input_annotations(self, func: Callable):
         """Parse variables from a function's input annotations.
 
         Args:
@@ -77,7 +76,7 @@ class DataframeRepr(BaseRepr):
                 #TODO
                 self._columns[name] = str(kind)
 
-    def from_output_annotations(self, func: FunctionType):
+    def from_output_annotations(self, func: Callable):
         """Parse variables from an operator's output annotations.
 
         Args:
