@@ -8,23 +8,31 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT_ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 
-def arg_type_check():
-    #TODO(fzliu): should we use this or a library such as `mypy`?
-    raise NotImplementedError
+import unittest
 
-def pipeline_compiler(target='local'):
-    """
-    The Pipeline compiler factory
-    """
-    raise NotImplementedError
+from towhee.dag.graph_repr import GraphRepr
 
-def at_compile_phase() -> bool:
+
+class TestGraphRepr(unittest.TestCase):
+    """Basic test case for `DataframeRepr`.
     """
-    Test whether we are at compile phase
-    """
-    raise NotImplementedError
+
+    def setUp(self):
+        self.repr = GraphRepr('test')
+
+    def test_yaml_import(self):
+        #TODO
+        self.assertTrue(True)
+
+    def test_yaml_export(self):
+        #TODO
+        self.assertTrue(True)
+
+
+if __name__ == '__main__':
+    unittest.main()

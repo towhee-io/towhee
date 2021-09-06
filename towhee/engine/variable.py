@@ -13,24 +13,25 @@
 # limitations under the License.
 
 
-from towhee.dataframe.dataframe import DFIterator, DataFrame
+from towhee.dataframe.dataframe import DataFrame
 from towhee.engine.operator_context import OperatorContext
 
 
 class Variable:
-    """
-    A Variable can be part of an Operator's inputs or outputs.
+    """A `Variable` is a blob of data which can be one of many data types such as:
+    `bool` (scalar), `int` (scalar), `float` (scalar), `tuple` (array), `list` (array),
+    `np.ndarray` (array), `string` (misc).
+
+    Args:
+        name:
+            Variable name; should be identical to its representation counterpart.
+        df:
+            The DataFrame this Variable belongs to.
+        op_ctx:
+            The OperatorContext this Variable belongs to.
     """
 
-    def __init__(self, name: str, df: DataFrame, df_iter: DFIterator, op_ctx: OperatorContext):
-        """
-        Args:
-            name: the Variable's name
-            df: the DataFrame this Variable belongs to
-            iter: the DataFrame's iterator
-            op_ctx: the OperatorContext this Variable belongs to.
-        """
-        self.name = name
-        self.df = df
-        self.df_iter = df_iter
-        self.op_ctx = op_ctx
+    def __init__(self, name: str, df: DataFrame, op_ctx: OperatorContext):
+        self._name = name
+        self._df = df
+        self._op_ctx = op_ctx

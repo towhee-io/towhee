@@ -13,40 +13,56 @@
 # limitations under the License.
 
 
-from towhee.dataframe._iterator import ScalarIterator, GroupIterator, BatchIterator, RepeatIterator
+from towhee.dataframe._iterator import ScalarIterator
+from towhee.dataframe._iterator import GroupIterator
+from towhee.dataframe._iterator import BatchIterator
+from towhee.dataframe._iterator import RepeatIterator
 
 
 class DataFrame:
-    """
-    A collection of immutable, potentially heterogeneous arrays of data.
+    """A dataframe is a collection of immutable, potentially heterogeneous blogs of
+    data.
     """
 
-    def __init__(self, name: str = None, data = None):
-        """
+    def __init__(self, name: str, data: list[tuple[Variable]] = None):
+        """DataFrame constructor.
+
         Args:
-            name: the name of the DataFrame
-            data: a list of Array with same size
+            name:
+                Name of the dataframe; `DataFrame` names should be the same as its
+                representation.
+            data:
+                A list of data tuples - in all instances, the number of elements per
+                tuple should be identical throughout the entire lifetime of the
+                `Dataframe`. These tuples can be interpreted as being direct outputs
+                into downstream operators.
         """
-        self.name = name
-        self.columns = data
-
-
-class DFIterator:
-    """
-    The DataFrame iterator
-    """
-    def __init__(self, df: DataFrame):
         self._iter = ScalarIterator(df)
-        self._df = df
+        self._name = name
+        self._data = data
 
-    def __iter__(self):
-        return iter(self._iter)
-    
-    def group_by(self, func):
-        self._iter = GroupIterator(self._df, func)
-    
-    def batch(self, size = None):
-        self._iter = BatchIterator(self._df, size)
+    @property
+    def name(self):
+        return self._name
 
-    def repeat(self, n = None):
-        self._iter = RepeatIterator(self._df, n)
+    def __getitem__(self, val):
+        return data[val]
+
+    def __delete__(self, val):
+        del data[val]
+
+    def append(self, item: tuple[Variable]):
+        data.append(item)
+
+    def iter_scalar(self):
+        #TODO(fzliu): register iterator
+        return iter(ScalarIterator(self._df))
+
+    def iter_group_by(self, func: function):
+        return iter(GroupIterator(self._df, func))
+
+    def iter_batch(self, size: int):
+        return iter(BatchIterator(self._df, size))
+
+    def iter_repeat(self, n: int):
+        return iter(RepeatIterator(self._df, n))
