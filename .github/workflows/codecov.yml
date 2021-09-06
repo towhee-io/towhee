@@ -1,4 +1,4 @@
-name: Workflow for towhee
+name: Workflow for codecov
 on: [push, pull_request]
 jobs:
   run:
@@ -20,7 +20,3 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml
-    - name: Python pylint
-      run: |
-        pip install pylint
-        pylint --rcfile=pylint.conf --output-format=colorized towhee
