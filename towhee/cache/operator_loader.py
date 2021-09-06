@@ -19,5 +19,5 @@ class OperatorLoader:
     """
 
     @staticmethod
-    def pull(url:str):
+    def pull(url: str):
         raise NotImplementedError

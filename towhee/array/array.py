@@ -17,21 +17,23 @@ class Array:
     """
     One-dimensional array of data
     """
-    def __init__(self, name: str = None, data = None):
+
+    def __init__(self, name: str = None, data=None):
         """
         Args:
             name: the name of the Array
-            data: supported data types are bool, int, float, str, bytes, PIL.Image, 
-                numpy.array, numpy.ndarray, and list of data mentioned above. 
+            data: supported data types are bool, int, float, str, bytes, PIL.Image,
+                numpy.array, numpy.ndarray, and list of data mentioned above.
         """
         self.name = name
         self.dtype = None
+        self.data = data
         raise NotImplementedError
 
-    def __iter__(self):    
+    def __iter__(self):
         raise NotImplementedError
-    
-    def __getitem__(self):
+
+    def __getitem__(self, key: str):
         raise NotImplementedError
 
     @property
@@ -40,26 +42,26 @@ class Array:
         Number of elements in the Array.
         """
         raise NotImplementedError
-    
+
     @property
     def empty(self) -> bool:
         """
         Indicator whether Array is empty.
         True if Array has no elements.
         """
-    
-    def fill(self, value, size = None):
+
+    def fill(self, value, size=None):
         """
         Fill the array with a scalar value.
-        
+
         Args:
             value: all the Array elements will be assigned this value
             size: if not None, the Array will be resized.
         """
         raise NotImplementedError
-    
+
     def to_bytes(self) -> bytes:
         raise NotImplementedError
-    
+
     def from_bytes(self, value: bytes):
         raise NotImplementedError

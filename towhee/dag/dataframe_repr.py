@@ -16,8 +16,9 @@
 # data1 = data0.map(op1)
 # data2 = data1.batch(op2, bs=64)
 
+
 from collections import OrderedDict
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
@@ -73,7 +74,7 @@ class DataframeRepr(BaseRepr):
         for (name, kind) in func.__annotations__.items():
             # Ignore return types in annotation dictionary.
             if name != 'return':
-                #TODO
+                # TODO
                 self._columns[name] = str(kind)
 
     def from_output_annotations(self, func: Callable):
@@ -86,7 +87,8 @@ class DataframeRepr(BaseRepr):
         retval = func.__annotations__.get('return')
         if isinstance(retval, NamedTuple):
             for (name, kind) in retval.__annotations__.items():
-                #TODO
+                # TODO
                 self._columns[name] = str(kind)
         else:
-            raise TypeError('Operator function return value must be a `NamedTuple`.')
+            raise TypeError(
+                'Operator function return value must be a `NamedTuple`.')

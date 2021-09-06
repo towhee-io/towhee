@@ -14,14 +14,16 @@
 
 
 def arg_type_check():
-    #TODO(fzliu): should we use this or a library such as `mypy`?
+    # TODO(fzliu): should we use this or a library such as `mypy`?
     raise NotImplementedError
+
 
 def pipeline_compiler(target='local'):
     """
     The Pipeline compiler factory
     """
     raise NotImplementedError
+
 
 def at_compile_phase() -> bool:
     """

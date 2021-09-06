@@ -26,12 +26,14 @@ class TestGraphRepr(unittest.TestCase):
         self.repr = GraphRepr('test')
 
     def test_yaml_import(self):
-        #TODO
-        self.assertTrue(True)
+        # TODO
+        # self.assertTrue(True)
+        pass
 
     def test_yaml_export(self):
-        #TODO
-        self.assertTrue(True)
+        # TODO
+        # self.assertTrue(True)
+        pass
 
 
 if __name__ == '__main__':

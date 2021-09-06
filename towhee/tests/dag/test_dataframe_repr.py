@@ -33,18 +33,21 @@ class TestDataframeRepr(unittest.TestCase):
 
     def test_input_auto_annotate(self):
         self.repr.from_input_annotations(test_op_a)
-        #TODO
+        # TODO
         self.assertTrue(isinstance(self.repr['a'], str))
 
     def test_output_auto_annotate(self):
-        #self.repr.from_output_annotations(test_op_a)
-        #TODO
-        self.assertTrue(isinstance("", str))
+        # self.repr.from_output_annotations(test_op_a)
+        # TODO
+        # self.assertTrue(isinstance("", str))
+        pass
 
     def test_serialize(self):
-        #yaml = self.repr.serialize()
-        #TODO
-        self.assertTrue(isinstance("", str))
+        # yaml = self.repr.serialize()
+        # TODO
+        # self.assertTrue(isinstance("", str))
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()

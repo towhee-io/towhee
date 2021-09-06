@@ -27,7 +27,7 @@ class GraphRepr(BaseRepr):
     """
 
     def __init__(self, name: str):
-        #TODO(Chiiizzzy)
+        # TODO(Chiiizzzy)
         super().__init__(name)
         self._operators = {}
         self._dataframes = {}
@@ -47,7 +47,7 @@ class GraphRepr(BaseRepr):
             yaml:
                 YAML file (pre-loaded as string) to import.
         """
-        #TODO(Chiiizzzy)
+        # TODO(Chiiizzzy)
         raise NotImplementedError
 
     def to_yaml(self) -> str:
@@ -56,5 +56,5 @@ class GraphRepr(BaseRepr):
         Returns:
             A string with the graph's serialized contents.
         """
-        #TODO(Chiiizzzy)
+        # TODO(Chiiizzzy)
         raise NotImplementedError
