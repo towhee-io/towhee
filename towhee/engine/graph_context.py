@@ -13,12 +13,12 @@
 # limitations under the License.
 
 
-from towhee.engine.pipeline import Pipeline
+# from towhee.engine.pipeline import Pipeline
 
 
 class GraphContext:
     """
-    Each row of a Pipeline's inputs will be processed individually by a pipeline, and 
+    Each row of a Pipeline's inputs will be processed individually by a pipeline, and
     each row's processing runs in a GraphContext.
     """
 
@@ -28,7 +28,7 @@ class GraphContext:
             pipeline: the Pipeline this GraphContext belongs to.
         """
         self._pipeline = pipeline
-        self.idx = None # the subjob index
+        self.idx = None  # the subjob index
         # todo: initialize OperatorContexts based on job.graph_repr
         self.op_contexts = None
         self.on_start_handlers = []
@@ -37,7 +37,7 @@ class GraphContext:
         self.on_task_start_handlers = []
         self.on_task_finish_handlers = []
         raise NotImplementedError
- 
+
     def _on_start(self):
         """
         Callback before the execution of the graph.
@@ -46,7 +46,7 @@ class GraphContext:
             handler(self)
         raise NotImplementedError
 
-    def _on_finish(self, handler: function):
+    def _on_finish(self):
         """
         Callback after the execution of the graph.
         """

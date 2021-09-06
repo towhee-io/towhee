@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from towhee.engine.task import Task
+# from towhee.engine.task import Task
 
 
 class Engine:
@@ -23,7 +23,7 @@ class Engine:
     def __init__(self, config: dict):
         """
         Args:
-            config: the Engine configurations. 
+            config: the Engine configurations.
         """
         self._config = config
         self.on_task_ready_handlers = []
@@ -34,7 +34,6 @@ class Engine:
         # self._setup_task_scheduler()
 
         raise NotImplementedError
-
 
     def add_pipeline(self, pipeline):
         pipeline.on_task_ready_handlers.append(self.on_task_ready_handlers)
@@ -50,7 +49,7 @@ class Engine:
         # todo: parse engine configs
         # todo: create a TaskExecutor on each of the devices
         raise NotImplementedError
-    
+
     def _setup_task_scheduler(self):
         # todo: parse engine configs
         # todo: create TaskScheduler

@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+from typing import Callable
+
 from towhee.engine.graph_context import GraphContext
 from towhee.engine.engine import Engine
 from towhee.dag.graph_repr import GraphRepr
@@ -23,12 +25,13 @@ class Pipeline:
     """
     The runtime pipeline context
     """
+
     def __init__(self, engine: Engine, graph_repr: GraphRepr, parallelism: int = 1) -> None:
         """
         Args:
             engine: the local engine to drive the Pipeline
             graph_repr: the graph representation
-            parallelism: how many rows of inputs to be processed concurrently 
+            parallelism: how many rows of inputs to be processed concurrently
         """
         self._engine = engine
         self._graph_repr = graph_repr
@@ -48,7 +51,7 @@ class Pipeline:
         The Pipeline's main loop
 
         Agrs:
-            inputs: the input data, organized as a list of DataFrame, feeding 
+            inputs: the input data, organized as a list of DataFrame, feeding
                 to the Pipeline.
         """
 
@@ -60,17 +63,17 @@ class Pipeline:
         #             break
         #     if all graphs contexts are busy:
         #         wait for notification from _notify_run_loop
-            
+
         raise NotImplementedError
-    
-    def on_start(self, handler: function):
+
+    def on_start(self, handler: Callable[[], None]) -> None:
         """
         Set a custom handler that called before the execution of the graph.
         """
         self._on_start_handler = handler
         raise NotImplementedError
 
-    def on_finish(self, handler: function):
+    def on_finish(self, handler: Callable[[], None]) -> None:
         """
         Set a custom handler that called after the execution of the graph.
         """
@@ -83,7 +86,7 @@ class Pipeline:
         GraphContext's output into Pipeline's outputs.
         """
         raise NotImplementedError
-    
+
     def _notify_run_loop(self, graph_ctx: GraphContext):
         """
         on_finish handler passing to GraphContext. The handler will notify the run loop

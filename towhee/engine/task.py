@@ -14,14 +14,16 @@
 
 
 from towhee.operator.operator import Operator
+from towhee.engine.graph_context import GraphContext
 
 
 class Task:
     """
-    A task is a wrapper of an Operator call. 
+    A task is a wrapper of an Operator call.
     """
 
-    def __init__(self, graph_ctx, task_idx, op, inputs, profiling_on = False):
+    def __init__(self, graph_ctx: GraphContext, task_idx: int,
+                 inputs: dict, op: Operator = None, profiling_on=False):
         """
         Args:
             graph_ctx: the GraphContext containing this Task
@@ -34,7 +36,7 @@ class Task:
                 and the resource consumption will be monitored.
         """
         self.task_idx = task_idx
-        self.op = None
+        self.op = op
         self.inputs = inputs
 
         self._graph_ctx = graph_ctx
@@ -45,7 +47,7 @@ class Task:
         if profiling_on:
             self.time_cost = 0
         raise NotImplementedError
-    
+
     def _on_ready(self):
         """
         Callback when a task is ready.
@@ -54,19 +56,17 @@ class Task:
             handler(self)
 
         raise NotImplementedError
-   
-    def _on_start(self, handler: function):
+
+    def _on_start(self) -> None:
         """
         Callback before the execution of the task.
         """
-        self._on_start_handler = handler
         raise NotImplementedError
 
-    def _on_finish(self, handler: function):
+    def _on_finish(self):
         """
         Callback after the execution of the task.
         """
-        self._on_finish_handler = handler
         raise NotImplementedError
 
     def run(self):
@@ -75,9 +75,8 @@ class Task:
         """
         self._on_start()
 
-        self.outputs = self.op(*self.inputs)        
+        self.outputs = self.op(**self.inputs)
 
         self._on_finsh()
 
         raise NotImplementedError
-
