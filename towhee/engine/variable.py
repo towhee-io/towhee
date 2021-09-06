@@ -35,4 +35,3 @@ class Variable:
         self._name = name
         self._df = df
         self._op_ctx = op_ctx
-
