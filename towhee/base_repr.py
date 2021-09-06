@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+import types
+
+
 class BaseRepr:
     """Base representation from which all other representation objects inherit.
     Primarily implements automatic serialization into YAML/YAML-like string formats,
@@ -23,7 +26,7 @@ class BaseRepr:
             Name of the internal object described by this representation.
     """
 
-    def __init__(self):
+    def __init__(self, name: str):
         self._name = name
 
     @property
@@ -45,8 +48,7 @@ class BaseRepr:
         out = self.__class__.__name___ + '\n'
         for name in dir(self):
             value = self.__getattribute__(name)
-            if name[0] != '_' and not isinstance(value, function):
-                if isinstance(value, object):
-                    value = value.__class__.__name__
-                out += name ': ' + str(value) + '\n'
+            if name[0] != '_' and not isinstance(value, types.FunctionType):
+                value = value.__class__.__name__
+                out += name + ': ' + str(value) + '\n'
         return out

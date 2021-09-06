@@ -22,10 +22,10 @@ def op_action(func):
     Mark of the implementation of an Operator's callable part.
 
     Examples:
-        Only interface Operator will use the @op_action mark. In most cases, method 
-        decorated by @op_action will be called by Operator's __call__. During an 
-        Operator's creation, OpMetaclass will check that method with @op_action in the 
-        interface Operator is overwritten by the subclass with identical input/output 
+        Only interface Operator will use the @op_action mark. In most cases, method
+        decorated by @op_action will be called by Operator's __call__. During an
+        Operator's creation, OpMetaclass will check that method with @op_action in the
+        interface Operator is overwritten by the subclass with identical input/output
         declarations.
 
         Example of an interface Operator
@@ -46,7 +46,7 @@ def op_action(func):
             def forward(self, img:Image) -> FloatVector:
                 # do the real forward works ...
 
-        Note that Img2VecOp.forward is decorated by @op_action, and VGGAnimalImg2VecOp 
+        Note that Img2VecOp.forward is decorated by @op_action, and VGGAnimalImg2VecOp
         implements this function with identical input types and output types.
 
         See OpMetaclass._op_callable_check for more explainations.
@@ -59,7 +59,7 @@ def create_op_in_pipeline(func):
     This is a decorator of the operator's __call__ method. It will put the operator
     into the pipeline's context -- creating a node related to the operator, and solving
     its dependency.
-    
+
     Example:
         class MyOp1(Operator):
             @create_op_in_pipeline
@@ -79,13 +79,13 @@ def create_op_in_pipeline(func):
             z = op2(y.y1)
             return z
 
-    In this example, we have two operators in a pipeline, where op2 depends on the 
-    results of op1. Behind the scene, Towhee's compiler will create a DAG during 
-    the execution of my_pipeline. When the program executes the line y = op1(x), 
-    The decorator @create_op_in_pipeline will be called before MyOp1's __call__ 
-    method. It will put op1 into the pipeline's context, link the pipeline's input x 
-    to op1's input. When the program reaches the line z = op2(y.y1), the compiler will 
-    add op2 into the pipeline's context, and settle the dependency between op1 and op2 
+    In this example, we have two operators in a pipeline, where op2 depends on the
+    results of op1. Behind the scene, Towhee's compiler will create a DAG during
+    the execution of my_pipeline. When the program executes the line y = op1(x),
+    The decorator @create_op_in_pipeline will be called before MyOp1's __call__
+    method. It will put op1 into the pipeline's context, link the pipeline's input x
+    to op1's input. When the program reaches the line z = op2(y.y1), the compiler will
+    add op2 into the pipeline's context, and settle the dependency between op1 and op2
     base on the fact that op2 takes op1's output as its input.
     """
     @wraps(func)
@@ -94,7 +94,7 @@ def create_op_in_pipeline(func):
         Solving the operator's dependency and return a VariableReprSet as the operator's
         outputs.
         """
-        raise NotImplementedError
+        #raise NotImplementedError
         return func(*args, **kwargs)
 
     return _create_op_in_pipeline

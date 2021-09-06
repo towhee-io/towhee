@@ -17,9 +17,11 @@
 # data2 = data1.batch(op2, bs=64)
 
 from collections import OrderedDict
+from types import FunctionType
 from typing import NamedTuple
 
 from towhee.base_repr import BaseRepr
+from towhee.dag.variable_repr import VariableRepr
 
 
 class DataframeRepr(BaseRepr):
@@ -63,7 +65,7 @@ class DataframeRepr(BaseRepr):
         """
         self._columns[key] = value
 
-    def from_input_annotations(self, func: function):
+    def from_input_annotations(self, func: FunctionType):
         """Parse variables from a function's input annotations.
 
         Args:
@@ -72,9 +74,10 @@ class DataframeRepr(BaseRepr):
         for (name, kind) in func.__annotations__.items():
             # Ignore return types in annotation dictionary.
             if name != 'return':
-                self._columns[name] = kind.__name__
+                #TODO
+                self._columns[name] = str(kind)
 
-    def from_output_annotations(self, func: function):
+    def from_output_annotations(self, func: FunctionType):
         """Parse variables from an operator's output annotations.
 
         Args:
@@ -82,8 +85,9 @@ class DataframeRepr(BaseRepr):
             and formatted into values.
         """
         retval = func.__annotations__.get('return')
-        if retval.__name__ == 'NamedTuple':
-            for (name, kind) in retval._field_types.items():
-                self._columns[name] = kind.__name__
+        if isinstance(retval, NamedTuple):
+            for (name, kind) in retval.__annotations__.items():
+                #TODO
+                self._columns[name] = str(kind)
         else:
-            raise TypeError("Operator function return value must be a `NamedTuple`.")
+            raise TypeError('Operator function return value must be a `NamedTuple`.')

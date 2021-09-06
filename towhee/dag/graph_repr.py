@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+from typing import Dict
+
+from towhee.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
 from towhee.dag.operator_repr import OperatorRepr
 
@@ -23,18 +26,19 @@ class GraphRepr(BaseRepr):
     are used during execution to load functions and pass data to the correct operators.
     """
 
-    def __init__(self):
+    def __init__(self, name: str):
         #TODO(Chiiizzzy)
-        self._ops = {}
-        self._dfs = {}
+        super().__init__(name)
+        self._operators = {}
+        self._dataframes = {}
 
     @property
-    def ops(self) -> Dict[str, OperatorRepr]:
-        return self._ops
+    def operators(self) -> Dict[str, OperatorRepr]:
+        return self._operators
 
     @property
-    def dfs(self) -> Dict[str, DataframeRepr]:
-        return self._dfs
+    def dataframes(self) -> Dict[str, DataframeRepr]:
+        return self._dataframes
 
     def from_yaml(self, yaml: str):
         """Import a YAML file describing this graph.

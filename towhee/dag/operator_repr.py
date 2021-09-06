@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from towhee.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
 #from towhee.dag.variable_repr import VariableRepr
 #from towhee.dag.variable_repr import VariableReprSet

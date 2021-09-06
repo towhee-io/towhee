@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from towhee.dag.operator_repr import OperatorRepr
 from towhee.base_repr import BaseRepr
 
 
@@ -31,8 +29,7 @@ class VariableRepr(BaseRepr):
             this variable.
     """
 
-    def __init__(self, name: str, vtype: str, dtype: str,
-                 from_op: OperatorRepr = None, to_op: OperatorRepr = None):
+    def __init__(self, name: str, vtype: str, dtype: str):
         super().__init__(name)
         self._vtype = str(vtype)
         self._dtype = str(dtype)
