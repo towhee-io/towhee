@@ -14,16 +14,16 @@
 
 
 import abc
-from collections.abc import Iterable 
+from collections.abc import Iterable
 
 
 class DataSource(Iterable):
-    """
+    """Base class of data source
     """
 
 
 class InputData(metaclass=abc.ABCMeta):
-    """
+    """Base class of input data
     """
     @abc.abstractmethod
     def get_data(self) -> dict:
@@ -32,4 +32,3 @@ class InputData(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def on_finish(self) -> bool:
         raise NotImplementedError
-    

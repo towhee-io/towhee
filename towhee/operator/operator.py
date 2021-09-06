@@ -13,13 +13,14 @@
 # limitations under the License.
 
 
-from abc import abstractclassmethod
+from abc import abstractmethod
+
 
 class Operator:
     """
     The base operator class.
     """
-    
+
     def __init__(self):
         self._params = {}
         self.name = None
@@ -29,13 +30,14 @@ class Operator:
     @property
     def params(self):
         return self._params
-    
+
     @params.setter
-    def params(self, dict):
+    def params(self, params: dict):
         # todo update parameter dict
         raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def op_class(cls):
         """
         Get the interface Operator class

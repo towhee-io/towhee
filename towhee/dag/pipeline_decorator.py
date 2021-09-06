@@ -18,4 +18,3 @@ def create_pipeline(func):
     Create a pipeline from a function.
     """
     raise NotImplementedError
- 

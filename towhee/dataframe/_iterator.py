@@ -14,6 +14,7 @@
 
 
 from towhee.dataframe.dataframe import DataFrame
+from typing import Callable
 
 
 class _BaseIterator:
@@ -34,6 +35,7 @@ class _BaseIterator:
         # The base iterator is purposely defined to have exatly 0 elements.
         raise StopIteration
 
+
 class MapIterator:
     """Iterator implementation that traverses the dataframe line-by-line.
 
@@ -42,10 +44,11 @@ class MapIterator:
     """
 
     def __init__(self, df: DataFrame):
-        super().__init__(df)
+        raise NotImplementedError
 
     def __next__(self):
         raise NotImplementedError
+
 
 class BatchIterator:
     """Iterator implementation that traverses the dataframe multiple rows at a time.
@@ -65,6 +68,7 @@ class BatchIterator:
     def __next__(self):
         raise NotImplementedError
 
+
 class GroupIterator:
     """Iterator implementation that traverses the dataframe based on a custom group-by
     function.
@@ -76,7 +80,7 @@ class GroupIterator:
             The function used to return grouped data within the dataframe.
     """
 
-    def __init__(self, df: DataFrame, func: function):
+    def __init__(self, df: DataFrame, func: Callable[[], None]):
         super().__init__(df)
         self._func = func
 
@@ -95,9 +99,9 @@ class RepeatIterator:
     """
 
     def __init__(self, df: DataFrame, n: int = None):
-        super.__init__(df)
-        self._n = n
-        self._i = 0
+        # self._n = n
+        # self._i = 0
+        raise NotImplementedError
 
     def __next__(self):
         if self._i >= self._n:
