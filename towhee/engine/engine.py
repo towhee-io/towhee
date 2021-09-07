@@ -17,7 +17,7 @@
 
 
 class Engine:
-    """
+    """Engine
     """
 
     def __init__(self, config: dict):

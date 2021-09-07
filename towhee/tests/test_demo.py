@@ -18,4 +18,4 @@ import unittest
 
 class TestDemo(unittest.TestCase):
     def test_demo(self):
-        self.assertTrue(True)
+        self.assertTrue(1 != "1")
