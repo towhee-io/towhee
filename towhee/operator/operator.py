@@ -14,9 +14,10 @@
 
 
 from abc import abstractmethod
+from abc import ABC
 
 
-class Operator:
+class Operator(ABC):
     """
     The base operator class.
     """
