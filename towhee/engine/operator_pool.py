@@ -17,19 +17,56 @@ from towhee.operator.operator import Operator
 
 
 class OperatorPool:
-    """
-    OperatorPool manages Operator creation, acquisition, release, garbage collection.
-    Each TaskExecutor has one OperatorPool.
+    """`OperatorPool` manages `Operator` creation, acquisition, release, and garbage
+    collection. Each `TaskExecutor` has one `OperatorPool`.
     """
 
-    def acquire(self, name: str, init_args: dict) -> Operator:
-        """
-        Acquire an Operator by name.
+    def __init__(self):
+        self._all_ops = {}
+
+    @property
+    def available_ops(self):
+        return self._all_ops.keys()
+
+    def _load_op(self, name: str, init: dict) -> Operator:
+        """Used only internally to acquire remote operators that have not yet been
+        loaded into memory.
+
+        For associated arguments, see `OperatorPool.acquire`.
         """
         raise NotImplementedError
 
-    def release(self, op: Operator) -> None:
+
+    def acquire(self, name: str, init: dict) -> Operator:
+        """Given a name, instruct the `OperatorPool` to reserve and return the
+        specified operator for use in the executor.
+
+        Args:
+            name: (`str`)
+                Unique operator name, as specified in the graph.
+            init: (`dict`)
+                The operator's initialization arguments, if any. Unused in Towhee v0.1.
+
+        Returns:
+            (`towhee.Operator`)
+                The operator instance reserved for the caller.
         """
-        Release an Operator.
+        if name not in self._all_ops:
+            op = self._load_op(name, init)
+        else:
+            op = self._all_ops[name]
+
+        # Let there be a record of the operator existing in the pool, but remove its
+        # pointer until the operator is released by the `TaskExecutor`.
+        self._all_ops[name] = None
+
+
+    def release(self, op: Operator):
+        """Releases the specified operator and all associated resources back to the
+        `OperatorPool`.
+
+        Args:
+            op: (`towhee.Operator`)
+                `Operator` instance to add back into the operator pool.
         """
-        raise NotImplementedError
+        self._all_ops[name] = op

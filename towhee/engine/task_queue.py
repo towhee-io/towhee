@@ -13,32 +13,62 @@
 # limitations under the License.
 
 
+from queue import Queue
+
 from towhee.engine.task import Task
 
 
 class TaskQueue:
     """
-    The queue where scheduler push tasks and executor pop tasks.
-    Each TaskExecutor has one TaskQueue.
+    A queue for `Task` objects exposed to the `TaskScheduler` which allows the scheduler
+    to assign tasks to individual instances of `TaskExecutor`.
+
+    Args:
+        size:
+            Maximum number of allowable queue elements.
     """
+
+    def __init__(self, size: int = 0):
+        self._queue = Queue(size)
 
     @property
     def empty(self) -> bool:
+        """Indicates whether `TaskQueue` is empty. Returns true if the queue has no
+        tasks.
         """
-        Indicator whether TaskQueue is empty.
-        True if the queue has no tasks.
+        return self._queue.empty()
+
+    @property
+    def full(self) -> bool:
+        """Indicates whether or not the `TaskQueue` is at its maximum capacity.
         """
-        raise NotImplementedError
+        return self._queue.full()
 
     @property
     def size(self) -> int:
+        """Returns the number of tasks in the TaskQueue.
         """
-        Number of tasks in the TaskQueue.
-        """
-        raise NotImplementedError
+        return self._queue.qsize()
 
-    def push(self, task: Task) -> None:
-        raise NotImplementedError
+    def push(self, task: Task) -> bool:
+        """Pushes a `Task` object to the end of the queue. Returns `True` if the
+        operation was successful and `False` otherwise. A return value of `False` most
+        likely indicates that the queue has reached its maximum capacity.
+
+        Args:
+            task: `towhee.engine.Task`
+                `Task` object to add to the end of the queue.
+        """
+        try:
+            self._queue.put(task, timeout=0.1)
+        except:
+            return False
+        return True
 
     def pop(self) -> Task:
-        raise NotImplementedError
+        """Attempts to acquire the first item off of the queue.
+        """
+        try:
+            return self._queue.get(timeout=0.1)
+        except:
+            return None
