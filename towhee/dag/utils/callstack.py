@@ -11,11 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import inspect
 from typing import List, Optional
 import hashlib
 
+
 class Callstack:
+    """Callstack
+    """
+
     def __init__(self, ignore: int = 0):
         """
         Initialize a Callstack.
@@ -33,7 +38,6 @@ class Callstack:
             raise ValueError(f"ignore = {ignore-1} is out of frame range")
         del self.frames[0:ignore]
         self.size = len(self.frames)
-        
 
     def num_frames(self) -> int:
         """
@@ -68,11 +72,11 @@ class Callstack:
 
         Args:
             `start (int)`: The index of the start frame.
-            
+
             `end (int)`: The index of the end frame.
 
-            `items (list[str])`: The items to be hashed. Supported items are 
-            {filename, lineno, function, code_context, position, lasti}, where 
+            `items (list[str])`: The items to be hashed. Supported items are
+            {filename, lineno, function, code_context, position, lasti}, where
             code_context denotes the current line of code of the context, position
             denotes the frame's index of the callstack, lasti denotes the index of last
             attempted instruction in bytecode.
@@ -81,8 +85,8 @@ class Callstack:
             The hash value.
 
         Raises:
-            `IndexError`: If the args [`start`, `end`) is out of the frame range or 
-            `end` less than `start`.   
+            `IndexError`: If the args [`start`, `end`) is out of the frame range or
+            `end` less than `start`.
 
             `ValueError`: If an item in `items` is not supported, i.e. not one of
             {filename, lineno, function, code_context, position, lasti}.
@@ -90,30 +94,31 @@ class Callstack:
         start = start or 0
         end = end or self.size
 
-        if end > self.size or end <= 0 or start >= self.size or start < 0 :
+        if end > self.size or end <= 0 or start >= self.size or start < 0:
             raise IndexError(
-                f'index range [{start}, {end}) out of frame range' 
-                f'[0, {self.size})'
+                f"index range [{start}, {end}) out of frame range"
+                f"[0, {self.size})"
             )
         if start >= end:
-            raise IndexError(f'end = {end} is less than or equal to start = {start}')
+            raise IndexError(
+                f"end = {end} is less than or equal to start = {start}")
 
         full_item = {
-            'filename', 'lineno', 'function', 'code_context', 'position', 'lasti'
+            "filename", "lineno", "function", "code_context", "position", "lasti"
         }
         if not set(items).issubset(set(full_item)):
             invalid_item = set(items) - (set(items) & full_item)
-            raise ValueError(f'{invalid_item} not supported')
+            raise ValueError(f"{invalid_item} not supported")
 
         md5 = hashlib.md5()
         for i, frame in enumerate(self.frames[start:end]):
             frame_dict = frame._asdict()
-            frame_dict['position'] = i + start
-            frame_dict['lasti'] = frame_dict['frame'].f_lasti
-            frame_dict['code_context'] = (
-                ''.join(frame_dict['code_context']) if frame_dict['code_context']
-                else ''
+            frame_dict["position"] = i + start
+            frame_dict["lasti"] = frame_dict["frame"].f_lasti
+            frame_dict["code_context"] = (
+                "".join(frame_dict["code_context"]) if frame_dict["code_context"]
+                else ""
             )
             for item in items:
-                md5.update(str(frame_dict[item]).encode('utf-8'))
+                md5.update(str(frame_dict[item]).encode("utf-8"))
         return md5.hexdigest()
