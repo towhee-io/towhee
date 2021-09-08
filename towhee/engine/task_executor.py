@@ -14,6 +14,7 @@
 
 
 import threading
+import time
 
 from towhee.operator.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
@@ -66,6 +67,11 @@ class TaskExecutor(threading.Thread):
             # ultimately the one responsible for determining which tasks get executed
             # before others.
             if task:
-                op = self._op_pool.acquire(task.op_name)
+                op = self._op_pool.acquire_op(task)
                 task.execute(op)
-                self._op_pool.release(op)
+                self._op_pool.release_op(op)
+
+            # If we reached this point, the queue is empty, wait for a short period of
+            # time and try again.
+            else:
+                time.sleep(0.01)

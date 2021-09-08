@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from queue import Queue
+import queue
 
 from towhee.engine.task import Task
 
@@ -29,7 +29,7 @@ class TaskQueue:
     """
 
     def __init__(self, size: int = 0):
-        self._queue = Queue(size)
+        self._queue = queue.Queue(size)
 
     @property
     def empty(self) -> bool:
@@ -56,19 +56,24 @@ class TaskQueue:
         likely indicates that the queue has reached its maximum capacity.
 
         Args:
-            task: `towhee.engine.Task`
+            task: (`towhee.engine.Task`)
                 `Task` object to add to the end of the queue.
         """
         try:
-            self._queue.put(task, timeout=0.1)
-        except:
+            self._queue.put_nowait(task)
+        except queue.Full:
             return False
         return True
 
     def pop(self) -> Task:
         """Attempts to acquire the first item off of the queue.
+
+        Returns:
+            (`towhee.engine.Task`)
+                First `Task` object available on the queue, or None if the queue is
+                empty
         """
         try:
-            return self._queue.get(timeout=0.1)
-        except:
+            return self._queue.get_nowait()
+        except queue.Empty:
             return None

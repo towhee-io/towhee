@@ -8,16 +8,25 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT_ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 
-class OperatorLoader:
-    """
-    Load operator from hub.
+from towhee.dag.dataframe_repr import DataframeRepr
+
+
+class TestOperatorPool(unittest.TestCase):
+    """Basic test case for `OperatorPool`.
     """
 
-    @staticmethod
-    def pull(url: str):
-        raise NotImplementedError
+    def setUp(self):
+        self._op_pool = OperatorPool()
+
+    def test_init(self):
+        # The list of available ops should be empty upon initialization.
+        self.assertFalse(self.available_ops)
+
+
+if __name__ == '__main__':
+    unittest.main()
