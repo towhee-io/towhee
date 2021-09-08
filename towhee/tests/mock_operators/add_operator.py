@@ -13,9 +13,22 @@
 # limitations under the License.
 
 
-from towhee.operator.base import OperatorBase, SharedType
+from typing import NamedTuple
+from towhee.operator import OperatorBase, SharedType
 
-__all__ = [
-    "OperatorBase",
-    "SharedType"
-]
+
+class AddOperator(OperatorBase):
+    """
+    Stateful operator
+    """
+
+    def __init__(self, factor: int) -> None:
+        self._factor = factor
+
+    def __call__(self, num: int) -> NamedTuple("Outputs", [("sum", int)]):
+        Outputs = NamedTuple("Outputs", [("sum", int)])
+        return Outputs(self._factor + num)
+
+    @property
+    def shared_type(self):
+        return SharedType.Shareable
