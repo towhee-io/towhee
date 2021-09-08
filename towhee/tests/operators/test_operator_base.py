@@ -14,12 +14,24 @@
 
 
 import unittest
-from towhee.tests.mock_operators.add_operator import AddOperator
+
+
+from towhee.tests.mock_operators import ADD_OPERATOR_PATH, load_local_operator
 from towhee.operator import SharedType
 
 
 class TestOperatorBase(unittest.TestCase):
+    """
+    Simple operator test
+    """
+
     def test_func_operator(self):
-        op = AddOperator(1)
+        add_operator = load_local_operator(
+            "add_operator", ADD_OPERATOR_PATH)
+        op = add_operator.AddOperator(1)
         self.assertEqual(op(1).sum, 2)
         self.assertEqual(op.shared_type, SharedType.Shareable)
+
+        op2 = add_operator.AddOperator(3)
+        self.assertEqual(op2(1).sum, 4)
+        self.assertEqual(op2.shared_type, SharedType.Shareable)
