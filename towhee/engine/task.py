@@ -14,9 +14,9 @@
 
 
 import timeit
-from typing import Callable
+from typing import Callable, List, Tuple
 
-from towhee.operator.operator import OperatorBase
+from towhee.operator.base import OperatorBase
 
 
 class Task:
@@ -37,7 +37,7 @@ class Task:
             are indexed individually for each operation performed, starting from 0.
     """
 
-    def __init__(self, op_name: str, op_func: str, inputs: tuple, task_idx: int):
+    def __init__(self, op_name: str, op_func: str, inputs: Tuple, task_idx: int):
         self._op_name = op_name
         self._op_func = op_func
         self._inputs = inputs
@@ -52,11 +52,15 @@ class Task:
 
     @property
     def inputs(self) -> tuple:
-        return _inputs
+        return self._inputs
 
     @property
     def op_name(self) -> str:
-        return _op_name
+        return self._op_name
+
+    @property
+    def op_func(self) -> str:
+        return self._op_func
 
     @property
     def output(self) -> tuple:
@@ -93,7 +97,7 @@ class Task:
         """
         self._on_finish_handlers.append(handler)
 
-    def _execute_handlers(self, handlers: list[Callable]):
+    def _execute_handlers(self, handlers: List[Callable]):
         """Execute handlers defined in `handlers`. These should be a list of callables
         which take this `Task` object as its input.
 

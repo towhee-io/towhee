@@ -13,7 +13,12 @@
 # limitations under the License.
 
 
+import unittest
+from pathlib import Path
+
 from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.engine.operator_pool import OperatorPool
+from towhee.engine.task import Task
 
 
 class TestOperatorPool(unittest.TestCase):
@@ -21,11 +26,17 @@ class TestOperatorPool(unittest.TestCase):
     """
 
     def setUp(self):
-        self._op_pool = OperatorPool()
+        cache_path = Path(__file__).parent.parent.resolve()
+        self._op_pool = OperatorPool(cache_path=cache_path)
 
     def test_init(self):
         # The list of available ops should be empty upon initialization.
-        self.assertFalse(self.available_ops)
+        self.assertFalse(self._op_pool.available_ops)
+
+    def test_loader(self):
+        op_func = 'mock_operators/add_operator'
+        task = Task('test', op_func, (), 0)
+        self._op_pool.acquire_op(task, args={"factor": 0})
 
 
 if __name__ == '__main__':

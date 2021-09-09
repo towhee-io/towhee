@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-from importlib.machinery import SourceFileLoader
+import importlib.util
 import os
 
-from towhee.operator.operator import OperatorBase
+from towhee.operator.base import OperatorBase
 
 
 class OperatorLoader:
@@ -35,8 +35,7 @@ class OperatorLoader:
             cache_path = os.path.join(home_path, '.towhee', 'cache')
         self._cache_path = cache_path
 
-    @staticmethod
-    def load_operator(function: str, args: dict) -> OperatorBase:
+    def load_operator(self, function: str, args: dict) -> OperatorBase:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
@@ -53,8 +52,9 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/operator.py
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/resnet.torch
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/config.json
-        (source, method) = function.split("/")
-        path = os.path.join(self._cache_path, source, method, "operator.py")
+        (source, method) = function.split('/')
+        path = os.path.join(self._cache_path, source, method, 'operator.py')
+        print(path)
 
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
@@ -62,7 +62,7 @@ class OperatorLoader:
 
             # Specify the module name and absolute path of the file that needs to be
             # imported.
-            modname = "towhee.operator." + method
+            modname = 'towhee.operator.' + method
             spec = importlib.util.spec_from_file_location(modname, path)
 
             # Create the module and then execute the module in its own namespace.

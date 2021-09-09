@@ -13,8 +13,9 @@
 # limitations under the License.
 
 
-from towhee.operator.operator import OperatorBase
+from towhee.operator.base import OperatorBase
 from towhee.engine.operator_loader import OperatorLoader
+from towhee.engine.task import Task
 
 
 class OperatorPool:
@@ -22,15 +23,15 @@ class OperatorPool:
     collection. Each `TaskExecutor` has one `OperatorPool`.
     """
 
-    def __init__(self):
-        self._op_loader = OperatorLoader()
+    def __init__(self, cache_path: str = None):
+        self._op_loader = OperatorLoader(cache_path)
         self._all_ops = {}
 
     @property
     def available_ops(self):
         return self._all_ops.keys()
 
-    def acquire_op(self, task: Task, args: dict = None) -> OperatorBase:
+    def acquire_op(self, task: Task, args: dict) -> OperatorBase:
         """Given a `Task`, instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
@@ -44,7 +45,7 @@ class OperatorPool:
             (`towhee.OperatorBase`)
                 The operator instance reserved for the caller.
         """
-        if name not in self._all_ops:
+        if task.op_name not in self._all_ops:
             op = self._op_loader.load_operator(task.op_func, args)
         else:
             op = self._all_ops[task.op_name]
@@ -53,7 +54,9 @@ class OperatorPool:
         # pointer until the operator is released by the `TaskExecutor`.
         self._all_ops[task.op_name] = None
 
-    def release_op(self, op: Operator):
+        return op
+
+    def release_op(self, op: OperatorBase):
         """Releases the specified operator and all associated resources back to the
         `OperatorPool`.
 

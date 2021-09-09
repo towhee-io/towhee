@@ -16,7 +16,6 @@
 import threading
 import time
 
-from towhee.operator.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
 from towhee.engine.task import Task
 from towhee.engine.task_queue import TaskQueue
