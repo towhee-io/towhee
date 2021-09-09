@@ -14,7 +14,8 @@
 
 
 import importlib.util
-import os
+from pathlib import Path
+from typing import Any, Dict
 
 from towhee.operator.base import OperatorBase
 
@@ -31,11 +32,12 @@ class OperatorLoader:
 
     def __init__(self, cache_path: str = None):
         if not cache_path:
-            home_path = os.path.expanduser('~')
-            cache_path = os.path.join(home_path, '.towhee', 'cache')
-        self._cache_path = cache_path
+            self._cache_path = Path.home() / '.towhee/cache'
+        else:
+            self._cache_path = Path(cache_path)
+        self._cache_path = Path(cache_path)
 
-    def load_operator(self, function: str, args: dict) -> OperatorBase:
+    def load_operator(self, function: str, args: Dict[str, Any]) -> OperatorBase:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
@@ -52,17 +54,20 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/operator.py
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/resnet.torch
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/config.json
-        (source, method) = function.split('/')
-        path = os.path.join(self._cache_path, source, method, 'operator.py')
-        print(path)
+        paths = list((self._cache_path / function).glob('[!_]*.py'))
+        if not paths:
+            raise TypeError('Operator definition not found')
+        if len(paths) > 1:
+            raise TypeError('Too many .py files in operator directory')
+        path = paths[0]
 
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
-        if os.path.exists(path) and not os.path.isdir(path):
+        if path.is_file():
 
             # Specify the module name and absolute path of the file that needs to be
             # imported.
-            modname = 'towhee.operator.' + method
+            modname = 'towhee.operator.' + function.split('/')[-1]
             spec = importlib.util.spec_from_file_location(modname, path)
 
             # Create the module and then execute the module in its own namespace.
@@ -75,4 +80,4 @@ class OperatorLoader:
             return module.Operator(**args)
 
         else:
-            raise NotImplementedError
+            raise TypeError('Operator definition must be a Python file')

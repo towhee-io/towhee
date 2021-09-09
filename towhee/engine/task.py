@@ -14,7 +14,7 @@
 
 
 import timeit
-from typing import Callable, List, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple
 
 from towhee.operator.base import OperatorBase
 
@@ -30,16 +30,18 @@ class Task:
             operator name which can be used by executors to lookup the proper `Operator`
             to execute.
         inputs:
-            A tuple of data, which serve as inputs to the operator call. It must be in
-            the same order of parameters as operator.__call__().
+            A dictionary of keyward arguments which serve as inputs to the operator
+            call.
         task_idx:
             A new task will be constructed for each operator call. The tasks
             are indexed individually for each operation performed, starting from 0.
     """
 
-    def __init__(self, op_name: str, op_func: str, inputs: Tuple, task_idx: int):
+    def __init__(self, op_name: str, op_func: str, op_args: Dict[str, Any],
+                 inputs: Dict[str, Any], task_idx: int):
         self._op_name = op_name
         self._op_func = op_func
+        self._op_args = op_args
         self._inputs = inputs
         self._task_idx = task_idx
 
@@ -51,10 +53,6 @@ class Task:
         self._on_finish_handlers = []
 
     @property
-    def inputs(self) -> tuple:
-        return self._inputs
-
-    @property
     def op_name(self) -> str:
         return self._op_name
 
@@ -63,7 +61,15 @@ class Task:
         return self._op_func
 
     @property
-    def output(self) -> tuple:
+    def op_args(self) -> Dict[str, Any]:
+        return self._op_args
+
+    @property
+    def inputs(self) -> Dict[str, Any]:
+        return self._inputs
+
+    @property
+    def outputs(self) -> NamedTuple:
         return self._outputs
 
     @property

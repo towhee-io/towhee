@@ -27,12 +27,12 @@ class TaskExecutor(threading.Thread):
     Each device has one TaskExecutor.
     """
 
-    def __init__(self, name: str):
-        super().__init__(self)
+    def __init__(self, name: str, cache_path: str = None):
+        super().__init__()
         self._name = name
         self._task_queue = TaskQueue()
-        self._op_pool = OperatorPool()
-        self._do_run = False
+        self._op_pool = OperatorPool(cache_path=cache_path)
+        self._is_run = True
 
     @property
     def name(self):
@@ -56,7 +56,10 @@ class TaskExecutor(threading.Thread):
     def run(self):
         """Runs the execution loop.
         """
-        while not self._do_run:
+
+        # Continue execution until the run flag is externally set to false and the queue
+        # is entirely empty of tasks.
+        while self._is_run or not self._task_queue.empty:
 
             # If there are no tasks in the queue, this might return `None` after
             # blocking for a while.
@@ -74,3 +77,9 @@ class TaskExecutor(threading.Thread):
             # time and try again.
             else:
                 time.sleep(0.01)
+
+    def stop(self):
+        """Sets a flag, which stops the execution loop after a period of time.
+        """
+        self._is_run = False
+        self.join()

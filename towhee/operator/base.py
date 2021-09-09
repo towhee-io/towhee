@@ -23,7 +23,7 @@ from enum import Enum
 
 # Shareable:
 #    Stateless operator
-SharedType = Enum("SharedType", ("NotShareable", "Shareable"))
+SharedType = Enum('SharedType', ('NotShareable', 'Shareable'))
 
 
 class Operator(ABC):
@@ -54,7 +54,7 @@ class Operator(ABC):
             An exception during __init__ can terminate the graph run.
 
         """
-        pass
+        self._name = ''
 
     @abstractmethod
     def __call__(self):
@@ -70,11 +70,19 @@ class Operator(ABC):
         Raises:
             An exception during __init__ can terminate the graph run.
         """
-        pass
+        raise NotImplementedError
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def shared_type(self):
         return SharedType.NotShared
+
+    @name.setter
+    def name(self, value):
+        self._name = str(value)
 
 
 class PyTorchNNOperator(Operator):

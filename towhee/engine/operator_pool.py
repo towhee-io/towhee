@@ -31,7 +31,7 @@ class OperatorPool:
     def available_ops(self):
         return self._all_ops.keys()
 
-    def acquire_op(self, task: Task, args: dict) -> OperatorBase:
+    def acquire_op(self, task: Task) -> OperatorBase:
         """Given a `Task`, instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
@@ -46,7 +46,8 @@ class OperatorPool:
                 The operator instance reserved for the caller.
         """
         if task.op_name not in self._all_ops:
-            op = self._op_loader.load_operator(task.op_func, args)
+            op = self._op_loader.load_operator(task.op_func, task.op_args)
+            op.name = task.op_name
         else:
             op = self._all_ops[task.op_name]
 
