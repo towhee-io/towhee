@@ -45,15 +45,23 @@ class OperatorPool:
             (`towhee.OperatorBase`)
                 The operator instance reserved for the caller.
         """
-        if task.op_name not in self._all_ops:
+
+        # Create a hashable object for the arguments to use as a part of the operator
+        # name.
+        args_tup = tuple((key, task.op_args[key]) for key in sorted(task.op_args))
+        op_key = (task.op_name, ) + args_tup
+
+        # Load the operator if the computed key does not exist in the operator
+        # dictinoary.
+        if op_key not in self._all_ops:
             op = self._op_loader.load_operator(task.op_func, task.op_args)
-            op.name = task.op_name
+            op.key = op_key
         else:
-            op = self._all_ops[task.op_name]
+            op = self._all_ops[op_key]
 
         # Let there be a record of the operator existing in the pool, but remove its
         # pointer until the operator is released by the `TaskExecutor`.
-        self._all_ops[task.op_name] = None
+        self._all_ops[op_key] = None
 
         return op
 
@@ -65,4 +73,4 @@ class OperatorPool:
             op: (`towhee.OperatorBase`)
                 `OperatorBase` instance to add back into the operator pool.
         """
-        self._all_ops[op.name] = op
+        self._all_ops[op.key] = op

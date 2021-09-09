@@ -51,6 +51,25 @@ class TestTaskExecutor(unittest.TestCase):
             task.add_finish_handler(_add_task_finish_callback)
             self._executor.push_task(task)
 
+    def test_sub_task_execution(self):
+
+        # Add callback function upon completion.
+        def _add_task_finish_callback(task):
+            diff = task.inputs['a'] - task.inputs['b']
+            self.assertEqual(task.outputs.diff, diff)
+
+        # Create a couple of tasks to execute through the executor.
+        tasks = []
+        op_func = 'mock_operators/sub_operator'
+        tasks.append(Task('test', op_func, {}, {'a': 0, 'b': 0}, 0))
+        tasks.append(Task('test', op_func, {}, {'a': 10, 'b': 20}, 1))
+        tasks.append(Task('test', op_func, {}, {'a': 23, 'b': -1}, 24))
+
+        # Add finish callbacks and submit the tasks to the executor.
+        for task in tasks:
+            task.add_finish_handler(_add_task_finish_callback)
+            self._executor.push_task(task)
+
 
 if __name__ == '__main__':
     unittest.main()

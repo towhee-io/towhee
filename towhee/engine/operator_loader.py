@@ -54,12 +54,8 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/operator.py
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/resnet.torch
         #   |_ /home/user/.towhee/cache/organization-name/operator-name/config.json
-        paths = list((self._cache_path / function).glob('[!_]*.py'))
-        if not paths:
-            raise TypeError('Operator definition not found')
-        if len(paths) > 1:
-            raise TypeError('Too many .py files in operator directory')
-        path = paths[0]
+        fname = function.split('/')[-1]
+        path = self._cache_path / function / (fname + '.py')
 
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
@@ -67,8 +63,8 @@ class OperatorLoader:
 
             # Specify the module name and absolute path of the file that needs to be
             # imported.
-            modname = 'towhee.operator.' + function.split('/')[-1]
-            spec = importlib.util.spec_from_file_location(modname, path)
+            modname = 'towhee.operator.' + fname
+            spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
             # Create the module and then execute the module in its own namespace.
             module = importlib.util.module_from_spec(spec)
@@ -80,4 +76,4 @@ class OperatorLoader:
             return module.Operator(**args)
 
         else:
-            raise TypeError('Operator definition must be a Python file')
+            raise FileNotFoundError('Operator definition not found')

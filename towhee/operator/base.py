@@ -54,7 +54,7 @@ class Operator(ABC):
             An exception during __init__ can terminate the graph run.
 
         """
-        self._name = ''
+        self._key = ''
 
     @abstractmethod
     def __call__(self):
@@ -73,16 +73,16 @@ class Operator(ABC):
         raise NotImplementedError
 
     @property
-    def name(self):
-        return self._name
+    def key(self):
+        return self._key
 
     @property
     def shared_type(self):
         return SharedType.NotShared
 
-    @name.setter
-    def name(self, value):
-        self._name = str(value)
+    @key.setter
+    def key(self, value):
+        self._key = value
 
 
 class PyTorchNNOperator(Operator):
