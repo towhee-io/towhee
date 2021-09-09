@@ -16,10 +16,13 @@
 from setuptools import setup, find_packages
 
 import unittest
+
+
 def test_suite():
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover('towhee/tests', pattern='test_*.py')
     return test_suite
+
 
 setup(
     name="towhee",
@@ -30,6 +33,10 @@ setup(
     url="https://github.com/towhee-io/towhee",
 
     test_suite="setup.test_suite",
+
+    install_requires=['torch>=1.2.0',
+                      'torchvision>=0.4.0',
+                      'pandas>=1.2.4'],
 
     packages=find_packages(),
     license="http://www.apache.org/licenses/LICENSE-2.0"
