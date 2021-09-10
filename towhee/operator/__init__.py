@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-from towhee.operator.base import OperatorBase, SharedType
+from towhee.operator.base import Operator, SharedType
 
 __all__ = [
-    "OperatorBase",
+    "Operator",
     "SharedType"
 ]
