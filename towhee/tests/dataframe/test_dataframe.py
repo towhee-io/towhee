@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dataframe.dataframe import DataFrame
-from towhee.dataframe._iterator import MapIterator, get_dataframe_iter, IterType
-from towhee.dataframe.variable import Variable
+import unittest
+
+from towhee.dataframe import DataFrame, get_dataframe_iter, IterType
 
 
-__all__ = [
-    'DataFrame',
-    'MapIterator',
-    'Variable',
-    'get_dataframe_iter',
-    'IterType'
-]
+class TestDataFrame(unittest.TestCase):
+    def test_normal(self):
+        df = DataFrame("test")
+        get_dataframe_iter(df, IterType.Map)
