@@ -13,8 +13,14 @@
 # limitations under the License.
 
 
+from typing import Optional, Callable
+from enum import Enum
+
+
 from towhee.dataframe.dataframe import DataFrame
-from typing import Callable
+
+
+IterType = Enum("IterType", ("Map"))
 
 
 class _BaseIterator:
@@ -36,7 +42,7 @@ class _BaseIterator:
         raise StopIteration
 
 
-class MapIterator:
+class MapIterator(_BaseIterator):
     """Iterator implementation that traverses the dataframe line-by-line.
 
     Args:
@@ -44,7 +50,7 @@ class MapIterator:
     """
 
     def __init__(self, df: DataFrame):
-        raise NotImplementedError
+        pass
 
     def __next__(self):
         raise NotImplementedError
@@ -107,3 +113,10 @@ class RepeatIterator:
         if self._i >= self._n:
             raise StopIteration
         return self._data[0]
+
+
+def get_dataframe_iter(df: DataFrame, iter_type: IterType) -> Optional[_BaseIterator]:
+    if iter_type == IterType.Map:
+        return MapIterator(df)
+    else:
+        return None

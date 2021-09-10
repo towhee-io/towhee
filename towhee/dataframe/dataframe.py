@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 
-
-from towhee.dataframe._iterator import ScalarIterator
-from towhee.dataframe._iterator import GroupIterator
-from towhee.dataframe._iterator import BatchIterator
-from towhee.dataframe._iterator import RepeatIterator
-
-from towhee.engine.variable import Variable
+from towhee.dataframe.variable import Variable
 
 
 class DataFrame:
@@ -57,16 +51,3 @@ class DataFrame:
 
     def append(self, item: Tuple[Variable]):
         self.data.append(item)
-
-    def iter_scalar(self):
-        # TODO(fzliu): register iterator
-        return iter(ScalarIterator(self._df))
-
-    def iter_group_by(self, func: Callable[[], None]):
-        return iter(GroupIterator(self._df, func))
-
-    def iter_batch(self, size: int):
-        return iter(BatchIterator(self._df, size))
-
-    def iter_repeat(self, n: int):
-        return iter(RepeatIterator(self._df, n))
