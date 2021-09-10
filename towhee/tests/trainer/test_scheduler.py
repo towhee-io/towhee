@@ -1,13 +1,13 @@
 # Copyright 2021 Zilliz. All rights reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -21,7 +21,6 @@ from torch import nn
 from torch.optim import AdamW
 
 from towhee.trainer.scheduler import (
-    check_scheduler,
     configure_constant_scheduler,
     configure_constant_scheduler_with_warmup,
     configure_linear_scheduler_with_warmup,
@@ -46,7 +45,7 @@ def unwrap_and_save_reload_scheduler(scheduler, num_steps=10):
         scheduler.step()
         if step == num_steps // 2:
             with tempfile.TemporaryDirectory() as tmpdirname:
-                file_name = os.path.join(tmpdirname, "schedule.bin")
+                file_name = os.path.join(tmpdirname, 'schedule.bin')
                 torch.save(scheduler.state_dict(), file_name)
 
                 state_dict = torch.load(file_name)
@@ -65,13 +64,13 @@ class ScheduleInitTest(unittest.TestCase):
             self.assertAlmostEqual(a, b, delta=tol, msg=msg)
 
     def test_schedulers(self):
-        common_kwargs = {"num_warmup_steps": 2, "num_training_steps": 10}
+        common_kwargs = {'num_warmup_steps': 2, 'num_training_steps': 10}
         # schedulers doct format
         # function: (sched_args_dict, expected_learning_rates)
         scheds = {
             configure_constant_scheduler: ({}, [10.0] * self.num_steps),
             configure_constant_scheduler_with_warmup: (
-                {"num_warmup_steps": 4},
+                {'num_warmup_steps': 4},
                 [0.0, 2.5, 5.0, 7.5, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
             ),
             configure_linear_scheduler_with_warmup: (
@@ -83,11 +82,11 @@ class ScheduleInitTest(unittest.TestCase):
                 [0.0, 5.0, 10.0, 9.61, 8.53, 6.91, 5.0, 3.08, 1.46, 0.38],
             ),
             configure_cosine_with_hard_restarts_scheduler_with_warmup: (
-                {**common_kwargs, "num_cycles": 2},
+                {**common_kwargs, 'num_cycles': 2},
                 [0.0, 5.0, 10.0, 8.53, 5.0, 1.46, 10.0, 8.53, 5.0, 1.46],
             ),
             configure_polynomial_decay_scheduler_with_warmup: (
-                {**common_kwargs, "power": 2.0, "lr_end": 1e-7},
+                {**common_kwargs, 'power': 2.0, 'lr_end': 1e-7},
                 [0.0, 5.0, 10.0, 7.656, 5.625, 3.906, 2.5, 1.406, 0.625, 0.156],
             ),
         }
@@ -102,9 +101,9 @@ class ScheduleInitTest(unittest.TestCase):
                 lr_sch_1,
                 expected_learning_rates,
                 tol=1e-2,
-                msg=f"failed for {scheduler_func} in normal scheduler",
+                msg=f'failed for {scheduler_func} in normal scheduler',
             )
 
             scheduler = scheduler_func(self.optimizer, **kwargs)
             lr_sch_2 = unwrap_and_save_reload_scheduler(scheduler, self.num_steps)
-            self.assertListEqual(lr_sch_1, lr_sch_2, msg=f"failed for {scheduler_func} in save and reload")
+            self.assertListEqual(lr_sch_1, lr_sch_2, msg=f'failed for {scheduler_func} in save and reload')

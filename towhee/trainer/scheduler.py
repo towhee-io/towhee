@@ -209,8 +209,8 @@ def configure_polynomial_decay_scheduler_with_warmup(
         A polynomial decay scheduler with warmup.
     """
 
-    lr_init = optimizer.defaults["lr"]
-    assert lr_init > lr_end, f"lr_end ({lr_end}) must be be smaller than initial lr ({lr_init})"
+    lr_init = optimizer.defaults['lr']
+    assert lr_init > lr_end, f'lr_end ({lr_end}) must be be smaller than initial lr ({lr_init})'
 
     def lr_lambda(current_step: int):
         if current_step < num_warmup_steps:
@@ -227,46 +227,46 @@ def configure_polynomial_decay_scheduler_with_warmup(
     return LambdaLR(optimizer, lr_lambda, last_epoch)
 
 
-class AdafactorScheduler(LambdaLR):
-    """
-    Adafactor scheduler.
-
-    It returns ``initial_lr`` during startup and the actual ``lr`` during stepping.
-    """
-
-    def __init__(self, optimizer, initial_lr=0.0):
-        def lr_lambda(_):
-            return initial_lr
-
-        for group in optimizer.param_groups:
-            group["initial_lr"] = initial_lr
-        super().__init__(optimizer, lr_lambda)
-        for group in optimizer.param_groups:
-            del group["initial_lr"]
-
-    def get_lr(self):
-        opt = self.optimizer
-        lrs = [
-            opt._get_lr(group, opt.state[group["params"][0]])
-            for group in opt.param_groups
-            if group["params"][0].grad is not None
-        ]
-        if len(lrs) == 0:
-            lrs = self.base_lrs  # if called before stepping
-        return lrs
-
-
-def congigure_adafactor_scheduler(optimizer, initial_lr=0.0):
-    """
-    Return an Adafactor scheduler.
-
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        initial_lr:
-            Initial lr.
-
-    Return:
-        An Adafactor scheduler.
-    """
-    return AdafactorScheduler(optimizer, initial_lr)
+# class AdafactorScheduler(LambdaLR):
+#     """
+#     Adafactor scheduler.
+#
+#     It returns ``initial_lr`` during startup and the actual ``lr`` during stepping.
+#     """
+#
+#     def __init__(self, optimizer: Optimizer, initial_lr=0.0):
+#         def lr_lambda(_):
+#             return initial_lr
+#
+#         for group in optimizer.param_groups:
+#             group['initial_lr'] = initial_lr
+#         super().__init__(optimizer, lr_lambda)
+#         for group in optimizer.param_groups:
+#             del group['initial_lr']
+#
+#     def get_lr(self):
+#         opt = self.optimizer
+#         lrs = [
+#             opt._get_lr(group, opt.state[group['params'][0]])
+#             for group in opt.param_groups
+#             if group['params'][0].grad is not None
+#         ]
+#         if len(lrs) == 0:
+#             lrs = self.base_lrs  # if called before stepping
+#         return lrs
+#
+#
+# def congigure_adafactor_scheduler(optimizer: Optimizer, initial_lr=0.0):
+#     """
+#     Return an Adafactor scheduler.
+#
+#     Args:
+#         optimizer:
+#             The optimizer to be scheduled.
+#         initial_lr:
+#             Initial lr.
+#
+#     Return:
+#         An Adafactor scheduler.
+#     """
+#     return AdafactorScheduler(optimizer, initial_lr)
