@@ -27,7 +27,7 @@ class TestOperator(unittest.TestCase):
 
     def test_func_operator(self):
         add_operator = load_local_operator(
-            "add_operator", ADD_OPERATOR_PATH)
+            'add_operator', ADD_OPERATOR_PATH)
         op = add_operator.AddOperator(1)
         self.assertEqual(op(1).sum, 2)
         self.assertEqual(op.shared_type, SharedType.Shareable)
@@ -35,3 +35,7 @@ class TestOperator(unittest.TestCase):
         op2 = add_operator.AddOperator(3)
         self.assertEqual(op2(1).sum, 4)
         self.assertEqual(op2.shared_type, SharedType.Shareable)
+
+
+if __name__ == '__main__':
+    unittest.main()

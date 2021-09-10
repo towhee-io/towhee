@@ -13,23 +13,64 @@
 # limitations under the License.
 
 
-from towhee.operator.operator import Operator
+from towhee.operator import Operator
+from towhee.engine.operator_loader import OperatorLoader
+from towhee.engine.task import Task
 
 
 class OperatorPool:
-    """
-    OperatorPool manages Operator creation, acquisition, release, garbage collection.
-    Each TaskExecutor has one OperatorPool.
+    """`OperatorPool` manages `Operator` creation, acquisition, release, and garbage
+    collection. Each `TaskExecutor` has one `OperatorPool`.
     """
 
-    def acquire(self, name: str, init_args: dict) -> Operator:
-        """
-        Acquire an Operator by name.
-        """
-        raise NotImplementedError
+    def __init__(self, cache_path: str = None):
+        self._op_loader = OperatorLoader(cache_path)
+        self._all_ops = {}
 
-    def release(self, op: Operator) -> None:
+    @property
+    def available_ops(self):
+        return self._all_ops.keys()
+
+    def acquire_op(self, task: Task) -> Operator:
+        """Given a `Task`, instruct the `OperatorPool` to reserve and return the
+        specified operator for use in the executor.
+
+        Args:
+            name: (`str`)
+                Unique operator name, as specified in the graph.
+            args: (`dict`)
+                The operator's initialization arguments, if any.
+
+        Returns:
+            (`towhee.operator.Operator`)
+                The operator instance reserved for the caller.
         """
-        Release an Operator.
+
+        # Create a hashable object for the arguments to use as a part of the operator
+        # name.
+        args_tup = tuple((key, task.op_args[key]) for key in sorted(task.op_args))
+        op_key = (task.op_name, ) + args_tup
+
+        # Load the operator if the computed key does not exist in the operator
+        # dictinoary.
+        if op_key not in self._all_ops:
+            op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
+            op.key = op_key
+        else:
+            op = self._all_ops[op_key]
+
+        # Let there be a record of the operator existing in the pool, but remove its
+        # pointer until the operator is released by the `TaskExecutor`.
+        self._all_ops[op_key] = None
+
+        return op
+
+    def release_op(self, op: Operator):
+        """Releases the specified operator and all associated resources back to the
+        `OperatorPool`.
+
+        Args:
+            op: (`towhee.Operator`)
+                `Operator` instance to add back into the operator pool.
         """
-        raise NotImplementedError
+        self._all_ops[op.key] = op
