@@ -29,7 +29,7 @@ class Task:
             Instead of each task executing its own operator, the Task maintains a
             operator name which can be used by executors to lookup the proper `Operator`
             to execute.
-        op_tag:
+        hub_op_id:
             Each operator in the operator hub is tagged with a string that describes its
             functionality.
         op_args:
@@ -44,10 +44,10 @@ class Task:
             are indexed individually for each operation performed, starting from 0.
     """
 
-    def __init__(self, op_name: str, op_tag: str, op_args: Dict[str, Any],
+    def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, Any],
                  inputs: Dict[str, Any], task_idx: int):
         self._op_name = op_name
-        self._op_tag = op_tag
+        self._hub_op_id = hub_op_id
         self._op_args = op_args
         self._inputs = inputs
         self._task_idx = task_idx
@@ -64,8 +64,8 @@ class Task:
         return self._op_name
 
     @property
-    def op_tag(self) -> str:
-        return self._op_tag
+    def hub_op_id(self) -> str:
+        return self._hub_op_id
 
     @property
     def op_args(self) -> Dict[str, Any]:

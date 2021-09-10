@@ -54,7 +54,7 @@ class OperatorPool:
         # Load the operator if the computed key does not exist in the operator
         # dictinoary.
         if op_key not in self._all_ops:
-            op = self._op_loader.load_operator(task.op_tag, task.op_args)
+            op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
             op.key = op_key
         else:
             op = self._all_ops[op_key]

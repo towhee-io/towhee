@@ -59,6 +59,8 @@ class TaskExecutor(threading.Thread):
 
         # Continue execution until the run flag is externally set to false and the queue
         # is entirely empty of tasks.
+# TODO(fzliu): use ThreadPool or manually create multiple threads to handle
+# tasks which are I/O bound.
         while self._is_run or not self._task_queue.empty:
 
             # If there are no tasks in the queue, this might return `None` after
