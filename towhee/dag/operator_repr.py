@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import Dict
+import yaml
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
-#from towhee.dag.variable_repr import VariableRepr
-#from towhee.dag.variable_repr import VariableReprSet
 
 
 class OperatorRepr(BaseRepr):
@@ -30,26 +29,53 @@ class OperatorRepr(BaseRepr):
         df_out:
             This operator's output dataframe.
     """
-
-    def __init__(self, name: str, df_in: DataframeRepr, df_out: DataframeRepr):
+    def __init__(
+        self,
+        name: str,
+        dataframes: Dict[str, DataframeRepr],
+        src: str = None,
+    ):
         super().__init__(name)
-        self._df_in = df_in
-        self._df_out = df_out
-        self._iter_in = None
-        self._iter_out = None
+        self._inputs = {}
+        self._outputs = {}
+        if src:
+            self.from_yaml(src, dataframes)
 
     @property
-    def df_in(self):
-        return self._df_in
+    def inputs(self):
+        return self._inputs
 
     @property
-    def df_out(self):
-        return self._df_out
+    def outputs(self):
+        return self._outputs
 
-    @df_in.setter
-    def df_in(self, value: DataframeRepr):
+    @inputs.setter
+    def inputs(self, value: Dict[str, DataframeRepr]):
         self._df_in = value
 
-    @df_out.setter
-    def df_out(self, value: DataframeRepr):
+    @outputs.setter
+    def outputs(self, value: Dict[str, DataframeRepr]):
         self._df_out = value
+
+    def from_yaml(self, src: str, dataframes: Dict[str, DataframeRepr]):
+        """Import a YAML file decribing this operator.
+
+        Args:
+            src:
+                YAML file (pre-loaded as string) to import.
+
+            dataframes:
+                Dict with `DataframeRepr` objects as values to construct current
+                `OperatorRepr`
+        """
+        op = yaml.safe_load(src)
+        self._name = op['name']
+        for ins in op['inputs']:
+            self._inputs[ins['name']] = {}
+            self._inputs[ins['name']]['df'] = dataframes[ins['df']]
+            self._inputs[ins['name']]['idx'] = ins['col']
+        # output has only one dataframe
+        outs = op['outputs'][0]
+        self._outputs[outs['name']] = {}
+        self._outputs[outs['name']]['df'] = dataframes[outs['df']]
+        self._outputs[outs['name']]['idx'] = outs['col']

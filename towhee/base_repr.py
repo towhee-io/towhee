@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import types
-
-
 class BaseRepr:
     """Base representation from which all other representation objects inherit.
     Primarily implements automatic serialization into YAML/YAML-like string formats,
@@ -25,30 +22,32 @@ class BaseRepr:
         name:
             Name of the internal object described by this representation.
     """
-
-    def __init__(self, name: str):
-        self._name = name
+    def __init__(self, name: str = None):
+        if name:
+            self._name = name
 
     @property
     def name(self):
         return self._name
 
-    def serialize(self) -> str:
-        """Universal function used to serialize this representation.
+    @name.setter
+    def name(self, value):
+        self._name = value
 
-        Returns:
-            A string containing the serialized version of this representation. Example
-            output:
+    # def serialize(self) -> str:
+    #     """Universal function used to serialize this representation.
 
-            'VariableRepr:
-                name: variable
-                vtype: tensor
-                dtype: float'
-        """
-        out = self.__class__.__name___ + '\n'
-        for name in dir(self):
-            value = self.__getattribute__(name)
-            if name[0] != '_' and not isinstance(value, types.FunctionType):
-                value = value.__class__.__name__
-                out += name + ': ' + str(value) + '\n'
-        return out
+    #     Returns:
+    #         A string containing the serialized version of this representation. Example
+    #         output:
+    #             VariableRepr:
+    #                 vtype: tensor
+    #                 dtype: float'
+    #     """
+    #     out = self.__class__.__name___ + '\n'
+    #     for name in dir(self):
+    #         value = self.__getattribute__(name)
+    #         if name[0] != '_' and not isinstance(value, types.FunctionType):
+    #             value = value.__class__.__name__
+    #             out += name + ': ' + str(value) + '\n'
+    #     return out

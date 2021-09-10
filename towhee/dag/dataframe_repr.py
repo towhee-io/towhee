@@ -16,18 +16,17 @@
 # data1 = data0.map(op1)
 # data2 = data1.batch(op2, bs=64)
 
-
-from collections import OrderedDict
-from typing import Callable, NamedTuple
+import yaml
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
 
 
 class DataframeRepr(BaseRepr):
-    """`DataframeRepr` represents a single dataframe within a graph. A single dataframe
-    is composed of multiple individual variables, each of which is required in the next
-    operator stage within the graph.
+    """`DataframeRepr` represents a single dataframe within a graph.
+
+    A single dataframe is composed of multiple individual variables, each of which is
+    required in the next operator stage within the graph.
 
     Args:
         name:
@@ -35,13 +34,14 @@ class DataframeRepr(BaseRepr):
         vars:
             A list of variables that can be accessed from within the dataframe.
     """
-
-    def __init__(self, name: str):
+    def __init__(self, name: str = None, src: str = None):
         super().__init__(name)
         # `_columns` must be filled in after this representation is instantiated
-        self._columns = OrderedDict()
+        self._columns = []
+        if src:
+            self.from_yaml(src)
 
-    def __getitem__(self, key) -> VariableRepr:
+    def __getitem__(self, index: int) -> VariableRepr:
         """Access a variable representation via dictionary-like indexing.
 
         Args:
@@ -52,9 +52,9 @@ class DataframeRepr(BaseRepr):
             The variable corresponding to the specified key, or None if an invalid key
             was provided.
         """
-        return self._columns.get(key)
+        return self._columns[index]
 
-    def __setitem__(self, key: str, value: VariableRepr):
+    def __setitem__(self, index: int, value: VariableRepr):
         """Sets a single variable representation within the dataframe.
 
         Args:
@@ -63,32 +63,16 @@ class DataframeRepr(BaseRepr):
             value:
                 A pre-instantiated `VariableRepr` instance.
         """
-        self._columns[key] = value
+        self._columns[index] = value
 
-    def from_input_annotations(self, func: Callable):
-        """Parse variables from a function's input annotations.
-
-        Args:
-            func:
-        """
-        for (name, kind) in func.__annotations__.items():
-            # Ignore return types in annotation dictionary.
-            if name != 'return':
-                # TODO
-                self._columns[name] = str(kind)
-
-    def from_output_annotations(self, func: Callable):
-        """Parse variables from an operator's output annotations.
+    def from_yaml(self, src: str):
+        """Import a YAML file decribing this dataframe.
 
         Args:
-            func: Target operator function, for which the return value will be parsed
-            and formatted into values.
+            src:
+                YAML file (pre-loaded as string) to import.
         """
-        retval = func.__annotations__.get('return')
-        if isinstance(retval, NamedTuple):
-            for (name, kind) in retval.__annotations__.items():
-                # TODO
-                self._columns[name] = str(kind)
-        else:
-            raise TypeError(
-                'Operator function return value must be a `NamedTuple`.')
+        df = yaml.safe_load(src)
+        self._name = df['name']
+        for col in df['columns']:
+            self._columns.append(VariableRepr(col['vtype'], col['dtype']))

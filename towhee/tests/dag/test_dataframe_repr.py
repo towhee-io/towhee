@@ -12,41 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from typing import List, NamedTuple, Tuple
 import unittest
 
 from towhee.dag.dataframe_repr import DataframeRepr
 
-
-def test_op_a(a: str, b: int, c: List) -> NamedTuple:
-    retval = NamedTuple('data', [('d', List), ('e', Tuple)])
-    return retval(c, (a, b))
+# def test_op_a(a: str, b: int, c: List) -> NamedTuple:
+#     retval = NamedTuple('data', [('d', List), ('e', Tuple)])
+#     return retval(c, (a, b))
 
 
 class TestDataframeRepr(unittest.TestCase):
     """Basic test case for `DataframeRepr`.
     """
+    def test_init(self):
+        src = """
+            name: 'test_df_1'
+            columns:
+                -
+                    vtype: 'test_vtype_1'
+                    dtype: 'test_dtype_1'
+                -
+                    vtype: 'test_vtype_2'
+                    dtype: 'test_dtype_2'
+        """
+        # Create a `DataframeRepr` object from a string in YAML format
+        self.repr = DataframeRepr('test_df_1', src)
+        self.assertTrue(isinstance(self.repr, DataframeRepr))
 
-    def setUp(self):
-        self.repr = DataframeRepr('test')
+        # This dataframe has name `test_df_1`
+        self.assertEqual(self.repr.name, 'test_df_1')
 
-    def test_input_auto_annotate(self):
-        self.repr.from_input_annotations(test_op_a)
-        # TODO
-        self.assertTrue(isinstance(self.repr['a'], str))
-
-    def test_output_auto_annotate(self):
-        # self.repr.from_output_annotations(test_op_a)
-        # TODO
-        # self.assertTrue(isinstance("", str))
-        pass
-
-    def test_serialize(self):
-        # yaml = self.repr.serialize()
-        # TODO
-        # self.assertTrue(isinstance("", str))
-        pass
+        # The first column in the dataframe has vtype `test_vtype_1` and dtype `test_dtype_1`
+        self.assertEqual(self.repr[0].vtype, 'test_vtype_1')
+        self.assertEqual(self.repr[0].dtype, 'test_dtype_1')
 
 
 if __name__ == '__main__':
