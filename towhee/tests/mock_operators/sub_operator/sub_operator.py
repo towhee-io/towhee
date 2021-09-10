@@ -15,10 +15,10 @@
 
 from typing import NamedTuple
 
-from towhee.operator import OperatorBase, SharedType
+from towhee.operator import Operator, SharedType
 
 
-class Operator(OperatorBase):
+class SubOperator(Operator):
     """Subtract operator (used for unit test purposes only).
     """
 

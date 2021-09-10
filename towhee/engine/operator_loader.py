@@ -17,7 +17,7 @@ import importlib.util
 from pathlib import Path
 from typing import Any, Dict
 
-from towhee.operator.base import OperatorBase
+from towhee.operator import Operator
 
 
 class OperatorLoader:
@@ -37,7 +37,7 @@ class OperatorLoader:
             self._cache_path = Path(cache_path)
         self._cache_path = Path(cache_path)
 
-    def load_operator(self, function: str, args: Dict[str, Any]) -> OperatorBase:
+    def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
@@ -71,9 +71,10 @@ class OperatorLoader:
             spec.loader.exec_module(module)
 
             # Instantiate the operator object and return it to the caller for
-            # `load_operator`. By convention, the operator class is simply called
-            # `Operator`, and inherits from `OperatorBase`.
-            return module.Operator(**args)
+            # `load_operator`. By convention, the operator class is simply the CamelCase
+            # version of the snake_case operator.
+            op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+            return getattr(module, op_cls)(**args)
 
         else:
             raise FileNotFoundError('Operator definition not found')

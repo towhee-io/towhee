@@ -16,7 +16,7 @@
 import unittest
 from pathlib import Path
 
-from towhee.operator.base import OperatorBase
+from towhee.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
 from towhee.engine.task import Task
 
@@ -35,14 +35,14 @@ class TestOperatorPool(unittest.TestCase):
 
     def test_acquire_release(self):
 
-        op_func = 'mock_operators/add_operator'
-        task = Task('test', op_func, {'factor': 0}, (1), 0)
+        op_tag = 'mock_operators/add_operator'
+        task = Task('test', op_tag, {'factor': 0}, (1), 0)
 
         # Acquire the operator.
         op = self._op_pool.acquire_op(task)
 
         # Perform some simple operations.
-        self.assertTrue(isinstance(op, OperatorBase))
+        self.assertTrue(isinstance(op, Operator))
         self.assertEqual(op(1).sum, 1)
 
         # Release and re-acquire the operator.

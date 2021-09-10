@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from towhee.operator.base import OperatorBase
+from towhee.operator import Operator
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.engine.task import Task
 
@@ -31,7 +31,7 @@ class OperatorPool:
     def available_ops(self):
         return self._all_ops.keys()
 
-    def acquire_op(self, task: Task) -> OperatorBase:
+    def acquire_op(self, task: Task) -> Operator:
         """Given a `Task`, instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
@@ -42,7 +42,7 @@ class OperatorPool:
                 The operator's initialization arguments, if any.
 
         Returns:
-            (`towhee.OperatorBase`)
+            (`towhee.operator.Operator`)
                 The operator instance reserved for the caller.
         """
 
@@ -54,7 +54,7 @@ class OperatorPool:
         # Load the operator if the computed key does not exist in the operator
         # dictinoary.
         if op_key not in self._all_ops:
-            op = self._op_loader.load_operator(task.op_func, task.op_args)
+            op = self._op_loader.load_operator(task.op_tag, task.op_args)
             op.key = op_key
         else:
             op = self._all_ops[op_key]
@@ -65,12 +65,12 @@ class OperatorPool:
 
         return op
 
-    def release_op(self, op: OperatorBase):
+    def release_op(self, op: Operator):
         """Releases the specified operator and all associated resources back to the
         `OperatorPool`.
 
         Args:
-            op: (`towhee.OperatorBase`)
-                `OperatorBase` instance to add back into the operator pool.
+            op: (`towhee.Operator`)
+                `Operator` instance to add back into the operator pool.
         """
         self._all_ops[op.key] = op

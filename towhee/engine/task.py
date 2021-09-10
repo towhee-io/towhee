@@ -16,7 +16,7 @@
 import timeit
 from typing import Any, Callable, Dict, List, NamedTuple
 
-from towhee.operator.base import OperatorBase
+from towhee.operator import Operator
 
 
 class Task:
@@ -29,6 +29,13 @@ class Task:
             Instead of each task executing its own operator, the Task maintains a
             operator name which can be used by executors to lookup the proper `Operator`
             to execute.
+        op_tag:
+            Each operator in the operator hub is tagged with a string that describes its
+            functionality.
+        op_args:
+            Input initialization arguments to the operator. Operators with the same tag
+            but with different initialization arguments are considered separate
+            operators within the same graph.
         inputs:
             A dictionary of keyward arguments which serve as inputs to the operator
             call.
@@ -37,10 +44,10 @@ class Task:
             are indexed individually for each operation performed, starting from 0.
     """
 
-    def __init__(self, op_name: str, op_func: str, op_args: Dict[str, Any],
+    def __init__(self, op_name: str, op_tag: str, op_args: Dict[str, Any],
                  inputs: Dict[str, Any], task_idx: int):
         self._op_name = op_name
-        self._op_func = op_func
+        self._op_tag = op_tag
         self._op_args = op_args
         self._inputs = inputs
         self._task_idx = task_idx
@@ -57,8 +64,8 @@ class Task:
         return self._op_name
 
     @property
-    def op_func(self) -> str:
-        return self._op_func
+    def op_tag(self) -> str:
+        return self._op_tag
 
     @property
     def op_args(self) -> Dict[str, Any]:
@@ -115,7 +122,7 @@ class Task:
         for handler in handlers:
             handler(self)
 
-    def execute(self, op: OperatorBase):
+    def execute(self, op: Operator):
         """Given a corresponding `Operator` from the `TaskExecutor`, run the task.
         """
         self._execute_handlers(self._on_start_handlers)
