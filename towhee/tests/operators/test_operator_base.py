@@ -20,7 +20,7 @@ from towhee.tests.mock_operators import ADD_OPERATOR_PATH, load_local_operator
 from towhee.operator import SharedType
 
 
-class TestOperatorBase(unittest.TestCase):
+class TestOperator(unittest.TestCase):
     """
     Simple operator test
     """

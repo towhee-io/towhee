@@ -26,12 +26,12 @@ from enum import Enum
 SharedType = Enum("SharedType", ("NotShareable", "Shareable"))
 
 
-class OperatorBase(ABC):
+class Operator(ABC):
     """
     Operator base class, implements __init__ and __call__,
 
     Examples:
-        class AddOperator(OperatorBase):
+        class AddOperator(Operator):
             def __init__(self, factor: int):
                 self._factor = factor
 
@@ -77,7 +77,7 @@ class OperatorBase(ABC):
         return SharedType.NotShared
 
 
-class TorchNNOperatorBase(OperatorBase):
+class PyTorchNNOperator(Operator):
     """
     PyTorch model operator base
     """

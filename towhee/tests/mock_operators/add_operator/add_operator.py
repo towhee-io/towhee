@@ -14,10 +14,10 @@
 
 
 from typing import NamedTuple
-from towhee.operator import OperatorBase, SharedType
+from towhee.operator import Operator, SharedType
 
 
-class AddOperator(OperatorBase):
+class AddOperator(Operator):
     """
     Stateful operator
     """
