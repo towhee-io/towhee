@@ -13,11 +13,23 @@
 # limitations under the License.
 
 
-class OperatorLoader:
-    """
-    Load operator from hub.
+from typing import NamedTuple
+
+from towhee.operator import Operator, SharedType
+
+
+class SubOperator(Operator):
+    """Subtract operator (used for unit test purposes only).
     """
 
-    @staticmethod
-    def pull(url: str):
-        raise NotImplementedError
+    def __init__(self):
+        super().__init__()
+        self.key = ()
+
+    def __call__(self, a: int, b: int) -> NamedTuple('Outputs', [('diff', int)]):
+        Outputs = NamedTuple('Outputs', [('diff', int)])
+        return Outputs(a - b)
+
+    @property
+    def shared_type(self):
+        return SharedType.Shareable

@@ -12,24 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import unittest
 
-from typing import NamedTuple
-from towhee.operator import Operator, SharedType
+from towhee.dataframe import DataFrame, get_dataframe_iter, IterType
 
 
-class AddOperator(Operator):
-    """
-    Stateful operator
-    """
-
-    def __init__(self, factor: int) -> None:
-        super().__init__()
-        self._factor = factor
-
-    def __call__(self, num: int) -> NamedTuple("Outputs", [("sum", int)]):
-        Outputs = NamedTuple("Outputs", [("sum", int)])
-        return Outputs(self._factor + num)
-
-    @property
-    def shared_type(self):
-        return SharedType.Shareable
+class TestDataFrame(unittest.TestCase):
+    def test_normal(self):
+        df = DataFrame("test")
+        get_dataframe_iter(df, IterType.Map)

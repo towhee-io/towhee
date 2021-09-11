@@ -13,70 +13,125 @@
 # limitations under the License.
 
 
-from towhee.operator.operator import Operator
-from towhee.engine.graph_context import GraphContext
+import timeit
+from typing import Any, Callable, Dict, List, NamedTuple
+
+from towhee.operator import Operator
 
 
 class Task:
-    """
-    A task is a wrapper of an Operator call.
+    """Tasks represent containers for which input, output, and operator data is stored.
+    Tasks themselves have no functioning logic, and merely serve as a container for the
+    `TaskExecutor`.
+
+    Args:
+        op_name:
+            Instead of each task executing its own operator, the Task maintains a
+            operator name which can be used by executors to lookup the proper `Operator`
+            to execute.
+        hub_op_id:
+            Each operator in the operator hub is tagged with a string that describes its
+            functionality.
+        op_args:
+            Input initialization arguments to the operator. Operators with the same tag
+            but with different initialization arguments are considered separate
+            operators within the same graph.
+        inputs:
+            A dictionary of keyward arguments which serve as inputs to the operator
+            call.
+        task_idx:
+            A new task will be constructed for each operator call. The tasks
+            are indexed individually for each operation performed, starting from 0.
     """
 
-    def __init__(self, graph_ctx: GraphContext, task_idx: int,
-                 inputs: dict, op: Operator = None, profiling_on=False):
-        """
+    def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, Any],
+                 inputs: Dict[str, Any], task_idx: int):
+        self._op_name = op_name
+        self._hub_op_id = hub_op_id
+        self._op_args = op_args
+        self._inputs = inputs
+        self._task_idx = task_idx
+
+        self._outputs = None
+        self._runtime = -1
+
+        self._on_ready_handlers = []
+        self._on_start_handlers = []
+        self._on_finish_handlers = []
+
+    @property
+    def op_name(self) -> str:
+        return self._op_name
+
+    @property
+    def hub_op_id(self) -> str:
+        return self._hub_op_id
+
+    @property
+    def op_args(self) -> Dict[str, Any]:
+        return self._op_args
+
+    @property
+    def inputs(self) -> Dict[str, Any]:
+        return self._inputs
+
+    @property
+    def outputs(self) -> NamedTuple:
+        return self._outputs
+
+    @property
+    def runtime(self) -> float:
+        return self._runtime
+
+    def add_ready_handler(self, handler: Callable):
+        """Adds a ready handler to this `Task` object.
+
         Args:
-            graph_ctx: the GraphContext containing this Task
-            task_idx: a new task will be constructed for each operator call. The tasks
-                are indexed individually on each opeartor, starting from 0.
-            op: on which operator the task will perform.
-            inputs: the inputs of the operator call. It is a list of arguments, which
-                has the same argument order of Operator.__call__.
-            profiling_on: open the task profiling or not. If open, the time consumption
-                and the resource consumption will be monitored.
+            handler: (`typing.Callable`)
+                Ready handler that will be called once the task is ready to be executed.
         """
-        self.task_idx = task_idx
-        self.op = op
-        self.inputs = inputs
+        self._on_ready_handlers.append(handler)
 
-        self._graph_ctx = graph_ctx
-        self.on_ready_handlers = []
-        self.on_start_handlers = []
-        self.on_finish_handlers = []
+    def add_start_handler(self, handler: Callable):
+        """Adds a start handler to this `Task` object.
 
-        if profiling_on:
-            self.time_cost = 0
-        raise NotImplementedError
-
-    def _on_ready(self):
+        Args:
+            handler: (`typing.Callable`)
+                Handler that will be called prior to execution.
         """
-        Callback when a task is ready.
+        self._on_start_handlers.append(handler)
+
+    def add_finish_handler(self, handler: Callable):
+        """Adds a finish handler to this `Task` object.
+
+        Args:
+            handler: (`typing.Callable`)
+                Handler that will be called when the `outputs` attribute is set.
         """
-        for handler in self.on_ready_handlers:
+        self._on_finish_handlers.append(handler)
+
+    def _execute_handlers(self, handlers: List[Callable]):
+        """Execute handlers defined in `handlers`. These should be a list of callables
+        which take this `Task` object as its input.
+
+        Args:
+            handlers: (`list[typing.Callable]`)
+                A list of functions to be executed. Should be one of
+                `_on_ready_handlers`, `_on_start_handlers`, and `_on_finish_handlers`.
+        """
+        for handler in handlers:
             handler(self)
 
-        raise NotImplementedError
-
-    def _on_start(self) -> None:
+    def execute(self, op: Operator):
+        """Given a corresponding `Operator` from the `TaskExecutor`, run the task.
         """
-        Callback before the execution of the task.
-        """
-        raise NotImplementedError
+        self._execute_handlers(self._on_start_handlers)
+        start = timeit.default_timer()
 
-    def _on_finish(self):
-        """
-        Callback after the execution of the task.
-        """
-        raise NotImplementedError
+        # Run the operator. The graph provided to the engine should already have done
+        # graph validity checks, so further input/output argument checks are
+        # unnecessary.
+        self._outputs = op(**self._inputs)
 
-    def run(self):
-        """
-        Run the task
-        """
-        self._on_start()
-
-        self.outputs = self.op(**self.inputs)
-
-        self._on_finsh()
-
-        raise NotImplementedError
+        self._runtime = timeit.default_timer() - start
+        self._execute_handlers(self._on_finish_handlers)

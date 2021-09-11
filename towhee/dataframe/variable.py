@@ -13,8 +13,7 @@
 # limitations under the License.
 
 
-from towhee.dataframe.dataframe import DataFrame
-from towhee.engine.operator_context import OperatorContext
+from typing import Optional
 
 
 class Variable:
@@ -25,13 +24,15 @@ class Variable:
     Args:
         name:
             Variable name; should be identical to its representation counterpart.
-        df:
-            The DataFrame this Variable belongs to.
-        op_ctx:
-            The OperatorContext this Variable belongs to.
+
+        vtype:
+            type name: int, float, str, bytes ...
+        value:
+            variable data
+
     """
 
-    def __init__(self, name: str, df: DataFrame, op_ctx: OperatorContext):
+    def __init__(self, vtype: str, value: any, name: Optional[str] = None):
+        self._vtype = vtype
+        self._value = value
         self._name = name
-        self._df = df
-        self._op_ctx = op_ctx
