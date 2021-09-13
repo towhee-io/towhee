@@ -28,6 +28,12 @@ class GraphRepr(BaseRepr):
     A graph contains individual subcomponents, including Operators, Dataframes, and
     Variables. Graph representations are used during execution to load functions and
     pass data to the correct operators.
+
+    Args:
+        name(`str`):
+            The representation name.
+        file_or_url(`str`):
+            The file or remote url that stores the information of this representation.
     """
     def __init__(self, name: str, file_or_url: str = None):
         super().__init__(name)
@@ -71,13 +77,13 @@ class GraphRepr(BaseRepr):
         # load name from YAML
         self._name = graph_dict['graph']['name']
 
-        # load dataframes from YAML
+        # load dataframes
         for df in graph_dict['dataframes']:
-            self._dataframes[df['name']] = DataframeRepr(df['name'], str(df))
+            self._dataframes[df['name']] = DataframeRepr(df['name'], yaml.safe_dump(df, default_flow_style=False))
 
-        # load operators from YAML
+        # load operators
         for op in graph_dict['operators']:
-            self._operators[op['name']] = OperatorRepr(op['name'], self._dataframes, str(op))
+            self._operators[op['name']] = OperatorRepr(op['name'], self._dataframes, yaml.safe_dump(op, default_flow_style=False))
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.

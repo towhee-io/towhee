@@ -31,8 +31,8 @@ class DataframeRepr(BaseRepr):
     Args:
         name:
             The representation name.
-        vars:
-            A list of variables that can be accessed from within the dataframe.
+        src:
+            The information of this dataframe.
     """
     def __init__(self, name: str = None, src: str = None):
         super().__init__(name)

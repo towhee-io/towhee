@@ -34,20 +34,14 @@ class BaseRepr:
     def name(self, value):
         self._name = value
 
-    # def serialize(self) -> str:
-    #     """Universal function used to serialize this representation.
+    def serialize(self) -> str:
+        """Universal function used to serialize this representation.
 
-    #     Returns:
-    #         A string containing the serialized version of this representation. Example
-    #         output:
-    #             VariableRepr:
-    #                 vtype: tensor
-    #                 dtype: float'
-    #     """
-    #     out = self.__class__.__name___ + '\n'
-    #     for name in dir(self):
-    #         value = self.__getattribute__(name)
-    #         if name[0] != '_' and not isinstance(value, types.FunctionType):
-    #             value = value.__class__.__name__
-    #             out += name + ': ' + str(value) + '\n'
-    #     return out
+        Returns:
+            A string containing the serialized version of this representation. Example
+            output:
+                VariableRepr:
+                    vtype: tensor
+                    dtype: float'
+        """
+        raise NotImplementedError
