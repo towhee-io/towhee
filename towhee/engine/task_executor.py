@@ -22,21 +22,36 @@ from towhee.engine.task_queue import TaskQueue
 
 
 class TaskExecutor(threading.Thread):
-    """
-    A FIFO task executor.
-    Each device has one TaskExecutor.
+    """A FIFO task executor. Each device has one TaskExecutor.
+
+    Args:
+        name: (`str`)
+            Name of the device for which the executor will run. Example device name:
+                dev_name_0 = 'cpu:0'
+                dev_name_1 = 'gpu:0'
+        cache_path: (`str`)
+            Local path for which operators are stored. Defaults to
+            `$HOME/.towhee/cache`.
     """
 
     def __init__(self, name: str, cache_path: str = None):
         super().__init__()
         self._name = name
         self._task_queue = TaskQueue()
-        self._op_pool = OperatorPool(cache_path=cache_path)
+        self._op_pool = OperatorPool(zcache_path=cache_path)
         self._is_run = True
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def num_tasks(self):
+        return self._task_queue.qsize()
+
+    @property
+    def available_ops(self):
+        return self._op_pool.available_ops()
 
     # def set_op_parallelism(self, name: str, parallel: int = 1):
     #     """
@@ -59,8 +74,8 @@ class TaskExecutor(threading.Thread):
 
         # Continue execution until the run flag is externally set to false and the queue
         # is entirely empty of tasks.
-# TODO(fzliu): use ThreadPool or manually create multiple threads to handle
-# tasks which are I/O bound.
+        # TODO(fzliu): use ThreadPool or manually create multiple threads to handle
+        # tasks which are I/O bound.
         while self._is_run or not self._task_queue.empty:
 
             # If there are no tasks in the queue, this might return `None` after
