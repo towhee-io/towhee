@@ -11,12 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from towhee.array.array import Array
-from towhee.array.utils import full
-
-
-__all__ = [
-    'Array',
-    'full'
-]
