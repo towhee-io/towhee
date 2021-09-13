@@ -13,7 +13,7 @@ jobs:
       run: |
         pip install coverage
         coverage erase
-        coverage run setup.py test
+        coverage run setup.py test -s towhee.tests
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
