@@ -18,19 +18,13 @@ import hashlib
 
 
 class Callstack:
-    """Callstack
-    """
-
-    def __init__(self, ignore: int = 0):
-        """
-        Initialize a Callstack.
+    """A 'Callstack' object contains the working frames at the moment.
 
         Args:
             `ignore (int)`: The number of frames to ignore on the top of the callstack.
+    """
+    def __init__(self, ignore: int = 0):
 
-        Returns:
-            A Callstack object ignoring a certain number of frames on the top.
-        """
         self.frames = inspect.stack()
         # ignore the frame of Callstack.__init__
         ignore += 1
@@ -40,8 +34,7 @@ class Callstack:
         self.size = len(self.frames)
 
     def num_frames(self) -> int:
-        """
-        Get the number of frames.
+        """Get the number of frames.
 
         Returns:
             The size of current stack.
@@ -49,9 +42,7 @@ class Callstack:
         return self.size
 
     def find_func(self, func_name: str) -> Optional[int]:
-        """
-        Given a function name, find the first-matched and outermost frame from current
-        stack.
+        """Given a function name, find the first-matched and outermost frame from current stack.
 
         Args:
             `func_name (str)`: The function name to find.
@@ -66,8 +57,7 @@ class Callstack:
         return None
 
     def hash(self, start: int = None, end: int = None, items: List[str] = None) -> str:
-        """
-        Get the hash value of the attributes contained in `items` between index `start`
+        """Get the hash value of the attributes contained in `items` between index `start`
         and `end` (includes `start`, excludes `end`).
 
         Args:
@@ -95,17 +85,11 @@ class Callstack:
         end = end or self.size
 
         if end > self.size or end <= 0 or start >= self.size or start < 0:
-            raise IndexError(
-                f"index range [{start}, {end}) out of frame range"
-                f"[0, {self.size})"
-            )
+            raise IndexError(f"index range [{start}, {end}) out of frame range" f"[0, {self.size})")
         if start >= end:
-            raise IndexError(
-                f"end = {end} is less than or equal to start = {start}")
+            raise IndexError(f"end = {end} is less than or equal to start = {start}")
 
-        full_item = {
-            "filename", "lineno", "function", "code_context", "position", "lasti"
-        }
+        full_item = {"filename", "lineno", "function", "code_context", "position", "lasti"}
         if not set(items).issubset(set(full_item)):
             invalid_item = set(items) - (set(items) & full_item)
             raise ValueError(f"{invalid_item} not supported")
@@ -115,10 +99,7 @@ class Callstack:
             frame_dict = frame._asdict()
             frame_dict["position"] = i + start
             frame_dict["lasti"] = frame_dict["frame"].f_lasti
-            frame_dict["code_context"] = (
-                "".join(frame_dict["code_context"]) if frame_dict["code_context"]
-                else ""
-            )
+            frame_dict["code_context"] = ("".join(frame_dict["code_context"]) if frame_dict["code_context"] else "")
             for item in items:
                 md5.update(str(frame_dict[item]).encode("utf-8"))
         return md5.hexdigest()
