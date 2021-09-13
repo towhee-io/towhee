@@ -43,7 +43,7 @@ class GraphRepr(BaseRepr):
         if file_or_url and os.path.isfile(file_or_url):
             with open(file_or_url, 'r', encoding='utf-8') as f:
                 self._src = yaml.safe_load(f)
-            self.from_yaml(self._src)
+            self.from_yaml(yaml.safe_dump(self._src, default_flow_style=False))
         # if `file` is a remote url
         elif file_or_url:
             self._src = requests.get(file_or_url).content.decode('utf-8')
