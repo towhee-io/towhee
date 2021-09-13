@@ -13,14 +13,10 @@
 # limitations under the License.
 
 from towhee.dataframe.dataframe import DataFrame
-from towhee.dataframe._iterator import MapIterator, get_dataframe_iter, IterType
 from towhee.dataframe.variable import Variable
 
 
 __all__ = [
     'DataFrame',
-    'MapIterator',
-    'Variable',
-    'get_dataframe_iter',
-    'IterType'
+    'Variable'
 ]
