@@ -166,14 +166,29 @@ class MapIterator(DataFrameIterator):
 
     def __next__(self) -> List:
         with self._lock:
-            i = self._cur_index
-            # have next row
-            if i < self._df_ref.size:
-                data = [col[i] for col in self._df_ref.columns]
-                return data
-            # wait for new rows or iteration ends
-            if not self._df_ref.wait_append_if_not_sealed():
+            # if there is a ready row in df
+            if self._has_next_row():
+                return self._get_next_row()
+
+            # wait for new rows
+            if self._df_ref.wait_append_if_not_sealed():
+                return self._get_next_row()
+            # df is sealed, see if there are rows left
+            elif self._has_next_row():
+                return self._get_next_row()
+            # the iteration ends
+            else:
                 raise StopIteration
+
+    def _has_next_row(self):
+        return self._cur_index < self._df_ref.size
+
+    def _get_next_row(self):
+        i = self._cur_index
+        # next row is ready
+        data = [col[i] for col in self._df_ref.columns]
+        self._cur_index += 1
+        return data
 
 
 class BatchIterator:
