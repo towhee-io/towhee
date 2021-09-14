@@ -59,6 +59,7 @@ class PyTorchImageDataset(Dataset):
         for i in range(len(breed_list)):
             dic[breed_list[i]] = i
         self.labels = [dic[categories[i]] for i in range(len(categories))]
+        self.num_classes = len(breed_list)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
         label = self.labels[index]
