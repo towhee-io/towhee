@@ -96,7 +96,7 @@ class DataFrame:
     def size(self):
         if not self._columns:
             return 0
-        return self._columns[0].size
+        return min([col.size for col in self._columns])
 
     def is_empty(self):
         return not self.size
@@ -112,6 +112,20 @@ class DataFrame:
     def is_sealed(self) -> bool:
         return self._sealed
 
+    def wait_append_if_not_sealed(self) -> bool:
+        """If new rows are appended to the `DataFrame`, the callers will be notified
+           via `self_.wcond`.
+        Return: (`bool`)
+            `True` if the `DataFrame` is NOT sealed
+        """
+        self._wcond.acquire()
+        if not self.is_sealed():
+            self._wcond.wait()
+            return True
+        else:
+            self._wcond.release()
+            return False
+
     def map_iter(self):
         it = MapIterator(self, self._wcond)
         self._iters.append(it)
@@ -125,12 +139,9 @@ class DataFrameIterator:
     Args:
         df: (`DataFrame`)
             The dataframe to iterate over.
-        cond: (`threading.Condition`)
-            If new rows are appened to `df`, iterators will be notified via `cond`.
     """
-    def __init__(self, df: DataFrame, cond: threading.Condition):
+    def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
-        self._cond = cond
 
     def __iter__(self):
         return self
@@ -145,30 +156,22 @@ class MapIterator(DataFrameIterator):
     Args:
         df: (`DataFrame`)
             The dataframe to iterate over.
-        cond: (`threading.Condition`)
-            If new rows are appened to `df`, iterators will be notified via `cond`.
     """
-    def __init__(self, df: DataFrame, cond: threading.Condition):
-        super().__init__(df, cond)
+    def __init__(self, df: DataFrame):
+        super().__init__(df)
         self._lock = threading.Lock()
         self._cur_index = 0
 
     def __next__(self) -> List:
         with self._lock:
             i = self._cur_index
-            self._cond.acquire()
             # have next row
             if i < self._df_ref.size:
-                self._cond.release()
                 data = [col[i] for col in self._df_ref.columns]
                 return data
-            # iteration ends
-            elif self._df_ref.is_sealed:
-                self._cond.release()
+            # wait for new rows or iteration ends
+            if not self._df_ref.wait_append_if_not_sealed():
                 raise StopIteration
-            # wait for new rows
-            else:
-                self._cond.wait()
 
 
 class BatchIterator:
