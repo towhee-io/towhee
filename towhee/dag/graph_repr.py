@@ -35,19 +35,10 @@ class GraphRepr(BaseRepr):
         file_or_url(`str`):
             The file or remote url that stores the information of this representation.
     """
-    def __init__(self, name: str, file_or_url: str = None):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
         self._operators = {}
         self._dataframes = {}
-        # if `file` is a loacl file
-        if file_or_url and os.path.isfile(file_or_url):
-            with open(file_or_url, 'r', encoding='utf-8') as f:
-                self._src = yaml.safe_load(f)
-            self.from_yaml(yaml.safe_dump(self._src, default_flow_style=False))
-        # if `file` is a remote url
-        elif file_or_url:
-            self._src = requests.get(file_or_url).content.decode('utf-8')
-            self.from_yaml(self._src)
 
     @property
     def operators(self) -> Dict[str, OperatorRepr]:
@@ -57,13 +48,40 @@ class GraphRepr(BaseRepr):
     def dataframes(self) -> Dict[str, DataframeRepr]:
         return self._dataframes
 
-    def from_yaml(self, src: str):
+    @operators.setter
+    def operators(self, name: str, value: OperatorRepr):
+        self._operators[name] = value
+
+    @dataframes.setter
+    def dataframes(self, name: str, value: DataframeRepr):
+        self._dataframes[name] = value
+
+    @staticmethod
+    def load_file(file_or_src: str):
+        # we support file from local file/HTTP/HDFS
+        # if `file_or_src` is a loacl file
+        if os.path.isfile(file_or_src):
+            with open(file_or_src, 'r', encoding='utf-8') as f:
+                src = yaml.safe_dump(yaml.safe_load(f), default_flow_style=False)
+            return src
+        # if `file_or_src` from HTTP
+        elif file_or_src.lower().startswith('http'):
+            src = requests.get(file_or_src).content.decode('utf-8')
+            return src
+        # if `file_or_src` is YAMl (pre-loaded as str)
+        return file_or_src
+
+    @staticmethod
+    def from_yaml(file_or_src: str):
         """Import a YAML file describing this graph.
 
         Args:
             src:
                 YAML file (pre-loaded as string) to import.
         """
+        graph = GraphRepr()
+        src = graph.load_file(file_or_src)
+
         # load YAML file as a dictionray
         graph_dict = yaml.safe_load(src)
 
@@ -74,16 +92,18 @@ class GraphRepr(BaseRepr):
         if not essentials.issubset(set(graph_dict.keys())):
             raise ValueError('src cannot descirbe a DAG in Towhee')
 
-        # load name from YAML
-        self._name = graph_dict['graph']['name']
+        # load name
+        graph.name = graph_dict['graph']['name']
 
         # load dataframes
         for df in graph_dict['dataframes']:
-            self._dataframes[df['name']] = DataframeRepr(df['name'], yaml.safe_dump(df, default_flow_style=False))
+            graph.dataframes[df['name']] = DataframeRepr.from_yaml(yaml.safe_dump(df, default_flow_style=False))
 
         # load operators
         for op in graph_dict['operators']:
-            self._operators[op['name']] = OperatorRepr(op['name'], self._dataframes, yaml.safe_dump(op, default_flow_style=False))
+            graph.operators[op['name']] = OperatorRepr.from_yaml(yaml.safe_dump(op, default_flow_style=False), graph.dataframes)
+
+        return graph
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.

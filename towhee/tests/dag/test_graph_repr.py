@@ -25,10 +25,7 @@ class TestGraphRepr(unittest.TestCase):
     """
     def test_init(self):
         # Instantiate a graph representation
-        self.repr = GraphRepr('test')
-
-        # The name of the instance is `test`
-        self.assertEqual(self.repr.name, 'test')
+        self.repr = GraphRepr()
 
         # `operators` and `dataframes` should be dict type
         self.assertTrue(isinstance(self.repr.operators, dict))
@@ -108,8 +105,8 @@ class TestGraphRepr(unittest.TestCase):
                             vtype: 'test_vtype_4'
                             dtype: 'test_dtype_4'
         """
-        self.repr = GraphRepr('test')
-        self.repr.from_yaml(src)
+        # self.repr = GraphRepr('test')
+        self.repr = GraphRepr.from_yaml(src)
         df = self.repr.dataframes
         op = self.repr.operators
 
@@ -129,8 +126,8 @@ class TestGraphRepr(unittest.TestCase):
 
         # In this case, `test_df_1` has two columns, each columns is a `VariableRepr` object
         # The columns are stored in a list
-        self.assertTrue(isinstance(df['test_df_1'][0], VariableRepr))
-        self.assertTrue(isinstance(df['test_df_1'][1], VariableRepr))
+        self.assertTrue(isinstance(df['test_df_1'].columns[0], VariableRepr))
+        self.assertTrue(isinstance(df['test_df_1'].columns[1], VariableRepr))
 
         # In this case, `op` contains two operators, namely `test_op_1` and `test_op_2`
         self.assertTrue('test_op_1' in op.keys())

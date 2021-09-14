@@ -16,15 +16,16 @@ import unittest
 
 from towhee.dag.dataframe_repr import DataframeRepr
 
-# def test_op_a(a: str, b: int, c: List) -> NamedTuple:
-#     retval = NamedTuple('data', [('d', List), ('e', Tuple)])
-#     return retval(c, (a, b))
-
 
 class TestDataframeRepr(unittest.TestCase):
     """Basic test case for `DataframeRepr`.
     """
     def test_init(self):
+        # Create a `DataframeRepr` object from a string in YAML format
+        self.repr = DataframeRepr()
+        self.assertTrue(isinstance(self.repr, DataframeRepr))
+
+    def test_yaml_import(self):
         src = """
             name: 'test_df_1'
             columns:
@@ -35,16 +36,10 @@ class TestDataframeRepr(unittest.TestCase):
                     vtype: 'test_vtype_2'
                     dtype: 'test_dtype_2'
         """
-        # Create a `DataframeRepr` object from a string in YAML format
-        self.repr = DataframeRepr('test_df_1', src)
-        self.assertTrue(isinstance(self.repr, DataframeRepr))
-
-        # This dataframe has name `test_df_1`
-        self.assertEqual(self.repr.name, 'test_df_1')
-
+        self.repr = DataframeRepr.from_yaml(src)
         # The first column in the dataframe has vtype `test_vtype_1` and dtype `test_dtype_1`
-        self.assertEqual(self.repr[0].vtype, 'test_vtype_1')
-        self.assertEqual(self.repr[0].dtype, 'test_dtype_1')
+        self.assertEqual(self.repr.columns[0].vtype, 'test_vtype_1')
+        self.assertEqual(self.repr.columns[0].dtype, 'test_dtype_1')
 
 
 if __name__ == '__main__':

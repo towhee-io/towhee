@@ -13,6 +13,8 @@
 # limitations under the License.
 from typing import Dict
 import yaml
+import requests
+import os
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
@@ -29,17 +31,10 @@ class OperatorRepr(BaseRepr):
         df_out:
             This operator's output dataframe.
     """
-    def __init__(
-        self,
-        name: str,
-        dataframes: Dict[str, DataframeRepr],
-        src: str = None,
-    ):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
         self._inputs = {}
         self._outputs = {}
-        if src:
-            self.from_yaml(src, dataframes)
 
     @property
     def inputs(self):
@@ -51,13 +46,29 @@ class OperatorRepr(BaseRepr):
 
     @inputs.setter
     def inputs(self, value: Dict[str, DataframeRepr]):
-        self._df_in = value
+        self._inputs = value
 
     @outputs.setter
     def outputs(self, value: Dict[str, DataframeRepr]):
-        self._df_out = value
+        self._outputs = value
 
-    def from_yaml(self, src: str, dataframes: Dict[str, DataframeRepr]):
+    @staticmethod
+    def load_file(file_or_src: str):
+        # we support file from local file/HTTP/HDFS
+        # if `file_or_src` is a loacl file
+        if os.path.isfile(file_or_src):
+            with open(file_or_src, 'r', encoding='utf-8') as f:
+                src = yaml.safe_dump(yaml.safe_load(f), default_flow_style=False)
+            return src
+        # if `file_or_src` from HTTP
+        elif file_or_src.lower().startswith('http'):
+            src = requests.get(file_or_src).content.decode('utf-8')
+            return src
+        # if `file_or_src` is YAMl (pre-loaded as str)
+        return file_or_src
+
+    @staticmethod
+    def from_yaml(file_or_src: str, dataframes: Dict[str, DataframeRepr]):
         """Import a YAML file decribing this operator.
 
         Args:
@@ -68,14 +79,20 @@ class OperatorRepr(BaseRepr):
                 Dict with `DataframeRepr` objects as values to construct current
                 `OperatorRepr`
         """
+        operator = OperatorRepr()
+
+        src = operator.load_file(file_or_src)
         op = yaml.safe_load(src)
-        self._name = op['name']
+
+        operator.name = op['name']
         for ins in op['inputs']:
-            self._inputs[ins['name']] = {}
-            self._inputs[ins['name']]['df'] = dataframes[ins['df']]
-            self._inputs[ins['name']]['idx'] = ins['col']
+            operator.inputs[ins['name']] = {}
+            operator.inputs[ins['name']]['df'] = dataframes[ins['df']]
+            operator.inputs[ins['name']]['idx'] = ins['col']
         # output has only one dataframe
         outs = op['outputs'][0]
-        self._outputs[outs['name']] = {}
-        self._outputs[outs['name']]['df'] = dataframes[outs['df']]
-        self._outputs[outs['name']]['idx'] = outs['col']
+        operator.outputs[outs['name']] = {}
+        operator.outputs[outs['name']]['df'] = dataframes[outs['df']]
+        operator.outputs[outs['name']]['idx'] = outs['col']
+
+        return operator

@@ -17,6 +17,8 @@
 # data2 = data1.batch(op2, bs=64)
 
 import yaml
+import requests
+import os
 
 from towhee.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
@@ -34,45 +36,53 @@ class DataframeRepr(BaseRepr):
         src:
             The information of this dataframe.
     """
-    def __init__(self, name: str = None, src: str = None):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
         # `_columns` must be filled in after this representation is instantiated
         self._columns = []
-        if src:
-            self.from_yaml(src)
 
-    def __getitem__(self, index: int) -> VariableRepr:
-        """Access a variable representation via dictionary-like indexing.
+    @property
+    def columns(self):
+        return self._columns
 
-        Args:
-            key:
-                Name of the variable representation to access.
-
-        Returns:
-            The variable corresponding to the specified key, or None if an invalid key
-            was provided.
-        """
-        return self._columns[index]
-
-    def __setitem__(self, index: int, value: VariableRepr):
-        """Sets a single variable representation within the dataframe.
-
-        Args:
-            key:
-                Variable name.
-            value:
-                A pre-instantiated `VariableRepr` instance.
-        """
+    @columns.setter
+    def columns(self, value: VariableRepr, index: int):
         self._columns[index] = value
 
-    def from_yaml(self, src: str):
+    @columns.setter
+    def columns(self, value: VariableRepr):
+        self._columns.append(value)
+
+    @staticmethod
+    def load_file(file_or_src: str):
+        # we support file from local file/HTTP/HDFS
+        # if `file_or_src` is a loacl file
+        if os.path.isfile(file_or_src):
+            with open(file_or_src, 'r', encoding='utf-8') as f:
+                src = yaml.safe_dump(yaml.safe_load(f), default_flow_style=False)
+            return src
+        # if `file_or_src` from HTTP
+        elif file_or_src.lower().startswith('http'):
+            src = requests.get(file_or_src).content.decode('utf-8')
+            return src
+        # if `file_or_src` is YAMl (pre-loaded as str)
+        return file_or_src
+
+    @staticmethod
+    def from_yaml(file_or_src: str):
         """Import a YAML file decribing this dataframe.
 
         Args:
             src:
                 YAML file (pre-loaded as string) to import.
         """
+        dataframe = DataframeRepr()
+
+        src = dataframe.load_file(file_or_src)
         df = yaml.safe_load(src)
-        self._name = df['name']
+
+        dataframe.name = df['name']
         for col in df['columns']:
-            self._columns.append(VariableRepr(col['vtype'], col['dtype']))
+            dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
+
+        return dataframe

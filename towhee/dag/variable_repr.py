@@ -30,8 +30,8 @@ class VariableRepr(BaseRepr):
     """
     def __init__(self, vtype: str, dtype: str):
         super().__init__()
-        self._vtype = str(vtype)
-        self._dtype = str(dtype)
+        self._vtype = vtype
+        self._dtype = dtype
 
     @property
     def vtype(self):

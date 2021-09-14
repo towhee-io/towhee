@@ -23,15 +23,14 @@ class BaseRepr:
             Name of the internal object described by this representation.
     """
     def __init__(self, name: str = None):
-        if name:
-            self._name = name
+        self._name = name
 
     @property
     def name(self):
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     def serialize(self) -> str:
