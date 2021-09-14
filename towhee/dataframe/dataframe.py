@@ -71,6 +71,7 @@ class DataFrame:
         try:
             for i, v in row.items():
                 self._columns[i].put(v)
+            self._wcond.notify_all()
         finally:
             self._wcond.release()
 
@@ -89,6 +90,7 @@ class DataFrame:
         try:
             for i, v in data.items():
                 self._columns[i].append(v)
+            self._wcond.notify_all()
         finally:
             self._wcond.release()
 
