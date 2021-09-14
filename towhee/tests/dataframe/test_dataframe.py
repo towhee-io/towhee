@@ -14,40 +14,12 @@
 
 
 import unittest
-import threading
 import time
-from typing import Optional
+import queue
 
-from towhee.dataframe import DataFrame
+from towhee.dataframe import DataFrame, DataFrameIterator
 
-
-class DfWriter(threading.Thread):
-    """Put data to dataframe
-    """
-
-    def __init__(self, df: DataFrame, count: Optional[int] = None):
-        super().__init__()
-        self._df = df
-        self._need_stop = False
-        self._count = count
-        self._set_sealed = False
-
-    def run(self):
-        while not self._need_stop:
-            if self._count is not None and self._count <= 0:
-                break
-            self._df.put(())
-            self._count -= 1
-            time.sleep(0.05)
-
-        if self._set_sealed:
-            self._df.seal()
-
-    def set_sealed_when_stop(self):
-        self._set_sealed = True
-
-    def stop(self):
-        self.need_stop = True
+from .dataframe_test_util import DfWriter, MultiThreadRunner
 
 
 class TestDataframe(unittest.TestCase):
@@ -84,17 +56,29 @@ class TestDataframe(unittest.TestCase):
 
     def test_multithread(self):
         df = DataFrame('test')
-        t = DfWriter(df, 10)
+        data_size = 10
+        t = DfWriter(df, data_size)
         t.set_sealed_when_stop()
         t.start()
-        index = 0
-        while True:
-            end, items = df.get(index, 2)
-            if not end:
-                index += len(items)
-            else:
-                self.assertEqual(index + len(items), 10)
-                break
+        q = queue.Queue()
+
+        def read(df: DataFrame, q: queue.Queue):
+            index = 0
+            while True:
+                end, items = df.get(index, 2)
+                if items:
+                    for item in items:
+                        q.put(item)
+                        index += 1
+                if end:
+                    break
+
+        runner = MultiThreadRunner(target=read, args=(df, q), thread_num=10)
+
+        runner.start()
+        runner.join()
+
+        self.assertEqual(q.qsize(), data_size * 10)
 
 
 class TestMapIterator(unittest.TestCase):
@@ -105,16 +89,22 @@ class TestMapIterator(unittest.TestCase):
     def test_map_iterator_multithread(self):
         df = DataFrame('test')
         it = df.map_iter()
-        t = DfWriter(df, 20)
+        data_size = 100
+        t = DfWriter(df, data_size)
         t.start()
         t.set_sealed_when_stop()
+        q = queue.Queue()
 
-        count = 0
-        for item in it:
-            if item:
-                count += 1
-            time.sleep(0.01)
-        self.assertEqual(count, 20)
+        def read(it: DataFrameIterator, q: queue.Queue):
+            for item in it:
+                if item:
+                    q.put(item)
+                time.sleep(0.01)
+
+        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=5)
+        runner.start()
+        runner.join()
+        self.assertEqual(q.qsize(), 100)
 
     def test_map_iterator(self):
         df = DataFrame('test')
@@ -128,6 +118,6 @@ class TestMapIterator(unittest.TestCase):
             if count < 20:
                 self.assertEqual(len(item), 1)
                 count += 1
-                self.assertEqual(it.accessible_size(), 20 - count)
+                self.assertEqual(it.accessible_size, 20 - count)
             else:
                 df.seal()
