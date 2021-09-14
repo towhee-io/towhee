@@ -13,152 +13,162 @@
 # limitations under the License.
 
 import threading
-from typing import Callable, List, Tuple
+from typing import Callable, List
 import weakref
 
-from towhee.dataframe.variable import Variable
+from towhee.array import Array
 
 
 class DataFrame:
-    """A dataframe is a collection of immutable, potentially heterogeneous blogs of
-    data.
+    """A dataframe is a collection of immutable, potentially heterogeneous arrays of
+       data.
+
+    Args:
+        name: (`str`)
+            Name of the `DataFrame`. A `DataFrame`'s name and its coupled 
+            `DataFrameRepr`'s name should be consistent.
+        data: (`list` of `Array`)
+            The data of the `DataFrame`. Each `Array` in the list will form a column
+            in the `DataFrame`.
     """
+    def __init__(self, name: str, data: List[Array] = None):
 
-    def __init__(self, name: str, data: List[Tuple[Variable]] = None):
-        """DataFrame constructor.
-
-        Args:
-            name:
-                Name of the dataframe; `DataFrame` names should be the same as its
-                representation.
-            data:
-                A list of data tuples - in all instances, the number of elements per
-                tuple should be identical throughout the entire lifetime of the
-                `Dataframe`. These tuples can be interpreted as being direct outputs
-                into downstream operators.
-        """
         self._name = name
-        self._data = data if data is not None else []
-        self._registered_iter = []
-        self._start_index = 0
-        self._total = 0
+        self._columns = data if data is not None else []
+        self._columns_dict = {(col.name, col) for col in data}
+        self._iters = []
         self._sealed = False
 
-        self._lock = threading.Lock()
-        self._registered_lock = threading.Lock()
+        self._wcond = threading.Condition()
+
+    def __getitem__(self, key):
+        """
+        Args: 
+            key: (`int` or `str`)
+                The column index or column name
+        """
+        if isinstance(key, int):
+            return self._columns[key]
+        elif isinstance(key, str):
+            return self._columns_dict[key]
+        else:
+            raise IndexError("only integers or strings are invalid indices")
 
     @property
     def name(self) -> str:
         return self._name
 
-    def put(self, item: Tuple[Variable]) -> None:
+    @property
+    def columns(self) -> List:
+        return self._columns
+
+    def put(self, row: List):
+        """Append one row to the end of this `DataFrame`
+        """
         assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
-        with self._lock:
-            self._data.append(item)
-            self._total += 1
 
-    def get(self, start: int, count: int, force_size: bool = False) -> Tuple[bool, List[Tuple[Variable]]]:
+        self._wcond.acquire()
+        try:
+            for i, v in row.items():
+                self._columns[i].put(v)
+        finally:
+            self._wcond.release()
+
+    def append(self, data):
+        """Append a dataframe-like data to the end of this `DataFrame`.
+        Args:
+            data: (`list` of `Array`, or `DataFrame`)
+                The data to be appended.
         """
-        Get [start: start + count) items of dataframe
-        `force_size` is true, return data size must equal `count`. If there is
-        not enough data, return empty list.
-        `force_size` is false, return no more than `count` data
+        assert not self._sealed, 'DataFrame %s is already sealed, can not append data' % self._name
 
-        Returns:
-            (is_sealed, data)
-        """
-        # TODO (junjie.jiang)
-        # 1. call gc function
-        # 2. put and seal will be called by the same operator
-        # 3. seal will always be called after put
-        # 4. iterators never ends until they meet df._sealed == True
-        with self._lock:
-            if start < self._start_index:
-                raise IndexError(
-                    'Can not read from {start}, dataframe {name} start index is {cur_start}',
-                    start=start,
-                    name=self.name,
-                    cur_start=self._start_index
-                )
+        if isinstance(data, DataFrame):
+            data = data._columns
 
-            if force_size and not self._sealed and self._total - start < count:
-                return False, []
-
-            real_count = min(self._total - start, count)
-            real_start_index = start - self._start_index
-            return self._sealed and real_start_index + real_count >= self._total, \
-                self._data[real_start_index: real_start_index + real_count]
+        self._wcond.acquire()
+        try:
+            for i, v in data.items():
+                self._columns[i].append(v)
+        finally:
+            self._wcond.release()
 
     @property
     def size(self):
-        return self._total
+        if not self._columns:
+            return 0
+        return self._columns[0].size
+
+    def is_empty(self):
+        return not self.size
 
     def seal(self):
-        with self._lock:
+        self._wcond.acquire()
+        try:
             self._sealed = True
+            self._wcond.notify_all()
+        finally:
+            self._wcond.release()
 
     def is_sealed(self) -> bool:
         return self._sealed
 
-    # TODO (junjie.jiangjjj)
-    def _gc(self) -> None:
-        """
-        Delete the data which all registered iter has read
-        """
-        return None
-
     def map_iter(self):
-        it = MapIterator(self)
-        with self._registered_lock:
-            self._registered_iter.append(it)
+        it = MapIterator(self, self._wcond)
+        self._iters.append(it)
         return it
 
 
 class DataFrameIterator:
-    """Base iterator implementation. All iterators should be subclasses of
+    """Base iterator implementation. All `DataFrame` iterators should be derived from
     `DataFrameIterator`.
 
     Args:
-        df: The dataframe to iterate over.
+        df: (`DataFrame`)
+            The dataframe to iterate over.
+        cond: (`threading.Condition`)
+            If new rows are appened to `df`, iterators will be notified via `cond`.
     """
-
-    def __init__(self, df: DataFrame):
+    def __init__(self, df: DataFrame, cond: threading.Condition):
         self._df_ref = weakref.ref(df)
-        self._cur_index = 0
+        self._cond = cond
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        # The base iterator is purposely defined to have exatly 0 elements.
         raise StopIteration
-
-    @property
-    def accessible_size(self) -> int:
-        """
-        Return current accessible data size
-        """
-        return self._df_ref().size - self._cur_index
 
 
 class MapIterator(DataFrameIterator):
     """Iterator implementation that traverses the dataframe line-by-line.
 
     Args:
-        df: The dataframe to iterate over.
+        df: (`DataFrame`)
+            The dataframe to iterate over.
+        cond: (`threading.Condition`)
+            If new rows are appened to `df`, iterators will be notified via `cond`.
     """
-
-    def __init__(self, df: DataFrame):
-        super().__init__(df)
+    def __init__(self, df: DataFrame, cond: threading.Condition):
+        super().__init__(df, cond)
         self._lock = threading.Lock()
+        self._cur_index = 0
 
-    def __next__(self) -> List[Tuple]:
+    def __next__(self) -> List:
         with self._lock:
-            sealed, data = self._df_ref().get(self._cur_index, 1)
-            if sealed and len(data) == 0:
+            i = self._cur_index
+            self._cond.acquire()
+            # have next row
+            if i < self._df_ref.size:
+                self._cond.release()
+                data = [col[i] for col in self._df_ref.columns]
+                return data
+            # iteration ends
+            elif self._df_ref.is_sealed:
+                self._cond.release()
                 raise StopIteration
-            self._cur_index += len(data)
-        return data
+            # wait for new rows
+            else:
+                self._cond.wait()
 
 
 class BatchIterator:
@@ -171,7 +181,6 @@ class BatchIterator:
             batch size. If size is None, then the whole variable set will be batched
             together.
     """
-
     def __init__(self, df: DataFrame, size: int = None):
         super().__init__(df)
         self._size = size
@@ -190,7 +199,6 @@ class GroupIterator:
         func:
             The function used to return grouped data within the dataframe.
     """
-
     def __init__(self, df: DataFrame, func: Callable[[], None]):
         super().__init__(df)
         self._func = func
@@ -208,7 +216,6 @@ class RepeatIterator:
             n:
                 the repeat times. If `None`, the iterator will loop continuously.
     """
-
     def __init__(self, df: DataFrame, n: int = None):
         # self._n = n
         # self._i = 0

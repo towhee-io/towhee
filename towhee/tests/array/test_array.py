@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 import numpy as np
 
@@ -25,23 +24,15 @@ from towhee.array import (
 class TestArray(unittest.TestCase):
     """Basic test case for `Array`.
     """
-
     def test_construction_from_list(self):
-
         def _basic_asserts(array, data):
             self.assertEqual(array.size, len(data))
 
             for a, b in zip(array, data):
-                if isinstance(a, np.ndarray):
-                    self.assertFalse((a - b).all())
-                else:
-                    self.assertEqual(a, b)
+                self.assertEqual(a, b)
 
             for i, v in enumerate(data):
-                if isinstance(array[i], np.ndarray):
-                    self.assertFalse((array[i] - v).all())
-                else:
-                    self.assertEqual(v, array[i])
+                self.assertEqual(v, array[i])
 
         data = [1, 2, 3]
         array = Array(data=data)
@@ -64,10 +55,12 @@ class TestArray(unittest.TestCase):
         _basic_asserts(array, data)
 
     def test_construction_from_scalar(self):
-
         def _basic_asserts(array, data):
             self.assertEqual(array.size, 1)
-            self.assertEqual(array[0], data)
+            if isinstance(data, np.ndarray):
+                self.assertFalse((array[0] - data).all())
+            else:
+                self.assertEqual(array[0], data)
 
         data = 1
         array = Array(data=data)
@@ -81,35 +74,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-    def test_construction_from_ndarray(self):
-
-        def _basic_asserts(array, data):
-            if data.size == 1:
-                data = data.reshape((1,))
-
-            self.assertEqual(array.size, data.shape[0])
-
-            for a, b in zip(array, data):
-                if isinstance(a, np.ndarray):
-                    self.assertFalse((a - b).all())
-                else:
-                    self.assertEqual(a, b)
-
-            for i, v in enumerate(data):
-                if isinstance(array[i], np.ndarray):
-                    self.assertFalse((array[i] - v).all())
-                else:
-                    self.assertEqual(v, array[i])
-
         data = np.ndarray([1, 2, 3])
-        array = Array(data=data)
-        _basic_asserts(array, data)
-
-        data = np.asarray(None)
-        array = Array(data=data)
-        _basic_asserts(array, data)
-
-        data = np.array([None])
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -118,7 +83,6 @@ class TestArray(unittest.TestCase):
         _basic_asserts(array, data)
 
     def test_full(self):
-
         def _basic_asserts(array, value, n):
             self.assertEqual(array.size, n)
 
@@ -128,25 +92,25 @@ class TestArray(unittest.TestCase):
 
         n = 8
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 1
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 0
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 8
         value = "abc"
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 8
         value = None
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)

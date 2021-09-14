@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import numpy as np
-
-
 class Array:
     """One-dimensional array of data
 
@@ -29,7 +26,6 @@ class Array:
         copy: (`bool`, default False)
             Copy the `data` contents to the `Array`.
     """
-
     def __init__(
         self,
         data=None,
@@ -43,48 +39,55 @@ class Array:
         # Array.dtypes
         self.dtype = None
 
-        # For data is numpy.array
-        if isinstance(data, np.ndarray):
-            # For `data` is scalar as array
-            if data.size == 1 and data.shape == ():
-                data = data.reshape((1,))
-
-        # For data is list
-        elif isinstance(data, list):
-            data = np.array(data)
-
-        # For data is None
+        # For `data` is `list`
+        if isinstance(data, list):
+            pass
+        # For `data` is `None`
         elif data is None:
             # TODO(GuoRentong): remember to handle dtype properly
-            pass
-
-        # For data is scalar
+            data = []
+        # For `data` is scalar
         else:
-            data = np.array([data])
+            data = [data]
 
-        self.data = data
+        self._data = data
 
     def __iter__(self):
-        return self.data.__iter__()
+        return self._data.__iter__()
 
     def __getitem__(self, key: int):
         if isinstance(key, int):
-            return self.data[key]
+            return self._data[key]
         else:
             raise IndexError("only integers are invalid indices")
 
     def __repr__(self):
-        return self.data.__repr__()
+        return self._data.__repr__()
 
     @property
     def size(self) -> int:
         """ Number of elements in the `Array`.
         """
-        return self.data.shape[0]
+        return len(self._data)
 
     def is_empty(self) -> bool:
         """
         Indicator whether Array is empty.
         True if Array has no elements.
         """
-        return self.size == 0
+        return not self.size
+
+    def put(self, item):
+        """Append one item to the end of this `Array`.
+        """
+        self._data.append(item)
+
+    def append(self, data):
+        """Append a list-like items to the end of this `Array`.
+        Args:
+            data: (`list` or `Array`)
+                The data to be appended.
+        """
+        if isinstance(data, Array):
+            data = data._data
+        self._data.extend(data)
