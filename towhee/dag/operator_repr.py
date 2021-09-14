@@ -16,7 +16,7 @@ import yaml
 import requests
 import os
 
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
 
 

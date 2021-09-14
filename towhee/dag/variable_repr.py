@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 
 
 class VariableRepr(BaseRepr):

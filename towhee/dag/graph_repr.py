@@ -17,7 +17,7 @@ import os
 import requests
 from typing import Dict
 
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
 from towhee.dag.operator_repr import OperatorRepr
 
