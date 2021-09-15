@@ -52,8 +52,18 @@ class _TaskScheduler(ABC):
         pipeline.add_task_finish_handler(self._on_task_finish)
         self._pipelines.append(pipeline)
 
+    def schedule_forever(self, sleep_ms: int = 1000):
+        """Runs the a single schedule step in a loop.
+
+        sleep_ms: (`int`)
+            Milliseconds to sleep after completing a single scheduling step.
+        """
+        while True:
+            self.schedule_step()
+            time.sleep(sleep_ms / 1000)
+
     @abstractmethod
-    def execute(self):
+    def schedule_step(self):
         raise NotImplementedError
 
     @abstractmethod
@@ -77,45 +87,35 @@ class FIFOTaskScheduler(_TaskScheduler):
     Args:
         task_execs: (`List[towhee.TaskExecutor]`)
             See `_TaskScheduler` docstring.
-        sleep_ms: (`int`)
-            Milliseconds to sleep for after looping through all operator contexts. The
-            `TaskExecutor` instances will maintain greater activity with a lower value,
-            but the scheduler will be more inclined to prioritize early
     """
 
-    def __init__(self, task_execs: List[TaskExecutor], sleep_ms: int = 1):
+    def __init__(self, task_execs: List[TaskExecutor]):
         super().__init__(task_execs)
-        self._sleep_ms = sleep_ms
 
         # `FIFOTaskScheduler` maintains a dictionary of `hub_op_id` to
         # `List[TaskExecutor]` mappings, tracking which operator IDs are loaded into
         # which task executors.
         self._op_id_exec_map = defaultdict(list)
 
-    def execute(self):
-        """This function loops continuously through all operator contexts in all graphs,
-        adding a single task from individual operator contexts as appropriate. We do
-        this continuously until one or more `TaskExecutor` instances are full, then wait
-        a bit before retrying. For maximum efficiency, we prioritize operators towards
-        the end of the graph first, greedily prioritizing dataframe outputs.
+    def schedule_step(self):
+        """This function loops once through all operator contexts in all graphs, adding
+        a single task from individual operator contexts as appropriate. For maximum
+        efficiency, we prioritize operators towards the end of the graph first.
         """
 
-        while True:
-            for pipeline in self._pipelines:
-                for op_ctx in pipeline.graph_ctx.op_ctxs[::-1]:
-                    tasks = op_ctx.pop_ready_tasks(n=1)
-                    if not tasks:
-                        continue
-                    task = tasks[0]
+        for pipeline in self._pipelines:
+            for op_ctx in pipeline.graph_ctx.op_ctxs[::-1]:
+                tasks = op_ctx.pop_ready_tasks(n=1)
+                if not tasks:
+                    continue
+                task = tasks[0]
 
-                    # If `push_task` returns `False`, then the optimal executor is
-                    # already full, wait a while and try again.
+                # If `push_task` returns `False`, then the optimal executor is
+                # already full, wait a while and try again.
+                task_exec = self._find_optimal_exec(task)
+                while not task_exec.push_task(task):
+                    time.sleep(self._sleep_ms / 1000)
                     task_exec = self._find_optimal_exec(task)
-                    while not task_exec.push_task(task):
-                        time.sleep(0.001)
-                        task_exec = self._find_optimal_exec(task)
-
-            time.sleep(self._sleep_ms)
 
     def _find_optimal_exec(self, task: Task):
         """Acquires the least busy instance of `TaskExecutor` that can still execute
