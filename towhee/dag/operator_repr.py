@@ -53,46 +53,129 @@ class OperatorRepr(BaseRepr):
         self._outputs = value
 
     @staticmethod
-    def load_file(file_or_src: str):
-        # we support file from local file/HTTP/HDFS
-        # if `file_or_src` is a loacl file
+    def is_format(info: list):
+        """Check if the src is a valid YAML file to describe the operator(s) in Towhee.
+
+        Args:
+            info(`list`):
+                The list loaded from the source file.
+        """
+        essentials = {'name', 'function', 'inputs', 'outputs', 'iterators'}
+        if not isinstance(info, list):
+            raise ValueError('src is not a valid YAML file')
+        for i in info:
+            if not isinstance(i, dict):
+                raise ValueError('src is not a valid YAML file')
+            if not essentials.issubset(set(i.keys())):
+                raise ValueError('src cannot descirbe the operator(s) in Towhee')
+
+    @staticmethod
+    def load_file(file: str) -> dict:
+        """Load the operator(s) information from a local YAML file.
+
+        Args:
+            file:
+                The file path.
+
+        Returns:
+            The list loaded from the YAML file that contains the operator(s) information.
+        """
+        with open(file, 'r', encoding='utf-8') as f:
+            res = yaml.safe_load(f)
+        if isinstance(res, dict):
+            res = [res]
+        OperatorRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_url(url: str) -> list:
+        """Load the operator(s) information from a remote YAML file.
+
+        Args:
+            file:
+                The url points to the remote YAML file.
+
+        Returns:
+            The list loaded from the YAML file that contains the operator(s) information.
+        """
+        src = requests.get(url).text
+        res = yaml.safe_load(src)
+        if isinstance(res, dict):
+            res = [res]
+        OperatorRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_str(string: str) -> list:
+        """Load the operator(s) information from a YAML file (pre-loaded as string).
+
+        Args:
+            string:
+                The string pre-loaded from a YAML.
+
+        Returns:
+            The list loaded from the YAML file that contains the operator(s) information.
+        """
+        res = yaml.safe_load(string)
+        if isinstance(res, dict):
+            res = [res]
+        OperatorRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_src(file_or_src: str) -> str:
+        """Load the information for the representation.
+
+        We support file from local file/HTTP/HDFS.
+
+        Args:
+            file_or_src(`str`):
+                The source YAML file or the URL points to the source file or a str
+                loaded from source file.
+
+        returns:
+            The YAML file loaded as list.
+        """
+        # If `file_or_src` is a loacl file
         if os.path.isfile(file_or_src):
-            with open(file_or_src, 'r', encoding='utf-8') as f:
-                src = yaml.safe_dump(yaml.safe_load(f), default_flow_style=False)
-            return src
-        # if `file_or_src` from HTTP
+            return OperatorRepr.load_file(file_or_src)
+        # If `file_or_src` from HTTP
         elif file_or_src.lower().startswith('http'):
-            src = requests.get(file_or_src).content.decode('utf-8')
-            return src
-        # if `file_or_src` is YAMl (pre-loaded as str)
-        return file_or_src
+            return OperatorRepr.load_url(file_or_src)
+        # If `file_or_src` is neither a file nor url
+        return OperatorRepr.load_str(file_or_src)
 
     @staticmethod
     def from_yaml(file_or_src: str, dataframes: Dict[str, DataframeRepr]):
-        """Import a YAML file decribing this operator.
+        """Import a YAML file decribing the operator(s).
 
         Args:
-            src:
-                YAML file (pre-loaded as string) to import.
+            file_or_src(`str`):
+                YAML file (could be pre-loaded as string) to import.
 
-            dataframes:
-                Dict with `DataframeRepr` objects as values to construct current
-                `OperatorRepr`
+            dataframes(`dict`):
+                Dict with `OperatorRepr` objects as values to construct current
+                `OperatorRepr`.
+
+        returns:
+            The operators we described in `file_or_src`
         """
-        operator = OperatorRepr()
+        operators = OperatorRepr.load_src(file_or_src)
 
-        src = operator.load_file(file_or_src)
-        op = yaml.safe_load(src)
+        res = {}
 
-        operator.name = op['name']
-        for ins in op['inputs']:
-            operator.inputs[ins['name']] = {}
-            operator.inputs[ins['name']]['df'] = dataframes[ins['df']]
-            operator.inputs[ins['name']]['idx'] = ins['col']
-        # output has only one dataframe
-        outs = op['outputs'][0]
-        operator.outputs[outs['name']] = {}
-        operator.outputs[outs['name']]['df'] = dataframes[outs['df']]
-        operator.outputs[outs['name']]['idx'] = outs['col']
+        for op in operators:
+            operator = OperatorRepr()
+            operator.name = op['name']
+            for ins in op['inputs']:
+                operator.inputs[ins['name']] = {}
+                operator.inputs[ins['name']]['df'] = dataframes[ins['df']]
+                operator.inputs[ins['name']]['idx'] = ins['col']
+            # output has only one dataframe
+            outs = op['outputs'][0]
+            operator.outputs[outs['name']] = {}
+            operator.outputs[outs['name']]['df'] = dataframes[outs['df']]
+            operator.outputs[outs['name']]['idx'] = outs['col']
+            res[operator.name] = operator
 
-        return operator
+        return res

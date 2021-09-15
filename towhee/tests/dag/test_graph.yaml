@@ -1,0 +1,66 @@
+
+graph:
+    name: 'test'
+
+operators:
+    -
+        name: 'test_op_1'
+        function: 'test_function'
+        inputs:
+            -
+                name: 'input_1'
+                df: 'test_df_1'
+                col: 1
+            -
+                name: 'input_2'
+                df: 'test_df_2'
+                col: 1
+        outputs:
+            -
+                name: 'output_1'
+                df: 'test_df_1'
+                col: 2
+        iterators:
+            -
+                df: 'test_df_1'
+                iter:
+                    type: map
+            -
+                df: 'test_df_2'
+                iter:
+                    type: map
+    -
+        name: 'test_op_2'
+        function: 'test_function'
+        inputs:
+            -
+                name: 'output_1'
+                df: 'test_df_1'
+                col: 2
+        outputs:
+            -
+                name: 'output_1'
+                df: 'test_df_1'
+                col: 2
+        iterators:
+            -
+                df: 'test_df_1'
+                iter:
+                    type: map
+
+dataframes:
+    -
+        name: 'test_df_1'
+        columns:
+            -
+                vtype: 'test_vtype_1'
+                dtype: 'test_dtype_1'
+            -
+                vtype: 'test_vtype_2'
+                dtype: 'test_dtype_2'
+    -
+        name: 'test_df_2'
+        columns:
+            -
+                vtype: 'test_vtype_3'
+                dtype: 'test_dtype_3'

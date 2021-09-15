@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# builder = GraphBuilder()
-# data1 = data0.map(op1)
-# data2 = data1.batch(op2, bs=64)
-
 import yaml
 import requests
 import os
+from typing import List
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
@@ -46,43 +43,123 @@ class DataframeRepr(BaseRepr):
         return self._columns
 
     @columns.setter
-    def columns(self, value: VariableRepr, index: int):
-        self._columns[index] = value
-
-    @columns.setter
-    def columns(self, value: VariableRepr):
-        self._columns.append(value)
+    def columns(self, value: List[VariableRepr]):
+        self._columns = value
 
     @staticmethod
-    def load_file(file_or_src: str):
-        # we support file from local file/HTTP/HDFS
-        # if `file_or_src` is a loacl file
+    def is_format(info: list):
+        """Check if the src is a valid YAML file to describe the dataframe(s) in Towhee.
+
+        Args:
+            info(`list`):
+                The list loaded from the source file.
+        """
+        essentials = {'name', 'columns'}
+        if not isinstance(info, list):
+            raise ValueError('src is not a valid YAML file')
+        for i in info:
+            if not isinstance(i, dict):
+                raise ValueError('src is not a valid YAML file')
+            if not essentials.issubset(set(i.keys())):
+                print(i)
+                raise ValueError('src cannot descirbe the dataframe(s) in Towhee')
+
+    @staticmethod
+    def load_file(file: str) -> dict:
+        """Load the dataframe(s) information from a local YAML file.
+
+        Args:
+            file:
+                The file path.
+
+        Returns:
+            The list loaded from the YAML file that contains the dataframe(s) information.
+        """
+        with open(file, 'r', encoding='utf-8') as f:
+            res = yaml.safe_load(f)
+        if isinstance(res, dict):
+            res = [res]
+        DataframeRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_url(url: str) -> dict:
+        """Load the dataframe(s) information from a remote YAML file.
+
+        Args:
+            file:
+                The url points to the remote YAML file.
+
+        Returns:
+            The list loaded from the YAML file that contains the dataframe(s) information.
+        """
+        src = requests.get(url).text
+        res = yaml.safe_load(src)
+        if isinstance(res, dict):
+            res = [res]
+        DataframeRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_str(string: str) -> list:
+        """Load the dataframe(s) information from a YAML file (pre-loaded as string).
+
+        Args:
+            string:
+                The string pre-loaded from a YAML.
+
+        Returns:
+            The list loaded from the YAML file that contains the dataframe(s) information.
+        """
+        res = yaml.safe_load(string)
+        if isinstance(res, dict):
+            res = [res]
+        DataframeRepr.is_format(res)
+        return res
+
+    @staticmethod
+    def load_src(file_or_src: str) -> str:
+        """Load the information for the representation.
+
+        We support file from local file/HTTP/HDFS.
+
+        Args:
+            file_or_src(`str`):
+                The source YAML file or the URL points to the source file or a str
+                loaded from source file.
+
+        returns:
+            The YAML file loaded as list.
+        """
+        # If `file_or_src` is a loacl file
         if os.path.isfile(file_or_src):
-            with open(file_or_src, 'r', encoding='utf-8') as f:
-                src = yaml.safe_dump(yaml.safe_load(f), default_flow_style=False)
-            return src
-        # if `file_or_src` from HTTP
+            return DataframeRepr.load_file(file_or_src)
+        # If `file_or_src` from HTTP
         elif file_or_src.lower().startswith('http'):
-            src = requests.get(file_or_src).content.decode('utf-8')
-            return src
-        # if `file_or_src` is YAMl (pre-loaded as str)
-        return file_or_src
+            return DataframeRepr.load_url(file_or_src)
+        # If `file_or_src` is neither a file nor url
+        return DataframeRepr.load_str(file_or_src)
 
     @staticmethod
     def from_yaml(file_or_src: str):
         """Import a YAML file decribing this dataframe.
 
         Args:
-            src:
-                YAML file (pre-loaded as string) to import.
+            file_or_src(`str`):
+                YAML file (could be pre-loaded as string) to import.
+
+        Returns:
+            The dataframes we described in `file_or_src`
         """
-        dataframe = DataframeRepr()
+        dataframes = DataframeRepr.load_src(file_or_src)
 
-        src = dataframe.load_file(file_or_src)
-        df = yaml.safe_load(src)
+        res = {}
 
-        dataframe.name = df['name']
-        for col in df['columns']:
-            dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
+        for df in dataframes:
+            dataframe = DataframeRepr()
+            dataframe.name = df['name']
+            for col in df['columns']:
+                dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
+            res[dataframe.name] = dataframe
 
-        return dataframe
+        return res
