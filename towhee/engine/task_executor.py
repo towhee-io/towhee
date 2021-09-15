@@ -38,7 +38,7 @@ class TaskExecutor(threading.Thread):
         super().__init__()
         self._name = name
         self._task_queue = TaskQueue()
-        self._op_pool = OperatorPool(zcache_path=cache_path)
+        self._op_pool = OperatorPool(cache_path=cache_path)
         self._is_run = True
 
     @property
@@ -49,9 +49,8 @@ class TaskExecutor(threading.Thread):
     def num_tasks(self):
         return self._task_queue.qsize()
 
-    @property
-    def available_ops(self):
-        return self._op_pool.available_ops()
+    def is_op_available(self, task: Task) -> bool:
+        return self._op_pool.is_op_availble(task)
 
     # def set_op_parallelism(self, name: str, parallel: int = 1):
     #     """

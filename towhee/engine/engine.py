@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 # from towhee.engine.task import Task
-from towhee.engine.scheduler import FIFOTaskScheduler
 from towhee.engine.pipeline import Pipeline
+from towhee.engine.scheduler import FIFOTaskScheduler
+from towhee.engine.task_executor import TaskExecutor
 
 
 class Engine:
@@ -35,8 +36,9 @@ class Engine:
             `$HOME/.towhee/cache`.
     """
 
-    def __init__(self, config: Dict[str, Any], cache_path: str):
+    def __init__(self, config: Dict[str, Any], cache_path: str = None):
         self._config = config
+        self._cache_path = cache_path
         self._pipelines = []
 
         # Setup executors and scheduler.
@@ -76,9 +78,9 @@ class Engine:
 
         # Create executor threads and begin running.
         for name in dev_names:
-            executor = TaskExecutor(name=name)
-            executor.start()
+            executor = TaskExecutor(name=name, cache_path=self._cache_path)
             self._task_execs.append(executor)
+            executor.start()
 
     def _setup_task_sched(self):
         """(Initialization function) Create a `TaskScheduler` instance.

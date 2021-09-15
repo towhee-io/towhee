@@ -31,28 +31,37 @@ class OperatorPool:
     def available_ops(self):
         return self._all_ops.keys()
 
+    def is_op_available(self, task: Task) -> bool:
+        """Determines whether an operator that can be used to fulfill the given Task is
+        currently loaded.
+
+        Args:
+            task: (`towhee.Task`)
+                Task
+
+        Returns:
+            (`bool`)
+                Returns `True` if the specified input task can be run without having to
+                load a new operator from cache.
+        """
+        return task.op_key in self._all_ops
+
     def acquire_op(self, task: Task) -> Operator:
         """Given a `Task`, instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
         Args:
-            name: (`str`)
-                Unique operator name, as specified in the graph.
-            args: (`dict`)
-                The operator's initialization arguments, if any.
+            task: (`towhee.Task`)
+                Task to acquire an operator for.
 
         Returns:
             (`towhee.operator.Operator`)
                 The operator instance reserved for the caller.
         """
 
-        # Create a hashable object for the arguments to use as a part of the operator
-        # name.
-        args_tup = tuple((key, task.op_args[key]) for key in sorted(task.op_args))
-        op_key = (task.op_name, ) + args_tup
-
         # Load the operator if the computed key does not exist in the operator
-        # dictinoary.
+        # dictionary.
+        op_key = task.op_key
         if op_key not in self._all_ops:
             op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
             op.key = op_key
