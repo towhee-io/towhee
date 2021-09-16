@@ -19,7 +19,7 @@ import queue
 
 from towhee.dataframe import DataFrame, DataFrameIterator
 
-from .dataframe_test_util import DfWriter, MultiThreadRunner
+from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
 class TestDataframe(unittest.TestCase):
