@@ -13,30 +13,34 @@
 # limitations under the License.
 
 
+import threading
 from typing import Callable
 
-from towhee.engine.graph_context import GraphContext
-from towhee.engine.engine import Engine
 from towhee.dag.graph_repr import GraphRepr
-from towhee.dataframe.dataframe import DFIterator
+from towhee.dataframe import DataFrameIterator
+from towhee.engine.graph_context import GraphContext
 
 
-class Pipeline:
+class Pipeline(threading.Thread):
     """
     The runtime pipeline context
     """
 
-    def __init__(self, engine: Engine, graph_repr: GraphRepr, parallelism: int = 1) -> None:
+    def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
         """
         Args:
-            engine: the local engine to drive the Pipeline
             graph_repr: the graph representation
             parallelism: how many rows of inputs to be processed concurrently
         """
-        self._engine = engine
         self._graph_repr = graph_repr
         self._parallelism = parallelism
         self.on_task_finish_handlers = []
+
+        self._graph_ctx = None
+
+    @property
+    def graph_ctx(self):
+        return self._graph_ctx
 
     def build(self):
         """
@@ -46,7 +50,7 @@ class Pipeline:
             g.on_task_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
 
-    def run(self, inputs: list) -> DFIterator:
+    def run(self, inputs: list) -> DataFrameIterator:
         """
         The Pipeline's main loop
 
