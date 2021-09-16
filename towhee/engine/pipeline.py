@@ -17,7 +17,7 @@ import threading
 from typing import Callable
 
 from towhee.dag.graph_repr import GraphRepr
-from towhee.dataframe.dataframe import DFIterator
+from towhee.dataframe import DataFrameIterator
 from towhee.engine.graph_context import GraphContext
 
 
@@ -50,7 +50,7 @@ class Pipeline(threading.Thread):
             g.on_task_finish_handlers.append(self.on_task_finish_handlers)
         raise NotImplementedError
 
-    def run(self, inputs: list) -> DFIterator:
+    def run(self, inputs: list) -> DataFrameIterator:
         """
         The Pipeline's main loop
 

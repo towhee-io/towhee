@@ -47,7 +47,7 @@ class TaskExecutor(threading.Thread):
 
     @property
     def num_tasks(self):
-        return self._task_queue.qsize()
+        return self._task_queue.size
 
     def is_op_available(self, task: Task) -> bool:
         return self._op_pool.is_op_availble(task)
@@ -89,8 +89,7 @@ class TaskExecutor(threading.Thread):
                 task.execute(op)
                 self._op_pool.release_op(op)
 
-            # If we reached this point, the queue is empty, wait for a short period of
-            # time and try again.
+            # TODO(fzliu): Improve wait logic if an empty queue is detected.
             else:
                 time.sleep(0.01)
 

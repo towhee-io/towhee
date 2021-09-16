@@ -14,34 +14,11 @@
 
 
 from pathlib import Path
-from typing import Callable, List, NamedTuple
 import unittest
 
-from towhee.engine.task import Task
 from towhee.engine.task_executor import TaskExecutor
 from towhee.engine.task_scheduler import FIFOTaskScheduler
-
-
-class _MockPipeline:
-    """Dummy pipeline with only fields required by the FIFOTaskScheduler filled in.
-    """
-
-    def __init__(self):
-        GraphContext = NamedTuple('GraphContext', [('op_ctxs', List)])
-        OperatorContext = NamedTuple('OperatorContext', [('pop_ready_tasks', Callable)])
-
-        # Initialize task list.
-        self._tasks = []
-        hub_op_id = 'mock_operators/add_operator'
-        args = {'factor': 0}
-        for n in range(10):
-            self._tasks.append(Task('test', hub_op_id, args, {'num': n}, n))
-
-        # Create dummy GraphContext with a single OperatorContext instance.
-        self.graph_ctx = GraphContext([OperatorContext(self._pop_ready_task)])
-
-    def _pop_ready_task(self):
-        return self._tasks.pop() if self._tasks else None
+from towhee.tests.mock_pipelines import EmulatedPipeline
 
 
 class TestFIFOTaskScheduler(unittest.TestCase):
@@ -50,14 +27,37 @@ class TestFIFOTaskScheduler(unittest.TestCase):
 
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
-        self._task_exec = TaskExecutor('', cache_path=cache_path)
-        self._task_sched = FIFOTaskScheduler([self._task_exec])
-        self._pipeline = _MockPipeline()
+        self._task_execs = []
+        for _ in range(4):
+            self._task_execs.append(TaskExecutor('', cache_path=cache_path))
+        self._task_sched = FIFOTaskScheduler(self._task_execs)
+        self._pipeline = EmulatedPipeline()
 
-    def test_scheduler(self):
+    def tearDown(self):
+        for task_exec in self._task_execs:
+            task_exec.stop()
+
+        # Ensure that exactly `n_runs` tasks have been completed after joining.
+        self.assertEqual(self._runs_count, self._n_runs)
+
+    def test_scheduler(self, n_runs=1024):
+
+        # Add callback function upon completion.
+        self._n_runs = n_runs
+        self._runs_count = 0
+        def _add_task_finish_callback(task):
+            self._runs_count += 1  # No need for threading.Lock due to GIL.
+            self.assertEqual(task.outputs.sum, task.inputs['num'])
+        self._pipeline.add_task_finish_handler(_add_task_finish_callback)
+
+        # Spin up executors.
+        for task_exec in self._task_execs:
+            task_exec.start()
+
+        # Add callback function upon completion.
         self._task_sched.add_pipeline(self._pipeline)
-        self._task_sched.schedule_step()
-
+        for _ in range(n_runs):
+            self._task_sched.schedule_step()
 
 if __name__ == '__main__':
     unittest.main()

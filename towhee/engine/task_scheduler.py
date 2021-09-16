@@ -31,13 +31,18 @@ class _TaskScheduler(ABC):
     """Task scheduler abstract interface.
 
     Args:
-        executors: (`List[towhee.TaskExecutor]`)
+        task_execs: (`List[towhee.TaskExecutor]`)
             A list of task executors that the `Engine` manages. Also should be
             continuously changing as new executors are acquired.
+        max_tasks: (`int`)
+            The maximum number of tasks per executor - if the scheduler detects that an
+            executor has greater than or equal to than `max_tasks` in queue, it will not
+            assign any further tasks to it.
     """
 
-    def __init__(self, task_execs: List[TaskExecutor]):
+    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
         self._task_execs = task_execs
+        self._max_tasks = max_tasks
         self._pipelines = []
 
     def add_pipeline(self, pipeline: Pipeline):
@@ -47,9 +52,9 @@ class _TaskScheduler(ABC):
             pipeline: `towhee.Pipeline`
                 A single pipeline to schedule tasks for.
         """
-        pipeline.add_task_ready_handler(self._on_task_ready)
-        pipeline.add_task_start_handler(self._on_task_start)
-        pipeline.add_task_finish_handler(self._on_task_finish)
+        pipeline.add_task_ready_handler(self.on_task_ready)
+        pipeline.add_task_start_handler(self.on_task_start)
+        pipeline.add_task_finish_handler(self.on_task_finish)
         self._pipelines.append(pipeline)
 
     def schedule_forever(self, sleep_ms: int = 1000):
@@ -60,6 +65,7 @@ class _TaskScheduler(ABC):
         """
         while True:
             self.schedule_step()
+            # TODO(fzliu): compute runtime for bottleneck operator
             time.sleep(sleep_ms / 1000)
 
     @abstractmethod
@@ -67,15 +73,15 @@ class _TaskScheduler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def on_task_ready(self):
+    def on_task_ready(self, task: Task):
         raise NotImplementedError
 
     @abstractmethod
-    def on_task_start(self):
+    def on_task_start(self, task: Task):
         raise NotImplementedError
 
     @abstractmethod
-    def on_task_finish(self):
+    def on_task_finish(self, task: Task):
         raise NotImplementedError
 
 
@@ -89,8 +95,8 @@ class FIFOTaskScheduler(_TaskScheduler):
             See `_TaskScheduler` docstring.
     """
 
-    def __init__(self, task_execs: List[TaskExecutor]):
-        super().__init__(task_execs)
+    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
+        super().__init__(task_execs, max_tasks)
 
         # `FIFOTaskScheduler` maintains a dictionary of `hub_op_id` to
         # `List[TaskExecutor]` mappings, tracking which operator IDs are loaded into
@@ -105,13 +111,13 @@ class FIFOTaskScheduler(_TaskScheduler):
 
         for pipeline in self._pipelines:
             for op_ctx in pipeline.graph_ctx.op_ctxs[::-1]:
-                tasks = op_ctx.pop_ready_tasks(n=1)
+                tasks = op_ctx.pop_ready_tasks(n_tasks=1)
                 if not tasks:
                     continue
                 task = tasks[0]
 
-                # If `push_task` returns `False`, then the optimal executor is
-                # already full, wait a while and try again.
+                # If `push_task` returns `False`, then the optimal executor is already
+                # full, wait a while and try again.
                 task_exec = self._find_optimal_exec(task)
                 while not task_exec.push_task(task):
                     time.sleep(self._sleep_ms / 1000)
@@ -128,7 +134,7 @@ class FIFOTaskScheduler(_TaskScheduler):
 
         # Attempt to find the least busy executor with the model already loaded. We do
         # not consider executors that have more than `MAX_EXECUTOR_TASKS` queued up.
-        min_num_tasks = MAX_EXECUTOR_TASKS
+        min_num_tasks = self._max_tasks
         optimal_exec = None
         for task_exec in self._op_id_exec_map[task.op_key]:
             if task_exec.num_tasks < min_num_tasks:
@@ -144,11 +150,11 @@ class FIFOTaskScheduler(_TaskScheduler):
 
         return optimal_exec
 
-    def on_task_ready(self):
+    def on_task_ready(self, task: Task):
         pass
 
-    def on_task_start(self):
+    def on_task_start(self, task: Task):
         pass
 
-    def on_task_finish(self):
+    def on_task_finish(self, task: Task):
         pass
