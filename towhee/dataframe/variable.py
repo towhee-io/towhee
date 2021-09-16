@@ -36,3 +36,11 @@ class Variable:
         self._vtype = vtype
         self._value = value
         self._name = name
+
+    @property
+    def value(self) -> any:
+        return self._value
+
+    @property
+    def vtype(self) -> str:
+        return self._vtype

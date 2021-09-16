@@ -13,55 +13,78 @@
 # limitations under the License.
 
 
+import numpy as np
+
+
 class Array:
-    """
-    One-dimensional array of data
+    """One-dimensional array of data
+
+    Args:
+        data: (`numpy.ndarray`, `list`, `dict` or scalar)
+            Contains data to be stored in `Array`.
+        dtype: (`numpy.dtype`, `str`, `PIL.Image` or `towhee.DType`, optional)
+            Data type of the `Array`. If not specified, it will be inferred from `data`.
+        name: (`str`)
+            Name of the `Array`.
+        copy: (`bool`, default False)
+            Copy the `data` contents to the `Array`.
     """
 
-    def __init__(self, name: str = None, data=None):
-        """
-        Args:
-            name: the name of the Array
-            data: supported data types are bool, int, float, str, bytes, PIL.Image,
-                numpy.array, numpy.ndarray, and list of data mentioned above.
-        """
+    def __init__(
+        self,
+        data=None,
+        #dtype=None,
+        name: str = None,
+        #copy=False
+    ):
+
         self.name = name
+        # TODO(GuoRentong): provide towhee.DType abstraction and support
+        # Array.dtypes
         self.dtype = None
+
+        # For data is numpy.array
+        if isinstance(data, np.ndarray):
+            # For `data` is scalar as array
+            if data.size == 1 and data.shape == ():
+                data = data.reshape((1,))
+
+        # For data is list
+        elif isinstance(data, list):
+            data = np.array(data)
+
+        # For data is None
+        elif data is None:
+            # TODO(GuoRentong): remember to handle dtype properly
+            pass
+
+        # For data is scalar
+        else:
+            data = np.array([data])
+
         self.data = data
-        raise NotImplementedError
 
     def __iter__(self):
-        raise NotImplementedError
+        return self.data.__iter__()
 
-    def __getitem__(self, key: str):
-        raise NotImplementedError
+    def __getitem__(self, key: int):
+        if isinstance(key, int):
+            return self.data[key]
+        else:
+            raise IndexError("only integers are invalid indices")
+
+    def __repr__(self):
+        return self.data.__repr__()
 
     @property
     def size(self) -> int:
+        """ Number of elements in the `Array`.
         """
-        Number of elements in the Array.
-        """
-        raise NotImplementedError
+        return self.data.shape[0]
 
-    @property
-    def empty(self) -> bool:
+    def is_empty(self) -> bool:
         """
         Indicator whether Array is empty.
         True if Array has no elements.
         """
-
-    def fill(self, value, size=None):
-        """
-        Fill the array with a scalar value.
-
-        Args:
-            value: all the Array elements will be assigned this value
-            size: if not None, the Array will be resized.
-        """
-        raise NotImplementedError
-
-    def to_bytes(self) -> bytes:
-        raise NotImplementedError
-
-    def from_bytes(self, value: bytes):
-        raise NotImplementedError
+        return self.size == 0

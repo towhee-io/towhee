@@ -43,8 +43,7 @@ s4 = generate_callstack(ignore=3)
 
 
 class TestCallStack(unittest.TestCase):
-    """
-    In this class, we test the functions in Callstack class.
+    """In this class, we test the functions in Callstack class.
     We do not initialize the Callstack directly. Instead, we create two functions
     `generate_frames` and `collect_frames` to initialize the Callstack as well as
     block the frames produced by the unittest. We do not care about the process of
@@ -54,7 +53,6 @@ class TestCallStack(unittest.TestCase):
     For convenience, we collect and returns the frames inside the callsatck in the
     the form of list.
     """
-
     def test_init(self):
         # the callstacks are instances of Callstack class
         self.assertIsInstance(s1, Callstack)
@@ -107,18 +105,12 @@ class TestCallStack(unittest.TestCase):
         self.assertEqual(out_3, out_4)
 
         # though `out_5` and `out_6` should be different, the lengths are the same
-        out_5 = s.hash(
-            items=[
-                'filename', 'lineno', 'function',
-                'code_context', 'position', 'lasti'
-            ]
-        )
+        out_5 = s.hash(items=['filename', 'lineno', 'function', 'code_context', 'position', 'lasti'])
         out_6 = s.hash(0, 1, ['filename'])
         self.assertEqual(len(out_5), len(out_6))
 
         # raise ValueError when given unsupported item
-        self.assertRaises(ValueError, s.hash, items=[
-                          'attribute_that_not_exists'])
+        self.assertRaises(ValueError, s.hash, items=['attribute_that_not_exists'])
         # raise IndexError when give invalid range of frames
         self.assertRaises(IndexError, s.hash, -1, 1, items=['filename'])
         self.assertRaises(IndexError, s.hash, 0, 1000, items=['filename'])
