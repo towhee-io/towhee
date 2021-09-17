@@ -18,7 +18,6 @@ import tempfile
 import unittest
 import torch
 from torch import nn
-from torch.optim import AdamW
 
 from towhee.trainer.optimization.adafactor import Adafactor
 from towhee.trainer.optimization.adamw import AdamW
