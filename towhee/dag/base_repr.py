@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import yaml
+import requests
+import os
+from typing import List
 
 
 class BaseRepr:
@@ -44,3 +48,70 @@ class BaseRepr:
                     dtype: float'
         """
         raise NotImplementedError
+
+    @staticmethod
+    def load_str(string: str) -> List[dict]:
+        """Load the representation(s) information from a YAML file (pre-loaded as string).
+
+        Args:
+            string(`str`):
+                The string pre-loaded from a YAML.
+
+        Returns:
+            The list loaded from the YAML file that contains the representation(s) information.
+        """
+        res = yaml.safe_load(string)
+        if isinstance(res, dict):
+            res = [res]
+        return res
+
+    @staticmethod
+    def load_file(file: str) -> List[dict]:
+        """Load the representation(s) information from a local YAML file.
+
+        Args:
+            file(`str`):
+                The file path.
+
+        Returns:
+            The list loaded from the YAML file that contains the representation(s) information.
+        """
+        with open(file, 'r', encoding='utf-8') as f:
+            return BaseRepr.load_str(f)
+
+    @staticmethod
+    def load_url(url: str) -> List[dict]:
+        """Load the representation(s) information from a remote YAML file.
+
+        Args:
+            url(`str`):
+                The url points to the remote YAML file.
+
+        Returns:
+            The list loaded from the YAML file that contains the representation(s) information.
+        """
+        src = requests.get(url, timeout=5).text
+        return BaseRepr.load_str(src)
+
+    @staticmethod
+    def load_src(file_or_src: str) -> List[dict]:
+        """Load the information for the representation.
+
+        We support file from local file/HTTP/HDFS.
+
+        Args:
+            file_or_src(`str`):
+                The source YAML file or the URL points to the source file or a str
+                loaded from source file.
+
+        returns:
+            The YAML file loaded as list.
+        """
+        # If `file_or_src` is a loacl file
+        if os.path.isfile(file_or_src):
+            return BaseRepr.load_file(file_or_src)
+        # If `file_or_src` from HTTP
+        elif file_or_src.lower().startswith('http'):
+            return BaseRepr.load_url(file_or_src)
+        # If `file_or_src` is neither a file nor url
+        return BaseRepr.load_str(file_or_src)

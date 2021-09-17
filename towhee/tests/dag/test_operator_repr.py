@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import requests
 import yaml
 import os
-from unittest import mock
 
 from towhee.dag.dataframe_repr import DataframeRepr
 from towhee.dag.operator_repr import OperatorRepr
@@ -58,77 +56,24 @@ class TestOperatorRepr(unittest.TestCase):
     """Basic test case for `OperatorRepr`.
     """
     def test_init(self):
-        # Create a `OperatorRepr` object from a string in YAML format
+        # Create a `OperatorRepr` object
         self.repr = OperatorRepr()
         self.assertTrue(isinstance(self.repr, OperatorRepr))
 
-    def test_is_format(self):
+    def test_is_valid(self):
         # When the information is valid YAML format
         info = yaml.safe_load(src)
-        if isinstance(info, dict):
-            info = [info]
-        self.assertIsNone(OperatorRepr.is_format(info))
+        self.assertTrue(OperatorRepr.is_valid(info))
 
         # When the information is not valid YAML format
         false_src_1 = 'test_src that is not of YAML format'
-        false_info_1 = yaml.safe_load(false_src_1)
-        self.assertRaises(ValueError, OperatorRepr.is_format, false_info_1)
+        false_info_1 = [yaml.safe_load(false_src_1)]
+        self.assertFalse(OperatorRepr.is_valid(false_info_1))
 
         # When the information is a valid YAML format but cannot describe a operator
         false_src_2 = """test_key : 'test_value'"""
-        false_info_2 = yaml.safe_load(false_src_2)
-        self.assertRaises(ValueError, OperatorRepr.is_format, false_info_2)
-
-    def test_load_file(self):
-        with open(src_path, 'w', encoding='utf-8') as f:
-            f.write(src)
-        op_list = OperatorRepr.load_file(src_path)
-        # The return values shoud be a list
-        self.assertTrue(isinstance(op_list, list))
-        # Inside the list is a series of dict
-        self.assertTrue(isinstance(op_list[0], dict))
-        # The dict should at least contain the keys listed in set `essentails`
-        self.assertTrue(essentials.issubset(set(op_list[0].keys())))
-
-    def test_load_url(self):
-        # Create a `MyResponse` class for mock to replace the return value of `requests.get`
-        class MyResponse:
-            def __init__(self, text):
-                self._text = text
-
-            @property
-            def text(self):
-                return self._text
-
-        # initialize a respoonse obejct and set `src` as the `text` value
-        res = MyResponse(src)
-        # replace return value of `requests.get` with `res`
-        list_1 = mock.Mock(return_value=res)
-        requests.get = list_1
-        # test how the `load_url` works
-        op_list = OperatorRepr.load_url('test_url')
-        # The return values shoud be a list
-        self.assertTrue(isinstance(op_list, list))
-        # Inside the list is a series of dict
-        self.assertTrue(isinstance(op_list[0], dict))
-        # The dict should at least contain the keys listed in set `essentails`
-        self.assertTrue(essentials.issubset(set(op_list[0].keys())))
-
-    def test_load_str(self):
-        op_list = OperatorRepr.load_str(src)
-        # The return values shoud be a list
-        self.assertTrue(isinstance(op_list, list))
-        # Inside the list is a series of dict
-        self.assertTrue(isinstance(op_list[0], dict))
-        # The dict should at least contain the keys listed in set `essentails`
-        self.assertTrue(essentials.issubset(set(op_list[0].keys())))
-
-    def test_load_src(self):
-        with open(src_path, 'w', encoding='utf-8') as f:
-            f.write(src)
-        op_1 = OperatorRepr.load_src(src_path)
-        op_2 = yaml.safe_load(src)
-        self.assertEqual(op_1, op_2)
+        false_info_2 = [yaml.safe_load(false_src_2)]
+        self.assertFalse(OperatorRepr.is_valid(false_info_2))
 
     def test_yaml_import(self):
         self.repr = OperatorRepr.from_yaml(src, dataframes)

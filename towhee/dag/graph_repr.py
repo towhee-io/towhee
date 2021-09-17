@@ -11,11 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import yaml
-import os
-import requests
-from typing import Dict
+import logging
+from typing import Dict, List
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
@@ -57,88 +55,25 @@ class GraphRepr(BaseRepr):
         self._dataframes = value
 
     @staticmethod
-    def is_format(info: dict):
+    def is_valid(info: List[dict]) -> bool:
         """Check if the src is a valid YAML file to describe a DAG in Towhee.
 
         Args:
-            info(`dict`):
-                The dict loaded from the source file.
+            info(`list`):
+                The List loaded from the source file.
         """
         essentials = {'graph', 'operators', 'dataframes'}
-        if not isinstance(info, dict):
-            raise ValueError('src is not a valid YAML file')
-        if not essentials.issubset(set(info.keys())):
-            raise ValueError('src cannot descirbe a DAG in Towhee')
-
-    @staticmethod
-    def load_file(file: str) -> dict:
-        """Load the graph information from a local YAML file.
-
-        Args:
-            file:
-                The file path.
-
-        Returns:
-            The dict loaded from the YAML file that contains the graph information.
-        """
-        with open(file, 'r', encoding='utf-8') as f:
-            res = yaml.safe_load(f)
-        GraphRepr.is_format(res)
-        return res
-
-    @staticmethod
-    def load_url(url: str) -> dict:
-        """Load the graph information from a remote YAML file.
-
-        Args:
-            file:
-                The url points to the remote YAML file.
-
-        Returns:
-            The dict loaded from the YAML file that contains the graph information.
-        """
-        src = requests.get(url).text
-        res = yaml.safe_load(src)
-        GraphRepr.is_format(res)
-        return res
-
-    @staticmethod
-    def load_str(string: str) -> dict:
-        """Load the graph information from a YAML file (pre-loaded as string).
-
-        Args:
-            string:
-                The string pre-loaded from a YAML.
-
-        Returns:
-            The dict loaded from the YAML file that contains the graph information.
-        """
-        res = yaml.safe_load(string)
-        GraphRepr.is_format(res)
-        return res
-
-    @staticmethod
-    def load_src(file_or_src: str) -> str:
-        """Load the information for the representation.
-
-        We support file from local file/HTTP/HDFS.
-
-        Args:
-            file_or_src(`str`):
-                The source YAML file or the URL points to the source file or a str
-                loaded from source file.
-
-        returns:
-            The YAML file loaded as dict.
-        """
-        # If `file_or_src` is a loacl file
-        if os.path.isfile(file_or_src):
-            return GraphRepr.load_file(file_or_src)
-        # If `file_or_src` from HTTP
-        elif file_or_src.lower().startswith('http'):
-            return GraphRepr.load_url(file_or_src)
-        # If `file_or_src` is neither a file nor url
-        return GraphRepr.load_str(file_or_src)
+        if not isinstance(info, list):
+            logging.error('src is not a valid YAML file.')
+            return False
+        for i in info:
+            if not isinstance(i, dict):
+                logging.error('src is not a valid YAML file.')
+                return False
+            if not essentials.issubset(set(i.keys())):
+                logging.error('src cannot descirbe a DAG in Towhee.')
+                return False
+        return True
 
     @staticmethod
     def from_yaml(file_or_src: str):
@@ -151,21 +86,22 @@ class GraphRepr(BaseRepr):
         Returns:
             The DAG we described in `file_or_src`.
         """
-        graph = GraphRepr()
-        graph_dict = graph.load_src(file_or_src)
+        graph_repr = GraphRepr()
+        graphs = graph_repr.load_src(file_or_src)
+        graph = graphs[0]
+        if not graph_repr.is_valid(graphs):
+            raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
 
         # load name
-        graph.name = graph_dict['graph']['name']
+        graph_repr.name = graph['graph']['name']
 
         # load dataframes
-        # for df in graph_dict['dataframes']:
-        graph.dataframes = DataframeRepr.from_yaml(yaml.safe_dump(graph_dict['dataframes'], default_flow_style=False))
+        graph_repr.dataframes = DataframeRepr.from_yaml(yaml.safe_dump(graph['dataframes'], default_flow_style=False))
 
         # load operators
-        # for op in graph_dict['operators']:
-        graph.operators = OperatorRepr.from_yaml(yaml.safe_dump(graph_dict['operators'], default_flow_style=False), graph.dataframes)
+        graph_repr.operators = OperatorRepr.from_yaml(yaml.safe_dump(graph['operators'], default_flow_style=False), graph_repr.dataframes)
 
-        return graph
+        return graph_repr
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.
