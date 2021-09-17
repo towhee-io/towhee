@@ -26,11 +26,11 @@ class TestTaskExecutor(unittest.TestCase):
 
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
-        self._executor = TaskExecutor('', cache_path=cache_path)
-        self._executor.start()
+        self._task_exec = TaskExecutor('', cache_path=cache_path)
+        self._task_exec.start()
 
     def tearDown(self):
-        self._executor.stop()
+        self._task_exec.stop()
 
     def test_add_task_execution(self):
 
@@ -49,7 +49,7 @@ class TestTaskExecutor(unittest.TestCase):
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:
             task.add_finish_handler(_add_task_finish_callback)
-            self._executor.push_task(task)
+            self._task_exec.push_task(task)
 
     def test_sub_task_execution(self):
 
@@ -68,7 +68,7 @@ class TestTaskExecutor(unittest.TestCase):
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:
             task.add_finish_handler(_add_task_finish_callback)
-            self._executor.push_task(task)
+            self._task_exec.push_task(task)
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ class OperatorContext:
         # leave op acquire & release to scheduler
         raise NotImplementedError
 
-    def pop_ready_tasks(self, n: int = 1) -> List:
+    def pop_ready_tasks(self, n_tasks: int = 1) -> List:
         """
         Pop n ready Tasks if any. The number of returned Tasks may be less than n
         if there are not enough Tasks.
