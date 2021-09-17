@@ -20,6 +20,8 @@ import torch
 from torch import nn
 from torch.optim import AdamW
 
+from towhee.trainer.optimization.adafactor import Adafactor
+from towhee.trainer.optimization.adamw import AdamW
 from towhee.trainer.scheduler import (
     configure_constant_scheduler,
     configure_constant_scheduler_with_warmup,
@@ -107,6 +109,52 @@ class ScheduleInitTest(unittest.TestCase):
             scheduler = scheduler_func(self.optimizer, **kwargs)
             lr_sch_2 = unwrap_and_save_reload_scheduler(scheduler, self.num_steps)
             self.assertListEqual(lr_sch_1, lr_sch_2, msg=f'failed for {scheduler_func} in save and reload')
+
+
+class OptimizationTest(unittest.TestCase):
+    def assertListAlmostEqual(self, list1, list2, tol):
+        self.assertEqual(len(list1), len(list2))
+        for a, b in zip(list1, list2):
+            self.assertAlmostEqual(a, b, delta=tol)
+
+    def test_adam_w(self):
+        w = torch.tensor([0.1, -0.2, -0.1], requires_grad=True)
+        target = torch.tensor([0.4, 0.2, -0.5])
+        criterion = nn.MSELoss()
+        # No warmup, constant schedule, no gradient clipping
+        optimizer = AdamW(params=[w], lr=2e-1, weight_decay=0.0)
+        for _ in range(100):
+            loss = criterion(w, target)
+            loss.backward()
+            optimizer.step()
+            w.grad.detach_()  # No zero_grad() function on simple tensors. we do it ourselves.
+            w.grad.zero_()
+        self.assertListAlmostEqual(w.tolist(), [0.4, 0.2, -0.5], tol=1e-2)
+
+    def test_adafactor(self):
+        w = torch.tensor([0.1, -0.2, -0.1], requires_grad=True)
+        target = torch.tensor([0.4, 0.2, -0.5])
+        criterion = nn.MSELoss()
+        # No warmup, constant schedule, no gradient clipping
+        optimizer = Adafactor(
+            params=[w],
+            lr=1e-2,
+            eps=(1e-30, 1e-3),
+            clip_threshold=1.0,
+            decay_rate=-0.8,
+            beta1=None,
+            weight_decay=0.0,
+            relative_step=False,
+            scale_parameter=False,
+            warmup_init=False,
+        )
+        for _ in range(1000):
+            loss = criterion(w, target)
+            loss.backward()
+            optimizer.step()
+            w.grad.detach_()  # No zero_grad() function on simple tensors. we do it ourselves.
+            w.grad.zero_()
+        self.assertListAlmostEqual(w.tolist(), [0.4, 0.2, -0.5], tol=1e-2)
 
 
 if __name__ == '__main__':
