@@ -16,7 +16,6 @@
 import unittest
 from pathlib import Path
 
-import torch
 import torchvision
 from PIL import Image
 
@@ -52,9 +51,7 @@ class TestOperator(unittest.TestCase):
         pytorch_cnn_operator = load_local_operator(
             'pytorch_cnn_operator', PYTORCH_CNN_OPERATOR_PATH)
         op = pytorch_cnn_operator.PyTorchCNNOperator(self.model, self.img_tensor)
-        op.model.eval()
-        output = op.model(op.img_tensor)
-        self.assertEqual(torch.Size((1, 1000)), output.shape)
+        self.assertEqual((1, 1000), op()[0].shape)
 
 
 if __name__ == '__main__':

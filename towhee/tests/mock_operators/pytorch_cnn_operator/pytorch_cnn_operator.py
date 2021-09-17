@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch
+from typing import NamedTuple
+
+import numpy
 
 from towhee.operator import Operator
 
@@ -24,12 +26,12 @@ class PyTorchCNNOperator(Operator):
     def __init__(self, model, img_tensor) -> None:
         super().__init__()
         self.model = model
+        self.model.eval()
         self.img_tensor = img_tensor
 
-    def __call__(self) -> torch.Tensor:
-        super().__call__()
-        outputs = self.model(self.img_tensor)
-        return outputs
+    def __call__(self) -> NamedTuple('Outputs', [('cnn', numpy.ndarray)]):
+        Outputs = NamedTuple('Outputs', [('cnn', numpy.ndarray)])
+        return Outputs(self.model(self.img_tensor).detach().numpy())
 
     def train(self):
         """
