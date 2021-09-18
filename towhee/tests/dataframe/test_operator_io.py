@@ -19,7 +19,7 @@ from queue import Queue
 from towhee.dataframe import DataFrame, Variable
 from towhee.engine._operator_io import MapDataFrameReader
 
-from .dataframe_test_util import DfWriter, MultiThreadRunner
+from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
 class TestOperatorIO(unittest.TestCase):

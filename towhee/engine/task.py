@@ -94,7 +94,8 @@ class Task:
                 Unique value corresponding to a combination of operator ininitialization
                 arguments and its operator ID in the hub.
         """
-        args_tup = tuple((key, self.op_args[key]) for key in sorted(self.op_args))
+        args_tup = tuple((key, self.op_args[key])
+                         for key in sorted(self.op_args))
         return (self.hub_op_id, ) + args_tup
 
     def add_ready_handler(self, handler: Callable):

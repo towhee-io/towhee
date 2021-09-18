@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Callable
+from typing import List, Dict
 
 # from collections import namedtuple
 from towhee.engine.task import Task
-from towhee.engine.graph_context import GraphContext
-# from towhee.engine.variable import Variable
+# from towhee.engine.graph_context import GraphContext
+from towhee.dataframe import DataFrame
+from towhee.engine._operator_io import create_reader, create_writer
 
 
 class OperatorContext:
@@ -29,26 +30,20 @@ class OperatorContext:
     scheduling context.
     """
 
-    def __init__(self, graph_ctx: GraphContext,
-                 inputs: List[
-                     Callable[[], None]
-                 ],
-                 outputs: List[
-                     Callable[[], None]
-                 ]) -> None:
+    def __init__(self, op_info: Dict, inputs: List[DataFrame],
+                 outputs: List[DataFrame]) -> None:
         """
         Args:
-            inputs: a list of Variable.
-            outputs: a list of Variable.
+            op_info: op config, op init data, op input info
+            inputs: a list of DataFrame.
+            outputs: a list of DataFrame.
         """
-        self._inputs = inputs
-        self._outputs = outputs
-        self.on_task_finish_handlers = []
-        self._graph_context = graph_ctx
-        # self.last_op = None
-        # self.is_op_stateless = True
-        # leave op acquire & release to scheduler
-        raise NotImplementedError
+        self._op_info = op_info
+        self._reader = create_reader(
+            inputs, op_info['iter_type'], op_info['inputs_index'])
+        self._writer = create_writer(outputs)
+        self._finished = False
+        self._taskid = 0
 
     def pop_ready_tasks(self, n_tasks: int = 1) -> List:
         """
@@ -57,19 +52,31 @@ class OperatorContext:
 
         Return: a list of ready Tasks.
         """
+        ready_tasks = []
+        task_num = n_tasks
+        while task_num > 0:
+            op_input_params = self._reader.read()
+            if op_input_params:
+                task = self._create_new_task(op_input_params)
+                ready_tasks.append(task)
+                task_num -= 1
+                continue
 
-        # create a new task
-        # task.on_finish_handlers.append(self.on_task_finish_handlers)
-        raise NotImplementedError
+            if op_input_params is None:
+                self._finished = True
+            break
+
+        return ready_tasks
+
+    def finished(self) -> bool:
+        return self._finished
 
     @property
     def num_ready_tasks(self) -> int:
         """
         Get the number of ready Tasks.
         """
-        raise NotImplementedError
-        # consider the thread-safe read write. This OperatorContext should be
-        # self._ready_tasks' only monifier.
+        return self._reader.size
 
     @property
     def num_finished_tasks(self) -> int:
@@ -85,6 +92,9 @@ class OperatorContext:
         The handler for the event of task start.
         """
         raise NotImplementedError
+
+    def write_outputs(self, task: Task):
+        self._writer.write(task.outputs)
 
     def _on_task_finish_handler(self, task: Task):
         """
@@ -102,11 +112,11 @@ class OperatorContext:
         """
         raise NotImplementedError
 
-    def _create_new_task(self, inputs: list):
-        #t = Task()
-        # todo: setup t
-        # t.on_start.append(self._on_task_start)
-        raise NotImplementedError
+    def _create_new_task(self, inputs: Dict[str, any]):
+        t = Task(self._op_info['name'], self._op_info['name'],
+                 self._op_info['op_args'], inputs, self._taskid)
+        self._taskid += 1
+        return t
 
     def _notify_downstream_op_ctx(self):
         """

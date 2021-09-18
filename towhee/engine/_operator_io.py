@@ -15,7 +15,15 @@
 from abc import ABC, abstractmethod
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Optional, Tuple, Union, List
+from typing import Dict, Optional, Tuple, Union, List, NamedTuple
+
+
+class DataFrameWriter:
+    def __init__(self, output_df: DataFrame):
+        self._output_df = output_df
+
+    def write(self, output_data: NamedTuple) -> bool:
+        return self._output_df.put(output_data._asdict())
 
 
 class DataFrameReader(ABC):
@@ -66,3 +74,18 @@ class MapDataFrameReader(DataFrameReader):
 
         except StopIteration:
             return None
+
+
+def create_reader(inputs: List[DataFrame], iter_type: str, op_inputs_index: Dict[str, int]) -> DataFrameReader:
+    if iter_type == "Map":
+        assert len(inputs) == 1, "%s iter needs one dataframe, input %s dataframes" % (
+            iter_type, len(inputs)
+        )
+        return MapDataFrameReader(inputs[0], op_inputs_index)
+    else:
+        raise NameError("Can not find %s iters" % iter_type)
+
+
+def create_writer(outputs: List[DataFrame]) -> DataFrameWriter:
+    assert len(outputs) == 1
+    return DataFrameWriter(outputs[0])
