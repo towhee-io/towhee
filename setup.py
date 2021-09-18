@@ -35,8 +35,9 @@ setup(
     test_suite="setup.test_suite",
 
     install_requires=['torch>=1.2.0',
-                      'torchvision>=0.4.0',
-                      'pandas>=1.2.4'],
+                       'torchvision>=0.4.0',
+                       'numpy>=1.20.3',
+                       'pandas>=1.2.4'],
 
     packages=find_packages(),
     license="http://www.apache.org/licenses/LICENSE-2.0"
