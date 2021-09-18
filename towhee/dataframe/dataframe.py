@@ -73,7 +73,7 @@ class DataFrame:
         with self._lock:
             assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
 
-            for i, v in row.items():
+            for i, v in row:
                 self._columns[i].put(v)
             self._size += 1
 
