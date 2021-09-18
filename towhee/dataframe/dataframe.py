@@ -38,8 +38,9 @@ class DataFrame:
         self._columns_dict = {(col.name, col) for col in data}
         self._iters = []
         self._sealed = False
+        self._size = 0
 
-        self._wcond = threading.Condition()
+        self._lock = threading.Lock()
 
     def __getitem__(self, key):
         """
@@ -62,18 +63,19 @@ class DataFrame:
     def columns(self) -> List:
         return self._columns
 
+    @property
+    def size(self) -> int:
+        return self._size
+
     def put(self, row: List):
         """Append one row to the end of this `DataFrame`
         """
-        assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
+        with self._lock:
+            assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
 
-        self._wcond.acquire()
-        try:
             for i, v in row.items():
                 self._columns[i].put(v)
-            self._wcond.notify_all()
-        finally:
-            self._wcond.release()
+            self._size += 1
 
     def append(self, data):
         """Append a dataframe-like data to the end of this `DataFrame`.
@@ -81,52 +83,32 @@ class DataFrame:
             data: (`list` of `Array`, or `DataFrame`)
                 The data to be appended.
         """
-        assert not self._sealed, 'DataFrame %s is already sealed, can not append data' % self._name
-
         if isinstance(data, DataFrame):
             data = data._columns
+        size = data[0].size
 
-        self._wcond.acquire()
-        try:
+        for v in data.items():
+            if v.size != size:
+                raise ValueError(
+                    'Each column of the appended data should be equally sized.'
+                )
+
+        with self._lock:
+            assert not self._sealed, 'DataFrame %s is already sealed, can not append data' % self._name
+
             for i, v in data.items():
                 self._columns[i].append(v)
-            self._wcond.notify_all()
-        finally:
-            self._wcond.release()
-
-    @property
-    def size(self):
-        if not self._columns:
-            return 0
-        return min([col.size for col in self._columns])
+            self._size += size
 
     def is_empty(self):
-        return not self.size
+        return not self._size
 
     def seal(self):
-        self._wcond.acquire()
-        try:
+        with self._lock:
             self._sealed = True
-            self._wcond.notify_all()
-        finally:
-            self._wcond.release()
 
     def is_sealed(self) -> bool:
         return self._sealed
-
-    def wait_append_if_not_sealed(self) -> bool:
-        """If new rows are appended to the `DataFrame`, the callers will be notified
-           via `self_.wcond`.
-        Return: (`bool`)
-            `True` if the `DataFrame` is NOT sealed
-        """
-        self._wcond.acquire()
-        if not self.is_sealed():
-            self._wcond.wait()
-            return True
-        else:
-            self._wcond.release()
-            return False
 
     def map_iter(self):
         it = MapIterator(self, self._wcond)
@@ -169,10 +151,9 @@ class MapIterator(DataFrameIterator):
             # if there is a ready row in df
             if self._has_next_row():
                 return self._get_next_row()
-
-            # wait for new rows
-            if self._df_ref.wait_append_if_not_sealed():
-                return self._get_next_row()
+            # next row is not ready yet
+            if not self._df_ref.is_sealed:
+                return None
             # df is sealed, see if there are rows left
             elif self._has_next_row():
                 return self._get_next_row()
@@ -180,7 +161,7 @@ class MapIterator(DataFrameIterator):
             else:
                 raise StopIteration
 
-    def _has_next_row(self):
+    def _has_next_row(self) -> bool:
         return self._cur_index < self._df_ref.size
 
     def _get_next_row(self):
