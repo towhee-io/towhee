@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import Any, Dict
 
 # from towhee.engine.task import Task
@@ -35,7 +34,6 @@ class Engine:
             Local path for which operators are stored. Defaults to
             `$HOME/.towhee/cache`.
     """
-
     def __init__(self, config: Dict[str, Any], cache_path: str = None):
         self._config = config
         self._cache_path = cache_path
@@ -92,7 +90,7 @@ class Engine:
         if sched_type == 'fifo':
             self._task_sched = FIFOTaskScheduler(self._pipelines)
         else:
-            raise ValueError('Invalid scheduler type - {0}'.format(sched_type))
+            raise ValueError(f'Invalid scheduler type - {sched_type}')
 
     def _on_task_ready(self):
         """Contains `Engine`-specific code blocks that need to be executed when a task

@@ -23,7 +23,6 @@ class DataFrame:
     """A dataframe is a collection of immutable, potentially heterogeneous blogs of
     data.
     """
-
     def __init__(self, name: str, data: List[Tuple[Variable]] = None):
         """DataFrame constructor.
 
@@ -52,7 +51,7 @@ class DataFrame:
         return self._name
 
     def put(self, item: Tuple[Variable]) -> None:
-        assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
+        assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         with self._lock:
             self._data.append(item)
             self._total += 1
@@ -121,7 +120,6 @@ class DataFrameIterator:
     Args:
         df: The dataframe to iterate over.
     """
-
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
         self._cur_index = 0
@@ -147,7 +145,6 @@ class MapIterator(DataFrameIterator):
     Args:
         df: The dataframe to iterate over.
     """
-
     def __init__(self, df: DataFrame):
         super().__init__(df)
         self._lock = threading.Lock()
@@ -171,7 +168,6 @@ class BatchIterator:
             batch size. If size is None, then the whole variable set will be batched
             together.
     """
-
     def __init__(self, df: DataFrame, size: int = None):
         super().__init__(df)
         self._size = size
@@ -190,7 +186,6 @@ class GroupIterator:
         func:
             The function used to return grouped data within the dataframe.
     """
-
     def __init__(self, df: DataFrame, func: Callable[[], None]):
         super().__init__(df)
         self._func = func
@@ -208,7 +203,6 @@ class RepeatIterator:
             n:
                 the repeat times. If `None`, the iterator will loop continuously.
     """
-
     def __init__(self, df: DataFrame, n: int = None):
         # self._n = n
         # self._i = 0
