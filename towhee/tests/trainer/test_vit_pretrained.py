@@ -25,7 +25,7 @@ class VitPretrainedTest(unittest.TestCase):
         assert self.name in PRETRAINED_MODELS.keys(), \
             'name should be in: ' + ', '.join(PRETRAINED_MODELS.keys())
         with request.urlopen(PRETRAINED_MODELS[self.name]['url']) as file:
-            self.assertEqual(math.floor(file.status/200), 2)
+            self.assertEqual(math.floor(file.status/100), 2)
             self.assertEqual(file.reason, 'OK')
 
 
