@@ -64,7 +64,8 @@ class OperatorLoader:
             # Specify the module name and absolute path of the file that needs to be
             # imported.
             modname = 'towhee.operator.' + fname
-            spec = importlib.util.spec_from_file_location(modname, path.resolve())
+            spec = importlib.util.spec_from_file_location(
+                modname, path.resolve())
 
             # Create the module and then execute the module in its own namespace.
             module = importlib.util.module_from_spec(spec)

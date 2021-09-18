@@ -13,6 +13,19 @@
 # limitations under the License.
 
 
-from pathlib import Path
+import threading
+from functools import wraps
 
-CACHE_PATH = Path(__file__).parent.resolve()
+
+def singleton(cls):
+    instances = {}
+    lock = threading.Lock()
+
+    @wraps(cls)
+    def wrapper(*args, **kargv):
+        if cls not in instances:
+            with lock:
+                if cls not in instances:
+                    instances[cls] = cls(*args, **kargv)
+        return instances[cls]
+    return wrapper

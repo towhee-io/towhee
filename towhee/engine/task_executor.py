@@ -40,6 +40,7 @@ class TaskExecutor(threading.Thread):
         self._task_queue = TaskQueue()
         self._op_pool = OperatorPool(cache_path=cache_path)
         self._is_run = True
+        self.setDaemon(True)
 
     @property
     def name(self):
