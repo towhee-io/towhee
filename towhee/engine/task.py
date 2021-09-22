@@ -14,7 +14,7 @@
 
 
 import timeit
-from typing import Any, Callable, Dict, List, NamedTuple
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 from towhee.operator import Operator
 
@@ -82,6 +82,21 @@ class Task:
     @property
     def runtime(self) -> float:
         return self._runtime
+
+    @property
+    def op_key(self) -> Tuple:
+        """Calculates a unique key given the operator hub ID and the operator's
+        initialization arguments. Operators with the same hub ID but different
+        initialization arguments are considered separate.
+
+        Returns:
+            (`tuple`)
+                Unique value corresponding to a combination of operator ininitialization
+                arguments and its operator ID in the hub.
+        """
+        args_tup = tuple((key, self.op_args[key])
+                         for key in sorted(self.op_args))
+        return (self.hub_op_id, ) + args_tup
 
     def add_ready_handler(self, handler: Callable):
         """Adds a ready handler to this `Task` object.

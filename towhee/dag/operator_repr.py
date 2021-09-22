@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
+from typing import Dict, List
 
-
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
-#from towhee.dag.variable_repr import VariableRepr
-#from towhee.dag.variable_repr import VariableReprSet
 
 
 class OperatorRepr(BaseRepr):
@@ -30,26 +29,81 @@ class OperatorRepr(BaseRepr):
         df_out:
             This operator's output dataframe.
     """
-
-    def __init__(self, name: str, df_in: DataframeRepr, df_out: DataframeRepr):
-        super().__init__(name)
-        self._df_in = df_in
-        self._df_out = df_out
-        self._iter_in = None
-        self._iter_out = None
+    def __init__(self):
+        super().__init__()
+        self._inputs = {}
+        self._outputs = {}
 
     @property
-    def df_in(self):
-        return self._df_in
+    def inputs(self):
+        return self._inputs
 
     @property
-    def df_out(self):
-        return self._df_out
+    def outputs(self):
+        return self._outputs
 
-    @df_in.setter
-    def df_in(self, value: DataframeRepr):
-        self._df_in = value
+    @inputs.setter
+    def inputs(self, value: Dict[str, DataframeRepr]):
+        self._inputs = value
 
-    @df_out.setter
-    def df_out(self, value: DataframeRepr):
-        self._df_out = value
+    @outputs.setter
+    def outputs(self, value: Dict[str, DataframeRepr]):
+        self._outputs = value
+
+    @staticmethod
+    def is_valid(info: List[dict]) -> bool:
+        """Check if the src is a valid YAML file to describe the operator(s) in Towhee.
+
+        Args:
+            info(`list`):
+                The list loaded from the source file.
+        """
+        essentials = {'name', 'function', 'inputs', 'outputs', 'iterators'}
+        if not isinstance(info, list):
+            logging.error('src is not a valid YAML file')
+            return False
+        for i in info:
+            if not isinstance(i, dict):
+                logging.error('src is not a valid YAML file')
+                return False
+            if not essentials.issubset(set(i.keys())):
+                logging.error('src cannot descirbe the operator(s) in Towhee')
+                return False
+        return True
+
+    @staticmethod
+    def from_yaml(file_or_src: str, dataframes: Dict[str, DataframeRepr]):
+        """Import a YAML file decribing the operator(s).
+
+        Args:
+            file_or_src(`str`):
+                YAML file (could be pre-loaded as string) to import.
+
+            dataframes(`dict`):
+                Dict with `DataframeRepr` objects as values to construct current
+                `OperatorRepr`.
+
+        Returns:
+            The operators we described in `file_or_src`
+        """
+        operators = OperatorRepr.load_src(file_or_src)
+        if not OperatorRepr.is_valid(operators):
+            raise ValueError('file or src is not a valid YAML file to describe the operator in Towhee.')
+
+        res = {}
+
+        for op in operators:
+            operator = OperatorRepr()
+            operator.name = op['name']
+            for ins in op['inputs']:
+                operator.inputs[ins['name']] = {}
+                operator.inputs[ins['name']]['df'] = dataframes[ins['df']]
+                operator.inputs[ins['name']]['idx'] = ins['col']
+            # output has only one dataframe
+            outs = op['outputs'][0]
+            operator.outputs[outs['name']] = {}
+            operator.outputs[outs['name']]['df'] = dataframes[outs['df']]
+            operator.outputs[outs['name']]['idx'] = outs['col']
+            res[operator.name] = operator
+
+        return res

@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dataframe.dataframe import DataFrame, DataFrameIterator
-from towhee.dataframe.variable import Variable
+
+from towhee.tests.mock_pipelines.emulated_pipeline import EmulatedPipeline
 
 
 __all__ = [
-    'DataFrame',
-    'Variable',
-    'DataFrameIterator'
+    'EmulatedPipeline'
 ]

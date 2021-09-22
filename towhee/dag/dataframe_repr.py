@@ -11,84 +11,81 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import List
+import logging
 
-# builder = GraphBuilder()
-# data1 = data0.map(op1)
-# data2 = data1.batch(op2, bs=64)
-
-
-from collections import OrderedDict
-from typing import Callable, NamedTuple
-
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
 
 
 class DataframeRepr(BaseRepr):
-    """`DataframeRepr` represents a single dataframe within a graph. A single dataframe
-    is composed of multiple individual variables, each of which is required in the next
-    operator stage within the graph.
+    """`DataframeRepr` represents a single dataframe within a graph.
+
+    A single dataframe is composed of multiple individual variables, each of which is
+    required in the next operator stage within the graph.
 
     Args:
         name:
             The representation name.
-        vars:
-            A list of variables that can be accessed from within the dataframe.
+        src:
+            The information of this dataframe.
     """
-
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
         # `_columns` must be filled in after this representation is instantiated
-        self._columns = OrderedDict()
+        self._columns = []
 
-    def __getitem__(self, key) -> VariableRepr:
-        """Access a variable representation via dictionary-like indexing.
+    @property
+    def columns(self):
+        return self._columns
+
+    @columns.setter
+    def columns(self, value: List[VariableRepr]):
+        self._columns = value
+
+    @staticmethod
+    def is_valid(info: List[dict]) -> bool:
+        """Check if the src is a valid YAML file to describe the dataframe(s) in Towhee.
 
         Args:
-            key:
-                Name of the variable representation to access.
+            info(`list`):
+                The list loaded from the source file.
+        """
+        essentials = {'name', 'columns'}
+        if not isinstance(info, list):
+            logging.error('src is not a valid YAML file.')
+            return False
+        for i in info:
+            if not isinstance(i, dict):
+                logging.error('src is not a valid YAML file.')
+                return False
+            if not essentials.issubset(set(i.keys())):
+                logging.error('src cannot descirbe the dataframe(s) in Towhee.')
+                return False
+        return True
+
+    @staticmethod
+    def from_yaml(file_or_src: str):
+        """Import a YAML file decribing this dataframe.
+
+        Args:
+            file_or_src(`str`):
+                YAML file (could be pre-loaded as string) to import.
 
         Returns:
-            The variable corresponding to the specified key, or None if an invalid key
-            was provided.
+            The dataframes we described in `file_or_src`.
         """
-        return self._columns.get(key)
+        dataframes = DataframeRepr.load_src(file_or_src)
+        if not DataframeRepr.is_valid(dataframes):
+            raise ValueError('file or src is not a valid YAML file to describe the dataframe in Towhee.')
 
-    def __setitem__(self, key: str, value: VariableRepr):
-        """Sets a single variable representation within the dataframe.
+        res = {}
 
-        Args:
-            key:
-                Variable name.
-            value:
-                A pre-instantiated `VariableRepr` instance.
-        """
-        self._columns[key] = value
+        for df in dataframes:
+            dataframe = DataframeRepr()
+            dataframe.name = df['name']
+            for col in df['columns']:
+                dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
+            res[dataframe.name] = dataframe
 
-    def from_input_annotations(self, func: Callable):
-        """Parse variables from a function's input annotations.
-
-        Args:
-            func:
-        """
-        for (name, kind) in func.__annotations__.items():
-            # Ignore return types in annotation dictionary.
-            if name != 'return':
-                # TODO
-                self._columns[name] = str(kind)
-
-    def from_output_annotations(self, func: Callable):
-        """Parse variables from an operator's output annotations.
-
-        Args:
-            func: Target operator function, for which the return value will be parsed
-            and formatted into values.
-        """
-        retval = func.__annotations__.get('return')
-        if isinstance(retval, NamedTuple):
-            for (name, kind) in retval.__annotations__.items():
-                # TODO
-                self._columns[name] = str(kind)
-        else:
-            raise TypeError(
-                'Operator function return value must be a `NamedTuple`.')
+        return res

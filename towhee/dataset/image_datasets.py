@@ -48,7 +48,10 @@ class PyTorchImageDataset(Dataset):
 
         df = pd.read_csv(self.label_file)
         image_names = Series.to_numpy(df['image_name'])
-        images = [name + '.jpg' for name in image_names]
+        for i in range(len(image_names)):
+            if os.path.splitext(image_names[i])[1] == '':
+                image_names[i] += '.jpg'
+        images = [name for name in image_names]
         self.images = [os.path.join(self.image_path, i) for i in images]
 
         categories = Series.to_numpy(df['category'])
