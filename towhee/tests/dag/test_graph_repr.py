@@ -11,29 +11,165 @@
 # WITHOUT_ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import unittest
+import os
+import yaml
 
+from towhee.dag.variable_repr import VariableRepr
+from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.operator_repr import OperatorRepr
 from towhee.dag.graph_repr import GraphRepr
+
+src = """
+-
+    graph:
+        name: 'test'
+
+    operators:
+        -
+            name: 'test_op_1'
+            function: 'test_function'
+            inputs:
+                -
+                    name: 'input_1'
+                    df: 'test_df_1'
+                    col: 1
+                -
+                    name: 'input_2'
+                    df: 'test_df_2'
+                    col: 1
+            outputs:
+                -
+                    name: 'output_1'
+                    df: 'test_df_1'
+                    col: 2
+            iterators:
+                -
+                    df: 'test_df_1'
+                    iter:
+                        type: map
+                -
+                    df: 'test_df_2'
+                    iter:
+                        type: map
+        -
+            name: 'test_op_2'
+            function: 'test_function'
+            inputs:
+                -
+                    name: 'output_1'
+                    df: 'test_df_1'
+                    col: 2
+            outputs:
+                -
+                    name: 'output_1'
+                    df: 'test_df_1'
+                    col: 2
+            iterators:
+                -
+                    df: 'test_df_1'
+                    iter:
+                        type: map
+
+    dataframes:
+        -
+            name: 'test_df_1'
+            columns:
+                -
+                    vtype: 'test_vtype_1'
+                    dtype: 'test_dtype_1'
+                -
+                    vtype: 'test_vtype_2'
+                    dtype: 'test_dtype_2'
+        -
+            name: 'test_df_2'
+            columns:
+                -
+                    vtype: 'test_vtype_3'
+                    dtype: 'test_dtype_3'
+"""
+cur_path = os.path.dirname(os.path.realpath(__file__))
+src_path = os.path.join(cur_path, 'test_graph.yaml')
+essentials = {'graph', 'operators', 'dataframes'}
 
 
 class TestGraphRepr(unittest.TestCase):
-    """Basic test case for `DataframeRepr`.
+    """Basic test cases for `GraphRepr`.
     """
+    def test_init(self):
+        # Create a `GraphRepr` object
+        self.repr = GraphRepr()
 
-    def setUp(self):
-        self.repr = GraphRepr('test')
+        # `operators` and `dataframes` should be dict type
+        self.assertTrue(isinstance(self.repr.operators, dict))
+        self.assertTrue(isinstance(self.repr.dataframes, dict))
+
+    def test_is_valid(self):
+        # When the information is valid YAML format
+        info = yaml.safe_load(src)
+        self.assertTrue(GraphRepr.is_valid(info))
+
+        # When the information is not valid YAML format
+        false_src_1 = 'test_src that is not of YAML format'
+        false_info_1 = [yaml.safe_load(false_src_1)]
+        self.assertFalse(GraphRepr.is_valid(false_info_1))
+
+        # When the information is a valid YAML format but cannot describe a DAG
+        false_src_2 = """test_key : 'test_value'"""
+        false_info_2 = [yaml.safe_load(false_src_2)]
+        self.assertFalse(GraphRepr.is_valid(false_info_2))
 
     def test_yaml_import(self):
-        # TODO
-        # self.assertTrue(True)
-        pass
+        self.repr = GraphRepr.from_yaml(src)
+        df = self.repr.dataframes
+        op = self.repr.operators
 
-    def test_yaml_export(self):
-        # TODO
-        # self.assertTrue(True)
-        pass
+        # `operators` and `dataframes` should be dict type
+        self.assertTrue(isinstance(op, dict))
+        self.assertTrue(isinstance(df, dict))
+
+        # In this case, `df` contains two dataframes, namely 'test_df_1' and 'test_df_2'
+        self.assertTrue({'test_df_1', 'test_df_2'}.issubset(set(df.keys())))
+
+        # Dataframes are stored in the form of dict
+        # The keys are `str` type, i.e. the name of the dataframe
+        # The values are `DataframeRepr` object
+        self.assertTrue(isinstance(df['test_df_1'], DataframeRepr))
+        self.assertTrue(isinstance(df['test_df_2'], DataframeRepr))
+
+        # In this case, `test_df_1` has two columns, each columns is a `VariableRepr` object
+        # The columns are stored in a list
+        self.assertTrue(isinstance(df['test_df_1'].columns[0], VariableRepr))
+        self.assertTrue(isinstance(df['test_df_1'].columns[1], VariableRepr))
+
+        # In this case, `op` contains two operators, namely `test_op_1` and `test_op_2`
+        self.assertTrue({'test_op_1', 'test_op_2'}.issubset(set(op.keys())))
+
+        # Operators are stored in the form of dict
+        # The keys are `str` type, i.e. the name of the operator
+        # The values are `OperatorRepr` object
+        self.assertTrue(isinstance(op['test_op_1'], OperatorRepr))
+        self.assertTrue(isinstance(op['test_op_2'], OperatorRepr))
+
+        # Each `OperatorRepr` object has two `dict` attributes `inputs` and `outputs`
+        self.assertTrue(hasattr(op['test_op_1'], 'inputs'))
+        self.assertTrue(hasattr(op['test_op_2'], 'inputs'))
+        self.assertTrue(isinstance(op['test_op_1'].inputs, dict))
+        self.assertTrue(isinstance(op['test_op_1'].outputs, dict))
+
+        # In this case, `test_op_1` has two inputs, namely `inputs_1` and `inputs_2`
+        self.assertTrue('input_1' in op['test_op_1'].inputs.keys())
+        self.assertTrue('input_2' in op['test_op_1'].inputs.keys())
+
+        # Each input is a `dict` that specifies the dataframe and the column
+        self.assertTrue('df' in op['test_op_1'].inputs['input_1'].keys())
+        self.assertTrue('idx' in op['test_op_1'].inputs['input_1'].keys())
+        self.assertTrue(isinstance(op['test_op_1'].inputs['input_1']['df'], DataframeRepr))
+        self.assertTrue(isinstance(op['test_op_1'].inputs['input_1']['idx'], int))
+
+    # def test_yaml_export(self):
+    #     # TODO
+    #     self.assertTrue(True)
 
 
 if __name__ == '__main__':

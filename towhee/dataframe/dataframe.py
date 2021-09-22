@@ -23,7 +23,6 @@ class DataFrame:
     """A dataframe is a collection of immutable, potentially heterogeneous blogs of
     data.
     """
-
     def __init__(self, name: str, data: List[Tuple[Variable]] = None):
         """DataFrame constructor.
 
@@ -48,11 +47,11 @@ class DataFrame:
         self._registered_lock = threading.Lock()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     def put(self, item: Tuple[Variable]) -> None:
-        assert not self._sealed, 'DataFrame %s is already sealed, can not put data' % self._name
+        assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         with self._lock:
             self._data.append(item)
             self._total += 1
@@ -114,14 +113,13 @@ class DataFrame:
         return it
 
 
-class _BaseIterator:
+class DataFrameIterator:
     """Base iterator implementation. All iterators should be subclasses of
-    `_BaseIterator`.
+    `DataFrameIterator`.
 
     Args:
         df: The dataframe to iterate over.
     """
-
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
         self._cur_index = 0
@@ -133,6 +131,7 @@ class _BaseIterator:
         # The base iterator is purposely defined to have exatly 0 elements.
         raise StopIteration
 
+    @property
     def accessible_size(self) -> int:
         """
         Return current accessible data size
@@ -140,18 +139,22 @@ class _BaseIterator:
         return self._df_ref().size - self._cur_index
 
 
-class MapIterator(_BaseIterator):
+class MapIterator(DataFrameIterator):
     """Iterator implementation that traverses the dataframe line-by-line.
 
     Args:
         df: The dataframe to iterate over.
     """
+    def __init__(self, df: DataFrame):
+        super().__init__(df)
+        self._lock = threading.Lock()
 
-    def __next__(self):
-        end, data = self._df_ref().get(self._cur_index, 1)
-        if end and len(data) == 0:
-            raise StopIteration
-        self._cur_index += len(data)
+    def __next__(self) -> List[Tuple]:
+        with self._lock:
+            sealed, data = self._df_ref().get(self._cur_index, 1)
+            if sealed and len(data) == 0:
+                raise StopIteration
+            self._cur_index += len(data)
         return data
 
 
@@ -165,7 +168,6 @@ class BatchIterator:
             batch size. If size is None, then the whole variable set will be batched
             together.
     """
-
     def __init__(self, df: DataFrame, size: int = None):
         super().__init__(df)
         self._size = size
@@ -184,7 +186,6 @@ class GroupIterator:
         func:
             The function used to return grouped data within the dataframe.
     """
-
     def __init__(self, df: DataFrame, func: Callable[[], None]):
         super().__init__(df)
         self._func = func
@@ -202,7 +203,6 @@ class RepeatIterator:
             n:
                 the repeat times. If `None`, the iterator will loop continuously.
     """
-
     def __init__(self, df: DataFrame, n: int = None):
         # self._n = n
         # self._i = 0

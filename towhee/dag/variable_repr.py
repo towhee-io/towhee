@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from towhee.base_repr import BaseRepr
+from towhee.dag.base_repr import BaseRepr
 
 
 class VariableRepr(BaseRepr):
@@ -21,7 +20,7 @@ class VariableRepr(BaseRepr):
 
     Args:
         name:
-            Variable name.
+            The representation name.
         vtype:
             This can be one of many possible variable types, such as a numpy array or
             PyTorch tensor.
@@ -29,11 +28,10 @@ class VariableRepr(BaseRepr):
             A string or instance of `numpy.dtype` indicating the internal data type for
             this variable.
     """
-
-    def __init__(self, name: str, vtype: str, dtype: str):
-        super().__init__(name)
-        self._vtype = str(vtype)
-        self._dtype = str(dtype)
+    def __init__(self, vtype: str, dtype: str):
+        super().__init__()
+        self._vtype = vtype
+        self._dtype = dtype
 
     @property
     def vtype(self):

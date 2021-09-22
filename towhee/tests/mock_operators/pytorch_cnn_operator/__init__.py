@@ -11,13 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from towhee.dataframe.dataframe import DataFrame, DataFrameIterator
-from towhee.dataframe.variable import Variable
-
-
-__all__ = [
-    'DataFrame',
-    'Variable',
-    'DataFrameIterator'
-]

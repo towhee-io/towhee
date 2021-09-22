@@ -12,12 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dataframe.dataframe import DataFrame, DataFrameIterator
-from towhee.dataframe.variable import Variable
+
+import numpy as np
+from towhee.array.array import Array
 
 
-__all__ = [
-    'DataFrame',
-    'Variable',
-    'DataFrameIterator'
-]
+def full(shape: int, fill_value):
+    """Return a new `Array` of given shape filled with `fill_value`
+
+    Args:
+        shape: (`int`)
+            Shape of the new `Array`
+        fill_value: (`numpy.dtype` or `str`)
+            Fill value
+    """
+    return Array(data=np.full(shape=shape, fill_value=fill_value))
