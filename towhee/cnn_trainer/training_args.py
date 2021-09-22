@@ -41,8 +41,40 @@ def default_logdir() -> str:
 @dataclass
 class TrainingArguments:
     """
-    Training arguments of CNN trainer.
-    """
+        Training arguments of CNN trainer.
+
+        Parameters:
+            output_dir (:obj:`str`):
+                The output directory where the model predictions and checkpoints will be written.
+            overwrite_output_dir (:obj:`bool`, `optional`, defaults to :obj:`False`):
+                If :obj:`True`, overwrite the content of the output directory. Use this to continue training if
+                :obj:`output_dir` points to a checkpoint directory.
+            prediction_loss_only (:obj:`bool`, `optional`, defaults to `False`):
+                When performing evaluation and generating predictions, only returns the loss.
+            per_device_train_batch_size (:obj:`int`, `optional`, defaults to 8):
+                The batch size per GPU core/CPU for training.
+            per_device_eval_batch_size (:obj:`int`, `optional`, defaults to 8):
+                The batch size per GPU core/CPU for evaluation.
+            eval_accumulation_steps (:obj:`int`, `optional`):
+                Number of predictions steps to accumulate the output tensors for, before moving the results to the CPU. If
+                left unset, the whole predictions are accumulated on GPU before being moved to the CPU (faster but
+                requires more memory).
+            num_train_epochs(:obj:`float`, `optional`, defaults to 3.0):
+                Total number of training epochs to perform (if not an integer, will perform the decimal part percents of
+                the last epoch before stopping training).
+            max_steps (:obj:`int`, `optional`, defaults to -1):
+                If set to a positive number, the total number of training steps to perform. Overrides
+                :obj:`num_train_epochs`.
+            no_cuda (:obj:`bool`, `optional`, defaults to :obj:`False`):
+                Whether to not use CUDA even when it is available or not.
+            eval_steps (:obj:`int`, `optional`):
+                Number of update steps between two evaluations if :obj:`evaluation_strategy="steps"`.
+            disable_tqdm (:obj:`bool`, `optional`):
+                Whether or not to disable the tqdm progress bars.
+            label_names (:obj:`List[str]`, `optional`):
+                The list of keys in your dictionary of inputs that correspond to the labels.
+        """
+
     output_dir: str = field(
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
