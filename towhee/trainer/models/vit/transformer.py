@@ -45,6 +45,13 @@ def merge_last(x, n_dims):
 class MultiHeadedSelfAttention(nn.Module):
     """
     Multi-Headed Dot Product Attention
+        Args:
+            dim(int):
+                dimension
+            num_heads(int):
+                number of heads
+            dropout(float):
+                dropout probability
     """
     def __init__(self, dim, num_heads, dropout):
         super().__init__()
