@@ -88,7 +88,12 @@ class MultiHeadedSelfAttention(nn.Module):
 class PositionWiseFeedForward(nn.Module):
     """
     FeedForward Neural Networks for each position
-    """
+        Args:
+            dim(int):
+                dimension
+            ff_dim(int):
+                hidden layer size in feedforward network
+    """    
     def __init__(self, dim, ff_dim):
         super().__init__()
         self.fc1 = nn.Linear(dim, ff_dim)
@@ -102,6 +107,15 @@ class PositionWiseFeedForward(nn.Module):
 class Block(nn.Module):
     """
     Transformer Block
+        Args:
+            dim(int):
+                dimension
+            num_heads(int):
+                number of heads
+            ff_dim(int):
+                hidden layer size in feedforward network
+            dropout(float):
+                dropout probability    
     """
     def __init__(self, dim, num_heads, ff_dim, dropout):
         super().__init__()
@@ -123,6 +137,18 @@ class Block(nn.Module):
 class Transformer(nn.Module):
     """
     Transformer with Self-Attentive Blocks
+        Args:
+            num_layers(int):
+                number of layers
+            dim(int):
+                dimension
+            num_heads(int):
+                number of heads
+            ff_dim(int):
+                hidden layer size in feedforward network
+            dropout(float):
+                dropout probability
+
     """
     def __init__(self, num_layers, dim, num_heads, ff_dim, dropout):
         super().__init__()
