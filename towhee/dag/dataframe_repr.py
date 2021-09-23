@@ -23,12 +23,6 @@ class DataframeRepr(BaseRepr):
 
     A single dataframe is composed of multiple individual variables, each of which is
     required in the next operator stage within the graph.
-
-    Args:
-        name:
-            The representation name.
-        src:
-            The information of this dataframe.
     """
     def __init__(self):
         super().__init__()
@@ -52,9 +46,11 @@ class DataframeRepr(BaseRepr):
                 The list loaded from the source file.
         """
         essentials = {'name', 'columns'}
+
         if not isinstance(info, list):
             logging.error('src is not a valid YAML file.')
             return False
+
         for i in info:
             if not isinstance(i, dict):
                 logging.error('src is not a valid YAML file.')
@@ -62,11 +58,12 @@ class DataframeRepr(BaseRepr):
             if not essentials.issubset(set(i.keys())):
                 logging.error('src cannot descirbe the dataframe(s) in Towhee.')
                 return False
+
         return True
 
     @staticmethod
     def from_yaml(file_or_src: str):
-        """Import a YAML file decribing this dataframe.
+        """Import a YAML file decribing the dataframe(s).
 
         Args:
             file_or_src(`str`):
@@ -77,13 +74,15 @@ class DataframeRepr(BaseRepr):
         """
         dataframes = DataframeRepr.load_src(file_or_src)
         if not DataframeRepr.is_valid(dataframes):
-            raise ValueError('file or src is not a valid YAML file to describe the dataframe in Towhee.')
+            raise ValueError('file or src is not a valid YAML file to describe the dataframe(s) in Towhee.')
 
         res = {}
+        all_df = set()
 
         for df in dataframes:
             dataframe = DataframeRepr()
             dataframe.name = df['name']
+            all_df.add(dataframe.name)
             for col in df['columns']:
                 dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
             res[dataframe.name] = dataframe

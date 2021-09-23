@@ -1,0 +1,54 @@
+-
+    name: 'loop_op_1'
+    function: 'test_function'
+    inputs:
+        -
+            name: 'input_2'
+            df: 'test_df_2'
+            col: 1
+    outputs:
+        -
+            name: 'output_2'
+            df: 'test_df_2'
+            col: 2
+    iterators:
+        -
+            df: 'test_df_2'
+            iter:
+                type: map
+-
+    name: 'loop_op_2'
+    function: 'test_function'
+    inputs:
+        -
+            name: 'output_2'
+            df: 'test_df_2'
+            col: 2
+    outputs:
+        -
+            name: 'output_3'
+            df: 'test_df_2'
+            col: 3
+    iterators:
+        -
+            df: 'test_df_2'
+            iter:
+                type: map
+-
+    name: 'loop_op_3'
+    function: 'test_function'
+    inputs:
+        -
+            name: 'output_3'
+            df: 'test_df_2'
+            col: 3
+    outputs:
+        -
+            name: 'input_2'
+            df: 'test_df_2'
+            col: 1
+    iterators:
+        -
+            df: 'test_df_2'
+            iter:
+                type: map

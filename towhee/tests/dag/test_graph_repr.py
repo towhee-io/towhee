@@ -62,8 +62,8 @@ src = """
                     col: 2
             outputs:
                 -
-                    name: 'output_1'
-                    df: 'test_df_1'
+                    name: 'output_2'
+                    df: 'test_df_2'
                     col: 2
             iterators:
                 -
@@ -87,7 +87,14 @@ src = """
                 -
                     vtype: 'test_vtype_3'
                     dtype: 'test_dtype_3'
+                -
+                    vtype: 'test_vtype_3'
+                    dtype: 'test_dtype_3'
+                -
+                    vtype: 'test_vtype_3'
+                    dtype: 'test_dtype_3'
 """
+
 cur_path = os.path.dirname(os.path.realpath(__file__))
 src_path = os.path.join(cur_path, 'test_graph.yaml')
 essentials = {'graph', 'operators', 'dataframes'}
@@ -103,6 +110,81 @@ class TestGraphRepr(unittest.TestCase):
         # `operators` and `dataframes` should be dict type
         self.assertTrue(isinstance(self.repr.operators, dict))
         self.assertTrue(isinstance(self.repr.dataframes, dict))
+
+    def test_dfs(self):
+        adj_1 = {'a': ['b'], 'b': ['c'], 'c': ['d']}
+        flag_1 = {'a': 0, 'b': 0, 'c': 0}
+        status, msg = GraphRepr.dfs('a', adj_1, flag_1, [])
+        self.assertEqual(status, False)
+        self.assertEqual(msg, '')
+
+        adj_2 = {'a': ['b'], 'b': ['c'], 'c': ['a']}
+        flag_2 = {'a': 0, 'b': 0, 'c': 0}
+        status, msg = GraphRepr.dfs('a', adj_2, flag_2, [])
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The columns [\'a\', \'b\', \'c\'] forms a loop')
+
+    def test_has_loop(self):
+        op_path = os.path.join(cur_path, 'loop_operators.yaml')
+
+        self.repr = GraphRepr.from_yaml(src)
+        self.assertTrue(isinstance(self.repr, GraphRepr))
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, False)
+        self.assertEqual(msg, '')
+
+        self.repr.operators = OperatorRepr.from_yaml(op_path, self.repr.dataframes)
+        status, msg = self.repr.has_loop()
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The columns [\'input_2\', \'output_2\', \'output_3\'] forms a loop')
+
+    def has_iso_df(self):
+        df_path = os.path.join(cur_path, 'isolated_dataframe.yaml')
+
+        self.repr = GraphRepr.from_yaml(src)
+        self.assertTrue(isinstance(self.repr, GraphRepr))
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, False)
+        self.assertEqual(msg, '')
+
+        self.repr.dataframes = DataframeRepr.from_yaml(df_path)
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The DAG contains isolated dataframe(s): {\'isolated_df\'}')
+
+    def test_iso_op(self):
+        op_path = os.path.join(cur_path, 'isolated_operator.yaml')
+
+        self.repr = GraphRepr.from_yaml(src)
+        self.assertTrue(isinstance(self.repr, GraphRepr))
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, False)
+        self.assertEqual(msg, '')
+
+        self.repr.operators = OperatorRepr.from_yaml(op_path, self.repr.dataframes)
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The DAG contains isolated operator(s): {\'isoloated_op_1\'}')
+
+    def test_has_isolation(self):
+        df_path = os.path.join(cur_path, 'isolated_dataframe.yaml')
+        op_path = os.path.join(cur_path, 'isolated_operator.yaml')
+
+        self.repr = GraphRepr.from_yaml(src)
+        self.assertTrue(isinstance(self.repr, GraphRepr))
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, False)
+        self.assertEqual(msg, '')
+
+        self.repr.dataframes = DataframeRepr.from_yaml(df_path)
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The DAG contains isolated dataframe(s): {\'isolated_df\'}')
+
+        self.repr.operators = OperatorRepr.from_yaml(op_path, self.repr.dataframes)
+        status, msg = self.repr.has_isolation()
+        self.assertEqual(status, True)
+        self.assertEqual(msg, 'The DAG contains isolated dataframe(s): {\'isolated_df\'}.The DAG contains isolated operator(s): {\'isoloated_op_1\'}')
 
     def test_is_valid(self):
         # When the information is valid YAML format

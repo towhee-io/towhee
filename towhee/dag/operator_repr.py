@@ -20,14 +20,6 @@ from towhee.dag.dataframe_repr import DataframeRepr
 
 class OperatorRepr(BaseRepr):
     """This class encapsulates operator representations at compile-time.
-
-    Args:
-        name:
-            Name of the operator represented by this object.
-        df_in:
-            Input dataframes(s) to this object.
-        df_out:
-            This operator's output dataframe.
     """
     def __init__(self):
         super().__init__()
@@ -59,9 +51,11 @@ class OperatorRepr(BaseRepr):
                 The list loaded from the source file.
         """
         essentials = {'name', 'function', 'inputs', 'outputs', 'iterators'}
+
         if not isinstance(info, list):
             logging.error('src is not a valid YAML file')
             return False
+
         for i in info:
             if not isinstance(i, dict):
                 logging.error('src is not a valid YAML file')
@@ -69,6 +63,7 @@ class OperatorRepr(BaseRepr):
             if not essentials.issubset(set(i.keys())):
                 logging.error('src cannot descirbe the operator(s) in Towhee')
                 return False
+
         return True
 
     @staticmethod
@@ -88,7 +83,7 @@ class OperatorRepr(BaseRepr):
         """
         operators = OperatorRepr.load_src(file_or_src)
         if not OperatorRepr.is_valid(operators):
-            raise ValueError('file or src is not a valid YAML file to describe the operator in Towhee.')
+            raise ValueError('file or src is not a valid YAML file to describe the operator(s) in Towhee.')
 
         res = {}
 
