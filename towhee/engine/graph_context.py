@@ -22,21 +22,24 @@ class GraphContext:
     each row's processing runs in a GraphContext.
     """
 
-    def __init__(self, pipeline):
+    def __init__(self):
         """
         Args:
             pipeline: the Pipeline this GraphContext belongs to.
         """
-        self._pipeline = pipeline
-        self.idx = None  # the subjob index
+        self._idx = None  # the subjob index
         # todo: initialize OperatorContexts based on job.graph_repr
-        self.op_contexts = None
-        self.on_start_handlers = []
-        self.on_finish_handlers = []
-        self.on_task_ready_handlers = []
-        self.on_task_start_handlers = []
-        self.on_task_finish_handlers = []
-        raise NotImplementedError
+        self._op_contexts = None
+        # self.on_start_handlers = []
+        # self.on_finish_handlers = []
+        # self.on_task_ready_handlers = []
+        # self.on_task_start_handlers = []
+        # self.on_task_finish_handlers = []
+        # raise NotImplementedError
+
+    @property
+    def op_ctxs(self):
+        return self._op_contexts
 
     def _on_start(self):
         """

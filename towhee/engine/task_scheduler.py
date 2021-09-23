@@ -40,22 +40,26 @@ class _TaskScheduler(ABC):
             assign any further tasks to it.
     """
 
-    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
+    def __init__(self, pipelines: List[Pipeline], task_execs: List[TaskExecutor], max_tasks: int = 10):
         self._task_execs = task_execs
         self._max_tasks = max_tasks
-        self._pipelines = []
+        self._pipelines = pipelines
+        self._need_stop = False
 
-    def add_pipeline(self, pipeline: Pipeline):
-        """Add a single pipeline for this scheduler to manage tasks for.
+    def stop(self) -> None:
+        self._need_stop = True
 
-        Args:
-            pipeline: `towhee.Pipeline`
-                A single pipeline to schedule tasks for.
-        """
-        pipeline.add_task_ready_handler(self.on_task_ready)
-        pipeline.add_task_start_handler(self.on_task_start)
-        pipeline.add_task_finish_handler(self.on_task_finish)
-        self._pipelines.append(pipeline)
+    # def add_pipeline(self, pipeline: Pipeline):
+    #     """Add a single pipeline for this scheduler to manage tasks for.
+
+    #     Args:
+    #         pipeline: `towhee.Pipeline`
+    #             A single pipeline to schedule tasks for.
+    #     """
+    #     pipeline.add_task_ready_handler(self.on_task_ready)
+    #     pipeline.add_task_start_handler(self.on_task_start)
+    #     pipeline.add_task_finish_handler(self.on_task_finish)
+    #     self._pipelines.append(pipeline)
 
     def schedule_forever(self, sleep_ms: int = 1000):
         """Runs the a single schedule step in a loop.
@@ -63,7 +67,7 @@ class _TaskScheduler(ABC):
         sleep_ms: (`int`)
             Milliseconds to sleep after completing a single scheduling step.
         """
-        while True:
+        while not self._need_stop:
             self.schedule_step()
             # TODO(fzliu): compute runtime for bottleneck operator
             time.sleep(sleep_ms / 1000)
@@ -110,7 +114,7 @@ class FIFOTaskScheduler(_TaskScheduler):
         """
 
         for pipeline in self._pipelines:
-            for op_ctx in pipeline.graph_ctx.op_ctxs[::-1]:
+            for op_ctx in pipeline.graph_ctx.op_ctxs:
                 tasks = op_ctx.pop_ready_tasks(n_tasks=1)
                 if not tasks:
                     continue

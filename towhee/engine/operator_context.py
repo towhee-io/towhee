@@ -116,6 +116,7 @@ class OperatorContext:
         t = Task(self._op_info['name'], self._op_info['name'],
                  self._op_info['op_args'], inputs, self._taskid)
         self._taskid += 1
+        t.add_finish_handler(self.write_outputs)
         return t
 
     def _notify_downstream_op_ctx(self):

@@ -30,8 +30,9 @@ class TestFIFOTaskScheduler(unittest.TestCase):
         self._task_execs = []
         for _ in range(4):
             self._task_execs.append(TaskExecutor('', cache_path=cache_path))
-        self._task_sched = FIFOTaskScheduler(self._task_execs)
         self._pipeline = EmulatedPipeline()
+        self._task_sched = FIFOTaskScheduler(
+            [self._pipeline], self._task_execs)
 
     def tearDown(self):
         for task_exec in self._task_execs:
@@ -45,6 +46,7 @@ class TestFIFOTaskScheduler(unittest.TestCase):
         # Add callback function upon completion.
         self._n_runs = n_runs
         self._runs_count = 0
+
         def _add_task_finish_callback(task):
             self._runs_count += 1  # No need for threading.Lock due to GIL.
             self.assertEqual(task.outputs.sum, task.inputs['num'])
@@ -55,9 +57,9 @@ class TestFIFOTaskScheduler(unittest.TestCase):
             task_exec.start()
 
         # Add callback function upon completion.
-        self._task_sched.add_pipeline(self._pipeline)
         for _ in range(n_runs):
             self._task_sched.schedule_step()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,30 +13,28 @@
 # limitations under the License.
 
 
-import threading
-from typing import Callable
+from typing import Callable, List
 
-from towhee.dag.graph_repr import GraphRepr
-from towhee.dataframe import DataFrameIterator
 from towhee.engine.graph_context import GraphContext
+from towhee.dataframe import DataFrame
 
 
-class Pipeline(threading.Thread):
+class Pipeline:
     """
-    The runtime pipeline context
+    The runtime pipeline context, include graph context, all dataframes
     """
+    # TODO (junjie.jiangjjj) use repr to create all ctx
 
-    def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
+    def __init__(self, graph_ctx: GraphContext, dataframes: List[DataFrame], parallelism: int = 1) -> None:
         """
         Args:
             graph_repr: the graph representation
             parallelism: how many rows of inputs to be processed concurrently
         """
-        self._graph_repr = graph_repr
+        self._graph_ctx = graph_ctx
+        self._dataframes = dataframes
         self._parallelism = parallelism
         self.on_task_finish_handlers = []
-
-        self._graph_ctx = None
 
     @property
     def graph_ctx(self):
@@ -48,26 +46,6 @@ class Pipeline(threading.Thread):
         """
         for g in self._graph_ctxs:
             g.on_task_finish_handlers.append(self.on_task_finish_handlers)
-        raise NotImplementedError
-
-    def run(self, inputs: list) -> DataFrameIterator:
-        """
-        The Pipeline's main loop
-
-        Agrs:
-            inputs: the input data, organized as a list of DataFrame, feeding
-                to the Pipeline.
-        """
-
-        # while we still have pipeline inputs:
-        #     input = inputs.next()
-        #     for g in graph contexts:
-        #         if g.is_idle:
-        #             g.start_op.inputs = input
-        #             break
-        #     if all graphs contexts are busy:
-        #         wait for notification from _notify_run_loop
-
         raise NotImplementedError
 
     def on_start(self, handler: Callable[[], None]) -> None:

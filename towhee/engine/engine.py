@@ -12,44 +12,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict
+import threading
 
-# from towhee.engine.task import Task
+from towhee.engine.singleton import singleton
 from towhee.engine.pipeline import Pipeline
-from towhee.engine.scheduler import FIFOTaskScheduler
+from towhee.engine.task_scheduler import FIFOTaskScheduler
 from towhee.engine.task_executor import TaskExecutor
 
 
-class Engine:
+@singleton
+class EngineConfig:
+    """
+    Global engine config
+    """
+
+    def __init__(self):
+        self._sched_type = 'fifo'
+        self._cache_path = None
+        self._sched_interval_ms = 1000
+
+    @property
+    def sched_type(self):
+        return self._sched_type
+
+    @sched_type.setter
+    def sched_type(self, sched_type: str):
+        self._sched_type = sched_type
+
+    @property
+    def cache_path(self):
+        return self._cache_path
+
+    @cache_path.setter
+    def cache_path(self, cache_path: str):
+        self._cache_path = cache_path
+
+    @property
+    def sched_interval_ms(self):
+        return self._sched_interval_ms
+
+    @sched_interval_ms.setter
+    def sched_interval_ms(self, sched_interval_ms: int):
+        self._sched_interval_ms = sched_interval_ms
+
+    def __str__(self):
+        return str(self.__dict__)
+
+
+@singleton
+class Engine(threading.Thread):
     """Engines are the core component responsible for deliving results to the user. A
     single engine may be composed of multiple pipelines.
-
-    Args:
-        config: (`dict`)
-            Engine configuration. Example configuration:
-                config = {
-                    'sched_type': 'fifo'
-                }
-        cache_path: (`str`)
-            Local path for which operators are stored. Defaults to
-            `$HOME/.towhee/cache`.
     """
-    def __init__(self, config: Dict[str, Any], cache_path: str = None):
-        self._config = config
-        self._cache_path = cache_path
+
+    def __init__(self):
+        super().__init__()
+
+        self._config = EngineConfig()
         self._pipelines = []
+        self.setDaemon(True)
 
         # Setup executors and scheduler.
         self._setup_task_execs()
         self._setup_task_sched()
 
-    @property
-    def pipelines(self):
-        return self._pipelines
+    def stop(self) -> None:
+        self._task_sched.stop()
+        for task_exec in self._task_execs:
+            task_exec.stop()
 
-    @property
-    def task_execs(self):
-        return self._task_execs
+    def run(self):
+        self._task_sched.schedule_forever(self._config.sched_interval_ms)
 
     def add_pipeline(self, pipeline: Pipeline):
         """Add a single pipeline to this engine. Pipelines can be added long after an
@@ -60,9 +93,9 @@ class Engine:
                 A single pipeline with which this engine will be assume execution
                 responsibility.
         """
-        pipeline.add_task_ready_handler(self._on_task_ready)
-        pipeline.add_task_start_handler(self._on_task_start)
-        pipeline.add_task_finish_handler(self._on_task_finish)
+        # pipeline.add_task_ready_handler(self._on_task_ready)
+        # pipeline.add_task_start_handler(self._on_task_start)
+        # pipeline.add_task_finish_handler(self._on_task_finish)
         self._pipelines.append(pipeline)
 
     def _setup_task_execs(self):
@@ -76,7 +109,8 @@ class Engine:
 
         # Create executor threads and begin running.
         for name in dev_names:
-            executor = TaskExecutor(name=name, cache_path=self._cache_path)
+            executor = TaskExecutor(
+                name=name, cache_path=self._config.cache_path)
             self._task_execs.append(executor)
             executor.start()
 
@@ -86,26 +120,27 @@ class Engine:
         self._task_sched = None
 
         # Parse scheduler type from configuration.
-        sched_type = self._config.get('sched_type', 'fifo')
+        sched_type = self._config.sched_type
         if sched_type == 'fifo':
-            self._task_sched = FIFOTaskScheduler(self._pipelines)
+            self._task_sched = FIFOTaskScheduler(
+                self._pipelines, self._task_execs)
         else:
             raise ValueError(f'Invalid scheduler type - {sched_type}')
 
-    def _on_task_ready(self):
-        """Contains `Engine`-specific code blocks that need to be executed when a task
-        is marked as ready.
-        """
-        pass
+    # def _on_task_ready(self):
+    #     """Contains `Engine`-specific code blocks that need to be executed when a task
+    #     is marked as ready.
+    #     """
+    #     pass
 
-    def _on_task_start(self):
-        """Contains `Engine`-specific code blocks that need to be executed when a task
-        begins running.
-        """
-        pass
+    # def _on_task_start(self):
+    #     """Contains `Engine`-specific code blocks that need to be executed when a task
+    #     begins running.
+    #     """
+    #     pass
 
-    def _on_task_finish(self):
-        """Contains `Engine`-specific code blocks that need to be executed when a task
-        is finished executing.
-        """
-        pass
+    # def _on_task_finish(self):
+    #     """Contains `Engine`-specific code blocks that need to be executed when a task
+    #     is finished executing.
+    #     """
+    #     pass
