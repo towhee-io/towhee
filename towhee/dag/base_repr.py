@@ -28,6 +28,13 @@ class BaseRepr:
             Name of the internal object described by this representation.
     """
 
+    def __init__(self, name: str):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
     @staticmethod
     def is_valid(info: Dict, essentials: Set[str]) -> bool:
         """Check if the src is a valid YAML file to describe a DAG in Towhee.

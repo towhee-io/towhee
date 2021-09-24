@@ -29,7 +29,8 @@ class VariableRepr(BaseRepr):
             this variable.
     """
 
-    def __init__(self, vtype: str):
+    def __init__(self, name: str, vtype: str):
+        super().__init__(name)
         self._vtype = vtype
 
     @property

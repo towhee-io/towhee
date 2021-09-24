@@ -14,11 +14,15 @@
 
 from typing import List, Dict
 
-# from collections import namedtuple
+from collections import namedtuple
 from towhee.engine.task import Task
 # from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
 from towhee.engine._operator_io import create_reader, create_writer
+
+
+OpInfo = namedtuple(
+    'OpInfo', ['name', 'function', 'op_args', 'iter_type', 'inputs_index'])
 
 
 class OperatorContext:
@@ -30,7 +34,7 @@ class OperatorContext:
     scheduling context.
     """
 
-    def __init__(self, op_info: Dict, inputs: List[DataFrame],
+    def __init__(self, op_info: OpInfo, inputs: List[DataFrame],
                  outputs: List[DataFrame]) -> None:
         """
         Args:
@@ -40,7 +44,7 @@ class OperatorContext:
         """
         self._op_info = op_info
         self._reader = create_reader(
-            inputs, op_info['iter_type'], op_info['inputs_index'])
+            inputs, op_info.iter_type, op_info.inputs_index)
         self._writer = create_writer(outputs)
         self._finished = False
         self._taskid = 0
@@ -113,8 +117,8 @@ class OperatorContext:
         raise NotImplementedError
 
     def _create_new_task(self, inputs: Dict[str, any]):
-        t = Task(self._op_info['name'], self._op_info['name'],
-                 self._op_info['op_args'], inputs, self._taskid)
+        t = Task(self._op_info.name, self._op_info.function,
+                 self._op_info.op_args, inputs, self._taskid)
         self._taskid += 1
         t.add_finish_handler(self.write_outputs)
         return t

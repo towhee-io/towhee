@@ -63,5 +63,5 @@ class DataframeRepr(BaseRepr):
             )
         var_reprs = []
         for c in info['columns']:
-            var_reprs.append(VariableRepr(c['vtype']))
+            var_reprs.append(VariableRepr(c['name'], c['vtype']))
         return DataframeRepr(info['name'], var_reprs)

@@ -31,33 +31,66 @@ class OperatorRepr(BaseRepr):
             This operator's iterator info.
     """
 
-    def __init__(self, name: str, init_args: Dict[str, any],
+    def __init__(self, name: str, function: str, init_args: Dict[str, any],
                  inputs: List[Dict[str, any]], outputs: List[Dict[str, any]],
                  iter_info: Dict[str, any]):
-        self._name = name
+        super().__init__(name)
+        self._function = function
         self._inputs = inputs
         self._outputs = outputs
         self._init_args = init_args
         self._iter_info = iter_info
 
     @property
-    def name(self):
-        return self._name
+    def function(self):
+        return self._function
 
     @property
-    def inputs(self):
+    def inputs(self) -> List:
+        """
+        Returns:
+        [
+            {
+                'df': `dataframe-name`,
+                'col': `col index`
+            },
+            ...
+        ]
+        """
         return self._inputs
 
     @property
-    def outputs(self):
+    def outputs(self) -> List:
+        """
+        Returns:
+        [
+            {
+                "df": `dataframe name`
+            },
+            ...
+        ]
+        """
         return self._outputs
 
     @property
-    def init_args(self):
+    def init_args(self) -> Dict:
+        """
+        Returns:
+        {
+            `arg_name`: `arg value`,
+            ...
+        }
+        """
         return self._init_args
 
     @property
     def iter_info(self):
+        """
+        Returns:
+        {
+            "type": `iter type`
+        }
+        """
         return self._iter_info
 
     @staticmethod
@@ -106,5 +139,5 @@ class OperatorRepr(BaseRepr):
                 'Invalid operator data.'
             )
 
-        return OperatorRepr(info['name'], info['init_args'],
+        return OperatorRepr(info['name'], info['function'], info['init_args'],
                             info['inputs'], info['outputs'], info['iter_info'])

@@ -34,7 +34,7 @@ class GraphRepr(BaseRepr):
 
     def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr],
                  dataframes: Dict[str, DataframeRepr]):
-        self._name = name
+        super().__init__(name)
         self._operators = op_reprs
         self._dataframes = dataframes
 

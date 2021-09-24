@@ -15,6 +15,10 @@
 
 # from towhee.engine.pipeline import Pipeline
 
+from typing import List
+
+from towhee.engine.operator_context import OperatorContext
+
 
 class GraphContext:
     """
@@ -22,14 +26,14 @@ class GraphContext:
     each row's processing runs in a GraphContext.
     """
 
-    def __init__(self):
+    def __init__(self, op_ctxs: List[OperatorContext]):
         """
         Args:
             pipeline: the Pipeline this GraphContext belongs to.
         """
         self._idx = None  # the subjob index
         # todo: initialize OperatorContexts based on job.graph_repr
-        self._op_contexts = None
+        self._op_contexts = op_ctxs
         # self.on_start_handlers = []
         # self.on_finish_handlers = []
         # self.on_task_ready_handlers = []

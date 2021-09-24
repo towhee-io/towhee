@@ -23,7 +23,7 @@ class DataFrameWriter:
         self._output_df = output_df
 
     def write(self, output_data: NamedTuple) -> bool:
-        return self._output_df.put(output_data._asdict())
+        return self._output_df.put_dict(output_data._asdict())
 
 
 class DataFrameReader(ABC):
@@ -77,7 +77,7 @@ class MapDataFrameReader(DataFrameReader):
 
 
 def create_reader(inputs: List[DataFrame], iter_type: str, op_inputs_index: Dict[str, int]) -> DataFrameReader:
-    if iter_type == "Map":
+    if iter_type.lower() == "map":
         assert len(inputs) == 1, "%s iter needs one dataframe, input %s dataframes" % (
             iter_type, len(inputs)
         )

@@ -9,9 +9,11 @@ operators:
         inputs:
             -
                 df: 'test_df_1'
+                name: 'k1'
                 col: 0
             -
                 df: 'test_df_2'
+                name: 'k1'
                 col: 0
         outputs:
             -
@@ -27,6 +29,7 @@ operators:
         inputs:
             -
                 df: 'test_df_1'
+                name: 'k1'
                 col: 2
         outputs:
             -
@@ -38,11 +41,14 @@ dataframes:
         name: 'test_df_1'
         columns:
             -
+                name: 'k1'
                 vtype: 'int'
             -
+                name: 'k2'
                 vtype: 'int'
     -
         name: 'test_df_2'
         columns:
             -
+                name: 'k1'
                 vtype: 'int'

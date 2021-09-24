@@ -15,14 +15,12 @@ import unittest
 import yaml
 import copy
 from unittest import mock
-from pathlib import Path
 from collections import namedtuple
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.graph_repr import GraphRepr
 
-
-GRAPH_TEST_YAML = Path(__file__).parent / 'test_graph.yaml'
+from towhee.tests.test_util import GRAPH_TEST_YAML
 
 
 class TestRepr(unittest.TestCase):
@@ -44,10 +42,10 @@ class TestRepr(unittest.TestCase):
         self.assertEqual(g_repr.operators[1].name, 'test_op_2')
 
         self.assertEqual(g_repr.operators[0].inputs, [
-                         {'df': 'test_df_1', 'col': 0}, {'df': 'test_df_2', 'col': 0}])
+                         {'df': 'test_df_1', 'name': 'k1', 'col': 0}, {'df': 'test_df_2', 'name': 'k1', 'col': 0}])
 
         self.assertEqual(g_repr.operators[1].inputs, [
-                         {'df': 'test_df_1', 'col': 2}])
+                         {'df': 'test_df_1', 'name': 'k1', 'col': 2}])
 
         self.assertEqual(g_repr.operators[1].outputs, [
                          {'df': 'test_df_1'}])

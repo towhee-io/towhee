@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import threading
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Dict
 import weakref
 
 from towhee.dataframe.variable import Variable
@@ -23,7 +23,8 @@ class DataFrame:
     """A dataframe is a collection of immutable, potentially heterogeneous blogs of
     data.
     """
-    def __init__(self, name: str, data: List[Tuple[Variable]] = None):
+
+    def __init__(self, name: str, cols=None, data: List[Tuple[Variable]] = None):
         """DataFrame constructor.
 
         Args:
@@ -37,6 +38,8 @@ class DataFrame:
                 into downstream operators.
         """
         self._name = name
+        # TODO (junjie.jiangjjj) define col struct
+        self._cols = cols
         self._data = data if data is not None else []
         self._registered_iter = []
         self._start_index = 0
@@ -55,6 +58,13 @@ class DataFrame:
         with self._lock:
             self._data.append(item)
             self._total += 1
+
+    def put_dict(self, data: Dict[str, any]):
+        datalist = [None] * len(self._cols)
+        for k, v in data.items():
+            datalist[self._cols[k]['index']] = Variable(
+                self._cols[k]['type'], v)
+        self.put(tuple(datalist))
 
     def get(self, start: int, count: int, force_size: bool = False) -> Tuple[bool, List[Tuple[Variable]]]:
         """
@@ -120,6 +130,7 @@ class DataFrameIterator:
     Args:
         df: The dataframe to iterate over.
     """
+
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
         self._cur_index = 0
@@ -145,6 +156,7 @@ class MapIterator(DataFrameIterator):
     Args:
         df: The dataframe to iterate over.
     """
+
     def __init__(self, df: DataFrame):
         super().__init__(df)
         self._lock = threading.Lock()
@@ -168,6 +180,7 @@ class BatchIterator:
             batch size. If size is None, then the whole variable set will be batched
             together.
     """
+
     def __init__(self, df: DataFrame, size: int = None):
         super().__init__(df)
         self._size = size
@@ -186,6 +199,7 @@ class GroupIterator:
         func:
             The function used to return grouped data within the dataframe.
     """
+
     def __init__(self, df: DataFrame, func: Callable[[], None]):
         super().__init__(df)
         self._func = func
@@ -203,6 +217,7 @@ class RepeatIterator:
             n:
                 the repeat times. If `None`, the iterator will loop continuously.
     """
+
     def __init__(self, df: DataFrame, n: int = None):
         # self._n = n
         # self._i = 0
