@@ -15,7 +15,7 @@
 
 import unittest
 
-from towhee.engine.operator_context import OperatorContext
+from towhee.engine.operator_context import OperatorContext, OpInfo
 from towhee.dataframe import DataFrame, Variable
 
 from towhee.tests.test_util.dataframe_test_util import DfWriter
@@ -28,14 +28,15 @@ class TestOperatorContext(unittest.TestCase):
     def test_op_context(self):
         df_in = DataFrame('op_test_in')
         df_out = DataFrame('op_test_out')
-        op = OperatorContext({
+        op = OperatorContext(OpInfo(**{
             'name': 'mock_op',
+            'function': 'mock_op',
             'op_args': {},
-            'iter_type': 'Map',
+            'iter_type': 'map',
             'inputs_index': {
                 'k1': 0, 'k2': 1
             }
-        }, [df_in], [df_out])
+        }), [df_in], [df_out])
         self.assertEqual(len(op.pop_ready_tasks()), 0)
 
         data = (Variable('int', 1), Variable(
@@ -60,14 +61,15 @@ class TestOperatorContext(unittest.TestCase):
     def test_op_context_multithread(self):
         df_in = DataFrame('op_test_in')
         df_out = DataFrame('op_test_out')
-        op = OperatorContext({
+        op = OperatorContext(OpInfo(**{
             'name': 'mock_op',
+            'function': 'mock_op',
             'op_args': {},
             'iter_type': 'Map',
             'inputs_index': {
                 'k1': 0, 'k2': 1
             }
-        }, [df_in], [df_out])
+        }), [df_in], [df_out])
         self.assertEqual(len(op.pop_ready_tasks()), 0)
 
         data = (Variable('int', 1), Variable(

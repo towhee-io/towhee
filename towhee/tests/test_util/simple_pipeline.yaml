@@ -1,0 +1,51 @@
+name: 'simple_pipeline'
+operators:
+    -
+        name: 'add_op1'
+        function: 'mock_operators/add_operator'
+        init_args:
+            factor: 1
+        inputs:
+            -
+                df: 'df1'
+                name: 'num'
+                col: 0
+        outputs:
+            -
+                df: 'df2'
+        iter_info:
+            type: map
+    -
+        name: 'add_op2'
+        function: 'mock_operators/add_operator'
+        init_args:
+            factor: 2
+        inputs:
+            -
+                df: 'df2'
+                name: 'num'
+                col: 0
+        outputs:
+            -
+                df: 'df3'
+        iter_info:
+            type: map
+dataframes:
+    -
+        name: 'df1'
+        columns:
+            -
+                name: 'input'
+                vtype: 'int'
+    -
+        name: 'df2'
+        columns:
+            -
+                name: 'sum'
+                vtype: 'int'
+    -
+        name: 'df3'
+        columns:
+            -
+                name: 'sum'
+                vtype: 'int'                

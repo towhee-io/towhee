@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import yaml
-import logging
-from typing import Dict, List
+from typing import Dict
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
@@ -33,10 +31,12 @@ class GraphRepr(BaseRepr):
         file_or_url(`str`):
             The file or remote url that stores the information of this representation.
     """
-    def __init__(self):
-        super().__init__()
-        self._operators = {}
-        self._dataframes = {}
+
+    def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr],
+                 dataframes: Dict[str, DataframeRepr]):
+        super().__init__(name)
+        self._operators = op_reprs
+        self._dataframes = dataframes
 
     @property
     def operators(self) -> Dict[str, OperatorRepr]:
@@ -46,62 +46,56 @@ class GraphRepr(BaseRepr):
     def dataframes(self) -> Dict[str, DataframeRepr]:
         return self._dataframes
 
-    @operators.setter
-    def operators(self, value: Dict[str, DataframeRepr]):
-        self._operators = value
-
-    @dataframes.setter
-    def dataframes(self, value: Dict[str, DataframeRepr]):
-        self._dataframes = value
+    @staticmethod
+    def from_dict(info: Dict) -> 'GraphRepr':
+        if not BaseRepr.is_valid(info, {'name', 'operators', 'dataframes'}):
+            raise ValueError(
+                'file or src is not a valid YAML file to describe a DAG in Towhee.'
+            )
+        dataframes = [DataframeRepr.from_dict(
+            df_info) for df_info in info['dataframes']]
+        operators = [OperatorRepr.from_dict(op_info)
+                     for op_info in info['operators']]
+        return GraphRepr(info['name'], operators, dataframes)
 
     @staticmethod
-    def is_valid(info: List[dict]) -> bool:
-        """Check if the src is a valid YAML file to describe a DAG in Towhee.
-
-        Args:
-            info(`list`):
-                The List loaded from the source file.
-        """
-        essentials = {'graph', 'operators', 'dataframes'}
-        if not isinstance(info, list):
-            logging.error('src is not a valid YAML file.')
-            return False
-        for i in info:
-            if not isinstance(i, dict):
-                logging.error('src is not a valid YAML file.')
-                return False
-            if not essentials.issubset(set(i.keys())):
-                logging.error('src cannot descirbe a DAG in Towhee.')
-                return False
-        return True
-
-    @staticmethod
-    def from_yaml(file_or_src: str):
+    def from_yaml(src: str) -> 'GraphRepr':
         """Import a YAML file describing this graph.
 
         Args:
-            file_or_src(`str`):
+            src(`str`):
                 YAML file (could be pre-loaded as string) to import.
 
-        Returns:
-            The DAG we described in `file_or_src`.
+        example:
+
+            name: 'test_graph'
+            operators:
+                -
+                    name: 'test_op_1'
+                    function: 'test_function'
+                    inputs:
+                        -
+                            df: 'test_df_1'
+                            col: 0
+                    outputs:
+                        -
+                            df: 'test_df_2'
+                            col: 0
+                    iter_info:
+                        type: map
+            dataframes:
+                -
+                    name: 'test_df_1'
+                    columns:
+                        -
+                            vtype: 'int'
+                    name: 'test_df_2'
+                    columns:
+                        -
+                           vtype: 'int'
         """
-        graph_repr = GraphRepr()
-        graphs = graph_repr.load_src(file_or_src)
-        graph = graphs[0]
-        if not graph_repr.is_valid(graphs):
-            raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
-
-        # load name
-        graph_repr.name = graph['graph']['name']
-
-        # load dataframes
-        graph_repr.dataframes = DataframeRepr.from_yaml(yaml.safe_dump(graph['dataframes'], default_flow_style=False))
-
-        # load operators
-        graph_repr.operators = OperatorRepr.from_yaml(yaml.safe_dump(graph['operators'], default_flow_style=False), graph_repr.dataframes)
-
-        return graph_repr
+        info = BaseRepr.load_src(src)
+        return GraphRepr.from_dict(info)
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.
