@@ -28,15 +28,10 @@ class VariableRepr(BaseRepr):
             A string or instance of `numpy.dtype` indicating the internal data type for
             this variable.
     """
-    def __init__(self, vtype: str, dtype: str):
-        super().__init__()
+
+    def __init__(self, vtype: str):
         self._vtype = vtype
-        self._dtype = dtype
 
     @property
     def vtype(self):
         return self._vtype
-
-    @property
-    def dtype(self):
-        return self._dtype

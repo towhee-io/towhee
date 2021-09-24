@@ -14,7 +14,8 @@
 import yaml
 import requests
 import os
-from typing import List
+import logging
+from typing import List, Dict, Set
 
 
 class BaseRepr:
@@ -26,28 +27,21 @@ class BaseRepr:
         name:
             Name of the internal object described by this representation.
     """
-    def __init__(self, name: str = None):
-        self._name = name
 
-    @property
-    def name(self):
-        return self._name
+    @staticmethod
+    def is_valid(info: Dict, essentials: Set[str]) -> bool:
+        """Check if the src is a valid YAML file to describe a DAG in Towhee.
 
-    @name.setter
-    def name(self, value: str):
-        self._name = value
-
-    def serialize(self) -> str:
-        """Universal function used to serialize this representation.
-
-        Returns:
-            A string containing the serialized version of this representation. Example
-            output:
-                VariableRepr:
-                    vtype: tensor
-                    dtype: float'
+        Args:
+            info(`list`):
+                The List loaded from the source file.
         """
-        raise NotImplementedError
+        info_keys = set(info.keys())
+        if not isinstance(info, dict) or not essentials.issubset(info_keys):
+            logging.error(
+                'Info [%s] is not valid, lost attr [%s]', str(info), essentials - info_keys)
+            return False
+        return True
 
     @staticmethod
     def load_str(string: str) -> List[dict]:
@@ -60,10 +54,7 @@ class BaseRepr:
         Returns:
             The list loaded from the YAML file that contains the representation(s) information.
         """
-        res = yaml.safe_load(string)
-        if isinstance(res, dict):
-            res = [res]
-        return res
+        return yaml.safe_load(string)
 
     @staticmethod
     def load_file(file: str) -> List[dict]:

@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List
-import logging
+from typing import List, Dict
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
@@ -30,62 +29,39 @@ class DataframeRepr(BaseRepr):
         src:
             The information of this dataframe.
     """
-    def __init__(self):
-        super().__init__()
-        # `_columns` must be filled in after this representation is instantiated
-        self._columns = []
+
+    def __init__(self, name: str, columns: List[VariableRepr]):
+        self._name = name
+        self._columns = columns
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def columns(self):
         return self._columns
 
-    @columns.setter
-    def columns(self, value: List[VariableRepr]):
-        self._columns = value
-
     @staticmethod
-    def is_valid(info: List[dict]) -> bool:
-        """Check if the src is a valid YAML file to describe the dataframe(s) in Towhee.
-
-        Args:
-            info(`list`):
-                The list loaded from the source file.
+    def from_dict(info: Dict[str, any]) -> 'DataframeRepr':
         """
-        essentials = {'name', 'columns'}
-        if not isinstance(info, list):
-            logging.error('src is not a valid YAML file.')
-            return False
-        for i in info:
-            if not isinstance(i, dict):
-                logging.error('src is not a valid YAML file.')
-                return False
-            if not essentials.issubset(set(i.keys())):
-                logging.error('src cannot descirbe the dataframe(s) in Towhee.')
-                return False
-        return True
-
-    @staticmethod
-    def from_yaml(file_or_src: str):
-        """Import a YAML file decribing this dataframe.
-
-        Args:
-            file_or_src(`str`):
-                YAML file (could be pre-loaded as string) to import.
-
+        info:
+            dataframe info
+            {
+                'name': 'example_df',
+                'columns': [
+                    {'vtype': 'int'},
+                    {'vtype': 'float'},
+                ],
+            }
         Returns:
-            The dataframes we described in `file_or_src`.
+            DataframeRepr obj
         """
-        dataframes = DataframeRepr.load_src(file_or_src)
-        if not DataframeRepr.is_valid(dataframes):
-            raise ValueError('file or src is not a valid YAML file to describe the dataframe in Towhee.')
-
-        res = {}
-
-        for df in dataframes:
-            dataframe = DataframeRepr()
-            dataframe.name = df['name']
-            for col in df['columns']:
-                dataframe.columns.append(VariableRepr(col['vtype'], col['dtype']))
-            res[dataframe.name] = dataframe
-
-        return res
+        if not DataframeRepr.is_valid(info, {'name', 'columns'}):
+            raise ValueError(
+                'Invalid dataframe info.'
+            )
+        var_reprs = []
+        for c in info['columns']:
+            var_reprs.append(VariableRepr(c['vtype']))
+        return DataframeRepr(info['name'], var_reprs)
