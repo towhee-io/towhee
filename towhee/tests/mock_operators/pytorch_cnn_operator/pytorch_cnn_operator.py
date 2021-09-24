@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
-
 import numpy
+import torch
+
+from typing import NamedTuple
 
 from towhee.operator import Operator
 
@@ -23,15 +24,14 @@ class PyTorchCNNOperator(Operator):
     """
     PyTorch model operator base
     """
-    def __init__(self, model, img_tensor) -> None:
+    def __init__(self, model) -> None:
         super().__init__()
         self.model = model
         self.model.eval()
-        self.img_tensor = img_tensor
 
-    def __call__(self) -> NamedTuple('Outputs', [('cnn', numpy.ndarray)]):
+    def __call__(self, img_tensor: torch.Tensor) -> NamedTuple('Outputs', [('cnn', numpy.ndarray)]):
         Outputs = NamedTuple('Outputs', [('cnn', numpy.ndarray)])
-        return Outputs(self.model(self.img_tensor).detach().numpy())
+        return Outputs(self.model(img_tensor).detach().numpy())
 
     def train(self):
         """
