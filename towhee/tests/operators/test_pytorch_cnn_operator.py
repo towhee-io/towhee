@@ -50,8 +50,8 @@ class TestOperator(unittest.TestCase):
     def test_func_operator(self):
         pytorch_cnn_operator = load_local_operator(
             'pytorch_cnn_operator', PYTORCH_CNN_OPERATOR_PATH)
-        op = pytorch_cnn_operator.PyTorchCNNOperator(self.model, self.img_tensor)
-        self.assertEqual((1, 1000), op()[0].shape)
+        op = pytorch_cnn_operator.PyTorchCNNOperator(self.model)
+        self.assertEqual((1, 1000), op(self.img_tensor)[0].shape)
 
 
 if __name__ == '__main__':
