@@ -51,7 +51,8 @@ class OperatorRepr(BaseRepr):
         Returns:
         [
             {
-                'df': `dataframe-name`,
+                'name': `arg name`,
+                'df': `dataframe name`,
                 'col': `col index`
             },
             ...

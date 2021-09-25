@@ -15,8 +15,9 @@
 
 import unittest
 
-from towhee.engine.operator_context import OperatorContext, OpInfo
+from towhee.engine.operator_context import OperatorContext
 from towhee.dataframe import DataFrame, Variable
+from towhee.dag import OperatorRepr
 
 from towhee.tests.test_util.dataframe_test_util import DfWriter
 
@@ -26,17 +27,24 @@ class TestOperatorContext(unittest.TestCase):
     """
 
     def test_op_context(self):
+
         df_in = DataFrame('op_test_in')
         df_out = DataFrame('op_test_out')
-        op = OperatorContext(OpInfo(**{
-            'name': 'mock_op',
-            'function': 'mock_op',
-            'op_args': {},
-            'iter_type': 'map',
-            'inputs_index': {
-                'k1': 0, 'k2': 1
-            }
-        }), [df_in], [df_out])
+        dfs = {'op_test_in': df_in, 'op_test_out': df_out}
+
+        op_repr = OperatorRepr(
+            name='mock_op',
+            function='mock_op',
+            init_args=None,
+            inputs=[
+                {'name': 'k1', 'df': 'op_test_in', 'col': 0},
+                {'name': 'k2', 'df': 'op_test_in', 'col': 1}
+            ],
+            outputs=[{'df': 'op_test_out'}],
+            iter_info={'type': 'map'}
+        )
+
+        op = OperatorContext(op_repr, dfs)
         self.assertEqual(len(op.pop_ready_tasks()), 0)
 
         data = (Variable('int', 1), Variable(
@@ -50,7 +58,7 @@ class TestOperatorContext(unittest.TestCase):
         count = 0
         while True:
             tasks = op.pop_ready_tasks(2)
-            if op.finished():
+            if op.is_finished:
                 break
             self.assertEqual(len(tasks), 2)
             count += len(tasks)
@@ -59,17 +67,24 @@ class TestOperatorContext(unittest.TestCase):
         self.assertEqual(count, data_size)
 
     def test_op_context_multithread(self):
+
         df_in = DataFrame('op_test_in')
         df_out = DataFrame('op_test_out')
-        op = OperatorContext(OpInfo(**{
-            'name': 'mock_op',
-            'function': 'mock_op',
-            'op_args': {},
-            'iter_type': 'Map',
-            'inputs_index': {
-                'k1': 0, 'k2': 1
-            }
-        }), [df_in], [df_out])
+        dfs = {'op_test_in': df_in, 'op_test_out': df_out}
+
+        op_repr = OperatorRepr(
+            name='mock_op',
+            function='mock_op',
+            init_args=None,
+            inputs=[
+                {'name': 'k1', 'df': 'op_test_in', 'col': 0},
+                {'name': 'k2', 'df': 'op_test_in', 'col': 1}
+            ],
+            outputs=[{'df': 'op_test_out'}],
+            iter_info={'type': 'map'}
+        )
+
+        op = OperatorContext(op_repr, dfs)
         self.assertEqual(len(op.pop_ready_tasks()), 0)
 
         data = (Variable('int', 1), Variable(
@@ -82,7 +97,7 @@ class TestOperatorContext(unittest.TestCase):
         count = 0
         while True:
             tasks = op.pop_ready_tasks(5)
-            if op.finished():
+            if op.is_finished:
                 break
             self.assertLessEqual(len(tasks), 2)
             count += len(tasks)

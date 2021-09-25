@@ -13,7 +13,8 @@
 # limitations under the License.
 
 
-from typing import Callable, List
+import threading
+from towhee.dag.graph_repr import GraphRepr
 
 from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
@@ -23,55 +24,75 @@ class Pipeline:
     """
     The runtime pipeline context, include graph context, all dataframes
     """
-    # TODO (junjie.jiangjjj) use repr to create all ctx
 
-    def __init__(self, graph_ctx: GraphContext, dataframes: List[DataFrame], parallelism: int = 1) -> None:
+    def __init__(self, graph_repr, parallelism: int = 1) -> None:
         """
         Args:
-            graph_repr: the graph representation
-            parallelism: how many rows of inputs to be processed concurrently
+            graph_repr: (yaml `str` or `towhee.dag.GraphRepr`)
+                The graph representation
+            parallelism: (`int`)
+                how many rows of inputs to be processed concurrently
         """
-        self._graph_ctx = graph_ctx
-        self._dataframes = dataframes
+        if isinstance(graph_repr, str):
+            self._graph_repr = GraphRepr.from_yaml(graph_repr)
+        else:
+            self._graph_repr = graph_repr
+
         self._parallelism = parallelism
-        self.on_task_finish_handlers = []
+        self.on_graph_finish_handlers = [self._on_graph_finish]
+
+        self._build()
+        self._cv = threading.Condition()
 
     @property
-    def graph_ctx(self):
-        return self._graph_ctx
+    def graph_contexts(self):
+        return self._graph_ctxs
 
-    def build(self):
+    @property
+    def is_busy(self) -> bool:
+        return False not in [graph_ctx.is_busy for graph_ctx in self._graph_ctxs]
+
+    def __call__(self, inputs: DataFrame) -> DataFrame:
+
+        def _feed_one_graph_ctx(row):
+            for graph_ctx in self._graph_ctxs:
+                if not graph_ctx.is_busy:
+                    # fill the input row to the available graph context
+                    graph_ctx(row)
+                    return
+
+        self.outputs = DataFrame()
+
+        for row in inputs.map_iter():
+            if not self.is_busy:
+                _feed_one_graph_ctx(row)
+            else:
+                with self._cv:
+                    if not self.is_busy:
+                        _feed_one_graph_ctx(row)
+                    else:
+                        self._cv.wait()
+
+        # todo: GuoRentong, need to track each graph call for multi-row inputs
+        with self._cv:
+            if self.is_busy:
+                self._cv.wait()
+            return self.outputs
+
+    def _on_graph_finish(self, graph_ctx: GraphContext):
+        # Organize the GraphContext's output into Pipeline's outputs.
+        self.outputs.merge(graph_ctx.outputs)
+        # Notify the run loop that a GraphContext is in idle state.
+        with self._cv:
+            self._cv.notify()
+
+    def _build(self):
         """
         Create GraphContexts and set up input iterators.
         """
+        # build graph contexts
+        self._graph_ctxs = [GraphContext(i, self._graph_repr) for i in range(self._parallelism)]
+
+        # add on_task_finish_handlers to graph contexts
         for g in self._graph_ctxs:
-            g.on_task_finish_handlers.append(self.on_task_finish_handlers)
-        raise NotImplementedError
-
-    def on_start(self, handler: Callable[[], None]) -> None:
-        """
-        Set a custom handler that called before the execution of the graph.
-        """
-        self._on_start_handler = handler
-        raise NotImplementedError
-
-    def on_finish(self, handler: Callable[[], None]) -> None:
-        """
-        Set a custom handler that called after the execution of the graph.
-        """
-        self._on_finish_handler = handler
-        raise NotImplementedError
-
-    def _organize_outputs(self, graph_ctx: GraphContext):
-        """
-        on_finish handler passing to GraphContext. The handler will organize the
-        GraphContext's output into Pipeline's outputs.
-        """
-        raise NotImplementedError
-
-    def _notify_run_loop(self, graph_ctx: GraphContext):
-        """
-        on_finish handler passing to GraphContext. The handler will notify the run loop
-        that a GraphContext is in idle state.
-        """
-        raise NotImplementedError
+            g.on_finish_handlers += self.on_graph_finish_handlers

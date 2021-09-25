@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.dag.operator_repr import OperatorRepr
 from typing import List, Dict
 
-from collections import namedtuple
 from towhee.engine.task import Task
 # from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
 from towhee.engine._operator_io import create_reader, create_writer
-
-
-OpInfo = namedtuple(
-    'OpInfo', ['name', 'function', 'op_args', 'iter_type', 'inputs_index'])
 
 
 class OperatorContext:
@@ -32,22 +28,56 @@ class OperatorContext:
     The abstraction of OperatorContext hides the complexity of Dataframe management,
     input iteration, and data dependency between Operators. It offers a Task-based
     scheduling context.
+
+    Args:
+        op_repr: (OperatorRepr)
+            The operator representation
+        dataframes: (`dict` of `DataFrame`)
+            All the `DataFrames` in `GraphContext`
+        is_schedulable: (`bool`)
+            Whether the `OperatorContext` is schedulable.
+            There are special `OperatorContext`s that are not schedulable, such as
+            `_start_op`, `_end_op`.
+
     """
 
-    def __init__(self, op_info: OpInfo, inputs: List[DataFrame],
-                 outputs: List[DataFrame]) -> None:
-        """
-        Args:
-            op_info: op config, op init data, op input info
-            inputs: a list of DataFrame.
-            outputs: a list of DataFrame.
-        """
-        self._op_info = op_info
-        self._reader = create_reader(
-            inputs, op_info.iter_type, op_info.inputs_index)
+    def __init__(
+        self,
+        op_repr: OperatorRepr,
+        dataframes: Dict[str, DataFrame],
+        is_schedulable: bool = True
+    ):
+        self._repr = op_repr
+        self._is_schedulable = is_schedulable
+
+        # todo: GuoRentong, issue #114
+        inputs = list({dataframes[input['df']] for input in op_repr.inputs})
+        input_iter_type = op_repr.iter_info['type']
+        inputs_index = dict((item['name'], item['col']) for item in op_repr.inputs)
+        self.inputs = inputs
+        self._reader = create_reader(inputs, input_iter_type, inputs_index)
+
+        outputs = list({dataframes[output['df']] for output in op_repr.outputs})
         self._writer = create_writer(outputs)
+        self.outputs = outputs
+
         self._finished = False
         self._taskid = 0
+
+        self.on_start_handlers = []
+        self.on_finish_handlers = []
+
+        self.on_task_ready_handlers = []
+        self.on_task_start_handlers = []
+        self.on_task_finish_handlers = [self._write_outputs]
+
+    @property
+    def name(self):
+        return self._repr.name
+
+    @property
+    def is_schedulable(self) -> bool:
+        return self._is_schedulable
 
     def pop_ready_tasks(self, n_tasks: int = 1) -> List:
         """
@@ -72,7 +102,9 @@ class OperatorContext:
 
         return ready_tasks
 
-    def finished(self) -> bool:
+    @property
+    def is_finished(self) -> bool:
+        # todo: GuoRentong. see issue #124
         return self._finished
 
     @property
@@ -82,7 +114,7 @@ class OperatorContext:
         """
         return self._reader.size
 
-    @property
+    @ property
     def num_finished_tasks(self) -> int:
         """
         Get the number of finished tasks.
@@ -91,21 +123,8 @@ class OperatorContext:
         # consider the thread-safe read write. This OperatorContext should be
         # self._finished_tasks' only monifier.
 
-    def _on_task_start_handler(self, task: Task):
-        """
-        The handler for the event of task start.
-        """
-        raise NotImplementedError
-
-    def write_outputs(self, task: Task):
+    def _write_outputs(self, task: Task):
         self._writer.write(task.outputs)
-
-    def _on_task_finish_handler(self, task: Task):
-        """
-        The handler for the event of task finish.
-        Feed downstream operator's inputs with this task's results.
-        """
-        raise NotImplementedError
 
     def _next_task_inputs(self):
         """
@@ -117,15 +136,8 @@ class OperatorContext:
         raise NotImplementedError
 
     def _create_new_task(self, inputs: Dict[str, any]):
-        t = Task(self._op_info.name, self._op_info.function,
-                 self._op_info.op_args, inputs, self._taskid)
+        t = Task(self.name, self._repr.function,
+                 self._repr.init_args, inputs, self._taskid)
         self._taskid += 1
-        t.add_finish_handler(self.write_outputs)
+        t.add_finish_handler(self.on_task_finish_handlers)
         return t
-
-    def _notify_downstream_op_ctx(self):
-        """
-        When a Task at this Operator is finished, its outputs will be feeded to the
-        downstream Operator, and followed by a notification.
-        """
-        raise NotImplementedError

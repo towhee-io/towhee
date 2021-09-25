@@ -114,18 +114,23 @@ class FIFOTaskScheduler(_TaskScheduler):
         """
 
         for pipeline in self._pipelines:
-            for op_ctx in pipeline.graph_ctx.op_ctxs:
-                tasks = op_ctx.pop_ready_tasks(n_tasks=1)
-                if not tasks:
-                    continue
-                task = tasks[0]
+            for graph_ctx in pipeline.graph_contexts:
+                for _, op_ctx in graph_ctx.operator_contexts.items():
 
-                # If `push_task` returns `False`, then the optimal executor is already
-                # full, wait a while and try again.
-                task_exec = self._find_optimal_exec(task)
-                while not task_exec.push_task(task):
-                    time.sleep(self._sleep_ms / 1000)
+                    if not op_ctx.is_schedulable:
+                        continue
+
+                    tasks = op_ctx.pop_ready_tasks(n_tasks=1)
+                    if not tasks:
+                        continue
+                    task = tasks[0]
+
+                    # If `push_task` returns `False`, then the optimal executor is already
+                    # full, wait a while and try again.
                     task_exec = self._find_optimal_exec(task)
+                    while not task_exec.push_task(task):
+                        time.sleep(self._sleep_ms / 1000)
+                        task_exec = self._find_optimal_exec(task)
 
     def _find_optimal_exec(self, task: Task):
         """Acquires the least busy instance of `TaskExecutor` that can still execute
