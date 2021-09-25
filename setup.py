@@ -38,7 +38,9 @@ setup(
         'pandas>=1.2.4',
         'pyyaml>=5.3',
         'requests>=2.25',
-        'tqdm>=4.59.0'
+        'tqdm>=4.59.0',
+        'pillow>=8.3.1',
+        'scipy>=1.7.1'
     ],
     packages=find_packages(),
     license="http://www.apache.org/licenses/LICENSE-2.0"
