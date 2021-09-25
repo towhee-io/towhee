@@ -32,8 +32,7 @@ class TestFIFOTaskScheduler(unittest.TestCase):
         for _ in range(4):
             self._task_execs.append(TaskExecutor('', cache_path=cache_path))
         self._pipeline = EmulatedPipeline()
-        self._task_sched = FIFOTaskScheduler(
-            [self._pipeline], self._task_execs)
+        self._task_sched = FIFOTaskScheduler(self._task_execs)
 
     def tearDown(self):
         for task_exec in self._task_execs:
@@ -43,6 +42,10 @@ class TestFIFOTaskScheduler(unittest.TestCase):
         self.assertEqual(self._runs_count, self._n_runs)
 
     def test_scheduler(self, n_runs=1024):
+
+        # Add graph contexts to scheduler.
+        for graph_ctx in self._pipeline.graph_contexts:
+            self._task_sched.register(graph_ctx)
 
         # Add callback function upon completion.
         self._n_runs = n_runs

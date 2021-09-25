@@ -12,26 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy
-import torch
 
 from typing import NamedTuple
+
+import numpy
+import torch
+import torchvision
 
 from towhee.operator import Operator
 
 
-class PyTorchCNNOperator(Operator):
+class PytorchCnnOperator(Operator):
     """
     PyTorch model operator base
     """
-    def __init__(self, model) -> None:
+    def __init__(self, model_name) -> None:
         super().__init__()
-        self.model = model
-        self.model.eval()
+        model_func = getattr(torchvision.models, model_name)
+        self._model = model_func(pretrained=True)
+        self._model.eval()
 
     def __call__(self, img_tensor: torch.Tensor) -> NamedTuple('Outputs', [('cnn', numpy.ndarray)]):
         Outputs = NamedTuple('Outputs', [('cnn', numpy.ndarray)])
-        return Outputs(self.model(img_tensor).detach().numpy())
+        return Outputs(self._model(img_tensor).detach().numpy())
 
     def train(self):
         """

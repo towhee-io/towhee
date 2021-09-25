@@ -27,12 +27,12 @@ class OperatorLoader:
     Args:
         cache_path: (`str`)
             Local cache path to use. If not specified, it will default to
-            `$HOME/.towhee/cache`.
+            `$HOME/.towhee/operators`.
     """
 
     def __init__(self, cache_path: str = None):
         if not cache_path:
-            self._cache_path = Path.home() / '.towhee/cache'
+            self._cache_path = Path.home() / '.towhee/operators'
         else:
             self._cache_path = Path(cache_path)
         self._cache_path = Path(cache_path)
@@ -50,10 +50,10 @@ class OperatorLoader:
         """
 
         # Lookup the path for the operator in local cache. Example directory structure:
-        #  /home/user/.towhee/cache/organization-name/operator-name
-        #   |_ /home/user/.towhee/cache/organization-name/operator-name/operator.py
-        #   |_ /home/user/.towhee/cache/organization-name/operator-name/resnet.torch
-        #   |_ /home/user/.towhee/cache/organization-name/operator-name/config.json
+        #  /home/user/.towhee/operators/organization-name/operator-name
+        #   |_ /home/user/.towhee/operators/organization-name/operator-name/operator.py
+        #   |_ /home/user/.towhee/operators/organization-name/operator-name/resnet.torch
+        #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
         fname = function.split('/')[-1]
         path = self._cache_path / function / (fname + '.py')
 
