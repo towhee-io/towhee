@@ -24,6 +24,8 @@ _MOCK_OPERATOR_DIR = os.path.dirname(__file__)
 
 ADD_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "add_operator")
 PYTORCH_CNN_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_cnn_operator")
+PYTORCH_TRANSFORMER_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_operator")
+
 
 
 def load_local_operator(op_name: str, op_path: str):
