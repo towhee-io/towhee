@@ -32,15 +32,28 @@ operators:
                 df: 'test_df_3'
         iter_info:
             type: map
+    -
+        name: 'iso_op'
+        function: 'test_function'
+        init_args:
+            arg1: 1
+            arg2: 'test'
+        inputs:
+            -
+                df: 'test_df_4'
+                name: 'k1'
+                col: 0
+        outputs:
+            -
+                df: 'test_df_5'
+        iter_info:
+            type: map
 dataframes:
     -
         name: 'test_df_1'
         columns:
             -
                 name: 'k1'
-                vtype: 'int'
-            -
-                name: 'k2'
                 vtype: 'int'
     -
         name: 'test_df_2'
@@ -54,3 +67,16 @@ dataframes:
             -
                 name: 'k1'
                 vtype: 'int'
+    -
+        name: 'test_df_4'
+        columns:
+            -
+                name: 'k1'
+                vtype: 'int'
+    -
+        name: 'test_df_5'
+        columns:
+            -
+                name: 'k1'
+                vtype: 'int'
+                
