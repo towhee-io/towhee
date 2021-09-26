@@ -33,10 +33,10 @@ class GraphRepr(BaseRepr):
     """
 
     def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr],
-                 dataframes: Dict[str, DataframeRepr]):
+                 df_reprs: Dict[str, DataframeRepr]):
         super().__init__(name)
         self._operators = op_reprs
-        self._dataframes = dataframes
+        self._dataframes = df_reprs
 
     @property
     def operators(self) -> Dict[str, OperatorRepr]:
@@ -52,10 +52,8 @@ class GraphRepr(BaseRepr):
             raise ValueError(
                 'file or src is not a valid YAML file to describe a DAG in Towhee.'
             )
-        dataframes = [DataframeRepr.from_dict(
-            df_info) for df_info in info['dataframes']]
-        operators = [OperatorRepr.from_dict(op_info)
-                     for op_info in info['operators']]
+        dataframes = [DataframeRepr.from_dict(df_info) for df_info in info['dataframes']]
+        operators = [OperatorRepr.from_dict(op_info) for op_info in info['operators']]
         return GraphRepr(info['name'], operators, dataframes)
 
     @staticmethod

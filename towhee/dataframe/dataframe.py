@@ -24,7 +24,7 @@ class DataFrame:
     data.
     """
 
-    def __init__(self, name: str, cols=None, data: List[Tuple[Variable]] = None):
+    def __init__(self, name: str = None, cols=None, data: List[Tuple[Variable]] = None):
         """DataFrame constructor.
 
         Args:
@@ -53,11 +53,20 @@ class DataFrame:
     def name(self) -> str:
         return self._name
 
+    @property
+    def data(self) -> List:
+        return self._data
+
     def put(self, item: Tuple[Variable]) -> None:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         with self._lock:
             self._data.append(item)
             self._total += 1
+
+    def merge(self, df):
+        with self._lock:
+            self._data += df.data
+            self._total += len(df.data)
 
     def put_dict(self, data: Dict[str, any]):
         datalist = [None] * len(self._cols)
@@ -109,8 +118,14 @@ class DataFrame:
     def is_sealed(self) -> bool:
         return self._sealed
 
-    # TODO (junjie.jiangjjj)
+    def clear(self):
+        self._data = []
+        self._start_index = 0
+        self._total = 0
+        self._sealed = False
+
     def _gc(self) -> None:
+        # TODO (junjie.jiangjjj)
         """
         Delete the data which all registered iter has read
         """

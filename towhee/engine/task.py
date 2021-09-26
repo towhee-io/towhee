@@ -98,32 +98,41 @@ class Task:
                          for key in sorted(self.op_args))
         return (self.hub_op_id, ) + args_tup
 
-    def add_ready_handler(self, handler: Callable):
+    def add_ready_handlers(self, handlers):
         """Adds a ready handler to this `Task` object.
 
         Args:
-            handler: (`typing.Callable`)
-                Ready handler that will be called once the task is ready to be executed.
+            handlers: (`typing.Callable`, or `list` of `typing.Callable`)
+                Handlers that will be called once the task is ready to be executed.
         """
-        self._on_ready_handlers.append(handler)
+        if isinstance(handlers, list):
+            self._on_ready_handlers += handlers
+        else:
+            self._on_ready_handlers.append(handlers)
 
-    def add_start_handler(self, handler: Callable):
+    def add_start_handler(self, handler):
         """Adds a start handler to this `Task` object.
 
         Args:
-            handler: (`typing.Callable`)
+            handler: (`typing.Callable`, or `list` of `typing.Callable`)
                 Handler that will be called prior to execution.
         """
-        self._on_start_handlers.append(handler)
+        if isinstance(handler, list):
+            self._on_start_handlers += handler
+        else:
+            self._on_start_handlers.append(handler)
 
-    def add_finish_handler(self, handler: Callable):
+    def add_finish_handler(self, handler):
         """Adds a finish handler to this `Task` object.
 
         Args:
-            handler: (`typing.Callable`)
+            handler: (`typing.Callable`, or `list` of `typing.Callable`)
                 Handler that will be called when the `outputs` attribute is set.
         """
-        self._on_finish_handlers.append(handler)
+        if isinstance(handler, list):
+            self._on_finish_handlers += handler
+        else:
+            self._on_finish_handlers.append(handler)
 
     def _execute_handlers(self, handlers: List[Callable]):
         """Execute handlers defined in `handlers`. These should be a list of callables

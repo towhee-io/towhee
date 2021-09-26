@@ -32,7 +32,7 @@ class DataFrameReader(ABC):
     One op_ctx has one dataframe reader.
     """
 
-    def __init__(self,  it: DataFrameIterator, op_inputs_index: Dict[str, int]):
+    def __init__(self, it: DataFrameIterator, op_inputs_index: Dict[str, int]):
         self._op_inputs_index = op_inputs_index
         self._iter = it
 
@@ -59,7 +59,11 @@ class MapDataFrameReader(DataFrameReader):
     Map dataframe reader
     """
 
-    def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, int]):
+    def __init__(
+        self,
+        input_df: DataFrame,
+        op_inputs_index: Dict[str, int]
+    ):
         super().__init__(input_df.map_iter(), op_inputs_index)
 
     def read(self) -> Optional[Dict[str, any]]:
@@ -76,12 +80,17 @@ class MapDataFrameReader(DataFrameReader):
             return None
 
 
-def create_reader(inputs: List[DataFrame], iter_type: str, op_inputs_index: Dict[str, int]) -> DataFrameReader:
+def create_reader(
+    inputs: List[DataFrame],
+    iter_type: str,
+    inputs_index: Dict[str, int]
+) -> DataFrameReader:
+
     if iter_type.lower() == "map":
-        assert len(inputs) == 1, "%s iter needs one dataframe, input %s dataframes" % (
+        assert len(inputs) == 1, "%s iter takes one dataframe, but %s dataframes are found" % (
             iter_type, len(inputs)
         )
-        return MapDataFrameReader(inputs[0], op_inputs_index)
+        return MapDataFrameReader(inputs[0], inputs_index)
     else:
         raise NameError("Can not find %s iters" % iter_type)
 
