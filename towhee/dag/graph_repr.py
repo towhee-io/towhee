@@ -31,6 +31,7 @@ class GraphRepr(BaseRepr):
         file_or_url(`str`):
             The file or remote url that stores the information of this representation.
     """
+
     def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataFrameRepr]):
         super().__init__(name)
         self._operators = op_reprs
@@ -159,11 +160,13 @@ class GraphRepr(BaseRepr):
     def from_dict(info: Dict) -> 'GraphRepr':
         # Basic schema check
         if not BaseRepr.is_valid(info, {'name', 'operators', 'dataframes'}):
-            raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
-        # Generate dataframes and operators
-        dataframes = {df_info['name']: DataFrameRepr.from_dict(df_info) for df_info in info['dataframes']}
-        operators = {op_info['name']: OperatorRepr.from_dict(op_info) for op_info in info['operators']}
-
+            raise ValueError(
+                'file or src is not a valid YAML file to describe a DAG in Towhee.'
+            )
+        dataframes = dict((df_info['name'], DataFrameRepr.from_dict(
+            df_info)) for df_info in info['dataframes'])
+        operators = dict((op_info['name'], OperatorRepr.from_dict(
+            op_info)) for op_info in info['operators'])
         return GraphRepr(info['name'], operators, dataframes)
 
     @staticmethod
@@ -202,22 +205,24 @@ class GraphRepr(BaseRepr):
                         -
                            vtype: 'int'
         """
-        # Load the information and get isolation and loop
         info = BaseRepr.load_src(src)
-        graph = GraphRepr.from_dict(info)
-        iso_df = graph.get_isolated_df()
-        iso_op = graph.get_isolated_op()
-        loop = graph.get_loop()
-        # If no loop or isolation found, return the GraphRepr
-        if not iso_df and not iso_op and not loop:
-            return GraphRepr.from_dict(info)
-        # generate error message
-        df_msg = '' if not iso_df else f'The DAG contains isolated dataframe(s) {iso_df}.'
-        op_msg = '' if not iso_op else f'The DAG contains isolated operator(s) {iso_op}.'
-        loop_msg = '' if not loop else f'The DAG contains loop consists of {loop}'
-        msg = '.'.join([df_msg, op_msg, loop_msg]).split(None)
+        return GraphRepr.from_dict(info)
+        # Load the information and get isolation and loop
+        # info = BaseRepr.load_src(src)
+        # graph = GraphRepr.from_dict(info)
+        # iso_df = graph.get_isolated_df()
+        # iso_op = graph.get_isolated_op()
+        # loop = graph.get_loop()
+        # # If no loop or isolation found, return the GraphRepr
+        # if not iso_df and not iso_op and not loop:
+        #     return GraphRepr.from_dict(info)
+        # # generate error message
+        # df_msg = '' if not iso_df else f'The DAG contains isolated dataframe(s) {iso_df}.'
+        # op_msg = '' if not iso_op else f'The DAG contains isolated operator(s) {iso_op}.'
+        # loop_msg = '' if not loop else f'The DAG contains loop consists of {loop}'
+        # msg = '.'.join([df_msg, op_msg, loop_msg]).split(None)
 
-        raise ValueError(msg)
+        # raise ValueError(msg)
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.

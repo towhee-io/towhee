@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import threading
 from towhee.dag.graph_repr import GraphRepr
 
 from towhee.engine.graph_context import GraphContext
@@ -25,7 +23,7 @@ class Pipeline:
     The runtime pipeline context, include graph context, all dataframes
     """
 
-    def __init__(self, graph_repr, parallelism: int = 1) -> None:
+    def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
         """
         Args:
             graph_repr: (yaml `str` or `towhee.dag.GraphRepr`)
@@ -39,60 +37,81 @@ class Pipeline:
             self._graph_repr = graph_repr
 
         self._parallelism = parallelism
-        self.on_graph_finish_handlers = [self._on_graph_finish]
+        self.on_graph_finish_handlers = []
+        self._scheduler = None
 
-        self._build()
-        self._cv = threading.Condition()
+        # self._cv = threading.Condition()
+        # self.on_graph_finish_handlers = [self._on_graph_finish]
+        # self._build()
 
-    @property
-    def graph_contexts(self):
-        return self._graph_ctxs
-
-    @property
-    def is_busy(self) -> bool:
-        return False not in [graph_ctx.is_busy for graph_ctx in self._graph_ctxs]
+    def register(self, scheduler):
+        self._scheduler = scheduler
 
     def __call__(self, inputs: DataFrame) -> DataFrame:
-
-        def _feed_one_graph_ctx(row):
-            for graph_ctx in self._graph_ctxs:
-                if not graph_ctx.is_busy:
-                    # fill the input row to the available graph context
-                    graph_ctx(row)
-                    return
-
-        self.outputs = DataFrame()
-
-        for row in inputs.map_iter():
-            if not self.is_busy:
-                _feed_one_graph_ctx(row)
-            else:
-                with self._cv:
-                    if not self.is_busy:
-                        _feed_one_graph_ctx(row)
-                    else:
-                        self._cv.wait()
-
-        # todo: GuoRentong, need to track each graph call for multi-row inputs
-        with self._cv:
-            if self.is_busy:
-                self._cv.wait()
-            return self.outputs
-
-    def _on_graph_finish(self, graph_ctx: GraphContext):
-        # Organize the GraphContext's output into Pipeline's outputs.
-        self.outputs.merge(graph_ctx.outputs)
-        # Notify the run loop that a GraphContext is in idle state.
-        with self._cv:
-            self._cv.notify()
-
-    def _build(self):
         """
-        Create GraphContexts and set up input iterators.
+        Process one input data
         """
-        # build graph contexts
-        self._graph_ctxs = [GraphContext(i, self._graph_repr) for i in range(self._parallelism)]
+        if self._scheduler is None:
+            raise AttributeError(
+                "The pipeline is not registered to a scheduler")
 
-        # add on_task_finish_handlers to graph contexts
-        for g in self._graph_ctxs:
-            g.on_finish_handlers += self.on_graph_finish_handlers
+        assert inputs.size == 1
+        g = GraphContext(0, self._graph_repr)
+        self._scheduler.register(g)
+        _, data = inputs.get(0, 1)
+        g(data)
+        return g.result()
+
+    # @property
+    # def graph_contexts(self):
+    #     return self._graph_ctxs
+
+    # @property
+    # def is_busy(self) -> bool:
+    #     return False not in [graph_ctx.is_busy for graph_ctx in self._graph_ctxs]
+
+    # def __call__(self, inputs: DataFrame) -> DataFrame:
+
+    #     def _feed_one_graph_ctx(row):
+    #         for graph_ctx in self._graph_ctxs:
+    #             if not graph_ctx.is_busy:
+    #                 # fill the input row to the available graph context
+    #                 graph_ctx(row)
+    #                 return
+
+    #     self.outputs = DataFrame()
+
+    #     for row in inputs.map_iter():
+    #         if not self.is_busy:
+    #             _feed_one_graph_ctx(row)
+    #         else:
+    #             with self._cv:
+    #                 if not self.is_busy:
+    #                     _feed_one_graph_ctx(row)
+    #                 else:
+    #                     self._cv.wait()
+
+    #     # todo: GuoRentong, need to track each graph call for multi-row inputs
+    #     with self._cv:
+    #         if self.is_busy:
+    #             self._cv.wait()
+    #         return self.outputs
+
+    # def _on_graph_finish(self, graph_ctx: GraphContext):
+    #     # Organize the GraphContext's output into Pipeline's outputs.
+    #     self.outputs.merge(graph_ctx.outputs)
+    #     # Notify the run loop that a GraphContext is in idle state.
+    #     with self._cv:
+    #         self._cv.notify()
+
+    # def _build(self):
+    #     """
+    #     Create GraphContexts and set up input iterators.
+    #     """
+    #     build graph contexts
+    #     self._graph_ctxs = [GraphContext(i, self._graph_repr)
+    #                         for i in range(self._parallelism)]
+
+    #     # add on_task_finish_handlers to graph contexts
+    #     for g in self._graph_ctxs:
+    #         g.on_finish_handlers += self.on_graph_finish_handlers

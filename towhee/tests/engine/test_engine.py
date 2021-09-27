@@ -17,13 +17,12 @@ from towhee.dag.graph_repr import GraphRepr
 from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
 import unittest
-#import time
 
 from towhee.engine.engine import Engine, EngineConfig
 from towhee.tests import CACHE_PATH
 from towhee.engine.pipeline import Pipeline
 from towhee.dataframe import DataFrame, Variable
-#from towhee.tests.test_util import SIMPLE_PIPELINE_YAML
+from towhee.tests.test_util import SIMPLE_PIPELINE_YAML
 from towhee.dag import OperatorRepr
 
 
@@ -98,31 +97,48 @@ class TestEngine(unittest.TestCase):
 
         graph_repr = GraphRepr('add', op_reprs, df_reprs)
 
-        self._df_in = DataFrame(
+        df_in = DataFrame(
             'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
 
-        self._df_in.put((Variable('int', 1)))
-        self._df_in.seal()
+        df_in.put((Variable('int', 1)))
+        df_in.seal()
 
         self._pipeline = Pipeline(graph_repr)
         engine = Engine()
         engine.add_pipeline(self._pipeline)
-        result = self._pipeline(self._df_in)
-
+        result = self._pipeline(df_in)
         _, ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 3)
 
-        #self._df_in.put((Variable('int', 3), ))
-        # time.sleep(0.1)
-        #_, ret = self._df_out.get(1, 1)
-        #self.assertEqual(ret[0][0].value, 5)
+        df_in = DataFrame(
+            'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
+        df_in.put((Variable('int', 3)))
+        df_in.seal()
 
-# def test_simple_pipeline(self):
-#    g_ctx, dataframes = create_ctxs(SIMPLE_PIPELINE_YAML)
-#    p = Pipeline(g_ctx, dataframes.keys())
-#    engine = Engine()
-#    engine.add_pipeline(p)
-#    dataframes['df1'].put((Variable('int', 3),))
-#    time.sleep(0.3)
-#    _, ret = dataframes['df3'].get(0, 1)
-#    self.assertEqual(ret[0][0].value, 6)
+        result = self._pipeline(df_in)
+        _, ret = result.get(0, 1)
+        self.assertEqual(ret[0][0].value, 5)
+
+    def test_simple_pipeline(self):
+        with open(SIMPLE_PIPELINE_YAML, 'r', encoding='utf-8') as f:
+            p = Pipeline(f.read())
+        engine = Engine()
+        engine.add_pipeline(p)
+
+        df_in = DataFrame(
+            'inputs', {'sum': {'index': 0, 'type': 'int'}})
+
+        df_in.put((Variable('int', 3)))
+        df_in.seal()
+        result = p(df_in)
+        _, ret = result.get(0, 1)
+        self.assertEqual(ret[0][0].value, 6)
+
+        df_in = DataFrame(
+            'inputs', {'sum': {'index': 0, 'type': 'int'}})
+
+        df_in.put((Variable('int', 7)))
+        df_in.seal()
+        result = p(df_in)
+        _, ret = result.get(0, 1)
+        self.assertEqual(ret[0][0].value, 10)

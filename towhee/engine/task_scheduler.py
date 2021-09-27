@@ -18,8 +18,9 @@ from collections import defaultdict
 import random
 import time
 from typing import List
+import weakref
+import threading
 
-from towhee.engine.pipeline import Pipeline
 from towhee.engine.task import Task
 from towhee.engine.task_executor import TaskExecutor
 
@@ -40,14 +41,20 @@ class _TaskScheduler(ABC):
             assign any further tasks to it.
     """
 
-    def __init__(self, pipelines: List[Pipeline], task_execs: List[TaskExecutor], max_tasks: int = 10):
+    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
         self._task_execs = task_execs
         self._max_tasks = max_tasks
-        self._pipelines = pipelines
+        # self._pipelines = pipelines
+        self._graph_ctxs = []
+        self._lock = threading.Lock()
         self._need_stop = False
 
     def stop(self) -> None:
         self._need_stop = True
+
+    def register(self, graph_ctx):
+        with self._lock:
+            self._graph_ctxs.append(weakref.ref(graph_ctx))
 
     # def add_pipeline(self, pipeline: Pipeline):
     #     """Add a single pipeline for this scheduler to manage tasks for.
@@ -113,11 +120,20 @@ class FIFOTaskScheduler(_TaskScheduler):
         efficiency, we prioritize operators towards the end of the graph first.
         """
 
-        for pipeline in self._pipelines:
-            for graph_ctx in pipeline.graph_contexts:
-                for _, op_ctx in graph_ctx.operator_contexts.items():
+        # for pipeline in self._pipelines:
+        with self._lock:
+            # for graph_ctx in pipeline.graph_contexts:
+            self._graph_ctxs = [
+                graph_ctx_ref for graph_ctx_ref in self._graph_ctxs if graph_ctx_ref() is not None
+            ]
+            for graph_context_ref in self._graph_ctxs:
+                g = graph_context_ref()
+                if g is None:
+                    continue
 
-                    if not op_ctx.is_schedulable:
+                for _, op_ctx in g.operator_contexts.items():
+
+                    if not op_ctx.is_schedulable or op_ctx.is_finished:
                         continue
 
                     tasks = op_ctx.pop_ready_tasks(n_tasks=1)
