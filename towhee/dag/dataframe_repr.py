@@ -17,8 +17,8 @@ from towhee.dag.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
 
 
-class DataframeRepr(BaseRepr):
-    """`DataframeRepr` represents a single dataframe within a graph.
+class DataFrameRepr(BaseRepr):
+    """`DataFrameRepr` represents a single dataframe within a graph.
 
     A single dataframe is composed of multiple individual variables, each of which is
     required in the next operator stage within the graph.
@@ -42,7 +42,7 @@ class DataframeRepr(BaseRepr):
         return self._columns
 
     @staticmethod
-    def from_dict(info: Dict[str, any]) -> 'DataframeRepr':
+    def from_dict(info: Dict[str, any]) -> 'DataFrameRepr':
         """
         info:
             dataframe info
@@ -54,12 +54,12 @@ class DataframeRepr(BaseRepr):
                 ],
             }
         Returns:
-            DataframeRepr obj
+            DataFrameRepr obj
         """
-        if not DataframeRepr.is_valid(info, {'name', 'columns'}):
+        if not DataFrameRepr.is_valid(info, {'name', 'columns'}):
             raise ValueError('Invalid dataframe info.')
         var_reprs = []
         df_name = info['name']
         for index, col in enumerate(info['columns']):
             var_reprs.append(VariableRepr(col['name'], col['vtype'], f'{df_name}_col_{index}'))
-        return DataframeRepr(df_name, var_reprs)
+        return DataFrameRepr(df_name, var_reprs)
