@@ -41,5 +41,10 @@ class TrainOutput(NamedTuple):
     training_loss: float
 
 
+class EvalLoopOutput(NamedTuple):
+    corrects: bool
+    evaluation_loss: float
+
+
 PREFIX_CHECKPOINT_DIR = "checkpoint"
 _re_checkpoint = re.compile(r"^" + PREFIX_CHECKPOINT_DIR + r"\-(\d+)$")

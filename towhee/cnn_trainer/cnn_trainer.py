@@ -40,6 +40,7 @@ from towhee.cnn_trainer.trainer_callback import (
 from towhee.cnn_trainer.trainer_utils import (
     PREFIX_CHECKPOINT_DIR,
     TrainOutput,
+    EvalLoopOutput,
 )
 from towhee.cnn_trainer.training_args import TrainingArguments
 from towhee.cnn_trainer.utils import logging
@@ -150,6 +151,27 @@ class PyTorchCNNTrainer:
             shuffle=True
         )
 
+    def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
+        """
+        Returns the evaluation :class:`~torch.utils.data.DataLoader`.
+
+        Subclass and override this method if you want to inject some custom behavior.
+
+        Args:
+            eval_dataset (:obj:`torch.utils.data.dataset.Dataset`, `optional`):
+                If provided, will override :obj:`self.eval_dataset`. If it is an :obj:`datasets.Dataset`, columns not
+                accepted by the ``model.forward()`` method are automatically removed. It must implement :obj:`__len__`.
+        """
+        if eval_dataset is None and self.eval_dataset is None:
+            raise ValueError("Trainer: evaluation requires an eval_dataset.")
+        eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
+
+        return DataLoader(
+            eval_dataset,
+            batch_size=self.args.eval_batch_size,
+            shuffle=True
+        )
+
     def create_optimizer_and_scheduler(self):
         """
         Setup the optimizer and the learning rate scheduler.
@@ -176,6 +198,112 @@ class PyTorchCNNTrainer:
         Will raise an exception if the underlying dataset does not implement method :obj:`__len__`
         """
         return len(dataloader.dataset)
+
+    def _maybe_log_save_evaluate(self, tr_loss, tr_corrects, num_examples):
+        if self.control.should_log:
+            logs: Dict[str, float] = {}
+            tr_loss_scalar = tr_loss.item()
+            epoch_loss = tr_loss_scalar / num_examples
+            epoch_acc = tr_corrects / num_examples
+
+            # reset tr_loss to zero
+            tr_loss -= tr_loss
+            tr_corrects -= tr_corrects
+
+            logs["loss"] = epoch_loss
+            logs["accuracy"] = epoch_acc
+
+            self._total_loss_scalar += tr_loss_scalar
+            self.log(logs)
+
+        self.control.should_save = False
+        if self.control.should_save:
+            self._save_checkpoint()
+            self.control = self.callback_handler.on_save(self.args, self.state, self.control)
+
+    def _save_checkpoint(self):
+        # Save model checkpoint
+        checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
+
+        run_dir = self.args.output_dir
+
+        output_dir = os.path.join(run_dir, checkpoint_folder)
+        self.save_model(output_dir)
+
+        # Save optimizer and scheduler
+        if self.args.should_save:
+            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
+            with warnings.catch_warnings(record=True):
+                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
+
+        # Save the Trainer state
+        if self.args.should_save:
+            self.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
+
+        # Save RNG state in non-distributed training
+        rng_states = {
+            "python": random.getstate(),
+            "numpy": np.random.get_state(),
+            "cpu": torch.random.get_rng_state(),
+        }
+        if torch.cuda.is_available():
+            rng_states["cuda"] = torch.cuda.random.get_rng_state()
+
+    def log(self, logs: Dict[str, float]) -> None:
+        """
+        Log :obj:`logs` on the various objects watching training.
+
+        Args:
+            logs (:obj:`Dict[str, float]`):
+                The values to log.
+        """
+        if self.state.epoch is not None:
+            logs["epoch"] = round(self.state.epoch, 2)
+
+        output = {**logs, **{"step": self.state.global_step}}
+        self.state.log_history.append(output)
+        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
+
+    def compute_loss(self, model, inputs):
+        """
+        How the loss is computed by PyTorchCNNTrainer. By default, all models return the loss in the first element.
+
+        Subclass and override for custom behavior.
+        """
+        labels = inputs[1]
+        with torch.set_grad_enabled(True):
+            outputs = model(inputs[0])
+            _, preds = torch.max(outputs, 1)
+
+        if labels is not None:
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(outputs, labels)
+            corrects = torch.sum(preds == labels.data)
+
+        # return (loss, outputs) if return_outputs else loss
+        return loss, corrects
+
+    def save_model(self, output_dir: Optional[str] = None):
+        """
+        Will save the model.
+        """
+
+        if output_dir is None:
+            output_dir = self.args.output_dir
+
+        state_dict = self.model.state_dict()
+        if self.args.should_save:
+            self._save(output_dir, state_dict)
+
+    def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        # If we are executing this function, we are the process zero, so we don't check for that.
+        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        logger.info("Saving model checkpoint to %s", output_dir)
+        torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
+
+        # Good practice: save your training arguments together with the trained model
+        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
 
     def train(self):
         """
@@ -290,71 +418,6 @@ class PyTorchCNNTrainer:
 
         return TrainOutput(self.state.global_step, train_loss)
 
-    def _maybe_log_save_evaluate(self, tr_loss, tr_corrects, num_examples):
-        if self.control.should_log:
-            logs: Dict[str, float] = {}
-            tr_loss_scalar = tr_loss.item()
-            epoch_loss = tr_loss_scalar / num_examples
-            epoch_acc = tr_corrects / num_examples
-
-            # reset tr_loss to zero
-            tr_loss -= tr_loss
-            tr_corrects -= tr_corrects
-
-            logs["loss"] = epoch_loss
-            logs["accuracy"] = epoch_acc
-
-            self._total_loss_scalar += tr_loss_scalar
-            self.log(logs)
-
-        self.control.should_save = False
-        if self.control.should_save:
-            self._save_checkpoint()
-            self.control = self.callback_handler.on_save(self.args, self.state, self.control)
-
-    def _save_checkpoint(self):
-        # Save model checkpoint
-        checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
-
-        run_dir = self.args.output_dir
-
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir)
-
-        # Save optimizer and scheduler
-        if self.args.should_save:
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-            with warnings.catch_warnings(record=True):
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-
-        # Save the Trainer state
-        if self.args.should_save:
-            self.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
-
-        # Save RNG state in non-distributed training
-        rng_states = {
-            "python": random.getstate(),
-            "numpy": np.random.get_state(),
-            "cpu": torch.random.get_rng_state(),
-        }
-        if torch.cuda.is_available():
-            rng_states["cuda"] = torch.cuda.random.get_rng_state()
-
-    def log(self, logs: Dict[str, float]) -> None:
-        """
-        Log :obj:`logs` on the various objects watching training.
-
-        Args:
-            logs (:obj:`Dict[str, float]`):
-                The values to log.
-        """
-        if self.state.epoch is not None:
-            logs["epoch"] = round(self.state.epoch, 2)
-
-        output = {**logs, **{"step": self.state.global_step}}
-        self.state.log_history.append(output)
-        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
-
     def training_step(self, model: nn.Module, inputs: List[torch.Tensor]) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
@@ -369,8 +432,6 @@ class PyTorchCNNTrainer:
             :obj:`torch.Tensor`: The tensor with training loss on this batch.
         """
         model.train()
-        # inputs = self._prepare_inputs(inputs)
-
         loss, corrects = self.compute_loss(model, inputs)
 
         if self.args.n_gpu > 1:
@@ -380,43 +441,80 @@ class PyTorchCNNTrainer:
 
         return loss.detach(), corrects
 
-    def compute_loss(self, model, inputs):
+    def evaluate(
+            self,
+            eval_dataset: Optional[Dataset] = None,
+    ) -> Dict[str, float]:
         """
-        How the loss is computed by PyTorchCNNTrainer. By default, all models return the loss in the first element.
+        Run evaluation and returns metrics.
 
-        Subclass and override for custom behavior.
+        The calling script will be responsible for providing a method to compute loss.
+
+        Args:
+            eval_dataset (:obj:`Dataset`, `optional`):
+                The dataset for evaluation.
+
+        Returns:
+            A dictionary containing the evaluation loss and accuracy.
         """
-        labels = inputs[1]
-        with torch.set_grad_enabled(True):
-            outputs = model(inputs[0])
-            _, preds = torch.max(outputs, 1)
+        eval_dataloader = self.get_eval_dataloader(eval_dataset)
 
-        if labels is not None:
-            criterion = nn.CrossEntropyLoss()
-            loss = criterion(outputs, labels)
-            corrects = torch.sum(preds == labels.data)
+        eval_loop = self.evaluation_loop
+        output = eval_loop(
+            eval_dataloader,
+        )
+        self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control)
 
-        # return (loss, outputs) if return_outputs else loss
-        return loss, corrects
+        return output
 
-    def save_model(self, output_dir: Optional[str] = None):
+    def evaluation_loop(
+            self,
+            dataloader: DataLoader,
+    ) -> EvalLoopOutput:
         """
-        Will save the model.
+        Evaluation loop.
+
+        Works with labels.
         """
+        model = self.model
 
-        if output_dir is None:
-            output_dir = self.args.output_dir
+        logger.info("***** Running {description} *****")
+        if isinstance(dataloader.dataset, collections.abc.Sized):
+            logger.info("  Num examples = {self.num_examples(dataloader)}")
+        else:
+            logger.info("  Num examples: Unknown")
+        logger.info("  Batch size = {batch_size}")
 
-        state_dict = self.model.state_dict()
-        if self.args.should_save:
-            self._save(output_dir, state_dict)
+        model.eval()
 
-    def _save(self, output_dir: Optional[str] = None, state_dict=None):
-        # If we are executing this function, we are the process zero, so we don't check for that.
-        output_dir = output_dir if output_dir is not None else self.args.output_dir
-        os.makedirs(output_dir, exist_ok=True)
-        logger.info("Saving model checkpoint to %s", output_dir)
-        torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
+        self.callback_handler.eval_dataloader = dataloader
 
-        # Good practice: save your training arguments together with the trained model
-        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+        # Main evaluation loop
+        for inputs in dataloader:
+            # Prediction step
+            loss, corrects = self.prediction_step(model, inputs)
+            self.control = self.callback_handler.on_prediction_step(self.args, self.state, self.control)
+
+        return EvalLoopOutput(corrects, loss)
+
+    def prediction_step(
+            self,
+            model: nn.Module,
+            inputs: List[torch.Tensor],
+    ) -> Tuple[Optional[torch.Tensor], float]:
+        """
+        Perform an evaluation step on :obj:`model` using obj:`inputs`.
+
+        Args:
+            model (:obj:`nn.Module`):
+                The model to evaluate.
+            inputs (:obj:`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs and targets of the model.
+
+        Return:
+            Tuple[Optional[torch.Tensor], float]: A tuple with the loss, and accuracy.
+        """
+        with torch.no_grad():
+            loss, corrects = self.compute_loss(model, inputs)
+
+        return loss.detach(), corrects

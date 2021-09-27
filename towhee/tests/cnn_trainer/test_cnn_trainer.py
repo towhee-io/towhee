@@ -25,8 +25,10 @@ from towhee.cnn_trainer.training_args import TrainingArguments
 from towhee.dataset.image_datasets import PyTorchImageDataset
 
 cache_path = Path(__file__).parent.parent.resolve()
-image_path = cache_path.joinpath('dataset/kaggle_dataset_small/train')
-label_file =cache_path.joinpath('dataset/kaggle_dataset_small/train/train_labels.csv')
+train_image_path = cache_path.joinpath('dataset/kaggle_dataset_small/train')
+train_label_file = cache_path.joinpath('dataset/kaggle_dataset_small/train/train_labels.csv')
+eval_image_path = cache_path.joinpath('dataset/kaggle_dataset_small/eval')
+eval_label_file = cache_path.joinpath('dataset/kaggle_dataset_small/eval/eval_labels.csv')
 
 
 class TrainerTest(unittest.TestCase):
@@ -37,9 +39,16 @@ class TrainerTest(unittest.TestCase):
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ]),
+            'val': transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
         }
-        self.train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+        self.train_data = PyTorchImageDataset(train_image_path, train_label_file, data_transforms['train'])
+        self.eval_data = PyTorchImageDataset(eval_image_path, eval_label_file, data_transforms['val'])
         self.model = torchvision.models.resnet50(pretrained=True)
         num_ftrs = self.model.fc.in_features
         self.model.fc = nn.Linear(num_ftrs, self.train_data.num_classes)
@@ -48,17 +57,23 @@ class TrainerTest(unittest.TestCase):
             overwrite_output_dir=True,
             num_train_epochs=5,
             per_gpu_train_batch_size=4,
+            per_gpu_eval_batch_size=4,
             prediction_loss_only=True,
         )
         self.trainer = PyTorchCNNTrainer(
             model=self.model,
             args=self.training_args,
-            train_dataset=self.train_data
+            train_dataset=self.train_data,
+            eval_dataset=self.eval_data
         )
 
     def test_overfit_on_small_batches(self) -> None:
         training_output = self.trainer.train()
         self.assertGreaterEqual(3.0, training_output.training_loss)
+
+    def test_evaluate(self) -> None:
+        eval_output = self.trainer.evaluate(self.eval_data)
+        self.assertGreaterEqual(5.0, eval_output.evaluation_loss)
 
 
 if __name__ == '__main__':
