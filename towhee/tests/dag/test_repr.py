@@ -31,71 +31,70 @@ class TestRepr(unittest.TestCase):
         self.assertFalse(BaseRepr.is_valid({'test': 1}, {'not_exist'}))
 
     def _check_graph(self, g_repr):
-        self.assertEqual(len(g_repr.dataframes), 3)
-        self.assertEqual(g_repr.dataframes[0].name, 'test_df_1')
-        self.assertEqual(g_repr.dataframes[1].name, 'test_df_2')
-        self.assertEqual(g_repr.dataframes[0].columns[0].vtype, 'int')
-
-        self.assertEqual(len(g_repr.operators), 2)
-        self.assertEqual(g_repr.operators[0].name, 'test_op_1')
-        self.assertEqual(g_repr.operators[1].name, 'test_op_2')
-
-        self.assertEqual(g_repr.operators[0].inputs, [{'df': 'test_df_1', 'name': 'k1', 'col': 0}])
-
-        self.assertEqual(g_repr.operators[1].inputs, [{'df': 'test_df_2', 'name': 'k1', 'col': 0}])
-
-        self.assertEqual(g_repr.operators[1].outputs, [{'df': 'test_df_3'}])
-
-        self.assertEqual(g_repr.operators[1].init_args, {'arg1': 1, 'arg2': 'test'})
-
-        self.assertEqual(g_repr.operators[1].iter_info, {'type': 'map'})
+        # test dataframes generation
+        self.assertEqual(len(g_repr.dataframes.values()), 3)
+        self.assertTrue('test_df_1' in g_repr.dataframes)
+        self.assertTrue('test_df_2' in g_repr.dataframes)
+        self.assertEqual(g_repr.dataframes['test_df_1'].columns[0].vtype, 'int')
+        # test operators generation
+        self.assertEqual(len(g_repr.operators.values()), 2)
+        self.assertTrue('test_op_1' in g_repr.operators)
+        self.assertTrue('test_op_2' in g_repr.operators)
+        # check details in operators
+        self.assertEqual(g_repr.operators['test_op_1'].inputs, [{'df': 'test_df_1', 'name': 'k1', 'col': 0}])
+        self.assertEqual(g_repr.operators['test_op_2'].inputs, [{'df': 'test_df_2', 'name': 'k1', 'col': 0}])
+        self.assertEqual(g_repr.operators['test_op_2'].outputs, [{'df': 'test_df_3'}])
+        self.assertEqual(g_repr.operators['test_op_2'].init_args, {'arg1': 1, 'arg2': 'test'})
+        self.assertEqual(g_repr.operators['test_op_2'].iter_info, {'type': 'map'})
 
     def test_graph_repr(self):
+        # Check if the inforamtion is loaded properly
+        # Load from YAML file
         self._check_graph(GraphRepr.from_yaml(GRAPH_TEST_YAML))
-
+        # Load from string
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
             self._check_graph(GraphRepr.from_yaml(f.read()))
-
+        # Load from url
         with mock.patch('requests.get') as mock_get:
             with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
                 MockResponse = namedtuple('MockResponse', ['text'])
                 mock_get.return_value = MockResponse(f.read())
                 self._check_graph(GraphRepr.from_yaml('http://mock.yaml'))
 
-    def test_isolation(self):
+    def test_isolation_or_loop(self):
+        # Raise error if given false source information that contain loop or isolation
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_ISO_DF_YAML)
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_ISO_OP_YAML)
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_LOOP_YAML)
+
+        # A proper graph does not contain isolation and loopa
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f.read())
         graph = GraphRepr.from_dict(data)
-        df_status, df_msg = graph.has_isolated_df()
-        self.assertFalse(df_status)
-        self.assertEqual(df_msg, '')
-        op_status, op_msg = graph.has_isolated_op()
-        self.assertFalse(op_status)
-        self.assertEqual(op_msg, '')
-        non_loop_status, non_loop_msg = graph.has_loop()
-        self.assertFalse(non_loop_status)
-        self.assertEqual(non_loop_msg, '')
-
+        non_iso_df = graph.get_isolated_df()
+        self.assertFalse(bool(non_iso_df))
+        non_iso_op = graph.get_isolated_op()
+        self.assertFalse(bool(non_iso_op))
+        none_loop = graph.get_loop()
+        self.assertFalse(bool(none_loop))
+        # If the graph contains isolated dataframes
         with open(GRAPH_TEST_ISO_DF_YAML, 'r', encoding='utf-8') as f:
             iso_data = yaml.safe_load(f.read())
         iso_df_graph = GraphRepr.from_dict(iso_data)
-        iso_df_status, iso_df_msg = iso_df_graph.has_isolated_df()
-        self.assertTrue(iso_df_status)
-        self.assertEqual(iso_df_msg, 'The DAG contains isolated dataframe(s) {\'iso_df\'}.')
-
+        iso_df = iso_df_graph.get_isolated_df()
+        self.assertTrue(bool(iso_df))
+        # If the graph contains isolated operators
         with open(GRAPH_TEST_ISO_OP_YAML, 'r', encoding='utf-8') as f:
             iso_data = yaml.safe_load(f.read())
         iso_op_graph = GraphRepr.from_dict(iso_data)
-        iso_op_status, iso_op_msg = iso_op_graph.has_isolated_op()
-        self.assertTrue(iso_op_status)
-        self.assertEqual(iso_op_msg, 'The DAG contains isolated operator(s) {\'iso_op\'}.')
-
+        iso_op = iso_op_graph.get_isolated_op()
+        self.assertTrue(bool(iso_op))
+        # If the graph contains loops
         with open(GRAPH_TEST_LOOP_YAML, 'r', encoding='utf-8') as f:
             iso_data = yaml.safe_load(f.read())
         loop_graph = GraphRepr.from_dict(iso_data)
-        loop_status, loop_msg = loop_graph.has_loop()
-        self.assertTrue(loop_status)
-        self.assertEqual(loop_msg, 'The dataframes [\'test_df_1\', \'test_df_2\'] forms a loop.')
+        loop = loop_graph.get_loop()
+        self.assertTrue(bool(loop))
 
     def test_error_yaml(self):
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:

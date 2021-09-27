@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.dataframe_repr import DataframeRepr
@@ -45,7 +45,7 @@ class GraphRepr(BaseRepr):
         return self._dataframes
 
     @staticmethod
-    def dfs(cur: str, adj: Dict[str, List[str]], flag: Dict[str, int], cur_list: List[str]) -> Tuple[bool, str]:
+    def dfs(cur: str, adj: Dict[str, List[str]], flag: Dict[str, int], cur_list: List[str]) -> List[str]:
         """Depth-First Search the graph
         Args:
             cur(`str`):
@@ -62,38 +62,39 @@ class GraphRepr(BaseRepr):
             cur_list('list):
                 The list of dataframe that have been visited in this search.
         Returns:
-            Return `False` if there is no loop, else `True` and the loop message.
+            Return `False` if there is no loop, else `True` and the loop.
         """
         # if `cur` is not the input of any operator, it will not form a loop anyway
         if cur not in flag:
-            return False, ''
+            return False, []
         # If `cur` has been searched and not in a loop
         if flag[cur] == 2:
-            return False, ''
+            return False, []
         # If `cur` has been visited in this search
         if flag[cur] == 1:
-            return True, f'The dataframes {cur_list} forms a loop.'
+            return True, cur_list
         flag[cur] = 1
-
+        # Recursion
         for col in adj[cur]:
             cur_list.append(cur)
-            status, msg = GraphRepr.dfs(col, adj, flag, cur_list)
+            status, loop_list = GraphRepr.dfs(col, adj, flag, cur_list)
             if status:
-                return status, msg
+                return status, loop_list
         flag[cur] = 2
 
-        return False, ''
+        return False, []
 
-    def has_loop(self) -> Tuple[bool, str]:
-        """Check if there are loop(s) inside the graph.
+    def get_loop(self) -> List[str]:
+        """Get the loop(s) inside the graph.
+
         Returns:
-            Return `False` if there is no loop, else `True` and the loop message.
+            Return the loop if exists, else an empty list.
         """
         adj = {}
         flag = {}
         dataframes = []
-
-        for op in self._operators:
+        # Collect adjacent information and mark all the flag as 0
+        for op in self._operators.values():
             out = op.outputs[0]['df']
             for df in op.inputs:
                 name = df['df']
@@ -102,63 +103,71 @@ class GraphRepr(BaseRepr):
                     flag[name] = 0
                     dataframes.append(name)
                 adj[name].append(out)
-
         # Recursive DFS
         for df in dataframes:
-            status, msg = GraphRepr.dfs(df, adj, flag, [])
+            status, loop_list = GraphRepr.dfs(df, adj, flag, [])
             if status:
-                return status, msg
+                return loop_list
 
-        return False, ''
+        return []
 
-    def has_isolated_df(self):
-        iso_df = {df.name for df in self._dataframes}
+    def get_isolated_df(self) -> Set[str]:
+        """Get the isolated dataframe(s) in the DAG.
 
-        for op in self._operators:
+        Returns:
+            Return the isolated daatframe set if exists, else an empty set.
+        """
+        # First mark all the dataframes as isolated
+        iso_df = {df.name for df in self._dataframes.values()}
+        # If the dataframe is the input/output of any operators, remove it from isolated dataframes set
+        for op in self._operators.values():
             for i in op.inputs:
                 iso_df.discard(i['df'])
             iso_df.discard(op.outputs[0]['df'])
 
-        status = bool(iso_df)
-        msg = '' if not iso_df else f'The DAG contains isolated dataframe(s) {iso_df}.'
+        return iso_df
 
-        return status, msg
+    def get_isolated_op(self) -> Set[str]:
+        """Get the isolated operator(s) in the DAG.
 
-    def has_isolated_op(self):
-        if len(self._operators) == 1:
+        Returns:
+            Return the isolated operator set if exists, else an empty set.
+        """
+        # If the graph has only one operator, there is no isolated operator
+        if len(self._operators.values()) == 1:
             return False, ''
 
         in_df = set()
         out_df = set()
         iso_op = set()
-
-        for op in self._operators:
+        # Collect all the input/output dataframes
+        for op in self._operators.values():
             for i in op.inputs:
                 in_df.add(i['df'])
             out_df.add(op.outputs[0]['df'])
-
-        for op in self._operators:
+        # Traverse the operators to find isolated operators
+        for op in self._operators.values():
             cur_in = {i['df'] for i in op.inputs}
             cur_out = {i['df'] for i in op.outputs}
-
+            # If the input/output are not the output/input of any other operators, the operator is isolated
             if not cur_in.intersection(out_df - cur_out) and not cur_out.intersection(in_df - cur_in):
                 iso_op.add(op.name)
 
-        status = bool(iso_op)
-        msg = '' if not iso_op else f'The DAG contains isolated operator(s) {iso_op}.'
-
-        return status, msg
+        return iso_op
 
     @staticmethod
     def from_dict(info: Dict) -> 'GraphRepr':
+        # Basic schema check
         if not BaseRepr.is_valid(info, {'name', 'operators', 'dataframes'}):
             raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
-        dataframes = [DataframeRepr.from_dict(df_info) for df_info in info['dataframes']]
-        operators = [OperatorRepr.from_dict(op_info) for op_info in info['operators']]
+        # Generate dataframes and operators
+        dataframes = {df_info['name']: DataframeRepr.from_dict(df_info) for df_info in info['dataframes']}
+        operators = {op_info['name']: OperatorRepr.from_dict(op_info) for op_info in info['operators']}
+
         return GraphRepr(info['name'], operators, dataframes)
 
     @staticmethod
-    def from_yaml(src: str) -> 'GraphRepr':
+    def from_yaml(src: str):
         """Import a YAML file describing this graph.
 
         Args:
@@ -193,8 +202,22 @@ class GraphRepr(BaseRepr):
                         -
                            vtype: 'int'
         """
+        # Load the information and get isolation and loop
         info = BaseRepr.load_src(src)
-        return GraphRepr.from_dict(info)
+        graph = GraphRepr.from_dict(info)
+        iso_df = graph.get_isolated_df()
+        iso_op = graph.get_isolated_op()
+        loop = graph.get_loop()
+        # If no loop or isolation found, return the GraphRepr
+        if not iso_df and not iso_op and not loop:
+            return GraphRepr.from_dict(info)
+        # generate error message
+        df_msg = '' if not iso_df else f'The DAG contains isolated dataframe(s) {iso_df}.'
+        op_msg = '' if not iso_op else f'The DAG contains isolated operator(s) {iso_op}.'
+        loop_msg = '' if not loop else f'The DAG contains loop consists of {loop}'
+        msg = '.'.join([df_msg, op_msg, loop_msg]).split(None)
+
+        raise ValueError(msg)
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.
