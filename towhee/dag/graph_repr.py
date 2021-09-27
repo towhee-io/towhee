@@ -14,7 +14,7 @@
 from typing import Dict, List, Set
 
 from towhee.dag.base_repr import BaseRepr
-from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.dataframe_repr import DataFrameRepr
 from towhee.dag.operator_repr import OperatorRepr
 
 
@@ -31,7 +31,7 @@ class GraphRepr(BaseRepr):
         file_or_url(`str`):
             The file or remote url that stores the information of this representation.
     """
-    def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataframeRepr]):
+    def __init__(self, name: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataFrameRepr]):
         super().__init__(name)
         self._operators = op_reprs
         self._dataframes = df_reprs
@@ -41,7 +41,7 @@ class GraphRepr(BaseRepr):
         return self._operators
 
     @property
-    def dataframes(self) -> Dict[str, DataframeRepr]:
+    def dataframes(self) -> Dict[str, DataFrameRepr]:
         return self._dataframes
 
     @staticmethod
@@ -161,7 +161,7 @@ class GraphRepr(BaseRepr):
         if not BaseRepr.is_valid(info, {'name', 'operators', 'dataframes'}):
             raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
         # Generate dataframes and operators
-        dataframes = {df_info['name']: DataframeRepr.from_dict(df_info) for df_info in info['dataframes']}
+        dataframes = {df_info['name']: DataFrameRepr.from_dict(df_info) for df_info in info['dataframes']}
         operators = {op_info['name']: OperatorRepr.from_dict(op_info) for op_info in info['operators']}
 
         return GraphRepr(info['name'], operators, dataframes)

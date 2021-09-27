@@ -15,7 +15,7 @@
 
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dag.variable_repr import VariableRepr
-from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.dataframe_repr import DataFrameRepr
 import unittest
 #import time
 
@@ -75,12 +75,12 @@ class TestEngine(unittest.TestCase):
             iter_info={'type': 'map'}
         )
 
-        df_in_repr = DataframeRepr(
+        df_in_repr = DataFrameRepr(
             name='op_test_in',
             columns=[VariableRepr('num', 'int')]
         )
 
-        df_out_repr = DataframeRepr(
+        df_out_repr = DataFrameRepr(
             name='op_test_out',
             columns=[VariableRepr('sum', 'int')]
         )

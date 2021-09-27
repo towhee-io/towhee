@@ -133,7 +133,7 @@ class OperatorRepr(BaseRepr):
                }
 
             dataframes(`dict`):
-                Dict with `DataframeRepr` objects as values to construct current
+                Dict with `DataFrameRepr` objects as values to construct current
                 `OperatorRepr`.
 
         Returns:

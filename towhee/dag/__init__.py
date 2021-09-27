@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dag.dataframe_repr import DataframeRepr
+from towhee.dag.dataframe_repr import DataFrameRepr
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dag.operator_repr import OperatorRepr
 from towhee.dag.variable_repr import VariableRepr
 
 
 __all__ = [
-    'DataframeRepr',
+    'DataFrameRepr',
     'GraphRepr',
     'OperatorRepr',
     'VariableRepr'
