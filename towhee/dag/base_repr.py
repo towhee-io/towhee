@@ -27,7 +27,6 @@ class BaseRepr:
         name:
             Name of the internal object described by this representation.
     """
-
     def __init__(self, name: str):
         self._name = name
 
@@ -37,21 +36,20 @@ class BaseRepr:
 
     @staticmethod
     def is_valid(info: Dict, essentials: Set[str]) -> bool:
-        """Check if the src is a valid YAML file to describe a DAG in Towhee.
+        """Check if the src is a valid YAML file to describe a representation in Towhee.
 
         Args:
-            info(`list`):
-                The List loaded from the source file.
+            info(`dict`):
+                The dict loaded from the source file.
         """
         info_keys = set(info.keys())
         if not isinstance(info, dict) or not essentials.issubset(info_keys):
-            logging.error(
-                'Info [%s] is not valid, lost attr [%s]', str(info), essentials - info_keys)
+            logging.error('Info [%s] is not valid, lack attr [%s]', str(info), essentials - info_keys)
             return False
         return True
 
     @staticmethod
-    def load_str(string: str) -> List[dict]:
+    def load_str(string: str) -> Dict[str, any]:
         """Load the representation(s) information from a YAML file (pre-loaded as string).
 
         Args:
@@ -59,7 +57,7 @@ class BaseRepr:
                 The string pre-loaded from a YAML.
 
         Returns:
-            The list loaded from the YAML file that contains the representation(s) information.
+            The dict loaded from the YAML file that contains the representation information.
         """
         return yaml.safe_load(string)
 
@@ -72,21 +70,21 @@ class BaseRepr:
                 The file path.
 
         Returns:
-            The list loaded from the YAML file that contains the representation(s) information.
+            The list loaded from the YAML file that contains the representation information.
         """
         with open(file, 'r', encoding='utf-8') as f:
             return BaseRepr.load_str(f)
 
     @staticmethod
     def load_url(url: str) -> List[dict]:
-        """Load the representation(s) information from a remote YAML file.
+        """Load the representation information from a remote YAML file.
 
         Args:
             url(`str`):
                 The url points to the remote YAML file.
 
         Returns:
-            The list loaded from the YAML file that contains the representation(s) information.
+            The list loaded from the YAML file that contains the representation information.
         """
         src = requests.get(url, timeout=5).text
         return BaseRepr.load_str(src)

@@ -29,7 +29,7 @@ operators:
                 col: 0
         outputs:
             -
-                df: 'test_df_3'
+                df: 'test_df_1'
         iter_info:
             type: map
 dataframes:
@@ -44,12 +44,6 @@ dataframes:
                 vtype: 'int'
     -
         name: 'test_df_2'
-        columns:
-            -
-                name: 'k1'
-                vtype: 'int'
-    -
-        name: 'test_df_3'
         columns:
             -
                 name: 'k1'

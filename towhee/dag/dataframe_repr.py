@@ -29,7 +29,6 @@ class DataframeRepr(BaseRepr):
         src:
             The information of this dataframe.
     """
-
     def __init__(self, name: str, columns: List[VariableRepr]):
         self._name = name
         self._columns = columns
@@ -58,10 +57,9 @@ class DataframeRepr(BaseRepr):
             DataframeRepr obj
         """
         if not DataframeRepr.is_valid(info, {'name', 'columns'}):
-            raise ValueError(
-                'Invalid dataframe info.'
-            )
+            raise ValueError('Invalid dataframe info.')
         var_reprs = []
-        for c in info['columns']:
-            var_reprs.append(VariableRepr(c['name'], c['vtype']))
-        return DataframeRepr(info['name'], var_reprs)
+        df_name = info['name']
+        for index, col in enumerate(info['columns']):
+            var_reprs.append(VariableRepr(col['name'], col['vtype'], f'{df_name}_col_{index}'))
+        return DataframeRepr(df_name, var_reprs)

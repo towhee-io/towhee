@@ -30,10 +30,15 @@ class OperatorRepr(BaseRepr):
         iterator:
             This operator's iterator info.
     """
-
-    def __init__(self, name: str, function: str, init_args: Dict[str, any],
-                 inputs: List[Dict[str, any]], outputs: List[Dict[str, any]],
-                 iter_info: Dict[str, any]):
+    def __init__(
+        self,
+        name: str,
+        function: str,
+        init_args: Dict[str, any],
+        inputs: List[Dict[str, any]],
+        outputs: List[Dict[str, any]],
+        iter_info: Dict[str, any]
+    ):
         super().__init__(name)
         self._function = function
         self._inputs = inputs
@@ -134,11 +139,7 @@ class OperatorRepr(BaseRepr):
         Returns:
             The operators we described in `file_or_src`
         """
-        if not BaseRepr.is_valid(info, {'name', 'init_args', 'function',
-                                        'inputs', 'outputs', 'iter_info'}):
-            raise ValueError(
-                'Invalid operator data.'
-            )
+        if not BaseRepr.is_valid(info, {'name', 'init_args', 'function', 'inputs', 'outputs', 'iter_info'}):
+            raise ValueError('Invalid operator info.')
 
-        return OperatorRepr(info['name'], info['function'], info['init_args'],
-                            info['inputs'], info['outputs'], info['iter_info'])
+        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'])
