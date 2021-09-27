@@ -48,6 +48,7 @@ class DataFrame:
 
         self._lock = threading.Lock()
         self._registered_lock = threading.Lock()
+        self._cv = threading.Condition(self._lock)
 
     @property
     def name(self) -> str:
@@ -112,11 +113,17 @@ class DataFrame:
         return self._total
 
     def seal(self):
-        with self._lock:
+        with self._cv:
             self._sealed = True
+            self._cv.notify_all()
 
     def is_sealed(self) -> bool:
         return self._sealed
+
+    def wait_sealed(self):
+        with self._cv:
+            if not self._sealed:
+                self._cv.wait()
 
     def clear(self):
         self._data = []
@@ -136,6 +143,9 @@ class DataFrame:
         with self._registered_lock:
             self._registered_iter.append(it)
         return it
+
+    def __str__(self) -> str:
+        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self.name, self.size, self.is_sealed())
 
 
 class DataFrameIterator:

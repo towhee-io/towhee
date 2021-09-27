@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dag.operator_repr import OperatorRepr
 from typing import List, Dict
+import threading
+
+from towhee.dag.operator_repr import OperatorRepr
 
 from towhee.engine.task import Task
 # from towhee.engine.graph_context import GraphContext
@@ -53,16 +55,21 @@ class OperatorContext:
         # todo: GuoRentong, issue #114
         inputs = list({dataframes[input['df']] for input in op_repr.inputs})
         input_iter_type = op_repr.iter_info['type']
-        inputs_index = dict((item['name'], item['col']) for item in op_repr.inputs)
+        inputs_index = dict((item['name'], item['col'])
+                            for item in op_repr.inputs)
         self.inputs = inputs
         self._reader = create_reader(inputs, input_iter_type, inputs_index)
 
-        outputs = list({dataframes[output['df']] for output in op_repr.outputs})
+        outputs = list({dataframes[output['df']]
+                       for output in op_repr.outputs})
         self._writer = create_writer(outputs)
         self.outputs = outputs
 
         self._finished = False
+        self._has_tasks = True
         self._taskid = 0
+        self._finished_task_count = 0
+        self._lock = threading.Lock()
 
         self.on_start_handlers = []
         self.on_finish_handlers = []
@@ -97,9 +104,12 @@ class OperatorContext:
                 continue
 
             if op_input_params is None:
+                self._has_tasks = False
+
+            if not self._has_tasks and self._taskid == self._finished_task_count:
+                self._writer.close()
                 self._finished = True
             break
-
         return ready_tasks
 
     @property
@@ -108,13 +118,18 @@ class OperatorContext:
         return self._finished
 
     @property
+    def has_tasks(self) -> bool:
+        # todo: GuoRentong. see issue #124
+        return self._has_tasks
+
+    @property
     def num_ready_tasks(self) -> int:
         """
         Get the number of ready Tasks.
         """
         return self._reader.size
 
-    @ property
+    @property
     def num_finished_tasks(self) -> int:
         """
         Get the number of finished tasks.
@@ -124,7 +139,9 @@ class OperatorContext:
         # self._finished_tasks' only monifier.
 
     def _write_outputs(self, task: Task):
-        self._writer.write(task.outputs)
+        with self._lock:
+            self._finished_task_count += 1
+            self._writer.write(task.outputs)
 
     def _next_task_inputs(self):
         """
@@ -136,8 +153,9 @@ class OperatorContext:
         raise NotImplementedError
 
     def _create_new_task(self, inputs: Dict[str, any]):
-        t = Task(self.name, self._repr.function,
-                 self._repr.init_args, inputs, self._taskid)
-        self._taskid += 1
-        t.add_finish_handler(self.on_task_finish_handlers)
-        return t
+        with self._lock:
+            t = Task(self.name, self._repr.function,
+                     self._repr.init_args, inputs, self._taskid)
+            self._taskid += 1
+            t.add_finish_handler(self.on_task_finish_handlers)
+            return t

@@ -58,7 +58,7 @@ class TestOperatorContext(unittest.TestCase):
         count = 0
         while True:
             tasks = op.pop_ready_tasks(2)
-            if op.is_finished:
+            if not op.has_tasks:
                 break
             self.assertEqual(len(tasks), 2)
             count += len(tasks)
@@ -97,7 +97,7 @@ class TestOperatorContext(unittest.TestCase):
         count = 0
         while True:
             tasks = op.pop_ready_tasks(5)
-            if op.is_finished:
+            if not op.has_tasks:
                 break
             self.assertLessEqual(len(tasks), 2)
             count += len(tasks)

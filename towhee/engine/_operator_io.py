@@ -25,6 +25,9 @@ class DataFrameWriter:
     def write(self, output_data: NamedTuple) -> bool:
         return self._output_df.put_dict(output_data._asdict())
 
+    def close(self):
+        self._output_df.seal()
+
 
 class DataFrameReader(ABC):
     """

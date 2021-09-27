@@ -15,10 +15,12 @@
 
 # from towhee.engine.pipeline import Pipeline
 
-from towhee.engine.task import Task
+from typing import Tuple
+import threading
+
 from towhee.dataframe import DataFrame
 from towhee.dag.graph_repr import GraphRepr
-from typing import Tuple
+
 
 from towhee.engine.operator_context import OperatorContext
 
@@ -39,24 +41,37 @@ class GraphContext:
     def __init__(self, ctx_idx: int, graph_repr: GraphRepr):
         self._idx = ctx_idx
         self._repr = graph_repr
+        self._mutex = threading.Lock()
+        self._finished = threading.Condition(self._mutex)
 
         self.on_start_handlers = []
         self.on_finish_handlers = []
 
         self.on_task_ready_handlers = []
         self.on_task_start_handlers = []
-        self.on_task_finish_handlers = [self._on_task_finish]
+        # self.on_task_finish_handlers = [self._on_task_finish]
+        self.on_task_finish_handlers = []
 
         self._build()
-        self._is_busy = False
+        self._cv = threading.Condition()
 
     def __call__(self, inputs: Tuple):
-        # todo: GuoRentong, issue #114
-        graph_input = self.operator_contexts['_start_op'].inputs[0]
-        graph_input.clear()
+        graph_input = self.operator_contexts['_start_op'].outputs[0]
         graph_input.put(inputs)
         graph_input.seal()
-        self._is_busy = True
+
+    def result(self):
+        output_df = self.operator_contexts['_end_op'].inputs[0]
+        output_df.wait_sealed()
+        return output_df
+
+    # def __call__(self, inputs: Tuple):
+    #     # todo: GuoRentong, issue #114
+    #     graph_input = self.operator_contexts['_start_op'].inputs[0]
+    #     graph_input.clear()
+    #     graph_input.put(inputs)
+    #     graph_input.seal()
+    #     self._is_busy = True
 
     @property
     def operator_contexts(self):
@@ -66,27 +81,27 @@ class GraphContext:
     def dataframes(self):
         return self._dataframes
 
-    @property
-    def outputs(self) -> DataFrame:
-        return self.operator_contexts['_end_op'].outputs[0]
+    # @property
+    # def outputs(self) -> DataFrame:
+    #     return self.operator_contexts['_end_op'].outputs[0]
 
-    @property
-    def is_busy(self):
-        return self._is_busy
+    # @property
+    # def is_busy(self):
+    #     return self._is_busy
 
-    def _on_task_finish(self, task: Task):
-        """
-        Callback after the execution of a `Task`.
-        """
-        # todo: GuoRentong, currently, each `GraphContext` can only process one row
-        # the following finish condition is ugly :(
-        if self.operator_contexts[task.op_name].outputs[0] is self.outputs:
-            self._is_busy = False
+    # def _on_task_finish(self, task: Task):
+    #     """
+    #     Callback after the execution of a `Task`.
+    #     """
+    #     # todo: GuoRentong, currently, each `GraphContext` can only process one row
+    #     # the following finish condition is ugly :(
+    #     if self.operator_contexts[task.op_name].outputs[0] is self.outputs:
+    #         self._is_busy = False
 
-        if not self._is_busy:
-            # call on_finish_handlers
-            for handler in self.on_finish_handlers:
-                handler(self)
+    #     if not self._is_busy:
+    #         # call on_finish_handlers
+    #         for handler in self.on_finish_handlers:
+    #             handler(self)
 
     def _build(self):
         # build dataframes
