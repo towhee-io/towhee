@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import os
+import signal
 import threading
+import logging
 import time
 
 from towhee.engine.operator_pool import OperatorPool
@@ -86,7 +88,14 @@ class TaskExecutor(threading.Thread):
             # ultimately the one responsible for determining which tasks get executed
             # before others.
             if task:
-                op = self._op_pool.acquire_op(task)
+                try:
+                    op = self._op_pool.acquire_op(task)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(e)
+
+                    # TODO (junjie.jiangjjj) gracefull exit
+                    os.kill(os.getpid(), signal.SIGINT)
+
                 task.execute(op)
                 self._op_pool.release_op(op)
 

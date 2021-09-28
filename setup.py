@@ -11,16 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 from setuptools import setup, find_packages
-
+from setuptools.command.install import install
 import unittest
+from pathlib import Path
+import shutil
 
 
 def test_suite():
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover('towhee/tests', pattern='test_*.py')
     return test_suite
+
+
+def create_towhee_cache(src: str, dst: str, is_dir: bool = False):
+    if not Path(dst).is_dir():
+        Path(dst).mkdir(parents=True)
+        if is_dir:
+            dst = os.path.join(dst, src.split('/')[-1])
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy(src, dst)
+
+
+class PostInstallCommand(install):
+    def run(self):
+        from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE, MOCK_OPS, MOCK_PIPELINES
+        install.run(self)
+        create_towhee_cache(MOCK_PIPELINES, LOCAL_PIPELINE_CACHE)
+        create_towhee_cache(MOCK_OPS, LOCAL_OPERATOR_CACHE, True)
 
 
 setup(
@@ -31,6 +51,9 @@ setup(
     author_email="",
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
+    cmdclass={
+        'install': PostInstallCommand
+    },
     install_requires=[
         'torch>=1.2.0',
         'torchvision>=0.4.0',

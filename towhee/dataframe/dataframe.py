@@ -60,6 +60,8 @@ class DataFrame:
 
     def put(self, item: Tuple[Variable]) -> None:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
+        assert isinstance(
+            item, tuple), 'Dataframe needs tuple, not %s' % (type(item))
         with self._lock:
             self._data.append(item)
             self._total += 1

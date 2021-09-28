@@ -43,13 +43,14 @@ class TransformerOperatorTest(unittest.TestCase):
     args = {'topk': 1, 'labels_map': labels_map}
 
     def test_transformer_operator(self):
-        print('-----')
-        trans = load_local_operator('pytorch_transformer_operator', PYTORCH_TRANSFORMER_OPERATOR_PATH)
+        trans = load_local_operator(
+            'pytorch_transformer_operator', PYTORCH_TRANSFORMER_OPERATOR_PATH)
         op = trans.PytorchTransformerOperator(self.model, self.args)
         outputs = op(self.img)
         print(type(outputs.predict))
         print('outputs.predict is '+outputs.predict)
-        self.assertEqual('giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', outputs.predict)
+        self.assertEqual(
+            'giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', outputs.predict)
 
 
 if __name__ == '__main__':

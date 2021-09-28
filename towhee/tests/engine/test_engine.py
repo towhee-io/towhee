@@ -99,8 +99,7 @@ class TestEngine(unittest.TestCase):
 
         df_in = DataFrame(
             'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
-
-        df_in.put((Variable('int', 1)))
+        df_in.put((Variable('int', 1), ))
         df_in.seal()
 
         self._pipeline = Pipeline(graph_repr)
@@ -112,7 +111,7 @@ class TestEngine(unittest.TestCase):
 
         df_in = DataFrame(
             'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
-        df_in.put((Variable('int', 3)))
+        df_in.put((Variable('int', 3), ))
         df_in.seal()
 
         result = self._pipeline(df_in)
@@ -128,7 +127,7 @@ class TestEngine(unittest.TestCase):
         df_in = DataFrame(
             'inputs', {'sum': {'index': 0, 'type': 'int'}})
 
-        df_in.put((Variable('int', 3)))
+        df_in.put((Variable('int', 3), ))
         df_in.seal()
         result = p(df_in)
         _, ret = result.get(0, 1)
@@ -137,7 +136,7 @@ class TestEngine(unittest.TestCase):
         df_in = DataFrame(
             'inputs', {'sum': {'index': 0, 'type': 'int'}})
 
-        df_in.put((Variable('int', 7)))
+        df_in.put((Variable('int', 7), ))
         df_in.seal()
         result = p(df_in)
         _, ret = result.get(0, 1)
