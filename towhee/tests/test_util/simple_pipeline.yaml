@@ -8,7 +8,7 @@ operators:
             -
                 df: 'input_df'
                 name: 'num'
-                col: 0          
+                col: 0
         outputs:
             -
                 df: 'input_df'
@@ -52,12 +52,12 @@ operators:
             -
                 df: 'output_df'
                 name: 'num'
-                col: 0              
+                col: 0
         outputs:
             -
                 df: 'output_df'
         iter_info:
-            type: map            
+            type: map
 dataframes:
     -
         name: 'input_df'
@@ -76,4 +76,4 @@ dataframes:
         columns:
             -
                 name: 'sum'
-                vtype: 'int'                
+                vtype: 'int'

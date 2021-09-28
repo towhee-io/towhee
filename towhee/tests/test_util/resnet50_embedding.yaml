@@ -1,0 +1,79 @@
+name: 'resnet50_embedding'
+operators:
+    -
+        name: '_start_op'
+        function: 'internal'
+        init_args:
+        inputs:
+            -
+                df: 'image'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'image'
+        iter_info:
+            type: map
+    -
+        name: 'preprocessing'
+        function: 'mock_operators/pytorch_transform_operator'
+        init_args:
+            size: 256
+        inputs:
+            -
+                df: 'image'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'image_preproc'
+        iter_info:
+            type: map
+    -
+        name: 'embedding_model'
+        function: 'mock_operators/pytorch_cnn_operator'
+        init_args:
+            model_name: 'resnet50'
+        inputs:
+            -
+                df: 'image_preproc'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'embedding'
+        iter_info:
+            type: map
+    -
+        name: '_end_op'
+        function: 'internal'
+        init_args:
+        inputs:
+            -
+                df: 'embedding'
+                name: 'cnn'
+                col: 0
+        outputs:
+            -
+                df: 'embedding'
+        iter_info:
+            type: map
+dataframes:
+    -
+        name: 'image'
+        columns:
+            -
+                name: 'img_tensor'
+                vtype: 'PIL.Image'
+    -
+        name: 'image_preproc'
+        columns:
+            -
+                name: 'img_transformed'
+                vtype: 'torch.Tensor'
+    -
+        name: 'embedding'
+        columns:
+            -
+                name: 'cnn'
+                vtype: 'numpy.ndarray'

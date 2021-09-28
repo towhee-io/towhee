@@ -43,5 +43,6 @@ setup(
         'scipy>=1.7.1'
     ],
     packages=find_packages(),
+    package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0"
 )

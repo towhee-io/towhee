@@ -40,10 +40,10 @@ class DataFrame:
         self._name = name
         # TODO (junjie.jiangjjj) define col struct
         self._cols = cols
-        self._data = data if data is not None else []
+        self._data = data if data else []
         self._registered_iter = []
         self._start_index = 0
-        self._total = 0
+        self._total = len(self._data)
         self._sealed = False
 
         self._lock = threading.Lock()

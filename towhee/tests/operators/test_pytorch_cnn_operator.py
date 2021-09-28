@@ -14,7 +14,6 @@
 
 
 import unittest
-import torchvision
 
 from pathlib import Path
 
@@ -26,8 +25,6 @@ from towhee.tests.mock_operators.pytorch_transform_operator.pytorch_transform_op
 cache_path = Path(__file__).parent.parent.resolve()
 test_image = cache_path.joinpath('dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
 
-model = torchvision.models.resnet50(pretrained=True)
-
 
 class TestOperator(unittest.TestCase):
     """
@@ -37,12 +34,12 @@ class TestOperator(unittest.TestCase):
         img_pil = Image.open(test_image)
         op = PytorchTransformOperator(256)
         self.img_tensor = op(img_pil).img_transformed
-        self.model = model
+        self.model = 'resnet50'
 
     def test_func_operator(self):
         pytorch_cnn_operator = load_local_operator(
             'pytorch_cnn_operator', PYTORCH_CNN_OPERATOR_PATH)
-        op = pytorch_cnn_operator.PyTorchCNNOperator(self.model)
+        op = pytorch_cnn_operator.PytorchCnnOperator(self.model)
         self.assertEqual((1, 1000), op(self.img_tensor)[0].shape)
 
 

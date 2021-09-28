@@ -31,7 +31,7 @@ class TaskExecutor(threading.Thread):
                 dev_name_1 = 'gpu:0'
         cache_path: (`str`)
             Local path for which operators are stored. Defaults to
-            `$HOME/.towhee/cache`.
+            `$HOME/.towhee/operators`.
     """
 
     def __init__(self, name: str, cache_path: str = None):
