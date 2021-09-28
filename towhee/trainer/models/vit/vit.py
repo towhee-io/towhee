@@ -78,6 +78,8 @@ class ViT(nn.Module):
             Number of classes for classification head.
         resize_positional_embedding(bool,optional):
             If resize_positional_embedding is true.
+        to_vec(bool, optional):
+            If the embedding vector is predicted instead.
     """
 
     def __init__(
@@ -99,7 +101,8 @@ class ViT(nn.Module):
         in_channels=3,
         image_size=None,
         num_classes=None,
-        resize_positional_embedding=True
+        resize_positional_embedding=True,
+        to_vec=False
     ):
         super().__init__()
         print(f'attention_dropout_rate is {attention_dropout_rate}')
@@ -130,6 +133,8 @@ class ViT(nn.Module):
             if num_classes is None:
                 num_classes = PRETRAINED_MODELS[name]['num_classes']
         self.image_size = image_size
+
+        self.to_vec = to_vec
 
         # Image and patch sizes
         h, w = as_tuple(image_size)  # image sizes
@@ -217,5 +222,7 @@ class ViT(nn.Module):
             x = torch.tanh(x)
         if hasattr(self, 'fc'):
             x = self.norm(x)[:, 0]  # b,d
+            if self.to_vec:
+                return x
             x = self.fc(x)  # b,num_classes
         return x
