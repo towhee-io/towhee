@@ -31,11 +31,10 @@ class OperatorLoader:
     """
 
     def __init__(self, cache_path: str = None):
-        if not cache_path:
+        if cache_path is None:
             self._cache_path = Path.home() / '.towhee/operators'
         else:
             self._cache_path = Path(cache_path)
-        self._cache_path = Path(cache_path)
 
     def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
@@ -56,7 +55,6 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
         fname = function.split('/')[-1]
         path = self._cache_path / function / (fname + '.py')
-
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
         if path.is_file():

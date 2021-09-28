@@ -14,6 +14,7 @@
 
 
 import timeit
+import logging
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 from towhee.operator import Operator
@@ -155,7 +156,11 @@ class Task:
         # Run the operator. The graph provided to the engine should already have done
         # graph validity checks, so further input/output argument checks are
         # unnecessary.
-        self._outputs = op(**self._inputs)
+        try:
+            self._outputs = op(**self._inputs)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(e)
+            self._outputs = None
 
         self._runtime = timeit.default_timer() - start
         self._execute_handlers(self._on_finish_handlers)

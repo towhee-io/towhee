@@ -147,3 +147,17 @@ class Engine(threading.Thread):
     #     is finished executing.
     #     """
     #     pass
+
+
+_engine_lock = threading.Lock()
+
+
+def start_engine():
+    engine = Engine()
+    if engine.is_alive():
+        return
+
+    with _engine_lock:
+        if engine.is_alive():
+            return
+        engine.start()
