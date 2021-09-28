@@ -14,14 +14,14 @@
 
 
 import unittest
+import torchvision
+
 from pathlib import Path
 
-import torchvision
 from PIL import Image
 
 from towhee.tests.mock_operators import PYTORCH_CNN_OPERATOR_PATH, load_local_operator
-from torchvision import transforms
-
+from towhee.tests.mock_operators.pytorch_transform_operator.pytorch_transform_operator import PytorchTransformOperator
 
 cache_path = Path(__file__).parent.parent.resolve()
 test_image = cache_path.joinpath('dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
@@ -34,18 +34,10 @@ class TestOperator(unittest.TestCase):
     Simple operator test
     """
     def setUp(self) -> None:
-        data_transforms = {
-            'test': transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ]),
-        }
-        self.model = model
         img_pil = Image.open(test_image)
-        self.img_tensor = data_transforms['test'](img_pil)
-        self.img_tensor.unsqueeze_(0)
+        op = PytorchTransformOperator(256)
+        self.img_tensor = op(img_pil).img_transformed
+        self.model = model
 
     def test_func_operator(self):
         pytorch_cnn_operator = load_local_operator(
