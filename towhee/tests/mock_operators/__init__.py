@@ -26,6 +26,8 @@ ADD_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "add_operator")
 PYTORCH_CNN_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_cnn_operator")
 PYTORCH_TRANSFORMER_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_operator")
 PYTORCH_TRANSFORME_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transform_operator")
+PYTORCH_TRANSFORMER_VEC_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_vec_operator")
+
 
 
 
