@@ -59,7 +59,7 @@ class Pipeline:
         g = GraphContext(0, self._graph_repr)
         self._scheduler.register(g)
         _, data = inputs.get(0, 1)
-        g(data)
+        g(data[0])
         return g.result()
 
     # @property

@@ -14,6 +14,7 @@
 
 
 import threading
+import logging
 import time
 
 from towhee.engine.operator_pool import OperatorPool
@@ -86,7 +87,12 @@ class TaskExecutor(threading.Thread):
             # ultimately the one responsible for determining which tasks get executed
             # before others.
             if task:
-                op = self._op_pool.acquire_op(task)
+                try:
+                    op = self._op_pool.acquire_op(task)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(e)
+                    continue
+
                 task.execute(op)
                 self._op_pool.release_op(op)
 
