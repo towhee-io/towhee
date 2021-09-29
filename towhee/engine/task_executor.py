@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import os
+import signal
 import threading
 import logging
 import time
@@ -91,7 +92,9 @@ class TaskExecutor(threading.Thread):
                     op = self._op_pool.acquire_op(task)
                 except Exception as e:  # pylint: disable=broad-except
                     logging.error(e)
-                    continue
+
+                    # TODO (junjie.jiangjjj) gracefull exit
+                    os.kill(os.getpid(), signal.SIGINT)
 
                 task.execute(op)
                 self._op_pool.release_op(op)

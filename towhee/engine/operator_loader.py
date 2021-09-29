@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from towhee.operator import Operator
+from towhee.engine import LOCAL_OPERATOR_CACHE
 
 
 class OperatorLoader:
@@ -32,7 +33,7 @@ class OperatorLoader:
 
     def __init__(self, cache_path: str = None):
         if cache_path is None:
-            self._cache_path = Path.home() / '.towhee/operators'
+            self._cache_path = LOCAL_OPERATOR_CACHE
         else:
             self._cache_path = Path(cache_path)
 

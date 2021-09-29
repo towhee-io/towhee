@@ -21,6 +21,7 @@ from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, EngineConfig, start_engine
 from towhee.engine.pipeline import Pipeline
+from towhee.engine import LOCAL_PIPELINE_CACHE
 
 
 __all__ = [
@@ -30,7 +31,7 @@ __all__ = [
 
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'resnet50-embedding'
+    'image-embedding': 'resnet50_embedding'
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
@@ -75,12 +76,12 @@ class _PipelineWrapper:
 def _get_pipeline_cache(cache_path: str):
     if not cache_path:
         cache_path = os.environ.get(_PIPELINE_CACHE_ENV) if os.environ.get(
-            _PIPELINE_CACHE_ENV) else Path.home() / '.towhee/pipelines'
+            _PIPELINE_CACHE_ENV) else LOCAL_PIPELINE_CACHE
     return Path(cache_path)
 
 
-def _get_hello_towhee_pipeline():
-    return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
+# def _get_hello_towhee_pipeline():
+#     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
 
 
 def pipeline(task: str, cache: str = None):
@@ -97,16 +98,16 @@ def pipeline(task: str, cache: str = None):
 
     start_engine()
     # TODO (jiangjunjie) delete when hub is ready
-    if task.startswith('hello_towhee'):
-        yaml_path = _get_hello_towhee_pipeline()
-    else:
-        task = DEFAULT_PIPELINES.get(task, task)
+    # if task.startswith('hello_towhee'):
+    #     yaml_path = _get_hello_towhee_pipeline()
+    # else:
+    task = DEFAULT_PIPELINES.get(task, task)
 
-        # Get YAML path given task name. The default cache location for pipelines is
-        # $HOME/.towhee/pipelines
-        # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
-        cache_path = _get_pipeline_cache(cache)
-        yaml_path = cache_path / (task + '.yaml')
+    # Get YAML path given task name. The default cache location for pipelines is
+    # $HOME/.towhee/pipelines
+    # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
+    cache_path = _get_pipeline_cache(cache)
+    yaml_path = cache_path / (task + '.yaml')
 
     if not yaml_path.is_file():
         raise NameError('Can not find pipeline by name %s ' % task)

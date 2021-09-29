@@ -34,9 +34,6 @@ class TestPipeline(unittest.TestCase):
         conf = EngineConfig()
         conf.cache_path = CACHE_PATH
         conf.sched_interval_ms = 20
-        # engine = Engine()
-        # if not engine.is_alive():
-        #     engine.start()
 
     def test_simple_pipeline(self):
         p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
@@ -46,15 +43,6 @@ class TestPipeline(unittest.TestCase):
     def test_embedding_pipeline(self):
         p = pipeline('test_util/resnet50_embedding',
                      cache=str(CACHE_PATH))
-        img_path = CACHE_PATH / 'dataset' / 'kaggle_dataset_small' / \
-            'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
-        img = Image.open(str(img_path))
-        res = p(img)
-        print('successfully got an embedding of size {0}'.format(res[0].size))
-        self.assertEqual(res[0].size, 1000)
-
-    def test_hello_pipeline(self):
-        p = pipeline('hello_towhee')
         img_path = CACHE_PATH / 'dataset' / 'kaggle_dataset_small' / \
             'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
         img = Image.open(str(img_path))
