@@ -47,13 +47,11 @@ setup(
     name="towhee",
     version="0.1",
     description="",
-    author="zilliz",
-    author_email="",
+    author="Towhee Team",
+    author_email="towhee-team@zilliz.com",
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
-    cmdclass={
-        'install': PostInstallCommand
-    },
+    cmdclass={'install': PostInstallCommand},
     install_requires=[
         'torch>=1.2.0',
         'torchvision>=0.4.0',
