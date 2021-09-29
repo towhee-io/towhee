@@ -33,8 +33,8 @@ Towhee provides pre-built computer vision models which can be used to generate e
 >>> from PIL import Image
 
 # Use our in-built embedding pipeline
->>> img = Image.open('towhee_logo.png')
->>> embedding_pipeline = pipeline('embedding-pipeline')
+>>> img = Image.open('towhee_logo.png').convert('RGB')
+>>> embedding_pipeline = pipeline('image-embedding')
 >>> embedding = embedding_pipeline(img)
 ```
 
@@ -64,4 +64,4 @@ Custom machine learning pipelines can be defined in a YAML file and uploaded to 
 
 - __Extensible__: Individual operators within each pipeline can be reconfigured and reused in different pipelines. A pipeline can be deployed anywhere you want - on your local machine, on a server with 4 GPUs, or in the cloud (coming soon&trade;)
 
-- __Convinient__: Operators can be defined as a single function; new pipelines can be constructed by looking at input and output annotations for those functions. Towhee provides a high-level interface for creating new graphs by stringing together functions in Python code.
+- __Convenient__: Operators can be defined as a single function; new pipelines can be constructed by looking at input and output annotations for those functions. Towhee provides a high-level interface for creating new graphs by stringing together functions in Python code.
