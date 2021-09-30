@@ -45,7 +45,7 @@ class PostInstallCommand(install):
 
 setup(
     name="towhee",
-    version="0.1",
+    version="0.1.0",
     description="",
     author="Towhee Team",
     author_email="towhee-team@zilliz.com",
