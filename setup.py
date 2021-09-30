@@ -45,7 +45,7 @@ class PostInstallCommand(install):
 
 setup(
     name="towhee",
-    version="0.1.0",
+    version="0.1.1",
     description="",
     author="Towhee Team",
     author_email="towhee-team@zilliz.com",
@@ -61,9 +61,9 @@ setup(
         'requests>=2.25',
         'tqdm>=4.59.0',
         'pillow>=8.3.1',
-        'scipy>=1.7.1'
+        'scipy>=1.7.1',
     ],
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
-    license="http://www.apache.org/licenses/LICENSE-2.0"
+    license="http://www.apache.org/licenses/LICENSE-2.0",
 )
