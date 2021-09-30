@@ -42,7 +42,7 @@ Towhee provides pre-built computer vision models which can be used to generate e
 
 # Use our in-built embedding pipeline
 >>> img = Image.open('towhee_logo.png').convert('RGB')
->>> embedding_pipeline = pipeline('embedding-pipeline')
+>>> embedding_pipeline = pipeline('image-embedding')
 >>> embedding = embedding_pipeline(img)
 ```
 
