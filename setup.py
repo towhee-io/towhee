@@ -45,7 +45,7 @@ class PostInstallCommand(install):
 
 setup(
     name="towhee",
-    version="0.1.1",
+    version="0.1.2",
     description="",
     author="Towhee Team",
     author_email="towhee-team@zilliz.com",
@@ -55,7 +55,7 @@ setup(
     install_requires=[
         'torch>=1.2.0',
         'torchvision>=0.4.0',
-        'numpy>=1.20.3',
+        'numpy>=1.19.5',
         'pandas>=1.2.4',
         'pyyaml>=5.3',
         'requests>=2.25',
