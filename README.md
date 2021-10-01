@@ -12,7 +12,7 @@
 
 ## What is Towhee?
 
-Towhee is a flexible machine learning framework currently focused on computing deep learning embeddings over unstructured data. Built on top of PyTorch (coming soon&trade;), Towhee provides a unified framework for running machine learning pipelines locally, on a multi-GPU/TPU/FPGA machine (coming soon&trade;), or in the cloud (coming soon&trade;). Towhee aims to make democratize machine learning, allowing everyone - from beginner developers to AI/ML research groups to large organizations - to train and deploy machine learning models.
+Towhee is a flexible machine learning framework currently focused on computing deep learning embeddings over unstructured data. Built on top of PyTorch and Tensorflow (coming soon&trade;), Towhee provides a unified framework for running machine learning pipelines locally, on a multi-GPU/TPU/FPGA machine (coming soon&trade;), or in the cloud (coming soon&trade;). Towhee aims to make democratize machine learning, allowing everyone - from beginner developers to AI/ML research groups to large organizations - to train and deploy machine learning models.
 
 ## Key features
 
