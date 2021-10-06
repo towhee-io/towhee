@@ -41,7 +41,7 @@ Towhee provides pre-built computer vision models which can be used to generate e
 >>> from PIL import Image
 
 # Use our in-built embedding pipeline
->>> img = Image.open('towhee_logo.png').convert('RGB')
+>>> img = Image.open('towhee_logo.png')
 >>> embedding_pipeline = pipeline('image-embedding')
 >>> embedding = embedding_pipeline(img)
 ```
@@ -51,8 +51,8 @@ Your image embedding is now stored in `embedding`. It's that simple.
 Custom machine learning pipelines can be defined in a YAML file and uploaded to the Towhee hub (coming soon&trade;). Pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
 
 ```python
-# This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/resnet50-embedding.yaml
->>> embedding_pipeline = pipeline('fzliu/resnet50-embedding')
+# This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/resnet50_embedding.yaml
+>>> embedding_pipeline = pipeline('fzliu/resnet50_embedding')
 >>> embedding = embedding_pipeline(img)
 ```
 

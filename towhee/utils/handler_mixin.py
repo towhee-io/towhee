@@ -50,6 +50,10 @@ class HandlerMixin:
                 for h in self._handlers:
                     h(*args)
 
+            @property
+            def handlers(self):
+                return self._handlers
+
         self._handler_mgrs = []
 
         for prefix in handler_prefix:
@@ -61,6 +65,8 @@ class HandlerMixin:
                 self.__setattr__(add_handler_method_name, handler_mgr.add_handler)
                 call_handler_method_name = 'call_' + prefix + '_handlers'
                 self.__setattr__(call_handler_method_name, handler_mgr.call_handlers)
+                handler_getter_name = prefix + '_handlers'
+                self.__setattr__(handler_getter_name, handler_mgr.handlers)
             else:
                 raise AttributeError(
                     '`HandlerMixin` can only take `str` as handler prefix, but found %s.'
