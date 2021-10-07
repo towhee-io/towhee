@@ -122,9 +122,9 @@ class GraphContext:
             is_schedulable = self._is_schedulable_op(op_repr)
             op_ctx = OperatorContext(op_repr, self.dataframes, is_schedulable)
 
-            op_ctx.on_task_start_handlers += self.on_task_start_handlers
-            op_ctx.on_task_ready_handlers += self.on_task_ready_handlers
-            op_ctx.on_task_finish_handlers += self.on_task_finish_handlers
+            op_ctx.add_task_start_handler(self.on_task_start_handlers)
+            op_ctx.add_task_ready_handler(self.on_task_ready_handlers)
+            op_ctx.add_task_finish_handler(self.on_task_finish_handlers)
 
             self._op_contexts[op_ctx.name] = op_ctx
 

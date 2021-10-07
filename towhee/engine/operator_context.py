@@ -16,14 +16,14 @@ from typing import List, Dict
 import threading
 
 from towhee.dag.operator_repr import OperatorRepr
-
+from towhee.utils import HandlerMixin
 from towhee.engine.task import Task
 # from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
 from towhee.engine._operator_io import create_reader, create_writer
 
 
-class OperatorContext:
+class OperatorContext(HandlerMixin):
     """
     The OperatorContext manages an operator's input data and output data at runtime,
     as well as the operators' dependency within a GraphContext.
@@ -71,12 +71,8 @@ class OperatorContext:
         self._finished_task_count = 0
         self._lock = threading.Lock()
 
-        self.on_start_handlers = []
-        self.on_finish_handlers = []
-
-        self.on_task_ready_handlers = []
-        self.on_task_start_handlers = []
-        self.on_task_finish_handlers = [self._write_outputs]
+        self.add_handler_methods('start', 'finish', 'task_ready', 'task_start', 'task_finish')
+        self.add_task_finish_handler(self._write_outputs)
 
     @property
     def name(self):
@@ -157,5 +153,5 @@ class OperatorContext:
             t = Task(self.name, self._repr.function,
                      self._repr.init_args, inputs, self._taskid)
             self._taskid += 1
-            t.add_finish_handler(self.on_task_finish_handlers)
+            t.add_finish_handler(self.task_finish_handlers)
             return t
