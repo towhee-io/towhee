@@ -53,7 +53,7 @@ class TaskExecutor(threading.Thread):
         return self._task_queue.size
 
     def is_op_available(self, task: Task) -> bool:
-        return self._op_pool.is_op_availble(task)
+        return self._op_pool.is_op_available(task)
 
     # def set_op_parallelism(self, name: str, parallel: int = 1):
     #     """
