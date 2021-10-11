@@ -15,12 +15,13 @@
 
 import timeit
 import logging
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Tuple
 
 from towhee.operator import Operator
+from towhee.utils import HandlerMixin
 
 
-class Task:
+class Task(HandlerMixin):
     """Tasks represent containers for which input, output, and operator data is stored.
     Tasks themselves have no functioning logic, and merely serve as a container for the
     `TaskExecutor`.
@@ -56,9 +57,7 @@ class Task:
         self._outputs = None
         self._runtime = -1
 
-        self._on_ready_handlers = []
-        self._on_start_handlers = []
-        self._on_finish_handlers = []
+        self.add_handler_methods('task_ready', 'task_start', 'task_finish')
 
     @property
     def op_name(self) -> str:
@@ -99,58 +98,10 @@ class Task:
                          for key in sorted(self.op_args))
         return (self.hub_op_id, ) + args_tup
 
-    def add_ready_handlers(self, handlers):
-        """Adds a ready handler to this `Task` object.
-
-        Args:
-            handlers: (`typing.Callable`, or `list` of `typing.Callable`)
-                Handlers that will be called once the task is ready to be executed.
-        """
-        if isinstance(handlers, list):
-            self._on_ready_handlers += handlers
-        else:
-            self._on_ready_handlers.append(handlers)
-
-    def add_start_handler(self, handler):
-        """Adds a start handler to this `Task` object.
-
-        Args:
-            handler: (`typing.Callable`, or `list` of `typing.Callable`)
-                Handler that will be called prior to execution.
-        """
-        if isinstance(handler, list):
-            self._on_start_handlers += handler
-        else:
-            self._on_start_handlers.append(handler)
-
-    def add_finish_handler(self, handler):
-        """Adds a finish handler to this `Task` object.
-
-        Args:
-            handler: (`typing.Callable`, or `list` of `typing.Callable`)
-                Handler that will be called when the `outputs` attribute is set.
-        """
-        if isinstance(handler, list):
-            self._on_finish_handlers += handler
-        else:
-            self._on_finish_handlers.append(handler)
-
-    def _execute_handlers(self, handlers: List[Callable]):
-        """Execute handlers defined in `handlers`. These should be a list of callables
-        which take this `Task` object as its input.
-
-        Args:
-            handlers: (`list[typing.Callable]`)
-                A list of functions to be executed. Should be one of
-                `_on_ready_handlers`, `_on_start_handlers`, and `_on_finish_handlers`.
-        """
-        for handler in handlers:
-            handler(self)
-
     def execute(self, op: Operator):
         """Given a corresponding `Operator` from the `TaskExecutor`, run the task.
         """
-        self._execute_handlers(self._on_start_handlers)
+        self.call_task_start_handlers(self)
         start = timeit.default_timer()
 
         # Run the operator. The graph provided to the engine should already have done
@@ -163,4 +114,4 @@ class Task:
             self._outputs = None
 
         self._runtime = timeit.default_timer() - start
-        self._execute_handlers(self._on_finish_handlers)
+        self.call_task_finish_handlers(self)
