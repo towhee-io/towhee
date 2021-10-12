@@ -48,7 +48,7 @@ class TestTaskExecutor(unittest.TestCase):
 
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:
-            task.add_finish_handler(_add_task_finish_callback)
+            task.add_task_finish_handler(_add_task_finish_callback)
             self._task_exec.push_task(task)
 
     def test_sub_task_execution(self):
@@ -67,7 +67,7 @@ class TestTaskExecutor(unittest.TestCase):
 
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:
-            task.add_finish_handler(_add_task_finish_callback)
+            task.add_task_finish_handler(_add_task_finish_callback)
             self._task_exec.push_task(task)
 
 

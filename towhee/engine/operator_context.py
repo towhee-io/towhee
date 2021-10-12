@@ -71,7 +71,7 @@ class OperatorContext(HandlerMixin):
         self._finished_task_count = 0
         self._lock = threading.Lock()
 
-        self.add_handler_methods('start', 'finish', 'task_ready', 'task_start', 'task_finish')
+        self.add_handler_methods('op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
         self.add_task_finish_handler(self._write_outputs)
 
     @property
@@ -153,5 +153,5 @@ class OperatorContext(HandlerMixin):
             t = Task(self.name, self._repr.function,
                      self._repr.init_args, inputs, self._taskid)
             self._taskid += 1
-            t.add_finish_handler(self.task_finish_handlers)
+            t.add_task_finish_handler(self.task_finish_handlers)
             return t

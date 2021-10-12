@@ -42,7 +42,7 @@ class TestTask(unittest.TestCase):
         inputs = {'k1': 1, 'k2': 'v1'}
         mock_output = MockOutputsWriter()
         task = Task('mock_op', 'mock_op', args, inputs, 0)
-        task.add_finish_handler(mock_output.write)
+        task.add_task_finish_handler(mock_output.write)
         self.assertEqual(task.op_name, 'mock_op')
         self.assertEqual(task.inputs, inputs)
         self.assertEqual(task.op_args, args)
