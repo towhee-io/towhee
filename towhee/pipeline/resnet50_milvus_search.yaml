@@ -1,0 +1,107 @@
+name: 'resnet50_milvus_search'
+operators:
+    -
+        name: '_start_op'
+        function: 'internal'
+        init_args:
+        inputs:
+            -
+                df: 'image'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'image'
+        iter_info:
+            type: map
+    -
+        name: 'preprocessing'
+        function: 'mock_operators/pytorch_transform_operator'
+        init_args:
+            size: 256
+        inputs:
+            -
+                df: 'image'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'image_preproc'
+        iter_info:
+            type: map
+    -
+        name: 'embedding_model'
+        function: 'mock_operators/pytorch_cnn_operator'
+        init_args:
+            model_name: 'resnet50'
+        inputs:
+            -
+                df: 'image_preproc'
+                name: 'img_tensor'
+                col: 0
+        outputs:
+            -
+                df: 'embedding'
+        iter_info:
+            type: map
+    -
+        name: 'milvus_search'
+        function: 'milvus_operators/milvus_search'
+        init_args:
+            host: 'localhost'
+            port: '19530'
+            c_name: 'towhee_test'
+            nprobe: 1
+            topk: 3
+            index_type: "IVF_FLAT"
+            metric_type: "L2"
+            nlist: 2
+        inputs:
+            -
+                df: 'embedding'
+                name: 'embs'
+                col: 0
+        outputs:
+            -
+                df: 'results'
+        iter_info:
+            type: map
+    -
+        name: '_end_op'
+        function: 'internal'
+        init_args:
+        inputs:
+            -
+                df: 'results'
+                name: 'results'
+                col: 0
+        outputs:
+            -
+                df: 'results'
+        iter_info:
+            type: map
+dataframes:
+    -
+        name: 'image'
+        columns:
+            -
+                name: 'img_tensor'
+                vtype: 'PIL.Image'
+    -
+        name: 'image_preproc'
+        columns:
+            -
+                name: 'img_transformed'
+                vtype: 'torch.Tensor'
+    -
+        name: 'embedding'
+        columns:
+            -
+                name: 'cnn'
+                vtype: 'numpy.ndarray'
+    -
+        name: 'results'
+        columns:
+            -
+                name: 'results'
+                vtype: 'list'
