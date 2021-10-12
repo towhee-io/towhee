@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from pathlib import Path
 from typing import Any, Tuple
 import os
@@ -52,6 +51,10 @@ class _PipelineWrapper:
     def __call__(self, *args) -> Tuple[Any]:
         """Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
         """
+        # Check if no data supplied to pipeline
+        if not args:
+            raise ValueError(
+                'No data supplied to pipeline')
 
         # Create `Variable` tuple from input arguments.
         vargs = []
@@ -110,7 +113,7 @@ def pipeline(task: str, cache: str = None):
     yaml_path = cache_path / (task + '.yaml')
 
     if not yaml_path.is_file():
-        raise NameError('Can not find pipeline by name %s ' % task)
+        raise NameError(F'Can not find pipeline by name {task}')
 
     # Create `Pipeline` object given its graph representation, then add the pipeline to
     # the existing `Engine`.

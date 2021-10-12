@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from towhee.dag.graph_repr import GraphRepr
-
 from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
+from towhee.engine import LOCAL_OPERATOR_CACHE
 
 
 class Pipeline:
@@ -40,6 +40,8 @@ class Pipeline:
         self.on_graph_finish_handlers = []
         self._scheduler = None
 
+        # self.fill_cache()
+
         # self._cv = threading.Condition()
         # self.on_graph_finish_handlers = [self._on_graph_finish]
         # self._build()
@@ -53,7 +55,7 @@ class Pipeline:
         """
         if self._scheduler is None:
             raise AttributeError(
-                "The pipeline is not registered to a scheduler")
+                'The pipeline is not registered to a scheduler')
 
         assert inputs.size == 1
         g = GraphContext(0, self._graph_repr)
@@ -61,6 +63,19 @@ class Pipeline:
         _, data = inputs.get(0, 1)
         g(data[0])
         return g.result()
+
+    def fill_cache(self):
+        """
+        Check to see if the operator directory exists locally or if needs to
+        downloaded from hub
+        """
+        for key, value in self._graph_repr.operators.items():
+            if key not in ('_start_op', '_end_op'):
+                operator_path = LOCAL_OPERATOR_CACHE / (value.function)
+                if operator_path.is_dir() is False:
+                    print('missing', operator_path)
+                else:
+                    print('has', operator_path)
 
     # @property
     # def graph_contexts(self):
