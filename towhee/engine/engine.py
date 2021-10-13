@@ -107,6 +107,7 @@ class Engine(threading.Thread):
         self._task_execs = []
 
         # TODO(fzliu): Perform device scan.
+        # Ping (filip-halt) when done
         dev_names = ['cpu:0']
 
         # Create executor threads and begin running.

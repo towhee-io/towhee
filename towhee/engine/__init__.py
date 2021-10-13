@@ -22,4 +22,6 @@ LOCAL_OPERATOR_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'operators'
 MOCK_PIPELINES = str(Path(__file__).parent.parent /
                      'tests/test_util/resnet50_embedding.yaml')
 
+# These are used for loading defaults into .towhee
 MOCK_OPS = str(Path(__file__).parent.parent / 'tests/mock_operators')
+MOCK_PIPES = str(Path(__file__).parent.parent / 'tests/mock_pipelines')
