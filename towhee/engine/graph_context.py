@@ -20,12 +20,12 @@ import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dag.graph_repr import GraphRepr
-
+from towhee.utils import HandlerMixin
 
 from towhee.engine.operator_context import OperatorContext
 
 
-class GraphContext:
+class GraphContext(HandlerMixin):
     """
     `GraphContext` is a data processing network with one or multiple `Operator`.
     Each row of a `Pipeline`'s inputs will be processed individually by a
@@ -44,13 +44,13 @@ class GraphContext:
         self._mutex = threading.Lock()
         self._finished = threading.Condition(self._mutex)
 
-        self.on_start_handlers = []
-        self.on_finish_handlers = []
-
-        self.on_task_ready_handlers = []
-        self.on_task_start_handlers = []
-        # self.on_task_finish_handlers = [self._on_task_finish]
-        self.on_task_finish_handlers = []
+        self.add_handler_methods(
+            'graph_start',
+            'graph_finish',
+            'task_ready',
+            'task_start',
+            'task_finish'
+        )
 
         self._build()
         self._cv = threading.Condition()
@@ -122,9 +122,9 @@ class GraphContext:
             is_schedulable = self._is_schedulable_op(op_repr)
             op_ctx = OperatorContext(op_repr, self.dataframes, is_schedulable)
 
-            op_ctx.add_task_start_handler(self.on_task_start_handlers)
-            op_ctx.add_task_ready_handler(self.on_task_ready_handlers)
-            op_ctx.add_task_finish_handler(self.on_task_finish_handlers)
+            op_ctx.add_task_start_handler(self.task_start_handlers)
+            op_ctx.add_task_ready_handler(self.task_ready_handlers)
+            op_ctx.add_task_finish_handler(self.task_finish_handlers)
 
             self._op_contexts[op_ctx.name] = op_ctx
 
