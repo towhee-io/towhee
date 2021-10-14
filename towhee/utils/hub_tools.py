@@ -4,11 +4,31 @@ import random
 import sys
 import getopt
 from typing import List
+from tqdm import tqdm
 
 from tempfile import TemporaryFile
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
+def exists(user: str, repo: str) -> bool:
+    """
+    Check if a repo exists.
+
+    Args:
+        user: (`str`)
+            The author name.
+        repo: (`str`)
+            The repo name.
+
+    Return
+        (`bool`)
+    """
+    try:
+        url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}'
+        r = requests.get(url)
+        return r.status_code == 200
+    except HTTPError as e:
+        raise e
 
 def create_token(user: str, password: str, token_name: str) -> str:
     """
@@ -190,9 +210,6 @@ def obtain_lfs_extensions(user: str, repo: str, branch: str) -> List[str]:
     Ret:
         `List[str]`: The list of file extentions tracked by git-lfs
 
-    Raises:
-        HTTPError: Error in request.
-
     """
     url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/raw/.gitattributes?ref={branch}'
     lfs_files = []
@@ -202,8 +219,8 @@ def obtain_lfs_extensions(user: str, repo: str, branch: str) -> List[str]:
         try:
             r = requests.get(url)
             r.raise_for_status()
-        except HTTPError as e:
-            raise e
+        except HTTPError:
+            return lfs_files
 
         temp_file.write(r.content)
         temp_file.seek(0)
@@ -285,20 +302,21 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
     for file_path in file_list:
         if file_path.endswith(lfs_files):  # files dealt with lfs have a different url
             url = f'https://hub.towhee.io/{user}/{repo}/media/branch/{branch}/{file_path}'
-            file_download_helper(url, local_dir + file_path)
         else:
-            url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/raw/{file_path}'
-            file_download_helper(url, local_dir + file_path)
+            url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/raw/{file_path}?ref={branch}'
+
+        file_download_helper(url, local_dir + file_path)
 
 
 def file_download_helper(url, f) -> None:
     """
     Helper function that downloads using stream and writes files in chunks.
     """
+    # Creating the directory tree to the file
     if not os.path.exists(os.path.dirname(f)):
         try:
             os.makedirs(os.path.dirname(f))
-        except OSError as e:
+        except OSError as e:  # raise any creation/filesystem errors
             raise e
     try:
         r = requests.get(url, stream=True)
@@ -306,9 +324,16 @@ def file_download_helper(url, f) -> None:
     except HTTPError as e:
         raise e
 
+    total_size = int(r.headers.get('content-length', 0))
+    chunk_size = 1024
+    progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
+
     with open(f, 'wb') as local_file:
-        for chunk in r.iter_content(chunk_size=1024):
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            progress_bar.update(len(chunk))
             local_file.write(chunk)
+
+    progress_bar.close()
 
 
 def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
@@ -324,7 +349,7 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
             The repo name.
         branch: (`str`)
             The branch name.
-        local_dir(`str`)
+        local_dir: (`str`)
             The local directory being downloaded to
 
     Returns:
@@ -334,6 +359,10 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
         HTTPError: Error in request.
         OSError: Error in writing file.
     """
+    if not exists(user, repo):
+        raise ValueError(
+            user + '/' + repo + ' repo doesnt exist.')
+
     lfs_files = obtain_lfs_extensions(user, repo, branch)
     commit = latest_branch_commit(user, repo, branch)
     file_list = get_file_list(user, repo, commit)
@@ -357,7 +386,7 @@ def main(argv):
     user = ''
     password = ''
     repo = ''
-    repo_type = 'pipeline'
+    repo_type = ''
     branch = 'main'
     directory = os.getcwd() + '/test_download/'
     token_name = random.randint(0, 10000)  # going to have to figure out how to store the token
@@ -384,6 +413,8 @@ def main(argv):
             password = input('Please enter your password: ')
         if not repo:
             repo = input('Please enter the repo name: ')
+        if not repo_type:
+            repo_type = input('Please enter the repo type: ')
 
         print('Creating token: ')
         token_id, token_hash = create_token(user, password, token_name)
