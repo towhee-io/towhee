@@ -14,6 +14,7 @@
 
 
 from typing import List
+from towhee.array._array_ref import _ArrayRef
 
 
 class Array:
@@ -39,9 +40,6 @@ class Array:
     ):
 
         self.name = name
-        # TODO(GuoRentong): provide towhee.DType abstraction and support
-        # Array.dtypes
-        self.dtype = None
 
         # For `data` is `list`
         if isinstance(data, list):
@@ -54,15 +52,20 @@ class Array:
             data = [data]
 
         self._data = data
+        self._ref = _ArrayRef()
+        self._offset = 0
 
     def __iter__(self):
         return self._data.__iter__()
 
     def __getitem__(self, key: int):
         if isinstance(key, int):
-            return self._data[key]
+            if key >= self._offset:
+                return self._data[key - self._offset]
+            else:
+                raise IndexError('element with index=%d has been released' % (key))
         else:
-            raise IndexError("only integers are invalid indices")
+            raise IndexError('only integers are invalid indices')
 
     def __repr__(self):
         return self._data.__repr__()
@@ -70,6 +73,12 @@ class Array:
     @property
     def size(self) -> int:
         """Number of elements in the `Array`.
+        """
+        return len(self._data) + self._offset
+
+    @property
+    def physical_size(self) -> int:
+        """Number of elements still existed in the `Array`
         """
         return len(self._data)
 
@@ -84,6 +93,29 @@ class Array:
            True if `Array` has no elements.
         """
         return not self.size
+
+    def add_reader(self) -> int:
+        """Add a read reference to `Array`
+        """
+        return self._ref.add_reader()
+
+    def remove_reader(self, ref_id: int):
+        """Remove a read reference from `Array`
+        Args:
+            ref_id: (`int`)
+                The reference ID
+        """
+        self._ref.remove(ref_id)
+
+    def update_reader_offset(self, ref_id: int, offset: int):
+        """Update a reference offset
+        Args:
+            ref_id: (`int`)
+                The reference ID
+            offset: (`int`)
+                The new reference offset
+        """
+        self._ref.update_reader_offset(ref_id, offset)
 
     def put(self, item):
         """Append one item to the end of this `Array`.
@@ -100,3 +132,12 @@ class Array:
             self._data.extend(data.data)
         elif isinstance(data, List):
             self._data.extend(data)
+
+    def gc(self):
+        """Release the unreferenced upper part of the `Array`, if any
+        """
+        min_ref_offset = self._ref.min_reader_offsets
+        release_offset = min_ref_offset - self._offset
+        if release_offset > 0:
+            del self._data[:release_offset]
+            self._offset = min_ref_offset
