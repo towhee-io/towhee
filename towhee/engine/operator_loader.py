@@ -85,7 +85,7 @@ class OperatorLoader:
     # Figure out where to put branch info, needed for loading diff versions.
     # Currently not thread safe when downloading same repo, will most likely result in race
     # Loading will have to happen higher above, per node not task executor
-    def _download_operator(self, task, branch: str = 'main', force_download: bool = False, install_reqs: bool = False):
+    def _download_operator(self, task, branch: str = 'main', force_download: bool = False, install_reqs: bool = True):
         """Checks cache and downloads operator if necessary.
         """
         task_split = task.split('/')
@@ -118,11 +118,7 @@ class OperatorLoader:
 
         if download:
             print('Downloading Operator: ' + repo)
-            download_repo(author, repo, branch, str(repo_path))
-
-        # Need to figure out if using python env
-        if install_reqs and (repo_path / 'requirements.txt').is_file():
-            raise NotImplementedError
+            download_repo(author, repo, branch, str(repo_path), install_reqs=install_reqs)
 
         return repo, file_path
 
