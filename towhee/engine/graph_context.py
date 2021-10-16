@@ -56,34 +56,39 @@ class GraphContext(HandlerMixin):
         self._cv = threading.Condition()
 
     def __call__(self, inputs: Tuple):
-        graph_input = self.operator_contexts['_start_op'].outputs[0]
-        graph_input.put(inputs)
-        graph_input.seal()
+        self.op_ctxs['_start_op'].outputs[0].put(inputs)
+        #graph_input = self.op_ctxs['_start_op'].outputs[0]
+        #graph_input.put(inputs)
+        #graph_input.seal()
 
-    def result(self):
-        output_df = self.operator_contexts['_end_op'].inputs[0]
-        output_df.wait_sealed()
-        return output_df
+    @property
+    def inputs(self) -> DataFrame:
+        return self.op_ctxs['_start_op'].outputs[0]
+
+    @property
+    def outputs(self) -> DataFrame:
+        return self.op_ctxs['_end_op'].outputs[0]
+
+    # def result(self):
+    #     output_df = self.op_ctxs['_end_op'].inputs[0]
+    #     output_df.wait_sealed()
+    #     return output_df
 
     # def __call__(self, inputs: Tuple):
     #     # todo: GuoRentong, issue #114
-    #     graph_input = self.operator_contexts['_start_op'].inputs[0]
+    #     graph_input = self.op_ctxs['_start_op'].inputs[0]
     #     graph_input.clear()
     #     graph_input.put(inputs)
     #     graph_input.seal()
     #     self._is_busy = True
 
     @property
-    def operator_contexts(self):
-        return self._op_contexts
+    def op_ctxs(self):
+        return self._op_ctxs
 
     @property
     def dataframes(self):
         return self._dataframes
-
-    # @property
-    # def outputs(self) -> DataFrame:
-    #     return self.operator_contexts['_end_op'].outputs[0]
 
     # @property
     # def is_busy(self):
@@ -95,7 +100,7 @@ class GraphContext(HandlerMixin):
     #     """
     #     # todo: GuoRentong, currently, each `GraphContext` can only process one row
     #     # the following finish condition is ugly :(
-    #     if self.operator_contexts[task.op_name].outputs[0] is self.outputs:
+    #     if self.op_ctxs[task.op_name].outputs[0] is self.outputs:
     #         self._is_busy = False
 
     #     if not self._is_busy:
@@ -117,7 +122,7 @@ class GraphContext(HandlerMixin):
         self._dataframes = dfs
 
         # build operator contexts
-        self._op_contexts = {}
+        self._op_ctxs = {}
         for _, op_repr in self._repr.operators.items():
             is_schedulable = self._is_schedulable_op(op_repr)
             op_ctx = OperatorContext(op_repr, self.dataframes, is_schedulable)
@@ -126,7 +131,7 @@ class GraphContext(HandlerMixin):
             op_ctx.add_task_ready_handler(self.task_ready_handlers)
             op_ctx.add_task_finish_handler(self.task_finish_handlers)
 
-            self._op_contexts[op_ctx.name] = op_ctx
+            self._op_ctxs[op_ctx.name] = op_ctx
 
     @staticmethod
     def _is_schedulable_op(op_repr):

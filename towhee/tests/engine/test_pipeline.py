@@ -50,8 +50,8 @@ class TestPipeline(unittest.TestCase):
         print('successfully got an embedding of size {0}'.format(res[0].size))
         self.assertEqual(res[0].size, 1000)
 
-        with self.assertRaises(IndexError):
-            print(p('a'))
+        with self.assertRaises(ValueError):
+            print(p())
 
 
 class TestPipelineCache(unittest.TestCase):

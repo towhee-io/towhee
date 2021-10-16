@@ -76,6 +76,10 @@ class Task(HandlerMixin):
         return self._inputs
 
     @property
+    def task_idx(self) -> int:
+        return self._task_idx
+
+    @property
     def outputs(self) -> NamedTuple:
         return self._outputs
 

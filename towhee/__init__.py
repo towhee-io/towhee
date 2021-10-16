@@ -66,11 +66,12 @@ class _PipelineWrapper:
         # Process the data through the pipeline.
         in_df = DataFrame('_in_df')
         in_df.put(vargs)
+        in_df.seal()
         out_df = self._pipeline(in_df)
 
         # Extract values from output tuple
         res = []
-        for v in out_df.get(0, out_df.size)[1][0]:
+        for v in out_df.get(0, out_df.size)[0]:
             res.append(v.value)
 
         return tuple(res)

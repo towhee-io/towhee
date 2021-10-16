@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import threading
-from typing import Callable, List, Tuple, Dict
+from typing import Any, Callable, List, Tuple, Dict
 import weakref
 
 from towhee.dataframe.variable import Variable
@@ -41,113 +41,135 @@ class DataFrame:
         # TODO (junjie.jiangjjj) define col struct
         self._cols = cols
         self._data = data if data else []
-        self._registered_iter = []
-        self._start_index = 0
-        self._total = len(self._data)
-        self._sealed = False
 
+        # `_start_idx` corresponds to the actual index for the current 0th element in
+        # this `DataFrame`.
+        self._start_idx = 0
+        self._total = len(self._data)
+
+        # A list of `DataFrameIterator` instances registered to this `DataFrame`.
+        self._iters = []
+
+        # Any changes made to `DataFrame` state must first acquire this lock.
         self._lock = threading.Lock()
-        self._registered_lock = threading.Lock()
-        self._cv = threading.Condition(self._lock)
+
+        # This flag and condition variable track whether or not this `DataFrame` can
+        # still be used. Sealed `DataFrames` are disabled.
+        self._sealed = False
+        self._seal_cv = threading.Condition(self._lock)
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def data(self) -> List:
+    def data(self) -> List[Tuple[Variable]]:
         return self._data
+
+    @property
+    def size(self) -> int:
+        return self._total
+
+    @property
+    def sealed(self) -> bool:
+        return self._sealed
 
     def put(self, item: Tuple[Variable]) -> None:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
-        assert isinstance(
-            item, tuple), 'Dataframe needs tuple, not %s' % (type(item))
+        assert isinstance(item, tuple), 'Dataframe needs tuple, not %s' % (type(item))
         with self._lock:
             self._data.append(item)
             self._total += 1
 
-    def merge(self, df):
-        with self._lock:
-            self._data += df.data
-            self._total += len(df.data)
-
-    def put_dict(self, data: Dict[str, any]):
+    def put_dict(self, data: Dict[str, Any]):
         datalist = [None] * len(self._cols)
         for k, v in data.items():
             datalist[self._cols[k]['index']] = Variable(
                 self._cols[k]['type'], v)
         self.put(tuple(datalist))
 
-    def get(self, start: int, count: int, force_size: bool = False) -> Tuple[bool, List[Tuple[Variable]]]:
-        """
-        Get [start: start + count) items of dataframe
-        `force_size` is true, return data size must equal `count`. If there is
-        not enough data, return empty list.
-        `force_size` is false, return no more than `count` data
+    def merge(self, df):
+        assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
+        # TODO: Check `df` compatibility with `self`.
+        with self._lock:
+            self._data += df.data
+            self._total += len(df.data)
+
+    def get(self, start: int, count: int) -> List[Tuple[Variable]]:
+        """Get [start: start + count) elements within the `DataFrame`. If `wait` is
+        `True`, this function will block until either the `DataFrame` is sealed or there
+        are enough elements.
+
+        Args:
+            start: (`int`)
+                The start index within the `DataFrame`.
+            count: (`int`)
+                Number of elements to acquire.
 
         Returns:
-            (is_sealed, data)
+            data: (`List[Tuple[Variable]]`)
         """
+
         # TODO (junjie.jiang)
         # 1. call gc function
         # 2. put and seal will be called by the same operator
         # 3. seal will always be called after put
         # 4. iterators never ends until they meet df._sealed == True
         with self._lock:
-            if start < self._start_index:
+            if start < self._start_idx:
                 raise IndexError(
                     'Can not read from {start}, dataframe {name} start index is {cur_start}',
                     start=start,
-                    name=self.name,
-                    cur_start=self._start_index
+                    name=self._name,
+                    cur_start=self._start_idx
                 )
 
-            if force_size and not self._sealed and self._total - start < count:
-                return False, []
+            # If there are enough elements within the `DataFrame`, gather the
+            # outputs and return them.
+            if self._total - start >= count:
+                idx0 = start - self._start_idx
+                return self._data[idx0:idx0+count]
 
-            real_count = min(self._total - start, count)
-            real_start_index = start - self._start_index
-            return self._sealed and real_start_index + real_count >= self._total, \
-                self._data[real_start_index: real_start_index + real_count]
+            # If the `DataFrame` is already sealed, return only the remaining data.
+            if self._sealed:
+                if self._total <= start:
+                    return None
+                return self._data[start:]
 
-    @property
-    def size(self):
-        return self._total
+            return None
 
     def seal(self):
-        with self._cv:
+        with self._seal_cv:
             self._sealed = True
-            self._cv.notify_all()
-
-    def is_sealed(self) -> bool:
-        return self._sealed
+            self._seal_cv.notify_all()
 
     def wait_sealed(self):
-        with self._cv:
+        with self._seal_cv:
             if not self._sealed:
-                self._cv.wait()
+                self._seal_cv.wait()
 
     def clear(self):
-        self._data = []
-        self._start_index = 0
-        self._total = 0
-        self._sealed = False
+        with self._lock:
+            self._data = []
+            self._start_idx = 0
+            self._total = 0
+            self._sealed = False
 
     def _gc(self) -> None:
         # TODO (junjie.jiangjjj)
         """
         Delete the data which all registered iter has read
         """
-        return None
+        return
 
     def map_iter(self):
         it = MapIterator(self)
-        with self._registered_lock:
-            self._registered_iter.append(it)
+        with self._lock:
+            self._iters.append(it)
         return it
 
     def __str__(self) -> str:
-        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self.name, self.size, self.is_sealed())
+        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self._size, self._sealed)
 
 
 class DataFrameIterator:
@@ -160,21 +182,26 @@ class DataFrameIterator:
 
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
-        self._cur_index = 0
+        self._cur_idx = 0
 
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> List[Tuple]:
         # The base iterator is purposely defined to have exatly 0 elements.
         raise StopIteration
 
     @property
+    def current_index(self) -> int:
+        """Returns the current index.
+        """
+        return self._cur_idx
+
+    @property
     def accessible_size(self) -> int:
+        """Returns current accessible data size.
         """
-        Return current accessible data size
-        """
-        return self._df_ref().size - self._cur_index
+        return self._df_ref().size - self._cur_idx
 
 
 class MapIterator(DataFrameIterator):
@@ -190,11 +217,12 @@ class MapIterator(DataFrameIterator):
 
     def __next__(self) -> List[Tuple]:
         with self._lock:
-            sealed, data = self._df_ref().get(self._cur_index, 1)
-            if sealed and len(data) == 0:
+            data = self._df_ref().get(self._cur_idx, 1)
+            if self._df_ref().sealed and not data:
                 raise StopIteration
-            self._cur_index += len(data)
-        return data
+            if data:
+                self._cur_idx += 1
+            return data
 
 
 class BatchIterator:

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from typing import List, Dict
-import threading
 
 from towhee.dag.operator_repr import OperatorRepr
 from towhee.utils import HandlerMixin
@@ -66,10 +65,9 @@ class OperatorContext(HandlerMixin):
         self.outputs = outputs
 
         self._finished = False
+        self._num_finished_tasks = 0
         self._has_tasks = True
-        self._taskid = 0
-        self._finished_task_count = 0
-        self._lock = threading.Lock()
+        self._task_idx = 0
 
         self.add_handler_methods('op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
         self.add_task_finish_handler(self._write_outputs)
@@ -93,6 +91,7 @@ class OperatorContext(HandlerMixin):
         task_num = n_tasks
         while task_num > 0:
             op_input_params = self._reader.read()
+
             if op_input_params:
                 task = self._create_new_task(op_input_params)
                 ready_tasks.append(task)
@@ -101,10 +100,10 @@ class OperatorContext(HandlerMixin):
 
             if op_input_params is None:
                 self._has_tasks = False
+                if self._num_finished_tasks == self._task_idx:
+                    self._finished = True
+                    self._writer.close()
 
-            if not self._has_tasks and self._taskid == self._finished_task_count:
-                self._writer.close()
-                self._finished = True
             break
         return ready_tasks
 
@@ -135,9 +134,8 @@ class OperatorContext(HandlerMixin):
         # self._finished_tasks' only monifier.
 
     def _write_outputs(self, task: Task):
-        with self._lock:
-            self._finished_task_count += 1
-            self._writer.write(task.outputs)
+        self._writer.write(task.outputs)
+        self._num_finished_tasks += 1
 
     def _next_task_inputs(self):
         """
@@ -149,9 +147,8 @@ class OperatorContext(HandlerMixin):
         raise NotImplementedError
 
     def _create_new_task(self, inputs: Dict[str, any]):
-        with self._lock:
-            t = Task(self.name, self._repr.function,
-                     self._repr.init_args, inputs, self._taskid)
-            self._taskid += 1
-            t.add_task_finish_handler(self.task_finish_handlers)
-            return t
+        t = Task(self.name, self._repr.function,
+                 self._repr.init_args, inputs, self._task_idx)
+        self._task_idx += 1
+        t.add_task_finish_handler(self.task_finish_handlers)
+        return t

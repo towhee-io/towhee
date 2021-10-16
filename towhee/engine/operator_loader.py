@@ -56,6 +56,7 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
         fname = function.split('/')[-1]
         path = self._cache_path / function / (fname + '.py')
+
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
         if path.is_file():

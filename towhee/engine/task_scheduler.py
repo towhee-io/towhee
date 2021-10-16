@@ -28,7 +28,7 @@ from towhee.engine.task_executor import TaskExecutor
 MAX_EXECUTOR_TASKS = 10
 
 
-class _TaskScheduler(ABC):
+class TaskScheduler(ABC):
     """Task scheduler abstract interface.
 
     Args:
@@ -96,14 +96,14 @@ class _TaskScheduler(ABC):
         raise NotImplementedError
 
 
-class FIFOTaskScheduler(_TaskScheduler):
+class FIFOTaskScheduler(TaskScheduler):
     """Very basic scheduler that sends tasks to executors in a first-in, first-out
     manner. The scheduler loops through all `OperatorContext` instances within the
     engine, acquiring tasks one at a time if available.
 
     Args:
         task_execs: (`List[towhee.TaskExecutor]`)
-            See `_TaskScheduler` docstring.
+            See `TaskScheduler` docstring.
     """
 
     def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
@@ -131,18 +131,19 @@ class FIFOTaskScheduler(_TaskScheduler):
                 if g is None:
                     continue
 
-                for _, op_ctx in g.operator_contexts.items():
+                for op_ctx in g.op_ctxs.values():
 
                     if not op_ctx.is_schedulable or op_ctx.is_finished:
                         continue
 
+                    #print(op_ctx._repr.name, op_ctx._reader.size)
                     tasks = op_ctx.pop_ready_tasks(n_tasks=1)
                     if not tasks:
                         continue
                     task = tasks[0]
 
-                    # If `push_task` returns `False`, then the optimal executor is already
-                    # full, wait a while and try again.
+                    # If `push_task` returns `False`, then the optimal executor is
+                    # already full, wait a while and try again.
                     task_exec = self._find_optimal_exec(task)
                     while not task_exec.push_task(task):
                         time.sleep(self._sleep_ms / 1000)

@@ -23,7 +23,7 @@ class EmulatedPipeline:
     """
 
     def __init__(self):
-        GraphContext = NamedTuple('GraphContext', [('operator_contexts', Dict)])
+        GraphContext = NamedTuple('GraphContext', [('op_ctxs', Dict)])
         OperatorContext = NamedTuple('OperatorContext', [('pop_ready_tasks', Callable), ('is_schedulable', Callable)])
 
         self._on_ready_handlers = []
