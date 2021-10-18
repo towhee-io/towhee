@@ -22,11 +22,11 @@ from torchvision import transforms
 
 from towhee.cnn_trainer.cnn_trainer import PyTorchCNNTrainer
 from towhee.cnn_trainer.training_args import TrainingArguments
-from towhee.dataset.image_datasets import PyTorchImageDataset
+from towhee.data.dataset.image_datasets import PyTorchImageDataset
 
 cache_path = Path(__file__).parent.parent.resolve()
-image_path = cache_path.joinpath('dataset/kaggle_dataset_small/train')
-label_file =cache_path.joinpath('dataset/kaggle_dataset_small/train/train_labels.csv')
+image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
 
 
 class TrainerTest(unittest.TestCase):
