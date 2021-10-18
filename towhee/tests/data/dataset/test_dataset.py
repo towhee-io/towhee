@@ -18,7 +18,7 @@ import sys
 import os
 
 from torchvision import transforms
-from towhee.dataset.image_datasets import PyTorchImageDataset
+from towhee.data.dataset.image_datasets import PyTorchImageDataset
 
 cache_path = os.path.abspath(sys.path[0])
 image_path = os.path.join(cache_path, 'kaggle_dataset_small/train')
