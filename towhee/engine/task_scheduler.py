@@ -133,7 +133,9 @@ class FIFOTaskScheduler(TaskScheduler):
 
                 for op_ctx in g.op_ctxs.values():
 
-                    if not op_ctx.is_schedulable or op_ctx.is_finished:
+                    #if not op_ctx.is_schedulable or op_ctx.is_finished:
+                    #    continue
+                    if g.is_busy and op_ctx.name == '_start_op':
                         continue
 
                     #print(op_ctx._repr.name, op_ctx._reader.size)

@@ -20,6 +20,7 @@ import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dag.graph_repr import GraphRepr
+from towhee.engine.task import Task
 from towhee.utils import HandlerMixin
 
 from towhee.engine.operator_context import OperatorContext
@@ -33,16 +34,17 @@ class GraphContext(HandlerMixin):
 
     Args:
         ctx_idx: (int)
-            The index of this `GraphContext`
+            The index of this `GraphContext`.
         graph_repr: (`towhee.dag.GraphRepr`)
-            The DAG representation
+            The DAG representation this `GraphContext` will implement.
     """
 
     def __init__(self, ctx_idx: int, graph_repr: GraphRepr):
         self._idx = ctx_idx
         self._repr = graph_repr
-        self._mutex = threading.Lock()
-        self._finished = threading.Condition(self._mutex)
+        self._lock = threading.Lock()
+        self._finished = threading.Condition(self._lock)
+        self._is_busy = False
 
         self.add_handler_methods(
             'graph_start',
@@ -55,19 +57,22 @@ class GraphContext(HandlerMixin):
         self._build()
         self._cv = threading.Condition()
 
+        self.add_graph_start_handler(self._on_graph_start)
+        self.add_graph_finish_handler(self._on_graph_finish)
+
     def __call__(self, inputs: Tuple):
-        self.op_ctxs['_start_op'].outputs[0].put(inputs)
+        self.inputs.put(inputs)
         #graph_input = self.op_ctxs['_start_op'].outputs[0]
         #graph_input.put(inputs)
         #graph_input.seal()
 
     @property
     def inputs(self) -> DataFrame:
-        return self.op_ctxs['_start_op'].outputs[0]
+        return self.dataframes['_start_df']
 
     @property
     def outputs(self) -> DataFrame:
-        return self.op_ctxs['_end_op'].outputs[0]
+        return self.dataframes['_end_df']
 
     # def result(self):
     #     output_df = self.op_ctxs['_end_op'].inputs[0]
@@ -90,9 +95,23 @@ class GraphContext(HandlerMixin):
     def dataframes(self):
         return self._dataframes
 
-    # @property
-    # def is_busy(self):
-    #     return self._is_busy
+    @property
+    def is_busy(self):
+        return self._is_busy
+
+    def reset(self):
+        """Resets `OperatorContext` instances which maintain state within the graph.
+        Stateless operators are left unchanged.
+        """
+        raise NotImplementedError
+
+    def _on_graph_start(self, task: Task):
+        if task.hub_op_id == '_start_op':
+            self._is_busy = True
+
+    def _on_graph_finish(self, task: Task):
+        if task.hub_op_id == '_end_op':
+            self._is_busy = False
 
     # def _on_task_finish(self, task: Task):
     #     """
@@ -124,19 +143,25 @@ class GraphContext(HandlerMixin):
         # build operator contexts
         self._op_ctxs = {}
         for _, op_repr in self._repr.operators.items():
-            is_schedulable = self._is_schedulable_op(op_repr)
+            #is_schedulable = self._is_schedulable_op(op_repr)
+            is_schedulable = True
             op_ctx = OperatorContext(op_repr, self.dataframes, is_schedulable)
 
-            op_ctx.add_task_start_handler(self.task_start_handlers)
-            op_ctx.add_task_ready_handler(self.task_ready_handlers)
-            op_ctx.add_task_finish_handler(self.task_finish_handlers)
+            if op_ctx.name == '_start_op':
+                op_ctx.add_task_start_handler(self.graph_start_handlers)
+            elif op_ctx.name == '_end_op':
+                op_ctx.add_task_finish_handler(self.graph_finish_handlers)
+            else:
+                op_ctx.add_task_start_handler(self.task_start_handlers)
+                op_ctx.add_task_ready_handler(self.task_ready_handlers)
+                op_ctx.add_task_finish_handler(self.task_finish_handlers)
 
             self._op_ctxs[op_ctx.name] = op_ctx
 
-    @staticmethod
-    def _is_schedulable_op(op_repr):
-        op_name = op_repr.name
-        if op_name in ('_start_op', '_end_op'):
-            return False
-        else:
-            return True
+    #@staticmethod
+    #def _is_schedulable_op(op_repr):
+    #    op_name = op_repr.name
+    #    if op_name in ('_start_op', '_end_op'):
+    #        return False
+    #    else:
+    #        return True

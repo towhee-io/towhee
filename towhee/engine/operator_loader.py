@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from towhee.operator import Operator
+from towhee.operator.nop import NOPOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 
 
@@ -48,6 +49,9 @@ class OperatorLoader:
                 Origin and method/class name of the operator. Used to look up the proper
                 operator in cache.
         """
+
+        if function in ['_start_op', '_end_op']:
+            return NOPOperator()
 
         # Lookup the path for the operator in local cache. Example directory structure:
         #  /home/user/.towhee/operators/organization-name/operator-name
