@@ -19,7 +19,7 @@ import torch
 from torchvision import transforms
 import os
 
-from towhee.trainer.models.vit.vit import ViT
+from towhee.models.vit.vit import ViT
 
 
 class VisionTransformerTest(unittest.TestCase):

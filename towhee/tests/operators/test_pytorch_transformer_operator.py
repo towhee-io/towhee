@@ -18,7 +18,7 @@ from PIL import Image
 from torchvision import transforms
 import os
 
-from towhee.trainer.models.vit.vit import ViT
+from towhee.models.vit.vit import ViT
 from towhee.tests.mock_operators import PYTORCH_TRANSFORMER_OPERATOR_PATH, load_local_operator
 
 

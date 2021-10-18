@@ -20,9 +20,9 @@ Jax version: https://github.com/google-research/vision_transformer.
 import torch
 from torch import nn
 
-from towhee.trainer.models.vit.transformer import Transformer
-from towhee.trainer.models.vit.vit_training_utils import load_pretrained_weights, as_tuple
-from towhee.trainer.models.vit.vit_pretrained import PRETRAINED_MODELS
+from towhee.models.vit.transformer import Transformer
+from towhee.models.vit.vit_training_utils import load_pretrained_weights, as_tuple
+from towhee.models.vit.vit_pretrained import PRETRAINED_MODELS
 
 
 class PositionalEmbedding1D(nn.Module):
