@@ -35,8 +35,8 @@ def load_pretrained_weights(
         verbose (bool):
             If printing is done when downloading is over.
     """
-    logging.info('model_name is '+str(model_name))
-    logging.info('weights_path is '+str(weights_path))
+    logging.info('model_name is %s', str(model_name))
+    logging.info('weights_path is %s', str(weights_path))
     assert bool(model_name), 'Expected model_name'
 
     # Load or download weights
