@@ -13,7 +13,7 @@
 # limitations under the License.
 import math
 import torch
-import torch.nn as nn
+from torch.nn import nn
 from typing import Optional
 from towhee.trainer.models.swin_transformer.utils import to_2tuple
 from towhee.trainer.models.layers import trunc_normal_, lecun_normal_
