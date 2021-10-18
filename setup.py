@@ -62,6 +62,7 @@ setup(
         'tqdm>=4.59.0',
         'pillow>=8.3.1',
         'scipy>=1.5.3',
+        'opencv-python>=4.5.3.56',
     ],
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
