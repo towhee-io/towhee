@@ -15,7 +15,7 @@
 
 import unittest
 
-from towhee.trainer.models.vit.vit_configs import get_b16_config
+from towhee.models.vit.vit_configs import get_b16_config
 
 
 class VitConfigsTest(unittest.TestCase):

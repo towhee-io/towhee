@@ -15,7 +15,7 @@
 import unittest
 import torch
 
-from towhee.trainer.models.vit.transformer import merge_last
+from towhee.models.vit.transformer import merge_last
 
 
 class TestTransformer(unittest.TestCase):

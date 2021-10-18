@@ -15,7 +15,7 @@
 import unittest
 import math
 from urllib import request
-from towhee.trainer.models.vit.vit_pretrained import PRETRAINED_MODELS
+from towhee.models.vit.vit_pretrained import PRETRAINED_MODELS
 
 
 class VitPretrainedTest(unittest.TestCase):
