@@ -395,6 +395,7 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str, install_req
     file_list = get_file_list(user, repo, commit)
     download_files(user, repo, branch, file_list, lfs_files, local_dir, install_reqs)
 
+
 def main(argv):
     try:
         opts, _ = getopt.getopt(argv[1:], 'u:p:r:t:b:d:', ['create', 'delete', 'download', 'user=', 'password=', 'repo=', 'type=', 'branch=', 'dir='])

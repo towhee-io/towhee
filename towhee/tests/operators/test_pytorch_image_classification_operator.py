@@ -24,7 +24,7 @@ from towhee.tests.mock_operators import PYTORCH_IMAGE_CLASSIFICATION_OPERATOR_PA
 from towhee.tests.mock_operators.pytorch_transform_operator.pytorch_transform_operator import PytorchTransformOperator
 
 cache_path = Path(__file__).parent.parent.resolve()
-test_image = cache_path.joinpath('dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
+test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
 
 model = torchvision.models.resnet50(pretrained=True)
 
