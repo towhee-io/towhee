@@ -29,7 +29,7 @@ DropBlock impl inspired by two Tensorflow impl that I liked:
 Hacked together by / Copyright 2020 Ross Wightman
 """
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 
 

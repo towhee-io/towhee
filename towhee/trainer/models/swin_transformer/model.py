@@ -13,13 +13,13 @@
 # limitations under the License.
 import math
 import torch
-import torch.nn as nn
+from torch import nn
+from torch.utils import checkpoint
 from typing import Optional
 from towhee.trainer.models.swin_transformer.utils import to_2tuple
 from towhee.trainer.models.layers import trunc_normal_, lecun_normal_
 from towhee.trainer.models.layers import Mlp
 from towhee.trainer.models.layers import DropPath
-from torch.utils import checkpoint
 
 def window_partition(x, window_size: int):
     """
