@@ -27,7 +27,7 @@ cache_path = Path(__file__).parent.parent.parent.resolve()
 
 
 def decode_predictions(preds):
-    fpath = cache_path.joinpath('dataset/imagenet_index_path.json')
+    fpath = cache_path.joinpath('data/dataset/imagenet_index_path.json')
     with open(fpath, encoding='ascii') as f:
         class_index = json.load(f)
 
