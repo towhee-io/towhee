@@ -13,6 +13,7 @@
 # limitations under the License.
 from torch.utils import model_zoo
 import torch
+import logging
 
 def load_pretrained_weights(
     model,
@@ -34,16 +35,16 @@ def load_pretrained_weights(
         verbose (bool):
             If printing is done when downloading is over.
     """
-    print('model_name is '+str(model_name))
-    print('weights_path is '+str(weights_path))
+    logging.info('model_name is '+str(model_name))
+    logging.info('weights_path is '+str(weights_path))
     assert bool(model_name), 'Expected model_name'
 
     # Load or download weights
     if weights_path is None:
-        print(model_configs.keys())
+        logging.info(model_configs.keys())
         url = model_configs['url']
         if url:
-            print('Please check hub connection in case weights can not be downloaded!')
+            logging.info('Please check hub connection in case weights can not be downloaded!')
             state_dict = model_zoo.load_url(url, map_location=torch.device('cpu'))
         else:
             raise ValueError(f'Pretrained model for {model_name} is not available.')
@@ -52,5 +53,4 @@ def load_pretrained_weights(
 
    # Load state dict
     ret = model.load_state_dict(state_dict['model'], strict=False)
-    print(f'ret is {ret}')
     return ret

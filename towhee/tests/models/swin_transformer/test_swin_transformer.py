@@ -26,10 +26,8 @@ from towhee.trainer.models.utils.pretrained_utils import load_pretrained_weights
 class SwinTransformerTest(unittest.TestCase):
     name = 'swin_small_patch4_window7_224'
     pwd = os.getcwd()
-    print('pwd swin is ' + name)
     resource_dir = pwd + '/towhee/tests/models/resource/'
     arch, model_cfg = build_configs(name)
-    print(model_cfg.keys())
     model = SwinTransformer(**arch)
 
     load_pretrained_weights(model, name, model_cfg)
@@ -54,12 +52,10 @@ class SwinTransformerTest(unittest.TestCase):
         outputs = model(img).squeeze(0)
 
     def test_swin_transformer(self):
-        print('-----')
         for idx in torch.topk(self.outputs, k=1).indices.tolist():
             prob = torch.softmax(self.outputs, -1)[idx].item()
             label = self.labels_map[idx]
             p = prob * 100
-            print(f'[{idx}] {label:<75} ({p:.2f}%)')
             self.assertEqual('giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', self.labels_map[idx])
 
 if __name__ == '__main__':
