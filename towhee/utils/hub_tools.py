@@ -379,9 +379,13 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str, install_req
         branch(`str`):
             The branch name.
         local_dir(`str`):
+<<<<<<< HEAD
             The local directory being downloaded to.
         install_reqs(`bool`):
             Whether to install packages required for repo.
+=======
+            The local directory being downloaded to
+>>>>>>> main
 
     Raises:
         HTTPError: Error in request.
