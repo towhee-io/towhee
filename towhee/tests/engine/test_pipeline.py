@@ -43,7 +43,7 @@ class TestPipeline(unittest.TestCase):
     def test_embedding_pipeline(self):
         p = pipeline('test_util/resnet50_embedding',
                      cache=str(CACHE_PATH))
-        img_path = CACHE_PATH / 'dataset' / 'kaggle_dataset_small' / \
+        img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
             'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
         img = Image.open(str(img_path))
         res = p(img)
