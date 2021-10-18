@@ -53,9 +53,9 @@ class SwinTransformerTest(unittest.TestCase):
 
     def test_swin_transformer(self):
         for idx in torch.topk(self.outputs, k=1).indices.tolist():
-            prob = torch.softmax(self.outputs, -1)[idx].item()
-            label = self.labels_map[idx]
-            p = prob * 100
+            #prob = torch.softmax(self.outputs, -1)[idx].item()
+            #label = self.labels_map[idx]
+            #p = prob * 100
             self.assertEqual('giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', self.labels_map[idx])
 
 if __name__ == '__main__':
