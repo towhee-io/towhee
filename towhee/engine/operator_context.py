@@ -54,15 +54,15 @@ class OperatorContext(HandlerMixin):
 
         # todo: GuoRentong, issue #114
         inputs = list({dataframes[input['df']] for input in op_repr.inputs})
-        input_iter_type = op_repr.iter_info['type']
+        iter_type = op_repr.iter_info['type']
         inputs_index = dict((item['name'], item['col'])
                             for item in op_repr.inputs)
         self.inputs = inputs
-        self._reader = create_reader(inputs, input_iter_type, inputs_index)
+        self._reader = create_reader(inputs, iter_type, inputs_index)
 
         outputs = list({dataframes[output['df']]
                        for output in op_repr.outputs})
-        self._writer = create_writer(outputs)
+        self._writer = create_writer(iter_type, outputs)
         self.outputs = outputs
 
         self._finished = False
@@ -71,7 +71,8 @@ class OperatorContext(HandlerMixin):
         self._finished_task_count = 0
         self._lock = threading.Lock()
 
-        self.add_handler_methods('op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
+        self.add_handler_methods(
+            'op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
         self.add_task_finish_handler(self._write_outputs)
 
     @property
