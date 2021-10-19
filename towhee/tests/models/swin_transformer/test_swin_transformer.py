@@ -19,9 +19,9 @@ import torch
 from torchvision import transforms
 import os
 
-from towhee.trainer.models.swin_transformer.configs import build_configs
-from towhee.trainer.models.swin_transformer.model import SwinTransformer
-from towhee.trainer.models.utils.pretrained_utils import load_pretrained_weights
+from towhee.models.swin_transformer.configs import build_configs
+from towhee.models.swin_transformer.model import SwinTransformer
+from towhee.models.utils.pretrained_utils import load_pretrained_weights
 
 class SwinTransformerTest(unittest.TestCase):
     name = 'swin_small_patch4_window7_224'
