@@ -19,9 +19,9 @@ from typing import Dict, Optional, Tuple, Union, List, NamedTuple
 
 
 class DataFrameWriter:
-    '''
+    """
     Df writer
-    '''
+    """
 
     def __init__(self, output_df: DataFrame):
         self._output_df = output_df
@@ -34,6 +34,17 @@ class DataFrameWriter:
 
     def close(self):
         self._output_df.seal()
+
+
+class FlatMapDataFrameWriter(DataFrameWriter):
+    """
+    Expand the list, put each item to dataframe
+    """
+
+    def write(self, output_data: List[NamedTuple]):
+        if output_data is not None and isinstance(output_data, list):
+            for data in output_data:
+                self._output_df.put_dict(data._asdict())
 
 
 class DataFrameReader(ABC):
@@ -82,7 +93,7 @@ class MapDataFrameReader(DataFrameReader):
         """
         try:
             data = next(self._iter)
-            if len(data) == 0:
+            if not data:
                 return {}
             return self._to_op_inputs(data[0])
 
@@ -96,7 +107,7 @@ def create_reader(
     inputs_index: Dict[str, int]
 ) -> DataFrameReader:
 
-    if iter_type.lower() == "map":
+    if iter_type.lower() in ["map", "flatmap"]:
         assert len(inputs) == 1, "%s iter takes one dataframe, but %s dataframes are found" % (
             iter_type, len(inputs)
         )
@@ -105,6 +116,8 @@ def create_reader(
         raise NameError("Can not find %s iters" % iter_type)
 
 
-def create_writer(outputs: List[DataFrame]) -> DataFrameWriter:
+def create_writer(iter_type: str, outputs: List[DataFrame]) -> DataFrameWriter:
     assert len(outputs) == 1
+    if iter_type.lower() == "flatmap":
+        return FlatMapDataFrameWriter(outputs[0])
     return DataFrameWriter(outputs[0])

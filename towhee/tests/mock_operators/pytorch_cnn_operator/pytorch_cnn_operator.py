@@ -15,7 +15,7 @@
 
 from typing import NamedTuple
 
-import numpy
+import numpy as np
 import torch
 import torchvision
 
@@ -32,8 +32,8 @@ class PytorchCnnOperator(Operator):
         self._model = model_func(pretrained=True)
         self._model.eval()
 
-    def __call__(self, img_tensor: torch.Tensor) -> NamedTuple('Outputs', [('cnn', numpy.ndarray)]):
-        Outputs = NamedTuple('Outputs', [('cnn', numpy.ndarray)])
+    def __call__(self, img_tensor: torch.Tensor) -> NamedTuple('Outputs', [('cnn', np.ndarray)]):
+        Outputs = NamedTuple('Outputs', [('cnn', np.ndarray)])
         return Outputs(self._model(img_tensor).detach().numpy())
 
     def train(self):

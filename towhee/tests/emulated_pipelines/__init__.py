@@ -13,14 +13,9 @@
 # limitations under the License.
 
 
-from pathlib import Path
+from towhee.tests.emulated_pipelines.emulated_pipeline import EmulatedPipeline
 
-_DEFAULT_LOCAL_CACHE_ROOT = Path.home() / '.towhee'
-LOCAL_PIPELINE_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
-LOCAL_OPERATOR_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'operators'
 
-MOCK_PIPELINES = str(Path(__file__).parent.parent /
-                     'tests/test_util/resnet50_embedding.yaml')
-
-MOCK_OPS = str(Path(__file__).parent.parent / 'tests/mock_operators')
-MOCK_PIPES = str(Path(__file__).parent.parent / 'tests/mock_pipelines')
+__all__ = [
+    'EmulatedPipeline'
+]

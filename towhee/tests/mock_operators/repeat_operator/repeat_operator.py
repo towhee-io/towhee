@@ -13,14 +13,23 @@
 # limitations under the License.
 
 
-from pathlib import Path
+from typing import NamedTuple
+from towhee.operator import Operator, SharedType
 
-_DEFAULT_LOCAL_CACHE_ROOT = Path.home() / '.towhee'
-LOCAL_PIPELINE_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
-LOCAL_OPERATOR_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'operators'
 
-MOCK_PIPELINES = str(Path(__file__).parent.parent /
-                     'tests/test_util/resnet50_embedding.yaml')
+class RepeatOperator(Operator):
+    """
+    repeat input num
+    """
 
-MOCK_OPS = str(Path(__file__).parent.parent / 'tests/mock_operators')
-MOCK_PIPES = str(Path(__file__).parent.parent / 'tests/mock_pipelines')
+    def __init__(self, repeat: int):
+        super().__init__()
+        self._repeat = repeat
+
+    def __call__(self, num: int):
+        Outputs = NamedTuple("Outputs", [("num", int)])
+        return [Outputs(num) for i in range(self._repeat)]
+
+    @property
+    def shared_type(self):
+        return SharedType.Shareable

@@ -13,9 +13,20 @@
 # limitations under the License.
 
 
-from towhee.tests.mock_pipelines.emulated_pipeline import EmulatedPipeline
+from typing import Any, Dict, NamedTuple
+
+from towhee.operator import Operator
 
 
-__all__ = [
-    'EmulatedPipeline'
-]
+class NOPOperator(Operator):
+    """No-op operator. Input arguments are redefined as a `NamedTuple` and returned as
+    outputs.
+    """
+
+    def __init__(self):
+        #pylint: disable=useless-super-delegation
+        super().__init__()
+
+    def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
+        fields = [(name, type(val)) for name, val in args.items()]
+        return NamedTuple('Outputs', fields)(**args)  #pylint: disable=not-callable

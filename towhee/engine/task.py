@@ -76,6 +76,10 @@ class Task(HandlerMixin):
         return self._inputs
 
     @property
+    def task_idx(self) -> int:
+        return self._task_idx
+
+    @property
     def outputs(self) -> NamedTuple:
         return self._outputs
 
@@ -94,18 +98,20 @@ class Task(HandlerMixin):
                 Unique value corresponding to a combination of operator ininitialization
                 arguments and its operator ID in the hub.
         """
-        args_tup = tuple((key, self.op_args[key])
-                         for key in sorted(self.op_args))
-        return (self.hub_op_id, ) + args_tup
+        if self._op_args:
+            args_tup = tuple(sorted(self._op_args.items()))
+        else:
+            args_tup = ()
+        return (self._hub_op_id, ) + args_tup
 
-    def execute(self, op: Operator):
+    def execute(self, op: Operator = None):
         """Given a corresponding `Operator` from the `TaskExecutor`, run the task.
         """
         self.call_task_start_handlers(self)
         start = timeit.default_timer()
 
-        # Run the operator. The graph provided to the engine should already have done
-        # graph validity checks, so further input/output argument checks are
+        # Run the operator. The graph provided to the engine should already have
+        # done graph validity checks, so further input/output argument checks are
         # unnecessary.
         try:
             self._outputs = op(**self._inputs)
