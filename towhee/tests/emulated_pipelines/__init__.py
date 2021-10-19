@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from towhee.tests.mock_pipelines.emulated_pipeline import EmulatedPipeline
+from towhee.tests.emulated_pipelines.emulated_pipeline import EmulatedPipeline
 
 
 __all__ = [

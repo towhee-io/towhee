@@ -14,6 +14,7 @@
 
 from pathlib import Path
 from typing import Any, Tuple
+from shutil import rmtree
 import os
 
 from towhee.dataframe import DataFrame
@@ -21,6 +22,7 @@ from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, EngineConfig, start_engine
 from towhee.engine.pipeline import Pipeline
 from towhee.engine import LOCAL_PIPELINE_CACHE
+from towhee.utils.hub_tools import download_repo
 
 
 __all__ = [
@@ -30,7 +32,7 @@ __all__ = [
 
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'resnet50_embedding'
+    'image-embedding': 'mock_pipelines/resnet50_embedding'
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
@@ -88,8 +90,41 @@ def _get_pipeline_cache(cache_path: str):
 # def _get_hello_towhee_pipeline():
 #     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
 
+def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_download: bool = False):
+    """Does the check and download logic for pipelines. Assumes pipeline name format of 'author/pipeline'.
+    """
+    task_split = task.split('/')
 
-def pipeline(task: str, cache: str = None):
+    # For now assuming all piplines will be classifed as 'author/repo'
+    if len(task_split) != 2:
+        raise ValueError(
+                '''Incorrect pipeline name format, should be '<author>/<pipeline_repo>', if local file please place into 'local/<pipeline_dir> ''')
+
+    author = task_split[0]
+    repo = task_split[1]
+    author_path = cache_path / author
+    repo_path = author_path / repo
+    yaml_path = repo_path / (repo + '.yaml')
+
+    # Avoid downloading logic if its a fully local repo
+    if author == 'local':
+        return yaml_path
+
+    download = False
+    if repo_path.is_dir():
+        if force_download or not yaml_path.is_file():
+            rmtree(repo_path)
+            download = True
+    else:
+        download = True
+
+    if download:
+        print('Downloading Pipeline: ' + repo)
+        download_repo(author, repo, branch, str(repo_path))
+
+    return yaml_path
+
+def pipeline(task: str, cache: str = None, force_download: bool = False):
     """
     Entry method which takes either an input task or path to an operator YAML. A
     `Pipeline` object is created (based on said task) and subsequently added to the
@@ -100,6 +135,8 @@ def pipeline(task: str, cache: str = None):
             Task name or YAML file location to use.
         cache (`str`):
             Cache path to use.
+        force_download (`bool`):
+            Whether to redownload pipeline and operators.
 
     Returns
         (`typing.Any`)
@@ -121,7 +158,7 @@ def pipeline(task: str, cache: str = None):
     # $HOME/.towhee/pipelines
     # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
     cache_path = _get_pipeline_cache(cache)
-    yaml_path = cache_path / (task + '.yaml')
+    yaml_path = _download_pipeline(cache_path, task, force_download=force_download)
 
     if not yaml_path.is_file():
         raise NameError(F'Can not find pipeline by name {task}')

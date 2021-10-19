@@ -14,8 +14,8 @@
 
 from pathlib import Path
 
-GRAPH_TEST_YAML = Path(__file__).parent / 'test_graph.yaml'
-GRAPH_TEST_ISO_DF_YAML = Path(__file__).parent / 'test_isolated_dataframe.yaml'
-GRAPH_TEST_ISO_OP_YAML = Path(__file__).parent / 'test_isolated_operator.yaml'
-GRAPH_TEST_LOOP_YAML = Path(__file__).parent / 'test_loop.yaml'
-SIMPLE_PIPELINE_YAML = Path(__file__).parent / 'simple_pipeline.yaml'
+GRAPH_TEST_YAML = Path(__file__).parent / 'test_graph/test_graph.yaml'
+GRAPH_TEST_ISO_DF_YAML = Path(__file__).parent / 'test_isolated_dataframe/test_isolated_dataframe.yaml'
+GRAPH_TEST_ISO_OP_YAML = Path(__file__).parent / 'test_isolated_operator/test_isolated_operator.yaml'
+GRAPH_TEST_LOOP_YAML = Path(__file__).parent / 'test_loop/test_loop.yaml'
+SIMPLE_PIPELINE_YAML = Path(__file__).parent / 'simple_pipeline/simple_pipeline.yaml'

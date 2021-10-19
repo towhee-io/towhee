@@ -14,7 +14,6 @@
 
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dataframe import DataFrame
-from towhee.engine import LOCAL_OPERATOR_CACHE
 from towhee.engine.graph_context import GraphContext
 from towhee.engine.task_scheduler import TaskScheduler
 
@@ -47,8 +46,6 @@ class Pipeline:
             self._graph_repr = GraphRepr.from_yaml(graph_repr)
         else:
             self._graph_repr = graph_repr
-
-        # self.fill_cache()
 
         # self._cv = threading.Condition()
         # self.on_graph_finish_handlers = [self._on_graph_finish]
@@ -126,20 +123,6 @@ class Pipeline:
             idx += 1
 
         return self._outputs
-
-    def fill_cache(self):
-        """Check to see if the operator directory exists locally or if needs to
-        be downloaded from the hub.
-        """
-        for key, value in self._graph_repr.operators.items():
-            if key not in ('_start_op', '_end_op'):
-                operator_path = LOCAL_OPERATOR_CACHE / (value.function)
-
-                # TODO(filip-halt): replace prints with code.
-                if operator_path.is_dir() is False:
-                    print('missing', operator_path)
-                else:
-                    print('has', operator_path)
 
     # def __call__(self, inputs: DataFrame) -> DataFrame:
 
