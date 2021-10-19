@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict
 import threading
+from typing import List, Dict
 
 from towhee.dag.operator_repr import OperatorRepr
 from towhee.utils import HandlerMixin
@@ -36,21 +36,14 @@ class OperatorContext(HandlerMixin):
             The operator representation
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
-        is_schedulable: (`bool`)
-            Whether the `OperatorContext` is schedulable.
-            There are special `OperatorContext`s that are not schedulable, such as
-            `_start_op`, `_end_op`.
-
     """
 
     def __init__(
         self,
         op_repr: OperatorRepr,
-        dataframes: Dict[str, DataFrame],
-        is_schedulable: bool = True
+        dataframes: Dict[str, DataFrame]
     ):
         self._repr = op_repr
-        self._is_schedulable = is_schedulable
 
         # todo: GuoRentong, issue #114
         inputs = list({dataframes[input['df']] for input in op_repr.inputs})
@@ -65,11 +58,11 @@ class OperatorContext(HandlerMixin):
         self._writer = create_writer(outputs)
         self.outputs = outputs
 
-        self._finished = False
-        self._has_tasks = True
-        self._taskid = 0
-        self._finished_task_count = 0
         self._lock = threading.Lock()
+        self._finished = False
+        self._num_finished_tasks = 0
+        self._has_tasks = True
+        self._task_idx = 0
 
         self.add_handler_methods('op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
         self.add_task_finish_handler(self._write_outputs)
@@ -77,10 +70,6 @@ class OperatorContext(HandlerMixin):
     @property
     def name(self):
         return self._repr.name
-
-    @property
-    def is_schedulable(self) -> bool:
-        return self._is_schedulable
 
     def pop_ready_tasks(self, n_tasks: int = 1) -> List:
         """
@@ -93,18 +82,21 @@ class OperatorContext(HandlerMixin):
         task_num = n_tasks
         while task_num > 0:
             op_input_params = self._reader.read()
+
             if op_input_params:
                 task = self._create_new_task(op_input_params)
                 ready_tasks.append(task)
                 task_num -= 1
                 continue
 
+            # None` implies that an input `DataFrame` has been sealed.
             if op_input_params is None:
-                self._has_tasks = False
+                with self._lock:
+                    self._has_tasks = False
+                    if self._num_finished_tasks == self._task_idx:
+                        self._finished = True
+                        self._writer.close()
 
-            if not self._has_tasks and self._taskid == self._finished_task_count:
-                self._writer.close()
-                self._finished = True
             break
         return ready_tasks
 
@@ -136,8 +128,8 @@ class OperatorContext(HandlerMixin):
 
     def _write_outputs(self, task: Task):
         with self._lock:
-            self._finished_task_count += 1
             self._writer.write(task.outputs)
+            self._num_finished_tasks += 1
 
     def _next_task_inputs(self):
         """
@@ -149,9 +141,8 @@ class OperatorContext(HandlerMixin):
         raise NotImplementedError
 
     def _create_new_task(self, inputs: Dict[str, any]):
-        with self._lock:
-            t = Task(self.name, self._repr.function,
-                     self._repr.init_args, inputs, self._taskid)
-            self._taskid += 1
-            t.add_task_finish_handler(self.task_finish_handlers)
-            return t
+        t = Task(self.name, self._repr.function,
+                 self._repr.init_args, inputs, self._task_idx)
+        self._task_idx += 1
+        t.add_task_finish_handler(self.task_finish_handlers)
+        return t

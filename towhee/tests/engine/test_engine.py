@@ -43,10 +43,10 @@ class TestEngine(unittest.TestCase):
 
         start_op_repr = OperatorRepr(
             name='_start_op',
-            function='internal',
+            function='_start_op',
             init_args={},
             inputs=[
-                {'name': 'num', 'df': 'op_test_in', 'col': 0}
+                {'name': 'num', 'df': '_start_df', 'col': 0}
             ],
             outputs=[{'df': 'op_test_in'}],
             iter_info={'type': 'map'}
@@ -65,13 +65,18 @@ class TestEngine(unittest.TestCase):
 
         end_op_repr = OperatorRepr(
             name='_end_op',
-            function='internal',
+            function='_end_op',
             init_args={},
             inputs=[
                 {'name': 'sum', 'df': 'op_test_out', 'col': 0}
             ],
-            outputs=[{'df': 'op_test_out'}],
+            outputs=[{'df': '_end_df'}],
             iter_info={'type': 'map'}
+        )
+
+        df_start_repr = DataFrameRepr(
+            name='_start_df',
+            columns=[VariableRepr('num', 'int')]
         )
 
         df_in_repr = DataFrameRepr(
@@ -84,6 +89,11 @@ class TestEngine(unittest.TestCase):
             columns=[VariableRepr('sum', 'int')]
         )
 
+        df_end_repr = DataFrameRepr(
+            name='_end_df',
+            columns=[VariableRepr('sum', 'int')]
+        )
+
         op_reprs = {
             start_op_repr.name: start_op_repr,
             add_op_repr.name: add_op_repr,
@@ -91,8 +101,10 @@ class TestEngine(unittest.TestCase):
         }
 
         df_reprs = {
+            df_start_repr.name: df_start_repr,
             df_in_repr.name: df_in_repr,
-            df_out_repr.name: df_out_repr
+            df_out_repr.name: df_out_repr,
+            df_end_repr.name: df_end_repr
         }
 
         graph_repr = GraphRepr('add', op_reprs, df_reprs)
@@ -106,7 +118,7 @@ class TestEngine(unittest.TestCase):
         engine = Engine()
         engine.add_pipeline(self._pipeline)
         result = self._pipeline(df_in)
-        _, ret = result.get(0, 1)
+        ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 3)
 
         df_in = DataFrame(
@@ -115,7 +127,7 @@ class TestEngine(unittest.TestCase):
         df_in.seal()
 
         result = self._pipeline(df_in)
-        _, ret = result.get(0, 1)
+        ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 5)
 
     def test_simple_pipeline(self):
@@ -130,7 +142,7 @@ class TestEngine(unittest.TestCase):
         df_in.put((Variable('int', 3), ))
         df_in.seal()
         result = p(df_in)
-        _, ret = result.get(0, 1)
+        ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 6)
 
         df_in = DataFrame(
@@ -139,5 +151,9 @@ class TestEngine(unittest.TestCase):
         df_in.put((Variable('int', 7), ))
         df_in.seal()
         result = p(df_in)
-        _, ret = result.get(0, 1)
+        ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 10)
+
+
+if __name__ == '__main__':
+    unittest.main()

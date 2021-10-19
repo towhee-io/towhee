@@ -34,24 +34,17 @@ class TestDataframe(unittest.TestCase):
         t.join()
         self.assertEqual(df.name, 'test')
         self.assertEqual(df.size, 10)
-        end, datas = df.get(0, 4)
-        self.assertFalse(end)
+        datas = df.get(0, 4)
         self.assertEqual(len(datas), 4)
 
-        end, datas = df.get(8, 4)
-        self.assertFalse(end)
-        self.assertEqual(len(datas), 2)
+        datas = df.get(8, 4)
+        self.assertEqual(datas, None)
 
-        end, datas = df.get(8, 4, True)
-        self.assertFalse(end)
-        self.assertEqual(len(datas), 0)
-
-        self.assertFalse(df.is_sealed())
+        self.assertFalse(df.sealed)
         df.seal()
-        self.assertTrue(df.is_sealed())
+        self.assertTrue(df.sealed)
 
-        end, datas = df.get(8, 4, True)
-        self.assertTrue(end)
+        datas = df.get(8, 4)
         self.assertEqual(len(datas), 2)
 
     def test_multithread(self):
@@ -65,12 +58,12 @@ class TestDataframe(unittest.TestCase):
         def read(df: DataFrame, q: queue.Queue):
             index = 0
             while True:
-                end, items = df.get(index, 2)
+                items = df.get(index, 2)
                 if items:
                     for item in items:
                         q.put(item)
                         index += 1
-                if end:
+                if df.sealed:
                     break
 
         runner = MultiThreadRunner(target=read, args=(df, q), thread_num=10)
@@ -121,3 +114,7 @@ class TestMapIterator(unittest.TestCase):
                 self.assertEqual(it.accessible_size, 20 - count)
             else:
                 df.seal()
+
+
+if __name__ == '__main__':
+    unittest.main()

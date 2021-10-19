@@ -19,9 +19,9 @@ from typing import Dict, Optional, Tuple, Union, List, NamedTuple
 
 
 class DataFrameWriter:
-    '''
+    """
     Df writer
-    '''
+    """
 
     def __init__(self, output_df: DataFrame):
         self._output_df = output_df
@@ -82,7 +82,7 @@ class MapDataFrameReader(DataFrameReader):
         """
         try:
             data = next(self._iter)
-            if len(data) == 0:
+            if not data:
                 return {}
             return self._to_op_inputs(data[0])
 

@@ -13,31 +13,20 @@
 # limitations under the License.
 
 
-from typing import NamedTuple
-
-import numpy as np
-import torch
-import torchvision
+from typing import Any, Dict, NamedTuple
 
 from towhee.operator import Operator
 
 
-class PytorchCnnOperator(Operator):
+class NOPOperator(Operator):
+    """No-op operator. Input arguments are redefined as a `NamedTuple` and returned as
+    outputs.
     """
-    PyTorch model operator base
-    """
-    def __init__(self, model_name) -> None:
+
+    def __init__(self):
+        #pylint: disable=useless-super-delegation
         super().__init__()
-        model_func = getattr(torchvision.models, model_name)
-        self._model = model_func(pretrained=True)
-        self._model.eval()
 
-    def __call__(self, img_tensor: torch.Tensor) -> NamedTuple('Outputs', [('cnn', np.ndarray)]):
-        Outputs = NamedTuple('Outputs', [('cnn', np.ndarray)])
-        return Outputs(self._model(img_tensor).detach().numpy())
-
-    def train(self):
-        """
-        For training model
-        """
-        pass
+    def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
+        fields = [(name, type(val)) for name, val in args.items()]
+        return NamedTuple('Outputs', fields)(**args)  #pylint: disable=not-callable
