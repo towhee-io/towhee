@@ -24,7 +24,7 @@ class EmulatedPipeline:
 
     def __init__(self):
         GraphContext = NamedTuple('GraphContext', [('op_ctxs', Dict)])
-        OperatorContext = NamedTuple('OperatorContext', [('pop_ready_tasks', Callable), ('is_schedulable', Callable)])
+        OperatorContext = NamedTuple('OperatorContext', [('pop_ready_tasks', Callable)])
 
         self._on_ready_handlers = []
         self._on_start_handlers = []
@@ -32,7 +32,7 @@ class EmulatedPipeline:
         self._task_idx = 0
 
         # Create dummy GraphContext with a single OperatorContext instance.
-        self.graph_contexts = [GraphContext({'op': OperatorContext(self._pop_ready_tasks, self._is_schedulable)})]
+        self.graph_contexts = [GraphContext({'op': OperatorContext(self._pop_ready_tasks)})]
 
     def _add_task_handlers(self, task: Task):
         """Helper function which adds handlers to the specified task.
@@ -57,9 +57,6 @@ class EmulatedPipeline:
             tasks.append(task)
         self._task_idx += n_tasks
         return tasks
-
-    def _is_schedulable(self):
-        return True
 
     def add_task_ready_handler(self, function: Callable):
         self._on_ready_handlers.append(function)

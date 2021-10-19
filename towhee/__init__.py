@@ -49,9 +49,10 @@ class _PipelineWrapper:
         self._pipeline = pipeline_
 
     def __call__(self, *args) -> Tuple[Any]:
-        """Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
         """
-        # Check if no data supplied to pipeline
+        Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
+        """
+        # Check if no data supplied to pipeline.
         if not args:
             raise ValueError(
                 'No data supplied to pipeline')
@@ -69,7 +70,7 @@ class _PipelineWrapper:
         in_df.seal()
         out_df = self._pipeline(in_df)
 
-        # Extract values from output tuple
+        # Extract values from output tuple.
         res = []
         for v in out_df.get(0, out_df.size)[0]:
             res.append(v.value)
@@ -89,11 +90,20 @@ def _get_pipeline_cache(cache_path: str):
 
 
 def pipeline(task: str, cache: str = None):
-    """Entry method which takes either an input task or path to an operator YAML.
+    """
+    Entry method which takes either an input task or path to an operator YAML. A
+    `Pipeline` object is created (based on said task) and subsequently added to the
+    existing `Engine`.
 
     Args:
-        task: (`str`)
+        task (`str`):
             Task name or YAML file location to use.
+        cache (`str`):
+            Cache path to use.
+
+    Returns
+        (`typing.Any`)
+            The `Pipeline` output.
     """
 
     # If the task name coincides with one of the default pipelines, use the YAML
@@ -116,8 +126,6 @@ def pipeline(task: str, cache: str = None):
     if not yaml_path.is_file():
         raise NameError(F'Can not find pipeline by name {task}')
 
-    # Create `Pipeline` object given its graph representation, then add the pipeline to
-    # the existing `Engine`.
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))
     engine.add_pipeline(pipeline_)

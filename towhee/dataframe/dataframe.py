@@ -50,12 +50,11 @@ class DataFrame:
         # A list of `DataFrameIterator` instances registered to this `DataFrame`.
         self._iters = []
 
-        # Any changes made to `DataFrame` state must first acquire this lock.
-        self._lock = threading.Lock()
-
-        # This flag and condition variable track whether or not this `DataFrame` can
-        # still be used. Sealed `DataFrames` are disabled.
+        # Sealed `DataFrames` are disabled, while changes made to `DataFrame` state must
+        # first acquire this lock. This flag and condition variable track whether or not
+        # this `DataFrame` can still be used.
         self._sealed = False
+        self._lock = threading.Lock()
         self._seal_cv = threading.Condition(self._lock)
 
     @property
@@ -72,6 +71,9 @@ class DataFrame:
 
     @property
     def sealed(self) -> bool:
+        """
+        Sealed `DataFrame`s are disabled.
+        """
         return self._sealed
 
     def put(self, item: Tuple[Variable]) -> None:
@@ -96,9 +98,13 @@ class DataFrame:
             self._total += len(df.data)
 
     def get(self, start: int, count: int) -> List[Tuple[Variable]]:
-        """Get [start: start + count) elements within the `DataFrame`. If `wait` is
-        `True`, this function will block until either the `DataFrame` is sealed or there
-        are enough elements.
+        """
+        Get [start: start + count) elements within the `DataFrame`.
+
+        If there are enough elements within this `DataFrame`, this function will gather
+        the elements and return them. If this `DataFrame` is already sealed and fewer
+        than `count` elements are available, this function will return all the remaining
+        elements. In all other cases, this function will return `None`.
 
         Args:
             start: (`int`)
@@ -108,6 +114,8 @@ class DataFrame:
 
         Returns:
             data: (`List[Tuple[Variable]]`)
+                At most `count` elements acquired from the `DataFrame`, or `None` if
+                not enough elements are available.
         """
 
         # TODO (junjie.jiang)
@@ -124,8 +132,7 @@ class DataFrame:
                     cur_start=self._start_idx
                 )
 
-            # If there are enough elements within the `DataFrame`, gather the
-            # outputs and return them.
+
             if self._total - start >= count:
                 idx0 = start - self._start_idx
                 return self._data[idx0:idx0+count]
@@ -156,11 +163,11 @@ class DataFrame:
             self._sealed = False
 
     def _gc(self) -> None:
-        # TODO (junjie.jiangjjj)
         """
         Delete the data which all registered iter has read
         """
-        return
+        # TODO (junjie.jiangjjj)
+        raise NotImplementedError
 
     def map_iter(self):
         it = MapIterator(self)

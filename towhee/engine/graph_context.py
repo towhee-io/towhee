@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# from towhee.engine.pipeline import Pipeline
-
-from typing import Tuple
 import threading
+from typing import Tuple
 
-from towhee.dataframe import DataFrame
-from towhee.dag.graph_repr import GraphRepr
+from towhee.dataframe import DataFrame, Variable
+from towhee.dag import GraphRepr
 from towhee.engine.task import Task
 from towhee.utils import HandlerMixin
 
@@ -33,7 +30,7 @@ class GraphContext(HandlerMixin):
     `GraphContext`.
 
     Args:
-        ctx_idx: (int)
+        ctx_idx: (`int`)
             The index of this `GraphContext`.
         graph_repr: (`towhee.dag.GraphRepr`)
             The DAG representation this `GraphContext` will implement.
@@ -42,9 +39,10 @@ class GraphContext(HandlerMixin):
     def __init__(self, ctx_idx: int, graph_repr: GraphRepr):
         self._idx = ctx_idx
         self._repr = graph_repr
-        self._lock = threading.Lock()
-        self._finished = threading.Condition(self._lock)
+
         self._is_busy = False
+        self._lock = threading.Lock()
+        self._done_cv = threading.Condition(self._lock)
 
         self.add_handler_methods(
             'graph_start',
@@ -54,13 +52,12 @@ class GraphContext(HandlerMixin):
             'task_finish'
         )
 
-        self._build()
-        self._cv = threading.Condition()
+        self._build_components()
 
         self.add_graph_start_handler(self._on_graph_start)
         self.add_graph_finish_handler(self._on_graph_finish)
 
-    def __call__(self, inputs: Tuple):
+    def __call__(self, inputs: Tuple[Variable]):
         self.inputs.put(inputs)
         #graph_input = self.op_ctxs['_start_op'].outputs[0]
         #graph_input.put(inputs)
@@ -68,10 +65,22 @@ class GraphContext(HandlerMixin):
 
     @property
     def inputs(self) -> DataFrame:
+        """Returns the graph's input `DataFrame`.
+
+        Returns:
+            (`towhee.dataframe.DataFrame`)
+                The input `DataFrame`.
+        """
         return self.dataframes['_start_df']
 
     @property
     def outputs(self) -> DataFrame:
+        """Returns the graph's output `DataFrame`.
+
+        Returns:
+            (`towhee.dataframe.DataFrame`)
+                The output `DataFrame`.
+        """
         return self.dataframes['_end_df']
 
     # def result(self):
@@ -99,6 +108,11 @@ class GraphContext(HandlerMixin):
     def is_busy(self):
         return self._is_busy
 
+    def wait_done(self):
+        with self._done_cv:
+            if self._is_busy:
+                self._done_cv.wait()
+
     def reset(self):
         """Resets `OperatorContext` instances which maintain state within the graph.
         Stateless operators are left unchanged.
@@ -107,11 +121,14 @@ class GraphContext(HandlerMixin):
 
     def _on_graph_start(self, task: Task):
         if task.hub_op_id == '_start_op':
-            self._is_busy = True
+            with self._done_cv:
+                self._is_busy = True
 
     def _on_graph_finish(self, task: Task):
         if task.hub_op_id == '_end_op':
-            self._is_busy = False
+            with self._done_cv:
+                self._is_busy = False
+                self._done_cv.notify_all()
 
     # def _on_task_finish(self, task: Task):
     #     """
@@ -127,8 +144,11 @@ class GraphContext(HandlerMixin):
     #         for handler in self.on_finish_handlers:
     #             handler(self)
 
-    def _build(self):
-        # build dataframes
+    def _build_components(self):
+        """Builds `DataFrame`s and `OperatorContext`s required to run this graph.
+        """
+
+        # Build dataframes.
         dfs = {}
         for df_name, df_repr in self._repr.dataframes.items():
             cols = {}
@@ -140,12 +160,10 @@ class GraphContext(HandlerMixin):
             dfs[df_name] = DataFrame(df_name, cols)
         self._dataframes = dfs
 
-        # build operator contexts
+        # Build operator contexts.
         self._op_ctxs = {}
         for _, op_repr in self._repr.operators.items():
-            #is_schedulable = self._is_schedulable_op(op_repr)
-            is_schedulable = True
-            op_ctx = OperatorContext(op_repr, self.dataframes, is_schedulable)
+            op_ctx = OperatorContext(op_repr, self.dataframes)
 
             if op_ctx.name == '_start_op':
                 op_ctx.add_task_start_handler(self.graph_start_handlers)
@@ -157,11 +175,3 @@ class GraphContext(HandlerMixin):
                 op_ctx.add_task_finish_handler(self.task_finish_handlers)
 
             self._op_ctxs[op_ctx.name] = op_ctx
-
-    #@staticmethod
-    #def _is_schedulable_op(op_repr):
-    #    op_name = op_repr.name
-    #    if op_name in ('_start_op', '_end_op'):
-    #        return False
-    #    else:
-    #        return True

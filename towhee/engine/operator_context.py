@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
 from typing import List, Dict
 
 from towhee.dag.operator_repr import OperatorRepr
@@ -35,21 +36,14 @@ class OperatorContext(HandlerMixin):
             The operator representation
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
-        is_schedulable: (`bool`)
-            Whether the `OperatorContext` is schedulable.
-            There are special `OperatorContext`s that are not schedulable, such as
-            `_start_op`, `_end_op`.
-
     """
 
     def __init__(
         self,
         op_repr: OperatorRepr,
-        dataframes: Dict[str, DataFrame],
-        is_schedulable: bool = True
+        dataframes: Dict[str, DataFrame]
     ):
         self._repr = op_repr
-        self._is_schedulable = is_schedulable
 
         # todo: GuoRentong, issue #114
         inputs = list({dataframes[input['df']] for input in op_repr.inputs})
@@ -64,6 +58,7 @@ class OperatorContext(HandlerMixin):
         self._writer = create_writer(outputs)
         self.outputs = outputs
 
+        self._lock = threading.Lock()
         self._finished = False
         self._num_finished_tasks = 0
         self._has_tasks = True
@@ -75,10 +70,6 @@ class OperatorContext(HandlerMixin):
     @property
     def name(self):
         return self._repr.name
-
-    @property
-    def is_schedulable(self) -> bool:
-        return self._is_schedulable
 
     def pop_ready_tasks(self, n_tasks: int = 1) -> List:
         """
@@ -98,11 +89,13 @@ class OperatorContext(HandlerMixin):
                 task_num -= 1
                 continue
 
+            # None` implies that an input `DataFrame` has been sealed.
             if op_input_params is None:
-                self._has_tasks = False
-                if self._num_finished_tasks == self._task_idx:
-                    self._finished = True
-                    self._writer.close()
+                with self._lock:
+                    self._has_tasks = False
+                    if self._num_finished_tasks == self._task_idx:
+                        self._finished = True
+                        self._writer.close()
 
             break
         return ready_tasks
@@ -134,8 +127,9 @@ class OperatorContext(HandlerMixin):
         # self._finished_tasks' only monifier.
 
     def _write_outputs(self, task: Task):
-        self._writer.write(task.outputs)
-        self._num_finished_tasks += 1
+        with self._lock:
+            self._writer.write(task.outputs)
+            self._num_finished_tasks += 1
 
     def _next_task_inputs(self):
         """

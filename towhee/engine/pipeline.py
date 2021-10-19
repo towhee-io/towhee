@@ -21,18 +21,19 @@ from towhee.engine.task_scheduler import TaskScheduler
 
 class Pipeline:
     """
-    The runtime pipeline context, include graph context, all dataframes
+    The runtime pipeline context, include graph context, all dataframes.
+
+    Args:
+        graph_repr: (`str` or `towhee.dag.GraphRepr`)
+            The graph representation either as a YAML-formatted string, or directly
+            as an instance of `GraphRepr`.
+        parallelism: (`int`)
+            The parallelism parameter dictates how many copies of the graph context
+            we create. This is likely a low number (1-4) for local engines, but may
+            be much higher for cloud instances.
     """
 
     def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
-        """
-        Args:
-            graph_repr: (`str` or `towhee.dag.GraphRepr`)
-                The graph representation either as a YAML-formatted string, or directly
-                as an instance of `GraphRepr`.
-            parallelism: (`int`)
-                how many rows of inputs to be processed concurrently
-        """
 
         self._parallelism = parallelism
         self.on_graph_finish_handlers = []
@@ -54,6 +55,17 @@ class Pipeline:
         # self._build()
 
     @property
+    def parallelism(self) -> int:
+        return self._parallelism
+
+    @parallelism.setter
+    def parallelism(self, val):
+        if isinstance(val, int) and val > 0:
+            self._parallelism = val
+        else:
+            raise ValueError('Parallelism value must be a positive integer')
+
+    @property
     def outputs(self) -> DataFrame:
         return self._outputs
 
@@ -61,40 +73,57 @@ class Pipeline:
         self._scheduler = scheduler
 
     def __call__(self, inputs: DataFrame) -> DataFrame:
-        """Process an input `DataFrame`.
+        """
+        Process an input `DataFrame`. This function instantiates an output `DataFrame`;
+        upon completion, individual `GraphContext` outputs are merged into this
+        dataframe. Inputs are weaved through the input `DataFrame` for each
+        `GraphContext` as follows (`parallelism = 3`):
+            data[0] -> ctx[0]
+            data[1] -> ctx[1]
+            data[2] -> ctx[2]
+            data[3] -> ctx[0]
+            data[4] -> ctx[1]
 
         Args:
-            inputs: (`towhee.DataFrame`)
+            inputs (`towhee.dataframe.DataFrame`):
+                Input `DataFrame` (with potentially multiple rows) to process.
+
+        Returns:
+            (`towhee.dataframe.DataFrame`)
+                Output `DataFrame` with ordering matching the input `DataFrame`.
         """
-        # Pipelines must register themselves with schedulers.
         if not self._scheduler:
             raise AttributeError('Pipeline not registered to a Scheduler.')
 
-        self._outputs = DataFrame()
-
-        # The parallelism parameter dictates how many copies of the graph context we
-        # create. This is likely a low number (1-4) for local engines, but may be much
-        # higher for cloud instances.
         graph_ctxs = []
         for n in range(self._parallelism):
             graph_ctx = GraphContext(n, self._graph_repr)
             self._scheduler.register(graph_ctx)
             graph_ctxs.append(graph_ctx)
 
+        self._outputs = DataFrame()
+
         # Weave inputs into each GraphContext.
-        # TODO(fzliu): can we spin off a thread to do this?
+        # TODO(fzliu): there are better ways to maintain ordering.
         for n, row in enumerate(inputs.map_iter()):
             idx = n % len(graph_ctxs)
             graph_ctxs[idx](row[0])
 
-        # Instantiate an output `DataFrame`. Upon completion, individual `GraphContext`
-        # outputs are merged into this dataframe.
-        # TODO(fzliu): Create an operator to merge multiple `DataFrame` instances.
         for graph_ctx in graph_ctxs:
             graph_ctx.inputs.seal()
             graph_ctx.outputs.wait_sealed()
-            #print(graph_ctx.outputs.size)
-            self._outputs.merge(graph_ctx.outputs)
+
+        # TODO(fzliu): Create an operator to merge multiple `DataFrame` instances.
+        idx = 0
+        merge = True
+        while merge:
+            for graph_ctx in graph_ctxs:
+                elem = graph_ctx.outputs.get(idx, 1)
+                if not elem:
+                    merge = False
+                    break
+                self._outputs.put(elem[0])
+            idx += 1
 
         return self._outputs
 
