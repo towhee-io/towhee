@@ -7,6 +7,7 @@ import time
 from typing import List
 from tqdm import tqdm
 from threading import Thread
+from getpass import getpass
 
 from tempfile import TemporaryFile
 from requests.auth import HTTPBasicAuth
@@ -430,11 +431,11 @@ def main(argv):
         if not user:
             user = input('Please enter your username: ')
         if not password:
-            password = input('Please enter your password: ')
+            password = getpass('Please enter your password: ')
         if not repo:
             repo = input('Please enter the repo name: ')
         if not repo_type:
-            repo_type = input('Please enter the repo type: ')
+            repo_type = input('Please enter the repo type, choose one from "model | operator | pipeline | dataset": ')
 
         print('Creating token...')
         token_id, token_hash = create_token(user, password, token_name)
