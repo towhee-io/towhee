@@ -11,12 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 import unittest
 from pathlib import Path
-import shutil
 
 
 def test_suite():
@@ -25,22 +23,17 @@ def test_suite():
     return test_suite
 
 
-def create_towhee_cache(src: str, dst: str, is_dir: bool = False):
+def create_towhee_cache(dst: str):
     if not Path(dst).is_dir():
         Path(dst).mkdir(parents=True)
-        if is_dir:
-            dst = os.path.join(dst, src.split('/')[-1])
-            shutil.copytree(src, dst)
-        else:
-            shutil.copy(src, dst)
 
 
 class PostInstallCommand(install):
     def run(self):
-        from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE, MOCK_OPS, MOCK_PIPES
+        from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE
         install.run(self)
-        create_towhee_cache(MOCK_PIPES, LOCAL_PIPELINE_CACHE, True)
-        create_towhee_cache(MOCK_OPS, LOCAL_OPERATOR_CACHE, True)
+        create_towhee_cache(LOCAL_PIPELINE_CACHE)
+        create_towhee_cache(LOCAL_OPERATOR_CACHE)
 
 
 setup(
