@@ -4,10 +4,12 @@ import random
 import sys
 import getopt
 import time
+import subprocess
 from typing import List
 from tqdm import tqdm
 from threading import Thread
 from getpass import getpass
+
 
 from tempfile import TemporaryFile
 from requests.auth import HTTPBasicAuth
@@ -313,9 +315,8 @@ def get_file_list(user: str, repo: str, commit: str) -> List[str]:
     return file_list
 
 
-def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_files: List[str], local_dir: str) -> None:
+def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
     """Download the files from hub. One url is used for git-lfs files and another for the other files.
-
     Args:
         user(`str`):
             The account name.
@@ -329,6 +330,8 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
             The file extensions being tracked by git-lfs.
         local_dir(`str`):
             The local directory to download to.
+        install_reqs(`bool`):
+            Whether to install packages from requirements.txt
 
     Returns:
         None
@@ -359,8 +362,11 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
     for thread in threads:
         thread.join()
 
+    if install_reqs and 'requirements.txt' in file_list:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + 'requirements.txt'])
 
-def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
+
+def download_repo(user: str, repo: str, branch: str, local_dir: str, install_reqs: bool = True) -> None:
     """Performs a download of the selected repo to specified location.
 
     First checks to see if lfs is tracking files, then finds all the filepaths
@@ -375,6 +381,9 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
             The branch name.
         local_dir(`str`):
             The local directory being downloaded to
+        install_reqs(`bool`):
+            Whether to install packages from requirements.txt
+
 
     Raises:
         HTTPError: Error in request.
@@ -386,7 +395,7 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str) -> None:
     lfs_files = obtain_lfs_extensions(user, repo, branch)
     commit = latest_branch_commit(user, repo, branch)
     file_list = get_file_list(user, repo, commit)
-    download_files(user, repo, branch, file_list, lfs_files, local_dir)
+    download_files(user, repo, branch, file_list, lfs_files, local_dir, install_reqs)
 
 
 def main(argv):

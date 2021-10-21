@@ -23,3 +23,4 @@ MOCK_PIPELINES = str(Path(__file__).parent.parent /
                      'tests/test_util/resnet50_embedding.yaml')
 
 MOCK_OPS = str(Path(__file__).parent.parent / 'tests/mock_operators')
+MOCK_PIPES = str(Path(__file__).parent.parent / 'tests/mock_pipelines')

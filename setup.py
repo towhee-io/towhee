@@ -37,9 +37,9 @@ def create_towhee_cache(src: str, dst: str, is_dir: bool = False):
 
 class PostInstallCommand(install):
     def run(self):
-        from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE, MOCK_OPS, MOCK_PIPELINES
+        from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE, MOCK_OPS, MOCK_PIPES
         install.run(self)
-        create_towhee_cache(MOCK_PIPELINES, LOCAL_PIPELINE_CACHE)
+        create_towhee_cache(MOCK_PIPES, LOCAL_PIPELINE_CACHE, True)
         create_towhee_cache(MOCK_OPS, LOCAL_OPERATOR_CACHE, True)
 
 

@@ -16,10 +16,12 @@
 import importlib.util
 from pathlib import Path
 from typing import Any, Dict
+from shutil import rmtree
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
+from towhee.utils.hub_tools import download_repo
 
 
 class OperatorLoader:
@@ -58,11 +60,11 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/operator.py
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/resnet.torch
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
-        fname = function.split('/')[-1]
-        path = self._cache_path / function / (fname + '.py')
+        # If file not there or force_download set to true, install operator
 
-        # If the following check passes, the desired operator was found locally and can
-        # be loaded from cache.
+        fname, path = self._download_operator(function)
+
+        #still checking if file exists since 'local' operators arent checked for
         if path.is_file():
 
             # Specify the module name and absolute path of the file that needs to be
@@ -83,3 +85,43 @@ class OperatorLoader:
 
         else:
             raise FileNotFoundError('Operator definition not found')
+
+    # Figure out where to put branch info, needed for loading diff versions.
+    # Currently not thread safe when downloading same repo, will most likely result in race
+    # There are issues of where to to assign force_download since it may be called multiple times
+    def _download_operator(self, task, branch: str = 'main', force_download: bool = False, install_reqs: bool = True):
+        """Checks cache and downloads operator if necessary.
+        """
+        task_split = task.split('/')
+
+        # For now assuming all operators will be classifed as 'author/repo'
+        if len(task_split) != 2:
+            raise ValueError(
+                    '''Incorrect operator name format, should be '<author>/<operator_repo>' or 'local/<operator_repo>' ''')
+
+        author = task_split[0]
+        repo = task_split[1]
+        author_path = self._cache_path / author
+        repo_path = author_path / repo
+        file_path = repo_path / (repo + '.py')
+
+
+        # for now assuming local repos will be stored in local, change once figure out where to store it
+        if author == 'local':
+            return repo, file_path
+
+        download = False
+
+        # Check if .py exists or if we need to redownload
+        if repo_path.is_dir():
+            if force_download or not file_path.is_file():
+                rmtree(repo_path)
+                download = True
+        else:
+            download = True
+
+        if download:
+            print('Downloading Operator: ' + repo)
+            download_repo(author, repo, branch, str(repo_path), install_reqs=install_reqs)
+
+        return repo, file_path

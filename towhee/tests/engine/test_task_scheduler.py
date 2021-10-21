@@ -18,7 +18,7 @@ import unittest
 
 from towhee.engine.task_executor import TaskExecutor
 from towhee.engine.task_scheduler import FIFOTaskScheduler
-from towhee.tests.mock_pipelines import EmulatedPipeline
+from towhee.tests.emulated_pipelines import EmulatedPipeline
 
 
 @unittest.skip('Scheduler changed')
