@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from towhee.operator import Operator
+from towhee.operator.nop import NOPOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 
 
@@ -49,6 +50,9 @@ class OperatorLoader:
                 operator in cache.
         """
 
+        if function in ['_start_op', '_end_op']:
+            return NOPOperator()
+
         # Lookup the path for the operator in local cache. Example directory structure:
         #  /home/user/.towhee/operators/organization-name/operator-name
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/operator.py
@@ -56,6 +60,7 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
         fname = function.split('/')[-1]
         path = self._cache_path / function / (fname + '.py')
+
         # If the following check passes, the desired operator was found locally and can
         # be loaded from cache.
         if path.is_file():

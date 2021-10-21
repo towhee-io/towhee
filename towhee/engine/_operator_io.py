@@ -93,7 +93,7 @@ class MapDataFrameReader(DataFrameReader):
         """
         try:
             data = next(self._iter)
-            if len(data) == 0:
+            if not data:
                 return {}
             return self._to_op_inputs(data[0])
 

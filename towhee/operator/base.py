@@ -52,7 +52,6 @@ class Operator(ABC):
 
         Raises:
             An exception during __init__ can terminate the graph run.
-
         """
         self._key = ''
 
