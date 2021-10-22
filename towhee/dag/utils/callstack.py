@@ -13,18 +13,19 @@
 # limitations under the License.
 
 import inspect
-from typing import List, Optional
+from typing import List, Union
 import hashlib
 
 
 class Callstack:
-    """A 'Callstack' object contains the working frames at the moment.
+    """
+    A Callstack object contains the working frames at the moment.
 
-        Args:
-            `ignore (int)`: The number of frames to ignore on the top of the callstack.
+    Args:
+        ignore (`int`):
+            The number of frames to ignore on the top of the callstack.
     """
     def __init__(self, ignore: int = 0):
-
         self.frames = inspect.stack()
         # ignore the frame of Callstack.__init__
         ignore += 1
@@ -34,22 +35,28 @@ class Callstack:
         self.size = len(self.frames)
 
     def num_frames(self) -> int:
-        """Get the number of frames.
+        """
+        Get the number of frames.
 
         Returns:
-            The size of current stack.
+            (`int`)
+                The size of current stack.
         """
         return self.size
 
-    def find_func(self, func_name: str) -> Optional[int]:
-        """Given a function name, find the first-matched and outermost frame from current stack.
+    def find_func(self, func_name: str) -> Union[int, None]:
+        """
+        Given a function name, find the first-matched and outermost frame from current
+        stack.
 
         Args:
-            `func_name (str)`: The function name to find.
+            func_name (`str`):
+                The function name to find.
 
         Returns:
-            If at least one matching frame exits, return the first-matched frame index.
-            Else, return None.
+            (`Union[int, None]`)
+                If at least one matching frame exits, return the first-matched frame
+                index. Else, return None.
         """
         for i in range(self.size - 1, -1, -1):
             if self.frames[i].function == func_name:
@@ -57,29 +64,33 @@ class Callstack:
         return None
 
     def hash(self, start: int = None, end: int = None, items: List[str] = None) -> str:
-        """Get the hash value of the attributes contained in `items` between index `start`
+        """
+        Get the hash value of the attributes contained in `items` between index `start`
         and `end` (includes `start`, excludes `end`).
 
         Args:
-            `start (int)`: The index of the start frame.
-
-            `end (int)`: The index of the end frame.
-
-            `items (list[str])`: The items to be hashed. Supported items are
-            {filename, lineno, function, code_context, position, lasti}, where
-            code_context denotes the current line of code of the context, position
-            denotes the frame's index of the callstack, lasti denotes the index of last
-            attempted instruction in bytecode.
+            start (`int`):
+                The index of the start frame.
+            end (`int`):
+                The index of the end frame.
+            items (`List[str]`):
+                The items to be hashed. Supported items are
+                {filename, lineno, function, code_context, position, lasti}, where
+                code_context denotes the current line of code of the context, position
+                denotes the frame's index of the callstack, lasti denotes the index of
+                last attempted instruction in bytecode.
 
         Returns:
-            The hash value.
+            (`str`)
+                The hash value.
 
         Raises:
-            `IndexError`: If the args [`start`, `end`) is out of the frame range or
-            `end` less than `start`.
-
-            `ValueError`: If an item in `items` is not supported, i.e. not one of
-            {filename, lineno, function, code_context, position, lasti}.
+            （`IndexError`）
+                If the args [`start`, `end`) is out of the frame range or `end` less
+                than `start`.
+            （`ValueError`）
+                If an item in `items` is not supported, i.e. not one of
+                {filename, lineno, function, code_context, position, lasti}.
         """
         start = start or 0
         end = end or self.size
