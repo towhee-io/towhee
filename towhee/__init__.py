@@ -11,11 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from pathlib import Path
-from typing import Any, Tuple
-from shutil import rmtree
 import os
+from pathlib import Path
+from typing import Any, Tuple, List
+from shutil import rmtree
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
@@ -32,7 +31,7 @@ __all__ = [
 
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'towhee/resnet50_embedding'
+    'image-embedding': 'mock_pipelines/resnet50_embedding'
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
@@ -79,6 +78,75 @@ class _PipelineWrapper:
 
         return tuple(res)
 
+    def input_multiple(self, inputs: List[Any] = None) -> Tuple[Any]:
+        """
+        Input multiple items into the pipeline.
+
+        Dealing with multiple inputs, every element in first layer of list in input is
+        treated as seperate. For example 'input_multiple([in, in1, in2])', each  'in' is
+        a seperate input. Similarily, 'input_multiple([[a1, a2], [b1, b2], [c1, c2]])'
+        is three seperate inputs: [a1, a2], [b1, b2], [c1, c2]. input_multiple(in, in1)
+        will fail.
+
+        Args:
+            inputs (`list[any]` | `None`)
+                An array of inputs with each element being a seperate input.
+
+        Returns:
+            (`Tuple[Any]`)
+                The corresponding output of the pipeline.
+
+        Raises:
+            (ValueError)
+                Raises ValueError when no data supplied into pipeline.
+            (ValueError)
+                Raises ValueError when input data not a list.
+
+        """
+        # Check if no data supplied to pipeline.
+        if not inputs:
+            raise ValueError(
+                'No data supplied to pipeline')
+        if not isinstance(inputs, list):
+            raise ValueError(
+                'Input data in wrong format, needs to be list.')
+
+        # Create input dataframe.
+        in_df = DataFrame('_in_df')
+
+        # Put each input as a row in the dataframe and seal.
+        for inpt in inputs:
+            vargs = []
+            # Different logic for list of input args and single input arg
+            # for case if pipeline([in0, in1, in2]), each in is a seperate input.
+            if not isinstance(inpt, list):
+                vtype = type(inpt).__name__
+                vargs = (Variable(vtype, inpt),)
+                in_df.put(vargs)
+            else:
+                for arg in inpt:
+                    vtype = type(arg).__name__
+                    vargs.append(Variable(vtype, arg))
+                vargs = tuple(vargs)
+                in_df.put(vargs)
+
+        in_df.seal()
+
+        # Process the data through the pipeline.
+        out_df = self._pipeline(in_df)
+
+        # Extract values from output tuple.
+        res = []
+
+        df_content = out_df.get(0, out_df.size)
+        for x in range(out_df.size):
+            sub_res = []
+            for y in range(len(df_content[x])):
+                sub_res.append(df_content[x][y].value)
+            res.append(sub_res)
+
+        return tuple(res)
+
 
 def _get_pipeline_cache(cache_path: str):
     if not cache_path:
@@ -87,11 +155,14 @@ def _get_pipeline_cache(cache_path: str):
     return Path(cache_path)
 
 
-# def _get_hello_towhee_pipeline():
-#     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
-
-def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_download: bool = False):
-    """Does the check and download logic for pipelines. Assumes pipeline name format of 'author/pipeline'.
+def _download_pipeline(
+        cache_path: str,
+        task: str,
+        branch: str = 'main',
+        force_download: bool = False
+    ):
+    """
+    Does the check and download logic for pipelines. Assumes pipeline name format of 'author/pipeline'.
     """
     task_split = task.split('/')
 
@@ -123,6 +194,7 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
         download_repo(author, repo, branch, str(repo_path))
 
     return yaml_path
+
 
 def pipeline(task: str, cache: str = None, force_download: bool = False):
     """
@@ -168,3 +240,4 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
     engine.add_pipeline(pipeline_)
 
     return _PipelineWrapper(pipeline_)
+
