@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from towhee.dag.base_repr import BaseRepr
 
@@ -21,23 +21,27 @@ class OperatorRepr(BaseRepr):
     """This class encapsulates operator representations at compile-time.
 
     Args:
-        name:
+        name (`str`):
             Name of the operator represented by this object.
-        df_in:
+        function (`str`):
+            The path leads to the operator.
+        init_args (`Dict[str, any]`):
+            The args to initilize the operator.
+        inputs (`List[Dict[str, Any]]`):
             Input dataframes(s) to this object.
-        df_out:
+        outputs (`List[Dict[str, Any]]`):
             This operator's output dataframe.
-        iterator:
+        iter_info (`Dict[str, Any]`):
             This operator's iterator info.
     """
     def __init__(
         self,
         name: str,
         function: str,
-        init_args: Dict[str, any],
-        inputs: List[Dict[str, any]],
-        outputs: List[Dict[str, any]],
-        iter_info: Dict[str, any]
+        init_args: Dict[str, Any],
+        inputs: List[Dict[str, Any]],
+        outputs: List[Dict[str, Any]],
+        iter_info: Dict[str, Any]
     ):
         super().__init__(name)
         self._function = function
@@ -51,17 +55,11 @@ class OperatorRepr(BaseRepr):
         return self._function
 
     @property
-    def inputs(self) -> List:
+    def inputs(self) -> List[dict]:
         """
         Returns:
-        [
-            {
-                'name': `arg name`,
-                'df': `dataframe name`,
-                'col': `col index`
-            },
-            ...
-        ]
+            (`List[dict]`)
+                The inputs of the operator.
         """
         return self._inputs
 
@@ -69,75 +67,41 @@ class OperatorRepr(BaseRepr):
     def outputs(self) -> List:
         """
         Returns:
-        [
-            {
-                "df": `dataframe name`
-            },
-            ...
-        ]
+            (`List[dict]`)
+                The outputs of the operator.
         """
         return self._outputs
 
     @property
-    def init_args(self) -> Dict:
+    def init_args(self) -> Dict[str, Any]:
         """
         Returns:
-        {
-            `arg_name`: `arg value`,
-            ...
-        }
+            (`Dict[str, Any]`)
+                The args to initilize the operator.
         """
         return self._init_args
 
     @property
-    def iter_info(self):
+    def iter_info(self) -> Dict[str, Any]:
         """
         Returns:
-        {
-            "type": `iter type`
-        }
+            (` Dict[str, Any]`)
+                The operator's iterator info.
         """
         return self._iter_info
 
     @staticmethod
-    def from_dict(info: Dict) -> 'OperatorRepr':
+    def from_dict(info: Dict[str, Any]) -> 'OperatorRepr':
         """
-        Args:
-            info:
-               Operator info
-               {
-                   'name': 'example_op',
-                   'function': 'test_function',
-                   'init_args': {
-                       'arg1': 1,
-                       'arg2': 'test'
-                   },
-                   'inputs': [
-                       {
-                           'df': 'input1',
-                           'col': 0
-                       },
-                       {
-                           'df': 'input2',
-                           'col': 0
-                       }
-                   ],
-                   'outputs': [
-                       {
-                           'df': 'input1'
-                       },
-                   ],
-                   'iter_info': {
-                       'type': 'map'
-                   }
-               }
+        Generate a OperatorRepr from a description dict.
 
-            dataframes(`dict`):
-                Dict with `DataFrameRepr` objects as values to construct current
-                `OperatorRepr`.
+        Args:
+            info (`Dict[str, Any]`):
+                A dict to describe the Operator.
 
         Returns:
-            The operators we described in `file_or_src`
+            (`towhee.dag.OperatorRepr`)
+                The OperatorRepe object.
         """
         if not BaseRepr.is_valid(info, {'name', 'init_args', 'function', 'inputs', 'outputs', 'iter_info'}):
             raise ValueError('Invalid operator info.')
