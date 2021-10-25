@@ -25,9 +25,9 @@ from towhee.tests.test_util import GRAPH_TEST_YAML, GRAPH_TEST_ISO_DF_YAML, GRAP
 
 @unittest.skip('')
 class TestRepr(unittest.TestCase):
-    """Basic test cases for `hRepr`.
     """
-
+    Basic test cases for `Repr`.
+    """
     def test_base_repr(self):
         self.assertTrue(BaseRepr.is_valid({'test': 1}, {'test'}))
         self.assertFalse(BaseRepr.is_valid({'test': 1}, {'not_exist'}))
@@ -37,23 +37,17 @@ class TestRepr(unittest.TestCase):
         self.assertEqual(len(g_repr.dataframes.values()), 3)
         self.assertTrue('test_df_1' in g_repr.dataframes)
         self.assertTrue('test_df_2' in g_repr.dataframes)
-        self.assertEqual(
-            g_repr.dataframes['test_df_1'].columns[0].vtype, 'int')
+        self.assertEqual(g_repr.dataframes['test_df_1'].columns[0].vtype, 'int')
         # test operators generation
         self.assertEqual(len(g_repr.operators.values()), 2)
         self.assertTrue('test_op_1' in g_repr.operators)
         self.assertTrue('test_op_2' in g_repr.operators)
         # check details in operators
-        self.assertEqual(g_repr.operators['test_op_1'].inputs, [
-                         {'df': 'test_df_1', 'name': 'k1', 'col': 0}])
-        self.assertEqual(g_repr.operators['test_op_2'].inputs, [
-                         {'df': 'test_df_2', 'name': 'k1', 'col': 0}])
-        self.assertEqual(g_repr.operators['test_op_2'].outputs, [
-                         {'df': 'test_df_3'}])
-        self.assertEqual(g_repr.operators['test_op_2'].init_args, {
-                         'arg1': 1, 'arg2': 'test'})
-        self.assertEqual(
-            g_repr.operators['test_op_2'].iter_info, {'type': 'map'})
+        self.assertEqual(g_repr.operators['test_op_1'].inputs, [{'df': 'test_df_1', 'name': 'k1', 'col': 0}])
+        self.assertEqual(g_repr.operators['test_op_2'].inputs, [{'df': 'test_df_2', 'name': 'k1', 'col': 0}])
+        self.assertEqual(g_repr.operators['test_op_2'].outputs, [{'df': 'test_df_3'}])
+        self.assertEqual(g_repr.operators['test_op_2'].init_args, {'arg1': 1, 'arg2': 'test'})
+        self.assertEqual(g_repr.operators['test_op_2'].iter_info, {'type': 'map'})
 
     def test_graph_repr(self):
         # Check if the inforamtion is loaded properly
@@ -71,12 +65,9 @@ class TestRepr(unittest.TestCase):
 
     def test_isolation_or_loop(self):
         # Raise error if given false source information that contain loop or isolation
-        self.assertRaises(ValueError, GraphRepr.from_yaml,
-                          GRAPH_TEST_ISO_DF_YAML)
-        self.assertRaises(ValueError, GraphRepr.from_yaml,
-                          GRAPH_TEST_ISO_OP_YAML)
-        self.assertRaises(ValueError, GraphRepr.from_yaml,
-                          GRAPH_TEST_LOOP_YAML)
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_ISO_DF_YAML)
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_ISO_OP_YAML)
+        self.assertRaises(ValueError, GraphRepr.from_yaml, GRAPH_TEST_LOOP_YAML)
 
         # A proper graph does not contain isolation and loopa
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:

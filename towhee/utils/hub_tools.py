@@ -5,11 +5,11 @@ import sys
 import getopt
 import time
 import subprocess
-from typing import List
+
+from typing import List, Tuple
 from tqdm import tqdm
 from threading import Thread
 from getpass import getpass
-
 
 from tempfile import TemporaryFile
 from requests.auth import HTTPBasicAuth
@@ -17,14 +17,15 @@ from requests.exceptions import HTTPError
 
 
 class Worker(Thread):
-    """Worker class to realize multi-threads download.
+    """
+    Worker class to realize multi-threads download.
 
     Args:
-        url(`str`):
+        url (`str`):
             The url of the target files.
-        local_dir(`str`):
+        local_dir (`str`):
             The local directory to download to.
-        file_name(`str`):
+        file_name (`str`):
             The name of the file (includes extension).
     """
     def __init__(self, url: str, local_dir: str, file_name: str):
@@ -34,7 +35,7 @@ class Worker(Thread):
         self.file_name = file_name
 
     def run(self):
-        # Creating the directory tree to the file
+        # Creating the directory tree to the file.
         if not os.path.exists(os.path.dirname(self.local_dir + self.file_name)):
             try:
                 os.makedirs(os.path.dirname(self.local_dir + self.file_name))
@@ -43,7 +44,7 @@ class Worker(Thread):
             except OSError as e:
                 raise e
 
-        # get content
+        # Get content.
         try:
             r = requests.get(self.url, stream=True)
             if r.status_code == 429:
@@ -53,7 +54,7 @@ class Worker(Thread):
         except HTTPError as e:
             raise e
 
-        # create local files
+        # Create local files.
         file_size = int(r.headers.get('content-length', 0))
         chunk_size = 1024
         progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True, desc=f'Downloading {self.file_name}')
@@ -69,13 +70,14 @@ def exists(user: str, repo: str) -> bool:
     Check if a repo exists.
 
     Args:
-        user(`str`):
+        user (`str`):
             The author name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
 
     Returns:
-        (`bool`): return `True` if the repository exists, else `False`.
+        (`bool`)
+            return `True` if the repository exists, else `False`.
     """
     try:
         url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}'
@@ -85,25 +87,27 @@ def exists(user: str, repo: str) -> bool:
         raise e
 
 
-def create_token(user: str, password: str, token_name: str) -> str:
-    """Creates an account verification token.
+def create_token(user: str, password: str, token_name: str) -> Tuple[int, str]:
+    """
+    Create an account verification token.
 
     This token allows for avoiding HttpBasicAuth for subsequent calls.
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        password(`str`):
+        password (`str`):
             The account password.
-        token_name(`str`):
+        token_name (`str`):
             The name to be given to the token.
 
     Returns:
-        `int': The token id.
-        `str`: The sha-1.
+        (`Tuple[int, str]`)
+            Return the token id and the sha-1.
 
     Raises:
-        HTTPError: Error in request.
+        (`HTTPError`)
+            Raise the error in request.
     """
     url = f'https://hub.towhee.io/api/v1/users/{user}/tokens'
     data = {'name': token_name}
@@ -121,14 +125,15 @@ def create_token(user: str, password: str, token_name: str) -> str:
 
 
 def delete_token(user: str, password: str, token_id: int) -> None:
-    """Deletes the token with the given name. Useful for cleanup after changes.
+    """
+    Delete the token with the given name. Useful for cleanup after changes.
 
     Args:
-        user(`str`):
+        user (`str`);
             The account name.
-        password(`str`):
+        password (`str`):
             The account password.
-        token_id(`int`):
+        token_id (`int`):
             The token id.
     """
     url = f'https://hub.towhee.io/api/v1/users/{user}/tokens/{token_id}'
@@ -140,21 +145,21 @@ def delete_token(user: str, password: str, token_id: int) -> None:
 
 
 def create_repo(repo: str, token: str, repo_type: str) -> None:
-    """Creates a repo under the account connected to the passed in token.
+    """
+    Create a repo under the account connected to the passed in token.
 
     Args:
-        repo(`str`):
+        repo (`str`):
             Name of the repo to create.
-        token(`str`):
+        token (`str`):
             Account verification token.
-        repo_type: (`str`: 'model' | 'operator' | 'pipeline' | 'dataset'):
-            Which category of repo to create, only one can be used.
-
-    Returns:
-        None
+        repo_type (`str`):
+            Which category of repo to create, only one can be used, includes
+            ('model', 'operator', 'pipeline', 'dataset').
 
     Raises:
-        HTTPError: Error in request.
+        (`HTTPError`)
+            Raise error in request.
     """
 
     type_dict = {'model': 1, 'operator': 2, 'pipeline': 3, 'dataset': 4}
@@ -179,19 +184,21 @@ def create_repo(repo: str, token: str, repo_type: str) -> None:
 
 
 def delete_repo(user: str, repo: str, token: str) -> None:
-    """Deletes the repo under the user, values correspond to
+    """
+    Delete the repo under the user, values correspond to
     https://www.hub.towhee/<user>/<repo>.
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The name of the repo to be deleted.
-        token(`str`):
+        token (`str`):
             Account verification token for that user.
 
     Raises:
-        HTTPError: Error in request.
+        (`HTTPError`)
+            Raise error in request.
     """
 
     url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}'
@@ -203,21 +210,24 @@ def delete_repo(user: str, repo: str, token: str) -> None:
 
 
 def latest_branch_commit(user: str, repo: str, branch: str) -> str:
-    """Grabs the latest commit for a specific branch.
+    """
+    Grab the latest commit for a specific branch.
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
-        branch(`str`):
+        branch (`str`):
             The branch name.
 
     Returns:
-        `str`: The branch commit hash cut down to 10 characters.
+        (`str`)
+            The branch commit hash cut down to 10 characters.
 
     Raises:
-        HTTPError: Error in request.
+        (`HTTPError`)
+            Raise error in request.
     """
 
     url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/commits?limit=1&page=1&sha={branch}'
@@ -233,7 +243,8 @@ def latest_branch_commit(user: str, repo: str, branch: str) -> str:
 
 
 def obtain_lfs_extensions(user: str, repo: str, branch: str) -> List[str]:
-    """Downloads the .gitattributes file from the specified repo in order to figure out
+    """
+    Download the .gitattributes file from the specified repo in order to figure out
     which files are being tracked by git-lfs.
 
     Lines that deal with git-lfs take on the following format:
@@ -243,15 +254,16 @@ def obtain_lfs_extensions(user: str, repo: str, branch: str) -> List[str]:
     ```
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
-        branch(`str`):
+        branch (`str`):
             The branch name.
 
     Returns:
-        `List[str]`: The list of file extentions tracked by git-lfs.
+        (`List[str]`)
+            The list of file extentions tracked by git-lfs.
     """
     url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/raw/.gitattributes?ref={branch}'
     lfs_files = []
@@ -269,32 +281,35 @@ def obtain_lfs_extensions(user: str, repo: str, branch: str) -> List[str]:
 
         for line in temp_file:
             parts = line.split()
-            # only care if lfs filter is present
+            # We only care if lfs filter is present.
             if b'filter=lfs' in parts[1:]:
-                # Removing the `*` in `*.ext`, need work if filtering specific files
+                # Removing the `*` in `*.ext`, need work if filtering specific files.
                 lfs_files.append(parts[0].decode('utf-8')[1:])
 
     return lfs_files
 
 
 def get_file_list(user: str, repo: str, commit: str) -> List[str]:
-    """Gets all the files in the current repo at the given commit.
+    """
+    Get all the files in the current repo at the given commit.
 
     This is done through forming a git tree recursively and filtering out all the files.
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
-        commit(`str`):
+        commit (`str`):
             The commit to base current existing files.
 
     Returns:
-        `List[str]`: The file paths for the repo
+        (`List[str]`)
+            The file paths for the repo
 
     Raises:
-        HTTPError: Error in request.
+        (`HTTPError`)
+            Raise error in request.
     """
 
     url = f'https://hub.towhee.io/api/v1/repos/{user}/{repo}/git/trees/{commit}?recursive=1'
@@ -316,41 +331,42 @@ def get_file_list(user: str, repo: str, commit: str) -> List[str]:
 
 
 def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
-    """Download the files from hub. One url is used for git-lfs files and another for the other files.
+    """
+    Download the files from hub. One url is used for git-lfs files and another for the other files.
+
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
-        branch(`str`):
+        branch (`str`):
             The branch name.
-        file_list(`List[str]`):
+        file_list (`List[str]`):
             The hub file paths.
-        lfs_files(`List[str]`):
+        lfs_files (`List[str]`):
             The file extensions being tracked by git-lfs.
-        local_dir(`str`):
+        local_dir (`str`):
             The local directory to download to.
-        install_reqs(`bool`):
+        install_reqs (`bool`):
             Whether to install packages from requirements.txt
 
-    Returns:
-        None
-
     Raises:
-        HTTPError: Error in request.
-        OSError: Error in writing file.
+        (`HTTPError`)
+            Rasie error in request.
+        (`OSError`)
+            Raise error in writing file.
     """
     threads = []
 
-    #  If the trailing forward slash is missing, add it on
+    # If the trailing forward slash is missing, add it on.
     if local_dir[-1] != '/':
         local_dir += '/'
 
-    # endswith() can check multiple suffixes if they are a tuple
+    # endswith() can check multiple suffixes if they are a tuple.
     lfs_files = tuple(lfs_files)
 
     for file_name in file_list:
-        # files dealt with lfs have a different url
+        # Files dealt with lfs have a different url.
         if file_name.endswith(lfs_files):
             url = f'https://hub.towhee.io/{user}/{repo}/media/branch/{branch}/{file_name}'
         else:
@@ -367,27 +383,29 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
 
 
 def download_repo(user: str, repo: str, branch: str, local_dir: str, install_reqs: bool = True) -> None:
-    """Performs a download of the selected repo to specified location.
+    """
+    Performs a download of the selected repo to specified location.
 
     First checks to see if lfs is tracking files, then finds all the filepaths
     in the repo and lastly downloads them to the location.
 
     Args:
-        user(`str`):
+        user (`str`):
             The account name.
-        repo(`str`):
+        repo (`str`):
             The repo name.
-        branch(`str`):
+        branch (`str`):
             The branch name.
-        local_dir(`str`):
+        local_dir (`str`):
             The local directory being downloaded to
-        install_reqs(`bool`):
+        install_reqs (`bool`):
             Whether to install packages from requirements.txt
 
-
     Raises:
-        HTTPError: Error in request.
-        OSError: Error in writing file.
+        (`HTTPError`)
+            Raise error in request.
+        (`OSError`)
+            Raise error in writing file.
     """
     if not exists(user, repo):
         raise ValueError(user + '/' + repo + ' repo doesnt exist.')
@@ -418,7 +436,7 @@ def main(argv):
     repo_type = ''
     branch = 'main'
     directory = os.getcwd() + '/test_download/'
-    # TODO figure out how to store the token
+    # TODO(Filip) figure out how to store the token
     token_name = random.randint(0, 10000)
     manipulation = argv[0]
 
@@ -461,7 +479,7 @@ def main(argv):
             print('Done')
 
         print('Deleting token...')
-        # right now this doesnt get done if an exception is raised before it
+        # TODO(Filip) right now this doesnt get done if an exception is raised before it
         delete_token(user, password, token_id)
         print('Done')
 
