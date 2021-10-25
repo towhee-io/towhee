@@ -16,15 +16,16 @@ from towhee.dag.base_repr import BaseRepr
 
 
 class VariableRepr(BaseRepr):
-    """The representation of a variable at compile-phase.
+    """
+    The representation of a variable at compile-phase.
 
     Args:
-        name:
+        name (`str`):
             The representation name.
-        vtype:
+        vtype (`str`):
             This can be one of many possible variable types, such as a numpy array or
             PyTorch tensor.
-        dtype:
+        dtype (`str`):
             A string or instance of `numpy.dtype` indicating the internal data type for
             this variable.
     """

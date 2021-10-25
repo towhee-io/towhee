@@ -32,7 +32,7 @@ __all__ = [
 
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'mock_pipelines/resnet50_embedding'
+    'image-embedding': 'towhee/resnet50_embedding'
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'

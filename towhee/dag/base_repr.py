@@ -15,16 +15,18 @@ import yaml
 import requests
 import os
 import logging
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Any
 
 
 class BaseRepr:
-    """Base representation from which all other representation objects inherit.
+    """
+    Base representation from which all other representation objects inherit.
+
     Primarily implements automatic serialization into YAML/YAML-like string formats,
     along with defining other universally used properties.
 
     Args:
-        name:
+        name (`str`):
             Name of the internal object described by this representation.
     """
     def __init__(self, name: str):
@@ -35,12 +37,20 @@ class BaseRepr:
         return self._name
 
     @staticmethod
-    def is_valid(info: Dict, essentials: Set[str]) -> bool:
-        """Check if the src is a valid YAML file to describe a representation in Towhee.
+    def is_valid(info: Dict[str, Any], essentials: Set[str]) -> bool:
+        """
+        Check if the src is a valid YAML file to describe a component in Towhee.
 
         Args:
-            info(`dict`):
+            info (`Dict[str, Any]`):
                 The dict loaded from the source file.
+            essentials (`Set[str]`):
+                The essential keys that a valid YAML file should contain.
+
+        Returns:
+            (`bool`)
+                Return `True` if the src file is a valid YAML file to describe a
+                component in Towhee, else `False`.
         """
         info_keys = set(info.keys())
         if not isinstance(info, dict) or not essentials.issubset(info_keys):
@@ -49,65 +59,75 @@ class BaseRepr:
         return True
 
     @staticmethod
-    def load_str(string: str) -> Dict[str, any]:
-        """Load the representation(s) information from a YAML file (pre-loaded as string).
+    def load_str(string: str) -> List[dict]:
+        """
+        Load the representation(s) information from a YAML file (pre-loaded as string).
 
         Args:
-            string(`str`):
+            string (`str`):
                 The string pre-loaded from a YAML.
 
         Returns:
-            The dict loaded from the YAML file that contains the representation information.
+            (`List[dict]`)
+                The list loaded from the YAML file that contains the representation
+                information.
         """
         return yaml.safe_load(string)
 
     @staticmethod
     def load_file(file: str) -> List[dict]:
-        """Load the representation(s) information from a local YAML file.
+        """
+        Load the representation(s) information from a local YAML file.
 
         Args:
-            file(`str`):
+            file (`str`):
                 The file path.
 
         Returns:
-            The list loaded from the YAML file that contains the representation information.
+            (`List[dict]`)
+                The list loaded from the YAML file that contains the representation
+                information.
         """
         with open(file, 'r', encoding='utf-8') as f:
             return BaseRepr.load_str(f)
 
     @staticmethod
     def load_url(url: str) -> List[dict]:
-        """Load the representation information from a remote YAML file.
+        """
+        Load the representation information from a remote YAML file.
 
         Args:
-            url(`str`):
+            url (`str`):
                 The url points to the remote YAML file.
 
         Returns:
-            The list loaded from the YAML file that contains the representation information.
+            (`List[dict]`)
+                The list loaded from the YAML file that contains the representation
+                information.
         """
         src = requests.get(url, timeout=5).text
         return BaseRepr.load_str(src)
 
     @staticmethod
     def load_src(file_or_src: str) -> List[dict]:
-        """Load the information for the representation.
-
-        We support file from local file/HTTP/HDFS.
+        """
+        Load the information for the representation. We support file from local
+        file/HTTP/HDFS.
 
         Args:
-            file_or_src(`str`):
+            file_or_src (`str`):
                 The source YAML file or the URL points to the source file or a str
                 loaded from source file.
 
         returns:
-            The YAML file loaded as list.
+            (`List[dict]`)
+                The YAML file loaded as list.
         """
-        # If `file_or_src` is a loacl file
+        # If `file_or_src` is a loacl file.
         if os.path.isfile(file_or_src):
             return BaseRepr.load_file(file_or_src)
-        # If `file_or_src` from HTTP
+        # If `file_or_src` from HTTP.
         elif file_or_src.lower().startswith('http'):
             return BaseRepr.load_url(file_or_src)
-        # If `file_or_src` is neither a file nor url
+        # If `file_or_src` is neither a file nor url.
         return BaseRepr.load_str(file_or_src)

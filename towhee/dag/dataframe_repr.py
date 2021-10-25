@@ -11,23 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.variable_repr import VariableRepr
 
 
 class DataFrameRepr(BaseRepr):
-    """`DataFrameRepr` represents a single dataframe within a graph.
+    """
+    A `DataFrameRepr` represents a single dataframe within a graph.
 
     A single dataframe is composed of multiple individual variables, each of which is
     required in the next operator stage within the graph.
 
     Args:
-        name:
+        name (`str`):
             The representation name.
-        src:
-            The information of this dataframe.
+        columns (`List[VariableRepr]`):
+            The columns that the DataFrameRepr contains.
     """
     def __init__(self, name: str, columns: List[VariableRepr]):
         self._name = name
@@ -42,19 +43,17 @@ class DataFrameRepr(BaseRepr):
         return self._columns
 
     @staticmethod
-    def from_dict(info: Dict[str, any]) -> 'DataFrameRepr':
+    def from_dict(info: Dict[str, Any]) -> 'DataFrameRepr':
         """
-        info:
-            dataframe info
-            {
-                'name': 'example_df',
-                'columns': [
-                    {'vtype': 'int'},
-                    {'vtype': 'float'},
-                ],
-            }
+        Generate a DataframeRepr from a description dict.
+
+        Args:
+            info (`Dict[str, Any]`):
+                A dict to describe the Dataframe.
+
         Returns:
-            DataFrameRepr obj
+            (`towhee.dag.DataFrameRepr`)
+                The DataFrameRepr object.
         """
         if not DataFrameRepr.is_valid(info, {'name', 'columns'}):
             raise ValueError('Invalid dataframe info.')
