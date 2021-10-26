@@ -40,16 +40,20 @@ class OperatorLoader:
         else:
             self._cache_path = Path(cache_path)
 
-    def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
+    def load_operator(self, function: str, args: Dict[str, Any], branch: str) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
         be contained within a single directory.
 
         Args:
-            function: (`str`)
+            function (`str`):
                 Origin and method/class name of the operator. Used to look up the proper
                 operator in cache.
+            args (`str):
+                The init_args for the operator.
+            branch (`str`):
+                Which repo branch for the hub operator.
         """
 
         if function in ['_start_op', '_end_op']:
@@ -62,7 +66,7 @@ class OperatorLoader:
         #   |_ /home/user/.towhee/operators/organization-name/operator-name/config.json
         # If file not there or force_download set to true, install operator
 
-        fname, path = self._download_operator(function)
+        fname, path = self._download_operator(function, branch)
 
         #still checking if file exists since 'local' operators arent checked for
         if path.is_file():
@@ -89,7 +93,7 @@ class OperatorLoader:
     # Figure out where to put branch info, needed for loading diff versions.
     # Currently not thread safe when downloading same repo, will most likely result in race
     # There are issues of where to to assign force_download since it may be called multiple times
-    def _download_operator(self, task, branch: str = 'main', force_download: bool = False, install_reqs: bool = True):
+    def _download_operator(self, task, branch: str, force_download: bool = False, install_reqs: bool = True):
         """Checks cache and downloads operator if necessary.
         """
         task_split = task.split('/')

@@ -44,14 +44,17 @@ class Task(HandlerMixin):
         task_idx:
             A new task will be constructed for each operator call. The tasks
             are indexed individually for each operation performed, starting from 0.
+        branch (`str`):
+            The hub branch for the operator.
     """
 
     def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, Any],
-                 inputs: Dict[str, Any], task_idx: int):
+                 inputs: Dict[str, Any], task_idx: int, branch: str):
         self._op_name = op_name
         self._hub_op_id = hub_op_id
         self._op_args = op_args
         self._inputs = inputs
+        self._branch = branch
         self._task_idx = task_idx
 
         self._outputs = None
@@ -62,6 +65,10 @@ class Task(HandlerMixin):
     @property
     def op_name(self) -> str:
         return self._op_name
+
+    @property
+    def branch(self) -> str:
+        return self._branch
 
     @property
     def hub_op_id(self) -> str:
@@ -102,7 +109,7 @@ class Task(HandlerMixin):
             args_tup = tuple(sorted(self._op_args.items()))
         else:
             args_tup = ()
-        return (self._hub_op_id, ) + args_tup
+        return (self._hub_op_id, self._branch, ) + args_tup
 
     def execute(self, op: Operator = None):
         """Given a corresponding `Operator` from the `TaskExecutor`, run the task.

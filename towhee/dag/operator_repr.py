@@ -33,6 +33,8 @@ class OperatorRepr(BaseRepr):
             This operator's output dataframe.
         iter_info (`Dict[str, Any]`):
             This operator's iterator info.
+        branch (`str`):
+            This operators branch version from hub.
     """
     def __init__(
         self,
@@ -41,10 +43,12 @@ class OperatorRepr(BaseRepr):
         init_args: Dict[str, Any],
         inputs: List[Dict[str, Any]],
         outputs: List[Dict[str, Any]],
-        iter_info: Dict[str, Any]
+        iter_info: Dict[str, Any],
+        branch: str
     ):
         super().__init__(name)
         self._function = function
+        self._branch = branch
         self._inputs = inputs
         self._outputs = outputs
         self._init_args = init_args
@@ -53,6 +57,10 @@ class OperatorRepr(BaseRepr):
     @property
     def function(self):
         return self._function
+
+    @property
+    def branch(self):
+        return self._branch
 
     @property
     def inputs(self) -> List[dict]:
@@ -106,4 +114,12 @@ class OperatorRepr(BaseRepr):
         if not BaseRepr.is_valid(info, {'name', 'init_args', 'function', 'inputs', 'outputs', 'iter_info'}):
             raise ValueError('Invalid operator info.')
 
-        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'])
+        return OperatorRepr(
+            info['name'],
+            info['function'],
+            info['init_args'],
+            info['inputs'],
+            info['outputs'],
+            info['iter_info'],
+            info.get('branch', 'main')
+        )

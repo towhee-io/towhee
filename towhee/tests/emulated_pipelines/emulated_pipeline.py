@@ -52,7 +52,7 @@ class EmulatedPipeline:
         tasks = []
         for n in range(n_tasks):
             num = self._task_idx + n
-            task = Task('test', hub_op_id, args, {'num': num}, num)
+            task = Task('test', hub_op_id, args, {'num': num}, num, 'main')
             self._add_task_handlers(task)
             tasks.append(task)
         self._task_idx += n_tasks

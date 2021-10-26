@@ -36,7 +36,7 @@ class TestOperatorPool(unittest.TestCase):
     def test_acquire_release(self):
 
         hub_op_id = 'mock_operators/add_operator'
-        task = Task('test', hub_op_id, {'factor': 0}, (1), 0)
+        task = Task('test', hub_op_id, {'factor': 0}, (1), 0, 'main')
 
         # Acquire the operator.
         op = self._op_pool.acquire_op(task)

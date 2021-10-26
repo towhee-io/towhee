@@ -143,7 +143,7 @@ class OperatorContext(HandlerMixin):
 
     def _create_new_task(self, inputs: Dict[str, any]):
         t = Task(self.name, self._repr.function,
-                 self._repr.init_args, inputs, self._task_idx)
+                 self._repr.init_args, inputs, self._task_idx, self._repr.branch)
         self._task_idx += 1
         t.add_task_finish_handler(self.task_finish_handlers)
         return t

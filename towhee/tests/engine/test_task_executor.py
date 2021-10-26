@@ -42,9 +42,9 @@ class TestTaskExecutor(unittest.TestCase):
         tasks = []
         hub_op_id = 'mock_operators/add_operator'
         args = {'factor': 0}
-        tasks.append(Task('test', hub_op_id, args, {'num': 0}, 0))
-        tasks.append(Task('test', hub_op_id, args, {'num': 1}, 1))
-        tasks.append(Task('test', hub_op_id, args, {'num': 10}, 10))
+        tasks.append(Task('test', hub_op_id, args, {'num': 0}, 0, 'main'))
+        tasks.append(Task('test', hub_op_id, args, {'num': 1}, 1, 'main'))
+        tasks.append(Task('test', hub_op_id, args, {'num': 10}, 10, 'main'))
 
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:
@@ -61,9 +61,9 @@ class TestTaskExecutor(unittest.TestCase):
         # Create a couple of tasks to execute through the executor.
         tasks = []
         hub_op_id = 'mock_operators/sub_operator'
-        tasks.append(Task('test', hub_op_id, {}, {'a': 0, 'b': 0}, 0))
-        tasks.append(Task('test', hub_op_id, {}, {'a': 10, 'b': 20}, 1))
-        tasks.append(Task('test', hub_op_id, {}, {'a': 23, 'b': -1}, 24))
+        tasks.append(Task('test', hub_op_id, {}, {'a': 0, 'b': 0}, 0, 'main'))
+        tasks.append(Task('test', hub_op_id, {}, {'a': 10, 'b': 20}, 1, 'main'))
+        tasks.append(Task('test', hub_op_id, {}, {'a': 23, 'b': -1}, 24, 'main'))
 
         # Add finish callbacks and submit the tasks to the executor.
         for task in tasks:

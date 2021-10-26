@@ -63,7 +63,7 @@ class OperatorPool:
         # dictionary.
         op_key = task.op_key
         if op_key not in self._all_ops:
-            op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
+            op = self._op_loader.load_operator(task.hub_op_id, task.op_args, task.branch)
             op.key = op_key
         else:
             op = self._all_ops[op_key]

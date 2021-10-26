@@ -49,7 +49,8 @@ class TestEngine(unittest.TestCase):
                 {'name': 'num', 'df': '_start_df', 'col': 0}
             ],
             outputs=[{'df': 'op_test_in'}],
-            iter_info={'type': 'map'}
+            iter_info={'type': 'map'},
+            branch='main'
         )
 
         add_op_repr = OperatorRepr(
@@ -60,7 +61,8 @@ class TestEngine(unittest.TestCase):
                 {'name': 'num', 'df': 'op_test_in', 'col': 0}
             ],
             outputs=[{'df': 'op_test_out'}],
-            iter_info={'type': 'map'}
+            iter_info={'type': 'map'},
+            branch='main'
         )
 
         end_op_repr = OperatorRepr(
@@ -71,7 +73,8 @@ class TestEngine(unittest.TestCase):
                 {'name': 'sum', 'df': 'op_test_out', 'col': 0}
             ],
             outputs=[{'df': '_end_df'}],
-            iter_info={'type': 'map'}
+            iter_info={'type': 'map'},
+            branch='main'
         )
 
         df_start_repr = DataFrameRepr(

@@ -41,7 +41,8 @@ class TestOperatorContext(unittest.TestCase):
                 {'name': 'k2', 'df': 'op_test_in', 'col': 1}
             ],
             outputs=[{'df': 'op_test_out'}],
-            iter_info={'type': 'map'}
+            iter_info={'type': 'map'},
+            branch='main'
         )
 
         op = OperatorContext(op_repr, dfs)
@@ -81,7 +82,8 @@ class TestOperatorContext(unittest.TestCase):
                 {'name': 'k2', 'df': 'op_test_in', 'col': 1}
             ],
             outputs=[{'df': 'op_test_out'}],
-            iter_info={'type': 'map'}
+            iter_info={'type': 'map'},
+            branch='main'
         )
 
         op = OperatorContext(op_repr, dfs)
