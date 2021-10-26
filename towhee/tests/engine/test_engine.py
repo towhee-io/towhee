@@ -28,8 +28,8 @@ from towhee.dag import OperatorRepr
 
 class TestEngine(unittest.TestCase):
     """
-      combine tests of engine/scheduler/task-executor/task
-      """
+    combine tests of engine/scheduler/task-executor/task
+    """
 
     def setUp(self):
         conf = EngineConfig()
@@ -153,7 +153,6 @@ class TestEngine(unittest.TestCase):
         result = p(df_in)
         ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 10)
-
 
     def test_flatmap_writer(self):
         with open(FLATMAP_PIPELINE_YAML, 'r', encoding='utf-8') as f:
