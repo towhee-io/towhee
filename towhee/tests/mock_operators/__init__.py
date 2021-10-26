@@ -29,6 +29,8 @@ PYTORCH_IMAGE_CLASSIFICATION_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "p
 PYTORCH_OBJECT_DETECTION_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_object_detection_operator")
 PYTORCH_TRANSFORMER_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_operator")
 PYTORCH_TRANSFORME_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transform_operator")
+PYTORCH_TRANSFORMER_VEC_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_vec_operator")
+
 
 
 def load_local_operator(op_name: str, op_path: str):
