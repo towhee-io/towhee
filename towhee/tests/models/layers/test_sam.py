@@ -12,11 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .weight_init import trunc_normal_, variance_scaling_, lecun_normal_
-from .mlp import Mlp
-from .convmlp import ConvMlp
-from .gatedmlp import GatedMlp
-from .dropblock2d import DropBlock2d, drop_block_2d
-from .droppath import DropPath
+import unittest
+import torch
+import torchvision
+
+from towhee.models.layers.sam import SAM
 
 
+class TestOperator(unittest.TestCase):
+    """
+    A test for SAM.
+    """
+
+    def setUp(self):
+        self.model = torchvision.models.resnet50(pretrained=True)
+        self.base_optimizer = torch.optim.SGD
+
+    def test_sam(self):
+        optimizer = SAM(self.model.parameters(), self.base_optimizer, lr=0.1, momentum=0.9)
+        self.assertEqual(8, len(optimizer.base_optimizer.param_groups[0]))
