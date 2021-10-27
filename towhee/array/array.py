@@ -70,6 +70,9 @@ class Array:
     def __repr__(self):
         return self._data.__repr__()
 
+    def __len__(self):
+        return len(self._data)
+
     @property
     def size(self) -> int:
         """Number of elements in the `Array`.
