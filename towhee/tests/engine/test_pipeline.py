@@ -20,7 +20,6 @@ import unittest
 from PIL import Image
 
 from towhee import pipeline, _get_pipeline_cache, _PIPELINE_CACHE_ENV
-from towhee.dataframe import DataFrame, Variable
 from towhee.engine.engine import EngineConfig
 
 
@@ -28,7 +27,8 @@ CACHE_PATH = Path(__file__).parent.parent.resolve()
 
 
 class TestPipeline(unittest.TestCase):
-    """Tests `pipeline` functionality.
+    """
+    Tests `pipeline` functionality.
     """
 
     def setUp(self):
@@ -38,8 +38,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_empty_input(self):
         p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
-        with self.assertRaises(ValueError):
-            print(p())
+        self.assertEqual(p(), [])
 
     def test_simple_pipeline(self):
         p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
@@ -59,13 +58,9 @@ class TestPipeline(unittest.TestCase):
         #pylint: disable=protected-access
         p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
         p._pipeline.parallelism = 2
-        in_df = DataFrame('_in_df')
+        res = p(list(range(1000)))
         for n in range(1000):
-            in_df.put((Variable('int', n), ))
-        in_df.seal()
-        out_df = p._pipeline(in_df)
-        for n in range(1000):
-            self.assertEqual(out_df.get(n, 1)[0][0].value, n+3)
+            self.assertEqual(res[n], n+3)
 
 
 class TestPipelineCache(unittest.TestCase):

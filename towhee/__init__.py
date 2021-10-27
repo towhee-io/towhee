@@ -52,32 +52,44 @@ class _PipelineWrapper:
 
     def __call__(self, *args) -> Tuple[Any]:
         """
-        Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
+        Wraps the input arguments around a `Dataframe` for Pipeline.__call__(). For
+        example:
+        ```
+        >>> p = pipeline('some-pipeline')
+        >>> single_result = p(arg0, arg1)
+        >>> multi_result = p([(arg0_0, arg1_0), (arg0_1, arg1_1)])
+        ```
+
         """
-        # Check if no data supplied to pipeline.
+
         if not args:
-            raise ValueError(
-                'No data supplied to pipeline')
+            return []
 
-        # Create `Variable` tuple from input arguments.
-        vargs = []
-        for arg in args:
-            vtype = type(arg).__name__
-            vargs.append(Variable(vtype, arg))
-        vargs = tuple(vargs)
+        # Support both single-input and multi-input (via list).
+        if len(args) == 1 and isinstance(args[0], list):
+            inputs = args[0]
+        else:
+            inputs = [args]
 
-        # Process the data through the pipeline.
         in_df = DataFrame('_in_df')
-        in_df.put(vargs)
+        for tup in inputs:
+            if not isinstance(tup, tuple):
+                tup = (tup,)
+            row = tuple((Variable(type(e).__name__, e) for e in tup))
+            in_df.put(row)
         in_df.seal()
+
         out_df = self._pipeline(in_df)
 
-        # Extract values from output tuple.
+        # 1-tuple outputs are automatically extracted.
         res = []
-        for v in out_df.get(0, out_df.size)[0]:
-            res.append(v.value)
+        for data in out_df.get(0, out_df.size):
+            if len(data) == 1:
+                res.append(data[0].value)
+            else:
+                res.append(tuple((v.value for v in data)))
 
-        return tuple(res)
+        return res
 
 
 def _get_pipeline_cache(cache_path: str):
@@ -95,7 +107,7 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
     """
     task_split = task.split('/')
 
-    # For now assuming all piplines will be classifed as 'author/repo'
+    # For now assuming all piplines will be classifed as 'author/repo'.
     if len(task_split) != 2:
         raise ValueError(
                 '''Incorrect pipeline name format, should be '<author>/<pipeline_repo>', if local file please place into 'local/<pipeline_dir> ''')
@@ -106,7 +118,7 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
     repo_path = author_path / repo
     yaml_path = repo_path / (repo + '.yaml')
 
-    # Avoid downloading logic if its a fully local repo
+    # Avoid downloading logic if its a fully local repo.
     if author == 'local':
         return yaml_path
 
