@@ -49,36 +49,7 @@ class _PipelineWrapper:
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
-    def __call__(self, *args) -> Tuple[Any]:
-        """
-        Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
-        """
-        # Check if no data supplied to pipeline.
-        if not args:
-            raise ValueError(
-                'No data supplied to pipeline')
-
-        # Create `Variable` tuple from input arguments.
-        vargs = []
-        for arg in args:
-            vtype = type(arg).__name__
-            vargs.append(Variable(vtype, arg))
-        vargs = tuple(vargs)
-
-        # Process the data through the pipeline.
-        in_df = DataFrame('_in_df')
-        in_df.put(vargs)
-        in_df.seal()
-        out_df = self._pipeline(in_df)
-
-        # Extract values from output tuple.
-        res = []
-        for v in out_df.get(0, out_df.size)[0]:
-            res.append(v.value)
-
-        return tuple(res)
-
-    def input_multiple(self, inputs: List[Any] = None) -> Tuple[Any]:
+    def __call__(self, inputs: List[Any] = None) -> Tuple[Any]:
         """
         Input multiple items into the pipeline.
 
