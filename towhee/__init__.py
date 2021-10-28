@@ -24,81 +24,93 @@ from towhee.engine.pipeline import Pipeline
 from towhee.engine import LOCAL_PIPELINE_CACHE
 from towhee.utils.hub_tools import download_repo
 
-
-__all__ = [
-    'DEFAULT_PIPELINES',
-    'pipeline'
-]
-
+__all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'towhee/resnet50_embedding'
+    'image-embedding': 'towhee/image_embedding_resnet50',
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
 
 
 class _PipelineWrapper:
-    """A wrapper class around `Pipeline` which prevents users from having to create
-    `DataFrame` instances by hand.
+    """
+    A wrapper class around `Pipeline`.
+
+    The class prevents users from having to create `DataFrame` instances by hand.
 
     Args:
-        pipeline: `towhee.Pipeline`
+        pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
-
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
     def __call__(self, *args) -> Tuple[Any]:
         """
-        Wraps the input arguments around a `Dataframe` for Pipeline.__call__().
+        Wraps the input arguments around a `Dataframe` for Pipeline.__call__(). For
+        example:
+        ```
+        >>> p = pipeline('some-pipeline')
+        >>> single_result = p(arg0, arg1)
+        >>> multi_result = p([(arg0_0, arg1_0), (arg0_1, arg1_1)])
+        ```
+
         """
-        # Check if no data supplied to pipeline.
+
         if not args:
-            raise ValueError(
-                'No data supplied to pipeline')
+            return []
 
-        # Create `Variable` tuple from input arguments.
-        vargs = []
-        for arg in args:
-            vtype = type(arg).__name__
-            vargs.append(Variable(vtype, arg))
-        vargs = tuple(vargs)
+        # Support both single-input and multi-input (via list).
+        if len(args) == 1 and isinstance(args[0], list):
+            inputs = args[0]
+        else:
+            inputs = [args]
 
-        # Process the data through the pipeline.
         in_df = DataFrame('_in_df')
-        in_df.put(vargs)
+        for tup in inputs:
+            if not isinstance(tup, tuple):
+                tup = (tup, )
+            row = tuple((Variable(type(e).__name__, e) for e in tup))
+            in_df.put(row)
         in_df.seal()
+
         out_df = self._pipeline(in_df)
 
-        # Extract values from output tuple.
+        # 1-tuple outputs are automatically extracted.
         res = []
-        for v in out_df.get(0, out_df.size)[0]:
-            res.append(v.value)
+        for data in out_df.get(0, out_df.size):
+            if len(data) == 1:
+                res.append(data[0].value)
+            else:
+                res.append(tuple((v.value for v in data)))
 
-        return tuple(res)
+        return res
 
 
 def _get_pipeline_cache(cache_path: str):
     if not cache_path:
-        cache_path = os.environ.get(_PIPELINE_CACHE_ENV) if os.environ.get(
-            _PIPELINE_CACHE_ENV) else LOCAL_PIPELINE_CACHE
+        cache_path = os.environ.get(_PIPELINE_CACHE_ENV) if os.environ.get(_PIPELINE_CACHE_ENV) else LOCAL_PIPELINE_CACHE
     return Path(cache_path)
 
 
 # def _get_hello_towhee_pipeline():
 #     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
 
+
 def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_download: bool = False):
-    """Does the check and download logic for pipelines. Assumes pipeline name format of 'author/pipeline'.
+    """
+    Do the check and download logic for pipelines.
+
+    In Towhee all the pipelines' name should follow the format of 'author/pipeline'.
     """
     task_split = task.split('/')
 
-    # For now assuming all piplines will be classifed as 'author/repo'
+    # For now assuming all piplines will be classifed as 'author/repo'.
     if len(task_split) != 2:
         raise ValueError(
-                '''Incorrect pipeline name format, should be '<author>/<pipeline_repo>', if local file please place into 'local/<pipeline_dir> ''')
+            '''Incorrect pipeline name format, should be '<author>/<pipeline_repo>', if local file please place into 'local/<pipeline_dir> '''
+        )
 
     author = task_split[0]
     repo = task_split[1]
@@ -106,7 +118,7 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
     repo_path = author_path / repo
     yaml_path = repo_path / (repo + '.yaml')
 
-    # Avoid downloading logic if its a fully local repo
+    # Avoid downloading logic if its a fully local repo.
     if author == 'local':
         return yaml_path
 
@@ -124,10 +136,12 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
 
     return yaml_path
 
+
 def pipeline(task: str, cache: str = None, force_download: bool = False):
     """
-    Entry method which takes either an input task or path to an operator YAML. A
-    `Pipeline` object is created (based on said task) and subsequently added to the
+    Entry method which takes either an input task or path to an operator YAML.
+
+    A `Pipeline` object is created (based on said task) and subsequently added to the
     existing `Engine`.
 
     Args:
