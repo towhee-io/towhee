@@ -31,5 +31,5 @@ class TestVidClass(unittest.TestCase):
         model = 'resnet50'
         op = PyTorchVideoClassificationOperator(model)
         f'frames num is {len(frames)}'
-        output = op(frames)
+        output = op(frames.imgs)
         self.assertEqual((1, 2000), output[0].shape)
