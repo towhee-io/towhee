@@ -72,7 +72,7 @@ class PyTorchVideoClassificationOperator(Operator):
                 results = decode_predictions(int(preds))
                 res_lst.append(results)
                 # out_sum = numpy.append(out_sum, outputs.detach())
-                out_sum = np.hstack((out_sum, outputs.detach()))
+                out_sum = numpy.hstack((out_sum, outputs.detach()))
 
         print('out_sum shape is')
         print(out_sum.shape)
