@@ -71,8 +71,9 @@ class PyTorchVideoClassificationOperator(Operator):
                 _, preds = torch.max(outputs, 1)
                 results = decode_predictions(int(preds))
                 res_lst.append(results)
-                out_sum = numpy.append(out_sum, outputs.detach())
-                out_sum = torch.cat((out_sum, outputs.detach()), 0)
+                # out_sum = numpy.append(out_sum, outputs.detach())
+                out_sum = np.hstack((out_sum, outputs.detach()))
+
         print('out_sum shape is')
         print(out_sum.shape)
         return Outputs(out_sum.numpy(), res_lst)
