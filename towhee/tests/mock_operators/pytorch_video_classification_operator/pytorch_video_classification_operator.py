@@ -19,7 +19,6 @@ import torch
 from typing import NamedTuple, List
 from pathlib import Path
 import torchvision
-from PIL import Image
 
 
 from towhee.operator import Operator
@@ -73,6 +72,8 @@ class PyTorchVideoClassificationOperator(Operator):
                 results = decode_predictions(int(preds))
                 res_lst.append(results)
                 out_sum = numpy.append(out_sum, outputs.detach().numpy())
+        print('out_sum shape is')
+        print(out_sum.shape())
         return Outputs(out_sum, res_lst)
 
     def train(self):
