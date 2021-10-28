@@ -42,7 +42,7 @@ class PyTorchVideoClassificationOperator(Operator):
     """
     PyTorch video classification operator.
     Args:
-        model_name (`nn.Module`):
+        model_name (`str`):
             Model name.
     """
 
