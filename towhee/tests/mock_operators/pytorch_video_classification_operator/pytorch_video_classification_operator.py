@@ -53,11 +53,10 @@ class PyTorchVideoClassificationOperator(Operator):
         self._model = model_func(pretrained=True)
         self._model.eval()
 
-    def __call__(self, img_list: List['Image']) -> NamedTuple('Outputs', [('embedding', numpy.ndarray),
+    def __call__(self, img_list: List[Image]) -> NamedTuple('Outputs', [('embedding', numpy.ndarray),
                                                                         ('breed', List[str])]):
         Outputs = NamedTuple('Outputs', [('embedding', numpy.ndarray), ('breed', List[str])])
         res_lst = []
-        f'img_list is {type(img_list)}'
         img_pil = Image.open(img_list[0])
         img_tensor = self.trans(img_pil).img_transformed
         outputs = self._model(img_tensor)

@@ -27,9 +27,8 @@ class TestVidClass(unittest.TestCase):
     def test_vid_class(self):
         test_video = Path(__file__).parent / 'video.mp4'
         rep = VidRepr(num=2, inter=2)
-        frames = rep(str(test_video))
+        out = rep(str(test_video))
         model = 'resnet50'
         op = PyTorchVideoClassificationOperator(model)
-        f'frames num is {len(frames)}'
-        output = op(frames.imgs)
+        output = op(out.imgs)
         self.assertEqual((1, 2000), output[0].shape)
