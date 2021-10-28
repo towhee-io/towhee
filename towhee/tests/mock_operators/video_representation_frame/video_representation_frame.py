@@ -14,7 +14,6 @@
 
 
 from typing import NamedTuple, List
-
 import cv2
 from PIL import Image
 
@@ -25,8 +24,6 @@ class VidRepr(Operator):
     """
     Video representation frames.
     Args:
-        num (`int`):
-            Number of representation frames.
         inter (`int`):
             Sampling interval.
     """

@@ -32,6 +32,7 @@ PYTORCH_TRANSFORME_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_tra
 PYTORCH_TRANSFORMER_VEC_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_transformer_vec_operator")
 PYTORCH_VIDEO_REPRESENTATION_FRAME_EXTRACTION_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR,
                                                                            "video_representation_frame")
+PYTORCH_VIDEO_CLASSIFICATION_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, "pytorch_video_classification_operator")
 
 
 def load_local_operator(op_name: str, op_path: str):
