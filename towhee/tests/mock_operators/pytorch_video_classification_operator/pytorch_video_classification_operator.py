@@ -54,7 +54,7 @@ class PyTorchVideoClassificationOperator(Operator):
         self._model = model_func(pretrained=True)
         self._model.eval()
 
-    def __call__(self, img_list: List[PIL.Image]) -> NamedTuple('Outputs', [('embedding', numpy.ndarray),
+    def __call__(self, img_list: List['Image']) -> NamedTuple('Outputs', [('embedding', numpy.ndarray),
                                                                         ('breed', List[str])]):
         Outputs = NamedTuple('Outputs', [('embedding', numpy.ndarray), ('breed', List[str])])
         res_lst = []
