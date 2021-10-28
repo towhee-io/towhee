@@ -76,7 +76,7 @@ class PyTorchVideoClassificationOperator(Operator):
 
         print('out_sum shape is')
         print(out_sum.shape)
-        return Outputs(out_sum.numpy(), res_lst)
+        return Outputs(out_sum, res_lst)
 
     def train(self):
         """
