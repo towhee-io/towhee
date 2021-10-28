@@ -19,7 +19,6 @@ import torch
 from typing import NamedTuple, List
 from pathlib import Path
 import torchvision
-import PIL
 from PIL import Image
 
 
