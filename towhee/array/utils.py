@@ -18,12 +18,13 @@ from towhee.array.array import Array
 
 
 def full(size: int, fill_value):
-    """Return a new `Array` of given shape filled with `fill_value`
+    """
+    Return a new `Array` of given shape filled with `fill_value`
 
     Args:
-        size: (`int`)
+        size (`int`):
             Size of the new `Array`
-        fill_value: (`numpy.dtype` or `str`)
+        fill_value (`numpy.dtype` or `str`):
             Fill value
     """
     return Array(list(repeat(fill_value, size)))

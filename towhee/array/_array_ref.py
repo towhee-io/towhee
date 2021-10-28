@@ -14,7 +14,8 @@
 
 
 class _ArrayRef:
-    """`_ArrayRef` maintains `DataFrame` to `Array` references.
+    """
+    `_ArrayRef` maintains `DataFrame` to `Array` references.
     """
 
     def __init__(self):
@@ -22,9 +23,12 @@ class _ArrayRef:
         self._ref_id_allocator = 0
 
     def add_reader(self) -> int:
-        """Add a read reference to this `Array`
-        Return: (`int`)
-            reference id
+        """
+        Add a read reference to this `Array`
+
+        Returns:
+            (`int`)
+                reference id
         """
         ref_id = self._ref_id_allocator
         self._read_ref_offsets[ref_id] = 0
@@ -32,9 +36,11 @@ class _ArrayRef:
         return ref_id
 
     def remove_reader(self, ref_id: int):
-        """Remove a read reference from this `Array`
+        """
+        Remove a read reference from this `Array`
+
         Args:
-            ref_id: (`int`)
+            ref_id (`int`):
                 The reference ID
         """
         self._read_ref_offsets.pop(ref_id, None)

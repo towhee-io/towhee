@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
 from typing import Iterable, List, Tuple, Any
 
 from towhee.array import Array
@@ -22,10 +23,10 @@ class DataFrame:
     A `DataFrame` is a collection of immutable, potentially heterogeneous blogs of data.
 
     Args:
-        name: (`str`)
+        name (`str`):
             Name of the dataframe; `DataFrame` names should be the same as its
             representation.
-        data: (`list[towhee.Array]` or `list[Tuple]` or `dict[str, towhee.Array]`)
+        data (`list[towhee.Array]` or `list[Tuple]` or `dict[str, towhee.Array]`):
             The data of the `DataFrame`. Internally, the data will be organized
             in a column-based manner.
     """
@@ -37,6 +38,9 @@ class DataFrame:
         columns=None,
     ):
         self._name = name
+        self._len = 0
+        self._sealed = False
+        self._lock = threading.Lock()
 
         # For `data` is empty
         if not data:
@@ -70,10 +74,13 @@ class DataFrame:
     def __getitem__(self, key):
         # access a row
         if isinstance(key, int):
-            return tuple([self._data_as_list[i][key] for i in range(len(self._data_as_list))])
+            return tuple(self._data_as_list[i][key] for i in range(len(self._data_as_list)))
         # access a column
         elif isinstance(key, str):
             return self._data_as_dict[key]
+
+    def __len__(self):
+        return self._len
 
     @property
     def name(self) -> str:
@@ -83,11 +90,19 @@ class DataFrame:
     def data(self) -> List[Array]:
         return self._data_as_list
 
-    def itertuples(self) -> Iterable[Tuple[Any, ...]]:
+    def iter(self) -> Iterable[Tuple[Any, ...]]:
         """
         Iterate over DataFrame rows as tuples.
         """
-        pass
+        return DFIterator(self)
+
+    def seal(self):
+        with self._lock:
+            self._sealed = True
+
+    def is_sealed(self) -> bool:
+        with self._lock:
+            return self._sealed
 
     def _from_tuples(self, data, columns):
 
@@ -115,11 +130,16 @@ class DataFrame:
             for i, element in enumerate(row):
                 self._data_as_list[i].put(element)
 
+        self._len = len(data)
+
     def _from_arrays(self, data, columns):
 
         # check array length
-        if len(set(len(array) for array in data)) != 1:
+        array_lengths = set(len(array) for array in data)
+        if len(array_lengths) != 1:
             raise ValueError('arrays in data should have equal length')
+
+        self._len = array_lengths.pop()
 
         # check columns length
         if columns and len(columns) != len(data):
@@ -137,11 +157,63 @@ class DataFrame:
         # check dict values
         for value in data.values():
             if not isinstance(value, Array):
-                raise ValueError('values in data should be towhee.Array')
+                raise ValueError('value type in data should be towhee.Array')
 
         # check arrays length
-        if len(set(len(array) for array in data.values())) != 1:
+        array_lengths = set(len(array) for array in data.values())
+        if len(array_lengths) != 1:
             raise ValueError('arrays in data should have equal length')
+
+        self._len = array_lengths.pop()
 
         self._data_as_list = list(data.values())
         self._data_as_dict = data
+
+
+class DFIterator:
+    """
+    A row-based `DataFrame` iterator.
+    """
+
+    def __init__(self, df: DataFrame):
+        self._df = df
+        self._offset = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """
+        Returns:
+            (`Tuple[Any, ...]`)
+                In the normal case, the iterator will return a `Tuple` at each call.
+            (`None`)
+                In the case that the `DataFrame` is not sealed and the new rows are
+                not ready yet, the iterator will return `None`. The caller should
+                determine whether to block the iteration or exit the loop.
+        Raises:
+            (`StopIteration`)
+                The iteration end iff the `DataFrame` is sealed and the last row is
+                reached.
+        """
+
+        if len(self._df) == self._offset:
+            if self._df.is_sealed():
+                # Already reach the last row
+                raise StopIteration
+            else:
+                # No more ready rows
+                return None
+        else:
+            row = self._df[self._offset]
+            self._offset += 1
+            return row
+
+    def ack(self):
+        """
+        To notice the DataFrame that the iterated rows has been successfully processed.
+
+        An acknowledgement (ack) will notice the `DataFrame`s that the rows already
+        iterated over are no longer used, and can be deleted from the system.
+        """
+        pass

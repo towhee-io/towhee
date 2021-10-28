@@ -26,35 +26,49 @@ class TestDataframe(unittest.TestCase):
 
     def test_constructors(self):
 
+        def get_columns():
+            return ['digit', 'letter']
+
+        def get_tuples():
+            return [(0, 'a'), (1, 'b'), (2, 'c')]
+
+        def get_arrays():
+            return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
+
+        def get_dict():
+            return {'digit': Array([0, 1, 2]), 'letter': Array(['a', 'b', 'c'])}
+
+        def check_data(df):
+            for i in range(3):
+                self.assertEqual(df['digit'][i], i)
+                self.assertEqual(df['letter'][i], chr(ord('a') + i))
+                self.assertEqual(df[i][0], i)
+                self.assertEqual(df[i][1], chr(ord('a') + i))
+            for i, row in enumerate(df.iter()):
+                self.assertEqual(row[0], i)
+                self.assertEqual(row[1], chr(ord('a') + i))
+
         # empty df
         df = DataFrame('my_df')
+        df.seal()
         self.assertEqual(df.name, 'my_df')
 
         # from list[tuple]
-        data = [(0, 'a'), (1, 'b'), (2, 'c')]
-        columns = ['digit', 'letter']
+        data = get_tuples()
+        columns = get_columns()
         df = DataFrame('my_df', data, columns)
-        for i in range(3):
-            self.assertEqual(df['digit'][i], i)
-            self.assertEqual(df['letter'][i], chr(ord('a') + i))
-            self.assertEqual(df[i][0], i)
-            self.assertEqual(df[i][1], chr(ord('a') + i))
+        df.seal()
+        check_data(df)
 
         # from list[towhee.Array]
-        data = [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
-        columns = ['digit', 'letter']
+        data = get_arrays()
+        columns = get_columns()
         df = DataFrame('my_df', data, columns)
-        for i in range(3):
-            self.assertEqual(df['digit'][i], i)
-            self.assertEqual(df['letter'][i], chr(ord('a') + i))
-            self.assertEqual(df[i][0], i)
-            self.assertEqual(df[i][1], chr(ord('a') + i))
+        df.seal()
+        check_data(df)
 
         # from dict[str, towhee.Array]
-        data = {'digit': Array([0, 1, 2]), 'letter': Array(['a', 'b', 'c'])}
+        data = get_dict()
         df = DataFrame('my_df', data)
-        for i in range(3):
-            self.assertEqual(df['digit'][i], i)
-            self.assertEqual(df['letter'][i], chr(ord('a') + i))
-            self.assertEqual(df[i][0], i)
-            self.assertEqual(df[i][1], chr(ord('a') + i))
+        df.seal()
+        check_data(df)

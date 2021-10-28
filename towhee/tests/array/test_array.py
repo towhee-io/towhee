@@ -121,18 +121,18 @@ class TestArray(unittest.TestCase):
 
     def test_gc(self):
         array = Array([0, 1, 2, 3])
-        self.assertEqual(array.size, 4)
+        self.assertEqual(len(array), 4)
         self.assertEqual(array.physical_size, 4)
 
         ref_a = array.add_reader()
         ref_b = array.add_reader()
         array.gc()
-        self.assertEqual(array.size, 4)
+        self.assertEqual(len(array), 4)
         self.assertEqual(array.physical_size, 4)
 
         array.update_reader_offset(ref_a, 2)
         array.gc()
-        self.assertEqual(array.size, 4)
+        self.assertEqual(len(array), 4)
         self.assertEqual(array.physical_size, 4)
 
         array.update_reader_offset(ref_b, 2)
