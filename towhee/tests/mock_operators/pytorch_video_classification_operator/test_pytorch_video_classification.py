@@ -17,7 +17,7 @@ from pathlib import Path
 import torchvision
 
 from .pytorch_video_classification_operator import PyTorchVideoClassificationOperator
-from towhee.tests.mock_operators.video_representation_frame.pytorch_transform_operator import VidRepr
+from towhee.tests.mock_operators.video_representation_frame import VidRepr
 
 
 class TestVidClass(unittest.TestCase):
