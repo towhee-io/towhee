@@ -15,6 +15,8 @@
 
 import random
 import math
+
+import numpy
 import numpy as np
 
 
@@ -30,12 +32,12 @@ class RandomErasing:
         p (`float`): probability of performing random erasing
     """
 
-    def __init__(self, p=0.5, sl=0.02, sh=0.4, r1=0.3):
+    def __init__(self, p: float = 0.5, sl: float = 0.02, sh: float = 0.4, r1: float = 0.3):
         self.p = p
         self.s = (sl, sh)
         self.r = (r1, 1 / r1)
 
-    def __call__(self, img):
+    def __call__(self, img: numpy.ndarray):
         """
         perform random erasing
         Args:
