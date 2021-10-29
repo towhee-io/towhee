@@ -11,6 +11,7 @@ jobs:
         python-version: 3.8
     - name: Generate coverage report
       run: |
+        pip install -r requirements.txt
         pip install coverage
         coverage erase
         coverage run setup.py test -s towhee.tests
