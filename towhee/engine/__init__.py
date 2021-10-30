@@ -15,9 +15,9 @@
 
 from pathlib import Path
 
-_DEFAULT_LOCAL_CACHE_ROOT = Path.home() / '.towhee'
-LOCAL_PIPELINE_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
-LOCAL_OPERATOR_CACHE = _DEFAULT_LOCAL_CACHE_ROOT / 'operators'
+DEFAULT_LOCAL_CACHE_ROOT = Path.home() / '.towhee'
+LOCAL_PIPELINE_CACHE = DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
+LOCAL_OPERATOR_CACHE = DEFAULT_LOCAL_CACHE_ROOT / 'operators'
 
 MOCK_PIPELINES = str(Path(__file__).parent.parent /
                      'tests/test_util/resnet50_embedding.yaml')

@@ -22,7 +22,8 @@ from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, EngineConfig, start_engine
 from towhee.engine.pipeline import Pipeline
 from towhee.engine import LOCAL_PIPELINE_CACHE
-from towhee.utils.hub_tools import download_repo
+from towhee.hub.hub_tools import download_repo
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
@@ -88,56 +89,11 @@ class _PipelineWrapper:
         return res
 
 
-def _get_pipeline_cache(cache_path: str):
-    if not cache_path:
-        cache_path = os.environ.get(_PIPELINE_CACHE_ENV) if os.environ.get(_PIPELINE_CACHE_ENV) else LOCAL_PIPELINE_CACHE
-    return Path(cache_path)
-
 
 # def _get_hello_towhee_pipeline():
 #     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
 
-
-def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_download: bool = False):
-    """
-    Do the check and download logic for pipelines.
-
-    In Towhee all the pipelines' name should follow the format of 'author/pipeline'.
-    """
-    task_split = task.split('/')
-
-    # For now assuming all piplines will be classifed as 'author/repo'.
-    if len(task_split) != 2:
-        raise ValueError(
-            '''Incorrect pipeline name format, should be '<author>/<pipeline_repo>', if local file please place into 'local/<pipeline_dir> '''
-        )
-
-    author = task_split[0]
-    repo = task_split[1]
-    author_path = cache_path / author
-    repo_path = author_path / repo
-    yaml_path = repo_path / (repo + '.yaml')
-
-    # Avoid downloading logic if its a fully local repo.
-    if author == 'local':
-        return yaml_path
-
-    download = False
-    if repo_path.is_dir():
-        if force_download or not yaml_path.is_file():
-            rmtree(repo_path)
-            download = True
-    else:
-        download = True
-
-    if download:
-        print('Downloading Pipeline: ' + repo)
-        download_repo(author, repo, branch, str(repo_path))
-
-    return yaml_path
-
-
-def pipeline(task: str, cache: str = None, force_download: bool = False):
+def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: str = 'main', force_download: bool = False):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -147,8 +103,10 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
     Args:
         task (`str`):
             Task name or YAML file location to use.
-        cache (`str`):
-            Cache path to use.
+        fmc (`FileManagerConfig`):
+            Optional file manager config for the local instance, defaults to local cache.
+        branch (`str`):
+            Which branch to use for operators/pipelines on hub, defaults to `main`.
         force_download (`bool`):
             Whether to redownload pipeline and operators.
 
@@ -156,26 +114,12 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
         (`typing.Any`)
             The `Pipeline` output.
     """
-
-    # If the task name coincides with one of the default pipelines, use the YAML
-    # specified by that default pipeline instead of trying to lookup a YAML in the hub
-    # or cache.
+    fm = FileManager(fmc)
 
     start_engine()
-    # TODO (jiangjunjie) delete when hub is ready
-    # if task.startswith('hello_towhee'):
-    #     yaml_path = _get_hello_towhee_pipeline()
-    # else:
     task = DEFAULT_PIPELINES.get(task, task)
+    yaml_path = fm.get_pipeline(task, branch, force_download)
 
-    # Get YAML path given task name. The default cache location for pipelines is
-    # $HOME/.towhee/pipelines
-    # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
-    cache_path = _get_pipeline_cache(cache)
-    yaml_path = _download_pipeline(cache_path, task, force_download=force_download)
-
-    if not yaml_path.is_file():
-        raise NameError(F'Can not find pipeline by name {task}')
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))
