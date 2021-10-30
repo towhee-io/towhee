@@ -32,16 +32,10 @@ class TestArray(unittest.TestCase):
             self.assertEqual(array.size, len(data))
 
             for a, b in zip(array, data):
-                if isinstance(a, np.ndarray):
-                    self.assertFalse((a - b).all())
-                else:
-                    self.assertEqual(a, b)
+                self.assertEqual(a, b)
 
             for i, v in enumerate(data):
-                if isinstance(array[i], np.ndarray):
-                    self.assertFalse((array[i] - v).all())
-                else:
-                    self.assertEqual(v, array[i])
+                self.assertEqual(v, array[i])
 
         data = [1, 2, 3]
         array = Array(data=data)
@@ -66,8 +60,10 @@ class TestArray(unittest.TestCase):
     def test_construction_from_scalar(self):
 
         def _basic_asserts(array, data):
-            self.assertEqual(array.size, 1)
-            self.assertEqual(array[0], data)
+            if isinstance(data, np.ndarray):
+                self.assertFalse((array[0] - data).all())
+            else:
+                self.assertEqual(array[0], data)
 
         data = 1
         array = Array(data=data)
@@ -81,35 +77,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-    def test_construction_from_ndarray(self):
-
-        def _basic_asserts(array, data):
-            if data.size == 1:
-                data = data.reshape((1,))
-
-            self.assertEqual(array.size, data.shape[0])
-
-            for a, b in zip(array, data):
-                if isinstance(a, np.ndarray):
-                    self.assertFalse((a - b).all())
-                else:
-                    self.assertEqual(a, b)
-
-            for i, v in enumerate(data):
-                if isinstance(array[i], np.ndarray):
-                    self.assertFalse((array[i] - v).all())
-                else:
-                    self.assertEqual(v, array[i])
-
         data = np.ndarray([1, 2, 3])
-        array = Array(data=data)
-        _basic_asserts(array, data)
-
-        data = np.asarray(None)
-        array = Array(data=data)
-        _basic_asserts(array, data)
-
-        data = np.array([None])
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -128,25 +96,51 @@ class TestArray(unittest.TestCase):
 
         n = 8
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 1
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 0
         value = 1
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 8
         value = "abc"
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
         n = 8
         value = None
-        array = full(shape=n, fill_value=value)
+        array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
+
+    def test_gc(self):
+        array = Array([0, 1, 2, 3])
+        self.assertEqual(len(array), 4)
+        self.assertEqual(array.physical_size, 4)
+
+        ref_a = array.add_reader()
+        ref_b = array.add_reader()
+        array.gc()
+        self.assertEqual(len(array), 4)
+        self.assertEqual(array.physical_size, 4)
+
+        array.update_reader_offset(ref_a, 2)
+        array.gc()
+        self.assertEqual(len(array), 4)
+        self.assertEqual(array.physical_size, 4)
+
+        array.update_reader_offset(ref_b, 2)
+        array.gc()
+        self.assertEqual(array.size, 4)
+        self.assertEqual(array.physical_size, 2)
+
+        self.assertEqual(array[2], 2)
+        self.assertEqual(array[3], 3)
+        self.assertRaises(IndexError, array.__getitem__, 0)
+        self.assertRaises(IndexError, array.__getitem__, 1)

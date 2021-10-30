@@ -13,17 +13,18 @@
 # limitations under the License.
 
 
-import numpy as np
+from itertools import repeat
 from towhee.array.array import Array
 
 
-def full(shape: int, fill_value):
-    """Return a new `Array` of given shape filled with `fill_value`
+def full(size: int, fill_value):
+    """
+    Return a new `Array` of given shape filled with `fill_value`
 
     Args:
-        shape: (`int`)
-            Shape of the new `Array`
-        fill_value: (`numpy.dtype` or `str`)
+        size (`int`):
+            Size of the new `Array`
+        fill_value (`numpy.dtype` or `str`):
             Fill value
     """
-    return Array(data=np.full(shape=shape, fill_value=fill_value))
+    return Array(list(repeat(fill_value, size)))

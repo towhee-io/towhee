@@ -13,78 +13,154 @@
 # limitations under the License.
 
 
-import numpy as np
+from typing import List
+from towhee.array._array_ref import _ArrayRef
 
 
 class Array:
-    """One-dimensional array of data
+    """
+    One-dimensional array of data
 
     Args:
-        data: (`numpy.ndarray`, `list`, `dict` or scalar)
+        data (`numpy.ndarray`, `list`, `dict` or scalar):
             Contains data to be stored in `Array`.
-        dtype: (`numpy.dtype`, `str`, `PIL.Image` or `towhee.DType`, optional)
+        dtype (`numpy.dtype`, `str`, `PIL.Image` or `towhee.DType`, optional):
             Data type of the `Array`. If not specified, it will be inferred from `data`.
-        name: (`str`)
+        name (`str`):
             Name of the `Array`.
-        copy: (`bool`, default False)
+        copy (`bool`, default False):
             Copy the `data` contents to the `Array`.
     """
 
     def __init__(
         self,
         data=None,
-        #dtype=None,
+        # dtype=None,
         name: str = None,
-        #copy=False
+        # copy=False
     ):
 
         self.name = name
-        # TODO(GuoRentong): provide towhee.DType abstraction and support
-        # Array.dtypes
-        self.dtype = None
 
-        # For data is numpy.array
-        if isinstance(data, np.ndarray):
-            # For `data` is scalar as array
-            if data.size == 1 and data.shape == ():
-                data = data.reshape((1,))
-
-        # For data is list
-        elif isinstance(data, list):
-            data = np.array(data)
-
-        # For data is None
-        elif data is None:
-            # TODO(GuoRentong): remember to handle dtype properly
+        # For `data` is `list`
+        if isinstance(data, list):
             pass
-
-        # For data is scalar
+        # For `data` is `None`
+        elif data is None:
+            data = []
+        # For `data` is scalar
         else:
-            data = np.array([data])
+            data = [data]
 
-        self.data = data
+        self._data = data
+        self._ref = _ArrayRef()
+        self._offset = 0
 
     def __iter__(self):
-        return self.data.__iter__()
+        return self._data.__iter__()
 
     def __getitem__(self, key: int):
         if isinstance(key, int):
-            return self.data[key]
+            if key >= self._offset:
+                return self._data[key - self._offset]
+            else:
+                raise IndexError('element with index=%d has been released' % (key))
         else:
-            raise IndexError("only integers are invalid indices")
+            raise IndexError('only integers are invalid indices')
 
     def __repr__(self):
-        return self.data.__repr__()
+        return self._data.__repr__()
+
+    def __len__(self):
+        """
+        Number of elements in the `Array`.
+        """
+        return len(self._data) + self._offset
 
     @property
     def size(self) -> int:
-        """ Number of elements in the `Array`.
         """
-        return self.data.shape[0]
+        Number of elements in the `Array`.
+        """
+        return len(self._data) + self._offset
+
+    @property
+    def physical_size(self) -> int:
+        """
+        Number of elements still existed in the `Array`
+        """
+        return len(self._data)
+
+    @property
+    def data(self) -> List:
+        """
+        Data of the `Array`
+        """
+        return self._data
 
     def is_empty(self) -> bool:
         """
-        Indicator whether Array is empty.
-        True if Array has no elements.
+        Indicator whether `Array` is empty.
+
+        Returns:
+            (`bool`)
+                Return `True` if `Array` has no elements.
         """
-        return self.size == 0
+        return not self.size
+
+    def add_reader(self) -> int:
+        """
+        Add a read reference to `Array`
+        """
+        return self._ref.add_reader()
+
+    def remove_reader(self, ref_id: int):
+        """
+        Remove a read reference from `Array`
+
+        Args:
+            ref_id (`int`):
+                The reference ID
+        """
+        self._ref.remove(ref_id)
+
+    def update_reader_offset(self, ref_id: int, offset: int):
+        """
+        Update a reference offset
+
+        Args:
+            ref_id (`int`):
+                The reference ID
+            offset (`int`):
+                The new reference offset
+        """
+        self._ref.update_reader_offset(ref_id, offset)
+
+    def put(self, item):
+        """
+        Append one item to the end of this `Array`.
+        """
+        self._data.append(item)
+
+    def append(self, data):
+        """
+        Append a list-like items to the end of this `Array`.
+
+        Args:
+            data (`list` or `Array`):
+                The data to be appended.
+        """
+        if isinstance(data, Array):
+            self._data.extend(data.data)
+        elif isinstance(data, List):
+            self._data.extend(data)
+
+    def gc(self):
+        """
+        Release the unreferenced upper part of the `Array`, if any
+        """
+        min_ref_offset = self._ref.min_reader_offsets
+        release_offset = min_ref_offset - self._offset
+        if release_offset > 0:
+            del self._data[:release_offset]
+            self._offset = min_ref_offset
