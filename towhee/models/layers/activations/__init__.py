@@ -11,4 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from towhee.models.layers.activations.gelu import GELU, gelu
+from towhee.models.layers.activations.hardsigmoid import HardSigmoid, hard_sigmoid
+from towhee.models.layers.activations.hardswish import HardSwish, hard_swish
+from towhee.models.layers.activations.mish import Mish, mish
+from towhee.models.layers.activations.hardmish import HardMish, hard_mish
+from towhee.models.layers.activations.prelu import PReLU
+from towhee.models.layers.activations.sigmoid import Sigmoid, sigmoid
+from towhee.models.layers.activations.swish import Swish, swish
+from towhee.models.layers.activations.tanh import Tanh, tanh
 
