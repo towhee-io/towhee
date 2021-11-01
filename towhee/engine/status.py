@@ -13,17 +13,31 @@
 # limitations under the License.
 
 
-from pathlib import Path
-# from towhee.engine.engine_v2 import Engine, EngineConfig as v2_Engine, v2_EngineConfig
-# from towhee.engine.engine import Engine, EngineConfig as v1_Engine, v1_EngineConfig
+class Status:
+    """
+    Return status
+    """
 
-from towhee.engine.engine import Engine, EngineConfig
+    def __init__(self, code: int, msg: str = None, data: any = None):
+        self._code = code
+        self._msg = msg
+        self._data = data
 
-CACHE_PATH = Path(__file__).parent.resolve()
+    @staticmethod
+    def ok_status(data: any = None) -> 'Status':
+        return Status(0, data=data)
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+    @staticmethod
+    def err_status(msg: str) -> 'Status':
+        return Status(-1, msg=msg)
+
+    @property
+    def msg(self):
+        return self._msg
+
+    @property
+    def data(self):
+        return self._data
+
+    def is_ok(self):
+        return self._code == 0

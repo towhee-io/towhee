@@ -19,7 +19,7 @@ from pathlib import Path
 
 from towhee.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
-from towhee.engine.task import Task
+from towhee.engine.operator_runner.runner_base import _OpInfo
 from towhee.tests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 
@@ -38,7 +38,7 @@ class TestOperatorPool(unittest.TestCase):
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
-        fm = FileManager(fmc) # pylint: disable=unused-variable
+        FileManager(fmc)
 
     # @classmethod
     # def tearDownClass(cls):
@@ -54,12 +54,12 @@ class TestOperatorPool(unittest.TestCase):
         self.assertFalse(self._op_pool.available_ops)
 
     def test_acquire_release(self):
-
         hub_op_id = 'local/add_operator'
-        task = Task('test', hub_op_id, {'factor': 0}, (1), 0)
+        op_info = _OpInfo('add_operator', hub_op_id, {'factor': 0})
 
-        # Acquire the operator.
-        op = self._op_pool.acquire_op(task)
+        op = self._op_pool.acquire_op(op_info.op_key,
+                                      op_info.hub_op_id,
+                                      op_info.op_args)
 
         # Perform some simple operations.
         self.assertTrue(isinstance(op, Operator))
@@ -67,8 +67,9 @@ class TestOperatorPool(unittest.TestCase):
 
         # Release and re-acquire the operator.
         self._op_pool.release_op(op)
-        op = self._op_pool.acquire_op(task)
-
+        op = self._op_pool.acquire_op(op_info.op_key,
+                                      op_info.hub_op_id,
+                                      op_info.op_args)
         # Perform more operations.
         self.assertEqual(op(-1).sum, -1)
         self.assertEqual(op(100).sum, 100)

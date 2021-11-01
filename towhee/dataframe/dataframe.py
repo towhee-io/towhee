@@ -56,6 +56,7 @@ class DataFrame:
         self._sealed = False
         self._lock = threading.Lock()
         self._seal_cv = threading.Condition(self._lock)
+        self._accessible_cv = threading.Condition(self._lock)
 
     @property
     def name(self) -> str:
@@ -82,6 +83,7 @@ class DataFrame:
         with self._lock:
             self._data.append(item)
             self._total += 1
+            self._accessible_cv.notify()
 
     def put_dict(self, data: Dict[str, Any]):
         datalist = [None] * len(self._cols)
@@ -96,8 +98,9 @@ class DataFrame:
         with self._lock:
             self._data += df.data
             self._total += len(df.data)
+            self._accessible_cv.notify_all()
 
-    def get(self, start: int, count: int) -> List[Tuple[Variable]]:
+    def get(self, start: int, count: int, block: bool = False) -> List[Tuple[Variable]]:
         """
         Get [start: start + count) elements within the `DataFrame`.
 
@@ -123,7 +126,8 @@ class DataFrame:
         # 2. put and seal will be called by the same operator
         # 3. seal will always be called after put
         # 4. iterators never ends until they meet df._sealed == True
-        with self._lock:
+
+        with self._accessible_cv:
             if start < self._start_idx:
                 raise IndexError(
                     'Can not read from {start}, dataframe {name} start index is {cur_start}',
@@ -132,6 +136,8 @@ class DataFrame:
                     cur_start=self._start_idx
                 )
 
+            if block and not self._accessible(start, count):
+                self._accessible_cv.wait()
 
             if self._total - start >= count:
                 idx0 = start - self._start_idx
@@ -142,17 +148,28 @@ class DataFrame:
                 if self._total <= start:
                     return None
                 return self._data[start:]
-
             return None
+
+    def notify_block_readers(self):
+        with self._accessible_cv:
+            self._accessible_cv.notify_all()
+
+    def _accessible(self, start: int, count: int) -> bool:
+        if self._sealed:
+            return True
+        if self._total - start >= count:
+            return True
+        return False
 
     def seal(self):
         with self._seal_cv:
             self._sealed = True
             self._seal_cv.notify_all()
+            self._accessible_cv.notify_all()
 
     def wait_sealed(self):
         with self._seal_cv:
-            if not self._sealed:
+            while not self._sealed:
                 self._seal_cv.wait()
 
     def clear(self):
@@ -169,14 +186,14 @@ class DataFrame:
         # TODO (junjie.jiangjjj)
         raise NotImplementedError
 
-    def map_iter(self):
-        it = MapIterator(self)
+    def map_iter(self, block: bool = False):
+        it = MapIterator(self, block)
         with self._lock:
             self._iters.append(it)
         return it
 
     def __str__(self) -> str:
-        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self._size, self._sealed)
+        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self.size, self._sealed)
 
 
 class DataFrameIterator:
@@ -218,18 +235,21 @@ class MapIterator(DataFrameIterator):
         df: The dataframe to iterate over.
     """
 
-    def __init__(self, df: DataFrame):
+    def __init__(self, df: DataFrame, block: bool = False):
         super().__init__(df)
-        self._lock = threading.Lock()
+        self._block = block
 
     def __next__(self) -> List[Tuple]:
-        with self._lock:
-            data = self._df_ref().get(self._cur_idx, 1)
-            if self._df_ref().sealed and not data:
-                raise StopIteration
-            if data:
-                self._cur_idx += 1
-            return data
+        data = self._df_ref().get(self._cur_idx, 1, self._block)
+        if self._df_ref().sealed and not data:
+            raise StopIteration
+        if data is not None:
+            self._cur_idx += 1
+            return data[0]
+        return None
+
+    def notify(self):
+        self._df_ref().notify_block_readers()
 
 
 class BatchIterator:

@@ -17,38 +17,29 @@ import unittest
 from queue import Queue
 
 from towhee.dataframe import DataFrame, Variable
-from towhee.engine._operator_io import MapDataFrameReader
+from towhee.engine.operator_io.reader import BlockMapDataFrameReader
+from towhee.engine.operator_io import create_reader
 
 from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
-class TestOperatorIO(unittest.TestCase):
-    """
-    op_ctx IO test
-    """
-
-    def test_map_reader(self):
-        df = DataFrame('test')
-        data = (Variable('int', 1), Variable(
-            'str', 'test'), Variable('float', 0.1))
-        t = DfWriter(df, 10, data=data)
-        t.start()
-        t.join()
-
-        map_reader = MapDataFrameReader(df, {'v1': 0, 'v2': 2})
-        self.assertEqual(map_reader.size, 10)
-        count = 0
-        while True:
+def read(map_reader: BlockMapDataFrameReader, q: Queue):
+    while True:
+        try:
             item = map_reader.read()
-            if not item:
-                break
-            self.assertEqual(item, {'v1': 1, 'v2': 0.1})
-            count += 1
-        self.assertEqual(count, 10)
-        df.seal()
-        self.assertEqual(map_reader.read(), None)
+            if item:
+                q.put(item)
+                continue
+        except StopIteration:
+            break
 
-    def test_map_reader_multithread(self):
+
+class TestReader(unittest.TestCase):
+    """
+    Reader test
+    """
+
+    def test_block_map_reader(self):
         df = DataFrame('test')
         data = (Variable('int', 1), Variable(
             'str', 'test'), Variable('float', 0.1))
@@ -56,20 +47,9 @@ class TestOperatorIO(unittest.TestCase):
         t = DfWriter(df, data_size, data=data)
         t.set_sealed_when_stop()
         t.start()
-        map_reader = MapDataFrameReader(df, {'v1': 0, 'v2': 2})
+        map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
 
         q = Queue()
-
-        def read(map_reader: MapDataFrameReader, q: Queue):
-            while True:
-                item = map_reader.read()
-                if item:
-                    q.put(item)
-                    continue
-                elif item is None:
-                    break
-                else:
-                    pass
 
         runner = MultiThreadRunner(
             target=read, args=(map_reader, q), thread_num=10)
@@ -82,3 +62,21 @@ class TestOperatorIO(unittest.TestCase):
             self.assertEqual(q.get(), {'v1': 1, 'v2': 0.1})
             count += 1
         self.assertEqual(count, data_size)
+
+    def test_close_reader(self):
+        df = DataFrame('test')
+        data = (Variable('int', 1), Variable(
+            'str', 'test'), Variable('float', 0.1))
+        data_size = 100
+        t = DfWriter(df, data_size, data=data)
+        t.start()
+        map_reader = create_reader([df], 'map', {'v1': 0, 'v2': 2})
+
+        q = Queue()
+
+        runner = MultiThreadRunner(
+            target=read, args=(map_reader, q), thread_num=10)
+
+        runner.start()
+        map_reader.close()
+        runner.join()

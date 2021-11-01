@@ -13,17 +13,23 @@
 # limitations under the License.
 
 
-from pathlib import Path
-# from towhee.engine.engine_v2 import Engine, EngineConfig as v2_Engine, v2_EngineConfig
-# from towhee.engine.engine import Engine, EngineConfig as v1_Engine, v1_EngineConfig
+from towhee.dataframe import DataFrame
+from typing import NamedTuple
 
-from towhee.engine.engine import Engine, EngineConfig
 
-CACHE_PATH = Path(__file__).parent.resolve()
+class DataFrameWriter:
+    """
+    Df writer
+    """
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+    def __init__(self, output_df: DataFrame):
+        self._output_df = output_df
+
+    def write(self, output_data: NamedTuple) -> bool:
+
+        # TODO (jiangjunjie) deal with task exception
+        if output_data is not None:
+            return self._output_df.put_dict(output_data._asdict())
+
+    def close(self):
+        self._output_df.seal()

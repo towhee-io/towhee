@@ -13,17 +13,9 @@
 # limitations under the License.
 
 
-from pathlib import Path
-# from towhee.engine.engine_v2 import Engine, EngineConfig as v2_Engine, v2_EngineConfig
-# from towhee.engine.engine import Engine, EngineConfig as v1_Engine, v1_EngineConfig
+import logging
 
-from towhee.engine.engine import Engine, EngineConfig
+FORMAT = '%(asctime)s - %(thread)d - %(filename)s-%(module)s:%(lineno)s - %(levelname)s: %(message)s'
+logging.basicConfig(format=FORMAT)
 
-CACHE_PATH = Path(__file__).parent.resolve()
-
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+engine_log = logging.getLogger('towhee.engine')
