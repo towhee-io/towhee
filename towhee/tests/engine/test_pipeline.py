@@ -15,8 +15,6 @@
 # import os
 from pathlib import Path
 import unittest
-from shutil import rmtree
-
 
 from PIL import Image
 
@@ -41,13 +39,10 @@ class TestPipeline(unittest.TestCase):
         operator_cache = (CACHE_PATH/'mock_operators')
         fmc = FileManagerConfig()
         fmc.change_default_cache(new_cache)
-        pipelines = [path for path in (pipeline_cache).rglob('*.yaml')]
+        pipelines = list(pipeline_cache.rglob('*.yaml'))
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
-        
-        
-
 
     def test_empty_input(self):
         p = pipeline('local/simple_pipeline', fmc=FileManagerConfig())

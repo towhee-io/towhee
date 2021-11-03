@@ -113,7 +113,6 @@ class FileManagerConfig():
 
         """
         self._cache_paths = [self._default_cache]
-           
 
     def cache_local_operator(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
         """
@@ -174,7 +173,6 @@ class FileManagerConfig():
 
                 if op not in self._cache_pipelines:
                     self._cache_pipelines.append(op)
-                
 
     def __str__(self):
         return str(self.__dict__)
@@ -359,7 +357,7 @@ class FileManager():
 
             file_path = self._config.default_cache / operator_path
             found_existing = False
-            
+
             for path in self._config.cache_paths:
                 path = path / operator_path
                 if path.is_file():
