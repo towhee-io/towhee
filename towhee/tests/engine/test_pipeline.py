@@ -15,6 +15,7 @@
 # import os
 from pathlib import Path
 import unittest
+from shutil import rmtree
 
 
 from PIL import Image
@@ -25,32 +26,41 @@ from towhee.hub.file_manager import FileManagerConfig
 
 
 CACHE_PATH = Path(__file__).parent.parent.resolve()
-fmc = FileManagerConfig(set_default_cache=CACHE_PATH)
 
 
 class TestPipeline(unittest.TestCase):
     """
     Tests `pipeline` functionality.
     """
-
     def setUp(self):
         conf = EngineConfig()
         conf.cache_path = CACHE_PATH
         conf.sched_interval_ms = 20
+        new_cache = (CACHE_PATH/'test_cache')
+        pipeline_cache = (CACHE_PATH/'test_util')
+        operator_cache = (CACHE_PATH/'mock_operators')
+        fmc = FileManagerConfig()
+        fmc.change_default_cache(new_cache)
+        pipelines = [path for path in (pipeline_cache).rglob('*.yaml')]
+        operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+        fmc.cache_local_pipeline(pipelines)
+        fmc.cache_local_operator(operators)
+        
+        
 
 
     def test_empty_input(self):
-        p = pipeline('test_util/simple_pipeline', fmc=fmc)
+        p = pipeline('local/simple_pipeline', fmc=FileManagerConfig())
         self.assertEqual(p(), [])
 
     def test_simple_pipeline(self):
-        p = pipeline('test_util/simple_pipeline', fmc=fmc)
+        p = pipeline('local/simple_pipeline', fmc=FileManagerConfig())
         res = p(0)
         self.assertEqual(res[0], 3)
 
     def test_embedding_pipeline(self):
-        p = pipeline('test_util/resnet50_embedding',
-                     fmc=fmc)
+        p = pipeline('local/resnet50_embedding',
+                     fmc=FileManagerConfig())
         img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
             'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
         img = Image.open(str(img_path))
@@ -59,11 +69,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_simple_pipeline_multirow(self):
         #pylint: disable=protected-access
-        p = pipeline('test_util/simple_pipeline', fmc=fmc)
+        p = pipeline('local/simple_pipeline', fmc=FileManagerConfig())
         p._pipeline.parallelism = 2
         res = p(list(range(1000)))
         for n in range(1000):
             self.assertEqual(res[n], n+3)
+
 
 
 # class TestPipelineCache(unittest.TestCase):
@@ -81,3 +92,6 @@ class TestPipeline(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    # x = TestPipeline()
+    # x.setUp()
+    

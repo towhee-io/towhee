@@ -16,7 +16,7 @@ operators:
             type: map
     -
         name: 'flat_op'
-        function: 'mock_operators/repeat_operator'
+        function: 'local/repeat_operator'
         init_args:
             repeat: 5
         inputs:

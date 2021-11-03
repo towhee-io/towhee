@@ -16,7 +16,7 @@ operators:
             type: map
     -
         name: 'add_op1'
-        function: 'mock_operators/add_operator'
+        function: 'local/add_operator'
         init_args:
             factor: 1
         inputs:
@@ -31,7 +31,7 @@ operators:
             type: map
     -
         name: 'add_op2'
-        function: 'mock_operators/add_operator'
+        function: 'local/add_operator'
         init_args:
             factor: 2
         inputs:

@@ -22,7 +22,8 @@ from towhee.engine.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 from towhee.hub.hub_tools import download_repo
 
-class FileManagerConfig:
+@singleton
+class FileManagerConfig():
     """
     Global FileManager config
 
@@ -35,12 +36,17 @@ class FileManagerConfig:
             will be used.
     """
 
-    def __init__(self, set_default_cache: Union[str, Path] = DEFAULT_LOCAL_CACHE_ROOT):
+    def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
-        self._default_cache = Path(set_default_cache)
-        self._cache_paths = [self._default_cache]
+        self._default_cache = DEFAULT_LOCAL_CACHE_ROOT
+        self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
         self._cache_operators = []
         self._cache_pipelines = []
+
+        self._default_lock = threading.Lock()
+        self._paths_lock = threading.Lock()
+        self._operators_lock = threading.Lock()
+        self._pipelines_lock = threading.Lock()
 
     @property
     def default_cache(self):
@@ -58,6 +64,12 @@ class FileManagerConfig:
     def cache_pipelines(self):
         return self._cache_pipelines
 
+    def change_default_cache(self, default_path: Union[str, Path]):
+        default_path = Path(default_path)
+        with self._paths_lock and self._default_lock:
+            self._cache_paths[-1] = default_path
+            self._default_cache = default_path
+
 
     def add_cache_path(self, insert_path: Union[str, Path, List[Union[str, Path]]]):
         """
@@ -68,12 +80,13 @@ class FileManagerConfig:
             insert_path (`str` | `Path | `list[str | Path]`):
                 The path that you are trying to add. Accepts multiple inputs at once.
         """
-        if not isinstance(insert_path, list):
-            insert_path = [insert_path]
+        with self._paths_lock:
+            if not isinstance(insert_path, list):
+                insert_path = [insert_path]
 
-        for path in insert_path:
-            if str(path) not in [str(x) for x in self._cache_paths]:
-                self._cache_paths.insert(0, Path(path))
+            for path in insert_path:
+                if str(path) not in [str(x) for x in self._cache_paths]:
+                    self._cache_paths.insert(0, Path(path))
 
     # Pretty useless now but might be worth having in the future
     def remove_cache_path(self, remove_path: Union[str, Path, List[Union[str, Path]]]):
@@ -84,79 +97,84 @@ class FileManagerConfig:
             remove_path (`str` | `Path | `list[str | Path]`):
                 The path that you are trying to remove. Accepts multiple inputs at once.
         """
-        if not isinstance(remove_path, list):
-            remove_path = [remove_path]
-        for path in remove_path:
-            try:
-                self._cache_paths.remove(Path(path))
-            except ValueError:
-                # TODO: Log this instead of print.
-                print(str(Path(path)) + ' not found.')
+        with self._paths_lock:
+            if not isinstance(remove_path, list):
+                remove_path = [remove_path]
+            for path in remove_path:
+                try:
+                    self._cache_paths.remove(Path(path))
+                except ValueError:
+                    # TODO: Log this instead of print.
+                    print(str(Path(path)) + ' not found.')
 
-    def reset_cache_path(self, use_def_cache: bool = True):
+    def reset_cache_path(self):
         """
         Remove all cache locations.
 
-        Args:
-            use_def_cache (`bool`):
-                Once emptied, should the default cache be readded.
         """
-        if use_def_cache:
-            self._cache_paths = [self._default_cache]
-        else:
-            self._cache_paths = []
+        self._cache_paths = [self._default_cache]
+           
 
-    def cache_local_operator(self, path: Union[str, Path], overwrite: bool = True, cache: Union[str, Path] = None):
+    def cache_local_operator(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
         """
         Add a local operator to a cache. In order for operators to be visible to Towhee
         they need to be cached.
 
         Args:
-            path (`str` | `Path`):
+            path (`str` | `Path | `list[str | Path]`):
                 The path to the operator or its directory.
             overwrite (`bool`):
                 Whether to overwrite already existing operator in cache.
             cache (`str` | `Path`):
                 Optional location to cache the opeartor.
         """
-        if cache is None:
-            cache = self._default_cache
-        op = {}
-        op['path'] = Path(path)
-        op['name'] = op['path'].name
-        op['cache'] = Path(cache)
-        op['overwrite'] = overwrite
+        if not isinstance(path, list):
+            path = [path]
 
-        if op not in self._cache_operators:
-            self._cache_operators.append(op)
-        else:
-            print('Already in add queue.')
+        with self._operators_lock:
+            if cache is None:
+                with self._default_lock:
+                    cache = self._default_cache
+            for  paths in path:
+                op = {}
+                op['path'] = Path(paths)
+                op['name'] = op['path'].name
+                op['cache'] = Path(cache)
+                op['overwrite'] = overwrite
 
-    def cache_local_pipeline(self, path: Union[str, Path], overwrite: bool = True, cache: Union[str, Path] = None):
+                if op not in self._cache_operators:
+                    self._cache_operators.append(op)
+
+    def cache_local_pipeline(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
         """
         Add a local pipeline to a cache. In order for pipelines to be visible to Towhee
         they need to be cached.
 
         Args:
-            path (`str` | `Path`):
+            path (`str` | `Path | `list[str | Path]`):
                 The path to the pipeline or its directory.
             overwrite (`bool`):
                 Whether to overwrite already existing operator in cache.
             cache (`str` | `Path`):
                 Optional location to cache the opeartor.
         """
-        if cache is None:
-            cache = self._default_cache
-        op = {}
-        op['path'] = Path(path)
-        op['name'] = op['path'].name
-        op['cache'] = Path(cache)
-        op['overwrite'] = overwrite
+        if not isinstance(path, list):
+            path = [path]
 
-        if op not in self._cache_pipelines:
-            self._cache_pipelines.append(op)
-        else:
-            print('Already in add queue.')
+        with self._pipelines_lock:
+            if cache is None:
+                with self._default_lock:
+                    cache = self._default_cache
+            for paths in path:
+                op = {}
+                op['path'] = Path(paths)
+                op['name'] = op['path'].name
+                op['cache'] = Path(cache)
+                op['overwrite'] = overwrite
+
+                if op not in self._cache_pipelines:
+                    self._cache_pipelines.append(op)
+                
 
     def __str__(self):
         return str(self.__dict__)
@@ -197,46 +215,44 @@ class FileManager():
     # Decide if to treat pipelines and operators the same. Should we allow single .py
     # for opeartor and should we allow directory for pipeline.
     def _cache_locals(self):
-        self._pipeline_lock.acquire()  # pylint: disable=consider-using-with
-        for pipe in self._config.cache_pipelines:
-            new_dir = self._cache_name(pipe['name'], author='local', branch='main')
-            file = pipe['name']
-            cache_path = pipe['cache']
-            old_path = pipe['path']
-            new_path = cache_path / new_dir / file
+        with self._pipeline_lock:
+            for pipe in self._config.cache_pipelines:
+                new_dir = self._cache_name(pipe['name'], author='local', branch='main')
+                file = pipe['name']
+                cache_path = pipe['cache']
+                old_path = pipe['path']
+                new_path = cache_path / new_dir / file
 
-            if pipe['overwrite']:
-                Path.unlink(new_path, missing_ok=True)
+                if pipe['overwrite']:
+                    Path.unlink(new_path, missing_ok=True)
 
-            if new_path.is_file():
-                # TODO: filip-halt
-                # Error logging.
-                print('Did not overwrite.')
-            else:
-                # TODO: filip-halt
-                # Figure out exception types.
-                new_path.parent.mkdir(parents=True, exist_ok=True)
-                copy2(str(old_path), str(new_path))
-        self._pipeline_lock.release()
+                if new_path.is_file():
+                    # TODO: filip-halt
+                    # Error logging.
+                    print('Did not overwrite.')
+                else:
+                    # TODO: filip-halt
+                    # Figure out exception types.
+                    new_path.parent.mkdir(parents=True, exist_ok=True)
+                    copy2(str(old_path), str(new_path))
 
-        self._operator_lock.acquire()  # pylint: disable=consider-using-with
-        for op in self._config.cache_operators:
-            new_dir = self._cache_name(op['name'], author='local', branch='main')
-            cache_path = op['cache']
-            old_path = op['path']
-            new_path = cache_path / new_dir
+        with self._operator_lock:
+            for op in self._config.cache_operators:
+                new_dir = self._cache_name(op['name'], author='local', branch='main')
+                cache_path = op['cache']
+                old_path = op['path']
+                new_path = cache_path / new_dir
 
-            if op['overwrite'] and new_path.is_dir():
-                rmtree(new_path)
+                if op['overwrite'] and new_path.is_dir():
+                    rmtree(new_path)
 
-            if new_path.is_dir():
-                # TODO: filip-halt
-                # Error logging.
-                print('Did not overwrite.')
-            else:
-                # TODO: Figure out exception types
-                copytree(str(old_path), str(new_path))
-        self._operator_lock.release()
+                if new_path.is_dir():
+                    # TODO: filip-halt
+                    # Error logging.
+                    print('Did not overwrite.')
+                else:
+                    # TODO: Figure out exception types
+                    copytree(str(old_path), str(new_path))
 
     def get_pipeline(self, pipeline: str, branch: str = 'main', redownload: bool = False, install_reqs = True):
         """
@@ -264,46 +280,43 @@ class FileManager():
             (`ValueError`):
                 Incorrect pipeline format.
         """
-        self._pipeline_lock.acquire()  # pylint: disable=consider-using-with
-        pipeline_split = pipeline.split('/')
-        # For now assuming all piplines will be classifed as 'author/repo'.
-        if len(pipeline_split) != 2:
-            raise ValueError(
-                '''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.'''
-            )
-        author = pipeline_split[0]
-        repo = pipeline_split[1]
+        with self._pipeline_lock:
+            pipeline_split = pipeline.split('/')
+            # For now assuming all piplines will be classifed as 'author/repo'.
+            if len(pipeline_split) != 2:
+                raise ValueError(
+                    '''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.'''
+                )
+            author = pipeline_split[0]
+            repo = pipeline_split[1]
 
-        pipeline_path = self._cache_name(repo, author, branch) + '/' + repo + '.yaml'
+            pipeline_path = self._cache_name(repo, author, branch) + '/' + repo + '.yaml'
 
-        file_path = self._config.default_cache / pipeline_path
+            file_path = self._config.default_cache / pipeline_path
+            found_existing = False
 
-        for path in self._config.cache_paths:
-            path = path / pipeline_path
-            if path.is_file():
-                file_path = path
-                found_existing = True
-                break
+            for path in self._config.cache_paths:
+                path = path / pipeline_path
+                if path.is_file():
+                    file_path = path
+                    found_existing = True
+                    break
 
-        if author == 'local' and found_existing is False:
-            # TODO: filip-halt
-            # Error logging.
-            print('Local file not found, has it been imported?')
-            self._pipeline_lock.release()
-            return None
-        elif author == 'local' and found_existing is True:
-            self._pipeline_lock.release()
-            return file_path
+            if author == 'local':
+                if found_existing is False:
+                    # TODO: filip-halt
+                    # Error logging.
+                    print('Local file not found, has it been imported?')
+                    file_path = None
+            else:
+                if redownload:
+                    # TODO: filip-halt
+                    # Error logging.
+                    rmtree(file_path.parent)
 
-        if redownload:
-            # TODO: filip-halt
-            # Error logging.
-            rmtree(file_path.parent)
+                if file_path.is_file() is False:
+                    download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
 
-        if file_path.is_file() is False:
-            download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
-
-        self._pipeline_lock.release()
         return file_path
 
     def get_operator(self, operator: str, branch: str = 'main', redownload: bool = False, install_reqs = True):
@@ -332,45 +345,41 @@ class FileManager():
             (`ValueError`):
                 Incorrect opeartor format.
         """
-        self._operator_lock.acquire()  # pylint: disable=consider-using-with
-        operator_split = operator.split('/')
-        # For now assuming all piplines will be classifed as 'author/repo'.
-        if len(operator_split) != 2:
-            raise ValueError(
-                '''Incorrect operator format, should be '<author>/<operator_repo>'.'''
-            )
-        author = operator_split[0]
-        repo = operator_split[1]
+        with self._operator_lock:
+            operator_split = operator.split('/')
+            # For now assuming all piplines will be classifed as 'author/repo'.
+            if len(operator_split) != 2:
+                raise ValueError(
+                    '''Incorrect operator format, should be '<author>/<operator_repo>'.'''
+                )
+            author = operator_split[0]
+            repo = operator_split[1]
 
-        operator_path = self._cache_name(repo, author, branch) + '/' + repo + '.py'
+            operator_path = self._cache_name(repo, author, branch) + '/' + repo + '.py'
 
-        file_path = self._config.default_cache / operator_path
+            file_path = self._config.default_cache / operator_path
+            found_existing = False
+            
+            for path in self._config.cache_paths:
+                path = path / operator_path
+                if path.is_file():
+                    file_path = path
+                    found_existing = True
+                    break
 
-        for path in self._config.cache_paths:
-            path = path / operator_path
-            if path.is_file():
-                file_path = path
-                found_existing = True
-                break
+            if author == 'local':
+                if found_existing is False:
+                # TODO: filip-halt
+                # Error logging.
+                    print('Local file not found, has it been imported?')
+                    file_path = None
+            else:
+                if redownload:
+                    # TODO: filip-halt
+                    # Error logging.
+                    rmtree(file_path.parent)
 
-        if author == 'local' and found_existing is False:
-            # TODO: filip-halt
-            # Error logging.
-            print('Local file not found, has it been imported?')
-            self._operator_lock.release()
-            return None
-        elif author == 'local' and found_existing is True:
-            self._operator_lock.release()
-            return file_path
-
-        if redownload:
-            # TODO: filip-halt
-            # Error logging.
-            rmtree(file_path.parent)
-
-        if file_path.is_file() is False:
-            download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
-
-        self._operator_lock.release()
+                if file_path.is_file() is False:
+                    download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
         return file_path
 
