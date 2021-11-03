@@ -15,6 +15,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 import unittest
 from pathlib import Path
+from typing import List
 
 
 def test_suite():
@@ -28,12 +29,10 @@ def create_towhee_cache(dst: str):
         Path(dst).mkdir(parents=True)
 
 
-# class PostInstallCommand(install):
-#     def run(self):
-#         from towhee.engine import LOCAL_OPERATOR_CACHE, LOCAL_PIPELINE_CACHE
-#         install.run(self)
-#         create_towhee_cache(LOCAL_PIPELINE_CACHE)
-#         create_towhee_cache(LOCAL_OPERATOR_CACHE)
+def parse_requirements(file_name: str) -> List[str]:
+    with open(file_name) as f:
+        return [require.strip() for require in f if require.strip() and not require.startswith("#")]
+
 
 setup(
     name="towhee",
@@ -43,18 +42,7 @@ setup(
     author_email="towhee-team@zilliz.com",
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
-    # install_requires=[
-    #     'torch>=1.2.0',
-    #     'torchvision>=0.4.0',
-    #     'numpy>=1.19.5',
-    #     'pandas>=1.1.5',
-    #     'pyyaml>=5.3.0',
-    #     'requests>=2.12.5',
-    #     'tqdm>=4.59.0',
-    #     'pillow>=8.3.1',
-    #     'scipy>=1.5.3',
-    #     'opencv-python>=4.5.3.56',
-    # ],
+    install_requires=parse_requirements('requirements.txt'),
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",

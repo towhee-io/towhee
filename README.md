@@ -32,7 +32,6 @@ Towhee can be installed as follows:
 % pip install -U pip
 % pip cache purge
 % pip install towhee
-% pip install -r requirements.txt
 ```
 
 Towhee provides pre-built computer vision models which can be used to generate embeddings:
