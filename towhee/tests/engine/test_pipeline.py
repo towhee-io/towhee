@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+# import os
 from pathlib import Path
 import unittest
 
 
 from PIL import Image
 
-from towhee import pipeline, _get_pipeline_cache, _PIPELINE_CACHE_ENV
+from towhee import pipeline
 from towhee.engine.engine import EngineConfig
+from towhee.hub.file_manager import FileManagerConfig
 
 
 CACHE_PATH = Path(__file__).parent.parent.resolve()
+fmc = FileManagerConfig(set_default_cache=CACHE_PATH)
 
 
 class TestPipeline(unittest.TestCase):
@@ -36,18 +38,19 @@ class TestPipeline(unittest.TestCase):
         conf.cache_path = CACHE_PATH
         conf.sched_interval_ms = 20
 
+
     def test_empty_input(self):
-        p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
+        p = pipeline('test_util/simple_pipeline', fmc=fmc)
         self.assertEqual(p(), [])
 
     def test_simple_pipeline(self):
-        p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
+        p = pipeline('test_util/simple_pipeline', fmc=fmc)
         res = p(0)
         self.assertEqual(res[0], 3)
 
     def test_embedding_pipeline(self):
         p = pipeline('test_util/resnet50_embedding',
-                     cache=str(CACHE_PATH))
+                     fmc=fmc)
         img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
             'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
         img = Image.open(str(img_path))
@@ -56,24 +59,24 @@ class TestPipeline(unittest.TestCase):
 
     def test_simple_pipeline_multirow(self):
         #pylint: disable=protected-access
-        p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
+        p = pipeline('test_util/simple_pipeline', fmc=fmc)
         p._pipeline.parallelism = 2
         res = p(list(range(1000)))
         for n in range(1000):
             self.assertEqual(res[n], n+3)
 
 
-class TestPipelineCache(unittest.TestCase):
-    def test_pipeline_cache(self):
-        self.assertEqual(_get_pipeline_cache(
-            None), Path.home() / '.towhee/pipelines')
+# class TestPipelineCache(unittest.TestCase):
+#     def test_pipeline_cache(self):
+#         self.assertEqual(_get_pipeline_cache(
+#             None), Path.home() / '.towhee/pipelines')
 
-        os.environ[_PIPELINE_CACHE_ENV] = '/opt/.pipeline'
-        self.assertEqual(_get_pipeline_cache(
-            None), Path('/opt/.pipeline'))
+#         os.environ[_PIPELINE_CACHE_ENV] = '/opt/.pipeline'
+#         self.assertEqual(_get_pipeline_cache(
+#             None), Path('/opt/.pipeline'))
 
-        self.assertEqual(_get_pipeline_cache(
-            '/home/mycache'), Path('/home/mycache'))
+#         self.assertEqual(_get_pipeline_cache(
+#             '/home/mycache'), Path('/home/mycache'))
 
 
 if __name__ == '__main__':
