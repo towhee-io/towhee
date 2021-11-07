@@ -18,8 +18,7 @@ from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
 import unittest
 
-from towhee.engine.engine import Engine, EngineConfig
-from towhee.tests import CACHE_PATH
+from towhee.engine.engine import Engine
 from towhee.engine.pipeline import Pipeline
 from towhee.dataframe import DataFrame, Variable
 from towhee.tests.test_util import SIMPLE_PIPELINE_YAML, FLATMAP_PIPELINE_YAML
@@ -30,14 +29,6 @@ class TestEngine(unittest.TestCase):
     """
     combine tests of engine/scheduler/task-executor/task
     """
-
-    def setUp(self):
-        conf = EngineConfig()
-        conf.cache_path = CACHE_PATH
-        conf.sched_interval_ms = 20
-        engine = Engine()
-        if not engine.is_alive():
-            engine.start()
 
     def test_engine(self):
 

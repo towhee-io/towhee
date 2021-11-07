@@ -20,21 +20,13 @@ import unittest
 from PIL import Image
 
 from towhee import pipeline, _get_pipeline_cache, _PIPELINE_CACHE_ENV
-from towhee.engine.engine import EngineConfig
-
-
-CACHE_PATH = Path(__file__).parent.parent.resolve()
+from towhee.tests import CACHE_PATH
 
 
 class TestPipeline(unittest.TestCase):
     """
     Tests `pipeline` functionality.
     """
-
-    def setUp(self):
-        conf = EngineConfig()
-        conf.cache_path = CACHE_PATH
-        conf.sched_interval_ms = 20
 
     def test_empty_input(self):
         p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
