@@ -12,26 +12,87 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import Enum, auto
 
 from towhee.utils.log import engine_log
 
 
 class RunnerStatus(Enum):
-    IDLE = 0
-    RUNNING = 1
-    FINISHED = 2
-    FAILED = 3
-    STOPPED = 4
+    IDLE = auto()
+    RUNNING = auto()
+    FINISHED = auto()
+    FAILED = auto()
+
+
+class _OpInfo:
+    def __init__(self, op_name: str, hub_op_id: str,
+                 op_args: Dict[str, any]) -> None:
+        self._op_name = op_name
+        self._hub_op_id = hub_op_id
+        self._op_args = op_args
+        self._op_key = _OpInfo._calc_op_key(hub_op_id, op_args)
+
+    @property
+    def op_key(self):
+        return self._op_key
+
+    @property
+    def op_name(self):
+        return self._op_name
+
+    @property
+    def hub_op_id(self):
+        return self._hub_op_id
+
+    @property
+    def op_args(self):
+        return self._op_args
+
+    @staticmethod
+    def _calc_op_key(hub_op_id: str, op_args: Dict[str, any]):
+        if op_args:
+            args_tup = tuple(sorted(op_args.items()))
+        else:
+            args_tup = ()
+        return (hub_op_id, ) + args_tup
 
 
 class RunnerBase(ABC):
-    def __init__(self, name: str, index: int):
+    """
+    Running instance of op.
+
+    The base class provides some function to control status.
+    """
+    
+    def __init__(self, name: str, index: int,
+                 op_name: str, hub_op_id: str,
+                 op_args: Dict[str, any],
+                 reader=None, writer=None) -> None:
         self._name = name
         self._index = index
         self._status = RunnerStatus.IDLE
+        self._op_info = _OpInfo(op_name, hub_op_id, op_args)
+        self._reader = reader
+        self._writer = writer
         self._need_stop = False
+
+    @property
+    def op_key(self):
+        return self._op_info.op_key
+
+    @property
+    def op_name(self):
+        return self._op_info.op_name
+
+    @property
+    def hub_op_id(self):
+        return self._op_info.hub_op_id
+
+    @property
+    def op_args(self):
+        return self._op_info.op_args
 
     @property
     def status(self) -> RunnerStatus:
@@ -44,13 +105,16 @@ class RunnerBase(ABC):
         self._set_status(RunnerStatus.IDLE)
 
     def _set_failed(self, msg: str) -> None:
-        engine_log.error('{} failed'.format(str(self)))
+        engine_log.error('{} runs failed'.format(str(self)))
         self._msg = msg
         self._set_status(RunnerStatus.FAILED)
 
     def _set_running(self) -> None:
         self._set_status(RunnerStatus.RUNNING)
-        
+
+    def _set_stop(self):
+        self._reader.close()
+        self._set_status(RunnerStatus.STOPPED)
 
     def _set_status(self, status: RunnerStatus) -> None:
         self._status = status
@@ -58,11 +122,13 @@ class RunnerBase(ABC):
     def is_idle(self) -> bool:
         return self.status == RunnerStatus.IDLE
 
-    def is_stop(self) -> bool:
-        return self.status == RunnerStatus.STOPPED
+    def is_finished(self) -> bool:
+        return self.status == RunnerStatus.FINISHED
 
     def set_stop(self) -> None:
-        self._need_stop = True
+        engine_log.info('Begin to stop {}'.format(str(self)))
+        self._need_stop = True        
+        self._reader.close()
 
     def __str__(self) -> str:
         return '{}:{}'.format(self._name, self._index)
@@ -72,9 +138,12 @@ class RunnerBase(ABC):
         raise NotImplementedError
 
     def process(self):
-        engine_log.info('Begin run {}'.format(str(self)))
+        engine_log.info('Begin to run {}'.format(str(self)))
         self._set_running()
-        while not self._need_stop:
-            if self.process_step():
+        while True:
+            if not self._need_stop:
+                if self.process_step():
+                    break
+            else:
+                self._set_finished()
                 break
-

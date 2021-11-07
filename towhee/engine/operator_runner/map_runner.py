@@ -28,10 +28,10 @@ class MapRunner(RunnerBase):
     If run an op error, we should pass error info by an error handler.
     """
 
-    def __init__(self, name: str, index: int, reader, writer):
-        super().__init__(name, index)
-        self._reader = reader
-        self._writer = writer
+    def __init__(self, name: str, index: int,
+                 op_name: str, hub_op_id: str,
+                 op_args: Dict[str, any], reader, writer) -> None:
+        super().__init__(name, index, op_name, hub_op_id, op_args, reader, writer)
         self._op = None
 
     def set_op(self, op):
@@ -40,7 +40,7 @@ class MapRunner(RunnerBase):
     def unset_op(self):
         raise NotImplementedError
 
-    def _get_inputs(self) -> Dict[str, any]:
+    def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
             data = self._reader.read()
             if data is None:
@@ -49,6 +49,7 @@ class MapRunner(RunnerBase):
                 return False, data
         except StopIteration:
             return True, None
+
 
     def _set_outputs(self, output: any):
         self._writer.write(output)

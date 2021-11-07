@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict
 
 from towhee.operator import Operator
 from towhee.engine.operator_loader import OperatorLoader
@@ -64,6 +65,35 @@ class OperatorPool:
         op_key = task.op_key
         if op_key not in self._all_ops:
             op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
+            op.key = op_key
+        else:
+            op = self._all_ops[op_key]
+
+        # Let there be a record of the operator existing in the pool, but remove its
+        # pointer until the operator is released by the `TaskExecutor`.
+        self._all_ops[op_key] = None
+
+        return op
+
+
+    def acquire_op_v2(self, op_key: str, hub_op_id: str,
+                      op_args: Dict[str, any]) -> Operator:
+        """Given a `Task`, instruct the `OperatorPool` to reserve and return the
+        specified operator for use in the executor.
+
+        Args:
+            task: (`towhee.Task`)
+                Task to acquire an operator for.
+
+        Returns:
+            (`towhee.operator.Operator`)
+                The operator instance reserved for the caller.
+        """
+
+        # Load the operator if the computed key does not exist in the operator
+        # dictionary.
+        if op_key not in self._all_ops:
+            op = self._op_loader.load_operator(hub_op_id, op_args)
             op.key = op_key
         else:
             op = self._all_ops[op_key]

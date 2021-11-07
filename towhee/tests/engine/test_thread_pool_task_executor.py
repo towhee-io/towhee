@@ -15,12 +15,13 @@
 
 import unittest
 from typing import Dict
-import threading
 from queue import Queue
+import time
 
-from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.map_runner import MapRunner
-from towhee.tests.mock_operators.add_operator import add_operator
+from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
+from towhee.tests import CACHE_PATH
 
 
 DATA_QUEUE = Queue()
@@ -34,11 +35,16 @@ class MockReader:
         self._queue = queue
 
     def read(self):
+        # Blocking if queue is empty
         data = self._queue.get()
+
         if not isinstance(data, StopFrame):
             return data
         else:
             raise StopIteration()
+
+    def close(self):
+        self._queue.put(StopFrame())
 
 
 class MockWriter:
@@ -49,57 +55,34 @@ class MockWriter:
         self.res.append(data)
 
 
-def run(runner):
-    runner.process()
-
-
-class TestMapRunner(unittest.TestCase):
-    def test_map_runner(self):
+class TestThreadPoolTaskExecutor(unittest.TestCase):
+    def setUp(self):
+        self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test',
+                                                 CACHE_PATH)
+        self._task_exec.start()
+        
+    def test_pool_with_map_runner(self):
         data_queue = Queue()
         writer = MockWriter()
+        hub_op_id = 'mock_operators/add_operator'
         runner = MapRunner('test', 0, 'add_operator',
-                           'mock_operators', {'num': 1},
+                           hub_op_id, {'factor': 1},
                            MockReader(data_queue), writer)
-        runner.set_op(add_operator.AddOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
+        self._task_exec.push_task(runner)
 
         data_queue.put({'num': 1})
         data_queue.put({'num': 2})
         data_queue.put({'num': 3})
-        data_queue.put(None)
-        t.join()
-        res = 4
+        
+        time.sleep(0.1)
+        runner.set_stop()
+        time.sleep(0.1)
+        self._task_exec.stop()
+
+        res = 2
         for item in writer.res:
             self.assertEqual(item[0], res)
             res += 1
-        self.assertEqual(runner.status, RunnerStatus.IDLE)
-
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
-
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 4})
-        data_queue.put({'num': 5})
-        data_queue.put(StopFrame())
-        t.join()
-        res = 4
-        for item in writer.res:
-            self.assertEqual(item[0], res)
-            res += 1
+            
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
-    def test_map_runner_with_error(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = MapRunner('test', 0, 'add_operator',
-                           'mock_operators', {'num': 1},
-                           MockReader(data_queue), writer)
-
-        runner.set_op(add_operator.AddOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
-        data_queue.put('error_data')
-        t.join()
-        self.assertEqual(runner.status, RunnerStatus.FAILED)
