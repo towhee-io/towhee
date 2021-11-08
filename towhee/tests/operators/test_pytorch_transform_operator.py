@@ -12,28 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from PIL import Image
 from torchvision import transforms
 import os
 
-from towhee.tests.mock_operators import PYTORCH_TRANSFORME_OPERATOR_PATH, load_local_operator
+from towhee.tests.mock_operators import PYTORCH_TRANSFORM_OPERATOR_PATH, load_local_operator
 
 
 class PytorchTransformTest(unittest.TestCase):
     pwd = os.getcwd()
-    test_dir = pwd+'/towhee/tests/models/vit/'
+    test_dir = pwd + '/towhee/tests/models/vit/'
     img = Image.open(test_dir + 'img.jpg')
-    tfms = transforms.Compose([transforms.Resize(256),
-                               transforms.CenterCrop(224),
-                               transforms.ToTensor(),
-                               transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-                               ])
+    tfms = transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]
+    )
     img1 = tfms(img).unsqueeze(0)
 
     def test_transform_operator(self):
-        trans = load_local_operator('pytorch_transform_operator', PYTORCH_TRANSFORME_OPERATOR_PATH)
+        trans = load_local_operator('pytorch_transform_operator', PYTORCH_TRANSFORM_OPERATOR_PATH)
         op = trans.PytorchTransformOperator(256)
         outputs = op(self.img)
         print(type(outputs.img_transformed))
