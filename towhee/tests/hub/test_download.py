@@ -4,7 +4,7 @@ from PIL import Image
 from shutil import rmtree
 from towhee import pipeline
 
-cache_path = Path(__file__).parent.resolve()
+cache_path = Path(__file__).parent.parent.resolve()
 
 
 class TestDownload(unittest.TestCase):
