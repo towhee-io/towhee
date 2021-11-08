@@ -15,14 +15,40 @@
 
 from pathlib import Path
 import unittest
+# from shutil import rmtree
 
 from towhee.engine.task_executor import TaskExecutor
 from towhee.engine.task import Task
+from towhee.hub.file_manager import FileManagerConfig, FileManager
+from towhee.tests import CACHE_PATH
+
+import os
 
 
 class TestTaskExecutor(unittest.TestCase):
     """Basic test case for `TaskExecutor`.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        new_cache = (CACHE_PATH/'test_cache')
+        pipeline_cache = (CACHE_PATH/'test_util')
+        operator_cache = (CACHE_PATH/'mock_operators')
+        print(new_cache)
+        fmc = FileManagerConfig()
+        fmc.change_default_cache(new_cache)
+        pipelines = list(pipeline_cache.rglob('*.yaml'))
+        operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+        fmc.cache_local_pipeline(pipelines)
+        fmc.cache_local_operator(operators)
+        fm = FileManager(fmc) # pylint: disable=unused-variable
+        x = os.listdir(str(new_cache))
+        print(x)
+
+    # @classmethod
+    # def tearDownClass(cls):
+    #     new_cache = (CACHE_PATH/'test_cache')
+    #     rmtree(str(new_cache))
 
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
@@ -40,7 +66,7 @@ class TestTaskExecutor(unittest.TestCase):
 
         # Create a couple of tasks to execute through the executor.
         tasks = []
-        hub_op_id = 'mock_operators/add_operator'
+        hub_op_id = 'local/add_operator'
         args = {'factor': 0}
         tasks.append(Task('test', hub_op_id, args, {'num': 0}, 0))
         tasks.append(Task('test', hub_op_id, args, {'num': 1}, 1))
@@ -60,7 +86,7 @@ class TestTaskExecutor(unittest.TestCase):
 
         # Create a couple of tasks to execute through the executor.
         tasks = []
-        hub_op_id = 'mock_operators/sub_operator'
+        hub_op_id = 'local/sub_operator'
         tasks.append(Task('test', hub_op_id, {}, {'a': 0, 'b': 0}, 0))
         tasks.append(Task('test', hub_op_id, {}, {'a': 10, 'b': 20}, 1))
         tasks.append(Task('test', hub_op_id, {}, {'a': 23, 'b': -1}, 24))

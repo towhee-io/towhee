@@ -11,24 +11,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import unittest
+# from shutil import rmtree
 
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
-import unittest
-
 from towhee.engine.engine import Engine
 from towhee.engine.pipeline import Pipeline
 from towhee.dataframe import DataFrame, Variable
 from towhee.tests.test_util import SIMPLE_PIPELINE_YAML, FLATMAP_PIPELINE_YAML
 from towhee.dag import OperatorRepr
+from towhee.tests import CACHE_PATH
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 
 class TestEngine(unittest.TestCase):
     """
     combine tests of engine/scheduler/task-executor/task
     """
+
+    @classmethod
+    def setUpClass(cls):
+        new_cache = (CACHE_PATH/'test_cache')
+        pipeline_cache = (CACHE_PATH/'test_util')
+        operator_cache = (CACHE_PATH/'mock_operators')
+        fmc = FileManagerConfig()
+        fmc.change_default_cache(new_cache)
+        pipelines = list(pipeline_cache.rglob('*.yaml'))
+        operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+        fmc.cache_local_pipeline(pipelines)
+        fmc.cache_local_operator(operators)
+        fm = FileManager(fmc) # pylint: disable=unused-variable
+
+    # @classmethod
+    # def tearDownClass(cls):
+    #     new_cache = (CACHE_PATH/'test_cache')
+    #     rmtree(str(new_cache))
 
     def test_engine(self):
 
@@ -44,8 +63,8 @@ class TestEngine(unittest.TestCase):
         )
 
         add_op_repr = OperatorRepr(
-            name='mock_operators/add_operator',
-            function='mock_operators/add_operator',
+            name='local/add_operator',
+            function='local/add_operator',
             init_args={'factor': 2},
             inputs=[
                 {'name': 'num', 'df': 'op_test_in', 'col': 0}

@@ -63,21 +63,30 @@ class FileManagerConfig():
     @property
     def cache_pipelines(self):
         return self._cache_pipelines
-    
+
     @property
     def operator_lock(self):
         return self._operators_lock
-    
+
     @property
     def pipeline_lock(self):
         return self._pipelines_lock
 
     def change_default_cache(self, default_path: Union[str, Path]):
+        """
+        Change the default cache path.
+
+        Args:
+            insert_path (`str` | `Path`):
+                The new default cache.
+        """
         default_path = Path(default_path)
         with self._paths_lock and self._default_lock:
-            if not self._cache_paths:
+            if not self._cache_paths or self._cache_paths[-1] != self._default_cache:
                 self._cache_paths.append(default_path)
-            self._cache_paths[-1] = default_path
+            else:
+                self._cache_paths[-1] = default_path
+
             self._default_cache = default_path
 
 
@@ -107,9 +116,10 @@ class FileManagerConfig():
             remove_path (`str` | `Path | `list[str | Path]`):
                 The path that you are trying to remove. Accepts multiple inputs at once.
         """
+        if not isinstance(remove_path, list):
+            remove_path = [remove_path]
+
         with self._paths_lock:
-            if not isinstance(remove_path, list):
-                remove_path = [remove_path]
             for path in remove_path:
                 try:
                     self._cache_paths.remove(Path(path))
@@ -144,7 +154,7 @@ class FileManagerConfig():
             if cache is None:
                 with self._default_lock:
                     cache = self._default_cache
-            for  paths in path:
+            for paths in path:
                 op = {}
                 op['path'] = Path(paths)
                 op['name'] = op['path'].name

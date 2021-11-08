@@ -16,7 +16,7 @@ operators:
             type: map
     -
         name: 'preprocessing'
-        function: 'mock_operators/pytorch_transform_operator'
+        function: 'local/pytorch_transform_operator'
         init_args:
             size: 256
         inputs:
@@ -31,7 +31,7 @@ operators:
             type: map
     -
         name: 'embedding_model'
-        function: 'mock_operators/pytorch_cnn_operator'
+        function: 'local/pytorch_cnn_operator'
         init_args:
             model_name: 'resnet50'
         inputs:
