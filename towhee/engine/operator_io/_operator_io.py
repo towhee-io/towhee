@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-import threading
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
 from typing import Dict, Optional, Tuple, Union, List, NamedTuple
@@ -76,7 +75,7 @@ class DataFrameReader(ABC):
         return ret
 
 
-class MapDataFrameReader(DataFrameReader):
+class BlockMapDataFrameReader(DataFrameReader):
     """
     Map dataframe reader
     """
@@ -87,18 +86,16 @@ class MapDataFrameReader(DataFrameReader):
         op_inputs_index: Dict[str, int]
     ):
         super().__init__(input_df.map_iter(), op_inputs_index)
-        self._lock = threading.Lock()
 
     def read(self) -> Optional[Dict[str, any]]:
         """
         Read data from dataframe, get cols by operator_repr info
         """
         try:
-            with self._lock:
-                data = next(self._iter)
-                if not data:
-                    return {}
-                return self._to_op_inputs(data[0])
+            data = next(self._iter)
+            if not data:
+                return {}
+            return self._to_op_inputs(data[0])
 
         except StopIteration:
             return None

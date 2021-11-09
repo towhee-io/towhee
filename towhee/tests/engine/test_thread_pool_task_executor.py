@@ -21,30 +21,11 @@ import time
 from towhee.engine.operator_runner.map_runner import MapRunner
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
+from towhee.engine.operator_io._mock_reader import MockReader
 from towhee.tests import CACHE_PATH
 
 
 DATA_QUEUE = Queue()
-
-class StopFrame:
-    pass
-
-
-class MockReader:
-    def __init__(self, queue: Queue):
-        self._queue = queue
-
-    def read(self):
-        # Blocking if queue is empty
-        data = self._queue.get()
-
-        if not isinstance(data, StopFrame):
-            return data
-        else:
-            raise StopIteration()
-
-    def close(self):
-        self._queue.put(StopFrame())
 
 
 class MockWriter:
@@ -86,3 +67,19 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
             
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
+    def test_pool_with_map_runner_error(self):
+        data_queue = Queue()
+        writer = MockWriter()
+        hub_op_id = 'mock_operators/add_operator'
+        runner = MapRunner('test', 0, 'add_operator',
+                           hub_op_id, {'factor': 1},
+                           MockReader(data_queue), writer)
+        self._task_exec.push_task(runner)
+
+        data_queue.put('error')
+        time.sleep(0.1)
+        runner.set_stop()
+        time.sleep(0.1)
+        self._task_exec.stop()
+        self.assertEqual(len(writer.res), 0)
+        self.assertEqual(runner.status, RunnerStatus.FAILED)

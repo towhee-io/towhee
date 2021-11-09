@@ -19,36 +19,24 @@ from towhee.dataframe import DataFrame, Variable, DataFrameIterator
 from typing import Dict, Optional, Tuple, Union, List, NamedTuple
 
 
-class DataFrameWriter:
+class ReaderBase(ABC):
     """
-    Df writer
+    The reader base class.
+
+    The read() could be blocking or non-blocking function, if it's a blocking function,
+    the runner may be blocked. When need to stop the graph, we call close to interrupting it.
     """
 
-    def __init__(self, output_df: DataFrame):
-        self._output_df = output_df
+    @abstractmethod
+    def read(self):
+        raise NotImplementedError
 
-    def write(self, output_data: NamedTuple) -> bool:
-
-        # TODO (jiangjunjie) deal with task exception
-        if output_data is not None:
-            return self._output_df.put_dict(output_data._asdict())
-
+    @abstractmethod
     def close(self):
-        self._output_df.seal()
+        raise NotImplementedError
 
 
-class FlatMapDataFrameWriter(DataFrameWriter):
-    """
-    Expand the list, put each item to dataframe
-    """
-
-    def write(self, output_data: List[NamedTuple]):
-        if output_data is not None and isinstance(output_data, list):
-            for data in output_data:
-                self._output_df.put_dict(data._asdict())
-
-
-class DataFrameReader(ABC):
+class DataFrameReader(ReaderBase):
     """
     Read data from input dataframes, unpack and combine data.
     One op_ctx has one dataframe reader.
@@ -66,6 +54,10 @@ class DataFrameReader(ABC):
     def size(self) -> int:
         return self._iter.accessible_size
 
+    @abstractmethod
+    def close(self):
+        raise NotImplementedError
+
     def _to_op_inputs(self, cols: Tuple[Variable]) -> Dict[str, any]:
         """
         Read from cols, combine op inputs
@@ -76,7 +68,7 @@ class DataFrameReader(ABC):
         return ret
 
 
-class MapDataFrameReader(DataFrameReader):
+class BlockMapDataFrameReader(DataFrameReader):
     """
     Map dataframe reader
     """
@@ -86,16 +78,23 @@ class MapDataFrameReader(DataFrameReader):
         input_df: DataFrame,
         op_inputs_index: Dict[str, int]
     ):
-        super().__init__(input_df.map_iter(), op_inputs_index)
+        super().__init__(input_df.map_iter(True), op_inputs_index)
         self._lock = threading.Lock()
+        self._close = False
 
     def read(self) -> Optional[Dict[str, any]]:
         """
         Read data from dataframe, get cols by operator_repr info
         """
         try:
+            if self._close:
+                return None
+
             with self._lock:
                 data = next(self._iter)
+                if self._close:
+                    return None
+                
                 if not data:
                     return {}
                 return self._to_op_inputs(data[0])
@@ -103,24 +102,6 @@ class MapDataFrameReader(DataFrameReader):
         except StopIteration:
             return None
 
-
-def create_reader(
-    inputs: List[DataFrame],
-    iter_type: str,
-    inputs_index: Dict[str, int]
-) -> DataFrameReader:
-
-    if iter_type.lower() in ["map", "flatmap"]:
-        assert len(inputs) == 1, "%s iter takes one dataframe, but %s dataframes are found" % (
-            iter_type, len(inputs)
-        )
-        return MapDataFrameReader(inputs[0], inputs_index)
-    else:
-        raise NameError("Can not find %s iters" % iter_type)
-
-
-def create_writer(iter_type: str, outputs: List[DataFrame]) -> DataFrameWriter:
-    assert len(outputs) == 1
-    if iter_type.lower() == "flatmap":
-        return FlatMapDataFrameWriter(outputs[0])
-    return DataFrameWriter(outputs[0])
+    def close(self):
+        self._close = True
+        self._iter.notify()
