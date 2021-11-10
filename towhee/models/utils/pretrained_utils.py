@@ -52,5 +52,8 @@ def load_pretrained_weights(
         state_dict = torch.load(weights_path)
 
    # Load state dict
-    ret = model.load_state_dict(state_dict['model'], strict=False)
+    if 'model' in state_dict:
+        ret = model.load_state_dict(state_dict['model'], strict=False)
+    else:
+        ret = model.load_state_dict(state_dict, strict=False)
     return ret
