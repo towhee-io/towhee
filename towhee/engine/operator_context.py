@@ -20,7 +20,7 @@ from towhee.utils import HandlerMixin
 from towhee.engine.task import Task
 # from towhee.engine.graph_context import GraphContext
 from towhee.dataframe import DataFrame
-from towhee.engine._operator_io import create_reader, create_writer
+from towhee.engine._operator_io import create_reader, create_writer, create_multireader
 
 
 class OperatorContext(HandlerMixin):
@@ -30,7 +30,6 @@ class OperatorContext(HandlerMixin):
     The abstraction of OperatorContext hides the complexity of Dataframe management,
     input iteration, and data dependency between Operators. It offers a Task-based
     scheduling context.
-
     Args:
         op_repr: (OperatorRepr)
             The operator representation
@@ -50,8 +49,22 @@ class OperatorContext(HandlerMixin):
         iter_type = op_repr.iter_info['type']
         inputs_index = dict((item['name'], item['col'])
                             for item in op_repr.inputs)
+
+        reader_inputs = {}
+        for x in op_repr.inputs:
+            if x['df'] in reader_inputs.keys():
+                reader_inputs[x['df']]['cols'].append((x['name'], x['col']))
+            else:
+                reader_inputs[x['df']] = {}
+                reader_inputs[x['df']]['df'] = dataframes[x['df']]
+                reader_inputs[x['df']]['cols'] = [(x['name'], x['col'])]
+
+
         self.inputs = inputs
-        self._reader = create_reader(inputs, iter_type, inputs_index)
+        if 'multi' in iter_type.lower():
+            self._reader = create_multireader(reader_inputs, iter_type)
+        else:
+            self._reader = create_reader(inputs, iter_type, inputs_index)
 
         outputs = list({dataframes[output['df']]
                        for output in op_repr.outputs})
@@ -76,7 +89,6 @@ class OperatorContext(HandlerMixin):
         """
         Pop n ready Tasks if any. The number of returned Tasks may be less than n
         if there are not enough Tasks.
-
         Return: a list of ready Tasks.
         """
         ready_tasks = []
@@ -136,7 +148,6 @@ class OperatorContext(HandlerMixin):
         """
         Manage the preparation works for an operator's inputs
         Returns one task's inputs on each call.
-
         Return: a list of inputs, list element can be scalar or Array.
         """
         raise NotImplementedError
