@@ -71,6 +71,7 @@ class OperatorContext:
     def name(self):
         return self._repr.name
 
+    @property
     def status(self):
         """
         Calc op-ctx status by checking all runners of this op-ctx
@@ -78,29 +79,33 @@ class OperatorContext:
         if self._op_status == OpStatus.FINISHED:
             return self._op_status
 
+        if len(self._op_runners) == 0:
+            return self._op_status
+
         finished_count = 0
         for runner in self._op_runners:
             if runner.status == RunnerStatus.FAILED:
                 self._op_status = OpStatus.FAILED
             else:
-                if runner.status in [RunnerStatus.FINISHED, RunnerStatus.STOPPED]:
+                if runner.status == RunnerStatus.FINISHED:
                     finished_count += 1
         if finished_count == len(self._op_runners):
             self._op_status = OpStatus.FINISHED
         return self._op_status
 
-    def start(self, count, executor: TaskExecutor) -> None:
+    def start(self, executor: TaskExecutor, count: int = 1) -> None:
         if self._op_status != OpStatus.NOT_RUNNING:
             raise RuntimeError("OperatorContext can only be started once")
 
-        self._op_status == OpStatus.RUNNING
+        self._op_status = OpStatus.RUNNING
         
         for i in range(count):
             self._op_runners.append(
-                create_runner(self.op_repr.name, i, self._reader, self._writer)
+                create_runner(self._repr.iter_info['type'], self._repr.name, i, self._repr.name,
+                              self._repr.function, self._repr.init_args, self._reader, self._writer)
             )
         for runner in self._op_runners:
-            executor.add(runner)
+            executor.push_task(runner)
 
     def stop(self):
         for runner in self._op_runners:

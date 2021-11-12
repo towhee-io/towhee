@@ -20,6 +20,7 @@ from queue import Queue
 from towhee.dataframe import DataFrame, DataFrameIterator
 from towhee.dataframe import DataFrame, Variable
 from towhee.engine.operator_io.reader import BlockMapDataFrameReader
+from towhee.engine.operator_io import create_reader
 
 from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
@@ -67,10 +68,10 @@ class TestReader(unittest.TestCase):
         data_size = 100
         t = DfWriter(df, data_size, data=data)
         t.start()
-        map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
+        map_reader = create_reader([df], 'map', {'v1': 0, 'v2': 2})
 
         q = Queue()
-        
+
         def read(map_reader: BlockMapDataFrameReader, q: Queue):
             while True:
                 item = map_reader.read()

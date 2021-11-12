@@ -41,6 +41,11 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test',
                                                  CACHE_PATH)
         self._task_exec.start()
+
+    def tearDown(self):
+        if self._task_exec.is_alive():
+            self._task_exec.stop()
+            self._task_exec.join()
         
     def test_pool_with_map_runner(self):
         data_queue = Queue()

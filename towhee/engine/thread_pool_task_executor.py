@@ -16,6 +16,7 @@ import os
 import signal
 import queue
 import threading
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.engine.operator_pool import OperatorPool
@@ -72,6 +73,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
             runner.process()
             self._op_pool.release_op(op)
         except Exception as e:  # pylint: disable=broad-except
+            engine_log.error(traceback.format_exc())
             engine_log.error(e)
             os.kill(os.getpid(), signal.SIGINT)
             
