@@ -15,12 +15,13 @@
 
 from typing import NamedTuple
 from collections import defaultdict
-from towhee.operator import Operator, SharedType
+from towhee.operator import Operator
 
 
 class ConcatOperator(Operator):
     """
-    Stateful operator
+    Stateful concat operator that can perform scalar and nonscalar concat. If no new data
+    is presented, the row will be skipped.
     """
 
     def __init__(self, repeat_end: bool) -> None:
@@ -29,11 +30,11 @@ class ConcatOperator(Operator):
         self._last_seens = defaultdict(lambda: None)
 
     def __call__(self, **kwargs):
-        cols = [(str(col), type(val)) for col, val in kwargs.items()]
-        output = NamedTuple("Outputs", cols)
         ret = []
+        none_count = 0
         for col, val in kwargs.items():
             if val is None:
+                none_count += 1
                 if self._scalar:
                     ret.append(self._last_seens[col])
                 else:
@@ -41,9 +42,10 @@ class ConcatOperator(Operator):
             else:
                 ret.append(val)
                 self._last_seens[col] = val
-
-        return output(*ret) #pylint: disable=not-callable
-
-    @property
-    def shared_type(self):
-        return SharedType.Shareable
+        #If no new data added, dont return anything.
+        if none_count == len(ret):
+            pass
+        else:
+            cols = [(str(col), type(val)) for col, val in kwargs.items()]
+            output = NamedTuple("Outputs", cols)
+            return output(*ret) #pylint: disable=not-callable

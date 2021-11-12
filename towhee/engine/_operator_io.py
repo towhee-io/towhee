@@ -29,8 +29,6 @@ class DataFrameWriter:
     def write(self, output_data: NamedTuple) -> bool:
 
         # TODO (jiangjunjie) deal with task exception
-        print('write: ', output_data, flush=True)
-
         if output_data is not None:
             return self._output_df.put_dict(output_data._asdict())
 
@@ -74,7 +72,6 @@ class DataFrameReader(ABC):
         ret = {}
         for key, index in self._op_inputs_index.items():
             ret[key] = cols[index].value
-        print('read: ', ret, flush=True)
         return ret
 
 
@@ -105,38 +102,35 @@ class MapDataFrameReader(DataFrameReader):
 
 class MultiDataFrameReader(ABC):
     """
-    Read data from input dataframes, unpack and combine data.
+    Read data from multiple input dataframes, unpack and combine data.
     One op_ctx has one dataframe reader.
     """
 
     def __init__(self, iterators):
         self._iters = iterators
+        self._size = len(iterators)
 
-    def all_synced(self) -> bool:
-        stats = {x.accesible_size for x in self._iters[0]}
-        return len(stats) == 1
+    def all_synced_and_ready(self) -> bool:
+        stats = {x[0].accessible_size for x in self._iters}
+        return len(stats) == 1 and stats.pop() > 0
+
+    def size(self) -> int:
+        return self._size
 
 
     @abstractmethod
     def read(self) -> Union[Dict[str, any], List[Dict[str, any]]]:
         pass
 
-    def _to_op_inputs(self, data: Tuple[Variable], cols: Tuple[str, int]) -> Dict[str, any]:
+    def _to_op_inputs(self, data, cols) -> Dict[str, any]:
         """
         Read from cols, combine op inputs
         """
-        ret = {}
-        if data is None:
-            for (key, index) in cols:
-                ret[key] = None
-        else:
-            for (key, index) in cols:
-                ret[key] = data[index].value
-        return ret
+        pass
 
 class MultiMapDataFrameReader(MultiDataFrameReader):
     """
-    Map dataframe reader
+    Map dataframe reader for multiple inputs.
     """
 
     def __init__(
@@ -155,23 +149,25 @@ class MultiMapDataFrameReader(MultiDataFrameReader):
         Read data from dataframe, get cols by operator_repr info
         """
         ret = {}
-        for x in self._iters:
+        count_stop = 0
+
+        for ite in self._iters:
             try:
-                data = next(x[0])
-                if not data:
-                    ret.update(self._to_op_inputs(None, x[1]))
+                data = next(ite[0])
+                if data is not None:
+                    for (key, index) in ite[1]:
+                        ret[key] = data[index][0].value
                 else:
-                    ret.update(self._to_op_inputs(data[0], x[1]))
-
+                    for (key, index) in ite[1]:
+                        ret[key] = None
             except StopIteration:
-                # TODO filip-halt: if one dataframe is done but another isnt, what next?
-                # if self.all_synced():
-                #     return None
-                # else:
-                return None
+                for key, index in ite[1]:
+                    ret[key] = None
+                count_stop += 1
 
+        if count_stop == self._size:
+            return None
         return ret
-
 
 
 def create_reader(
@@ -192,11 +188,14 @@ def create_multireader(
     inputs,
     iter_type
 ):
-    if iter_type.lower() in ['multi-map']:
+    """
+    Method for being able to deal with multiple input dataframes. If using this method,
+    the operator needs to know how to deal with None inputs.
+    """
+    if iter_type.lower() == 'multi-map':
         return MultiMapDataFrameReader(inputs)
     else:
         raise NameError('Can not find %s iters' % iter_type)
-
 
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> DataFrameWriter:
     assert len(outputs) == 1

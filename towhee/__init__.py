@@ -83,7 +83,8 @@ class _PipelineWrapper:
             if len(data) == 1:
                 res.append(data[0].value)
             else:
-                res.append(tuple((v.value for v in data)))
+                # Need to check if None for the case of multi column result
+                res.append(tuple((v.value for v in data if v is not None)))
 
         return res
 

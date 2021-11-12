@@ -1,4 +1,6 @@
-name: 'test_concat'
+name: 'test_multi_column_out'
+operators:
+   name: 'test_concat'
 operators:
     -
         name: '_start_op'
@@ -34,7 +36,7 @@ operators:
                 col: 0
         outputs:
             -
-                df: 'sum1'
+                df: '_end_df'
         iter_info:
             type: map
     -
@@ -49,7 +51,7 @@ operators:
                 col: 1
         outputs:
             -
-                df: 'sum2'
+                df: '_end_df'
 
         iter_info:
             type: map
@@ -65,62 +67,11 @@ operators:
                 col: 2
         outputs:
             -
-                df: 'sum3'
-
-        iter_info:
-            type: map
-    -
-        name: 'concat'
-        function: 'mock_operators/concat_operator'
-        init_args:
-            repeat_end: True
-        inputs:
-            -
-                df: 'sum1'
-                name: 'concat_1'
-                col: 0
-            -
-                df: 'sum2'
-                name: 'concat_2'
-                col: 0
-            -
-                df: 'sum3'
-                name: 'concat_3'
-                col: 0
-
-        outputs:
-            -
-                df: 'after_concat'
-
-        iter_info:
-            type: multi-map
-        
-    -
-        name: 'add_op4'
-        function: 'mock_operators/add_operator_v2'
-        init_args:
-            factor: 4
-        inputs:
-            -
-                df: 'after_concat'
-                name: 'num1'
-                col: 0
-            -
-                df: 'after_concat'
-                name: 'num2'
-                col: 1
-            -
-                df: 'after_concat'
-                name: 'num3'
-                col: 2
-        outputs:
-            -
                 df: '_end_df'
 
         iter_info:
             type: map
         
-            
 dataframes:
     -
         name: '_start_df'
@@ -145,36 +96,6 @@ dataframes:
                 vtype: 'int'
             -
                 name: 'num3'
-                vtype: 'int'
-    -
-        name: 'sum1'
-        columns:
-            -
-                name: 'num1_sum'
-                vtype: 'int'
-    -
-        name: 'sum2'
-        columns:
-            -
-                name: 'num2_sum'
-                vtype: 'int'
-    -
-        name: 'sum3'
-        columns:
-            -
-                name: 'num3_sum'
-                vtype: 'int'
-    -
-        name: 'after_concat'
-        columns:
-            -
-                name: 'concat_1'
-                vtype: 'int'
-            -
-                name: 'concat_2'
-                vtype: 'int'
-            -
-                name: 'concat_3'
                 vtype: 'int'
     -
         name: '_end_df'
