@@ -16,7 +16,7 @@ from typing import List
 import torch
 from torch import nn
 
-from towhee.models.utils.create_conv2d import create_conv2d_pad
+from towhee.models.utils.create_conv2d_pad import create_conv2d_pad
 
 def _split_channels(num_chan: int, num_groups: int) -> List[int]:
     split = [num_chan // num_groups for _ in range(num_groups)]

@@ -11,19 +11,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License
-from typing import Union
-
 from torch import nn
 
-from towhee.models.layers.conv2d_same import Conv2dSame
-from towhee.models.layers.padding_functions import get_padding_value
+from towhee.models.utils.create_conv2d_pad import create_conv2d_pad
+from towhee.models.layers.cond_conv2d import CondConv2d
+from towhee.models.layers.mixed_conv2d import MixedConv2d
 
-def create_conv2d_pad(in_chs: int, out_chs: int, kernel_size: int, **kwargs) -> Union[nn.Conv2d, Conv2dSame]:
-    padding = kwargs.pop('padding', '')
-    kwargs.setdefault('bias', False)
-    padding, is_dynamic = get_padding_value(padding, kernel_size, **kwargs)
-    if is_dynamic:
-        return Conv2dSame(in_chs, out_chs, kernel_size, **kwargs)
+def create_conv2d(in_channels: int, out_channels: int, kernel_size: int, **kwargs) -> nn.Module:
+    """ Select a 2d convolution implementation based on arguments
+    Creates and returns one of torch.nn.Conv2d, Conv2dSame, MixedConv2d, or CondConv2d.
+    Used extensively by EfficientNet, MobileNetv3 and related networks.
+    """
+    if isinstance(kernel_size, list):
+        assert 'num_experts' not in kwargs  # MixNet + CondConv combo not supported currently
+        assert 'groups' not in kwargs  # MixedConv groups are defined by kernel list
+        # We're going to use only lists for defining the MixedConv2d kernel groups,
+        # ints, tuples, other iterables will continue to pass to normal conv and specify h, w.
+        m = MixedConv2d(in_channels, out_channels, kernel_size, **kwargs)
     else:
-        return nn.Conv2d(in_chs, out_chs, kernel_size, padding=padding, **kwargs)
-
+        depthwise = kwargs.pop('depthwise', False)
+        # for DW out_channels must be multiple of in_channels as must have out_channels % groups == 0
+        groups = in_channels if depthwise else kwargs.pop('groups', 1)
+        if 'num_experts' in kwargs and kwargs['num_experts'] > 0:
+            m = CondConv2d(in_channels, out_channels, kernel_size, groups=groups, **kwargs)
+        else:
+            m = create_conv2d_pad(in_channels, out_channels, kernel_size, groups=groups, **kwargs)
+    return m
