@@ -35,7 +35,7 @@ class TestPipeline(unittest.TestCase):
         pipeline_cache = (CACHE_PATH/'test_util')
         operator_cache = (CACHE_PATH/'mock_operators')
         fmc = FileManagerConfig()
-        fmc.change_default_cache(new_cache)
+        fmc.update_default_cache(new_cache)
         pipelines = list(pipeline_cache.rglob('*.yaml'))
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)

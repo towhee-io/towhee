@@ -38,28 +38,30 @@ class FileManagerConfig():
 
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
-        self._default_cache = DEFAULT_LOCAL_CACHE_ROOT
         self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
         self._cache_operators = []
         self._cache_pipelines = []
 
-        self._default_lock = threading.Lock()
-        self._paths_lock = threading.Lock()
+        self._cache_paths_lock = threading.Lock()
         self._operators_lock = threading.Lock()
         self._pipelines_lock = threading.Lock()
 
+    # Requires manual locking
     @property
     def default_cache(self):
-        return self._default_cache
+        return self._cache_paths[-1]
 
+    # Requires manual locking
     @property
     def cache_paths(self):
         return self._cache_paths
 
+    # Requires manual locking
     @property
     def cache_operators(self):
         return self._cache_operators
 
+    # Requires manual locking
     @property
     def cache_pipelines(self):
         return self._cache_pipelines
@@ -72,7 +74,11 @@ class FileManagerConfig():
     def pipeline_lock(self):
         return self._pipelines_lock
 
-    def change_default_cache(self, default_path: Union[str, Path]):
+    @property
+    def cache_paths_lock(self):
+        return self._cache_paths_lock
+
+    def update_default_cache(self, default_path: Union[str, Path]):
         """
         Change the default cache path.
 
@@ -81,14 +87,8 @@ class FileManagerConfig():
                 The new default cache.
         """
         default_path = Path(default_path)
-        with self._paths_lock and self._default_lock:
-            if not self._cache_paths or self._cache_paths[-1] != self._default_cache:
-                self._cache_paths.append(default_path)
-            else:
-                self._cache_paths[-1] = default_path
-
-            self._default_cache = default_path
-
+        with self._cache_paths_lock:
+            self._cache_paths.append(default_path)
 
     def add_cache_path(self, insert_path: Union[str, Path, List[Union[str, Path]]]):
         """
@@ -99,7 +99,7 @@ class FileManagerConfig():
             insert_path (`str` | `Path | `list[str | Path]`):
                 The path that you are trying to add. Accepts multiple inputs at once.
         """
-        with self._paths_lock:
+        with self._cache_paths_lock:
             if not isinstance(insert_path, list):
                 insert_path = [insert_path]
 
@@ -119,7 +119,8 @@ class FileManagerConfig():
         if not isinstance(remove_path, list):
             remove_path = [remove_path]
 
-        with self._paths_lock:
+        with self._cache_paths_lock:
+            default_path = self._cache_paths[-1]
             for path in remove_path:
                 try:
                     self._cache_paths.remove(Path(path))
@@ -127,12 +128,16 @@ class FileManagerConfig():
                     # TODO: Log this instead of print.
                     print(str(Path(path)) + ' not found.')
 
+            if len(self._cache_paths) <= 1:
+                self._cache_paths.append(default_path)
+
     def reset_cache_path(self):
         """
         Remove all cache locations.
 
         """
-        self._cache_paths = [self._default_cache]
+        with self._cache_paths_lock:
+            self._cache_paths = [self._cache_paths.pop()]
 
     def cache_local_operator(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
         """
@@ -152,8 +157,8 @@ class FileManagerConfig():
 
         with self._operators_lock:
             if cache is None:
-                with self._default_lock:
-                    cache = self._default_cache
+                with self._cache_paths_lock:
+                    cache = self._cache_paths[-1]
             for paths in path:
                 op = {}
                 op['path'] = Path(paths)
@@ -182,8 +187,8 @@ class FileManagerConfig():
 
         with self._pipelines_lock:
             if cache is None:
-                with self._default_lock:
-                    cache = self._default_cache
+                with self._cache_paths_lock:
+                    cache = self._cache_paths[-1]
             for paths in path:
                 op = {}
                 op['path'] = Path(paths)
@@ -254,7 +259,7 @@ class FileManager():
                     new_path.parent.mkdir(parents=True, exist_ok=True)
                     copy2(str(old_path), str(new_path))
 
-        with self._operator_lock:
+        with self._operator_lock and self._config.operator_lock:
             for op in self._config.cache_operators:
                 new_dir = self._cache_name(op['name'], author='local', branch='main')
                 cache_path = op['cache']

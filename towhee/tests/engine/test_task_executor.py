@@ -22,9 +22,6 @@ from towhee.engine.task import Task
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.tests import CACHE_PATH
 
-import os
-
-
 class TestTaskExecutor(unittest.TestCase):
     """Basic test case for `TaskExecutor`.
     """
@@ -34,16 +31,13 @@ class TestTaskExecutor(unittest.TestCase):
         new_cache = (CACHE_PATH/'test_cache')
         pipeline_cache = (CACHE_PATH/'test_util')
         operator_cache = (CACHE_PATH/'mock_operators')
-        print(new_cache)
         fmc = FileManagerConfig()
-        fmc.change_default_cache(new_cache)
+        fmc.update_default_cache(new_cache)
         pipelines = list(pipeline_cache.rglob('*.yaml'))
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
         fm = FileManager(fmc) # pylint: disable=unused-variable
-        x = os.listdir(str(new_cache))
-        print(x)
 
     # @classmethod
     # def tearDownClass(cls):
