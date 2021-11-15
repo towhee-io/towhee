@@ -84,6 +84,10 @@ class _PipelineWrapper:
                 res.append(data[0].value)
             else:
                 # Need to check if None for the case of multi column result
+                # This needs work, might need to cache results in order to be able 
+                # to make full columns
+                
+                # res.append(tuple((v.value if v is not None else None for v in data)))
                 res.append(tuple((v.value for v in data if v is not None)))
 
         return res
