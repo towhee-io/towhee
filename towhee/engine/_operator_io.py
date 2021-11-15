@@ -147,19 +147,26 @@ class MultiMapDataFrameReader(MultiDataFrameReader):
     def read(self) -> Optional[Dict[str, any]]:
         """
         Read data from dataframe, get cols by operator_repr info
+        
         """
+        # TODO: Reader needs to be thread safe
+
         ret = {}
         count_stop = 0
-
+        # ite[0] is the iterator
+        # ite[1] is the columns for that iterator
         for ite in self._iters:
             try:
                 data = next(ite[0])
                 if data is not None:
+                    # key is operator parameter
+                    # index is column
                     for (key, index) in ite[1]:
                         ret[key] = data[index][0].value
                 else:
                     for (key, index) in ite[1]:
                         ret[key] = None
+            # will StopIteration be thrown after
             except StopIteration:
                 for key, index in ite[1]:
                     ret[key] = None
