@@ -16,7 +16,9 @@
 from abc import abstractmethod
 from abc import ABC
 from enum import Enum
-
+from torch import nn
+from typing import NamedTuple
+import numpy as np
 
 # NotShareable:
 #    Stateful operator
@@ -88,6 +90,19 @@ class PyTorchNNOperator(Operator):
     """
     PyTorch model operator base
     """
+
+    def __init__(self, model: nn.Module):
+        """
+        Model initialization.
+        """
+        super().__init__()
+        self.model = model
+
+    def __call__(self):
+        """
+        For inference
+        """
+        raise NotImplementedError
 
     def train(self):
         """
