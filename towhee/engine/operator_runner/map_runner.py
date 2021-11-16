@@ -50,7 +50,6 @@ class MapRunner(RunnerBase):
         except StopIteration:
             return True, None
 
-
     def _set_outputs(self, output: any):
         self._writer.write(output)
 

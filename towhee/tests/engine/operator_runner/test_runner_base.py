@@ -24,6 +24,10 @@ class MockRunner(RunnerBase):
 
 
 class TestRunnerBase(unittest.TestCase):
+    """
+    Runner base test
+    """
+
     def test_runner_base(self):
         mock_runner = MockRunner('mock', 0, 'add_operator',
                                  'mock_operators', {'num': 1})
@@ -34,4 +38,3 @@ class TestRunnerBase(unittest.TestCase):
         self.assertEqual(mock_runner.op_name, 'add_operator')
         self.assertEqual(mock_runner.hub_op_id, 'mock_operators')
         self.assertEqual(mock_runner.op_args, {'num': 1})
-

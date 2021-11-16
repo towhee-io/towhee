@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractmethod
 
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
+from towhee.dataframe import DataFrame, Variable, DataFrameIterator, MapDataFrameReader
 from typing import Dict, Optional, Tuple, Union, List, NamedTuple
 
 

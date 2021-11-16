@@ -15,6 +15,7 @@
 
 class Status:
     """
+    Return status
     """
 
     def __init__(self, code: int, msg: str = None, data: any = None):
@@ -40,4 +41,3 @@ class Status:
 
     def is_ok(self):
         return self._code == 0
-

@@ -14,10 +14,8 @@
 
 
 import unittest
-import time
 from queue import Queue
 
-from towhee.dataframe import DataFrame, DataFrameIterator
 from towhee.dataframe import DataFrame, Variable
 from towhee.engine.operator_io.reader import BlockMapDataFrameReader
 from towhee.engine.operator_io import create_reader
@@ -25,7 +23,22 @@ from towhee.engine.operator_io import create_reader
 from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
+def read(map_reader: BlockMapDataFrameReader, q: Queue):
+    while True:
+        try:
+            item = map_reader.read()
+            if item:
+                q.put(item)
+                continue
+        except StopIteration:
+            break
+
+
 class TestReader(unittest.TestCase):
+    """
+    Reader test
+    """
+
     def test_block_map_reader(self):
         df = DataFrame('test')
         data = (Variable('int', 1), Variable(
@@ -37,17 +50,6 @@ class TestReader(unittest.TestCase):
         map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
 
         q = Queue()
-
-        def read(map_reader: BlockMapDataFrameReader, q: Queue):
-            while True:
-                item = map_reader.read()
-                if item:
-                    q.put(item)
-                    continue
-                elif item is None:
-                    break
-                else:
-                    pass
 
         runner = MultiThreadRunner(
             target=read, args=(map_reader, q), thread_num=10)
@@ -71,17 +73,6 @@ class TestReader(unittest.TestCase):
         map_reader = create_reader([df], 'map', {'v1': 0, 'v2': 2})
 
         q = Queue()
-
-        def read(map_reader: BlockMapDataFrameReader, q: Queue):
-            while True:
-                item = map_reader.read()
-                if item:
-                    q.put(item)
-                    continue
-                elif item is None:
-                    break
-                else:
-                    pass
 
         runner = MultiThreadRunner(
             target=read, args=(map_reader, q), thread_num=10)

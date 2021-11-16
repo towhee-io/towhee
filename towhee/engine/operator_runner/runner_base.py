@@ -15,6 +15,7 @@
 from typing import Dict
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+from threading import Event
 
 from towhee.utils.log import engine_log
 
@@ -27,6 +28,10 @@ class RunnerStatus(Enum):
 
 
 class _OpInfo:
+    """
+    Operator hub info.
+    """
+
     def __init__(self, op_name: str, hub_op_id: str,
                  op_args: Dict[str, any]) -> None:
         self._op_name = op_name
@@ -65,7 +70,7 @@ class RunnerBase(ABC):
 
     The base class provides some function to control status.
     """
-    
+
     def __init__(self, name: str, index: int,
                  op_name: str, hub_op_id: str,
                  op_args: Dict[str, any],
@@ -77,10 +82,15 @@ class RunnerBase(ABC):
         self._reader = reader
         self._writer = writer
         self._need_stop = False
+        self._end_event = Event()
 
     @property
     def op_key(self):
         return self._op_info.op_key
+
+    def _set_end_status(self, status: RunnerStatus):
+        self._set_status(status)
+        self._end_event.set()
 
     @property
     def op_name(self):
@@ -99,22 +109,18 @@ class RunnerBase(ABC):
         return self._status
 
     def _set_finished(self) -> None:
-        self._set_status(RunnerStatus.FINISHED)
+        self._set_end_status(RunnerStatus.FINISHED)
 
     def _set_idle(self) -> None:
         self._set_status(RunnerStatus.IDLE)
 
     def _set_failed(self, msg: str) -> None:
-        engine_log.error('{} runs failed'.format(str(self)))
+        engine_log.error('%s runs failed', str(self))
         self._msg = msg
-        self._set_status(RunnerStatus.FAILED)
+        self._set_end_status(RunnerStatus.FAILED)
 
     def _set_running(self) -> None:
         self._set_status(RunnerStatus.RUNNING)
-
-    def _set_stop(self):
-        self._reader.close()
-        self._set_status(RunnerStatus.STOPPED)
 
     def _set_status(self, status: RunnerStatus) -> None:
         self._status = status
@@ -126,19 +132,22 @@ class RunnerBase(ABC):
         return self.status == RunnerStatus.FINISHED
 
     def set_stop(self) -> None:
-        engine_log.info('Begin to stop {}'.format(str(self)))
-        self._need_stop = True        
+        engine_log.info('Begin to stop %s', str(self))
+        self._need_stop = True
         self._reader.close()
 
     def __str__(self) -> str:
         return '{}:{}'.format(self._name, self._index)
 
-    @abstractmethod
+    @ abstractmethod
     def process_step(self) -> bool:
         raise NotImplementedError
 
+    def join(self):
+        self._end_event.wait()
+
     def process(self):
-        engine_log.info('Begin to run {}'.format(str(self)))
+        engine_log.info('Begin to run %s', str(self))
         self._set_running()
         while True:
             if not self._need_stop:

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Tuple
+from typing import Dict
 from enum import Enum, auto
 
 from towhee.dag.operator_repr import OperatorRepr
@@ -95,10 +95,10 @@ class OperatorContext:
 
     def start(self, executor: TaskExecutor, count: int = 1) -> None:
         if self._op_status != OpStatus.NOT_RUNNING:
-            raise RuntimeError("OperatorContext can only be started once")
+            raise RuntimeError('OperatorContext can only be started once')
 
         self._op_status = OpStatus.RUNNING
-        
+
         for i in range(count):
             self._op_runners.append(
                 create_runner(self._repr.iter_info['type'], self._repr.name, i, self._repr.name,
@@ -108,6 +108,13 @@ class OperatorContext:
             executor.push_task(runner)
 
     def stop(self):
+        if self.status != OpStatus.RUNNING:
+            raise RuntimeError('Op ctx is already not running.')
+
         for runner in self._op_runners:
             runner.set_stop()
-        self._status = OpStatus.STOPPED
+
+    def join(self):
+        # Waits all runner finished.
+        for runner in self._op_runners:
+            runner.join()

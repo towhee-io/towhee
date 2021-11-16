@@ -167,14 +167,13 @@ class TestMapIterator(unittest.TestCase):
     def test_notify(self):
         df = DataFrame('test')
         it = df.map_iter()
-        q = queue.Queue()
 
-        def read(it: DataFrameIterator, q: queue.Queue):
+        def read(it: DataFrameIterator):
             for item in it:
                 assert item is None
                 break
 
-        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=5)
+        runner = MultiThreadRunner(target=read, args=(it, ), thread_num=5)
         runner.start()
         time.sleep(0.5)
         it.notify()

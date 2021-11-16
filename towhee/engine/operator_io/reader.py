@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 import threading
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Optional, Tuple, Union, List, NamedTuple
+from typing import Dict, Optional, Tuple, Union, List
 
 
 class ReaderBase(ABC):
@@ -86,21 +86,17 @@ class BlockMapDataFrameReader(DataFrameReader):
         """
         Read data from dataframe, get cols by operator_repr info
         """
-        try:
+        if self._close:
+            raise StopIteration
+
+        with self._lock:
+            data = next(self._iter)
             if self._close:
-                return None
+                raise StopIteration
 
-            with self._lock:
-                data = next(self._iter)
-                if self._close:
-                    return None
-                
-                if not data:
-                    return {}
-                return self._to_op_inputs(data[0])
-
-        except StopIteration:
-            return None
+            if not data:
+                return {}
+            return self._to_op_inputs(data[0])
 
     def close(self):
         self._close = True

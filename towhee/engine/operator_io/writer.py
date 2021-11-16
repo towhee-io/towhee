@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Optional, Tuple, Union, List, NamedTuple
+from towhee.dataframe import DataFrame
+from typing import NamedTuple
 
 
 class DataFrameWriter:

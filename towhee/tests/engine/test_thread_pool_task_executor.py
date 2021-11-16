@@ -37,6 +37,10 @@ class MockWriter:
 
 
 class TestThreadPoolTaskExecutor(unittest.TestCase):
+    """
+    Thread pool task executor test
+    """
+
     def setUp(self):
         self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test',
                                                  CACHE_PATH)
@@ -46,7 +50,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         if self._task_exec.is_alive():
             self._task_exec.stop()
             self._task_exec.join()
-        
+
     def test_pool_with_map_runner(self):
         data_queue = Queue()
         writer = MockWriter()
@@ -59,7 +63,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         data_queue.put({'num': 1})
         data_queue.put({'num': 2})
         data_queue.put({'num': 3})
-        
+
         time.sleep(0.1)
         runner.set_stop()
         time.sleep(0.1)
@@ -69,7 +73,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         for item in writer.res:
             self.assertEqual(item[0], res)
             res += 1
-            
+
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
     def test_pool_with_map_runner_error(self):

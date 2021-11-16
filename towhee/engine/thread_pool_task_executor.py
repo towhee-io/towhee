@@ -76,7 +76,6 @@ class ThreadPoolTaskExecutor(threading.Thread):
             engine_log.error(traceback.format_exc())
             engine_log.error(e)
             os.kill(os.getpid(), signal.SIGINT)
-            
 
     def run(self):
         """
@@ -94,7 +93,6 @@ class ThreadPoolTaskExecutor(threading.Thread):
                 self._thread_pool.submit(self.execute(runner))
             else:
                 break
-
 
     def stop(self):
         """

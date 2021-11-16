@@ -25,6 +25,7 @@ from towhee.tests.mock_operators.add_operator import add_operator
 
 DATA_QUEUE = Queue()
 
+
 class StopFrame:
     pass
 
@@ -54,6 +55,10 @@ def run(runner):
 
 
 class TestMapRunner(unittest.TestCase):
+    """
+    MapRunner test
+    """
+
     def test_map_runner(self):
         data_queue = Queue()
         writer = MockWriter()
@@ -64,7 +69,6 @@ class TestMapRunner(unittest.TestCase):
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-
         data_queue.put({'num': 1})
         data_queue.put({'num': 2})
         data_queue.put({'num': 3})
@@ -78,12 +82,11 @@ class TestMapRunner(unittest.TestCase):
 
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         data_queue.put({'num': 4})
         data_queue.put({'num': 5})
         data_queue.put(StopFrame())
-        t.join()
+        runner.join()
         res = 4
         for item in writer.res:
             self.assertEqual(item[0], res)
@@ -101,5 +104,5 @@ class TestMapRunner(unittest.TestCase):
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         data_queue.put('error_data')
-        t.join()
+        runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)

@@ -15,8 +15,8 @@
 
 import towhee.engine.operator_io.reader as io_reader
 import towhee.engine.operator_io.writer as io_writer
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Optional, Tuple, Union, List, NamedTuple
+from towhee.dataframe import DataFrame
+from typing import Dict, List
 
 
 def create_reader(
@@ -33,10 +33,10 @@ def create_reader(
     else:
         raise NameError("Can not find %s iters" % iter_type)
 
-    
+
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFrameWriter:
     assert len(outputs) == 1
     if iter_type.lower() == "map":
-        return io_writer.DataFrameWriter(outputs[0])    
+        return io_writer.DataFrameWriter(outputs[0])
     else:
         raise NameError("Can not find %s iters" % iter_type)
