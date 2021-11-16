@@ -118,3 +118,4 @@ class OperatorContext:
         # Waits all runner finished.
         for runner in self._op_runners:
             runner.join()
+        self._writer.close()

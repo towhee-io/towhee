@@ -91,6 +91,7 @@ class RunnerBase(ABC):
     def _set_end_status(self, status: RunnerStatus):
         self._set_status(status)
         self._end_event.set()
+        engine_log.info('%s ends with status: %s', self._name, status)
 
     @property
     def op_name(self):
