@@ -14,13 +14,25 @@
 
 
 from pathlib import Path
-from towhee.engine.engine import Engine, EngineConfig
+# from towhee.engine.engine_v2 import Engine, EngineConfig as v2_Engine, v2_EngineConfig
+# from towhee.engine.engine import Engine, EngineConfig as v1_Engine, v1_EngineConfig
+
+import towhee.engine.engine_v2 as engine_v2
+import towhee.engine.engine as engine
 
 CACHE_PATH = Path(__file__).parent.resolve()
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+v2_conf = engine_v2.EngineConfig()
+v2_conf.cache_path = CACHE_PATH
+v2_conf.sched_interval_ms = 20
+v2_engine = engine_v2.Engine()
+if not v2_engine.is_alive():
+    v2_engine.start()
+
+
+v1_conf = engine.EngineConfig()
+v1_conf.cache_path = CACHE_PATH
+v1_conf.sched_interval_ms = 20
+v1_engine = engine.Engine()
+if not v1_engine.is_alive():
+    v1_engine.start()
