@@ -15,15 +15,35 @@
 
 import unittest
 from pathlib import Path
+# from shutil import rmtree
 
 from towhee.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
 from towhee.engine.task import Task
+from towhee.tests import CACHE_PATH
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 
 class TestOperatorPool(unittest.TestCase):
     """Basic test case for `OperatorPool`.
     """
+    @classmethod
+    def setUpClass(cls):
+        new_cache = (CACHE_PATH/'test_cache')
+        pipeline_cache = (CACHE_PATH/'test_util')
+        operator_cache = (CACHE_PATH/'mock_operators')
+        fmc = FileManagerConfig()
+        fmc.update_default_cache(new_cache)
+        pipelines = list(pipeline_cache.rglob('*.yaml'))
+        operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+        fmc.cache_local_pipeline(pipelines)
+        fmc.cache_local_operator(operators)
+        fm = FileManager(fmc) # pylint: disable=unused-variable
+
+    # @classmethod
+    # def tearDownClass(cls):
+    #     new_cache = (CACHE_PATH/'test_cache')
+    #     rmtree(str(new_cache))
 
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
@@ -35,7 +55,7 @@ class TestOperatorPool(unittest.TestCase):
 
     def test_acquire_release(self):
 
-        hub_op_id = 'mock_operators/add_operator'
+        hub_op_id = 'local/add_operator'
         task = Task('test', hub_op_id, {'factor': 0}, (1), 0)
 
         # Acquire the operator.
