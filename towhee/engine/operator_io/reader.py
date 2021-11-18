@@ -15,8 +15,8 @@
 from abc import ABC, abstractmethod
 import threading
 
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Optional, Tuple, Union, List
+# from towhee.dataframe import DataFrame, Variable, DataFrameIterator
+from typing import Dict, Optional, Union, List
 
 
 class ReaderBase(ABC):
@@ -42,30 +42,33 @@ class DataFrameReader(ReaderBase):
     One op_ctx has one dataframe reader.
     """
 
-    def __init__(self, it: DataFrameIterator, op_inputs_index: Dict[str, int]):
-        self._op_inputs_index = op_inputs_index
-        self._iter = it
+    def __init__(self, input_dfs: dict):
+        self._iters = []
+        for _, x in input_dfs.items():
+            ite = x['df'].map_iter()
+            self._iters.append((ite, x['cols']))
+        self._iters_count = len(self._iters)
 
     @abstractmethod
     def read(self) -> Union[Dict[str, any], List[Dict[str, any]]]:
         pass
 
     @property
-    def size(self) -> int:
-        return self._iter.accessible_size
+    def min_size(self) -> int:
+        return min([x.accessible_size for x in self._iters])
 
     @abstractmethod
     def close(self):
         raise NotImplementedError
 
-    def _to_op_inputs(self, cols: Tuple[Variable]) -> Dict[str, any]:
-        """
-        Read from cols, combine op inputs
-        """
-        ret = {}
-        for key, index in self._op_inputs_index.items():
-            ret[key] = cols[index].value
-        return ret
+    # def _to_op_inputs(self, cols: Tuple[Variable]) -> Dict[str, any]:
+    #     """
+    #     Read from cols, combine op inputs
+    #     """
+    #     ret = {}
+    #     for key, index in self._op_inputs_index.items():
+    #         ret[key] = cols[index].value
+    #     return ret
 
 
 class BlockMapDataFrameReader(DataFrameReader):
@@ -75,10 +78,10 @@ class BlockMapDataFrameReader(DataFrameReader):
 
     def __init__(
         self,
-        input_df: DataFrame,
-        op_inputs_index: Dict[str, int]
+        input_dfs: dict,
     ):
-        super().__init__(input_df.map_iter(True), op_inputs_index)
+
+        super().__init__(input_dfs)
         self._lock = threading.Lock()
         self._close = False
 
@@ -89,15 +92,88 @@ class BlockMapDataFrameReader(DataFrameReader):
         if self._close:
             raise StopIteration
 
+        ret = {}
+        bitmap = range(self._iters_count)
         with self._lock:
-            data = next(self._iter)
-            if self._close:
-                raise StopIteration
+            while bitmap:
+                remove_index = set()
+                for bit_index, iter_index in enumerate(bitmap):
+                    try:
+                        # self._iters[x][0] is the iterator
+                        # self._iters[x][1] are the columns for that iterator
+                        data = next(self._iters[iter_index][0])
+                        if data is not None:
+                            for (key, index) in self._iters[iter_index][1]:
+                                ret[key] = data[index][0].value
+                            remove_index.add(bit_index)
+                    except StopIteration:
+                        return None
+                # enumerating set is fastest way to remove multiple indexes
+                bitmap = [i for j, i in enumerate(remove_index) if j not in remove_index]
 
-            if not data:
-                return {}
-            return self._to_op_inputs(data)
+            return ret
+
+        # # Previous
+        # if self._close:
+        #     raise StopIteration
+
+        # with self._lock:
+        #     data = next(self._iter)
+        #     if self._close:
+        #         raise StopIteration
+
+        #     if not data:
+        #         return {}
+        #     return self._to_op_inputs(data)
 
     def close(self):
         self._close = True
         self._iter.notify()
+
+# class MultiMapDataFrameReader(MultiDataFrameReader):
+#     """
+#     Map dataframe reader for multiple inputs.
+#     """
+
+#     def __init__(
+#         self,
+#         inputs: DataFrame,
+#     ):
+#         iter_list = []
+#         for _, x in inputs.items():
+#             ite = x['df'].map_iter()
+#             iter_list.append((ite, x['cols']))
+
+#         super().__init__(iter_list)
+
+#     def read(self) -> Optional[Dict[str, any]]:
+#         """
+#         Read data from dataframe, get cols by operator_repr info
+
+#         """
+#         # TODO: Reader needs to be thread safe
+
+#         ret = {}
+#         count_stop = 0
+#         # ite[0] is the iterator
+#         # ite[1] is the columns for that iterator
+#         for ite in self._iters:
+#             try:
+#                 data = next(ite[0])
+#                 if data is not None:
+#                     # key is operator parameter
+#                     # index is column
+#                     for (key, index) in ite[1]:
+#                         ret[key] = data[index][0].value
+#                 else:
+#                     for (key, index) in ite[1]:
+#                         ret[key] = None
+#             # will StopIteration be thrown after
+#             except StopIteration:
+#                 for key, index in ite[1]:
+#                     ret[key] = None
+#                 count_stop += 1
+
+#         if count_stop == self._size:
+#             return None
+#         return ret

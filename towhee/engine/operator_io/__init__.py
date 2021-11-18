@@ -20,16 +20,12 @@ from typing import Dict, List
 
 
 def create_reader(
-    inputs: List[DataFrame],
+    input_dfs: dict,
     iter_type: str,
-    inputs_index: Dict[str, int]
 ) -> io_reader.DataFrameReader:
 
     if iter_type.lower() in ["map"]:
-        assert len(inputs) == 1, "%s iter takes one dataframe, but %s dataframes are found" % (
-            iter_type, len(inputs)
-        )
-        return io_reader.BlockMapDataFrameReader(inputs[0], inputs_index)
+        return io_reader.BlockMapDataFrameReader(input_dfs)
     else:
         raise NameError("Can not find %s iters" % iter_type)
 
