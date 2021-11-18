@@ -17,7 +17,10 @@ from typing import Dict
 
 from towhee.engine.operator_runner import runner_base
 from towhee.engine.operator_runner import map_runner
-from towhee.engine._operator_io import DataFrameReader, DataFrameWriter
+from towhee.engine.operator_io.reader import DataFrameReader
+from towhee.engine.operator_io.writer import DataFrameWriter
+
+# from towhee.engine._operator_io import DataFrameReader, DataFrameWriter
 
 
 def create_runner(runner_type: str, name: str, index: int,

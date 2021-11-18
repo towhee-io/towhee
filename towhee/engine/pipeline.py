@@ -33,23 +33,14 @@ class Pipeline:
     """
 
     def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
-
         self._parallelism = parallelism
         self.on_graph_finish_handlers = []
         self._scheduler = None
 
-        # TODO(fzliu): instantiate `DataFrame` columns.
-        self._outputs = None
-
-        # Instantiate the graph representation.
         if isinstance(graph_repr, str):
             self._graph_repr = GraphRepr.from_yaml(graph_repr)
         else:
             self._graph_repr = graph_repr
-
-        # self._cv = threading.Condition()
-        # self.on_graph_finish_handlers = [self._on_graph_finish]
-        # self._build()
 
     @property
     def parallelism(self) -> int:
@@ -61,10 +52,6 @@ class Pipeline:
             self._parallelism = val
         else:
             raise ValueError('Parallelism value must be a positive integer')
-
-    @property
-    def outputs(self) -> DataFrame:
-        return self._outputs
 
     def register(self, scheduler: TaskScheduler):
         self._scheduler = scheduler
@@ -92,80 +79,12 @@ class Pipeline:
         if not self._scheduler:
             raise AttributeError('Pipeline not registered to a Scheduler.')
 
-        graph_ctxs = []
-        for n in range(self._parallelism):
-            graph_ctx = GraphContext(n, self._graph_repr)
-            self._scheduler.register(graph_ctx)
-            graph_ctxs.append(graph_ctx)
-
-        self._outputs = DataFrame()
-
-        # Weave inputs into each GraphContext.
-        # TODO(fzliu): there are better ways to maintain ordering.
-        for n, row in enumerate(inputs.map_iter()):
-            idx = n % len(graph_ctxs)
-            graph_ctxs[idx](row[0])
-
-        for graph_ctx in graph_ctxs:
-            graph_ctx.inputs.seal()
-            graph_ctx.outputs.wait_sealed()
-
-        # TODO(fzliu): Create an operator to merge multiple `DataFrame` instances.
-        idx = 0
-        merge = True
-        while merge:
-            for graph_ctx in graph_ctxs:
-                elem = graph_ctx.outputs.get(idx, 1)
-                if not elem:
-                    merge = False
-                    break
-                self._outputs.put(elem[0])
-            idx += 1
-
-        return self._outputs
-
-    # def __call__(self, inputs: DataFrame) -> DataFrame:
-
-    #     def _feed_one_graph_ctx(row):
-    #         for graph_ctx in self._graph_ctxs:
-    #             if not graph_ctx.is_busy:
-    #                 # fill the input row to the available graph context
-    #                 graph_ctx(row)
-    #                 return
-
-    #     self.outputs = DataFrame()
-
-    #     for row in inputs.map_iter():
-    #         if not self.is_busy:
-    #             _feed_one_graph_ctx(row)
-    #         else:
-    #             with self._cv:
-    #                 if not self.is_busy:
-    #                     _feed_one_graph_ctx(row)
-    #                 else:
-    #                     self._cv.wait()
-
-    #     # todo: GuoRentong, need to track each graph call for multi-row inputs
-    #     with self._cv:
-    #         if self.is_busy:
-    #             self._cv.wait()
-    #         return self.outputs
-
-    # def _on_graph_finish(self, graph_ctx: GraphContext):
-    #     # Organize the GraphContext's output into Pipeline's outputs.
-    #     self.outputs.merge(graph_ctx.outputs)
-    #     # Notify the run loop that a GraphContext is in idle state.
-    #     with self._cv:
-    #         self._cv.notify()
-
-    # def _build(self):
-    #     """
-    #     Create GraphContexts and set up input iterators.
-    #     """
-    #     build graph contexts
-    #     self._graph_ctxs = [GraphContext(i, self._graph_repr)
-    #                         for i in range(self._parallelism)]
-
-    #     # add on_task_finish_handlers to graph contexts
-    #     for g in self._graph_ctxs:
-    #         g.on_finish_handlers += self.on_graph_finish_handlers
+        assert self._parallelism == 1
+        graph_ctx = GraphContext(0, self._graph_repr)
+        self._scheduler.register(graph_ctx)
+        input_data = inputs.get(0, 1)
+        if input_data is None:
+            raise RuntimeError('Input data is empty')
+        graph_ctx(input_data[0])
+        graph_ctx.join()
+        return graph_ctx.outputs

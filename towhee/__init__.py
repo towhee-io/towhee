@@ -13,13 +13,14 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any, Tuple, List
 from shutil import rmtree
 import os
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
-from towhee.engine.engine import Engine, EngineConfig, start_engine
+from towhee.engine.engine import Engine, start_engine
+from towhee.utils.log import engine_log
 from towhee.engine.pipeline import Pipeline
 from towhee.engine import LOCAL_PIPELINE_CACHE
 from towhee.utils.hub_tools import download_repo
@@ -43,48 +44,41 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
+
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
-    def __call__(self, *args) -> Tuple[Any]:
+    def __call__(self, *args) -> List[Tuple]:
         """
         Wraps the input arguments around a `Dataframe` for Pipeline.__call__(). For
         example:
         ```
         >>> p = pipeline('some-pipeline')
-        >>> single_result = p(arg0, arg1)
-        >>> multi_result = p([(arg0_0, arg1_0), (arg0_1, arg1_1)])
+        >>> result = p(arg0, arg1)
         ```
-
         """
-
         if not args:
-            return []
+            raise RuntimeError('Input data is empty')
 
-        # Support both single-input and multi-input (via list).
-        if len(args) == 1 and isinstance(args[0], list):
-            inputs = args[0]
-        else:
-            inputs = [args]
+        vargs = []
+        for arg in args:
+            vtype = type(arg).__name__
+            vargs.append(Variable(vtype, arg))
+        vargs = tuple(vargs)
 
+        # Process the data through the pipeline.
         in_df = DataFrame('_in_df')
-        for tup in inputs:
-            if not isinstance(tup, tuple):
-                tup = (tup, )
-            row = tuple((Variable(type(e).__name__, e) for e in tup))
-            in_df.put(row)
-        in_df.seal()
-
+        in_df.put(vargs)
         out_df = self._pipeline(in_df)
 
-        # 1-tuple outputs are automatically extracted.
         res = []
-        for data in out_df.get(0, out_df.size):
-            if len(data) == 1:
-                res.append(data[0].value)
-            else:
-                res.append(tuple((v.value for v in data)))
-
+        it = out_df.map_iter()
+        for data in it:
+            # data is Tuple[Variable]
+            data_value = []
+            for item in data:
+                data_value.append(item.value)
+            res.append(tuple(data_value))
         return res
 
 
@@ -131,7 +125,7 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
         download = True
 
     if download:
-        print('Downloading Pipeline: ' + repo)
+        engine_log.info('Downloading Pipeline: ' + repo)
         download_repo(author, repo, branch, str(repo_path))
 
     return yaml_path
@@ -172,6 +166,7 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
     # $HOME/.towhee/pipelines
     # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
     cache_path = _get_pipeline_cache(cache)
+
     yaml_path = _download_pipeline(cache_path, task, force_download=force_download)
 
     if not yaml_path.is_file():

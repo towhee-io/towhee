@@ -96,7 +96,7 @@ class BlockMapDataFrameReader(DataFrameReader):
 
             if not data:
                 return {}
-            return self._to_op_inputs(data[0])
+            return self._to_op_inputs(data)
 
     def close(self):
         self._close = True

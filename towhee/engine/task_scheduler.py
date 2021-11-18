@@ -12,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from abc import ABC, abstractmethod
-from collections import defaultdict
-import random
-import time
 from typing import List
+import time
+import random
 import weakref
 import threading
 
-from towhee.engine.task import Task
-from towhee.engine.task_executor import TaskExecutor
-
-
-MAX_EXECUTOR_TASKS = 10
+from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 
 
 class TaskScheduler(ABC):
@@ -35,38 +29,21 @@ class TaskScheduler(ABC):
         task_execs: (`List[towhee.TaskExecutor]`)
             A list of task executors that the `Engine` manages. Also should be
             continuously changing as new executors are acquired.
-        max_tasks: (`int`)
-            The maximum number of tasks per executor - if the scheduler detects that an
-            executor has greater than or equal to than `max_tasks` in queue, it will not
-            assign any further tasks to it.
     """
 
-    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
+    def __init__(self, task_execs: List[ThreadPoolTaskExecutor]):
         self._task_execs = task_execs
-        self._max_tasks = max_tasks
-        # self._pipelines = pipelines
-        self._graph_ctxs = []
+        self._graph_ctx_refs = []
         self._lock = threading.Lock()
         self._need_stop = False
 
+    @abstractmethod
     def stop(self) -> None:
-        self._need_stop = True
+        raise NotImplementedError
 
-    def register(self, graph_ctx):
-        with self._lock:
-            self._graph_ctxs.append(weakref.ref(graph_ctx))
-
-    # def add_pipeline(self, pipeline: Pipeline):
-    #     """Add a single pipeline for this scheduler to manage tasks for.
-
-    #     Args:
-    #         pipeline: `towhee.Pipeline`
-    #             A single pipeline to schedule tasks for.
-    #     """
-    #     pipeline.add_task_ready_handler(self.on_task_ready)
-    #     pipeline.add_task_start_handler(self.on_task_start)
-    #     pipeline.add_task_finish_handler(self.on_task_finish)
-    #     self._pipelines.append(pipeline)
+    @abstractmethod
+    def join(self) -> None:
+        raise NotImplementedError
 
     def schedule_forever(self, sleep_ms: int = 1000):
         """Runs the a single schedule step in a loop.
@@ -83,106 +60,43 @@ class TaskScheduler(ABC):
     def schedule_step(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def on_task_ready(self, task: Task):
-        raise NotImplementedError
 
-    @abstractmethod
-    def on_task_start(self, task: Task):
-        raise NotImplementedError
+class BasicScheduler(TaskScheduler):
+    """
+    Basic scheduler.
 
-    @abstractmethod
-    def on_task_finish(self, task: Task):
-        raise NotImplementedError
-
-
-class FIFOTaskScheduler(TaskScheduler):
-    """Very basic scheduler that sends tasks to executors in a first-in, first-out
-    manner. The scheduler loops through all `OperatorContext` instances within the
-    engine, acquiring tasks one at a time if available.
-
-    Args:
-        task_execs: (`List[towhee.TaskExecutor]`)
-            See `TaskScheduler` docstring.
+    This scheduler will start all ops, and has no scheduling logic, so the
+    schedule_step does nothing.
     """
 
-    def __init__(self, task_execs: List[TaskExecutor], max_tasks: int = 10):
-        super().__init__(task_execs, max_tasks)
+    def register(self, graph_ctx):
+        for op in graph_ctx.op_ctxs.values():
+            executor = self._find_optimal_exec()
+            op.start(executor)
 
-        # `FIFOTaskScheduler` maintains a dictionary of `hub_op_id` to
-        # `List[TaskExecutor]` mappings, tracking which operator IDs are loaded into
-        # which task executors.
-        self._op_id_exec_map = defaultdict(list)
+        with self._lock:
+            self._graph_ctx_refs.append(weakref.ref(graph_ctx))
+
+    def stop(self):
+        for g_ctx_ref in self._graph_ctx_refs:
+            g_ctx = g_ctx_ref()
+            if g_ctx is not None:
+                g_ctx.stop()
+
+    def join(self):
+        for g_ctx_ref in self._graph_ctx_refs:
+            g_ctx = g_ctx_ref()
+            if g_ctx is not None:
+                g_ctx.join()
 
     def schedule_step(self):
-        """This function loops once through all operator contexts in all graphs, adding
-        a single task from individual operator contexts as appropriate. For maximum
-        efficiency, we prioritize operators towards the end of the graph first.
         """
-
-        # for pipeline in self._pipelines:
-        with self._lock:
-            # for graph_ctx in pipeline.graph_contexts:
-            self._graph_ctxs = [
-                graph_ctx_ref for graph_ctx_ref in self._graph_ctxs if graph_ctx_ref() is not None
-            ]
-            for graph_context_ref in self._graph_ctxs:
-                g = graph_context_ref()
-                if g is None:
-                    continue
-
-                for op_ctx in g.op_ctxs.values():
-
-                    #if not op_ctx.is_schedulable or op_ctx.is_finished:
-                    #    continue
-                    if g.is_busy and op_ctx.name == '_start_op':
-                        continue
-
-                    #print(op_ctx._repr.name, op_ctx._reader.size)
-                    tasks = op_ctx.pop_ready_tasks(n_tasks=1)
-                    if not tasks:
-                        continue
-                    task = tasks[0]
-
-                    # If `push_task` returns `False`, then the optimal executor is
-                    # already full, wait a while and try again.
-                    task_exec = self._find_optimal_exec(task)
-                    while not task_exec.push_task(task):
-                        time.sleep(self._sleep_ms / 1000)
-                        task_exec = self._find_optimal_exec(task)
-
-    def _find_optimal_exec(self, task: Task):
-        """Acquires the least busy instance of `TaskExecutor` that can still execute
-        the operator.
-
-        Args:
-            task: (`towhee.Task`)
-                The `Task` instance that the executor will need to complete.
+        Do nothing
         """
-
-        # Attempt to find the least busy executor with the model already loaded. We do
-        # not consider executors that have more than `MAX_EXECUTOR_TASKS` queued up.
-        min_num_tasks = self._max_tasks
-        optimal_exec = None
-        for task_exec in self._op_id_exec_map[task.op_key]:
-            if task_exec.num_tasks < min_num_tasks:
-                optimal_exec = task_exec
-                min_num_tasks = task_exec.num_tasks
-
-        # TODO(fzliu): If no task executor with the specified object was found, assign
-        # the least busy executor that has the resource (i.e. GPU, TPU, FPGA, etc...)
-        # required by the task.
-        if not optimal_exec:
-            optimal_exec = random.choice(self._task_execs)
-            self._op_id_exec_map[task.op_key].append(optimal_exec)
-
-        return optimal_exec
-
-    def on_task_ready(self, task: Task):
         pass
 
-    def on_task_start(self, task: Task):
-        pass
-
-    def on_task_finish(self, task: Task):
-        pass
+    def _find_optimal_exec(self):
+        """
+        Acquires the least busy instance of `TaskExecutor` that can still execute the operator.
+        """
+        return random.choice(self._task_execs)

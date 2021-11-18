@@ -135,7 +135,7 @@ class TestMapIterator(unittest.TestCase):
 
         def read(it: DataFrameIterator, q: queue.Queue):
             for item in it:
-                if item:
+                if item is not None:
                     q.put(item)
                 time.sleep(0.01)
 
@@ -155,7 +155,7 @@ class TestMapIterator(unittest.TestCase):
 
         def read(it: DataFrameIterator, q: queue.Queue):
             for item in it:
-                if item:
+                if item is not None:
                     q.put(item)
                 time.sleep(0.01)
 

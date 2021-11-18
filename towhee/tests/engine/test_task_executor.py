@@ -13,63 +13,63 @@
 # limitations under the License.
 
 
-from pathlib import Path
-import unittest
+# from pathlib import Path
+# import unittest
 
-from towhee.engine.task_executor import TaskExecutor
-from towhee.engine.task import Task
-
-
-class TestTaskExecutor(unittest.TestCase):
-    """Basic test case for `TaskExecutor`.
-    """
-
-    def setUp(self):
-        cache_path = Path(__file__).parent.parent.resolve()
-        self._task_exec = TaskExecutor('', cache_path=cache_path)
-        self._task_exec.start()
-
-    def tearDown(self):
-        self._task_exec.stop()
-
-    def test_add_task_execution(self):
-
-        # Add callback function upon completion.
-        def _add_task_finish_callback(task):
-            self.assertEqual(task.outputs.sum, task.inputs['num'])
-
-        # Create a couple of tasks to execute through the executor.
-        tasks = []
-        hub_op_id = 'mock_operators/add_operator'
-        args = {'factor': 0}
-        tasks.append(Task('test', hub_op_id, args, {'num': 0}, 0))
-        tasks.append(Task('test', hub_op_id, args, {'num': 1}, 1))
-        tasks.append(Task('test', hub_op_id, args, {'num': 10}, 10))
-
-        # Add finish callbacks and submit the tasks to the executor.
-        for task in tasks:
-            task.add_task_finish_handler(_add_task_finish_callback)
-            self._task_exec.push_task(task)
-
-    def test_sub_task_execution(self):
-
-        # Add callback function upon completion.
-        def _add_task_finish_callback(task):
-            diff = task.inputs['a'] - task.inputs['b']
-            self.assertEqual(task.outputs.diff, diff)
-
-        # Create a couple of tasks to execute through the executor.
-        tasks = []
-        hub_op_id = 'mock_operators/sub_operator'
-        tasks.append(Task('test', hub_op_id, {}, {'a': 0, 'b': 0}, 0))
-        tasks.append(Task('test', hub_op_id, {}, {'a': 10, 'b': 20}, 1))
-        tasks.append(Task('test', hub_op_id, {}, {'a': 23, 'b': -1}, 24))
-
-        # Add finish callbacks and submit the tasks to the executor.
-        for task in tasks:
-            task.add_task_finish_handler(_add_task_finish_callback)
-            self._task_exec.push_task(task)
+# from towhee.engine.task_executor import TaskExecutor
+# from towhee.engine.task import Task
 
 
-if __name__ == '__main__':
-    unittest.main()
+# class TestTaskExecutor(unittest.TestCase):
+#     """Basic test case for `TaskExecutor`.
+#     """
+
+#     def setUp(self):
+#         cache_path = Path(__file__).parent.parent.resolve()
+#         self._task_exec = TaskExecutor('', cache_path=cache_path)
+#         self._task_exec.start()
+
+#     def tearDown(self):
+#         self._task_exec.stop()
+
+#     def test_add_task_execution(self):
+
+#         # Add callback function upon completion.
+#         def _add_task_finish_callback(task):
+#             self.assertEqual(task.outputs.sum, task.inputs['num'])
+
+#         # Create a couple of tasks to execute through the executor.
+#         tasks = []
+#         hub_op_id = 'mock_operators/add_operator'
+#         args = {'factor': 0}
+#         tasks.append(Task('test', hub_op_id, args, {'num': 0}, 0))
+#         tasks.append(Task('test', hub_op_id, args, {'num': 1}, 1))
+#         tasks.append(Task('test', hub_op_id, args, {'num': 10}, 10))
+
+#         # Add finish callbacks and submit the tasks to the executor.
+#         for task in tasks:
+#             task.add_task_finish_handler(_add_task_finish_callback)
+#             self._task_exec.push_task(task)
+
+#     def test_sub_task_execution(self):
+
+#         # Add callback function upon completion.
+#         def _add_task_finish_callback(task):
+#             diff = task.inputs['a'] - task.inputs['b']
+#             self.assertEqual(task.outputs.diff, diff)
+
+#         # Create a couple of tasks to execute through the executor.
+#         tasks = []
+#         hub_op_id = 'mock_operators/sub_operator'
+#         tasks.append(Task('test', hub_op_id, {}, {'a': 0, 'b': 0}, 0))
+#         tasks.append(Task('test', hub_op_id, {}, {'a': 10, 'b': 20}, 1))
+#         tasks.append(Task('test', hub_op_id, {}, {'a': 23, 'b': -1}, 24))
+
+#         # Add finish callbacks and submit the tasks to the executor.
+#         for task in tasks:
+#             task.add_task_finish_handler(_add_task_finish_callback)
+#             self._task_exec.push_task(task)
+
+
+# if __name__ == '__main__':
+#     unittest.main()

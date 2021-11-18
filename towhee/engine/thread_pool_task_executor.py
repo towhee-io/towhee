@@ -66,9 +66,9 @@ class ThreadPoolTaskExecutor(threading.Thread):
 
     def execute(self, runner: RunnerBase):
         try:
-            op = self._op_pool.acquire_op_v2(runner.op_key,
-                                             runner.hub_op_id,
-                                             runner.op_args)
+            op = self._op_pool.acquire_op(runner.op_key,
+                                          runner.hub_op_id,
+                                          runner.op_args)
             runner.set_op(op)
             runner.process()
             self._op_pool.release_op(op)

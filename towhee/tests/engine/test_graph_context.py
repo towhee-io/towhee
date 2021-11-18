@@ -18,19 +18,31 @@ from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
 import unittest
 
-from towhee.engine.engine_v2 import Engine
-from towhee.engine.pipeline_v2 import Pipeline
 from towhee.dataframe import Variable
-from towhee.tests.test_util import SIMPLE_PIPELINE_YAML, FLATMAP_PIPELINE_YAML
+from towhee.engine.graph_context import GraphContext
+from towhee.engine.operator_context import OpStatus
 from towhee.dag import OperatorRepr
+from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
+
+from towhee.tests import CACHE_PATH
 
 
-class TestEngine(unittest.TestCase):
+class TestGraphCtx(unittest.TestCase):
     """
-    combine tests of engine/scheduler/task-executor/task
+    Graph ctx test
     """
 
-    def test_engine(self):
+    def setUp(self):
+        self._task_exec = ThreadPoolTaskExecutor('Graph_ctx_test',
+                                                 CACHE_PATH)
+        self._task_exec.start()
+
+    def tearDown(self):
+        if self._task_exec.is_alive():
+            self._task_exec.stop()
+            self._task_exec.join()
+
+    def _crate_graph(self):
 
         start_op_repr = OperatorRepr(
             name='_start_op',
@@ -99,62 +111,43 @@ class TestEngine(unittest.TestCase):
         }
 
         graph_repr = GraphRepr('add', op_reprs, df_reprs)
+        graph_ctx = GraphContext(0, graph_repr)
+        return graph_ctx
+        # df_in = DataFrame(
+        #     'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
+        # df_in.put((Variable('int', 1), ))
+        # df_in.seal()
 
-        self._pipeline = Pipeline(graph_repr)
-        engine = Engine()
-        engine.add_pipeline(self._pipeline)
-        result = self._pipeline((Variable('int', 1), ))
-        ret = result.get(0, 1)
-        self.assertEqual(ret[0][0].value, 3)
+    def test_graph_ctx(self):
+        graph_ctx = self._crate_graph()
 
-        result = self._pipeline((Variable('int', 3), ))
-        ret = result.get(0, 1)
-        self.assertEqual(ret[0][0].value, 5)
+        for op in graph_ctx.op_ctxs.values():
+            op.start(self._task_exec)
 
-    def test_simple_pipeline(self):
-        with open(SIMPLE_PIPELINE_YAML, 'r', encoding='utf-8') as f:
-            p = Pipeline(f.read())
-        engine = Engine()
-        engine.add_pipeline(p)
+        graph_ctx((Variable('int', 3), ))
 
-        result = p((Variable('int', 3), ))
-        ret = result.get(0, 1)
-        self.assertEqual(ret[0][0].value, 6)
+        graph_ctx.join()
 
-        result = p((Variable('int', 7), ))
-        ret = result.get(0, 1)
-        self.assertEqual(ret[0][0].value, 10)
+        for op in graph_ctx.op_ctxs.values():
+            self.assertEqual(op.status, OpStatus.FINISHED)
 
-    # def test_flatmap_writer(self):
-    #     with open(FLATMAP_PIPELINE_YAML, 'r', encoding='utf-8') as f:
-    #         p = Pipeline(f.read())
-    #     engine = Engine()
-    #     engine.add_pipeline(p)
+        it = graph_ctx.outputs.map_iter(True)
+        for data in it:
+            self.assertEqual(data[0].value, 5)
 
-    #     df_in = DataFrame(
-    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
+    def test_graph_ctx_failed(self):
+        graph_ctx = self._crate_graph()
 
-    #     df_in.put((Variable('int', 3), ))
-    #     df_in.seal()
-    #     result = p(df_in)
-    #     ret = result.get(0, 5)
+        for op in graph_ctx.op_ctxs.values():
+            op.start(self._task_exec)
 
-    #     # 5 is configured in FLATMAP_PIPELINE_YAML, witch means repeat 5 times
-    #     self.assertEqual(len(ret), 5)
-    #     for item in ret:
-    #         self.assertEqual(item[0].value, 3)
+        # Error input data
+        graph_ctx((Variable('string', 'x'), ))
 
-    #     df_in = DataFrame(
-    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
+        graph_ctx.join()
 
-    #     df_in.put((Variable('int', 10), ))
-    #     df_in.seal()
-    #     result = p(df_in)
-    #     ret = result.get(0, 5)
-    #     self.assertEqual(len(ret), 5)
-    #     for item in ret:
-    #         self.assertEqual(item[0].value, 10)
+        for name, op in graph_ctx.op_ctxs.items():
+            if name not in ['_start_op', '_end_op']:
+                self.assertEqual(op.status, OpStatus.FAILED)
 
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertEqual(graph_ctx.outputs.size, 0)

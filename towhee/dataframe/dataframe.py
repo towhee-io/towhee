@@ -100,7 +100,6 @@ class DataFrame:
             self._total += len(df.data)
             self._accessible_cv.notify_all()
 
-
     def get(self, start: int, count: int, block: bool = False) -> List[Tuple[Variable]]:
         """
         Get [start: start + count) elements within the `DataFrame`.
@@ -194,7 +193,7 @@ class DataFrame:
         return it
 
     def __str__(self) -> str:
-        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self._size, self._sealed)
+        return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self.size, self._sealed)
 
 
 class DataFrameIterator:
@@ -244,9 +243,10 @@ class MapIterator(DataFrameIterator):
         data = self._df_ref().get(self._cur_idx, 1, self._block)
         if self._df_ref().sealed and not data:
             raise StopIteration
-        if data:
+        if data is not None:
             self._cur_idx += 1
-        return data
+            return data[0]
+        return None
 
     def notify(self):
         self._df_ref().notify_block_readers()

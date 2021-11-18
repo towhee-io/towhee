@@ -16,7 +16,6 @@ from typing import Dict
 
 from towhee.operator import Operator
 from towhee.engine.operator_loader import OperatorLoader
-from towhee.engine.task import Task
 
 
 class OperatorPool:
@@ -32,52 +31,23 @@ class OperatorPool:
     def available_ops(self):
         return self._all_ops.keys()
 
-    def is_op_available(self, task: Task) -> bool:
-        """Determines whether an operator that can be used to fulfill the given Task is
-        currently loaded.
+    # def is_op_available(self, task: Task) -> bool:
+    #     """Determines whether an operator that can be used to fulfill the given Task is
+    #     currently loaded.
 
-        Args:
-            task: (`towhee.Task`)
-                Task
+    #     Args:
+    #         task: (`towhee.Task`)
+    #             Task
 
-        Returns:
-            (`bool`)
-                Returns `True` if the specified input task can be run without having to
-                load a new operator from cache.
-        """
-        return task.op_key in self._all_ops
+    #     Returns:
+    #         (`bool`)
+    #             Returns `True` if the specified input task can be run without having to
+    #             load a new operator from cache.
+    #     """
+    #     return task.op_key in self._all_ops
 
-    def acquire_op(self, task: Task) -> Operator:
-        """Given a `Task`, instruct the `OperatorPool` to reserve and return the
-        specified operator for use in the executor.
-
-        Args:
-            task: (`towhee.Task`)
-                Task to acquire an operator for.
-
-        Returns:
-            (`towhee.operator.Operator`)
-                The operator instance reserved for the caller.
-        """
-
-        # Load the operator if the computed key does not exist in the operator
-        # dictionary.
-        op_key = task.op_key
-        if op_key not in self._all_ops:
-            op = self._op_loader.load_operator(task.hub_op_id, task.op_args)
-            op.key = op_key
-        else:
-            op = self._all_ops[op_key]
-
-        # Let there be a record of the operator existing in the pool, but remove its
-        # pointer until the operator is released by the `TaskExecutor`.
-        self._all_ops[op_key] = None
-
-        return op
-
-
-    def acquire_op_v2(self, op_key: str, hub_op_id: str,
-                      op_args: Dict[str, any]) -> Operator:
+    def acquire_op(self, op_key: str, hub_op_id: str,
+                   op_args: Dict[str, any]) -> Operator:
         """Given a `Task`, instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
