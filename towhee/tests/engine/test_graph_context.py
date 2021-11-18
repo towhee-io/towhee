@@ -56,8 +56,8 @@ class TestGraphCtx(unittest.TestCase):
         )
 
         add_op_repr = OperatorRepr(
-            name='mock_operators/add_operator',
-            function='mock_operators/add_operator',
+            name='local/add_operator',
+            function='local/add_operator',
             init_args={'factor': 2},
             inputs=[
                 {'name': 'num', 'df': 'op_test_in', 'col': 0}

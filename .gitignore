@@ -41,6 +41,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+towhee/tests/test_cache/*
 nosetests.xml
 coverage.xml
 *.cover

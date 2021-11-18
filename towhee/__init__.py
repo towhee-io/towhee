@@ -23,7 +23,8 @@ from towhee.engine.engine import Engine, start_engine
 from towhee.utils.log import engine_log
 from towhee.engine.pipeline import Pipeline
 from towhee.engine import LOCAL_PIPELINE_CACHE
-from towhee.utils.hub_tools import download_repo
+from towhee.hub.hub_tools import download_repo
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
@@ -82,15 +83,8 @@ class _PipelineWrapper:
         return res
 
 
-def _get_pipeline_cache(cache_path: str):
-    if not cache_path:
-        cache_path = os.environ.get(_PIPELINE_CACHE_ENV) if os.environ.get(_PIPELINE_CACHE_ENV) else LOCAL_PIPELINE_CACHE
-    return Path(cache_path)
-
-
 # def _get_hello_towhee_pipeline():
 #     return Path(__file__).parent / 'tests/test_util/resnet50_embedding.yaml'
-
 
 def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_download: bool = False):
     """
@@ -125,13 +119,13 @@ def _download_pipeline(cache_path: str, task: str, branch: str = 'main', force_d
         download = True
 
     if download:
-        engine_log.info('Downloading Pipeline: ' + repo)
+        engine_log.info('Downloading Pipeline: %s', repo)
         download_repo(author, repo, branch, str(repo_path))
 
     return yaml_path
 
 
-def pipeline(task: str, cache: str = None, force_download: bool = False):
+def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: str = 'main', force_download: bool = False):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -141,8 +135,10 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
     Args:
         task (`str`):
             Task name or YAML file location to use.
-        cache (`str`):
-            Cache path to use.
+        fmc (`FileManagerConfig`):
+            Optional file manager config for the local instance, defaults to local cache.
+        branch (`str`):
+            Which branch to use for operators/pipelines on hub, defaults to `main`.
         force_download (`bool`):
             Whether to redownload pipeline and operators.
 
@@ -150,27 +146,11 @@ def pipeline(task: str, cache: str = None, force_download: bool = False):
         (`typing.Any`)
             The `Pipeline` output.
     """
-
-    # If the task name coincides with one of the default pipelines, use the YAML
-    # specified by that default pipeline instead of trying to lookup a YAML in the hub
-    # or cache.
+    fm = FileManager(fmc)
 
     start_engine()
-    # TODO (jiangjunjie) delete when hub is ready
-    # if task.startswith('hello_towhee'):
-    #     yaml_path = _get_hello_towhee_pipeline()
-    # else:
     task = DEFAULT_PIPELINES.get(task, task)
-
-    # Get YAML path given task name. The default cache location for pipelines is
-    # $HOME/.towhee/pipelines
-    # TODO(fzliu): if pipeline is not available in cache, acquire it from hub
-    cache_path = _get_pipeline_cache(cache)
-
-    yaml_path = _download_pipeline(cache_path, task, force_download=force_download)
-
-    if not yaml_path.is_file():
-        raise NameError(F'Can not find pipeline by name {task}')
+    yaml_path = fm.get_pipeline(task, branch, force_download)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))

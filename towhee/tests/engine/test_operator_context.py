@@ -46,7 +46,7 @@ class TestOperatorContextV2(unittest.TestCase):
 
         op_repr = OperatorRepr(
             name='add_operator',
-            function='mock_operators/add_operator',
+            function='local/add_operator',
             init_args={'factor': 5},
             inputs=[
                 {'name': 'num', 'df': 'op_test_in', 'col': 0},
