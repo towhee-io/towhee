@@ -8,7 +8,6 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.tests import CACHE_PATH
 
 
-
 cache_path = Path(__file__).parent.parent.resolve()
 
 
@@ -28,13 +27,13 @@ class TestDownload(unittest.TestCase):
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
-        fm = FileManager(fmc) # pylint: disable=unused-variable
+        FileManager(fmc)
 
     def test_pipeline(self):
         p = pipeline('towhee/ci_test')
         img = Image.open(CACHE_PATH / 'test_cache/ci_test&towhee$main/towhee_logo.png')
         res = p(img)
-        self.assertEqual(res[0].size, 1000)
+        self.assertEqual(res[0][0].size, 1000)
 
 
 if __name__ == '__main__':
