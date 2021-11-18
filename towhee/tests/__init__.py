@@ -14,8 +14,6 @@
 
 
 from pathlib import Path
-# from towhee.engine.engine_v2 import Engine, EngineConfig as v2_Engine, v2_EngineConfig
-# from towhee.engine.engine import Engine, EngineConfig as v1_Engine, v1_EngineConfig
 
 from towhee.engine.engine import Engine, EngineConfig
 

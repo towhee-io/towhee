@@ -65,18 +65,24 @@ class OperatorContext:
 
         self._writer = create_writer(iter_type, outputs)
         self._op_runners = []
+
         self._op_status = OpStatus.NOT_RUNNING
+        self._err_msg = None
 
     @property
     def name(self):
         return self._repr.name
 
     @property
+    def err_msg(self):
+        return self._err_msg
+
+    @property
     def status(self):
         """
         Calc op-ctx status by checking all runners of this op-ctx
         """
-        if self._op_status == OpStatus.FINISHED:
+        if self._op_status in [OpStatus.FINISHED, OpStatus.FAILED]:
             return self._op_status
 
         if len(self._op_runners) == 0:
@@ -86,6 +92,7 @@ class OperatorContext:
         for runner in self._op_runners:
             if runner.status == RunnerStatus.FAILED:
                 self._op_status = OpStatus.FAILED
+                self._err_msg = runner.msg
             else:
                 if runner.status == RunnerStatus.FINISHED:
                     finished_count += 1

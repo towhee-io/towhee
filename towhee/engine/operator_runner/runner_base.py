@@ -36,6 +36,7 @@ class _OpInfo:
                  op_args: Dict[str, any]) -> None:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
+        self._msg = None
         self._op_args = op_args
         self._op_key = _OpInfo._calc_op_key(hub_op_id, op_args)
 
@@ -109,6 +110,10 @@ class RunnerBase(ABC):
     def status(self) -> RunnerStatus:
         return self._status
 
+    @property
+    def msg(self):
+        return self._msg
+
     def _set_finished(self) -> None:
         self._set_end_status(RunnerStatus.FINISHED)
 
@@ -116,8 +121,9 @@ class RunnerBase(ABC):
         self._set_status(RunnerStatus.IDLE)
 
     def _set_failed(self, msg: str) -> None:
-        engine_log.error('%s runs failed', str(self))
-        self._msg = msg
+        error_info = '{} runs failed, error msg: {}'.format(str(self), msg)
+        engine_log.error(error_info)
+        self._msg = error_info
         self._set_end_status(RunnerStatus.FAILED)
 
     def _set_running(self) -> None:
@@ -140,7 +146,7 @@ class RunnerBase(ABC):
     def __str__(self) -> str:
         return '{}:{}'.format(self._name, self._index)
 
-    @ abstractmethod
+    @abstractmethod
     def process_step(self) -> bool:
         raise NotImplementedError
 

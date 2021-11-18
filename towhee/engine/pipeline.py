@@ -85,6 +85,7 @@ class Pipeline:
         input_data = inputs.get(0, 1)
         if input_data is None:
             raise RuntimeError('Input data is empty')
+
         graph_ctx(input_data[0])
         graph_ctx.join()
-        return graph_ctx.outputs
+        return graph_ctx.result()

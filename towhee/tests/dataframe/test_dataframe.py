@@ -64,6 +64,10 @@ class TestDataframe(unittest.TestCase):
                         q.put(item)
                         index += 1
                 if df.sealed:
+                    items = df.get(index, 100)
+                    if items:
+                        for item in items:
+                            q.put(item)
                     break
 
         runner = MultiThreadRunner(target=read, args=(df, q), thread_num=10)
@@ -91,6 +95,10 @@ class TestDataframe(unittest.TestCase):
                         index += 1
                     continue
                 if df.sealed:
+                    items = df.get(index, 100)
+                    if items:
+                        for item in items:
+                            q.put(item)
                     break
 
         runner = MultiThreadRunner(target=read, args=(df, q), thread_num=10)

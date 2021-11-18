@@ -18,7 +18,7 @@ from typing import Tuple
 from towhee.dataframe import DataFrame, Variable
 from towhee.dag import GraphRepr
 
-from towhee.engine.operator_context import OperatorContext
+from towhee.engine.operator_context import OperatorContext, OpStatus
 
 
 class GraphContext:
@@ -64,6 +64,16 @@ class GraphContext:
                 The output `DataFrame`.
         """
         return self.dataframes['_end_df']
+
+    def result(self):
+        if self.outputs.size != 0:
+            return self.outputs
+        else:
+            # graph run failed, raise an exception
+            for op in self._op_ctxs.values():
+                if op.status == OpStatus.FAILED:
+                    raise RuntimeError(op.err_msg)
+            raise RuntimeError('Unkown error')
 
     @property
     def op_ctxs(self):

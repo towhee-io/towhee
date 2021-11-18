@@ -12,10 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 
-from towhee.tests.emulated_pipelines.emulated_pipeline import EmulatedPipeline
+from towhee.engine.operator_runner.map_runner import MapRunner
 
 
-__all__ = [
-    'EmulatedPipeline'
-]
+class FlatMapRunner(MapRunner):
+    """
+    FlatMap, one input multiple outputs.
+    """
+
+    def _set_outputs(self, output: List[any]):
+        if not isinstance(output, list):
+            raise RuntimeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
+
+        for data in output:
+            self._writer.write(data)

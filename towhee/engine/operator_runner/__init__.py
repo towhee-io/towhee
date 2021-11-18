@@ -17,6 +17,7 @@ from typing import Dict
 
 from towhee.engine.operator_runner import runner_base
 from towhee.engine.operator_runner import map_runner
+from towhee.engine.operator_runner import flatmap_runner
 from towhee.engine.operator_io.reader import DataFrameReader
 from towhee.engine.operator_io.writer import DataFrameWriter
 
@@ -29,5 +30,8 @@ def create_runner(runner_type: str, name: str, index: int,
     if runner_type.lower() == 'map':
         return map_runner.MapRunner(name, index, op_name, hub_op_id,
                                     op_args, reader, writer)
+    elif runner_type.lower() == 'flatmap':
+        return flatmap_runner.FlatMapRunner(name, index, op_name, hub_op_id,
+                                            op_args, reader, writer)
     else:
         raise AttributeError('No runner type named: {}'.format(runner_type))

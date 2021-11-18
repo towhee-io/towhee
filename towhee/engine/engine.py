@@ -69,7 +69,6 @@ class Engine(threading.Thread):
         super().__init__()
 
         self._config = EngineConfig()
-        print(self._config)
         self._pipelines = []
         self.setDaemon(True)
 

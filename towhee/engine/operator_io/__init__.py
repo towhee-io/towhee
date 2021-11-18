@@ -25,18 +25,18 @@ def create_reader(
     inputs_index: Dict[str, int]
 ) -> io_reader.DataFrameReader:
 
-    if iter_type.lower() in ["map"]:
-        assert len(inputs) == 1, "%s iter takes one dataframe, but %s dataframes are found" % (
+    if iter_type.lower() in ['map', 'flatmap']:
+        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (
             iter_type, len(inputs)
         )
         return io_reader.BlockMapDataFrameReader(inputs[0], inputs_index)
     else:
-        raise NameError("Can not find %s iters" % iter_type)
+        raise NameError('Can not find %s iters' % iter_type)
 
 
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFrameWriter:
     assert len(outputs) == 1
-    if iter_type.lower() == "map":
+    if iter_type.lower() in ['map', 'flatmap']:
         return io_writer.DataFrameWriter(outputs[0])
     else:
-        raise NameError("Can not find %s iters" % iter_type)
+        raise NameError('Can not find %s iters' % iter_type)
