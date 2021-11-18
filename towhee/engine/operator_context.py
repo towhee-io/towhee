@@ -52,13 +52,29 @@ class OperatorContext:
         dataframes: Dict[str, DataFrame]
     ):
         self._repr = op_repr
-
-        inputs = list({dataframes[input['df']] for input in op_repr.inputs})
         iter_type = op_repr.iter_info['type']
-        inputs_index = dict((item['name'], item['col'])
-                            for item in op_repr.inputs)
-        self.inputs = inputs
-        self._reader = create_reader(inputs, iter_type, inputs_index)
+
+        # New method of transfering data, I believe it is much cleaner.
+        reader_inputs = {}
+        for x in op_repr.inputs:
+            # If a dataframe is already being read, add in columns to be read to it.
+            if x['df'] in reader_inputs.keys():
+                reader_inputs[x['df']]['cols'].append((x['name'], x['col']))
+            # Else, create a new dataframe reader.
+            else:
+                reader_inputs[x['df']] = {}
+                reader_inputs[x['df']]['df'] = dataframes[x['df']]
+                reader_inputs[x['df']]['cols'] = [(x['name'], x['col'])]
+
+        self._reader = create_reader(reader_inputs, iter_type)
+
+        # # Previous version:
+        # inputs = list({dataframes[input['df']] for input in op_repr.inputs})
+        # iter_type = op_repr.iter_info['type']
+        # inputs_index = dict((item['name'], item['col'])
+        #                     for item in op_repr.inputs)
+        # self.inputs = inputs
+        # self._reader = create_reader(inputs, iter_type, inputs_index)
 
         outputs = list({dataframes[output['df']]
                        for output in op_repr.outputs})
