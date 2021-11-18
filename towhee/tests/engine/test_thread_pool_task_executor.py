@@ -14,6 +14,7 @@
 
 
 import unittest
+from pathlib import Path
 from typing import Dict
 from queue import Queue
 import time
@@ -22,6 +23,7 @@ from towhee.engine.operator_runner.map_runner import MapRunner
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 from towhee.engine.operator_io._mock_reader import MockReader
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.tests import CACHE_PATH
 
 
@@ -41,9 +43,23 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
     Thread pool task executor test
     """
 
+    @classmethod
+    def setUpClass(cls):
+        new_cache = (CACHE_PATH/'test_cache')
+        pipeline_cache = (CACHE_PATH/'test_util')
+        operator_cache = (CACHE_PATH/'mock_operators')
+        fmc = FileManagerConfig()
+        fmc.update_default_cache(new_cache)
+        pipelines = list(pipeline_cache.rglob('*.yaml'))
+        operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+        fmc.cache_local_pipeline(pipelines)
+        fmc.cache_local_operator(operators)
+        FileManager(fmc)
+
     def setUp(self):
+        cache_path = Path(__file__).parent.parent.resolve()
         self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test',
-                                                 CACHE_PATH)
+                                                 cache_path)
         self._task_exec.start()
 
     def tearDown(self):
