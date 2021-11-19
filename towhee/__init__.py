@@ -59,27 +59,33 @@ class _PipelineWrapper:
         ```
         """
         if not args:
-            raise RuntimeError('Input data is empty')
+            return []
 
-        vargs = []
-        for arg in args:
-            vtype = type(arg).__name__
-            vargs.append(Variable(vtype, arg))
-        vargs = tuple(vargs)
+        # Support both single-input and multi-input (via list).
+        if len(args) == 1 and isinstance(args[0], list):
+            inputs = args[0]
+        else:
+            inputs = [args]
 
-        # Process the data through the pipeline.
         in_df = DataFrame('_in_df')
-        in_df.put(vargs)
+        for tup in inputs:
+            if not isinstance(tup, tuple):
+                tup = (tup, )
+            row = tuple((Variable(type(e).__name__, e) for e in tup))
+            in_df.put(row)
+        print(in_df)
+        in_df.seal()
+
         out_df = self._pipeline(in_df)
 
+        # 1-tuple outputs are automatically extracted.
         res = []
-        it = out_df.map_iter()
-        for data in it:
-            # data is Tuple[Variable]
-            data_value = []
-            for item in data:
-                data_value.append(item.value)
-            res.append(tuple(data_value))
+        for data in out_df.get(0, out_df.size):
+            if len(data) == 1:
+                res.append(data[0].value)
+            else:
+                res.append(tuple((v.value for v in data)))
+
         return res
 
 
