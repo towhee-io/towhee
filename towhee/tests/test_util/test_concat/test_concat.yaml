@@ -24,7 +24,7 @@ operators:
             type: map
     -
         name: 'add_op1'
-        function: 'mock_operators/add_operator_v2'
+        function: 'local/add_operator_v2'
         init_args:
             factor: 1
         inputs:
@@ -39,7 +39,7 @@ operators:
             type: map
     -
         name: 'add_op2'
-        function: 'mock_operators/add_operator_v2'
+        function: 'local/add_operator_v2'
         init_args:
             factor: 2
         inputs:
@@ -55,7 +55,7 @@ operators:
             type: map
     -
         name: 'add_op3'
-        function: 'mock_operators/add_operator_v2'
+        function: 'local/add_operator_v2'
         init_args:
             factor: 3
         inputs:
@@ -71,7 +71,7 @@ operators:
             type: map
     -
         name: 'concat'
-        function: 'mock_operators/concat_operator'
+        function: 'local/concat_operator'
         init_args:
             repeat_end: True
         inputs:
@@ -93,11 +93,11 @@ operators:
                 df: 'after_concat'
 
         iter_info:
-            type: multi-map
+            type: map
         
     -
         name: 'add_op4'
-        function: 'mock_operators/add_operator_v2'
+        function: 'local/add_operator_v2'
         init_args:
             factor: 4
         inputs:

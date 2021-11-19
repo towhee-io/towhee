@@ -57,10 +57,15 @@ class TestPipeline(unittest.TestCase):
     #     res = p(0)
     #     self.assertEqual(res[0][0], 3)
 
-    def test_simple_pipeline(self):
-        p = pipeline('local/simple_pipeline')
-        res = p(0)
-        self.assertEqual(res[0][0], 3)
+    # def test_simple_pipeline(self):
+    #     p = pipeline('local/simple_pipeline')
+    #     res = p(0)
+    #     self.assertEqual(res[0][0], 3)
+
+    def test_test_concat(self):
+        p = pipeline('local/test_concat')
+        res = p([(0, 1, 2), (3,4,5)])
+        self.assertEqual(res, 3)
 
     # def test_embedding_pipeline(self):
     #     p = pipeline('local/resnet50_embedding')

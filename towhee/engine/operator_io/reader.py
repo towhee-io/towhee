@@ -94,11 +94,11 @@ class BlockMapDataFrameReader(DataFrameReader):
         ret = {}
         bitmap = list(range(self._iters_count))
         with self._lock:
+            if self._close:
+                raise StopIteration
             while len(bitmap) > 0:
                 remove_index = set()
                 for bit_index, iter_index in enumerate(bitmap):
-                    if self._close:
-                        raise StopIteration
                     # self._iters[x][0] is the iterator
                     # self._iters[x][1] are the columns for that iterator
                     data = next(self._iters[iter_index][0])
@@ -106,7 +106,9 @@ class BlockMapDataFrameReader(DataFrameReader):
                     if data == None:
                         print("no present data, continuing to wait")
                     if data is not None:
+                        print(data)
                         for (key, index) in self._iters[iter_index][1]:
+                            print("key: ", key, 'index: ', index)
                             if data[index] is None:
                                 print("present data holder is: ", None)
                             elif data[index].value is None:
@@ -116,9 +118,9 @@ class BlockMapDataFrameReader(DataFrameReader):
                             ret[key] = data[index].value
                         print("Removing bitmask values: ", (bit_index, iter_index) )
                         remove_index.add(bit_index)
-                    
-                # enumerating set is fastest way to remove multiple indexes
-                bitmap = [i for j, i in enumerate(remove_index) if j not in remove_index]
+                print(bitmap)
+                bitmap = [i for j, i in enumerate(bitmap) if j not in remove_index]
+                print(bitmap)
             print(ret)
             return ret
 
