@@ -47,7 +47,8 @@ class TestReader(unittest.TestCase):
         t = DfWriter(df, data_size, data=data)
         t.set_sealed_when_stop()
         t.start()
-        map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
+        test = {df.name: {'df': df, 'cols': [('v1', 0), ('v2', 2)]}}
+        map_reader = BlockMapDataFrameReader(test)
 
         q = Queue()
 
@@ -70,7 +71,8 @@ class TestReader(unittest.TestCase):
         data_size = 100
         t = DfWriter(df, data_size, data=data)
         t.start()
-        map_reader = create_reader([df], 'map', {'v1': 0, 'v2': 2})
+        test = {df.name: {'df': df, 'cols': [('v1', 0), ('v2', 2)]}}
+        map_reader = create_reader(test, 'map')
 
         q = Queue()
 
@@ -80,3 +82,6 @@ class TestReader(unittest.TestCase):
         runner.start()
         map_reader.close()
         runner.join()
+
+if __name__ == '__main__':
+    unittest.main()

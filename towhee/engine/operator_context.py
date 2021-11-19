@@ -65,6 +65,8 @@ class OperatorContext:
                 reader_inputs[x['df']] = {}
                 reader_inputs[x['df']]['df'] = dataframes[x['df']]
                 reader_inputs[x['df']]['cols'] = [(x['name'], x['col'])]
+        print('-'*50)
+        print(reader_inputs)
 
         self._reader = create_reader(reader_inputs, iter_type)
 

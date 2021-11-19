@@ -47,23 +47,28 @@ class TestPipeline(unittest.TestCase):
     #     new_cache = (CACHE_PATH/'test_cache')
     #     rmtree(str(new_cache))
 
-    def test_empty_input(self):
-        p = pipeline('local/simple_pipeline')
-        with self.assertRaises(RuntimeError):
-            p()
+    # def test_empty_input(self):
+    #     p = pipeline('local/simple_pipeline')
+    #     with self.assertRaises(RuntimeError):
+    #         p()
+
+    # def test_simple_pipeline(self):
+    #     p = pipeline('local/simple_pipeline')
+    #     res = p(0)
+    #     self.assertEqual(res[0][0], 3)
 
     def test_simple_pipeline(self):
         p = pipeline('local/simple_pipeline')
         res = p(0)
         self.assertEqual(res[0][0], 3)
 
-    def test_embedding_pipeline(self):
-        p = pipeline('local/resnet50_embedding')
-        img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
-            'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
-        img = Image.open(str(img_path))
-        res = p(img)
-        self.assertEqual(res[0][0].size, 1000)
+    # def test_embedding_pipeline(self):
+    #     p = pipeline('local/resnet50_embedding')
+    #     img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
+    #         'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
+    #     img = Image.open(str(img_path))
+    #     res = p(img)
+    #     self.assertEqual(res[0][0].size, 1000)
 
     # def test_simple_pipeline_multirow(self):
     #     #pylint: disable=protected-access

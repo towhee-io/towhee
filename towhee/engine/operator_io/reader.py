@@ -46,15 +46,16 @@ class DataFrameReader(ReaderBase):
         self._iters = []
         for _, x in input_dfs.items():
             ite = x['df'].map_iter()
-            self._iters.append((ite, x['cols']))
+            self._iters.append([ite, x['cols']])
         self._iters_count = len(self._iters)
+
 
     @abstractmethod
     def read(self) -> Union[Dict[str, any], List[Dict[str, any]]]:
         pass
 
     @property
-    def min_size(self) -> int:
+    def size(self) -> int:
         return min([x.accessible_size for x in self._iters])
 
     @abstractmethod
@@ -80,7 +81,6 @@ class BlockMapDataFrameReader(DataFrameReader):
         self,
         input_dfs: dict,
     ):
-
         super().__init__(input_dfs)
         self._lock = threading.Lock()
         self._close = False
@@ -91,26 +91,35 @@ class BlockMapDataFrameReader(DataFrameReader):
         """
         if self._close:
             raise StopIteration
-
         ret = {}
-        bitmap = range(self._iters_count)
+        bitmap = list(range(self._iters_count))
         with self._lock:
-            while bitmap:
+            while len(bitmap) > 0:
                 remove_index = set()
                 for bit_index, iter_index in enumerate(bitmap):
-                    try:
-                        # self._iters[x][0] is the iterator
-                        # self._iters[x][1] are the columns for that iterator
-                        data = next(self._iters[iter_index][0])
-                        if data is not None:
-                            for (key, index) in self._iters[iter_index][1]:
-                                ret[key] = data[index][0].value
-                            remove_index.add(bit_index)
-                    except StopIteration:
-                        return None
+                    if self._close:
+                        raise StopIteration
+                    # self._iters[x][0] is the iterator
+                    # self._iters[x][1] are the columns for that iterator
+                    data = next(self._iters[iter_index][0])
+                    print("data being read in: ", data, "from: ",  self._iters[iter_index][0]._df_name)
+                    if data == None:
+                        print("no present data, continuing to wait")
+                    if data is not None:
+                        for (key, index) in self._iters[iter_index][1]:
+                            if data[index] is None:
+                                print("present data holder is: ", None)
+                            elif data[index].value is None:
+                                print("present data is: ", None)
+                            else:
+                                print("present data is: ", data[index].value)
+                            ret[key] = data[index].value
+                        print("Removing bitmask values: ", (bit_index, iter_index) )
+                        remove_index.add(bit_index)
+                    
                 # enumerating set is fastest way to remove multiple indexes
                 bitmap = [i for j, i in enumerate(remove_index) if j not in remove_index]
-
+            print(ret)
             return ret
 
         # # Previous
@@ -128,7 +137,8 @@ class BlockMapDataFrameReader(DataFrameReader):
 
     def close(self):
         self._close = True
-        self._iter.notify()
+        for x in self._iters:
+            x[0].notify()
 
 # class MultiMapDataFrameReader(MultiDataFrameReader):
 #     """

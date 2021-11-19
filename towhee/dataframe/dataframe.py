@@ -207,6 +207,7 @@ class DataFrameIterator:
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
         self._cur_idx = 0
+        self._df_name = df.name
 
     def __iter__(self):
         return self

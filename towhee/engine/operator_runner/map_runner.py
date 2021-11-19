@@ -51,6 +51,7 @@ class MapRunner(RunnerBase):
             return True, None
 
     def _set_outputs(self, output: any):
+        print('Setting output from: ', self._op, 'to: ', self._writer._output_df.name, "with value: ", output)
         self._writer.write(output)
 
     def _call_op(self, inputs) -> Tuple[bool, Union[str, any]]:
@@ -63,6 +64,7 @@ class MapRunner(RunnerBase):
 
     def process_step(self) -> bool:
         is_end, op_input_params = self._get_inputs()
+        print("Runner process step: ", is_end, op_input_params)
         if is_end:
             self._set_finished()
             return True
