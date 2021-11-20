@@ -12,24 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from abc import ABC, abstractmethod
 from towhee.dataframe import DataFrame
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
+from towhee.utils.log import engine_log
 
 
-class DataFrameWriter:
+class DataFrameWriter(ABC):
     """
-    Df writer
+    Dataframe writer base.
     """
 
     def __init__(self, output_df: DataFrame):
         self._output_df = output_df
 
-    def write(self, output_data: NamedTuple) -> bool:
-
-        # TODO (jiangjunjie) deal with task exception
+    def write(self, output_data: any) -> None:
         if output_data is not None:
-            return self._output_df.put_dict(output_data._asdict())
+            self._write(output_data)
+        else:
+            engine_log.error('Ignore None data which try to write to dataframe %s',
+                             self._output_df.name)
+
+    @ abstractmethod
+    def _write(self, output_data: any):
+        raise NotImplementedError
 
     def close(self):
         self._output_df.seal()
+
+
+class NamedTupleDataFrameWriter(DataFrameWriter):
+    """
+    Df writer.
+
+    Write op output to the next dataframe.
+    """
+
+    def _write(self, output_data: NamedTuple) -> None:
+        self._output_df.put_dict(output_data._asdict())
+
+
+class RowDataFrameWriter(DataFrameWriter):
+    """
+    Filter dataframe writer.
+
+    Write prev dataframe's one row to the next dataframe.
+    """
+
+    def _write(self, output_data: Tuple) -> None:
+        self._output_df.put(output_data)

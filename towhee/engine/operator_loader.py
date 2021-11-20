@@ -63,7 +63,6 @@ class OperatorLoader:
         if path is None:
             raise FileExistsError('Cannot find operator.')
 
-
         fname = str(path).rsplit('/', maxsplit=1)[-1][:-3]
         modname = 'towhee.operator.' + fname
 
@@ -78,5 +77,7 @@ class OperatorLoader:
         # `load_operator`. By convention, the operator class is simply the CamelCase
         # version of the snake_case operator.
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-        return getattr(module, op_cls)(**args)
-
+        if args is not None:
+            return getattr(module, op_cls)(**args)
+        else:
+            return getattr(module, op_cls)()

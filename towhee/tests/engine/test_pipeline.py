@@ -53,6 +53,14 @@ class TestPipeline(unittest.TestCase):
         res = p(10)
         self.assertEqual(len(res), 5)
 
+    def test_filter_pipeline(self):
+        p = pipeline('local/filter_pipeline')
+        res = p([1, 0, 2, 0, 3, 4])
+        num = 1
+        for item in res:
+            self.assertEqual(item[0], num)
+            num += 1
+
     def test_embedding_pipeline(self):
         p = pipeline('local/resnet50_embedding')
         img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \

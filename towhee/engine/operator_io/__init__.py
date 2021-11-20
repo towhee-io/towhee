@@ -30,6 +30,11 @@ def create_reader(
             iter_type, len(inputs)
         )
         return io_reader.BlockMapDataFrameReader(inputs[0], inputs_index)
+    elif iter_type.lower() == 'filter':
+        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (
+            iter_type, len(inputs)
+        )
+        return io_reader.BlockMapReaderWithOriginData(inputs[0], inputs_index)
     else:
         raise NameError('Can not find %s iters' % iter_type)
 
@@ -37,6 +42,8 @@ def create_reader(
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFrameWriter:
     assert len(outputs) == 1
     if iter_type.lower() in ['map', 'flatmap']:
-        return io_writer.DataFrameWriter(outputs[0])
+        return io_writer.NamedTupleDataFrameWriter(outputs[0])
+    elif iter_type.lower() == 'filter':
+        return io_writer.RowDataFrameWriter(outputs[0])
     else:
         raise NameError('Can not find %s iters' % iter_type)
