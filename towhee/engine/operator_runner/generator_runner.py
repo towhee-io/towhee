@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Generator
 
-from towhee.operator import Operator, SharedType
+
+from towhee.engine.operator_runner.map_runner import MapRunner
 
 
-class ZeroDrop(Operator):
+class GeneratorRunner(MapRunner):
     """
-    Drop zero.
+    GeneratorRunner, the ops must return a generator.
     """
 
-    def __init__(self):  # pylint: disable=super-init-not-called
-        pass
+    def _set_outputs(self, output: Generator):
+        if not isinstance(output, Generator):
+            raise RuntimeError("Op {}'s output is not a generator".format(self.op_name))
 
-    def __call__(self, num: int) -> bool:
-        return num != 0
-
-    @property
-    def shared_type(self):
-        return SharedType.Shareable
+        for data in output:
+            self._writer.write(data)

@@ -13,20 +13,30 @@
 # limitations under the License.
 
 
+from typing import Generator, NamedTuple
 from towhee.operator import Operator, SharedType
 
 
-class ZeroDrop(Operator):
+Outputs = NamedTuple("Outputs", [("sum", int)])
+
+
+class GeneratoOperator(Operator):
     """
-    Drop zero.
+    Generator operator.
     """
 
-    def __init__(self):  # pylint: disable=super-init-not-called
+    def __init__(self) -> None:  # pylint: disable=super-init-not-called
         pass
 
-    def __call__(self, num: int) -> bool:
-        return num != 0
+    def __call__(self, num: int) -> Generator:
+        self._num = 0
+        while True:
+            if self._num >= num:
+                break
+            else:
+                yield Outputs(self._num)
+                self._num += 1
 
     @property
     def shared_type(self):
-        return SharedType.Shareable
+        return SharedType.NotShareable

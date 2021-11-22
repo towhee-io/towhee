@@ -28,11 +28,8 @@ class FilterRunner(MapRunner):
 
     def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
-            data, self._row = self._reader.read()
-            if data is None:
-                return False, None
-            else:
-                return False, data
+            data, self._row_data = self._reader.read()
+            return False, data
         except StopIteration:
             return True, None
 
@@ -41,4 +38,4 @@ class FilterRunner(MapRunner):
             raise RuntimeError('Filter operator\'s output must be a bool type, this one is {}'.format(type(output)))
 
         if output:
-            self._writer.write(self._row)
+            self._writer.write(self._row_data)

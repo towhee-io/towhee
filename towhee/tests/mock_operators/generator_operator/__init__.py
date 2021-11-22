@@ -11,22 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from towhee.operator import Operator, SharedType
-
-
-class ZeroDrop(Operator):
-    """
-    Drop zero.
-    """
-
-    def __init__(self):  # pylint: disable=super-init-not-called
-        pass
-
-    def __call__(self, num: int) -> bool:
-        return num != 0
-
-    @property
-    def shared_type(self):
-        return SharedType.Shareable

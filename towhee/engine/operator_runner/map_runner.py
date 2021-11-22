@@ -43,10 +43,7 @@ class MapRunner(RunnerBase):
     def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
             data = self._reader.read()
-            if data is None:
-                return False, None
-            else:
-                return False, data
+            return False, data
         except StopIteration:
             return True, None
 
