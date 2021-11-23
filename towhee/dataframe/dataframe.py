@@ -192,6 +192,12 @@ class DataFrame:
             self._iters.append(it)
         return it
 
+    def batch_iter(self, size: int, step: int, block: bool = False):
+        it = BatchIterator(self, size, step, block)
+        with self._lock:
+            self._iters.append(it)
+        return it
+
     def __str__(self) -> str:
         return 'DataFrame [%s] with [%s] datas, seal: [%s]' % (self._name, self.size, self._sealed)
 
@@ -227,6 +233,11 @@ class DataFrameIterator:
         """
         return self._df_ref().size - self._cur_idx
 
+    def notify(self):
+        df = self._df_ref()
+        if df is not None:
+            self._df_ref().notify_block_readers()
+
 
 class MapIterator(DataFrameIterator):
     """Iterator implementation that traverses the dataframe line-by-line.
@@ -248,11 +259,8 @@ class MapIterator(DataFrameIterator):
             return data[0]
         return None
 
-    def notify(self):
-        self._df_ref().notify_block_readers()
 
-
-class BatchIterator:
+class BatchIterator(DataFrameIterator):
     """Iterator implementation that traverses the dataframe multiple rows at a time.
 
     Args:
@@ -263,12 +271,21 @@ class BatchIterator:
             together.
     """
 
-    def __init__(self, df: DataFrame, size: int = None):
+    def __init__(self, df: DataFrame, size: int, step: int, block=False):
         super().__init__(df)
         self._size = size
+        self._step = step
+        self._block = block
 
     def __next__(self):
-        raise NotImplementedError
+        data = self._df_ref().get(self._cur_idx, self._size, self._block)
+        if self._df_ref().sealed and not data:
+            raise StopIteration
+
+        if data is not None:
+            self._cur_idx += self._step
+            return data
+        return None
 
 
 class GroupIterator:

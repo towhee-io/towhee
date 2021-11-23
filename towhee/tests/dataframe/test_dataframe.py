@@ -188,5 +188,62 @@ class TestMapIterator(unittest.TestCase):
         runner.join()
 
 
+class TestBatchIter(unittest.TestCase):
+    """
+    Batch iter test.
+    """
+
+    def test_batch_iterator(self):
+        df = DataFrame('test')
+        it = df.batch_iter(3, 4)
+        data_size = 100
+        t = DfWriter(df, data_size)
+        t.start()
+        t.set_sealed_when_stop()
+        q = queue.Queue()
+
+        def read(it: DataFrameIterator, q: queue.Queue):
+            for item in it:
+                if item is not None:
+                    q.put(item)
+                time.sleep(0.01)
+
+        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
+        runner.start()
+        runner.join()
+        self.assertEqual(q.qsize(), 25)
+        while not q.empty():
+            item = q.get()
+            self.assertEqual(item, [(), (), ()])
+
+    def test_block_batch_iterator(self):
+        df = DataFrame('test')
+        it = df.batch_iter(4, 2, True)
+        data_size = 100
+        t = DfWriter(df, data_size)
+        t.start()
+        t.set_sealed_when_stop()
+        q = queue.Queue()
+
+        def read(it: DataFrameIterator, q: queue.Queue):
+            for item in it:
+                if item is not None:
+                    q.put(item)
+                time.sleep(0.01)
+
+        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
+        runner.start()
+        runner.join()
+        self.assertEqual(q.qsize(), 50)
+        num = 0
+        while not q.empty():
+            item = q.get()
+            if num < 49:
+                self.assertEqual(item, [(), (), (), ()])
+            else:
+                self.assertEqual(item, [(), ()])
+            num += 1
+
+
 if __name__ == '__main__':
     unittest.main()
