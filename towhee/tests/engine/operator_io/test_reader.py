@@ -17,16 +17,16 @@ import unittest
 from queue import Queue
 
 from towhee.dataframe import DataFrame, Variable
-from towhee.engine.operator_io.reader import BlockMapDataFrameReader
+from towhee.engine.operator_io.reader import DataFrameReader, BlockMapDataFrameReader, BatchFrameReader
 from towhee.engine.operator_io import create_reader
 
 from towhee.tests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
-def read(map_reader: BlockMapDataFrameReader, q: Queue):
+def read(reader: DataFrameReader, q: Queue):
     while True:
         try:
-            item = map_reader.read()
+            item = reader.read()
             if item:
                 q.put(item)
                 continue
@@ -39,14 +39,21 @@ class TestReader(unittest.TestCase):
     Reader test
     """
 
-    def test_block_map_reader(self):
+    def _create_test_df(self, data_size):
         df = DataFrame('test')
         data = (Variable('int', 1), Variable(
             'str', 'test'), Variable('float', 0.1))
-        data_size = 100
+        self.data_size = 100
         t = DfWriter(df, data_size, data=data)
         t.set_sealed_when_stop()
         t.start()
+        return df
+
+    def test_block_map_reader(self):
+
+        data_size = 100
+        df = self._create_test_df(data_size)
+
         map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
 
         q = Queue()
@@ -63,13 +70,37 @@ class TestReader(unittest.TestCase):
             count += 1
         self.assertEqual(count, data_size)
 
-    def test_close_reader(self):
-        df = DataFrame('test')
-        data = (Variable('int', 1), Variable(
-            'str', 'test'), Variable('float', 0.1))
+    def test_batch_reader(self):
+
         data_size = 100
-        t = DfWriter(df, data_size, data=data)
-        t.start()
+        df = self._create_test_df(data_size)
+        batch_reader = BatchFrameReader(df, {'v1': 0, 'v2': 2}, 3, 2)
+
+        q = Queue()
+
+        runner = MultiThreadRunner(
+            target=read, args=(batch_reader, q), thread_num=10)
+
+        runner.start()
+        runner.join()
+        self.assertEqual(q.qsize(), 50)
+
+        num = 0
+        while not q.empty():
+            if num < 49:
+                self.assertEqual(q.get(), [{'v1': 1, 'v2': 0.1},
+                                           {'v1': 1, 'v2': 0.1},
+                                           {'v1': 1, 'v2': 0.1}]
+                                 )
+            else:
+                self.assertEqual(q.get(), [{'v1': 1, 'v2': 0.1},
+                                           {'v1': 1, 'v2': 0.1}]
+                                 )
+            num += 1
+
+    def test_close_reader(self):
+        data_size = 100
+        df = self._create_test_df(data_size)
         map_reader = create_reader([df], 'map', {'v1': 0, 'v2': 2})
 
         q = Queue()

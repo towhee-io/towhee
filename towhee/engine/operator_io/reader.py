@@ -111,3 +111,37 @@ class BlockMapDataFrameReader(BlockMapReaderWithOriginData):
     def read(self) -> Dict[str, any]:
         output, _ = super().read()
         return output
+
+
+class BatchFrameReader(DataFrameReader):
+    """
+    Batch reader.
+    """
+
+    def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, any],
+                 batch_size: int, step: int):
+        assert batch_size >= 1 and step >= 1
+        super().__init__(input_df.batch_iter(batch_size, step), op_inputs_index)
+        self._close = False
+        self._lock = threading.Lock()
+
+    def read(self) -> List[Dict[str, any]]:
+        if self._close:
+            raise StopIteration
+
+        with self._lock:
+            data = next(self._iter)
+            if self._close:
+                raise StopIteration
+
+            if not data:
+                return []
+            else:
+                res = []
+                for row in data:
+                    res.append(self._to_op_inputs(row))
+                return res
+
+    def close(self):
+        self._close = True
+        self._iter.notify()
