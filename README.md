@@ -4,7 +4,7 @@
   <p style="text-align: center;"> X2Vec, Towhee is all you need! </p>
 </h3>
 
-![Slack](https://img.shields.io/badge/join-slack-orange?style=for-the-badge)
+![Slack](https://img.shields.io/badge/join-slack-orange?style=for-the-badge&link=https://join.slack.com/t/towhee-io/shared_invite/zt-xfdg6n8k-0OImXaHHpzSxiAOj~wTVQw)
 ![License](https://img.shields.io/badge/license-apache2.0-green?style=for-the-badge)
 ![Language](https://img.shields.io/badge/language-python-blue?style=for-the-badge&logoColor=ffdd54)
 ![Github Actions](https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=for-the-badge)
