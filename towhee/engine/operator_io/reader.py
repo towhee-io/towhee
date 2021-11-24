@@ -14,9 +14,10 @@
 
 from abc import ABC, abstractmethod
 import threading
+from collections import namedtuple
+from typing import Dict, Tuple, Union, List
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
-from typing import Dict, Tuple, Union, List
 
 
 class ReaderBase(ABC):
@@ -118,10 +119,10 @@ class BatchFrameReader(DataFrameReader):
     Batch reader.
     """
 
-    def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, any],
+    def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, int],
                  batch_size: int, step: int):
         assert batch_size >= 1 and step >= 1
-        super().__init__(input_df.batch_iter(batch_size, step), op_inputs_index)
+        super().__init__(input_df.batch_iter(batch_size, step, True), op_inputs_index)
         self._close = False
         self._lock = threading.Lock()
 
@@ -139,7 +140,8 @@ class BatchFrameReader(DataFrameReader):
             else:
                 res = []
                 for row in data:
-                    res.append(self._to_op_inputs(row))
+                    data_dict = self._to_op_inputs(row)
+                    res.append(namedtuple('input', data_dict.keys())(**data_dict))
                 return res
 
     def close(self):

@@ -15,6 +15,7 @@
 
 import unittest
 from queue import Queue
+from collections import namedtuple
 
 from towhee.dataframe import DataFrame, Variable
 from towhee.engine.operator_io.reader import DataFrameReader, BlockMapDataFrameReader, BatchFrameReader
@@ -86,16 +87,13 @@ class TestReader(unittest.TestCase):
         self.assertEqual(q.qsize(), 50)
 
         num = 0
+        d1_map = {'v1': 1, 'v2': 0.1}
+        d1 = namedtuple('input', d1_map.keys())(**d1_map)
         while not q.empty():
             if num < 49:
-                self.assertEqual(q.get(), [{'v1': 1, 'v2': 0.1},
-                                           {'v1': 1, 'v2': 0.1},
-                                           {'v1': 1, 'v2': 0.1}]
-                                 )
+                self.assertEqual(q.get(), [d1] * 3)
             else:
-                self.assertEqual(q.get(), [{'v1': 1, 'v2': 0.1},
-                                           {'v1': 1, 'v2': 0.1}]
-                                 )
+                self.assertEqual(q.get(), [d1] * 2)
             num += 1
 
     def test_close_reader(self):

@@ -16,6 +16,7 @@ from typing import Dict
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from threading import Event
+import traceback
 
 from towhee.utils.log import engine_log
 
@@ -158,7 +159,12 @@ class RunnerBase(ABC):
         self._set_running()
         while True:
             if not self._need_stop:
-                if self.process_step():
+                try:
+                    if self.process_step():
+                        break
+                except Exception as e:  # pylint: disable=broad-except
+                    err = '{}, {}'.format(e, traceback.format_exc())
+                    self._set_failed(err)
                     break
             else:
                 self._set_finished()
