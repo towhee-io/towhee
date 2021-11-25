@@ -13,15 +13,22 @@
 # limitations under the License.
 
 
-from pathlib import Path
+from typing import NamedTuple, List
+from towhee.operator import Operator, SharedType
 
-from towhee.engine.engine import Engine, EngineConfig
 
-CACHE_PATH = Path(__file__).parent.resolve()
+class FlatOperator(Operator):
+    """
+    Flat input list.
+    """
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+    def __init__(self):
+        pass
+
+    def __call__(self, nums: List[int]):
+        Outputs = NamedTuple("Outputs", [("num", int)])
+        return [Outputs(num) for num in nums]
+
+    @property
+    def shared_type(self):
+        return SharedType.Shareable

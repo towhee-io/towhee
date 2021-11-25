@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import unittest
 # from shutil import rmtree
 
@@ -20,7 +21,7 @@ from towhee.dag.dataframe_repr import DataFrameRepr
 from towhee.engine.engine import Engine
 from towhee.engine.pipeline import Pipeline
 from towhee.dataframe import DataFrame, Variable
-from towhee.tests.test_util import SIMPLE_PIPELINE_YAML, FLATMAP_PIPELINE_YAML
+from towhee.tests.test_util import SIMPLE_PIPELINE_YAML
 from towhee.dag import OperatorRepr
 from towhee.tests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
@@ -42,7 +43,7 @@ class TestEngine(unittest.TestCase):
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
-        fm = FileManager(fmc) # pylint: disable=unused-variable
+        fm = FileManager(fmc)  # pylint: disable=unused-variable
 
     # @classmethod
     # def tearDownClass(cls):
@@ -119,20 +120,21 @@ class TestEngine(unittest.TestCase):
 
         graph_repr = GraphRepr('add', op_reprs, df_reprs)
 
-        df_in = DataFrame(
-            'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
-        df_in.put((Variable('int', 1), ))
-        df_in.seal()
-
         self._pipeline = Pipeline(graph_repr)
         engine = Engine()
         engine.add_pipeline(self._pipeline)
+
+        df_in = DataFrame(
+            'inputs', {'num': {'index': 0, 'type': 'int'}})
+        df_in.put((Variable('int', 1), ))
+        df_in.seal()
+
         result = self._pipeline(df_in)
         ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 3)
 
         df_in = DataFrame(
-            'op_test_in', {'sum': {'index': 0, 'type': 'int'}})
+            'inputs', {'num': {'index': 0, 'type': 'int'}})
         df_in.put((Variable('int', 3), ))
         df_in.seal()
 
@@ -147,8 +149,7 @@ class TestEngine(unittest.TestCase):
         engine.add_pipeline(p)
 
         df_in = DataFrame(
-            'inputs', {'sum': {'index': 0, 'type': 'int'}})
-
+            'inputs', {'num': {'index': 0, 'type': 'int'}})
         df_in.put((Variable('int', 3), ))
         df_in.seal()
         result = p(df_in)
@@ -156,43 +157,42 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(ret[0][0].value, 6)
 
         df_in = DataFrame(
-            'inputs', {'sum': {'index': 0, 'type': 'int'}})
-
-        df_in.put((Variable('int', 7), ))
+            'inputs', {'num': {'index': 0, 'type': 'int'}})
+        df_in.put((Variable('int', 4), ))
         df_in.seal()
         result = p(df_in)
         ret = result.get(0, 1)
-        self.assertEqual(ret[0][0].value, 10)
+        self.assertEqual(ret[0][0].value, 7)
 
-    def test_flatmap_writer(self):
-        with open(FLATMAP_PIPELINE_YAML, 'r', encoding='utf-8') as f:
-            p = Pipeline(f.read())
-        engine = Engine()
-        engine.add_pipeline(p)
+    # def test_flatmap_writer(self):
+    #     with open(FLATMAP_PIPELINE_YAML, 'r', encoding='utf-8') as f:
+    #         p = Pipeline(f.read())
+    #     engine = Engine()
+    #     engine.add_pipeline(p)
 
-        df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+    #     df_in = DataFrame(
+    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
 
-        df_in.put((Variable('int', 3), ))
-        df_in.seal()
-        result = p(df_in)
-        ret = result.get(0, 5)
+    #     df_in.put((Variable('int', 3), ))
+    #     df_in.seal()
+    #     result = p(df_in)
+    #     ret = result.get(0, 5)
 
-        # 5 is configured in FLATMAP_PIPELINE_YAML, witch means repeat 5 times
-        self.assertEqual(len(ret), 5)
-        for item in ret:
-            self.assertEqual(item[0].value, 3)
+    #     # 5 is configured in FLATMAP_PIPELINE_YAML, witch means repeat 5 times
+    #     self.assertEqual(len(ret), 5)
+    #     for item in ret:
+    #         self.assertEqual(item[0].value, 3)
 
-        df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+    #     df_in = DataFrame(
+    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
 
-        df_in.put((Variable('int', 10), ))
-        df_in.seal()
-        result = p(df_in)
-        ret = result.get(0, 5)
-        self.assertEqual(len(ret), 5)
-        for item in ret:
-            self.assertEqual(item[0].value, 10)
+    #     df_in.put((Variable('int', 10), ))
+    #     df_in.seal()
+    #     result = p(df_in)
+    #     ret = result.get(0, 5)
+    #     self.assertEqual(len(ret), 5)
+    #     for item in ret:
+    #         self.assertEqual(item[0].value, 10)
 
 
 if __name__ == '__main__':

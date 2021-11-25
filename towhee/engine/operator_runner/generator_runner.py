@@ -12,16 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Generator
 
-from pathlib import Path
 
-from towhee.engine.engine import Engine, EngineConfig
+from towhee.engine.operator_runner.map_runner import MapRunner
 
-CACHE_PATH = Path(__file__).parent.resolve()
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+class GeneratorRunner(MapRunner):
+    """
+    GeneratorRunner, the ops must return a generator.
+    """
+
+    def _set_outputs(self, output: Generator):
+        if not isinstance(output, Generator):
+            raise RuntimeError("Op {}'s output is not a generator".format(self.op_name))
+
+        for data in output:
+            self._writer.write(data)

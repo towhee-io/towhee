@@ -13,15 +13,29 @@
 # limitations under the License.
 
 
-from pathlib import Path
+from queue import Queue
 
-from towhee.engine.engine import Engine, EngineConfig
+from towhee.engine.operator_io.reader import ReaderBase
 
-CACHE_PATH = Path(__file__).parent.resolve()
+class StopFrame:
+    pass
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+
+class MockReader(ReaderBase):
+    """
+    MockReader for engine test
+    """
+    def __init__(self, queue: Queue):
+        self._queue = queue
+
+    def read(self):
+        # Blocking if queue is empty
+        data = self._queue.get()
+
+        if not isinstance(data, StopFrame):
+            return data
+        else:
+            raise StopIteration()
+
+    def close(self):
+        self._queue.put(StopFrame())

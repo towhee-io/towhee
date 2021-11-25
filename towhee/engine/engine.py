@@ -16,8 +16,8 @@ import threading
 
 from towhee.engine.singleton import singleton
 from towhee.engine.pipeline import Pipeline
-from towhee.engine.task_scheduler import FIFOTaskScheduler
-from towhee.engine.task_executor import TaskExecutor
+from towhee.engine.task_scheduler import BasicScheduler
+from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 
 
 @singleton
@@ -27,7 +27,7 @@ class EngineConfig:
     """
 
     def __init__(self):
-        self._sched_type = 'fifo'
+        self._sched_type = 'basic'
         self._cache_path = None
         self._sched_interval_ms = 20
 
@@ -73,13 +73,16 @@ class Engine(threading.Thread):
         self.setDaemon(True)
 
         # Setup executors and scheduler.
-        self._setup_task_execs()
-        self._setup_task_sched()
+        self._setup_execs()
+        self._setup_sched()
 
     def stop(self) -> None:
-        self._task_sched.stop()
-        for task_exec in self._task_execs:
-            task_exec.stop()
+        self._sched.stop()
+        for executor in self._execs:
+            executor.stop()
+
+        self._sched.stop()
+        self._sched.join()
 
     def run(self):
         self._task_sched.schedule_forever(self._config.sched_interval_ms)
@@ -100,7 +103,7 @@ class Engine(threading.Thread):
         pipeline.register(self._task_sched)
         self._pipelines.append(pipeline)
 
-    def _setup_task_execs(self):
+    def _setup_execs(self):
         """(Initialization function) Scan for devices and create TaskExecutors to
         manage task execution on CPU, GPU, and other devices.
         """
@@ -111,42 +114,22 @@ class Engine(threading.Thread):
 
         # Create executor threads and begin running.
         for name in dev_names:
-            executor = TaskExecutor(
+            executor = ThreadPoolTaskExecutor(
                 name=name, cache_path=self._config.cache_path)
             self._task_execs.append(executor)
             executor.start()
 
-    def _setup_task_sched(self):
+    def _setup_sched(self):
         """(Initialization function) Create a `TaskScheduler` instance.
         """
         self._task_sched = None
 
         # Parse scheduler type from configuration.
         sched_type = self._config.sched_type
-        if sched_type == 'fifo':
-            # self._task_sched = FIFOTaskScheduler(
-            #     self._pipelines, self._task_execs)
-            self._task_sched = FIFOTaskScheduler(self._task_execs)
+        if sched_type == 'basic':
+            self._task_sched = BasicScheduler(self._task_execs)
         else:
             raise ValueError(f'Invalid scheduler type - {sched_type}')
-
-    # def _on_task_ready(self):
-    #     """Contains `Engine`-specific code blocks that need to be executed when a task
-    #     is marked as ready.
-    #     """
-    #     pass
-
-    # def _on_task_start(self):
-    #     """Contains `Engine`-specific code blocks that need to be executed when a task
-    #     begins running.
-    #     """
-    #     pass
-
-    # def _on_task_finish(self):
-    #     """Contains `Engine`-specific code blocks that need to be executed when a task
-    #     is finished executing.
-    #     """
-    #     pass
 
 
 _engine_lock = threading.Lock()

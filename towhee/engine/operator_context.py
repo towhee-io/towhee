@@ -12,18 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
-from typing import List, Dict
+from typing import Dict
+from enum import Enum, auto
 
 from towhee.dag.operator_repr import OperatorRepr
-from towhee.utils import HandlerMixin
-from towhee.engine.task import Task
-# from towhee.engine.graph_context import GraphContext
+from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.dataframe import DataFrame
-from towhee.engine._operator_io import create_reader, create_writer
+from towhee.engine.operator_io import create_reader, create_writer
+from towhee.engine.operator_runner import create_runner
+from towhee.engine.thread_pool_task_executor import ThreadPoolExecutor
 
 
-class OperatorContext(HandlerMixin):
+class OpStatus(Enum):
+    NOT_RUNNING = auto()
+    RUNNING = auto()
+    FINISHED = auto()
+    FAILED = auto()
+    STOPPED = auto()
+
+
+class OperatorContext:
     """
     The OperatorContext manages an operator's input data and output data at runtime,
     as well as the operators' dependency within a GraphContext.
@@ -45,7 +53,6 @@ class OperatorContext(HandlerMixin):
     ):
         self._repr = op_repr
 
-        # todo: GuoRentong, issue #114
         inputs = list({dataframes[input['df']] for input in op_repr.inputs})
         iter_type = op_repr.iter_info['type']
         inputs_index = dict((item['name'], item['col'])
@@ -55,95 +62,67 @@ class OperatorContext(HandlerMixin):
 
         outputs = list({dataframes[output['df']]
                        for output in op_repr.outputs})
+
         self._writer = create_writer(iter_type, outputs)
-        self.outputs = outputs
+        self._op_runners = []
 
-        self._lock = threading.Lock()
-        self._finished = False
-        self._num_finished_tasks = 0
-        self._has_tasks = True
-        self._task_idx = 0
-
-        self.add_handler_methods(
-            'op_start', 'op_finish', 'task_ready', 'task_start', 'task_finish')
-        self.add_task_finish_handler(self._write_outputs)
+        self._op_status = OpStatus.NOT_RUNNING
+        self._err_msg = None
 
     @property
     def name(self):
         return self._repr.name
 
-    def pop_ready_tasks(self, n_tasks: int = 1) -> List:
-        """
-        Pop n ready Tasks if any. The number of returned Tasks may be less than n
-        if there are not enough Tasks.
-
-        Return: a list of ready Tasks.
-        """
-        ready_tasks = []
-        task_num = n_tasks
-        while task_num > 0:
-            op_input_params = self._reader.read()
-
-            if op_input_params:
-                task = self._create_new_task(op_input_params)
-                ready_tasks.append(task)
-                task_num -= 1
-                continue
-
-            # None` implies that an input `DataFrame` has been sealed.
-            if op_input_params is None:
-                with self._lock:
-                    self._has_tasks = False
-                    if self._num_finished_tasks == self._task_idx:
-                        self._finished = True
-                        self._writer.close()
-
-            break
-        return ready_tasks
+    @property
+    def err_msg(self):
+        return self._err_msg
 
     @property
-    def is_finished(self) -> bool:
-        # todo: GuoRentong. see issue #124
-        return self._finished
-
-    @property
-    def has_tasks(self) -> bool:
-        # todo: GuoRentong. see issue #124
-        return self._has_tasks
-
-    @property
-    def num_ready_tasks(self) -> int:
+    def status(self):
         """
-        Get the number of ready Tasks.
+        Calc op-ctx status by checking all runners of this op-ctx
         """
-        return self._reader.size
+        if self._op_status in [OpStatus.FINISHED, OpStatus.FAILED]:
+            return self._op_status
 
-    @property
-    def num_finished_tasks(self) -> int:
-        """
-        Get the number of finished tasks.
-        """
-        raise NotImplementedError
-        # consider the thread-safe read write. This OperatorContext should be
-        # self._finished_tasks' only monifier.
+        if len(self._op_runners) == 0:
+            return self._op_status
 
-    def _write_outputs(self, task: Task):
-        with self._lock:
-            self._writer.write(task.outputs)
-            self._num_finished_tasks += 1
+        finished_count = 0
+        for runner in self._op_runners:
+            if runner.status == RunnerStatus.FAILED:
+                self._op_status = OpStatus.FAILED
+                self._err_msg = runner.msg
+            else:
+                if runner.status == RunnerStatus.FINISHED:
+                    finished_count += 1
+        if finished_count == len(self._op_runners):
+            self._op_status = OpStatus.FINISHED
+        return self._op_status
 
-    def _next_task_inputs(self):
-        """
-        Manage the preparation works for an operator's inputs
-        Returns one task's inputs on each call.
+    def start(self, executor: ThreadPoolExecutor, count: int = 1) -> None:
+        if self._op_status != OpStatus.NOT_RUNNING:
+            raise RuntimeError('OperatorContext can only be started once')
 
-        Return: a list of inputs, list element can be scalar or Array.
-        """
-        raise NotImplementedError
+        self._op_status = OpStatus.RUNNING
 
-    def _create_new_task(self, inputs: Dict[str, any]):
-        t = Task(self.name, self._repr.function,
-                 self._repr.init_args, inputs, self._task_idx)
-        self._task_idx += 1
-        t.add_task_finish_handler(self.task_finish_handlers)
-        return t
+        for i in range(count):
+            self._op_runners.append(
+                create_runner(self._repr.iter_info['type'], self._repr.name, i, self._repr.name,
+                              self._repr.function, self._repr.init_args, self._reader, self._writer)
+            )
+        for runner in self._op_runners:
+            executor.push_task(runner)
+
+    def stop(self):
+        if self.status != OpStatus.RUNNING:
+            raise RuntimeError('Op ctx is already not running.')
+
+        for runner in self._op_runners:
+            runner.set_stop()
+
+    def join(self):
+        # Waits all runner finished.
+        for runner in self._op_runners:
+            runner.join()
+        self._writer.close()

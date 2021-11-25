@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 
-from pathlib import Path
+from towhee.engine.operator_runner.map_runner import MapRunner
 
-from towhee.engine.engine import Engine, EngineConfig
 
-CACHE_PATH = Path(__file__).parent.resolve()
+class FlatMapRunner(MapRunner):
+    """
+    FlatMap, one input multiple outputs.
+    """
 
-conf = EngineConfig()
-conf.cache_path = CACHE_PATH
-conf.sched_interval_ms = 20
-engine = Engine()
-if not engine.is_alive():
-    engine.start()
+    def _set_outputs(self, output: List[any]):
+        if not isinstance(output, list):
+            raise RuntimeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
+
+        for data in output:
+            self._writer.write(data)

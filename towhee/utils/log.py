@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-from towhee.tests.emulated_pipelines.emulated_pipeline import EmulatedPipeline
+import logging
 
+FORMAT = '%(asctime)s - %(thread)d - %(filename)s-%(module)s:%(lineno)s - %(levelname)s: %(message)s'
+logging.basicConfig(format=FORMAT)
 
-__all__ = [
-    'EmulatedPipeline'
-]
+engine_log = logging.getLogger('towhee.engine')
