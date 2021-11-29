@@ -15,17 +15,19 @@
 from towhee.engine.operator_io import reader as io_reader
 from towhee.engine.operator_io import writer as io_writer
 from towhee.dataframe import DataFrame
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def create_reader(inputs: List[DataFrame], iter_type: str, inputs_index: Dict[str, int]) -> io_reader.DataFrameReader:
+def create_reader(
+    inputs: Dict[str, Any],
+    input_order: List,
+    iter_type: str,
+) -> io_reader.DataFrameReader:
 
     if iter_type.lower() in ['map', 'flatmap']:
-        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (iter_type, len(inputs))
-        return io_reader.BlockMapDataFrameReader(inputs[0], inputs_index)
+        return io_reader.BlockMapDataFrameReader(inputs, input_order)
     elif iter_type.lower() == 'filter':
-        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (iter_type, len(inputs))
-        return io_reader.BlockMapReaderWithOriginData(inputs[0], inputs_index)
+        return io_reader.BlockMapReaderWithOriginData(inputs, input_order)
     else:
         raise NameError('Can not find %s iters' % iter_type)
 

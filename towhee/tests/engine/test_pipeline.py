@@ -74,6 +74,11 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             p('xx')
 
+    def test_test_concat(self):
+        p = pipeline('local/test_concat')
+        res = p(0, 0, 0)
+        self.assertEqual(res, [(1,0,2,0,3,0)])
+
     # def test_simple_pipeline_multirow(self):
     #     #pylint: disable=protected-access
     #     p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
