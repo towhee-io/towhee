@@ -1,0 +1,5 @@
+#pip install -U pip
+#pip cache purge
+Pillow
+towhee
+
