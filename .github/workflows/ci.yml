@@ -1,0 +1,20 @@
+name: Test and Publish
+on: [push, pull_request]
+
+job:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup Python
+      uses: actions/setup-python@master
+      with:
+        python-version: 3.8
+    - name: Run Test
+      run: |
+        cd  tests/testcases
+        python3 -m pip install -U pip
+        python3 -m pip install --no-cache-dir -r requirements.text
+        python3 test_main.py
+    - name: Publish
+      run: |
+        echo "Publish"
