@@ -17,10 +17,10 @@ from pathlib import Path
 from typing import Union, List
 from shutil import copy2, copytree, rmtree
 
-
 from towhee.engine.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 from towhee.hub.hub_tools import download_repo
+
 
 @singleton
 class FileManagerConfig():
@@ -35,7 +35,6 @@ class FileManagerConfig():
             The default cache to check in, if nothing supplied, the default cache of $HOME/.towhee
             will be used.
     """
-
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
         self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
@@ -222,7 +221,6 @@ class FileManager():
         self._pipeline_lock = threading.Lock()
         self._cache_locals()
 
-
     # Move to a utils location?
     def _cache_name(self, name: str, author: str, branch: str):
         # If pointing directly to pipeline file.
@@ -244,7 +242,7 @@ class FileManager():
                 file = pipe['name']
                 cache_path = pipe['cache']
                 old_path = pipe['path']
-                new_path = cache_path / new_dir / file
+                new_path = cache_path / 'pipelines' / new_dir / file
 
                 if pipe['overwrite']:
                     Path.unlink(new_path, missing_ok=True)
@@ -264,7 +262,7 @@ class FileManager():
                 new_dir = self._cache_name(op['name'], author='local', branch='main')
                 cache_path = op['cache']
                 old_path = op['path']
-                new_path = cache_path / new_dir
+                new_path = cache_path / 'operators' / new_dir
 
                 if op['overwrite'] and new_path.is_dir():
                     rmtree(new_path)
@@ -277,7 +275,7 @@ class FileManager():
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
 
-    def get_pipeline(self, pipeline: str, branch: str = 'main', redownload: bool = False, install_reqs = True):
+    def get_pipeline(self, pipeline: str, branch: str = 'main', redownload: bool = False, install_reqs=True):
         """
         Obtain the path to the requested pipeline.
 
@@ -307,19 +305,17 @@ class FileManager():
             pipeline_split = pipeline.split('/')
             # For now assuming all piplines will be classifed as 'author/repo'.
             if len(pipeline_split) != 2:
-                raise ValueError(
-                    '''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.'''
-                )
+                raise ValueError('''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.''')
             author = pipeline_split[0]
             repo = pipeline_split[1]
 
             pipeline_path = self._cache_name(repo, author, branch) + '/' + repo + '.yaml'
 
-            file_path = self._config.default_cache / pipeline_path
+            file_path = self._config.default_cache / 'pipelines' / pipeline_path
             found_existing = False
 
             for path in self._config.cache_paths:
-                path = path / pipeline_path
+                path = path / 'pipelines' / pipeline_path
                 if path.is_file():
                     file_path = path
                     found_existing = True
@@ -342,7 +338,7 @@ class FileManager():
 
         return file_path
 
-    def get_operator(self, operator: str, branch: str = 'main', redownload: bool = False, install_reqs = True):
+    def get_operator(self, operator: str, branch: str = 'main', redownload: bool = False, install_reqs=True):
         """
         Obtain the path to the requested operator.
 
@@ -372,19 +368,17 @@ class FileManager():
             operator_split = operator.split('/')
             # For now assuming all piplines will be classifed as 'author/repo'.
             if len(operator_split) != 2:
-                raise ValueError(
-                    '''Incorrect operator format, should be '<author>/<operator_repo>'.'''
-                )
+                raise ValueError('''Incorrect operator format, should be '<author>/<operator_repo>'.''')
             author = operator_split[0]
             repo = operator_split[1]
 
             operator_path = self._cache_name(repo, author, branch) + '/' + repo + '.py'
 
-            file_path = self._config.default_cache / operator_path
+            file_path = self._config.default_cache / 'operators' / operator_path
             found_existing = False
 
             for path in self._config.cache_paths:
-                path = path / operator_path
+                path = path / 'operators' / operator_path
                 if path.is_file():
                     file_path = path
                     found_existing = True
@@ -392,8 +386,8 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                # TODO: filip-halt
-                # Error logging.
+                    # TODO: filip-halt
+                    # Error logging.
                     print('Local file not found, has it been imported?')
                     file_path = None
             else:
@@ -405,4 +399,3 @@ class FileManager():
                 if file_path.is_file() is False:
                     download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
         return file_path
-
