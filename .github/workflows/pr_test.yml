@@ -1,0 +1,23 @@
+name: Test on pull request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup Python
+      uses: actions/setup-python@v2.3.1
+      with:
+        python-version: 3.8
+    - name: Run Test
+      run: |
+        cd  tests/testcases
+        python3 -m pip install -U pip
+        python3 -m pip install --no-cache-dir -r requirements.text
+        python3 test_main.py
