@@ -1,6 +1,13 @@
 name: Test and Publish
-on: [push, pull_request]
-
+on: 
+  workflow
+  push:      
+    branches:
+      - main
+      - main-ci-jenny
+  pull_request:
+    branches:
+      - main
 job:
     runs-on: ubuntu-18.04
     steps:
