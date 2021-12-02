@@ -14,10 +14,10 @@
 
 from typing import List
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
 
 
-class FlatMapRunner(MapRunner):
+class FlatMapRunner(RunnerBase):
     """
     FlatMap, one input multiple outputs.
     """

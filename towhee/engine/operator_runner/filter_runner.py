@@ -15,10 +15,10 @@
 from typing import Tuple, Dict
 
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
 
 
-class FilterRunner(MapRunner):
+class FilterRunner(RunnerBase):
     """
     FilterRunner
 

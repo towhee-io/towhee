@@ -15,10 +15,10 @@
 from typing import Generator
 
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
 
 
-class GeneratorRunner(MapRunner):
+class GeneratorRunner(RunnerBase):
     """
     GeneratorRunner, the ops must return a generator.
     """

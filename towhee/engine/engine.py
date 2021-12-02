@@ -96,10 +96,6 @@ class Engine(threading.Thread):
                 A single pipeline with which this engine will be assume execution
                 responsibility.
         """
-        # pipeline.add_task_ready_handler(self._on_task_ready)
-        # pipeline.add_task_start_handler(self._on_task_start)
-        # pipeline.add_task_finish_handler(self._on_task_finish)
-
         pipeline.register(self._task_sched)
         self._pipelines.append(pipeline)
 

@@ -12,18 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
-from typing import Any, Tuple, List
-from shutil import rmtree
-import os
+from typing import List, Tuple
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, start_engine
-from towhee.utils.log import engine_log
 from towhee.engine.pipeline import Pipeline
-from towhee.engine import LOCAL_PIPELINE_CACHE
-from towhee.hub.hub_tools import download_repo
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']

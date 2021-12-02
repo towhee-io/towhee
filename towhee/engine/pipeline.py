@@ -36,6 +36,7 @@ class Pipeline:
         self._parallelism = parallelism
         self.on_graph_finish_handlers = []
         self._scheduler = None
+        self._graph_count = 0
 
         if isinstance(graph_repr, str):
             self._graph_repr = GraphRepr.from_yaml(graph_repr)
@@ -80,7 +81,8 @@ class Pipeline:
             raise AttributeError('Pipeline not registered to a Scheduler.')
 
         assert self._parallelism == 1
-        graph_ctx = GraphContext(0, self._graph_repr)
+        graph_ctx = GraphContext(self._graph_count, self._graph_repr)
+        self._graph_count += 1
         self._scheduler.register(graph_ctx)
         input_data = inputs.get(0, 1)
         if input_data is None:

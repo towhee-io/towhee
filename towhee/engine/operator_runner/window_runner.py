@@ -15,12 +15,12 @@
 from typing import Tuple, Union, Dict, List
 import traceback
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
 from towhee.engine.status import Status
 from towhee.utils.log import engine_log
 
 
-class WindowRunner(MapRunner):
+class WindowRunner(RunnerBase):
     """
     WindowRunner, multiple inputs and multiple outputs.
 
