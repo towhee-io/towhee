@@ -40,13 +40,12 @@ setup(
     description="",
     author="Towhee Team",
     author_email="towhee-team@zilliz.com",
-    use_scm_version = {
-        "local_scheme": "no-local-version"
-    },
+    use_scm_version={"local_scheme": "no-local-version"},
     setup_requires=['setuptools_scm'],
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
     install_requires=parse_requirements('requirements.txt'),
+    tests_require=parse_requirements('test_requirements.txt'),
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",
