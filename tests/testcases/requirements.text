@@ -1,5 +1,5 @@
+--extra-index-url https://test.pypi.org/simple/
 #pip install -U pip
 #pip cache purge
 Pillow
-towhee
-
+towhee==0.2.3.dev3

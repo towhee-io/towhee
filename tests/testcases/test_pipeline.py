@@ -4,9 +4,9 @@ from towhee import pipeline
 image_pipeline_name = "image-embedding"
 video_pipeline_name = "towhee/video_embedding_resnet50"
 
+
 class TestPipelineInvalid:
     """ Test case of invalid pipeline interface """
-
     def test_pipeline_no_params(self):
         """
         target: test pipeline for invalid scenario
@@ -28,11 +28,11 @@ class TestPipelineInvalid:
         try:
             embedding_pipeline = pipeline(wrong_pipeline)
         except Exception as e:
-            assert "Incorrect pipeline name format" in str(e)
+            assert "Incorrect pipeline format" in str(e)
+
 
 class TestPipelineValid:
     """ Test case of valid pipeline interface """
-
     def test_pipeline_image(self):
         """
         target: test pipeline for image normal case
@@ -50,8 +50,3 @@ class TestPipelineValid:
         """
         embedding_pipeline = pipeline(video_pipeline_name)
         assert "_pipeline" in dir(embedding_pipeline)
-
-
-
-
-
