@@ -12,28 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import towhee.engine.operator_io.reader as io_reader
-import towhee.engine.operator_io.writer as io_writer
+from towhee.engine.operator_io import reader as io_reader
+from towhee.engine.operator_io import writer as io_writer
 from towhee.dataframe import DataFrame
 from typing import Dict, List
 
 
-def create_reader(
-    inputs: List[DataFrame],
-    iter_type: str,
-    inputs_index: Dict[str, int]
-) -> io_reader.DataFrameReader:
+def create_reader(inputs: List[DataFrame], iter_type: str, inputs_index: Dict[str, int]) -> io_reader.DataFrameReader:
 
     if iter_type.lower() in ['map', 'flatmap']:
-        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (
-            iter_type, len(inputs)
-        )
+        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (iter_type, len(inputs))
         return io_reader.BlockMapDataFrameReader(inputs[0], inputs_index)
     elif iter_type.lower() == 'filter':
-        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (
-            iter_type, len(inputs)
-        )
+        assert len(inputs) == 1, '%s iter takes one dataframe, but %s dataframes are found' % (iter_type, len(inputs))
         return io_reader.BlockMapReaderWithOriginData(inputs[0], inputs_index)
     else:
         raise NameError('Can not find %s iters' % iter_type)
