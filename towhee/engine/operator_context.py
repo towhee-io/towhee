@@ -116,7 +116,7 @@ class OperatorContext:
 
     def stop(self):
         if self.status != OpStatus.RUNNING:
-            raise RuntimeError('Op ctx is already not running.')
+            raise RuntimeError('Op ctx is already stopped.')
 
         for runner in self._op_runners:
             runner.set_stop()

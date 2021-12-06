@@ -16,6 +16,7 @@ from typing import Tuple, Dict
 
 
 from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.errors import OpIOTypeError
 
 
 class FilterRunner(RunnerBase):
@@ -35,7 +36,7 @@ class FilterRunner(RunnerBase):
 
     def _set_outputs(self, output: bool):
         if not isinstance(output, bool):
-            raise RuntimeError('Filter operator\'s output must be a bool type, this one is {}'.format(type(output)))
+            raise OpIOTypeError('Filter operator\'s output must be a bool type, this one is {}'.format(type(output)))
 
         if output:
             self._writer.write(self._row_data)

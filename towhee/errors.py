@@ -12,20 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
 
-from towhee.engine.operator_runner.runner_base import RunnerBase
-from towhee.errors import OpIOTypeError
-
-
-class FlatMapRunner(RunnerBase):
+class TowheeError(Exception):
     """
-    FlatMap, one input multiple outputs.
+    Towhee exception base.
     """
 
-    def _set_outputs(self, output: List[any]):
-        if not isinstance(output, list):
-            raise OpIOTypeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
 
-        for data in output:
-            self._writer.write(data)
+class OpIOTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class OpFailedError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class OpTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class SchedulerTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class NoSchedulerError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class EmptyInputError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """

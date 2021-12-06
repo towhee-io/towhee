@@ -20,6 +20,7 @@ from towhee.dag import GraphRepr
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
 from towhee.utils.log import engine_log
+from towhee.errors import OpFailedError
 
 
 class GraphContext:
@@ -73,8 +74,9 @@ class GraphContext:
             # graph run failed, raise an exception
             for op in self._op_ctxs.values():
                 if op.status == OpStatus.FAILED:
-                    raise RuntimeError(op.err_msg)
-            raise RuntimeError('The pipeline runs successfully, but no data return')
+                    raise OpFailedError(op.err_msg)
+            engine_log.warning('The pipeline runs successfully, but no data return')
+            return None
 
     @property
     def op_ctxs(self):

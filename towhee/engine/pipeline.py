@@ -14,6 +14,7 @@
 
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dataframe import DataFrame
+from towhee.errors import NoSchedulerError, EmptyInputError
 from towhee.engine.graph_context import GraphContext
 from towhee.engine.task_scheduler import TaskScheduler
 
@@ -78,7 +79,7 @@ class Pipeline:
                 Output `DataFrame` with ordering matching the input `DataFrame`.
         """
         if not self._scheduler:
-            raise AttributeError('Pipeline not registered to a Scheduler.')
+            raise NoSchedulerError('Pipeline not registered to a Scheduler.')
 
         assert self._parallelism == 1
         graph_ctx = GraphContext(self._graph_count, self._graph_repr)
@@ -86,7 +87,7 @@ class Pipeline:
         self._scheduler.register(graph_ctx)
         input_data = inputs.get(0, 1)
         if input_data is None:
-            raise RuntimeError('Input data is empty')
+            raise EmptyInputError('Input data is empty')
 
         graph_ctx(input_data[0])
         graph_ctx.join()

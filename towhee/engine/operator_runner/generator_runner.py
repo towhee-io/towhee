@@ -16,6 +16,7 @@ from typing import Generator
 
 
 from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.errors import OpIOTypeError
 
 
 class GeneratorRunner(RunnerBase):
@@ -25,7 +26,7 @@ class GeneratorRunner(RunnerBase):
 
     def _set_outputs(self, output: Generator):
         if not isinstance(output, Generator):
-            raise RuntimeError("Op {}'s output is not a generator".format(self.op_name))
+            raise OpIOTypeError("Op {}'s output is not a generator".format(self.op_name))
 
         for data in output:
             self._writer.write(data)

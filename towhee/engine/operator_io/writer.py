@@ -33,7 +33,7 @@ class DataFrameWriter(ABC):
             engine_log.error('Ignore None data which try to write to dataframe %s',
                              self._output_df.name)
 
-    @ abstractmethod
+    @abstractmethod
     def _write(self, output_data: any):
         raise NotImplementedError
 
