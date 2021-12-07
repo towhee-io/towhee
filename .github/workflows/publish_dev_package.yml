@@ -22,7 +22,7 @@ jobs:
         cd  tests/testcases
         python3 -m pip install -U pip
         python3 -m pip install --no-cache-dir -r requirements.text
-        python3 test_main.py
+        python3 -W ignore test_main.py
     - name: Install pypa/build
       run: >-
         python -m
