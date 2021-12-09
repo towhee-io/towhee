@@ -36,7 +36,7 @@ def parse_requirements(file_name: str) -> List[str]:
 
 setup(
     name="towhee",
-    version="0.2.1",
+    version="0.3.0",
     description="",
     author="Towhee Team",
     author_email="towhee-team@zilliz.com",
