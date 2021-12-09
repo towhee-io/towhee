@@ -223,14 +223,17 @@ class FileManager():
 
     # Move to a utils location?
     def _cache_name(self, name: str, author: str, branch: str):
-        # If pointing directly to pipeline file.
-        if name.endswith('.yaml'):
-            return name[:-5] + '&' + author + '$' + branch
-        # If pointing directly to operator file.
-        elif name.endswith('.py'):
-            return name[:-3] + '&' + author + '$' + branch
+        try:
+            file_name, file_type = name.split('.')
+        except ValueError:
+            return name.replace('-', '_') + '&' + author + '$' + branch
+
+        # If pointing directly to pipeline or operator file.
+        if file_type in ['py', 'yaml']:
+            return file_name.replace('-', '_') + '&' + author + '$' + branch
+        # If not pointing to a pipeline or operator file.
         else:
-            return name + '&' + author + '$' + branch
+            raise ValueError('Unsupported file type.')
 
     # TODO: filip-halt
     # Decide if to treat pipelines and operators the same. Should we allow single .py
@@ -308,8 +311,9 @@ class FileManager():
                 raise ValueError('''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.''')
             author = pipeline_split[0]
             repo = pipeline_split[1]
+            file_name = repo.replace('-', '_')
 
-            pipeline_path = self._cache_name(repo, author, branch) + '/' + repo + '.yaml'
+            pipeline_path = self._cache_name(repo, author, branch) + '/' + file_name + '.yaml'
 
             file_path = self._config.default_cache / 'pipelines' / pipeline_path
             found_existing = False
@@ -371,8 +375,9 @@ class FileManager():
                 raise ValueError('''Incorrect operator format, should be '<author>/<operator_repo>'.''')
             author = operator_split[0]
             repo = operator_split[1]
+            file_name = repo.replace('-', '_')
 
-            operator_path = self._cache_name(repo, author, branch) + '/' + repo + '.py'
+            operator_path = self._cache_name(repo, author, branch) + '/' + file_name + '.py'
 
             file_path = self._config.default_cache / 'operators' / operator_path
             found_existing = False

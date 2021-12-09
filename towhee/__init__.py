@@ -29,7 +29,7 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'towhee/image_embedding_resnet50',
+    'image-embedding': 'towhee/image-embedding-resnet50',
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
@@ -45,7 +45,6 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
-
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
