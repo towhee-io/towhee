@@ -40,7 +40,7 @@ class Array:
         # copy=False
     ):
 
-        self.name = name
+        self._name = name
 
         # For `data` is `list`
         if isinstance(data, list):
@@ -83,6 +83,13 @@ class Array:
         Number of elements in the `Array`.
         """
         return len(self._data) + self._offset
+    
+    @property
+    def name(self) -> str:
+        """
+        Number of elements in the `Array`.
+        """
+        return self._name
 
     @property
     def physical_size(self) -> int:
