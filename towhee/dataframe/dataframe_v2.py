@@ -16,6 +16,7 @@ import threading
 from typing import Iterable, List, Tuple, Any
 
 from towhee.array import Array
+import weakref
 
 
 class DataFrame:
@@ -33,14 +34,16 @@ class DataFrame:
 
     def __init__(
         self,
+        columns: List[Tuple[str, any]] = None,
         name: str = None,
         data=None,
-        columns=None,
     ):
         self._name = name
         self._len = 0
         self._sealed = False
         self._lock = threading.Lock()
+        if columns != None:
+            self._types = {x[0]: x[1] for x in columns}
 
         # For `data` is empty
         if not data:
@@ -78,6 +81,23 @@ class DataFrame:
         # access a column
         elif isinstance(key, str):
             return self._data_as_dict[key]
+    
+    def __str__(self):
+        ret = ''
+        formater = ''
+        columns = []
+        for x in range(len(self._data_as_list)):
+            columns.append(self._data_as_list[x].name)
+            formater += '{' + str(x) + ':30}'
+        ret += formater.format(*columns) + '\n'
+
+        for x in range(self._len):
+            values = []
+            for i in range(len(self._data_as_list)):
+                values.append(str(self._data_as_list[i][x]))
+            ret += formater.format(*values) + '\n'
+
+        return ret
 
     def __len__(self):
         return self._len
@@ -119,8 +139,8 @@ class DataFrame:
 
         # create arrays
         if columns:
-            self._data_as_list = [Array(name=columns[i]) for i in range(tuple_length)]
-            self._data_as_dict = {columns[i]: self._data_as_list[i] for i in range(tuple_length)}
+            self._data_as_list = [Array(name=columns[i][0]) for i in range(tuple_length)]
+            self._data_as_dict = {columns[i][0]: self._data_as_list[i] for i in range(tuple_length)}
         else:
             self._data_as_list = [Array()] * tuple_length
             self._data_as_dict = None
@@ -148,14 +168,16 @@ class DataFrame:
         self._data_as_list = data
 
         if columns:
-            self._data_as_dict = {columns[i]: self._data_as_list[i] for i in range(len(data))}
+            self._data_as_dict = {columns[i][0]: self._data_as_list[i] for i in range(len(data))}
         else:
             self._data_as_dict = None
 
     def _from_dict(self, data):
 
         # check dict values
-        for value in data.values():
+        self._types = {}
+        for key, value in data.items():
+            self._types[key[0]] = key[1]
             if not isinstance(value, Array):
                 raise ValueError('value type in data should be towhee.Array')
 
@@ -176,7 +198,7 @@ class DFIterator:
     """
 
     def __init__(self, df: DataFrame):
-        self._df = df
+        self._df = weakref.ref(df)
         self._offset = 0
 
     def __iter__(self):

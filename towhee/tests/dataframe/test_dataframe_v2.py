@@ -27,7 +27,7 @@ class TestDataframe(unittest.TestCase):
     def test_constructors(self):
 
         def get_columns():
-            return ['digit', 'letter']
+            return [('digit', int), ('letter', str)]
 
         def get_tuples():
             return [(0, 'a'), (1, 'b'), (2, 'c')]
@@ -36,7 +36,7 @@ class TestDataframe(unittest.TestCase):
             return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
 
         def get_dict():
-            return {'digit': Array([0, 1, 2]), 'letter': Array(['a', 'b', 'c'])}
+            return {('digit', int): Array([0, 1, 2]), ('letter', str): Array(['a', 'b', 'c'])}
 
         def check_data(df):
             for i in range(3):
@@ -48,27 +48,35 @@ class TestDataframe(unittest.TestCase):
                 self.assertEqual(row[0], i)
                 self.assertEqual(row[1], chr(ord('a') + i))
 
-        # empty df
-        df = DataFrame('my_df')
-        df.seal()
-        self.assertEqual(df.name, 'my_df')
+        # # empty df
+        # df = DataFrame(name = 'my_df')
+        # df.seal()
+        # self.assertEqual(df.name, 'my_df')
 
         # from list[tuple]
         data = get_tuples()
         columns = get_columns()
-        df = DataFrame('my_df', data, columns)
+        df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
         # from list[towhee.Array]
         data = get_arrays()
         columns = get_columns()
-        df = DataFrame('my_df', data, columns)
+        df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
         # from dict[str, towhee.Array]
         data = get_dict()
-        df = DataFrame('my_df', data)
+        df = DataFrame(None, name = 'my_df', data = data)
+        print(df)
+
         df.seal()
         check_data(df)
+        # for x in range(len(df)):
+
+
+if __name__ == '__main__':
+    unittest.main()
+
