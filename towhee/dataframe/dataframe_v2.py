@@ -14,6 +14,7 @@
 
 import threading
 from typing import Iterable, List, Tuple, Any
+from towhee import array
 
 from towhee.array import Array
 import weakref
@@ -34,7 +35,7 @@ class DataFrame:
 
     def __init__(
         self,
-        columns: List[Tuple[str, any]] = None,
+        columns: List[Tuple[str, any]],
         name: str = None,
         data=None,
     ):
@@ -42,8 +43,17 @@ class DataFrame:
         self._len = 0
         self._sealed = False
         self._lock = threading.Lock()
-        if columns != None:
+        self._iterators = []
+        
+
+        # TODO: Enforce columns everytime except for when dict passed in. 
+        if columns is not None:
             self._types = {x[0]: x[1] for x in columns}
+            self._columns = [x[0] for x in columns]
+
+        elif type(data) is not dict:
+            raise ValueError(
+                    'Cannot construct dataframe without colum names and types (except for dict).')
 
         # For `data` is empty
         if not data:
@@ -109,6 +119,65 @@ class DataFrame:
     @property
     def data(self) -> List[Array]:
         return self._data_as_list
+
+    def put(self, item) -> None:
+        """Put values into dictionary
+
+        For now it takes:
+        tuple
+        towhee array
+        dict(requires col names)
+        """
+        assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
+        assert isinstance(item, (tuple, dict, list)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
+        with self._lock:
+            if isinstance(item, list):
+                self._put_list(item)
+            elif isinstance(item, dict):
+                self._put_dict(item)
+            else: # type(item) is tuple:
+                self._put_tuple(item)
+            
+            self._total += 1
+            # self._accessible_cv.notify()
+
+    def _put_list(self, item: list):
+        assert len(item) == len(self._types)
+        
+        # I believe its faster to loop through and check than list comp
+        for i, x in enumerate(item):
+            assert type(x) == type(self._types[self._columns[i]])
+        
+        for i, x in enumerate(item):
+            self._data_as_list[i].put(x)
+            self._data_as_dict[self._columns[i]].append(x)
+
+    def _put_tuple(self, item: tuple):
+        assert len(item) == len(self._types)
+        
+        # I believe its faster to loop through and check than list comp
+        for i, x in enumerate(item):
+            assert type(x) == type(self._types[self._columns[i]])
+        
+        for i, x in enumerate(item):
+            self._data_as_list[i].put(x)
+            self._data_as_dict[self._columns[i]].append(x)
+        
+    def _put_dict(self, item: dict):
+        assert len(item) == len(self._types)
+        
+        # I believe its faster to loop through and check than list comp
+        for x in item.values():
+            assert type(x) == type(self._types[self._columns[i]])
+        
+        for i, x in enumerate(item):
+            self._data_as_list[i].put(x)
+            self._data_as_dict[self._columns[i]].append(x)
+
+
+
+        
+
 
     def iter(self) -> Iterable[Tuple[Any, ...]]:
         """
@@ -187,9 +256,55 @@ class DataFrame:
             raise ValueError('arrays in data should have equal length')
 
         self._len = array_lengths.pop()
-
+        # TODO: Check if data lines up by just converting to list
         self._data_as_list = list(data.values())
         self._data_as_dict = data
+
+    # def _add_ref(self, iterator):
+    #     self._iterators.append(iterator)
+    #     print(data)
+
+#     def map_iter(self, block: bool = False):
+#         it = MapIterator(self, block)
+#         with self._lock:
+#             self._iters.append(it)
+#         return it
+
+# class DataFrameIterator:
+#     """Base iterator implementation. All iterators should be subclasses of
+#     `DataFrameIterator`.
+
+#     Args:
+#         df: The dataframe to iterate over.
+#     """
+
+#     def __init__(self, df: DataFrame):
+#         self._df_ref = weakref.ref(df)
+#         self._cur_idx = 0
+
+#     def __iter__(self):
+#         return self
+
+#     def __next__(self) -> List[Tuple]:
+#         # The base iterator is purposely defined to have exatly 0 elements.
+#         raise StopIteration
+
+#     @property
+#     def current_index(self) -> int:
+#         """Returns the current index.
+#         """
+#         return self._cur_idx
+
+#     @property
+#     def accessible_size(self) -> int:
+#         """Returns current accessible data size.
+#         """
+#         return self._df_ref().size - self._cur_idx
+
+#     def notify(self):
+#         df = self._df_ref()
+#         if df is not None:
+#             self._df_ref().notify_block_readers()
 
 
 class DFIterator:
@@ -200,6 +315,7 @@ class DFIterator:
     def __init__(self, df: DataFrame):
         self._df = weakref.ref(df)
         self._offset = 0
+
 
     def __iter__(self):
         return self
