@@ -35,7 +35,7 @@ class DataFrame:
 
     def __init__(
         self,
-        columns: List[Tuple[str, any]],
+        columns: List[Tuple[str, Any]],
         name: str = None,
         data=None,
     ):
@@ -120,6 +120,14 @@ class DataFrame:
     def data(self) -> List[Array]:
         return self._data_as_list
 
+    @property
+    def columns(self) -> List[str]:
+        return self._columns
+
+    @property
+    def types(self) -> List[Any]:
+        return self._types
+
     def put(self, item) -> None:
         """Put values into dictionary
 
@@ -137,8 +145,8 @@ class DataFrame:
                 self._put_dict(item)
             else: # type(item) is tuple:
                 self._put_tuple(item)
-            
-            self._total += 1
+
+            self._len += 1
             # self._accessible_cv.notify()
 
     def _put_list(self, item: list):
@@ -146,8 +154,8 @@ class DataFrame:
         
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
-            assert type(x) == type(self._types[self._columns[i]])
-        
+            assert isinstance(x, self._types[self._columns[i]])
+
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
             self._data_as_dict[self._columns[i]].append(x)
@@ -157,7 +165,7 @@ class DataFrame:
         
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
-            assert type(x) == type(self._types[self._columns[i]])
+            assert isinstance(x, self._types[self._columns[i]])
         
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
@@ -167,23 +175,20 @@ class DataFrame:
         assert len(item) == len(self._types)
         
         # I believe its faster to loop through and check than list comp
-        for x in item.values():
-            assert type(x) == type(self._types[self._columns[i]])
+        for key, val in item.items():
+            assert isinstance(val, self._types[key])
         
-        for i, x in enumerate(item):
-            self._data_as_list[i].put(x)
-            self._data_as_dict[self._columns[i]].append(x)
-
-
-
-        
-
+        for key, val in item.items():
+            self._data_as_list[self._columns.index(key)].put(val)
+            self._data_as_dict[key].append(val)
 
     def iter(self) -> Iterable[Tuple[Any, ...]]:
         """
         Iterate over DataFrame rows as tuples.
         """
-        return DFIterator(self)
+        it = DFIterator(self)
+        self._iterators.append(it)
+        return it
 
     def seal(self):
         with self._lock:
@@ -313,9 +318,14 @@ class DFIterator:
     """
 
     def __init__(self, df: DataFrame):
-        self._df = weakref.ref(df)
+        self._df_ref = weakref.ref(df)
         self._offset = 0
-
+        self._readers = []
+        for x in df.data:
+             self._readers.append(x.add_reader())
+        print(df.columns)
+        print(df.types)
+        print(self._readers)
 
     def __iter__(self):
         return self
@@ -334,16 +344,16 @@ class DFIterator:
                 The iteration end iff the `DataFrame` is sealed and the last row is
                 reached.
         """
-
-        if len(self._df) == self._offset:
-            if self._df.is_sealed():
+        df = self._df_ref()
+        if len(df) == self._offset:
+            if df.is_sealed():
                 # Already reach the last row
                 raise StopIteration
             else:
                 # No more ready rows
                 return None
         else:
-            row = self._df[self._offset]
+            row = df[self._offset]
             self._offset += 1
             return row
 

@@ -87,7 +87,7 @@ class Array:
     @property
     def name(self) -> str:
         """
-        Number of elements in the `Array`.
+        Name of the Array'.
         """
         return self._name
 
@@ -162,9 +162,29 @@ class Array:
         elif isinstance(data, List):
             self._data.extend(data)
 
+    # TODO: Get next 'count' elements, decide where to do blocking logic.
+    def next(self, reader_id):
+        """
+        Read the next value from the `Array`.
+
+        Args:
+            data (`list` or `Array`):
+                The data to be appended.
+        """
+
+        offset = self._ref.get_reader_offset(reader_id)
+        if offset > self.size:
+            raise IndexError
+        ret = self._data[offset]
+        self._ref.update_reader_offset(reader_id, offset + 1)
+        self.gc()
+        return ret
+
+
+
     def gc(self):
         """
-        Release the unreferenced upper part of the `Array`, if any
+        Release the unreferenced lower part of the `Array`, if any
         """
         min_ref_offset = self._ref.min_reader_offsets
         release_offset = min_ref_offset - self._offset

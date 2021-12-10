@@ -19,7 +19,7 @@ class _ArrayRef:
     """
 
     def __init__(self):
-        self._read_ref_offsets = {}
+        self._offsets = {}
         self._ref_id_allocator = 0
 
     def add_reader(self) -> int:
@@ -31,7 +31,7 @@ class _ArrayRef:
                 reference id
         """
         ref_id = self._ref_id_allocator
-        self._read_ref_offsets[ref_id] = 0
+        self._offsets[ref_id] = 0
         self._ref_id_allocator += 1
         return ref_id
 
@@ -43,17 +43,24 @@ class _ArrayRef:
             ref_id (`int`):
                 The reference ID
         """
-        self._read_ref_offsets.pop(ref_id, None)
+        self._offsets.pop(ref_id, None)
 
     def update_reader_offset(self, ref_id: int, offset: int):
-        if ref_id in self._read_ref_offsets:
-            self._read_ref_offsets[ref_id] = offset
+        if ref_id in self._offsets:
+            self._offsets[ref_id] = offset
         else:
             raise KeyError('reference id %d not fount' % (ref_id))
 
+    def get_reader_offset(self, reader_id):
+        return self._offsets[reader_id]
+    
+
     @property
     def min_reader_offsets(self):
-        if self._read_ref_offsets:
-            return min(self._read_ref_offsets.values())
+        if self._offsets:
+            return min(self._offsets.values())
         else:
             return 0
+    
+
+    
