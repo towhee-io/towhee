@@ -14,6 +14,7 @@
 
 
 import unittest
+import time
 
 from towhee.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame
@@ -74,6 +75,7 @@ class TestDataframe(unittest.TestCase):
             else:
                 print('reader2: ', df.data[0].next(reader2))
                 print(df.data[0])
+        
        
         # check_data(df)
         
@@ -95,5 +97,4 @@ class TestDataframe(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
-
+    # unittest.main()
