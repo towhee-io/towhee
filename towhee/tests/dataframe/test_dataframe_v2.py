@@ -57,23 +57,32 @@ class TestDataframe(unittest.TestCase):
         data = get_tuples()
         columns = get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
+        
+        df.put([3,'d'])
+        df.put((4, 'e'))
+        df.put({'digit': 5, 'letter': 'f'})
         df.seal()
-        check_data(df)
-
-        # from list[towhee.Array]
-        data = get_arrays()
-        columns = get_columns()
-        df = DataFrame(columns, name = 'my_df', data = data)
-        df.seal()
-        check_data(df)
-
-        # from dict[str, towhee.Array]
-        data = get_dict()
-        df = DataFrame(None, name = 'my_df', data = data)
         print(df)
+        for i, row in enumerate(df.iter()):
+            print(i, row)
+        # check_data(df)
+        
+        
 
-        df.seal()
-        check_data(df)
+        # # from list[towhee.Array]
+        # data = get_arrays()
+        # columns = get_columns()
+        # df = DataFrame(columns, name = 'my_df', data = data)
+        # df.seal()
+        # check_data(df)
+
+        # # from dict[str, towhee.Array]
+        # data = get_dict()
+        # df = DataFrame(None, name = 'my_df', data = data)
+        # print(df)
+
+        # df.seal()
+        # check_data(df)
         # for x in range(len(df)):
 
 
