@@ -345,6 +345,9 @@ class DFIterator:
                 reached.
         """
         df = self._df_ref()
+        with df._lock:
+            for x in df.data:
+                
         if len(df) == self._offset:
             if df.is_sealed():
                 # Already reach the last row

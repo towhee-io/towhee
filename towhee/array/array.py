@@ -184,8 +184,6 @@ class Array:
         self.gc()
         return ret
 
-
-
     def gc(self):
         """
         Release the unreferenced lower part of the `Array`, if any
