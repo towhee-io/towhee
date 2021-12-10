@@ -63,12 +63,20 @@ class TestDataframe(unittest.TestCase):
         df.put({'digit': 5, 'letter': 'f'})
         df.seal()
         print(df)
-        for i, row in enumerate(df.iter()):
-            print(i, row)
+        # for i, row in enumerate(df.iter()):
+        #     print(i, row)
+        reader1 = df.data[0].add_reader()
+        reader2 = df.data[0].add_reader()
+        for x in range(10):
+            if x%2 == 0:
+                print('reader1: ', df.data[0].next(reader1))
+                print(df.data[0])
+            else:
+                print('reader2: ', df.data[0].next(reader2))
+                print(df.data[0])
+       
         # check_data(df)
         
-        
-
         # # from list[towhee.Array]
         # data = get_arrays()
         # columns = get_columns()
