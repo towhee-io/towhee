@@ -163,6 +163,7 @@ class Array:
             self._data.extend(data)
 
     # TODO: Get next 'count' elements, decide where to do blocking logic.
+    # TODO: Make iterator based to support next(array)
     def next(self, reader_id):
         """
         Read the next value from the `Array`.
@@ -170,12 +171,15 @@ class Array:
         Args:
             data (`list` or `Array`):
                 The data to be appended.
+        
+        Raises:
+            IndexError: There is no value left. 
         """
 
         offset = self._ref.get_reader_offset(reader_id)
         if offset > self.size:
             raise IndexError
-        ret = self._data[offset]
+        ret = self._data[offset- self._offset]
         self._ref.update_reader_offset(reader_id, offset + 1)
         self.gc()
         return ret

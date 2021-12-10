@@ -53,7 +53,6 @@ class _ArrayRef:
 
     def get_reader_offset(self, reader_id):
         return self._offsets[reader_id]
-    
 
     @property
     def min_reader_offsets(self):
@@ -61,6 +60,3 @@ class _ArrayRef:
             return min(self._offsets.values())
         else:
             return 0
-    
-
-    
