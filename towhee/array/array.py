@@ -81,7 +81,7 @@ class Array:
         Number of elements in the `Array`.
         """
         return len(self._data) + self._offset
-
+    
     @property
     def name(self) -> str:
         """
