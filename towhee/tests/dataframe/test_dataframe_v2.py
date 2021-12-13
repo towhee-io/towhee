@@ -18,6 +18,7 @@ import time
 
 from towhee.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame
+from towhee.iterators.map_iterator import MapIterator
 
 
 class TestDataframe(unittest.TestCase):
@@ -64,17 +65,13 @@ class TestDataframe(unittest.TestCase):
         df.put({'digit': 5, 'letter': 'f'})
         df.seal()
         print(df)
-        # for i, row in enumerate(df.iter()):
-        #     print(i, row)
-        reader1 = df.data[0].add_reader()
-        reader2 = df.data[0].add_reader()
-        for x in range(10):
-            if x%2 == 0:
-                print('reader1: ', df.data[0].next(reader1))
-                print(df.data[0])
-            else:
-                print('reader2: ', df.data[0].next(reader2))
-                print(df.data[0])
+
+        it = MapIterator(df)
+
+        for i, row in enumerate(it):
+            print(i, row)
+            
+            print(df)
         
        
         # check_data(df)

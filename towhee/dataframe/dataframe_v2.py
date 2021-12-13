@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import threading
-from typing import Iterable, List, Tuple, Any
-from towhee import array
+from typing import List, Tuple, Any, Iterable
 
 from towhee.array import Array
-import weakref
 
 
 class DataFrame:
@@ -43,19 +41,21 @@ class DataFrame:
         self._len = 0
         self._sealed = False
         self._lock = threading.Lock()
+        self._it_id = 0
         self._iterators = []
-        
+        self._iterator_offsets = []
 
-        # TODO: Enforce columns everytime except for when dict passed in. 
+        # TODO: Enforce columns everytime except for when dict passed in.
         if columns is not None:
             self._types = {x[0]: x[1] for x in columns}
             self._columns = [x[0] for x in columns]
 
-        elif type(data) is not dict:
+        elif not isinstance(data, dict):
             raise ValueError(
                     'Cannot construct dataframe without colum names and types (except for dict).')
 
         # For `data` is empty
+        # TODO: Create arrays even when empty. 
         if not data:
             pass
 
@@ -91,7 +91,7 @@ class DataFrame:
         # access a column
         elif isinstance(key, str):
             return self._data_as_dict[key]
-    
+
     def __str__(self):
         ret = ''
         formater = ''
@@ -100,17 +100,16 @@ class DataFrame:
             columns.append(self._data_as_list[x].name)
             formater += '{' + str(x) + ':30}'
         ret += formater.format(*columns) + '\n'
-
         for x in range(self._len):
             values = []
             for i in range(len(self._data_as_list)):
-                values.append(str(self._data_as_list[i][x]))
+                values.append(str(self._data_as_list[i].get_relative(x)))
             ret += formater.format(*values) + '\n'
 
         return ret
 
     def __len__(self):
-        return self._len
+        return self._data_as_list[0].size
 
     @property
     def name(self) -> str:
@@ -151,44 +150,33 @@ class DataFrame:
 
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
-        
+
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
             assert isinstance(x, self._types[self._columns[i]])
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
-            self._data_as_dict[self._columns[i]].append(x)
 
     def _put_tuple(self, item: tuple):
         assert len(item) == len(self._types)
-        
+
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
             assert isinstance(x, self._types[self._columns[i]])
-        
+
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
-            self._data_as_dict[self._columns[i]].append(x)
-        
+
     def _put_dict(self, item: dict):
         assert len(item) == len(self._types)
-        
+
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():
             assert isinstance(val, self._types[key])
-        
+
         for key, val in item.items():
             self._data_as_list[self._columns.index(key)].put(val)
-            self._data_as_dict[key].append(val)
-
-    def iter(self) -> Iterable[Tuple[Any, ...]]:
-        """
-        Iterate over DataFrame rows as tuples.
-        """
-        it = DFIterator(self)
-        self._iterators.append(it)
-        return it
 
     def seal(self):
         with self._lock:
@@ -199,7 +187,6 @@ class DataFrame:
             return self._sealed
 
     def _from_tuples(self, data, columns):
-
         # check tuple length
         tuple_lengths = set(len(i) for i in data)
         if len(tuple_lengths) == 1:
@@ -227,7 +214,6 @@ class DataFrame:
         self._len = len(data)
 
     def _from_arrays(self, data, columns):
-
         # check array length
         array_lengths = set(len(array) for array in data)
         if len(array_lengths) != 1:
@@ -247,7 +233,6 @@ class DataFrame:
             self._data_as_dict = None
 
     def _from_dict(self, data):
-
         # check dict values
         self._types = {}
         for key, value in data.items():
@@ -265,106 +250,33 @@ class DataFrame:
         self._data_as_list = list(data.values())
         self._data_as_dict = data
 
-    # def _add_ref(self, iterator):
-    #     self._iterators.append(iterator)
-    #     print(data)
+    def gc(self):
+        min_offset = min(self._iterator_offsets)
+        for x in self._data_as_list:
+            x.gc(min_offset)
 
-#     def map_iter(self, block: bool = False):
-#         it = MapIterator(self, block)
-#         with self._lock:
-#             self._iters.append(it)
-#         return it
+    def register_iter(self, iterator: Iterable):
+        with self._lock:
+            self._it_id =+ 1
+            self._iterators.append(iterator)
+            self._iterator_offsets.append(0)
+            return self._it_id - 1
 
-# class DataFrameIterator:
-#     """Base iterator implementation. All iterators should be subclasses of
-#     `DataFrameIterator`.
-
-#     Args:
-#         df: The dataframe to iterate over.
-#     """
-
-#     def __init__(self, df: DataFrame):
-#         self._df_ref = weakref.ref(df)
-#         self._cur_idx = 0
-
-#     def __iter__(self):
-#         return self
-
-#     def __next__(self) -> List[Tuple]:
-#         # The base iterator is purposely defined to have exatly 0 elements.
-#         raise StopIteration
-
-#     @property
-#     def current_index(self) -> int:
-#         """Returns the current index.
-#         """
-#         return self._cur_idx
-
-#     @property
-#     def accessible_size(self) -> int:
-#         """Returns current accessible data size.
-#         """
-#         return self._df_ref().size - self._cur_idx
-
-#     def notify(self):
-#         df = self._df_ref()
-#         if df is not None:
-#             self._df_ref().notify_block_readers()
-
-
-class DFIterator:
-    """
-    A row-based `DataFrame` iterator.
-    """
-
-    def __init__(self, df: DataFrame):
-        self._df_ref = weakref.ref(df)
-        self._offset = 0
-        self._readers = []
-        for x in df.data:
-             self._readers.append(x.add_reader())
-        print(df.columns)
-        print(df.types)
-        print(self._readers)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        """
-        Returns:
-            (`Tuple[Any, ...]`)
-                In the normal case, the iterator will return a `Tuple` at each call.
-            (`None`)
-                In the case that the `DataFrame` is not sealed and the new rows are
-                not ready yet, the iterator will return `None`. The caller should
-                determine whether to block the iteration or exit the loop.
-        Raises:
-            (`StopIteration`)
-                The iteration end iff the `DataFrame` is sealed and the last row is
-                reached.
-        """
-        df = self._df_ref()
-        with df._lock:
-            for x in df.data:
-                
-        if len(df) == self._offset:
-            if df.is_sealed():
-                # Already reach the last row
-                raise StopIteration
-            else:
-                # No more ready rows
-                return None
-        else:
-            row = df[self._offset]
-            self._offset += 1
-            return row
-
-    def ack(self):
+    def ack(self, iter_id, offset):
         """
         To notice the DataFrame that the iterated rows has been successfully processed.
 
         An acknowledgement (ack) will notice the `DataFrame`s that the rows already
         iterated over are no longer used, and can be deleted from the system.
+
+        Args:
+            iter_id (`int`):
+                The iterator id to set offset for.
+            offset (`int`):
+                The latest accepted offset.
         """
-        pass
+        with self._lock:
+            self._iterator_offsets[iter_id] = offset
+            self.gc()
+
+

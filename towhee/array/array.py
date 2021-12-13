@@ -13,8 +13,7 @@
 # limitations under the License.
 
 
-from typing import List
-from towhee.array._array_ref import _ArrayRef
+from typing import List, Tuple
 
 
 class Array:
@@ -53,7 +52,6 @@ class Array:
             data = [data]
 
         self._data = data
-        self._ref = _ArrayRef()
         self._offset = 0
 
     def __iter__(self):
@@ -83,7 +81,7 @@ class Array:
         Number of elements in the `Array`.
         """
         return len(self._data) + self._offset
-    
+
     @property
     def name(self) -> str:
         """
@@ -104,6 +102,9 @@ class Array:
         Data of the `Array`
         """
         return self._data
+    
+    def get_relative(self, key: int):
+        return self._data[key + self._offset]
 
     def is_empty(self) -> bool:
         """
@@ -114,34 +115,6 @@ class Array:
                 Return `True` if `Array` has no elements.
         """
         return not self.size
-
-    def add_reader(self) -> int:
-        """
-        Add a read reference to `Array`
-        """
-        return self._ref.add_reader()
-
-    def remove_reader(self, ref_id: int):
-        """
-        Remove a read reference from `Array`
-
-        Args:
-            ref_id (`int`):
-                The reference ID
-        """
-        self._ref.remove(ref_id)
-
-    def update_reader_offset(self, ref_id: int, offset: int):
-        """
-        Update a reference offset
-
-        Args:
-            ref_id (`int`):
-                The reference ID
-            offset (`int`):
-                The new reference offset
-        """
-        self._ref.update_reader_offset(ref_id, offset)
 
     def put(self, item):
         """
@@ -164,32 +137,12 @@ class Array:
 
     # TODO: Get next 'count' elements, decide where to do blocking logic.
     # TODO: Make iterator based to support next(array)
-    def next(self, reader_id):
-        """
-        Read the next value from the `Array`.
 
-        Args:
-            data (`list` or `Array`):
-                The data to be appended.
-        
-        Raises:
-            IndexError: There is no value left. 
-        """
-
-        offset = self._ref.get_reader_offset(reader_id)
-        if offset > self.size:
-            raise IndexError
-        ret = self._data[offset- self._offset]
-        self._ref.update_reader_offset(reader_id, offset + 1)
-        self.gc()
-        return ret
-
-    def gc(self):
+    def gc(self, offset):
         """
         Release the unreferenced lower part of the `Array`, if any
         """
-        min_ref_offset = self._ref.min_reader_offsets
-        release_offset = min_ref_offset - self._offset
+        release_offset = offset - self._offset
         if release_offset > 0:
             del self._data[:release_offset]
-            self._offset = min_ref_offset
+            self._offset = offset
