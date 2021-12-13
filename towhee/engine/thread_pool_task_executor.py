@@ -66,12 +66,13 @@ class ThreadPoolTaskExecutor(threading.Thread):
 
     def execute(self, runner: RunnerBase):
         try:
-            op = self._op_pool.acquire_op(runner.op_key,
-                                          runner.hub_op_id,
+            op = self._op_pool.acquire_op(runner.hub_op_id,
                                           runner.op_args)
             runner.set_op(op)
             runner.process()
-            self._op_pool.release_op(op)
+            if runner.is_end() and runner.op is not None:
+                runner.unset_op()
+                self._op_pool.release_op(op)
         except Exception as e:  # pylint: disable=broad-except
             engine_log.error(traceback.format_exc())
             engine_log.error(e)

@@ -15,12 +15,13 @@
 from typing import Tuple, Union, Dict, List
 import traceback
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
 from towhee.engine.status import Status
+from towhee.errors import OpIOTypeError
 from towhee.utils.log import engine_log
 
 
-class WindowRunner(MapRunner):
+class WindowRunner(RunnerBase):
     """
     WindowRunner, multiple inputs and multiple outputs.
 
@@ -30,7 +31,7 @@ class WindowRunner(MapRunner):
 
     def _set_outputs(self, output: List[any]):
         if not isinstance(output, list):
-            raise RuntimeError("Window operator's output must be a list, not a {}".format(type(output)))
+            raise OpIOTypeError("Window operator's output must be a list, not a {}".format(type(output)))
 
         for data in output:
             self._writer.write(data)

@@ -19,6 +19,8 @@ from towhee.dataframe import DataFrame, Variable
 from towhee.dag import GraphRepr
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
+from towhee.utils.log import engine_log
+from towhee.errors import OpFailedError
 
 
 class GraphContext:
@@ -65,15 +67,16 @@ class GraphContext:
         """
         return self.dataframes['_end_df']
 
-    def result(self):
+    def result(self) -> any:
         if self.outputs.size != 0:
             return self.outputs
         else:
             # graph run failed, raise an exception
             for op in self._op_ctxs.values():
                 if op.status == OpStatus.FAILED:
-                    raise RuntimeError(op.err_msg)
-            raise RuntimeError('Unkown error')
+                    raise OpFailedError(op.err_msg)
+            engine_log.warning('The pipeline runs successfully, but no data return')
+            return None
 
     @property
     def op_ctxs(self):
@@ -113,3 +116,6 @@ class GraphContext:
         for _, op_repr in self._repr.operators.items():
             op_ctx = OperatorContext(op_repr, self.dataframes)
             self._op_ctxs[op_ctx.name] = op_ctx
+
+    def __del__(self):
+        engine_log.info('Graph % s end', self._idx)
