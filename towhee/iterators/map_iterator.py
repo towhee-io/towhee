@@ -39,6 +39,6 @@ class MapIterator:
                 return None
         else:
             row = df[self._offset]
-            df.ack(self._id, self._offset)
             self._offset += 1
+            df.ack(self._id, self._offset)
             return row

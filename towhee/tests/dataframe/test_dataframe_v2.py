@@ -50,27 +50,27 @@ class TestDataframe(unittest.TestCase):
                 self.assertEqual(row[0], i)
                 self.assertEqual(row[1], chr(ord('a') + i))
 
-        # # empty df
-        # df = DataFrame(name = 'my_df')
-        # df.seal()
-        # self.assertEqual(df.name, 'my_df')
-
         # from list[tuple]
         data = get_tuples()
         columns = get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
-        
+
         df.put([3,'d'])
         df.put((4, 'e'))
         df.put({'digit': 5, 'letter': 'f'})
         df.seal()
-        print(df)
 
         it = MapIterator(df)
+        it2 = MapIterator(df)
 
         for i, row in enumerate(it):
-            print(i, row)
-            
+            print('row, (values, ): ', i, row)
+            print('\nDF Values:\n')
+            print(df)
+        
+        for i, row in enumerate(it2):
+            print('row, (values, ): ', i, row)
+            print('\nDF Values:\n')
             print(df)
         
        

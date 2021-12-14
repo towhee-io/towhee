@@ -124,19 +124,11 @@ class TestArray(unittest.TestCase):
         self.assertEqual(len(array), 4)
         self.assertEqual(array.physical_size, 4)
 
-        ref_a = array.add_reader()
-        ref_b = array.add_reader()
-        array.gc()
+        array.gc(0)
         self.assertEqual(len(array), 4)
         self.assertEqual(array.physical_size, 4)
 
-        array.update_reader_offset(ref_a, 2)
-        array.gc()
-        self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
-
-        array.update_reader_offset(ref_b, 2)
-        array.gc()
+        array.gc(2)
         self.assertEqual(array.size, 4)
         self.assertEqual(array.physical_size, 2)
 
@@ -144,3 +136,6 @@ class TestArray(unittest.TestCase):
         self.assertEqual(array[3], 3)
         self.assertRaises(IndexError, array.__getitem__, 0)
         self.assertRaises(IndexError, array.__getitem__, 1)
+
+if __name__ == '__main__':
+    unittest.main()

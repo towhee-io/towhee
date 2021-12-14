@@ -44,6 +44,7 @@ class DataFrame:
         self._it_id = 0
         self._iterators = []
         self._iterator_offsets = []
+        self._min_offset = 0
 
         # TODO: Enforce columns everytime except for when dict passed in.
         if columns is not None:
@@ -100,16 +101,17 @@ class DataFrame:
             columns.append(self._data_as_list[x].name)
             formater += '{' + str(x) + ':30}'
         ret += formater.format(*columns) + '\n'
-        for x in range(self._len):
+
+        for x in range(self._min_offset, self._min_offset + self.physical_size):
             values = []
             for i in range(len(self._data_as_list)):
-                values.append(str(self._data_as_list[i].get_relative(x)))
+                values.append(str(self._data_as_list[i][x]))
             ret += formater.format(*values) + '\n'
 
         return ret
 
     def __len__(self):
-        return self._data_as_list[0].size
+        return self._len
 
     @property
     def name(self) -> str:
@@ -126,6 +128,10 @@ class DataFrame:
     @property
     def types(self) -> List[Any]:
         return self._types
+    
+    @property
+    def physical_size(self) -> int:
+        return self._data_as_list[0].physical_size
 
     def put(self, item) -> None:
         """Put values into dictionary
@@ -251,13 +257,13 @@ class DataFrame:
         self._data_as_dict = data
 
     def gc(self):
-        min_offset = min(self._iterator_offsets)
+        self._min_offset = min(self._iterator_offsets)
         for x in self._data_as_list:
-            x.gc(min_offset)
+            x.gc(self._min_offset)
 
     def register_iter(self, iterator: Iterable):
         with self._lock:
-            self._it_id =+ 1
+            self._it_id += 1
             self._iterators.append(iterator)
             self._iterator_offsets.append(0)
             return self._it_id - 1
