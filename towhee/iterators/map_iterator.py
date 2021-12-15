@@ -7,7 +7,7 @@ class MapIterator:
     """
     A row-based `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame):
+    def __init__(self, df: DataFrame, block = False):
         self._df_ref = weakref.ref(df)
         self._offset = 0
         self._id = df.register_iter(self)
