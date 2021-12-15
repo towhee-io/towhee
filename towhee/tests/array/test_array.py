@@ -136,6 +136,11 @@ class TestArray(unittest.TestCase):
         self.assertEqual(array[3], 3)
         self.assertRaises(IndexError, array.__getitem__, 0)
         self.assertRaises(IndexError, array.__getitem__, 1)
-
+    
+    def test_slice(self):
+        array = Array([0, 1, 2, 3])
+        x = array[0:5]
+        print(x)
+        
 if __name__ == '__main__':
     unittest.main()

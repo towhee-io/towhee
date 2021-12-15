@@ -40,11 +40,17 @@ class DataFrame:
         self._name = name
         self._len = 0
         self._sealed = False
-        self._lock = threading.Lock()
+        
         self._it_id = 0
+
         self._iterators = []
         self._iterator_offsets = []
+
         self._min_offset = 0
+
+        self._lock = threading.Lock()
+        self._seal_cv = threading.Condition(self._lock)
+        self._accessible_cv = threading.Condition(self._lock)
 
         # TODO: Enforce columns everytime except for when dict passed in.
         if columns is not None:
@@ -52,6 +58,7 @@ class DataFrame:
             self._columns = [x[0] for x in columns]
 
         elif not isinstance(data, dict):
+
             raise ValueError(
                     'Cannot construct dataframe without colum names and types (except for dict).')
 
@@ -86,29 +93,31 @@ class DataFrame:
             raise ValueError('can not construct DataFrame from data type %s' % (type(data)))
 
     def __getitem__(self, key):
-        # access a row
-        if isinstance(key, int):
-            return tuple(self._data_as_list[i][key] for i in range(len(self._data_as_list)))
-        # access a column
-        elif isinstance(key, str):
-            return self._data_as_dict[key]
+        with self._lock:
+            # access a row
+            if isinstance(key, int):
+                return tuple(self._data_as_list[i][key] for i in range(len(self._data_as_list)))
+            # access a column
+            elif isinstance(key, str):
+                return self._data_as_dict[key]
 
     def __str__(self):
         ret = ''
         formater = ''
         columns = []
-        for x in range(len(self._data_as_list)):
-            columns.append(self._data_as_list[x].name)
-            formater += '{' + str(x) + ':30}'
-        ret += formater.format(*columns) + '\n'
+        with self._lock:
+            for x in range(len(self._data_as_list)):
+                columns.append(self._data_as_list[x].name)
+                formater += '{' + str(x) + ':30}'
+            ret += formater.format(*columns) + '\n'
 
-        for x in range(self._min_offset, self._min_offset + self.physical_size):
-            values = []
-            for i in range(len(self._data_as_list)):
-                values.append(str(self._data_as_list[i][x]))
-            ret += formater.format(*values) + '\n'
+            for x in range(self._min_offset, self._min_offset + self.physical_size):
+                values = []
+                for i in range(len(self._data_as_list)):
+                    values.append(str(self._data_as_list[i][x]))
+                ret += formater.format(*values) + '\n'
 
-        return ret
+            return ret
 
     def __len__(self):
         return self._len
@@ -128,10 +137,34 @@ class DataFrame:
     @property
     def types(self) -> List[Any]:
         return self._types
-    
+
     @property
     def physical_size(self) -> int:
         return self._data_as_list[0].physical_size
+    
+    def get(self, offset, count, block = True):
+        with self._accessible_cv:
+            if offset < self._min_offset:
+                raise IndexError(
+                    'Can not read from {start}, dataframe {name} start index is {cur_start}',
+                    start=offset,
+                    name=self._name,
+                    cur_start=self._min_offset
+                )
+
+            # # if block and not self._accessible(start, count):
+            # #     self._accessible_cv.wait()
+
+            # if self._len - offset >= count:
+            #     idx0 = start - self._start_idx
+            #     return self._data[idx0:idx0+count]
+
+            # # If the `DataFrame` is already sealed, return only the remaining data.
+            # if self._sealed:
+            #     if self._total <= start:
+            #         return None
+            #     return self._data[start:]
+            # return None
 
     def put(self, item) -> None:
         """Put values into dictionary
@@ -185,12 +218,19 @@ class DataFrame:
             self._data_as_list[self._columns.index(key)].put(val)
 
     def seal(self):
-        with self._lock:
+        with self._seal_cv:
             self._sealed = True
+            self._seal_cv.notify_all()
+            self._accessible_cv.notify_all()
 
     def is_sealed(self) -> bool:
-        with self._lock:
+        with self._seal_cv:
             return self._sealed
+    
+    def wait_sealed(self):
+        with self._seal_cv:
+            while not self._sealed:
+                self._seal_cv.wait()
 
     def _from_tuples(self, data, columns):
         # check tuple length
@@ -257,9 +297,10 @@ class DataFrame:
         self._data_as_dict = data
 
     def gc(self):
-        self._min_offset = min(self._iterator_offsets)
-        for x in self._data_as_list:
-            x.gc(self._min_offset)
+        with self._lock:
+            self._min_offset = min(self._iterator_offsets)
+            for x in self._data_as_list:
+                x.gc(self._min_offset)
 
     def register_iter(self, iterator: Iterable):
         with self._lock:
@@ -281,8 +322,8 @@ class DataFrame:
             offset (`int`):
                 The latest accepted offset.
         """
-        with self._lock:
-            self._iterator_offsets[iter_id] = offset
-            self.gc()
+        # No lock needed since iterators only deal with their index
+        self._iterator_offsets[iter_id] = offset
+        self.gc()
 
 

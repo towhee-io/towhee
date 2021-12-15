@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 class Array:
@@ -57,12 +57,22 @@ class Array:
     def __iter__(self):
         return self._data.__iter__()
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: Union[int, slice]):
         if isinstance(key, int):
             if key >= self._offset:
                 return self._data[key - self._offset]
             else:
                 raise IndexError('element with index=%d has been released' % (key))
+        elif isinstance(key, slice):
+            print(key)
+            if key.start >= self._offset:
+                if key.stop == None:
+                    stop = None
+                else:
+                    stop = key.stop - self._offset
+                return self._data[key.start - self._offset:stop]
+            else:
+                raise IndexError('element with index=%d has been released' % (key.start))
         else:
             raise IndexError('only integers are invalid indices')
 
