@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import importlib.util
 from pathlib import Path
 from typing import Any, Dict
@@ -32,7 +31,6 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
-
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
@@ -66,8 +64,7 @@ class OperatorLoader:
         fname = str(path).rsplit('/', maxsplit=1)[-1][:-3]
         modname = 'towhee.operator.' + fname
 
-        spec = importlib.util.spec_from_file_location(
-            modname, path.resolve())
+        spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
         # Create the module and then execute the module in its own namespace.
         module = importlib.util.module_from_spec(spec)

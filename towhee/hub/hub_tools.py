@@ -5,6 +5,7 @@ import sys
 import getopt
 import time
 import subprocess
+import re
 
 from typing import List, Tuple
 from tqdm import tqdm
@@ -378,8 +379,10 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
     for thread in threads:
         thread.join()
 
-    if install_reqs and 'requirements.txt' in file_list:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + 'requirements.txt'])
+    if install_reqs:
+        requirements = list(filter(lambda x: re.match(r'(.*/)?requirements.txt', x) is not None, file_list))
+        for req in requirements:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
 
 
 def download_repo(user: str, repo: str, branch: str, local_dir: str, install_reqs: bool = True) -> None:
