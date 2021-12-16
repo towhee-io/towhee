@@ -5,6 +5,8 @@ import sys
 import getopt
 import time
 import subprocess
+import yaml
+from importlib import import_module
 
 from typing import List, Tuple
 from tqdm import tqdm
@@ -28,6 +30,7 @@ class Worker(Thread):
         file_name (`str`):
             The name of the file (includes extension).
     """
+
     def __init__(self, url: str, local_dir: str, file_name: str):
         super().__init__()
         self.url = url
@@ -382,6 +385,126 @@ def download_files(user: str, repo: str, branch: str, file_list: List[str], lfs_
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + 'requirements.txt'])
 
 
+def init_file_structure(user: str, repo: str, repo_type: str) -> None:
+    """
+    Initialized the file structure with template.
+
+    First clone the repo, then download and rename the template repo file.
+
+    Args:
+        user (`str`):
+            The account name.
+        repo (`str`):
+            The repo name.
+        repo_type (`str`):
+            Which category of repo to create, only one can be used, includes
+            ('model', 'operator', 'pipeline', 'dataset').
+
+    Raises:
+        (`HTTPError`)
+            Raise error in request.
+        (`OSError`)
+            Raise error in writing file.
+    """
+    links = 'https://hub.towhee.io/' + user + '/' + repo + '.git'
+    subprocess.call(['git', 'clone', links])
+    repo_file_name = repo.replace('-', '_')
+    if repo_type == 'operator':
+        download_repo('towhee', 'operator-template', 'main', os.getcwd() + '/' + repo)
+        os.rename(repo + '/operator_template.py', repo + '/' + repo_file_name + '.py')
+        os.rename(repo + '/operator_template.yaml', repo + '/' + repo_file_name + '.yaml')
+    elif repo_type == 'pipeline':
+        download_repo('towhee', 'pipeline-template', 'main', os.getcwd() + '/' + repo)
+        os.rename(repo + '/pipeline_template.yaml', repo + '/' + repo_file_name + '.yaml')
+
+
+def covert_dic(dicts: dict) -> dict:
+    """
+    Convert all the values in a dictionary to str and replace char, for example:
+     <class 'torch.Tensor'>(unknow type) to torch.Tensor(str type).
+
+    Args:
+        dicts (`dict`):
+            The dictionary to convert.
+
+    Returns:
+        (`dict`)
+            The converted dictionary.
+    """
+    for keys in dicts:
+        dicts[keys] = str(dicts[keys]).replace('<class ', '').replace('>', '').replace('\'', '')
+    return dicts
+
+
+def generate_repo_yaml(user: str, repo: str) -> None:
+    """
+    Generate the yaml of Operator, for example:
+    name: 'operator-template'
+    labels:
+      recommended_framework: ''
+      class: ''
+      others: ''
+    operator: 'towhee/operator-template'
+    init:
+      model_name: str
+    call:
+      input:
+        img_path: str
+      output:
+        feature_vector: numpy.ndarray
+
+    Args:
+        user (`str`):
+            The account name.
+        repo (`str`):
+            The repo name.
+
+    Raises:
+        (`HTTPError`)
+            Raise error in request.
+        (`OSError`)
+            Raise error in writing file.
+    """
+    sys.path.append(repo)
+    repo_file_name = repo.replace('-', '_')
+    # get class name in camel case
+    components = repo.split('-')
+    class_name = ''.join(x.title() for x in components)
+    yaml_file = repo + '/' + repo_file_name + '.yaml'
+    operator_name = user + '/' + repo
+    # import the class from repo
+    cls = getattr(import_module(repo_file_name, repo), class_name)
+
+    init_args = cls.__init__.__annotations__
+    try:
+        del init_args['return']
+    except KeyError:
+        pass
+
+    call_func = cls.__call__.__annotations__
+    try:
+        call_output = call_func.pop('return')
+        call_output = call_output._field_types
+    except KeyError:
+        pass
+    call_input = call_func
+
+    data = {'name': repo,
+            'labels': {
+                'recommended_framework': '',
+                'class': '',
+                'others': ''
+            },
+            'operator': operator_name,
+            'init': covert_dic(init_args),
+            'call': {
+                'input': covert_dic(call_input),
+                'output': covert_dic(call_output)
+            }}
+    with open(yaml_file, 'wb') as outfile:
+        yaml.dump(data, outfile, default_flow_style=False, sort_keys=False)
+
+
 def download_repo(user: str, repo: str, branch: str, local_dir: str, install_reqs: bool = True) -> None:
     """
     Performs a download of the selected repo to specified location.
@@ -418,15 +541,17 @@ def download_repo(user: str, repo: str, branch: str, local_dir: str, install_req
 
 def main(argv):
     try:
-        opts, _ = getopt.getopt(argv[1:], 'u:p:r:t:b:d:', ['create', 'delete', 'download', 'user=', 'password=', 'repo=', 'type=', 'branch=', 'dir='])
+        opts, _ = getopt.getopt(argv[1:], 'u:p:r:t:b:d:', ['create', 'delete', 'download', 'init-directory',
+                                                           'generate-yaml', 'user=', 'password=', 'repo=', 'type=',
+                                                           'branch=', 'dir='])
     except getopt.GetoptError:
         print(
-            'Usage: hub_interaction.py -<manipulate type> -u <user> -p ' +
+            'Usage: hub_tool.py -<manipulate type> -u <user> -p ' +
             '<password> -r <repository> -t <repository type> -b <download branch> -d <download directory>'
         )
         sys.exit(2)
     else:
-        if argv[0] not in ['create', 'delete', 'download']:
+        if argv[0] not in ['create', 'delete', 'download', 'generate-yaml']:
             print('You must specify one kind of manipulation.')
             sys.exit(2)
 
@@ -451,8 +576,6 @@ def main(argv):
             repo_type = arg
         elif opt in ['-d', '--dir']:
             directory = arg
-        elif opt in ['-r', '--repo']:
-            repo = arg
 
     if manipulation in ('create', 'delete'):
         if not user:
@@ -471,6 +594,8 @@ def main(argv):
         if manipulation == 'create':
             print('Creating repo...')
             create_repo(repo, token_hash, repo_type)
+            print('Generate with template...')
+            init_file_structure(user, repo, repo_type)
             print('Done')
 
         elif manipulation == 'delete':
@@ -490,6 +615,15 @@ def main(argv):
             repo = input('Please enter the repo name: ')
         print('Downloading repo...')
         download_repo(user, repo, branch, directory)
+
+    elif manipulation == 'generate-yaml':
+        if not user:
+            user = input('Please enter your username: ')
+        if not repo:
+            repo = input('Please enter the operator repo name: ')
+        print('Generating the yaml of repo...')
+        generate_repo_yaml(user, repo)
+        print('Done')
 
 
 if __name__ == '__main__':
