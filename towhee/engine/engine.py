@@ -26,7 +26,6 @@ class EngineConfig:
     """
     Global engine config
     """
-
     def __init__(self):
         self._sched_type = 'basic'
         self._cache_path = None
@@ -62,20 +61,37 @@ class EngineConfig:
 
 @singleton
 class Engine(threading.Thread):
-    """Engines are the core component responsible for deliving results to the user. A
-    single engine may be composed of multiple pipelines.
     """
+    Engines are the core component responsible for deliving results to the user.
 
+    A single engine may be composed of multiple pipelines.
+    """
     def __init__(self):
         super().__init__()
 
         self._config = EngineConfig()
         self._pipelines = []
         self.setDaemon(True)
+        self._framework = 'pytorch'
 
         # Setup executors and scheduler.
         self._setup_execs()
         self._setup_sched()
+
+    @property
+    def framework(self):
+        return self._framework
+
+    @framework.setter
+    def framework(self, framework: str):
+        """
+        Set the framework to use for current pipeline.
+
+        Args:
+            framework (`str`):
+                The framework to apply.
+        """
+        self._framework = framework
 
     def stop(self) -> None:
         self._sched.stop()
@@ -89,8 +105,10 @@ class Engine(threading.Thread):
         self._task_sched.schedule_forever(self._config.sched_interval_ms)
 
     def add_pipeline(self, pipeline: Pipeline):
-        """Add a single pipeline to this engine. Pipelines can be added long after an
-        engine has been instantiated.
+        """
+        Add a single pipeline to this engine.
+
+        Pipelines can be added long after an engine has been instantiated.
 
         Args:
             pipeline: `towhee.Pipeline`
@@ -111,8 +129,8 @@ class Engine(threading.Thread):
 
         # Create executor threads and begin running.
         for name in dev_names:
-            executor = ThreadPoolTaskExecutor(
-                name=name, cache_path=self._config.cache_path)
+            executor = ThreadPoolTaskExecutor(name=name, cache_path=self._config.cache_path)
+            executor.framework = self._framework
             self._task_execs.append(executor)
             executor.start()
 

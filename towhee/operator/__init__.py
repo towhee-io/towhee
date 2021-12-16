@@ -11,11 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from towhee.operator.base import Operator, NNOperator, PyOperator, SharedType
 
-
-from towhee.operator.base import Operator, SharedType
-
-__all__ = [
-    "Operator",
-    "SharedType"
-]
+__all__ = ['Operator', 'NNOperator', 'PyOperator', 'SharedType']

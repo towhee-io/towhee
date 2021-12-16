@@ -76,20 +76,20 @@ class _PipelineWrapper:
         return res
 
 
-def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: str = 'main', force_download: bool = False):
+def pipeline(src: str, branch: str = 'main', framework: str = 'pytorch', force_download: bool = False):
     """
-    Entry method which takes either an input task or path to an operator YAML.
+    Entry method which takes either an input task name or path to an operator YAML.
 
-    A `Pipeline` object is created (based on said task) and subsequently added to the
+    A `Pipeline` object is created (based on the src) and subsequently added to the
     existing `Engine`.
 
     Args:
-        task (`str`):
+        src (`str`):
             Task name or YAML file location to use.
-        fmc (`FileManagerConfig`):
-            Optional file manager config for the local instance, defaults to local cache.
         branch (`str`):
             Which branch to use for operators/pipelines on hub, defaults to `main`.
+        framework (`str`):
+            The framework to apply.
         force_download (`bool`):
             Whether to redownload pipeline and operators.
 
@@ -99,14 +99,16 @@ def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: st
     """
     start_engine()
 
-    if os.path.isfile(task):
-        yaml_path = task
+    if os.path.isfile(src):
+        yaml_path = src
     else:
+        fmc = FileManagerConfig()
         fm = FileManager(fmc)
-        task = DEFAULT_PIPELINES.get(task, task)
-        yaml_path = fm.get_pipeline(task, branch, force_download)
+        src = DEFAULT_PIPELINES.get(src, src)
+        yaml_path = fm.get_pipeline(src, branch, force_download)
 
     engine = Engine()
+    engine.framework = framework
     pipeline_ = Pipeline(str(yaml_path))
     engine.add_pipeline(pipeline_)
 

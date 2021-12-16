@@ -23,7 +23,6 @@ class _OperatorStorage:
     """
     Impl operator get and put by different shared_type.
     """
-
     def __init__(self):
         self._shared_type = None
         self._ops = []
@@ -43,16 +42,17 @@ class _OperatorStorage:
         if self._shared_type is None:
             self._shared_type = op.shared_type
 
-        if force_put or self._shared_type in [SharedType.Shareable,
-                                              SharedType.NotShareable]:
+        if force_put or self._shared_type in [SharedType.Shareable, SharedType.NotShareable]:
             self._ops.append(op)
 
 
 class OperatorPool:
-    """`OperatorPool` manages `Operator` creation, acquisition, release, and garbage
+    """
+    `OperatorPool` is used to manage Operators.
+
+    `OperatorPool` manages `Operator` creation, acquisition, release, and garbage
     collection. Each `TaskExecutor` has one `OperatorPool`.
     """
-
     def __init__(self, cache_path: str = None):
         self._op_loader = OperatorLoader(cache_path)
         self._all_ops = {}
@@ -66,22 +66,24 @@ class OperatorPool:
             args_tup = ()
         return (hub_op_id, ) + args_tup
 
-    def acquire_op(self, hub_op_id: str,
-                   op_args: Dict[str, any]) -> Operator:
+    def acquire_op(self, hub_op_id: str, op_args: Dict[str, any], framework: str = 'pytorch') -> Operator:
         """
-        Instruct the `OperatorPool` to reserve and return the
-        specified operator for use in the executor.
+        Instruct the `OperatorPool` to reserve and return the specified operator for
+        use in the executor.
 
         Args:
-            hub_op_id: (`str`)
-            op_args: (`Dict[str, any]`)
-                operator init parameters
+            hub_op_id (`str`):
+                Origin and method/class name of the operator. Used to look up the proper
+                operator in cache.
+            op_args (`Dict[str, any]`):
+                operator init parameters.
+            framework (`str`):
+                The framework to apply.
 
         Returns:
             (`towhee.operator.Operator`)
                 The operator instance reserved for the caller.
         """
-
         # Load the operator if the computed key does not exist in the operator
         # dictionary.
         op_key = OperatorPool._operator_id(hub_op_id, op_args)
@@ -92,7 +94,7 @@ class OperatorPool:
                 self._all_ops[op_key] = storage
 
             if not storage.op_available():
-                op = self._op_loader.load_operator(hub_op_id, op_args)
+                op = self._op_loader.load_operator(hub_op_id, op_args, framework)
                 op.key = op_key
                 storage.put(op, True)
             return storage.get()

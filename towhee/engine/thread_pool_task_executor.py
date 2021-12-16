@@ -34,10 +34,9 @@ class ThreadPoolTaskExecutor(threading.Thread):
                 dev_name_0 = 'cpu:0'
                 dev_name_1 = 'gpu:0'
         cache_path: (`str`)
-            Local path for which operators are stored. Defaults to
+            Local path in which operators are stored. Defaults to
             `$HOME/.towhee/operators`.
     """
-
     def __init__(self, name: str, cache_path: str = None):
         super().__init__()
         self._name = name
@@ -46,6 +45,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
         self._thread_pool = ThreadPoolExecutor()
         self._is_run = True
         self.setDaemon(True)
+        self._framework = 'pytorch'
 
     @property
     def name(self):
@@ -55,19 +55,42 @@ class ThreadPoolTaskExecutor(threading.Thread):
     def num_tasks(self):
         return self._task_queue.qsize()
 
+    @property
+    def framework(self):
+        return self._framework
+
+    @framework.setter
+    def framework(self, framework: str):
+        """
+        Set the framework to use for current pipeline.
+
+        Args:
+            framework (`str`):
+                The framework to apply.
+        """
+        self._framework = framework
+
     def push_task(self, task: RunnerBase) -> bool:
         """Push a task to the end of the task queue.
 
         Args:
-            task:
+            task (`towhee.engine.operator_runner.runner_base.RunnerBase`):
                 Pre-initialized `Task` object to push onto the queue.
         """
         return self._task_queue.put(task)
 
-    def execute(self, runner: RunnerBase):
+    def execute(self, runner: RunnerBase, framework: str = 'pytorch'):
+        """
+        Acquire and execute the operator.
+
+        Args:
+            runner (`towhee.engine.operator_runner.runner_base.RunnerBase`):
+                The op Runner.
+            framework (`str`):
+                The framework to apply.
+        """
         try:
-            op = self._op_pool.acquire_op(runner.hub_op_id,
-                                          runner.op_args)
+            op = self._op_pool.acquire_op(runner.hub_op_id, runner.op_args, framework)
             runner.set_op(op)
             runner.process()
             if runner.is_end() and runner.op is not None:
@@ -91,7 +114,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
             runner = self._task_queue.get()
 
             if self._is_run and runner is not None:
-                self._thread_pool.submit(self.execute, runner)
+                self._thread_pool.submit(self.execute(runner, self._framework))
             else:
                 break
 

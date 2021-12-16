@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from abc import abstractmethod
 from abc import ABC
 from enum import Enum
-
 
 # NotShareable:
 #    Stateful & reusable operator.
@@ -42,16 +40,12 @@ class Operator(ABC):
                 Outputs = NamedTuple("Outputs", [("sum", int)])
                 return Outputs(self._factor + num)
     """
-
     @abstractmethod
     def __init__(self):
         """
         Init operator, before a graph starts, the framework will call Operator __init__ function.
 
         Args:
-
-        Returns:
-            None
 
         Raises:
             An exception during __init__ can terminate the graph run.
@@ -65,9 +59,7 @@ class Operator(ABC):
 
         Args:
 
-
-        Return:
-            NamedTuple
+        Returns:
 
         Raises:
             An exception during __init__ can terminate the graph run.
@@ -87,10 +79,40 @@ class Operator(ABC):
         self._key = value
 
 
-class PyTorchNNOperator(Operator):
+class NNOperator(Operator):
     """
-    PyTorch model operator base
+    Neural Network related operators that involve machine learning frameworks.
+
+    Args:
+        framework (`str`):
+            The framework to apply.
     """
+    def __init__(self, framework: str = 'pytorch'):
+        super().__init__()
+        self._framework = framework
+
+    @property
+    def framework(self):
+        return self._framework
+
+    @framework.setter
+    def framework(self, framework: str):
+        self._framework = framework
+
+    def train(self):
+        """
+        For training model
+        """
+        raise NotImplementedError
+
+
+class PyOperator(Operator):
+    """
+    Python function operator, no machine learning frameworks involved.
+    """
+    def __init__(self):
+        super().__init__()
+        pass
 
     def train(self):
         """

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Union
 
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dataframe import DataFrame
@@ -24,16 +25,15 @@ class Pipeline:
     The runtime pipeline context, include graph context, all dataframes.
 
     Args:
-        graph_repr: (`str` or `towhee.dag.GraphRepr`)
-            The graph representation either as a YAML-formatted string, or directly
-            as an instance of `GraphRepr`.
-        parallelism: (`int`)
+        graph_repr (`Union[towhee.dag.GraphRepr, str]`):
+            The graph representation loaed as a YAML-formatted string, or directly
+            as an instance of `GraphRepr`, or the path leads to the YAML file.
+        parallelism (`int`):
             The parallelism parameter dictates how many copies of the graph context
             we create. This is likely a low number (1-4) for local engines, but may
             be much higher for cloud instances.
     """
-
-    def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
+    def __init__(self, graph_repr: Union[GraphRepr, str], parallelism: int = 1) -> None:
         self._parallelism = parallelism
         self.on_graph_finish_handlers = []
         self._scheduler = None

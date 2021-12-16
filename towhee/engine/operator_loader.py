@@ -16,7 +16,7 @@ import importlib.util
 from pathlib import Path
 from typing import Any, Dict
 
-from towhee.operator import Operator
+from towhee.operator import Operator, NNOperator
 from towhee.operator.nop import NOPOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 from towhee.hub.file_manager import FileManager
@@ -37,16 +37,27 @@ class OperatorLoader:
         else:
             self._cache_path = Path(cache_path)
 
-    def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
-        """Attempts to load an operator from cache. If it does not exist, looks up the
-        operator in a remote location and downloads it to cache instead. By standard
-        convention, the operator must be called `Operator` and all associated data must
-        be contained within a single directory.
+    def load_operator(self, function: str, args: Dict[str, Any], framework: str = 'pytorch') -> Operator:
+        """
+        Attempts to load an operator from cache.
+
+        If it does not exist, looks up the operator in a remote location and downloads
+        it to cache instead. By standard convention, the operator must be called
+        `Operator` and all associated data must be contained within a single directory.
 
         Args:
             function: (`str`)
                 Origin and method/class name of the operator. Used to look up the proper
                 operator in cache.
+            args (`Dict[str, Any]`):
+                Initial args to initialize operators.
+            framework (`str`):
+                The framework to apply.
+
+        Returns:
+            (`towhee.operator.Operator`)
+                The operator instance reserved for the caller.
+
         Raises:
             FileExistsError
                 Cannot find operator.
@@ -73,8 +84,14 @@ class OperatorLoader:
         # Instantiate the operator object and return it to the caller for
         # `load_operator`. By convention, the operator class is simply the CamelCase
         # version of the snake_case operator.
-        op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+        op_name = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+        op_cls = getattr(module, op_name)
+
+        # Attach framework parameter for NNOperator.
+        if issubclass(op_cls, NNOperator) and 'framework' not in args:
+            args['framework'] = framework
+
         if args is not None:
-            return getattr(module, op_cls)(**args)
+            return op_cls(**args)
         else:
-            return getattr(module, op_cls)()
+            return op_cls()
