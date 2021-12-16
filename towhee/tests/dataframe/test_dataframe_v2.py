@@ -15,10 +15,11 @@
 
 import unittest
 import time
+import threading
 
 from towhee.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame
-from towhee.iterators.map_iterator import MapIterator
+from towhee.dataframe.iterators import MapIterator, BatchIterator
 
 
 class TestDataframe(unittest.TestCase):
@@ -58,20 +59,27 @@ class TestDataframe(unittest.TestCase):
         df.put([3,'d'])
         df.put((4, 'e'))
         df.put({'digit': 5, 'letter': 'f'})
-        df.seal()
+        # # MapIters
+        # it = MapIterator(df)
+        # it2 = MapIterator(df)
 
-        it = MapIterator(df)
-        it2 = MapIterator(df)
-
-        for i, row in enumerate(it):
-            print('row, (values, ): ', i, row)
-            print('\nDF Values:\n')
-            print(df)
+        # for i, row in enumerate(it):
+        #     print('row, (values, ): ', i, row)
+        #     print('\nDF Values:\n')
+        #     print(df)
         
-        for i, row in enumerate(it2):
-            print('row, (values, ): ', i, row)
+        # for i, row in enumerate(it2):
+        #     print('row, (values, ): ', i, row)
+        #     print('\nDF Values:\n')
+        #     print(df)
+        
+        # BatchIter
+        it = BatchIterator(df, batch_size=4, block=True)
+        for i, rows in enumerate(it):
+            print('row, (values, ): ', i, rows)
             print('\nDF Values:\n')
             print(df)
+
         
        
         # check_data(df)

@@ -66,7 +66,7 @@ class Array:
         elif isinstance(key, slice):
             print(key)
             if key.start >= self._offset:
-                if key.stop == None:
+                if key.stop is None:
                     stop = None
                 else:
                     stop = key.stop - self._offset

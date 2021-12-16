@@ -38,27 +38,32 @@ class DataFrame:
         data=None,
     ):
         self._name = name
-        self._len = 0
         self._sealed = False
-        
-        self._it_id = 0
 
+        self._iterator_lock = threading.Lock()
+        self._it_id = 0
         self._iterators = []
         self._iterator_offsets = []
-
+        self._iterator_blocked = []
         self._min_offset = 0
 
-        self._lock = threading.Lock()
-        self._seal_cv = threading.Condition(self._lock)
-        self._accessible_cv = threading.Condition(self._lock)
+        self._data_lock = threading.RLock()
+        self._len = 0
+        self._data_as_list = None
+        self._data_as_dict = None
+        
+
+        # Why do we share locks for these conditions?
+        self._seal_cv = threading.Condition(self._data_lock)
+        self._accessible_cv = threading.Condition(self._data_lock)
 
         # TODO: Enforce columns everytime except for when dict passed in.
+        # or supply default 'col_x' naming convention. 
         if columns is not None:
             self._types = {x[0]: x[1] for x in columns}
             self._columns = [x[0] for x in columns]
 
         elif not isinstance(data, dict):
-
             raise ValueError(
                     'Cannot construct dataframe without colum names and types (except for dict).')
 
@@ -93,7 +98,7 @@ class DataFrame:
             raise ValueError('can not construct DataFrame from data type %s' % (type(data)))
 
     def __getitem__(self, key):
-        with self._lock:
+        with self._data_lock:
             # access a row
             if isinstance(key, int):
                 return tuple(self._data_as_list[i][key] for i in range(len(self._data_as_list)))
@@ -105,7 +110,7 @@ class DataFrame:
         ret = ''
         formater = ''
         columns = []
-        with self._lock:
+        with self._data_lock:
             for x in range(len(self._data_as_list)):
                 columns.append(self._data_as_list[x].name)
                 formater += '{' + str(x) + ':30}'
@@ -120,7 +125,8 @@ class DataFrame:
             return ret
 
     def __len__(self):
-        return self._len
+        with self._data_lock:
+            return self._len
 
     @property
     def name(self) -> str:
@@ -128,11 +134,13 @@ class DataFrame:
 
     @property
     def data(self) -> List[Array]:
-        return self._data_as_list
+        with self._data_lock:
+            return self._data_as_list
 
     @property
     def columns(self) -> List[str]:
-        return self._columns
+        with self._data_lock:
+            return self._columns
 
     @property
     def types(self) -> List[Any]:
@@ -140,9 +148,12 @@ class DataFrame:
 
     @property
     def physical_size(self) -> int:
-        return self._data_as_list[0].physical_size
+        with self._data_lock:
+            if self._data_as_list is None:
+                return 0
+            return self._data_as_list[0].physical_size
     
-    def get(self, offset, count, block = True):
+    def get(self, iterator_id, offset, count, block = True):
         with self._accessible_cv:
             if offset < self._min_offset:
                 raise IndexError(
@@ -151,20 +162,43 @@ class DataFrame:
                     name=self._name,
                     cur_start=self._min_offset
                 )
+            
+            if block:
+                self._iterator_blocked[iterator_id] = True
 
-            # # if block and not self._accessible(start, count):
-            # #     self._accessible_cv.wait()
+            while block and not self._accessible(offset, count):
+                self._accessible_cv.wait()
+                if not self._iterator_blocked[iterator_id]:
+                    return None
 
-            # if self._len - offset >= count:
-            #     idx0 = start - self._start_idx
-            #     return self._data[idx0:idx0+count]
+            ret = []
 
-            # # If the `DataFrame` is already sealed, return only the remaining data.
-            # if self._sealed:
-            #     if self._total <= start:
-            #         return None
-            #     return self._data[start:]
-            # return None
+            if self._len - offset >= count:
+                for x in range(offset, offset + count):
+                    ret.append(self.__getitem__(x))
+                self._iterator_blocked[iterator_id] = False
+
+            # If the `DataFrame` is already sealed, return only the remaining data.
+            elif self._sealed:
+                if self._len <= offset:
+                    ret = None
+                    self._iterator_blocked[iterator_id] = False
+                else:
+                    for x in range(offset, self._len):
+                        ret.append(self.__getitem__(x))
+                    self._iterator_blocked[iterator_id] = False
+            else:
+                ret = None
+                self._iterator_blocked[iterator_id] = False
+            print(ret)
+            return ret
+
+    def _accessible(self, offset: int, count: int) -> bool:
+        if self._sealed:
+            return True
+        if self._len - offset >= count:
+            return True
+        return False
 
     def put(self, item) -> None:
         """Put values into dictionary
@@ -176,7 +210,7 @@ class DataFrame:
         """
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, (tuple, dict, list)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
-        with self._lock:
+        with  self._accessible_cv:
             if isinstance(item, list):
                 self._put_list(item)
             elif isinstance(item, dict):
@@ -185,7 +219,7 @@ class DataFrame:
                 self._put_tuple(item)
 
             self._len += 1
-            # self._accessible_cv.notify()
+            self._accessible_cv.notifyAll()
 
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
@@ -297,16 +331,17 @@ class DataFrame:
         self._data_as_dict = data
 
     def gc(self):
-        with self._lock:
+        with self._data_lock:
             self._min_offset = min(self._iterator_offsets)
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
     def register_iter(self, iterator: Iterable):
-        with self._lock:
+        with self._iterator_lock:
             self._it_id += 1
             self._iterators.append(iterator)
             self._iterator_offsets.append(0)
+            self._iterator_blocked.append(False)
             return self._it_id - 1
 
     def ack(self, iter_id, offset):
@@ -323,7 +358,6 @@ class DataFrame:
                 The latest accepted offset.
         """
         # No lock needed since iterators only deal with their index
-        self._iterator_offsets[iter_id] = offset
-        self.gc()
-
-
+        with self._iterator_lock:
+            self._iterator_offsets[iter_id] = offset
+            self.gc()
