@@ -1,4 +1,5 @@
 import weakref
+import time
 
 from towhee.dataframe.dataframe_v2 import DataFrame
 
@@ -12,6 +13,7 @@ class MapIterator:
         self._offset = 0
         self._block = block
         self._id = df.register_iter(self)
+        self._done = False
 
     def __iter__(self):
         return self
@@ -30,23 +32,47 @@ class MapIterator:
                 The iteration end iff the `DataFrame` is sealed and the last row is
                 reached.
         """
-        df = self._df_ref()
-        if len(df) == self._offset:
-            if df.is_sealed():
-                raise StopIteration
-
-        rows = df.get(self._id, self._offset, block=self._block)
-
-        if rows == -1:
+        if self._done:
             raise StopIteration
 
-        elif rows is None:
+        df = self._df_ref()
+
+        code, row = df.get(self._offset, count = 1)
+
+        if code == 'Index_GC':
+            raise IndexError
+
+        elif code == 'Index_OOB_Unsealed':
+            if self._block:
+                while code == 'Index_OOB_Unsealed':
+                    time.sleep(1)
+                    code, row = df.get(self._offset, count = 1)
+
+                if code == 'Killed':
+                    raise StopIteration
+
+                else:
+                    df.ack(self._id, self._offset)
+                    self._offset += 1
+                    return row
+
             return None
 
-        else:
-            self._offset += 1
+        elif code == 'Approved_Continue':
             df.ack(self._id, self._offset)
-            return rows
+            self._offset += 1
+            return row
+
+        elif code == 'Index_OOB_Sealed':
+            raise StopIteration
+
+        elif code == 'Approved_Done':
+            self._done = True
+            return row
+
+        else: # 'unkown_error'
+            raise Exception
+
 
 class BatchIterator:
     """
@@ -59,6 +85,7 @@ class BatchIterator:
         self._step = step
         self._block = block
         self._id = df.register_iter(self)
+        self._done = False
 
     def __iter__(self):
         return self
@@ -77,20 +104,43 @@ class BatchIterator:
                 The iteration end iff the `DataFrame` is sealed and the last row is
                 reached.
         """
-        df = self._df_ref()
-        if len(df) == self._offset:
-            if df.is_sealed():
-                raise StopIteration
-
-        rows = df.get(self._id, self._offset, self._batch_size, block=self._block)
-
-        if rows == -1:
+        if self._done:
             raise StopIteration
 
-        elif rows is None:
+        df = self._df_ref()
+
+        code, row = df.get(self._offset, count = self._batch_size)
+
+        if code == 'Index_GC':
+            raise IndexError
+
+        elif code == 'Index_OOB_Unsealed':
+            if self._block:
+                while code == 'Index_OOB_Unsealed':
+                    time.sleep(1)
+                    code, row = df.get(self._offset, count = self._batch_size)
+
+                if code == 'Killed':
+                    raise StopIteration
+
+                else:
+                    df.ack(self._id, self._offset)
+                    self._offset += self._step
+                    return row
+
             return None
 
-        else:
-            self._offset += self._step
+        elif code == 'Approved_Continue':
             df.ack(self._id, self._offset)
-            return rows
+            self._offset += self._step
+            return row
+
+        elif code == 'Index_OOB_Sealed':
+            raise StopIteration
+
+        elif code == 'Approved_Done':
+            self._done = True
+            return row
+
+        else: # 'unkown_error'
+            raise Exception

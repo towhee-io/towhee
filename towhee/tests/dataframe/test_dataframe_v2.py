@@ -61,25 +61,25 @@ class TestDataframe(unittest.TestCase):
         df.put({'digit': 5, 'letter': 'f'})
         df.seal()
         # # MapIters
-        # it = MapIterator(df)
+        # it = MapIterator(df, block=True)
         # it2 = MapIterator(df)
 
         # for i, row in enumerate(it):
         #     print('row, (values, ): ', i, row)
         #     print('\nDF Values:\n')
         #     print(df)
-        
+
         # for i, row in enumerate(it2):
         #     print('row, (values, ): ', i, row)
         #     print('\nDF Values:\n')
         #     print(df)
-        
-        # BatchIter
-        it = BatchIterator(df, batch_size=4, block=True)
-        for i, rows in enumerate(it):
-            print('row, (values, ): ', i, rows)
-            print('\nDF Values:\n')
-            print(df)
+    
+        # # BatchIter
+        # it = BatchIterator(df, batch_size=4, block=True)
+        # for i, rows in enumerate(it):
+        #     print('row, (values, ): ', i, rows)
+        #     print('\nDF Values:\n')
+        #     print(df)
 
         
        

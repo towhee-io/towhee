@@ -44,17 +44,12 @@ class DataFrame:
         self._it_id = 0
         self._iterators = []
         self._iterator_offsets = []
-        self._iterator_blocked = []
         self._min_offset = 0
 
         self._data_lock = threading.RLock()
         self._len = 0
         self._data_as_list = None
         self._data_as_dict = None
-
-        # Why do we share locks for these conditions?
-        self._seal_cv = threading.Condition(self._data_lock)
-        self._accessible_cv = threading.Condition(self._data_lock)
 
         # TODO: Enforce columns everytime except for when dict passed in.
         # or supply default 'col_x' naming convention.
@@ -152,58 +147,27 @@ class DataFrame:
                 return 0
             return self._data_as_list[0].physical_size
 
-    def get(self, iterator_id, offset, count, block = True):
-        with self._accessible_cv:
+    def get(self, iter_id, offset, count = 1):
+        with self._data_lock and self._iterator_lock:
             if offset < self._min_offset:
-                raise IndexError(
-                    'Can not read from {start}, dataframe {name} start index is {cur_start}',
-                    start=offset,
-                    name=self._name,
-                    cur_start=self._min_offset
-                )
-            
-            ret = []
+                return 'Index_GC', None
 
-            if block:
-                self._iterator_blocked[iterator_id] = True
+            elif offset + count <= self._len:
+                return 'Approved_Continue', [self.__getitem__(x) for x in range(offset, offset + count)]
 
-            # If blocking call, wait for the data to be available or the df to be sealed.
-            # Once notified, if the iterator was set to not block that means that it was
-            # manually killed, resulting in returning -1, which will cause a stop iteration
-            # in the iterator.  
-            while block and not self._accessible(offset, count):
-                self._accessible_cv.wait()
-                if not self._iterator_blocked[iterator_id]:
-                    return -1
-
-
-            if self._len - offset >= count:
-                for x in range(offset, offset + count):
-                    ret.append(self.__getitem__(x))
-                self._iterator_blocked[iterator_id] = False
-
-            # If the `DataFrame` is already sealed, return only the remaining data.
             elif self._sealed:
-                # TODO Have this logic in iterator or here
                 if self._len <= offset:
-                    ret = -1
-                    self._iterator_blocked[iterator_id] = False
+                    return 'Index_OOB_Sealed', None
                 else:
-                    for x in range(offset, self._len):
-                        ret.append(self.__getitem__(x))
-                    self._iterator_blocked[iterator_id] = False
+                    return 'Approved_Done', [self.__getitem__(x) for x in range(offset, self._len)]
+
+            elif offset >= self._len:
+                if self._iterators[iter_id] is None:
+                        return 'Kill', None
+                return 'Index_OOB_Unsealed', None
+
             else:
-                ret = None
-                self._iterator_blocked[iterator_id] = False
-
-            return ret
-
-    def _accessible(self, offset: int, count: int) -> bool:
-        if self._sealed:
-            return True
-        if self._len - offset >= count:
-            return True
-        return False
+                return 'Unkown_Error', None
 
     def put(self, item) -> None:
         """Put values into dictionary
@@ -215,7 +179,7 @@ class DataFrame:
         """
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, (tuple, dict, list)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
-        with  self._accessible_cv:
+        with  self._data_lock:
             if isinstance(item, list):
                 self._put_list(item)
             elif isinstance(item, dict):
@@ -224,7 +188,6 @@ class DataFrame:
                 self._put_tuple(item)
 
             self._len += 1
-            self._accessible_cv.notifyAll()
 
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
@@ -257,19 +220,12 @@ class DataFrame:
             self._data_as_list[self._columns.index(key)].put(val)
 
     def seal(self):
-        with self._seal_cv:
+        with self._data_lock:
             self._sealed = True
-            self._seal_cv.notify_all()
-            self._accessible_cv.notify_all()
 
     def is_sealed(self) -> bool:
-        with self._seal_cv:
+        with self._data_lock:
             return self._sealed
-
-    def wait_sealed(self):
-        with self._seal_cv:
-            while not self._sealed:
-                self._seal_cv.wait()
 
     def _from_tuples(self, data, columns):
         # check tuple length
@@ -336,8 +292,12 @@ class DataFrame:
         self._data_as_dict = data
 
     def gc(self):
-        with self._data_lock:
+        with self._data_lock and self._iterator_lock:
+            
             self._min_offset = min(self._iterator_offsets)
+            if self._min_offset == float('inf'):
+                raise ValueError('All iterators killed')
+
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
@@ -346,8 +306,13 @@ class DataFrame:
             self._it_id += 1
             self._iterators.append(iterator)
             self._iterator_offsets.append(0)
-            self._iterator_blocked.append(False)
             return self._it_id - 1
+
+    def kill_iter(self, iter_id):
+        with self._iterator_lock:
+            self._iterators[iter_id] = None
+            self._iterator_offsets[iter_id] = float('inf')
+
 
     def ack(self, iter_id, offset):
         """
@@ -364,15 +329,6 @@ class DataFrame:
         """
         # No lock needed since iterators only deal with their index
         with self._iterator_lock:
-            self._iterator_offsets[iter_id] = offset
+            if self._iterator_offsets[iter_id] <= (offset + 1):
+                self._iterator_offsets[iter_id] = offset + 1
             self.gc()
-
-    def notify_all_readers(self):
-        with self._accessible_cv:
-            self._iterator_blocked = [False for _ in self._iterator_blocked]
-            self._accessible_cv.notify_all()
-
-    def notfiy_iterator(self, iterator_id):
-        with self._accesible_cv:
-            self._iterator_blocked[iterator_id] = False
-            self._accessible_cv.notify_all()
