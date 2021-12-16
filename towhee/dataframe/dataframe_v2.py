@@ -51,14 +51,13 @@ class DataFrame:
         self._len = 0
         self._data_as_list = None
         self._data_as_dict = None
-        
 
         # Why do we share locks for these conditions?
         self._seal_cv = threading.Condition(self._data_lock)
         self._accessible_cv = threading.Condition(self._data_lock)
 
         # TODO: Enforce columns everytime except for when dict passed in.
-        # or supply default 'col_x' naming convention. 
+        # or supply default 'col_x' naming convention.
         if columns is not None:
             self._types = {x[0]: x[1] for x in columns}
             self._columns = [x[0] for x in columns]
@@ -68,7 +67,7 @@ class DataFrame:
                     'Cannot construct dataframe without colum names and types (except for dict).')
 
         # For `data` is empty
-        # TODO: Create arrays even when empty. 
+        # TODO: Create arrays even when empty.
         if not data:
             pass
 
@@ -152,7 +151,7 @@ class DataFrame:
             if self._data_as_list is None:
                 return 0
             return self._data_as_list[0].physical_size
-    
+
     def get(self, iterator_id, offset, count, block = True):
         with self._accessible_cv:
             if offset < self._min_offset:
@@ -163,15 +162,20 @@ class DataFrame:
                     cur_start=self._min_offset
                 )
             
+            ret = []
+
             if block:
                 self._iterator_blocked[iterator_id] = True
 
+            # If blocking call, wait for the data to be available or the df to be sealed.
+            # Once notified, if the iterator was set to not block that means that it was
+            # manually killed, resulting in returning -1, which will cause a stop iteration
+            # in the iterator.  
             while block and not self._accessible(offset, count):
                 self._accessible_cv.wait()
                 if not self._iterator_blocked[iterator_id]:
-                    return None
+                    return -1
 
-            ret = []
 
             if self._len - offset >= count:
                 for x in range(offset, offset + count):
@@ -180,8 +184,9 @@ class DataFrame:
 
             # If the `DataFrame` is already sealed, return only the remaining data.
             elif self._sealed:
+                # TODO Have this logic in iterator or here
                 if self._len <= offset:
-                    ret = None
+                    ret = -1
                     self._iterator_blocked[iterator_id] = False
                 else:
                     for x in range(offset, self._len):
@@ -190,6 +195,7 @@ class DataFrame:
             else:
                 ret = None
                 self._iterator_blocked[iterator_id] = False
+
             return ret
 
     def _accessible(self, offset: int, count: int) -> bool:
@@ -259,7 +265,7 @@ class DataFrame:
     def is_sealed(self) -> bool:
         with self._seal_cv:
             return self._sealed
-    
+
     def wait_sealed(self):
         with self._seal_cv:
             while not self._sealed:
@@ -360,12 +366,12 @@ class DataFrame:
         with self._iterator_lock:
             self._iterator_offsets[iter_id] = offset
             self.gc()
-    
+
     def notify_all_readers(self):
         with self._accessible_cv:
             self._iterator_blocked = [False for _ in self._iterator_blocked]
             self._accessible_cv.notify_all()
-    
+
     def notfiy_iterator(self, iterator_id):
         with self._accesible_cv:
             self._iterator_blocked[iterator_id] = False

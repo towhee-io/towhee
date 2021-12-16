@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import List, Tuple, Union
+from typing import List, Union
 
 
 class Array:
@@ -90,7 +90,7 @@ class Array:
         Number of elements in the `Array`.
         """
         return len(self._data) + self._offset
-    
+
     @property
     def name(self) -> str:
         """
@@ -111,7 +111,7 @@ class Array:
         Data of the `Array`
         """
         return self._data
-    
+
     def get_relative(self, key: int):
         return self._data[key + self._offset]
 

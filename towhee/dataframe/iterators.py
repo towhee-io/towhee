@@ -10,6 +10,7 @@ class MapIterator:
     def __init__(self, df: DataFrame, block = False):
         self._df_ref = weakref.ref(df)
         self._offset = 0
+        self._block = block
         self._id = df.register_iter(self)
 
     def __iter__(self):
@@ -32,16 +33,20 @@ class MapIterator:
         df = self._df_ref()
         if len(df) == self._offset:
             if df.is_sealed():
-                # Already reach the last row
                 raise StopIteration
-            else:
-                # No more ready rows
-                return None
+
+        rows = df.get(self._id, self._offset, block=self._block)
+
+        if rows == -1:
+            raise StopIteration
+
+        elif rows is None:
+            return None
+
         else:
-            row = df[self._offset]
             self._offset += 1
             df.ack(self._id, self._offset)
-            return row
+            return rows
 
 class BatchIterator:
     """
@@ -73,17 +78,19 @@ class BatchIterator:
                 reached.
         """
         df = self._df_ref()
-        if len(df) <= self._offset:
+        if len(df) == self._offset:
             if df.is_sealed():
-                # Already reach the last row
                 raise StopIteration
-            else:
-                # No more ready rows
-                return None
+
+        rows = df.get(self._id, self._offset, self._batch_size, block=self._block)
+
+        if rows == -1:
+            raise StopIteration
+
+        elif rows is None:
+            return None
+
         else:
-            rows = df.get(self._id, self._offset, self._batch_size, block=self._block)
             self._offset += self._step
             df.ack(self._id, self._offset)
             return rows
-            
-       
