@@ -59,6 +59,7 @@ class TestDataframe(unittest.TestCase):
         df.put([3,'d'])
         df.put((4, 'e'))
         df.put({'digit': 5, 'letter': 'f'})
+        df.seal()
         # # MapIters
         # it = MapIterator(df)
         # it2 = MapIterator(df)

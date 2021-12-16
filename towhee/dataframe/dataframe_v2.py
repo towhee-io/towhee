@@ -190,7 +190,6 @@ class DataFrame:
             else:
                 ret = None
                 self._iterator_blocked[iterator_id] = False
-            print(ret)
             return ret
 
     def _accessible(self, offset: int, count: int) -> bool:
@@ -361,3 +360,13 @@ class DataFrame:
         with self._iterator_lock:
             self._iterator_offsets[iter_id] = offset
             self.gc()
+    
+    def notify_all_readers(self):
+        with self._accessible_cv:
+            self._iterator_blocked = [False for _ in self._iterator_blocked]
+            self._accessible_cv.notify_all()
+    
+    def notfiy_iterator(self, iterator_id):
+        with self._accesible_cv:
+            self._iterator_blocked[iterator_id] = False
+            self._accessible_cv.notify_all()

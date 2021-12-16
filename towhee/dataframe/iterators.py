@@ -47,10 +47,11 @@ class BatchIterator:
     """
     A row-based `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame, batch_size = 1,  block = False):
+    def __init__(self, df: DataFrame, batch_size = 1, step = 1, block = False):
         self._df_ref = weakref.ref(df)
         self._offset = 0
         self._batch_size = batch_size
+        self._step = step
         self._block = block
         self._id = df.register_iter(self)
 
@@ -81,7 +82,7 @@ class BatchIterator:
                 return None
         else:
             rows = df.get(self._id, self._offset, self._batch_size, block=self._block)
-            self._offset += self._batch_size
+            self._offset += self._step
             df.ack(self._id, self._offset)
             return rows
             

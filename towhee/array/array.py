@@ -64,7 +64,6 @@ class Array:
             else:
                 raise IndexError('element with index=%d has been released' % (key))
         elif isinstance(key, slice):
-            print(key)
             if key.start >= self._offset:
                 if key.stop is None:
                     stop = None
