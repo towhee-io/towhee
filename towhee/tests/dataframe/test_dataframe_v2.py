@@ -16,6 +16,8 @@
 import unittest
 import time
 import threading
+import queue
+
 
 from towhee.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame
@@ -109,37 +111,39 @@ class TestDataframe(unittest.TestCase):
         # check_data(df)
         # for x in range(len(df)):
 
-    def test_put(self):
-        columns = self.get_columns()
-        data = (0, 'a')
-        df = DataFrame(columns, name = 'test')
-        t = DfWriter(df, 10, data)
-        t.start()
-        t.join()
-        self.assertEqual(df.name, 'test')
-        self.assertEqual(len(df), 10)
-        datas = df.get(0, 4)
-        self.assertEqual(datas[0], 'Approved_Continue')
-        self.assertEqual(len(datas[1]), 4)
+    # def test_put(self):
+    #     columns = self.get_columns()
+    #     data = (0, 'a')
+    #     df = DataFrame(columns, name = 'test')
+    #     t = DfWriter(df, 10, data)
+    #     t.start()
+    #     t.join()
+    #     self.assertEqual(df.name, 'test')
+    #     self.assertEqual(len(df), 10)
+    #     datas = df.get(0, 4)
+    #     self.assertEqual(datas[0], 'Approved_Continue')
+    #     self.assertEqual(len(datas[1]), 4)
 
-        datas = df.get(8, 4)
-        self.assertEqual(datas[0], 'Index_OOB_Unsealed')
-        self.assertEqual(datas[1], None)
+    #     datas = df.get(8, 4)
+    #     self.assertEqual(datas[0], 'Index_OOB_Unsealed')
+    #     self.assertEqual(datas[1], None)
 
 
-        self.assertFalse(df.sealed)
-        df.seal()
-        self.assertTrue(df.sealed)
+    #     self.assertFalse(df.sealed)
+    #     df.seal()
+    #     self.assertTrue(df.sealed)
 
-        datas = df.get(8, 4)
-        print(datas)
-        self.assertEqual(datas[0], 'Approved_Done')
-        self.assertEqual(len(datas[1]), 2)
+    #     datas = df.get(8, 4)
+    #     print(datas)
+    #     self.assertEqual(datas[0], 'Approved_Done')
+    #     self.assertEqual(len(datas[1]), 2)
 
     # def test_multithread(self):
-    #     df = DataFrame('test')
+    #     columns = self.get_columns()
+    #     df = DataFrame(columns, name = 'test')
     #     data_size = 10
-    #     t = DfWriter(df, data_size)
+    #     data = (0, 'a')
+    #     t = DfWriter(df, data_size, data=data)
     #     t.set_sealed_when_stop()
     #     t.start()
     #     q = queue.Queue()
@@ -148,14 +152,14 @@ class TestDataframe(unittest.TestCase):
     #         index = 0
     #         while True:
     #             items = df.get(index, 2)
-    #             if items:
-    #                 for item in items:
+    #             if items[1]:
+    #                 for item in items[1]:
     #                     q.put(item)
     #                     index += 1
     #             if df.sealed:
     #                 items = df.get(index, 100)
-    #                 if items:
-    #                     for item in items:
+    #                 if items[1]:
+    #                     for item in items[1]:
     #                         q.put(item)
     #                 break
 
@@ -165,6 +169,10 @@ class TestDataframe(unittest.TestCase):
     #     runner.join()
 
     #     self.assertEqual(q.qsize(), data_size * 10)
+
+
+
+
 
 
 
