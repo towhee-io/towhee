@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 from typing import List, Tuple
 
 from towhee.dataframe import DataFrame
@@ -97,11 +97,14 @@ def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: st
         (`typing.Any`)
             The `Pipeline` output.
     """
-    fm = FileManager(fmc)
-
     start_engine()
-    task = DEFAULT_PIPELINES.get(task, task)
-    yaml_path = fm.get_pipeline(task, branch, force_download)
+
+    if os.path.isfile(task):
+        yaml_path = task
+    else:
+        fm = FileManager(fmc)
+        task = DEFAULT_PIPELINES.get(task, task)
+        yaml_path = fm.get_pipeline(task, branch, force_download)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))

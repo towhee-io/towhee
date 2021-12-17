@@ -337,7 +337,7 @@ class FileManager():
                     # Error logging.
                     rmtree(file_path.parent)
 
-                if file_path.is_file() is False:
+                if not file_path.is_file():
                     download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
 
         return file_path
