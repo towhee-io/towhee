@@ -64,7 +64,7 @@ class DataFrame:
         # For `data` is empty
         # TODO: Create arrays even when empty.
         if not data:
-            pass
+            self._from_none()
 
         # For `data` is `list`
         elif isinstance(data, list):
@@ -76,10 +76,10 @@ class DataFrame:
 
             # For `data` is `list[tuple]`
             if container_type is tuple:
-                self._from_tuples(data, columns)
+                self._from_tuples(data)
             # For `data` is `list[towhee.Array]`
             elif container_type is Array:
-                self._from_arrays(data, columns)
+                self._from_arrays(data)
             else:
                 raise ValueError('can not construct DataFrame from list[%s]' % (container_type))
 
@@ -148,7 +148,7 @@ class DataFrame:
             return self._data_as_list[0].physical_size
 
     def get(self, iter_id, offset, count = 1):
-        with self._data_lock and self._iterator_lock:
+        with self._data_lock:
             if offset < self._min_offset:
                 return 'Index_GC', None
 
@@ -227,7 +227,11 @@ class DataFrame:
         with self._data_lock:
             return self._sealed
 
-    def _from_tuples(self, data, columns):
+    def _from_none(self):
+        self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]
+        self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(len(self._columns))}
+
+    def _from_tuples(self, data):
         # check tuple length
         tuple_lengths = set(len(i) for i in data)
         if len(tuple_lengths) == 1:
@@ -236,13 +240,13 @@ class DataFrame:
             raise ValueError('can not construct DataFrame from unequal-length tuples')
 
         # check columns length
-        if columns and len(columns) != tuple_length:
+        if self._columns and len(self._columns) != tuple_length:
             raise ValueError('length of columns is not equal to the length of tuple')
 
         # create arrays
-        if columns:
-            self._data_as_list = [Array(name=columns[i][0]) for i in range(tuple_length)]
-            self._data_as_dict = {columns[i][0]: self._data_as_list[i] for i in range(tuple_length)}
+        if self._columns:
+            self._data_as_list = [Array(name=self._columns[i]) for i in range(tuple_length)]
+            self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(tuple_length)}
         else:
             self._data_as_list = [Array()] * tuple_length
             self._data_as_dict = None
@@ -254,7 +258,7 @@ class DataFrame:
 
         self._len = len(data)
 
-    def _from_arrays(self, data, columns):
+    def _from_arrays(self, data):
         # check array length
         array_lengths = set(len(array) for array in data)
         if len(array_lengths) != 1:
@@ -263,13 +267,13 @@ class DataFrame:
         self._len = array_lengths.pop()
 
         # check columns length
-        if columns and len(columns) != len(data):
+        if self._columns and len(self._columns) != len(data):
             raise ValueError('length of columns is not equal to the number of arrays')
 
         self._data_as_list = data
 
-        if columns:
-            self._data_as_dict = {columns[i][0]: self._data_as_list[i] for i in range(len(data))}
+        if self._columns:
+            self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(len(data))}
         else:
             self._data_as_dict = None
 
@@ -292,8 +296,7 @@ class DataFrame:
         self._data_as_dict = data
 
     def gc(self):
-        with self._data_lock and self._iterator_lock:
-            
+        with self._data_lock:
             self._min_offset = min(self._iterator_offsets)
             if self._min_offset == float('inf'):
                 raise ValueError('All iterators killed')
