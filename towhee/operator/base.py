@@ -19,11 +19,14 @@ from enum import Enum
 
 
 # NotShareable:
-#    Stateful operator
+#    Stateful & reusable operator.
+
+# NotRusable:
+#    Stateful & not reusable operator.
 
 # Shareable:
 #    Stateless operator
-SharedType = Enum('SharedType', ('NotShareable', 'Shareable'))
+SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
 
 class Operator(ABC):
@@ -77,7 +80,7 @@ class Operator(ABC):
 
     @property
     def shared_type(self):
-        return SharedType.NotShared
+        return SharedType.NotShareable
 
     @key.setter
     def key(self, value):

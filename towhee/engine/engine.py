@@ -16,6 +16,7 @@ import threading
 
 from towhee.engine.singleton import singleton
 from towhee.engine.pipeline import Pipeline
+from towhee.errors import SchedulerTypeError
 from towhee.engine.task_scheduler import BasicScheduler
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 
@@ -96,10 +97,6 @@ class Engine(threading.Thread):
                 A single pipeline with which this engine will be assume execution
                 responsibility.
         """
-        # pipeline.add_task_ready_handler(self._on_task_ready)
-        # pipeline.add_task_start_handler(self._on_task_start)
-        # pipeline.add_task_finish_handler(self._on_task_finish)
-
         pipeline.register(self._task_sched)
         self._pipelines.append(pipeline)
 
@@ -129,7 +126,7 @@ class Engine(threading.Thread):
         if sched_type == 'basic':
             self._task_sched = BasicScheduler(self._task_execs)
         else:
-            raise ValueError(f'Invalid scheduler type - {sched_type}')
+            raise SchedulerTypeError(f'Invalid scheduler type - {sched_type}')
 
 
 _engine_lock = threading.Lock()

@@ -17,6 +17,7 @@ from PIL import Image
 # from shutil import rmtree
 
 from towhee import pipeline
+from towhee.errors import OpFailedError
 from towhee.tests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 
@@ -71,7 +72,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_error_input(self):
         p = pipeline('local/simple_pipeline')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(OpFailedError):
             p('xx')
 
     def test_test_concat(self):

@@ -20,7 +20,7 @@ from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.dataframe import DataFrame
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner import create_runner
-from towhee.engine.thread_pool_task_executor import ThreadPoolExecutor
+from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 
 
 class OpStatus(Enum):
@@ -45,15 +45,9 @@ class OperatorContext:
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
-
-    def __init__(
-        self,
-        op_repr: OperatorRepr,
-        dataframes: Dict[str, DataFrame]
-    ):
+    def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
         iter_type = op_repr.iter_info['type']
-
         reader_inputs = {}
         input_order = []
         for x in op_repr.inputs:
@@ -69,8 +63,7 @@ class OperatorContext:
 
         self._reader = create_reader(reader_inputs, input_order, iter_type)
 
-        outputs = list({dataframes[output['df']]
-                       for output in op_repr.outputs})
+        outputs = list({dataframes[output['df']] for output in op_repr.outputs})
 
         self._writer = create_writer(iter_type, outputs)
         self._op_runners = []
@@ -109,7 +102,7 @@ class OperatorContext:
             self._op_status = OpStatus.FINISHED
         return self._op_status
 
-    def start(self, executor: ThreadPoolExecutor, count: int = 1) -> None:
+    def start(self, executor: ThreadPoolTaskExecutor, count: int = 1) -> None:
         if self._op_status != OpStatus.NOT_RUNNING:
             raise RuntimeError('OperatorContext can only be started once')
 
@@ -117,15 +110,23 @@ class OperatorContext:
 
         for i in range(count):
             self._op_runners.append(
-                create_runner(self._repr.iter_info['type'], self._repr.name, i, self._repr.name,
-                              self._repr.function, self._repr.init_args, self._reader, self._writer)
+                create_runner(
+                    self._repr.iter_info['type'],
+                    self._repr.name,
+                    i,
+                    self._repr.name,
+                    self._repr.function,
+                    self._repr.init_args,
+                    self._reader,
+                    self._writer
+                )
             )
         for runner in self._op_runners:
             executor.push_task(runner)
 
     def stop(self):
         if self.status != OpStatus.RUNNING:
-            raise RuntimeError('Op ctx is already not running.')
+            raise RuntimeError('Op ctx is already stopped.')
 
         for runner in self._op_runners:
             runner.set_stop()

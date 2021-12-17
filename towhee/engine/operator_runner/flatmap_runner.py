@@ -14,17 +14,18 @@
 
 from typing import List
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.errors import OpIOTypeError
 
 
-class FlatMapRunner(MapRunner):
+class FlatMapRunner(RunnerBase):
     """
     FlatMap, one input multiple outputs.
     """
 
     def _set_outputs(self, output: List[any]):
         if not isinstance(output, list):
-            raise RuntimeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
+            raise OpIOTypeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
 
         for data in output:
             self._writer.write(data)

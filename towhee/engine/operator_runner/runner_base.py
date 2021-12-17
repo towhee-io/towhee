@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
-from abc import ABC, abstractmethod
+from typing import Dict, Tuple
+from towhee.engine.status import Status
+from abc import ABC
 from enum import Enum, auto
 from threading import Event
 import traceback
@@ -27,6 +28,10 @@ class RunnerStatus(Enum):
     FINISHED = auto()
     FAILED = auto()
 
+    @staticmethod
+    def is_end(status: 'RunnerStatus') -> bool:
+        return status in [RunnerStatus.FINISHED, RunnerStatus.FAILED]
+
 
 class _OpInfo:
     """
@@ -39,11 +44,6 @@ class _OpInfo:
         self._hub_op_id = hub_op_id
         self._msg = None
         self._op_args = op_args
-        self._op_key = _OpInfo._calc_op_key(hub_op_id, op_args)
-
-    @property
-    def op_key(self):
-        return self._op_key
 
     @property
     def op_name(self):
@@ -56,14 +56,6 @@ class _OpInfo:
     @property
     def op_args(self):
         return self._op_args
-
-    @staticmethod
-    def _calc_op_key(hub_op_id: str, op_args: Dict[str, any]):
-        if op_args:
-            args_tup = tuple(sorted(op_args.items()))
-        else:
-            args_tup = ()
-        return (hub_op_id, ) + args_tup
 
 
 class RunnerBase(ABC):
@@ -85,10 +77,7 @@ class RunnerBase(ABC):
         self._writer = writer
         self._need_stop = False
         self._end_event = Event()
-
-    @property
-    def op_key(self):
-        return self._op_info.op_key
+        self._op = None
 
     def _set_end_status(self, status: RunnerStatus):
         self._set_status(status)
@@ -114,6 +103,19 @@ class RunnerBase(ABC):
     @property
     def msg(self):
         return self._msg
+
+    @property
+    def op(self):
+        return self._op
+
+    def is_end(self) -> bool:
+        return RunnerStatus.is_end(self.status)
+
+    def set_op(self, op):
+        self._op = op
+
+    def unset_op(self):
+        self._op = None
 
     def _set_finished(self) -> None:
         self._set_end_status(RunnerStatus.FINISHED)
@@ -147,9 +149,42 @@ class RunnerBase(ABC):
     def __str__(self) -> str:
         return '{}:{}'.format(self._name, self._index)
 
-    @abstractmethod
+    def _call_op(self, inputs) -> Status:
+        try:
+            outputs = self._op(**inputs)
+            return Status.ok_status(outputs)
+        except Exception as e:  # pylint: disable=broad-except
+            err = '{}, {}'.format(str(e), traceback.format_exc())
+            return Status.err_status(err)
+
+    def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
+        try:
+            data = self._reader.read()
+            return False, data
+        except StopIteration:
+            return True, None
+
+    def _set_outputs(self, output: any):
+        self._writer.write(output)
+
     def process_step(self) -> bool:
-        raise NotImplementedError
+        is_end, op_input_params = self._get_inputs()
+        if is_end:
+            self._set_finished()
+            return True
+
+        if op_input_params is None:
+            # No data in dataframe, but dataframe is not sealed
+            self._set_idle()
+            return True
+
+        st = self._call_op(op_input_params)
+        if st.is_ok():
+            self._set_outputs(st.data)
+            return False
+        else:
+            self._set_failed(st.msg)
+            return True
 
     def join(self):
         self._end_event.wait()

@@ -13,9 +13,39 @@
 # limitations under the License.
 
 from typing import Dict
+import threading
 
-from towhee.operator import Operator
+from towhee.operator import Operator, SharedType
 from towhee.engine.operator_loader import OperatorLoader
+
+
+class _OperatorStorage:
+    """
+    Impl operator get and put by different shared_type.
+    """
+
+    def __init__(self):
+        self._shared_type = None
+        self._ops = []
+
+    def op_available(self) -> bool:
+        return self._shared_type is not None and len(self._ops) > 0
+
+    def get(self):
+        assert self._shared_type is not None and len(self._ops) != 0
+
+        op = self._ops[-1]
+        if self._shared_type != SharedType.Shareable:
+            self._ops.pop()
+        return op
+
+    def put(self, op: Operator, force_put: bool = False):
+        if self._shared_type is None:
+            self._shared_type = op.shared_type
+
+        if force_put or self._shared_type in [SharedType.Shareable,
+                                              SharedType.NotShareable]:
+            self._ops.append(op)
 
 
 class OperatorPool:
@@ -26,34 +56,26 @@ class OperatorPool:
     def __init__(self, cache_path: str = None):
         self._op_loader = OperatorLoader(cache_path)
         self._all_ops = {}
+        self._lock = threading.Lock()
 
-    @property
-    def available_ops(self):
-        return self._all_ops.keys()
+    @staticmethod
+    def _operator_id(hub_op_id: str, op_args: Dict[str, any]):
+        if op_args:
+            args_tup = tuple(sorted(op_args.items()))
+        else:
+            args_tup = ()
+        return (hub_op_id, ) + args_tup
 
-    # def is_op_available(self, task: Task) -> bool:
-    #     """Determines whether an operator that can be used to fulfill the given Task is
-    #     currently loaded.
-
-    #     Args:
-    #         task: (`towhee.Task`)
-    #             Task
-
-    #     Returns:
-    #         (`bool`)
-    #             Returns `True` if the specified input task can be run without having to
-    #             load a new operator from cache.
-    #     """
-    #     return task.op_key in self._all_ops
-
-    def acquire_op(self, op_key: str, hub_op_id: str,
+    def acquire_op(self, hub_op_id: str,
                    op_args: Dict[str, any]) -> Operator:
-        """Given a `Task`, instruct the `OperatorPool` to reserve and return the
+        """
+        Instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
         Args:
-            task: (`towhee.Task`)
-                Task to acquire an operator for.
+            hub_op_id: (`str`)
+            op_args: (`Dict[str, any]`)
+                operator init parameters
 
         Returns:
             (`towhee.operator.Operator`)
@@ -62,17 +84,18 @@ class OperatorPool:
 
         # Load the operator if the computed key does not exist in the operator
         # dictionary.
-        if op_key not in self._all_ops:
-            op = self._op_loader.load_operator(hub_op_id, op_args)
-            op.key = op_key
-        else:
-            op = self._all_ops[op_key]
+        op_key = OperatorPool._operator_id(hub_op_id, op_args)
+        with self._lock:
+            storage = self._all_ops.get(op_key, None)
+            if storage is None:
+                storage = _OperatorStorage()
+                self._all_ops[op_key] = storage
 
-        # Let there be a record of the operator existing in the pool, but remove its
-        # pointer until the operator is released by the `TaskExecutor`.
-        self._all_ops[op_key] = None
-
-        return op
+            if not storage.op_available():
+                op = self._op_loader.load_operator(hub_op_id, op_args)
+                op.key = op_key
+                storage.put(op, True)
+            return storage.get()
 
     def release_op(self, op: Operator):
         """Releases the specified operator and all associated resources back to the
@@ -82,4 +105,6 @@ class OperatorPool:
             op: (`towhee.Operator`)
                 `Operator` instance to add back into the operator pool.
         """
-        self._all_ops[op.key] = op
+        with self._lock:
+            storage = self._all_ops[op.key]
+            storage.put(op)

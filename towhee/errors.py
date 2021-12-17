@@ -12,13 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.engine.operator_runner.runner_base import RunnerBase
 
-
-class MapRunner(RunnerBase):
+class TowheeError(Exception):
     """
-    Map wrapper, one input one output.
+    Towhee exception base.
+    """
 
-    Wrapper will run in task executor in another thread or process.
-    If run an op error, we should pass error info by an error handler.
+
+class OpIOTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class OpFailedError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class OpTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class SchedulerTypeError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class NoSchedulerError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
+class EmptyInputError(TowheeError):  # pylint: disable=empty-docstring
+    """
     """

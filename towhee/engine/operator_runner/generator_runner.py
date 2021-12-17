@@ -15,17 +15,18 @@
 from typing import Generator
 
 
-from towhee.engine.operator_runner.map_runner import MapRunner
+from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.errors import OpIOTypeError
 
 
-class GeneratorRunner(MapRunner):
+class GeneratorRunner(RunnerBase):
     """
     GeneratorRunner, the ops must return a generator.
     """
 
     def _set_outputs(self, output: Generator):
         if not isinstance(output, Generator):
-            raise RuntimeError("Op {}'s output is not a generator".format(self.op_name))
+            raise OpIOTypeError("Op {}'s output is not a generator".format(self.op_name))
 
         for data in output:
             self._writer.write(data)

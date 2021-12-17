@@ -49,16 +49,11 @@ class TestOperatorPool(unittest.TestCase):
         cache_path = Path(__file__).parent.parent.resolve()
         self._op_pool = OperatorPool(cache_path=cache_path)
 
-    def test_init(self):
-        # The list of available ops should be empty upon initialization.
-        self.assertFalse(self._op_pool.available_ops)
-
     def test_acquire_release(self):
         hub_op_id = 'local/add_operator'
         op_info = _OpInfo('add_operator', hub_op_id, {'factor': 0})
 
-        op = self._op_pool.acquire_op(op_info.op_key,
-                                      op_info.hub_op_id,
+        op = self._op_pool.acquire_op(op_info.hub_op_id,
                                       op_info.op_args)
 
         # Perform some simple operations.
@@ -67,8 +62,7 @@ class TestOperatorPool(unittest.TestCase):
 
         # Release and re-acquire the operator.
         self._op_pool.release_op(op)
-        op = self._op_pool.acquire_op(op_info.op_key,
-                                      op_info.hub_op_id,
+        op = self._op_pool.acquire_op(op_info.hub_op_id,
                                       op_info.op_args)
         # Perform more operations.
         self.assertEqual(op(-1).sum, -1)

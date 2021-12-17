@@ -164,36 +164,6 @@ class TestEngine(unittest.TestCase):
         ret = result.get(0, 1)
         self.assertEqual(ret[0][0].value, 7)
 
-    # def test_flatmap_writer(self):
-    #     with open(FLATMAP_PIPELINE_YAML, 'r', encoding='utf-8') as f:
-    #         p = Pipeline(f.read())
-    #     engine = Engine()
-    #     engine.add_pipeline(p)
-
-    #     df_in = DataFrame(
-    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
-
-    #     df_in.put((Variable('int', 3), ))
-    #     df_in.seal()
-    #     result = p(df_in)
-    #     ret = result.get(0, 5)
-
-    #     # 5 is configured in FLATMAP_PIPELINE_YAML, witch means repeat 5 times
-    #     self.assertEqual(len(ret), 5)
-    #     for item in ret:
-    #         self.assertEqual(item[0].value, 3)
-
-    #     df_in = DataFrame(
-    #         'inputs', {'num': {'index': 0, 'type': 'int'}})
-
-    #     df_in.put((Variable('int', 10), ))
-    #     df_in.seal()
-    #     result = p(df_in)
-    #     ret = result.get(0, 5)
-    #     self.assertEqual(len(ret), 5)
-    #     for item in ret:
-    #         self.assertEqual(item[0].value, 10)
-
 
 if __name__ == '__main__':
     unittest.main()
