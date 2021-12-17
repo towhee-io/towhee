@@ -101,6 +101,13 @@ class DataFrame:
                 return self._data_as_dict[key]
 
     def __str__(self):
+
+        def physical_size():
+            with self._data_lock:
+                if self._data_as_list is None:
+                    return 0
+                return self._data_as_list[0].physical_size
+
         ret = ''
         formater = ''
         columns = []
@@ -110,7 +117,7 @@ class DataFrame:
                 formater += '{' + str(x) + ':30}'
             ret += formater.format(*columns) + '\n'
 
-            for x in range(self._min_offset, self._min_offset + self.physical_size):
+            for x in range(self._min_offset, self._min_offset + physical_size()):
                 values = []
                 for i in range(len(self._data_as_list)):
                     values.append(str(self._data_as_list[i][x]))
@@ -140,14 +147,13 @@ class DataFrame:
     def types(self) -> List[Any]:
         return self._types
 
-    @property
-    def physical_size(self) -> int:
-        with self._data_lock:
-            if self._data_as_list is None:
-                return 0
-            return self._data_as_list[0].physical_size
 
-    def get(self, iter_id, offset, count = 1):
+    @property
+    def sealed(self) -> bool:
+        with self._data_lock:
+            return self._sealed
+
+    def get(self, offset, count = 1, iter_id = None):
         with self._data_lock:
             if offset < self._min_offset:
                 return 'Index_GC', None
@@ -160,9 +166,12 @@ class DataFrame:
                     return 'Index_OOB_Sealed', None
                 else:
                     return 'Approved_Done', [self.__getitem__(x) for x in range(offset, self._len)]
+            
+            elif offset + count >= self._len:
+                return 'Index_OOB_Unsealed', None # [self.__getitem__(x) for x in range(offset, self._len)]
 
             elif offset >= self._len:
-                if self._iterators[iter_id] is None:
+                if iter_id and self._iterators[iter_id] is None:
                         return 'Kill', None
                 return 'Index_OOB_Unsealed', None
 
@@ -222,10 +231,6 @@ class DataFrame:
     def seal(self):
         with self._data_lock:
             self._sealed = True
-
-    def is_sealed(self) -> bool:
-        with self._data_lock:
-            return self._sealed
 
     def _from_none(self):
         self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]

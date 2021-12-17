@@ -37,16 +37,16 @@ class MapIterator:
 
         df = self._df_ref()
 
-        code, row = df.get(self._id, self._offset, count = 1)
+        code, row = df.get(self._offset, count = 1, iter_id = self._id)
 
         if code == 'Index_GC':
             raise IndexError
 
-        elif code == 'Index_OOB_Unsealed':
+        elif code == 'Not_Available_Unsealed':
             if self._block:
-                while code == 'Index_OOB_Unsealed':
+                while code == 'Not_Available_Unsealed':
                     time.sleep(1)
-                    code, row = df.get(self._id, self._offset, count = 1)
+                    code, row = df.get(self._offset, count = 1, iter_id = self._id)
 
                 if code == 'Killed':
                     raise StopIteration
@@ -109,16 +109,16 @@ class BatchIterator:
 
         df = self._df_ref()
 
-        code, row = df.get(self._id, self._offset, count = self._batch_size)
+        code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
 
         if code == 'Index_GC':
             raise IndexError
 
-        elif code == 'Index_OOB_Unsealed':
+        elif code == 'Not_Available_Unsealed':
             if self._block:
-                while code == 'Index_OOB_Unsealed':
+                while code == 'Not_Available_Unsealed':
                     time.sleep(1)
-                    code, row = df.get(self._id, self._offset, count = self._batch_size)
+                    code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
 
                 if code == 'Killed':
                     raise StopIteration
