@@ -28,8 +28,8 @@ class TestDownload(unittest.TestCase):
         FileManager(fmc)
 
     def test_pipeline(self):
-        p = pipeline('towhee/ci_test')
-        img = Image.open(CACHE_PATH / 'test_cache/pipelines/ci_test&towhee$main/towhee_logo.png')
+        p = pipeline(CACHE_PATH / 'mock_pipelines/ci_test/ci_test.yaml')
+        img = Image.open(CACHE_PATH / 'mock_pipelines/ci_test/towhee_logo.png')
         res = p(img)
         self.assertEqual(res[0][0].size, 1000)
 

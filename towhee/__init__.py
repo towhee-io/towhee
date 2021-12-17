@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 from typing import List, Tuple
 
 from towhee.dataframe import DataFrame
@@ -23,7 +23,7 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
 DEFAULT_PIPELINES = {
-    'image-embedding': 'towhee/image_embedding_resnet50',
+    'image-embedding': 'towhee/image-embedding-resnet50',
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
@@ -39,7 +39,6 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
-
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -98,11 +97,14 @@ def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: st
         (`typing.Any`)
             The `Pipeline` output.
     """
-    fm = FileManager(fmc)
-
     start_engine()
-    task = DEFAULT_PIPELINES.get(task, task)
-    yaml_path = fm.get_pipeline(task, branch, force_download)
+
+    if os.path.isfile(task):
+        yaml_path = task
+    else:
+        fm = FileManager(fmc)
+        task = DEFAULT_PIPELINES.get(task, task)
+        yaml_path = fm.get_pipeline(task, branch, force_download)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))
