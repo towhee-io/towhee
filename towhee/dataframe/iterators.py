@@ -42,9 +42,9 @@ class MapIterator:
         if code == 'Index_GC':
             raise IndexError
 
-        elif code == 'Not_Available_Unsealed':
+        elif code == 'Index_OOB_Unsealed':
             if self._block:
-                while code == 'Not_Available_Unsealed':
+                while code == 'Index_OOB_Unsealed':
                     time.sleep(1)
                     code, row = df.get(self._offset, count = 1, iter_id = self._id)
 
@@ -114,9 +114,9 @@ class BatchIterator:
         if code == 'Index_GC':
             raise IndexError
 
-        elif code == 'Not_Available_Unsealed':
+        elif code == 'Index_OOB_Unsealed':
             if self._block:
-                while code == 'Not_Available_Unsealed':
+                while code == 'Index_OOB_Unsealed':
                     time.sleep(1)
                     code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
 
