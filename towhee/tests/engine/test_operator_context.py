@@ -120,3 +120,6 @@ class TestOperatorContext(unittest.TestCase):
         op_ctx.stop()
         op_ctx.join()
         self.assertEqual(op_ctx.status, OpStatus.FINISHED)
+
+if __name__ == '__main__':
+    unittest.main()

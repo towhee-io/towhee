@@ -213,6 +213,7 @@ class DataFrameIterator:
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
         self._cur_idx = 0
+        self._df_name = df.name
 
     def __iter__(self):
         return self
@@ -220,6 +221,12 @@ class DataFrameIterator:
     def __next__(self) -> List[Tuple]:
         # The base iterator is purposely defined to have exatly 0 elements.
         raise StopIteration
+
+    @property
+    def df_name(self) -> int:
+        """Returns the df name.
+        """
+        return self._df_name
 
     @property
     def current_index(self) -> int:
@@ -278,14 +285,18 @@ class BatchIterator(DataFrameIterator):
         self._block = block
 
     def __next__(self):
-        data = self._df_ref().get(self._cur_idx, self._size, self._block)
-        if self._df_ref().sealed and not data:
-            raise StopIteration
+        data = None
+        while data is None:
+            data = self._df_ref().get(self._cur_idx, self._size, self._block)
+            if self._df_ref().sealed and not data:
+                raise StopIteration
 
-        if data is not None:
-            self._cur_idx += self._step
-            return data
-        return None
+            if data is not None:
+                self._cur_idx += self._step
+                return data
+
+            elif not self._block:
+                return None
 
 
 class GroupIterator:

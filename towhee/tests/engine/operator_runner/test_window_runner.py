@@ -49,11 +49,14 @@ class TestMapRunner(unittest.TestCase):
         writer = MockWriter()
 
         df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
+        test = {df_in.name: {'df': df_in, 'cols': [('num', 0)]}}
+        input_order = ['num']
+
 
         # We
         runner = WindowRunner('window_test', 0, 'sum_operator',
                               'mock_operators', {},
-                              BatchFrameReader(df_in, {'num': 0}, 5, 3),
+                              BatchFrameReader(test, input_order, 5, 3),
                               writer)
 
         runner.set_op(SumOperator())
@@ -80,11 +83,13 @@ class TestMapRunner(unittest.TestCase):
         writer = MockWriter()
 
         df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
+        test = {df_in.name: {'df': df_in, 'cols': [('num', 0)]}}
+        input_order = ['num']
 
         # We
         runner = WindowRunner('window_test', 0, 'sum_operator',
                               'mock_operators', {},
-                              BatchFrameReader(df_in, {'num': 0}, 5, 3),
+                              BatchFrameReader(test, input_order, 5, 3),
                               writer)
 
         runner.set_op(SumOperator())
@@ -95,3 +100,7 @@ class TestMapRunner(unittest.TestCase):
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
+if __name__ == '__main__':
+    unittest.main()
+

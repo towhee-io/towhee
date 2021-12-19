@@ -47,12 +47,21 @@ class OperatorContext:
     """
     def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
-
-        inputs = list({dataframes[input['df']] for input in op_repr.inputs})
         iter_type = op_repr.iter_info['type']
-        inputs_index = dict((item['name'], item['col']) for item in op_repr.inputs)
-        self.inputs = inputs
-        self._reader = create_reader(inputs, iter_type, inputs_index)
+        reader_inputs = {}
+        input_order = []
+        for x in op_repr.inputs:
+            # If a dataframe is already added, append the new columns.
+            if x['df'] in reader_inputs.keys():
+                reader_inputs[x['df']]['cols'].append((x['name'], x['col']))
+                input_order.append(x['name'])
+            else:
+                reader_inputs[x['df']] = {}
+                reader_inputs[x['df']]['df'] = dataframes[x['df']]
+                reader_inputs[x['df']]['cols'] = [(x['name'], x['col'])]
+                input_order.append(x['name'])
+
+        self._reader = create_reader(reader_inputs, input_order, iter_type)
 
         outputs = list({dataframes[output['df']] for output in op_repr.outputs})
 
