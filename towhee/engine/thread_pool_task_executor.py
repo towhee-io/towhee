@@ -91,7 +91,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
             runner = self._task_queue.get()
 
             if self._is_run and runner is not None:
-                self._thread_pool.submit(self.execute(runner))
+                self._thread_pool.submit(self.execute, runner)
             else:
                 break
 
