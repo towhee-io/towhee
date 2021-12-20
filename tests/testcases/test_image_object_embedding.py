@@ -5,7 +5,7 @@ import time
 import threading
 from towhee import pipeline
 
-data_path = "../data_set/object_image/"
+data_path = "images/"
 
 embedding_size = 1000
 
@@ -160,5 +160,3 @@ class TestImageObjEmbeddingValid:
             t.join()
 
         return True
-
-
