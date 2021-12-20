@@ -1,4 +1,4 @@
-# Towhee Developers' Guidance
+# Towhee Style Guide
 
 ## **Coding Style**
 Towhee's coding style is based on PEP8 and PEP257.
@@ -28,16 +28,16 @@ bar = (
 )
 ```
 *Notes*:
-- Add a level of indent to clearly distinguish hanging indents. 
+- Add a level of indent to clearly distinguish hanging indents.
 - Split before the first arguemnt in hanging indents.
-- Start a new line for the closing parenthesis, brackets, braces. 
+- Start a new line for the closing parenthesis, brackets, braces.
 - Dedent the closing parenthesis, brackets, braces.
 - Split a long line before operators and after commas.
 
 ### **Blank Lines**
 - Leave two blank lines between:
 	- top-level functions and classes.
-- Leave One blank line between 
+- Leave One blank line between
 	- functions defined inside classes.
 	- logical sections inside a function.
 - Leave one blank line at the end of a python file
@@ -53,7 +53,7 @@ class Foo():
 def foo():
     # This is the first logical part.
     ...
-    
+
     # This is the second logical part.
     ...
 
@@ -131,7 +131,7 @@ bar = (0, )
 # Correct:
 if x == 4:
     print x, y; x, y = y, x
-    
+
 # Wrong:
 if x == 4 :
     print x , y ;x , y = y , x
@@ -139,8 +139,8 @@ if x == 4 :
 - The end of a line.
 
 #### **Do use whitespace in following cases:**
-- Surround following operators with a single space on either side: 
-	- assignment (=), 
+- Surround following operators with a single space on either side:
+	- assignment (=),
 	- augmented assignment (+=, -=, etc.)
 	- comparisons (==, <, >, !=, <>, <=, >=, in, not in, is, is not)
 	- booleans (and, or, not).
@@ -185,7 +185,7 @@ def foo(a: Set(str), b: List[int], c: Dict[str, Any]) -> Tuple(int, str):
 *Notes*:
 - Use Set, Dict, List, Tuple instead of set, dict, list, tuple in annotation, also specify the data type inside.
 
-*Special case*: 
+*Special case*:
 - If we want to return a Foo object inside of the Foo class, use string to annotate the return type:
 ```python
 Class Foo():
@@ -240,7 +240,7 @@ Args:
 Returns:
     (`Tuple[bool, int]`)
         Return value description.
-        
+
 Raises:
     (`xxxError`)
         Raise xxxError when ....
@@ -248,9 +248,9 @@ Raises:
 ```
 *Notes*:
 - Start a new line for a brief introduction, do not add an introduction right after the opening """.
-- Use `` (the symbol in the left of 1), not '' when declare the types. 
+- Use `` (the symbol in the left of 1), not '' when declare the types.
 - If needed, add some detailed description after the introduction separated by one blank line.
-- If there is more than one paragraph in the detailed description, separate them with one blank line. 
+- If there is more than one paragraph in the detailed description, separate them with one blank line.
 - If a function does not have Args, Returns or Raises, do not add them in the docstring.
 - In Args, add a colon (':') after (\`type\`), leave whitespace before (\`type\`) .
 - In Returns, Raises, only list the return type and error types, as (\`return/error type\`), no colon(':') needed.
@@ -261,7 +261,7 @@ class Foo():
     Introduction to the Foo class...
 
 	Detailed description...
-    
+
     Args:
         args_0 (`type`):
         ...
@@ -279,7 +279,7 @@ def __init__(
 """
 A one line summary.
 
-This is a complicated function so we need multi-line docstring, this function does something. 
+This is a complicated function so we need multi-line docstring, this function does something.
 
 Functions that do not have return values, raise errors, or need examples can omit the sections below.
 
@@ -310,12 +310,12 @@ Class Foo():
     def generate(args) -> 'Foo':
         """
         Short intro.
-        
+
         Detailed Description.
-        
+
         Args:
             ...
-        
+
         Returns:
             (`path/to/Foo`)
                 Returns a Foo instance.
@@ -336,7 +336,7 @@ MY_CONSTANT
 ```
 - CapWords for class name:
 ```python
-class MyClass(object): 
+class MyClass(object):
 	...
 ```
 - Use one leading underscore only for non-public methods and instance variables:

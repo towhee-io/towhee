@@ -32,7 +32,7 @@ class TestImageObjEmbeddingInvalid:
         method:  embedding with no object image
         expected: raise exception for empty result
         """
-        img = "../../docs/towhee_logo.png"
+        img = "../../towhee_logo.png"
         embedding_pipeline = pipeline(pipeline_name)
         try:
             embedding = embedding_pipeline(img)
@@ -160,5 +160,3 @@ class TestImageObjEmbeddingValid:
             t.join()
 
         return True
-
-

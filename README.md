@@ -1,18 +1,18 @@
-![https://towhee.io](docs/towhee_logo.png)
+![https://towhee.io](towhee_logo.png)
 
 <h3 align="center">
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
 </h3>
 
 [![Slack](https://img.shields.io/badge/join-slack-orange?style=for-the-badge)](https://slack.towhee.io)
+[![Twitter](https://img.shields.io/badge/follow-twitter-blue?style=for-the-badge)](https://twitter.com/towheeio)
 [![License](https://img.shields.io/badge/license-apache2.0-green?style=for-the-badge)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Language](https://img.shields.io/badge/language-python-blue?style=for-the-badge&logoColor=ffdd54)](https://www.python.org/)
 [![Github Actions](https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=for-the-badge)]()
 [![Coverage](https://img.shields.io/codecov/c/github/towhee-io/towhee?style=for-the-badge)]()
 
 ## What is Towhee?
 
-Towhee is an flexible, application-oriented framework for computing embedding vectors over unstructured data. It aims to make democratize `anything2vec`, allowing everyone - from beginner developers to large organizations - to train and deploy complex machine learning pipelines with just a few lines of code.
+Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data. It aims to make democratize `anything2vec`, allowing everyone - from beginner developers to large organizations - to train and deploy complex machine learning pipelines with just a few lines of code.
 
 Towhee has pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://hub.towhee.io).
 
@@ -62,7 +62,7 @@ Custom machine learning pipelines can be defined in a YAML file or via a Spark-l
 >>> embedding_pipeline = pipeline('fzliu/my-embedding-pipeline')
 ```
 
-#### Architecture overview
+### Architecture overview
 
 Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and a singleton `Engine`.
 
@@ -74,7 +74,7 @@ Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and
 
 For a deeper dive into Towhee and its architecture, check out our [documentation](https://docs.towhee.io).
 
-#### Design concepts
+### Design philosophy
 
 Towhee was created with a few key design concepts in mind. We differentiate ourselves from other machine learning frameworks by making machine learning accessible to a variety of users. To do this, we base Towhee's architecture and design around these key features.
 
@@ -83,6 +83,12 @@ Towhee was created with a few key design concepts in mind. We differentiate ours
 - __Convenient__:  Towhee pipelines can be created to implement a variety of practical embedding tasks. We provide a number of pre-built pipelines on our [hub](https://hub.towhee.io).
 
 - __Extensible__: Individual operators within each pipeline can be reconfigured and reused in different pipelines. Pipelines can be deployed anywhere you want - on your local machine, on a server with 4 GPUs, or even in the cloud.
+
+## Contributing
+
+Remember that writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/CONTRIBUTING.md) for more information.
+
+Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
 <br><!-- Do not remove start of hero-bot --><br>
 <img src="https://img.shields.io/badge/all--contributors-16-orange"><br>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
