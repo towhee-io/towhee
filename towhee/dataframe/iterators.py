@@ -44,21 +44,15 @@ class MapIterator:
 
         elif code == 'Index_OOB_Unsealed':
             if self._block:
-                while code == 'Index_OOB_Unsealed':
-                    time.sleep(1)
-                    code, row = df.get(self._offset, count = 1, iter_id = self._id)
-
-                if code == 'Killed':
-                    raise StopIteration
-
-                else:
-                    df.ack(self._id, self._offset)
-                    self._offset += 1
-                    return row
+                cv = df.notify_block(self._offset, 1)
+                with cv:
+                    cv.wait()
+                return self.__next__()
 
             return None
 
         elif code == 'Approved_Continue':
+            # subtract one due to step.
             df.ack(self._id, self._offset)
             self._offset += 1
             return row
@@ -68,7 +62,12 @@ class MapIterator:
 
         elif code == 'Approved_Done':
             self._done = True
+            df.ack(self._id, self._offset)
+            self._offset += 1
             return row
+
+        elif code == 'Killed':
+            raise StopIteration
 
         else: # 'unkown_error'
             raise Exception
@@ -110,32 +109,21 @@ class BatchIterator:
         df = self._df_ref()
 
         code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
-        print(code)
 
         if code == 'Index_GC':
             raise IndexError
 
         elif code == 'Index_OOB_Unsealed':
-            print("waitinging maybe")
             if self._block:
-                if code == 'Index_OOB_Unsealed':
-                    cv = df.notify_block(self._offset, self._batch_size)
-                    with cv:
-                        cv.wait()
-                    code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
-
-                if code == 'Killed':
-                    raise StopIteration
-
-                else:
-                    df.ack(self._id, self._offset)
-                    self._offset += self._step
-                    return row
+                cv = df.notify_block(self._offset, self._batch_size)
+                with cv:
+                    cv.wait()
+                return self.__next__()
 
             return None
 
         elif code == 'Approved_Continue':
-            # subtract one due to step. 
+            # subtract one due to step.
             df.ack(self._id, self._offset + self._step - 1)
             self._offset += self._step
             return row
@@ -145,7 +133,12 @@ class BatchIterator:
 
         elif code == 'Approved_Done':
             self._done = True
+            df.ack(self._id, len(df) - 1)
+            self._offset = len(df)
             return row
+        
+        elif code == 'Killed':
+            raise StopIteration
 
         else: # 'unkown_error'
             raise Exception

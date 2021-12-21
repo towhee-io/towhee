@@ -104,13 +104,6 @@ class DataFrame:
                 return self._data_as_dict[key]
 
     def __str__(self):
-
-        def physical_size():
-            with self._data_lock:
-                if self._data_as_list is None:
-                    return 0
-                return self._data_as_list[0].physical_size
-
         ret = ''
         formater = ''
         columns = []
@@ -120,7 +113,7 @@ class DataFrame:
                 formater += '{' + str(x) + ':30}'
             ret += formater.format(*columns) + '\n'
 
-            for x in range(self._min_offset, self._min_offset + physical_size()):
+            for x in range(self._min_offset, self._min_offset + self.physical_size):
                 values = []
                 for i in range(len(self._data_as_list)):
                     values.append(str(self._data_as_list[i][x]))
@@ -131,6 +124,13 @@ class DataFrame:
     def __len__(self):
         with self._data_lock:
             return self._len
+
+    @property
+    def physical_size(self):
+            with self._data_lock:
+                if self._data_as_list is None:
+                    return 0
+                return self._data_as_list[0].physical_size
 
     @property
     def name(self) -> str:
@@ -201,9 +201,16 @@ class DataFrame:
 
             self._len += 1
 
-            for (off, count), cv in self._blocked.items():
-                if off + count <= self._len:
+            cv = self._blocked.pop(self._len, None)
+
+            if cv is not None:
+                with cv:
                     cv.notify_all()
+
+            # if adding multiple, check for all below
+            # for index, cv in self._blocked.items():
+            #     if index <= self._len:
+            #         cv.notify_all()
 
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
@@ -238,6 +245,12 @@ class DataFrame:
     def seal(self):
         with self._data_lock:
             self._sealed = True
+            for k, cv in self._blocked.items():
+                with cv:
+                    cv.notify_all()
+            self._blocked.clear()
+
+                
 
     def _from_none(self):
         self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]
@@ -349,6 +362,7 @@ class DataFrame:
             self.gc()
 
     def notify_block(self, offset, count):
-        if not self._blocked.get((offset, count)):
-            self._blocked[(offset, count)] = threading.Condition()
-        return self._blocked[(offset, count)]
+        index = offset + count
+        if self._blocked.get(index) is None:
+            self._blocked[index] = threading.Condition()
+        return self._blocked[index]
