@@ -43,9 +43,10 @@ class MapIterator:
 
         elif code == 'Index_OOB_Unsealed':
             if self._block:
-                cv = df.notify_block(self._offset, 1)
+                cv = df.notify_block(self._id, self._offset, 1)
                 with cv:
                     cv.wait()
+
                 return self.__next__()
 
             return None
@@ -70,6 +71,10 @@ class MapIterator:
 
         else: # 'unkown_error'
             raise Exception
+
+    @property
+    def id(self):
+        return self._id
 
 
 class BatchIterator:
@@ -114,7 +119,7 @@ class BatchIterator:
 
         elif code == 'Index_OOB_Unsealed':
             if self._block:
-                cv = df.notify_block(self._offset, self._batch_size)
+                cv = df.notify_block(self._id, self._offset, self._batch_size)
                 with cv:
                     cv.wait()
                 return self.__next__()
@@ -141,3 +146,7 @@ class BatchIterator:
 
         else: # 'unkown_error'
             raise Exception
+
+    @property
+    def id(self):
+        return self._id

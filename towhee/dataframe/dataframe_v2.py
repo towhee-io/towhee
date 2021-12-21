@@ -40,13 +40,13 @@ class DataFrame:
         self._name = name
         self._sealed = False
 
-        self._iterator_lock = threading.Lock()
+        self._iterator_lock = threading.RLock()
         self._it_id = 0
         self._iterators = []
         self._iterator_offsets = []
         self._min_offset = 0
 
-        self._block_lock = threading.Lock()
+        self._block_lock = threading.RLock()
         self._blocked = {}
 
         self._data_lock = threading.RLock()
@@ -137,6 +137,16 @@ class DataFrame:
         return self._name
 
     @property
+    def iterators(self) -> List[int]:
+        with self._iterator_lock:
+            return self._iterators
+
+    @property
+    def iterator_offsets(self) -> List[int]:
+        with self._iterator_lock:
+            return self._iterator_offsets
+
+    @property
     def data(self) -> List[Array]:
         with self._data_lock:
             return self._data_as_list
@@ -157,6 +167,10 @@ class DataFrame:
             return self._sealed
 
     def get(self, offset, count = 1, iter_id = None):
+        with self._iterator_lock:
+            if iter_id is not None and self._iterators[iter_id] is None:
+                return 'Killed', None
+
         with self._data_lock:
             if offset < self._min_offset:
                 return 'Index_GC', None
@@ -174,8 +188,6 @@ class DataFrame:
                 return 'Index_OOB_Unsealed', None # [self.__getitem__(x) for x in range(offset, self._len)]
 
             elif offset >= self._len:
-                if iter_id and self._iterators[iter_id] is None:
-                    return 'Kill', None
                 return 'Index_OOB_Unsealed', None
 
             else:
@@ -200,9 +212,10 @@ class DataFrame:
                 self._put_tuple(item)
 
             self._len += 1
+            cur_len = self._len
 
-            cv = self._blocked.pop(self._len, None)
-
+        with self._iterator_lock:
+            cv, _ = self._blocked.pop(cur_len, (None, None))
             if cv is not None:
                 with cv:
                     cv.notify_all()
@@ -245,7 +258,7 @@ class DataFrame:
     def seal(self):
         with self._data_lock:
             self._sealed = True
-            for _, cv in self._blocked.items():
+            for _, (cv, _) in self._blocked.items():
                 with cv:
                     cv.notify_all()
             self._blocked.clear()
@@ -336,11 +349,15 @@ class DataFrame:
             self._iterator_offsets.append(0)
             return self._it_id - 1
 
-    def kill_iter(self, iter_id):
+    # TODO kill blocked iters or kill all iters?
+    def unblock_iters(self):
         with self._iterator_lock:
-            self._iterators[iter_id] = None
-            self._iterator_offsets[iter_id] = float('inf')
-
+            for _, (cv, iters) in self._blocked.items():
+                for ite in iters:
+                    self._iterators[ite] = None
+                    self._iterator_offsets[ite] = float('inf')
+                with cv:
+                    cv.notify_all()
 
     def ack(self, iter_id, offset):
         """
@@ -359,10 +376,12 @@ class DataFrame:
         with self._iterator_lock:
             if self._iterator_offsets[iter_id] <= (offset + 1):
                 self._iterator_offsets[iter_id] = offset + 1
-            self.gc()
+        self.gc()
 
-    def notify_block(self, offset, count):
-        index = offset + count
-        if self._blocked.get(index) is None:
-            self._blocked[index] = threading.Condition()
-        return self._blocked[index]
+    def notify_block(self, iter_id, offset, count):
+        with self._iterator_lock:
+            index = offset + count
+            if self._blocked.get(index) is None:
+                self._blocked[index] = (threading.Condition(), [])
+            self._blocked[index][1].append(iter_id)
+            return self._blocked[index][0]

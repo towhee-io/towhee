@@ -82,5 +82,34 @@ class TestIterators(unittest.TestCase):
         x.join()
         x2.join()
 
+    def test_kill_iters(self):
+        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), (7, 'c'), (8, 'd'), (9, 'e'),]
+        columns = [('digit', int), ('letter', str)]
+        df = DataFrame(columns, name = 'my_df', data = data)
+
+        q = queue.Queue()
+        q2 = queue.Queue()
+
+        it = MapIterator(df, block=True)
+        it2 = BatchIterator(df, batch_size=4, step= 4, block=True)
+
+        def read(iterator, q: queue.Queue):
+            for x in iterator:
+                q.put(x)
+
+        x = threading.Thread(target=read, args=(it,q,))
+        x2 = threading.Thread(target=read, args=(it2,q2,))
+
+        x.start()
+        x2.start()
+
+        df.unblock_iters()
+
+        x.join()
+        x2.join()
+
+        self.assertEqual(df.iterator_offsets, [float('inf'), float('inf')])
+        self.assertEqual(df.iterators, [None, None])
+
 if __name__ == '__main__':
     unittest.main()
