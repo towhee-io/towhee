@@ -84,32 +84,32 @@ class TestDataframe(unittest.TestCase):
     #         print('\nDF Values:\n')
     #         print(df)
     
-        # # BatchIter
-        # it = BatchIterator(df, batch_size=4, block=True)
-        # for i, rows in enumerate(it):
-        #     print('row, (values, ): ', i, rows)
-        #     print('\nDF Values:\n')
-        #     print(df)
+    #     # BatchIter
+    #     it = BatchIterator(df, batch_size=4, block=True)
+    #     for i, rows in enumerate(it):
+    #         print('row, (values, ): ', i, rows)
+    #         print('\nDF Values:\n')
+    #         print(df)
 
         
        
-        # check_data(df)
+    #     check_data(df)
         
-        # # from list[towhee.Array]
-        # data = get_arrays()
-        # columns = get_columns()
-        # df = DataFrame(columns, name = 'my_df', data = data)
-        # df.seal()
-        # check_data(df)
+    #     # from list[towhee.Array]
+    #     data = get_arrays()
+    #     columns = get_columns()
+    #     df = DataFrame(columns, name = 'my_df', data = data)
+    #     df.seal()
+    #     check_data(df)
 
-        # # from dict[str, towhee.Array]
-        # data = get_dict()
-        # df = DataFrame(None, name = 'my_df', data = data)
-        # print(df)
+    #     # from dict[str, towhee.Array]
+    #     data = get_dict()
+    #     df = DataFrame(None, name = 'my_df', data = data)
+    #     print(df)
 
-        # df.seal()
-        # check_data(df)
-        # for x in range(len(df)):
+    #     df.seal()
+    #     check_data(df)
+    #     for x in range(len(df)):
 
     # def test_put(self):
     #     columns = self.get_columns()

@@ -46,6 +46,9 @@ class DataFrame:
         self._iterator_offsets = []
         self._min_offset = 0
 
+        self._block_lock = threading.Lock()
+        self._blocked = {}
+
         self._data_lock = threading.RLock()
         self._len = 0
         self._data_as_list = None
@@ -198,6 +201,10 @@ class DataFrame:
 
             self._len += 1
 
+            for (off, count), cv in self._blocked.items():
+                if off + count <= self._len:
+                    cv.notify_all()
+
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
 
@@ -340,3 +347,8 @@ class DataFrame:
             if self._iterator_offsets[iter_id] <= (offset + 1):
                 self._iterator_offsets[iter_id] = offset + 1
             self.gc()
+
+    def notify_block(self, offset, count):
+        if not self._blocked.get((offset, count)):
+            self._blocked[(offset, count)] = threading.Condition()
+        return self._blocked[(offset, count)]

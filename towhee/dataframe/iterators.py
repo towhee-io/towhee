@@ -110,14 +110,18 @@ class BatchIterator:
         df = self._df_ref()
 
         code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
+        print(code)
 
         if code == 'Index_GC':
             raise IndexError
 
         elif code == 'Index_OOB_Unsealed':
+            print("waitinging maybe")
             if self._block:
-                while code == 'Index_OOB_Unsealed':
-                    time.sleep(1)
+                if code == 'Index_OOB_Unsealed':
+                    cv = df.notify_block(self._offset, self._batch_size)
+                    with cv:
+                        cv.wait()
                     code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
 
                 if code == 'Killed':
@@ -131,7 +135,8 @@ class BatchIterator:
             return None
 
         elif code == 'Approved_Continue':
-            df.ack(self._id, self._offset)
+            # subtract one due to step. 
+            df.ack(self._id, self._offset + self._step - 1)
             self._offset += self._step
             return row
 
