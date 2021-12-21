@@ -12,23 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 
-
-from towhee.tests.mock_operators import ADD_OPERATOR_PATH, load_local_operator
-from towhee.operator import SharedType
+from towhee.tests.mock_operators import ADD_OPERATOR_PATH, NN_OPERATOR_PATH, PY_OPERATOR_PATH, load_local_operator
+from towhee.operator import SharedType, PyOperator, NNOperator, Operator
 
 
 class TestOperator(unittest.TestCase):
     """
     Simple operator test
     """
+    def test_nnoperator(self):
+        self.assertTrue(issubclass(NNOperator, Operator))
 
-    def test_func_operator(self):
-        add_operator = load_local_operator(
-            'add_operator', ADD_OPERATOR_PATH)
+        nn_operator = load_local_operator('nn_operator', NN_OPERATOR_PATH)
+        pt_op = nn_operator.TestNNOperator()
+        tf_op = nn_operator.TestNNOperator('tensorflow')
+        self.assertIsInstance(pt_op, NNOperator)
+        self.assertIsInstance(tf_op, NNOperator)
+        self.assertEqual(pt_op.framework, 'pytorch')
+        self.assertEqual(tf_op.framework, 'tensorflow')
+
+        pt_op.framework = 'tensorflow'
+        self.assertEqual(pt_op.framework, tf_op.framework)
+
+    def test_pyoperator(self):
+        self.assertTrue(issubclass(PyOperator, Operator))
+
+        py_operator = load_local_operator('py_operator', PY_OPERATOR_PATH)
+        op = py_operator.TestPyOperator()
+
+        self.assertIsInstance(op, PyOperator)
+
+    def test_operator_function(self):
+        add_operator = load_local_operator('add_operator', ADD_OPERATOR_PATH)
         op = add_operator.AddOperator(1)
+        self.assertTrue(isinstance(op, PyOperator))
         self.assertEqual(op(1).sum, 2)
         self.assertEqual(op.shared_type, SharedType.Shareable)
 

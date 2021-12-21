@@ -12,22 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
-from towhee.operator import PyOperator, SharedType
+from towhee.operator import NNOperator
 
 
-class AddOperator(PyOperator):
+class TestNNOperator(NNOperator):
     """
-    Stateful operator
+    A test NNOperator with no functionality.
     """
-    def __init__(self, factor: int) -> None:
+    def __init__(self, framework: str = 'pytorch'):
         super().__init__()
-        self._factor = factor
-
-    def __call__(self, num: int) -> NamedTuple("Outputs", [("sum", int)]):
-        Outputs = NamedTuple("Outputs", [("sum", int)])
-        return Outputs(self._factor + num)
+        self._framework = framework
 
     @property
-    def shared_type(self):
-        return SharedType.Shareable
+    def framework(self):
+        return self._framework
+
+    @framework.setter
+    def framework(self, framework: str):
+        self._framework = framework
+
+    def __call__(self):
+        print('I\'m an NNOperator.')

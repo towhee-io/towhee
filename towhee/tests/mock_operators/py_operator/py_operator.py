@@ -12,22 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
-from towhee.operator import PyOperator, SharedType
+from towhee.operator import PyOperator
 
 
-class AddOperator(PyOperator):
+class TestPyOperator(PyOperator):
     """
-    Stateful operator
+    A test PyOperator with no functionality.
     """
-    def __init__(self, factor: int) -> None:
+    def __init__(self):
         super().__init__()
-        self._factor = factor
+        pass
 
-    def __call__(self, num: int) -> NamedTuple("Outputs", [("sum", int)]):
-        Outputs = NamedTuple("Outputs", [("sum", int)])
-        return Outputs(self._factor + num)
-
-    @property
-    def shared_type(self):
-        return SharedType.Shareable
+    def __call__(self):
+        print('I\'m an PyOperator.')
