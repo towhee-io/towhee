@@ -67,6 +67,8 @@ class TestDataframe(unittest.TestCase):
         df.seal()
         check_data(df)
 
+        self.assertEqual(df.name, 'my_df')
+
     def test_put(self):
         columns = self.get_columns()
         data = (0, 'a')

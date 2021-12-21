@@ -141,6 +141,21 @@ class TestArray(unittest.TestCase):
         array = Array([0, 1, 2, 3])
         x = array[0:5]
         self.assertEqual(x, [0, 1, 2, 3])
+        x = array[0:2]
+        self.assertEqual(x, [0, 1])
+        x = array[1:]
+        self.assertEqual(x, [1, 2, 3])
+
+    def test_properties(self):
+        array = Array([0, 1, 2, 3])
+        array.put(1)
+        x = array.physical_size
+        self.assertEqual(x, 5)
+        x = array.size
+        self.assertEqual(x, 5)
+        x = len(array)
+        self.assertEqual(x, 5)
+
 
 if __name__ == '__main__':
     unittest.main()
