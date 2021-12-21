@@ -41,7 +41,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-        data = ["a", "b", "c"]
+        data = ['a', 'b', 'c']
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -69,7 +69,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-        data = "abc"
+        data = 'abc'
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -110,7 +110,7 @@ class TestArray(unittest.TestCase):
         _basic_asserts(array, value, n)
 
         n = 8
-        value = "abc"
+        value = 'abc'
         array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
@@ -136,11 +136,11 @@ class TestArray(unittest.TestCase):
         self.assertEqual(array[3], 3)
         self.assertRaises(IndexError, array.__getitem__, 0)
         self.assertRaises(IndexError, array.__getitem__, 1)
-    
+
     def test_slice(self):
         array = Array([0, 1, 2, 3])
         x = array[0:5]
-        print(x)
-        
+        self.assertEqual(x, [0, 1, 2, 3])
+
 if __name__ == '__main__':
     unittest.main()

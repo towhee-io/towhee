@@ -1,5 +1,4 @@
 import weakref
-import time
 
 from towhee.dataframe.dataframe_v2 import DataFrame
 
@@ -136,7 +135,7 @@ class BatchIterator:
             df.ack(self._id, len(df) - 1)
             self._offset = len(df)
             return row
-        
+
         elif code == 'Killed':
             raise StopIteration
 

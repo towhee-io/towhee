@@ -127,10 +127,10 @@ class DataFrame:
 
     @property
     def physical_size(self):
-            with self._data_lock:
-                if self._data_as_list is None:
-                    return 0
-                return self._data_as_list[0].physical_size
+        with self._data_lock:
+            if self._data_as_list is None:
+                return 0
+            return self._data_as_list[0].physical_size
 
     @property
     def name(self) -> str:
@@ -169,13 +169,13 @@ class DataFrame:
                     return 'Index_OOB_Sealed', None
                 else:
                     return 'Approved_Done', [self.__getitem__(x) for x in range(offset, self._len)]
-  
+
             elif offset + count >= self._len:
                 return 'Index_OOB_Unsealed', None # [self.__getitem__(x) for x in range(offset, self._len)]
 
             elif offset >= self._len:
                 if iter_id and self._iterators[iter_id] is None:
-                        return 'Kill', None
+                    return 'Kill', None
                 return 'Index_OOB_Unsealed', None
 
             else:
@@ -245,12 +245,10 @@ class DataFrame:
     def seal(self):
         with self._data_lock:
             self._sealed = True
-            for k, cv in self._blocked.items():
+            for _, cv in self._blocked.items():
                 with cv:
                     cv.notify_all()
             self._blocked.clear()
-
-                
 
     def _from_none(self):
         self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]
@@ -305,8 +303,10 @@ class DataFrame:
     def _from_dict(self, data):
         # check dict values
         self._types = {}
+        self._columns = []
         for key, value in data.items():
             self._types[key[0]] = key[1]
+            self._columns.append(key[0])
             if not isinstance(value, Array):
                 raise ValueError('value type in data should be towhee.Array')
 
@@ -318,7 +318,7 @@ class DataFrame:
         self._len = array_lengths.pop()
         # TODO: Check if data lines up by just converting to list
         self._data_as_list = list(data.values())
-        self._data_as_dict = data
+        self._data_as_dict = {key[0]: val for key, val in data.items()}
 
     def gc(self):
         with self._data_lock:
