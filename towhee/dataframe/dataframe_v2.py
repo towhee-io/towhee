@@ -169,7 +169,7 @@ class DataFrame:
                     return 'Index_OOB_Sealed', None
                 else:
                     return 'Approved_Done', [self.__getitem__(x) for x in range(offset, self._len)]
-            
+  
             elif offset + count >= self._len:
                 return 'Index_OOB_Unsealed', None # [self.__getitem__(x) for x in range(offset, self._len)]
 
