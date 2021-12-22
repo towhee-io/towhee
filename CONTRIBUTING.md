@@ -66,3 +66,6 @@ If you're interested in contributing to the `towhee-io/towhee` codebase, follow 
   ```
 
 6. Submit your pull request on Github. Folks in the community will discuss your pull request, and maintainers might ask you for some changes. This happens very frequently (including maintainers themselves), so don't worry if it happens to you as well.
+
+  Note that Towhee uses [DCOs](https://developercertificate.org/) to sign pull requests. Please ensure that the first line of your PR is as follows:
+  Signed-off-by: Your Name your.email@domain.com
