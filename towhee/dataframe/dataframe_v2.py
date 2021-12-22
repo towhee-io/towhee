@@ -17,7 +17,6 @@ from typing import List, Tuple, Any, Iterable
 
 from towhee.array import Array
 
-
 class DataFrame:
     """
     A `DataFrame` is a collection of immutable, potentially heterogeneous blogs of data.
@@ -33,7 +32,7 @@ class DataFrame:
 
     def __init__(
         self,
-        columns: List[Tuple[str, Any]],
+        columns: List[Tuple[str, Any]] = None,
         name: str = None,
         data=None,
     ):
