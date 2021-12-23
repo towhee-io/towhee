@@ -42,7 +42,7 @@ class ConcatOperator(Operator):
                 self._last_seens[col] = val
 
         #If no new data added, dont return anything.
-        if not set(kwargs.values()) - {None}:
+        if all(val is None for val in kwargs.values()):
             pass
         else:
             cols = [(str(col), type(val)) for col, val in kwargs.items()]
