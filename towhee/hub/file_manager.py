@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Union, List
 from shutil import copy2, copytree, rmtree
 
-from towhee.engine.singleton import singleton
+from towhee.utils.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 from towhee.hub.hub_tools import download_repo
 
