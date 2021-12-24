@@ -17,7 +17,7 @@ import unittest
 import queue
 import time
 
-from towhee.engine.singleton import singleton
+from towhee.utils.singleton import singleton
 from towhee.tests.test_util.dataframe_test_util import MultiThreadRunner
 
 

@@ -14,7 +14,7 @@
 
 import threading
 
-from towhee.engine.singleton import singleton
+from towhee.utils.singleton import singleton
 from towhee.engine.pipeline import Pipeline
 from towhee.errors import SchedulerTypeError
 from towhee.engine.task_scheduler import BasicScheduler
