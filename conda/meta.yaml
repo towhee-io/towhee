@@ -1,0 +1,124 @@
+{% set name = "towhee" %}
+{% set version = "0.3.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: bf44c3a7ccce4d57a38b7a34d72095f8142c1d1fd5d3d5c76651a370de034fc8
+
+build:
+  number: 0
+  noarch: python
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - pip
+    - python >=3.6
+    - pytorch >=1.4.0
+    - pyyaml >=5.3.0
+    - requests >=2.12.5
+    - tqdm >=4.59.0
+  run:
+    - python >=3.6
+    - pytorch >=1.4.0
+    - pyyaml >=5.3.0
+    - requests >=2.12.5
+    - tqdm >=4.59.0
+
+test:
+  imports:
+    - towhee
+    - towhee.array
+    - towhee.cnn_trainer
+    - towhee.cnn_trainer.utils
+    - towhee.dag
+    - towhee.dag.utils
+    - towhee.data_source
+    - towhee.dataframe
+    - towhee.engine
+    - towhee.engine.operator_io
+    - towhee.engine.operator_runner
+    - towhee.hub
+    - towhee.models
+    - towhee.models.layers
+    - towhee.models.layers.activations
+    - towhee.models.loss
+    - towhee.models.retina_face
+    - towhee.models.swin_transformer
+    - towhee.models.utils
+    - towhee.operator
+    - towhee.tests
+    - towhee.tests.array
+    - towhee.tests.cnn_trainer
+    - towhee.tests.dag
+    - towhee.tests.dag.utils
+    - towhee.tests.dataframe
+    - towhee.tests.engine
+    - towhee.tests.engine.operator_io
+    - towhee.tests.engine.operator_runner
+    - towhee.tests.hub
+    - towhee.tests.mock_operators
+    - towhee.tests.mock_operators.add_operator
+    - towhee.tests.mock_operators.cv2_decoder
+    - towhee.tests.mock_operators.flat_operator
+    - towhee.tests.mock_operators.generator_operator
+    - towhee.tests.mock_operators.norm_data_operator
+    - towhee.tests.mock_operators.pytorch_cnn_operator
+    - towhee.tests.mock_operators.pytorch_image_classification_operator
+    - towhee.tests.mock_operators.pytorch_object_detection_operator
+    - towhee.tests.mock_operators.pytorch_transform_operator
+    - towhee.tests.mock_operators.pytorch_transformer_operator
+    - towhee.tests.mock_operators.repeat_operator
+    - towhee.tests.mock_operators.sub_operator
+    - towhee.tests.mock_operators.sum_operator
+    - towhee.tests.mock_operators.zero_drop
+    - towhee.tests.models
+    - towhee.tests.models.layers
+    - towhee.tests.models.loss
+    - towhee.tests.models.swin_transformer
+    - towhee.tests.models.utils
+    - towhee.tests.operators
+    - towhee.tests.test_util
+    - towhee.tests.trainer
+    - towhee.tests.utils
+    - towhee.trainer
+    - towhee.trainer.models
+    - towhee.trainer.models.layers
+    - towhee.trainer.models.swin_transformer
+    - towhee.trainer.models.utils
+    - towhee.trainer.optimization
+    - towhee.utils
+  requires:
+    - numpy >=1.19.5
+    - py-opencv >=4.5.3
+    - pandas >=1.1.5
+    - pillow >=8.3.1
+    - pyyaml >=5.3.0
+    - requests >=2.12.5
+    - scipy >=1.5.3
+    - pytorch >=1.4.0
+    - torchvision >=0.4.0
+    - tqdm >=4.59.0
+
+about:
+  home: "https://github.com/towhee-io/towhee"
+  license: "Apache-2.0"
+  license_family: APACHE
+  license_file: LICENSE
+  summary: "Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data."
+  doc_url: "https://docs.towhee.io/"
+  dev_url: "https://docs.towhee.io/advanced/contributing-guide"
+  description: |
+    Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data. 
+    It aims to make democratize anything2vec, allowing everyone - from beginner developers to large organizations - 
+    to train and deploy complex machine learning pipelines with just a few lines of code.
+    Towhee has pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. 
+    For a full list of pipelines, feel free to visit our Towhee hub.
+
+extra:
+  recipe-maintainers:
+    - haorenfsa
