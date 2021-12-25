@@ -12,6 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.operator.base import Operator, NNOperator, PyOperator, SharedType
+from towhee.operator import NNOperator
+from towhee.utils.log import engine_log
 
-__all__ = ['Operator', 'NNOperator', 'PyOperator', 'SharedType']
+
+class TestNNOperator(NNOperator):
+    """
+    A test NNOperator with no functionality.
+    """
+    def __init__(self, framework: str = 'pytorch'):
+        super().__init__()
+        self._framework = framework
+
+    @property
+    def framework(self):
+        return self._framework
+
+    @framework.setter
+    def framework(self, framework: str):
+        self._framework = framework
+
+    def __call__(self):
+        engine_log.info('I\'m an NNOperator.')
