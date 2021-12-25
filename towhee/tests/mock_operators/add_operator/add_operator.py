@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import NamedTuple
-from towhee.operator import Operator, SharedType
+from towhee.operator import PyOperator, SharedType
 
 
-class AddOperator(Operator):
+class AddOperator(PyOperator):
     """
     Stateful operator
     """
-
     def __init__(self, factor: int) -> None:
         super().__init__()
         self._factor = factor
