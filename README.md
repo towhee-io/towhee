@@ -55,6 +55,14 @@ Your image embedding is now stored in `embedding`. It's that simple.
 
 ## Dive deeper
 
+If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
+
+```python
+>>> embedding_pipeline = pipeline('towhee/image-embedding-resnet101')
+```
+
+For a full list of supported pipelines, visit our [docs page]().
+
 Custom machine learning pipelines can be defined in a YAML file or via a Spark-like high-level programming interface (coming soon &trade;). The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
 
 ```python
@@ -72,17 +80,7 @@ Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and
 
 - __Engine__: The `Engine` sits at Towhee's core. Given a `Pipeline`, the `Engine` will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic `Engine` within Towhee to run pipelines on a single-instance machine - K8s and other more complex `Engine` implementations are coming soon.
 
-For a deeper dive into Towhee and its architecture, check out our [documentation](https://docs.towhee.io).
-
-### Design philosophy
-
-Towhee was created with a few key design concepts in mind. We differentiate ourselves from other machine learning frameworks by making machine learning accessible to a variety of users. To do this, we base Towhee's architecture and design around these key features.
-
-- __Application-oriented__: Instead of being "just another model hub", we provide full end-to-end machine learning pipelines. Each pipeline can make use of any number of machine learning models or Python functions in a variety of configurations - ensembles, flows, or any combination thereof.
-
-- __Convenient__:  Towhee pipelines can be created to implement a variety of practical embedding tasks. We provide a number of pre-built pipelines on our [hub](https://hub.towhee.io).
-
-- __Extensible__: Individual operators within each pipeline can be reconfigured and reused in different pipelines. Pipelines can be deployed anywhere you want - on your local machine, on a server with 4 GPUs, or even in the cloud.
+For a deeper dive into Towhee and its architecture, check out the [Towhee docs](https://docs.towhee.io).
 
 ## Contributing
 

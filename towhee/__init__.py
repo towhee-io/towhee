@@ -24,6 +24,9 @@ __all__ = ['DEFAULT_PIPELINES', 'pipeline']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
+    'image-encoding': 'towhee/image-embedding-resnet50',  # TODO: add encoders
+    'music-embedding': 'towhee/music-embedding-vggish',
+    'music-encoding': 'towhee/music-embedding-clmr',  # TODO: clmr -> encoder
 }
 
 _PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
