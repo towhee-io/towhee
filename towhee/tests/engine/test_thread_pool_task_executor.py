@@ -73,7 +73,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         hub_op_id = 'local/add_operator'
         runner = MapRunner('test', 0, 'add_operator',
                            hub_op_id, {'factor': 1},
-                           MockReader(data_queue), writer)
+                           [MockReader(data_queue)], writer)
         self._task_exec.push_task(runner)
 
         data_queue.put({'num': 1})
@@ -98,7 +98,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         hub_op_id = 'local/add_operator'
         runner = MapRunner('test', 0, 'add_operator',
                            hub_op_id, {'factor': 1},
-                           MockReader(data_queue), writer)
+                           [MockReader(data_queue)], writer)
         self._task_exec.push_task(runner)
 
         data_queue.put('error')

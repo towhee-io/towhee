@@ -17,6 +17,7 @@ from typing import Dict
 
 from towhee.engine.operator_runner import runner_base
 from towhee.engine.operator_runner import map_runner
+from towhee.engine.operator_runner import concat_runner
 from towhee.engine.operator_runner import flatmap_runner
 from towhee.engine.operator_runner import filter_runner
 from towhee.engine.operator_io.reader import DataFrameReader
@@ -34,6 +35,9 @@ def create_runner(runner_type: str, name: str, index: int,
                                             op_args, reader, writer)
     elif runner_type.lower() == 'filter':
         return filter_runner.FilterRunner(name, index, op_name, hub_op_id,
+                                          op_args, reader, writer)
+    elif runner_type.lower() == 'concat':
+        return concat_runner.ConcatRunner(name, index, op_name, hub_op_id,
                                           op_args, reader, writer)
     else:
         raise AttributeError('No runner type named: {}'.format(runner_type))
