@@ -1,6 +1,6 @@
-name: Documentation improvement
-description: As a Towhee user, I have some suggestions regarding documentation improvements
-title: "[Documentation]: "
+name: Enhancement request
+description: As a developer, I want to make an enhancement for Towhee
+title: "[Enhancement]: "
 body:
 - type: markdown
   attributes:
@@ -15,10 +15,10 @@ body:
       required: true
 - type: textarea
   attributes:
-    label: What kind of documentation would you like added or changed?
+    label: What would you like to be added?
     description: A concise description of what you're expecting/suggesting.
     placeholder: |
-      I would like more clarity within the documentation regarding...
+      I would like to suggest/request a feature that's like...
   validations:
     required: true
 - type: textarea
