@@ -18,6 +18,7 @@ from typing import Any, Dict
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
+from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 from towhee.hub.file_manager import FileManager
 
@@ -31,11 +32,21 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
+
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
         else:
             self._cache_path = Path(cache_path)
+
+    def _load_interal_op(self, op_name: str, args: Dict[str, any]):
+        if op_name in ['_start_op', '_end_op']:
+            return NOPOperator()
+        elif op_name == '_concat':
+            return ConcatOperator(**args)
+        else:
+            # Not a interal operator
+            return None
 
     def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
@@ -52,8 +63,9 @@ class OperatorLoader:
                 Cannot find operator.
         """
 
-        if function in ['_start_op', '_end_op']:
-            return NOPOperator()
+        op = self._load_interal_op(function, args)
+        if op is not None:
+            return op
 
         fm = FileManager()
         path = fm.get_operator(function)

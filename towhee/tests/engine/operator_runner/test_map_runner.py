@@ -64,7 +64,7 @@ class TestMapRunner(unittest.TestCase):
         writer = MockWriter()
         runner = MapRunner('test', 0, 'add_operator',
                            'mock_operators', {'num': 1},
-                           MockReader(data_queue), writer)
+                           [MockReader(data_queue)], writer)
         runner.set_op(add_operator.AddOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -98,7 +98,7 @@ class TestMapRunner(unittest.TestCase):
         writer = MockWriter()
         runner = MapRunner('test', 0, 'add_operator',
                            'mock_operators', {'num': 1},
-                           MockReader(data_queue), writer)
+                           [MockReader(data_queue)], writer)
 
         runner.set_op(add_operator.AddOperator(3))
         t = threading.Thread(target=run, args=(runner, ))

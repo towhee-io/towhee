@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from typing import Dict, Tuple
-from towhee.engine.status import Status
 from abc import ABC
 from enum import Enum, auto
 from threading import Event
 import traceback
 
+from towhee.engine.status import Status
 from towhee.utils.log import engine_log
 
 
@@ -68,12 +68,17 @@ class RunnerBase(ABC):
     def __init__(self, name: str, index: int,
                  op_name: str, hub_op_id: str,
                  op_args: Dict[str, any],
-                 reader=None, writer=None) -> None:
+                 readers=None, writer=None) -> None:
         self._name = name
         self._index = index
         self._status = RunnerStatus.IDLE
         self._op_info = _OpInfo(op_name, hub_op_id, op_args)
-        self._reader = reader
+
+        self._readers = readers
+
+        # only concat can have multiple readers
+        if self._readers:
+            self._reader = readers[0]
         self._writer = writer
         self._need_stop = False
         self._end_event = Event()
@@ -144,7 +149,8 @@ class RunnerBase(ABC):
     def set_stop(self) -> None:
         engine_log.info('Begin to stop %s', str(self))
         self._need_stop = True
-        self._reader.close()
+        for reader in self._readers:
+            reader.close()
 
     def __str__(self) -> str:
         return '{}:{}'.format(self._name, self._index)

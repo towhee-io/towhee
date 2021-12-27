@@ -118,7 +118,7 @@ class TestEngine(unittest.TestCase):
             df_end_repr.name: df_end_repr
         }
 
-        graph_repr = GraphRepr('add', op_reprs, df_reprs)
+        graph_repr = GraphRepr('add', '', op_reprs, df_reprs)
 
         self._pipeline = Pipeline(graph_repr)
         engine = Engine()

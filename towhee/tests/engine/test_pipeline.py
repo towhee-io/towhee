@@ -70,6 +70,14 @@ class TestPipeline(unittest.TestCase):
         res = p(img)
         self.assertEqual(res[0][0].size, 1000)
 
+    def test_embedding_pipeline_with_format(self):
+        p = pipeline('local/resnet50_embedding_with_format')
+        img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
+            'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
+        img = Image.open(str(img_path))
+        res = p(img)
+        self.assertEqual(res.size, 1000)
+
     def test_error_input(self):
         p = pipeline('local/simple_pipeline')
         with self.assertRaises(OpFailedError):
@@ -78,25 +86,8 @@ class TestPipeline(unittest.TestCase):
     def test_test_concat(self):
         p = pipeline('local/test_concat')
         res = p(0, 0, 0)
-        self.assertEqual(res, [(1,0,2,0,3,0)])
+        self.assertEqual(res, [(1, 0, 2, 0, 3, 0)])
 
-    # def test_simple_pipeline_multirow(self):
-    #     #pylint: disable=protected-access
-    #     p = pipeline('test_util/simple_pipeline', cache=str(CACHE_PATH))
-    #     p._pipeline.parallelism = 2
-    #     res = p(list(range(1000)))
-    #     for n in range(1000):
-    #         self.assertEqual(res[n], n+3)
-
-
-# class TestPipelineCache(unittest.TestCase):
-#     def test_pipeline_cache(self):
-#         self.assertEqual(_get_pipeline_cache(
-#             None), Path.home() / '.towhee/pipelines')
-
-#         os.environ[_PIPELINE_CACHE_ENV] = '/opt/.pipeline'
-#         self.assertEqual(_get_pipeline_cache(
-#             None), Path('/opt/.pipeline'))
 
 if __name__ == '__main__':
     unittest.main()

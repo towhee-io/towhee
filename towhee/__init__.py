@@ -18,6 +18,7 @@ from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
+from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
@@ -42,6 +43,7 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
+
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -68,18 +70,11 @@ class _PipelineWrapper:
         in_df.put(vargs)
         out_df = self._pipeline(in_df)
 
-        res = []
-        it = out_df.map_iter()
-        for data in it:
-            # data is Tuple[Variable]
-            data_value = []
-            for item in data:
-                data_value.append(item.value)
-            res.append(tuple(data_value))
-        return res
+        format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
+        return format_handler(out_df)
 
 
-def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: str = 'main', force_download: bool = False):
+def pipeline(pipeline_src: str, branch: str = 'main', force_download: bool = False):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -87,10 +82,8 @@ def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: st
     existing `Engine`.
 
     Args:
-        task (`str`):
-            Task name or YAML file location to use.
-        fmc (`FileManagerConfig`):
-            Optional file manager config for the local instance, defaults to local cache.
+        pipeline_src (`str`):
+            pipeline name or YAML file location to use.
         branch (`str`):
             Which branch to use for operators/pipelines on hub, defaults to `main`.
         force_download (`bool`):
@@ -102,12 +95,12 @@ def pipeline(task: str, fmc: FileManagerConfig = FileManagerConfig(), branch: st
     """
     start_engine()
 
-    if os.path.isfile(task):
-        yaml_path = task
+    if os.path.isfile(pipeline_src):
+        yaml_path = pipeline_src
     else:
-        fm = FileManager(fmc)
-        task = DEFAULT_PIPELINES.get(task, task)
-        yaml_path = fm.get_pipeline(task, branch, force_download)
+        fm = FileManager()
+        p_repo = DEFAULT_PIPELINES.get(pipeline_src, pipeline_src)
+        yaml_path = fm.get_pipeline(p_repo, branch, force_download)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))

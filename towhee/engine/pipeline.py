@@ -45,6 +45,10 @@ class Pipeline:
             self._graph_repr = graph_repr
 
     @property
+    def pipeline_type(self):
+        return self._graph_repr.graph_type
+
+    @property
     def parallelism(self) -> int:
         return self._parallelism
 
