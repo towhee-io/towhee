@@ -15,8 +15,6 @@
 import copy
 import numpy as np
 
-from towhee.utils.log import engine_log
-
 
 class Image:
     """
@@ -31,7 +29,7 @@ class Image:
             The height of the image.
         channel (`int`):
             The channel of the image.
-        image_mode (`str`):
+        mode (`str`):
             The mode of the image(i.e. 'RGB', 'RGBA', 'HSV', etc.).
         array (`np.ndarray`):
             The image in the form of ndarray.
@@ -65,9 +63,9 @@ class Image:
         return self._mode
 
     @property
-    def array(self):
+    def array(self) -> np.ndarray:
         if not isinstance(self._array, np.ndarray):
-            engine_log.error('The array of image is not given, please call `Image.to_ndarray()` function to get the ndarray.')
+            raise AttributeError('The array of image is not given, please call `Image.to_ndarray()` function to get the ndarray.')
         else:
             return copy.deepcopy(self._array)
 
@@ -76,6 +74,8 @@ class Image:
         Load the np.ndarray form of the image.
         """
         if not isinstance(self._array, np.ndarray):
-            self._array = np.frombuffer(self._image, dtype=np.uint8).reshape(self._height, self._width, self._channel)
+            shape = (self._height, self._width, self._channel)
+            self._array = np.ndarray(shape, np.uint8, self._image)
+            # self._array = np.frombuffer(self._image, dtype=np.uint8).reshape(self._height, self._width, self._channel)
 
         return copy.deepcopy(self._array)

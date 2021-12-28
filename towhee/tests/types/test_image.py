@@ -16,15 +16,14 @@ import os
 import unittest
 import numpy as np
 
-from PIL import Image as PILImage
 from pathlib import Path
+from PIL import Image as PILImage
 
-from towhee.dataframe.Image import Image
+from towhee.types import Image
 
-logo_path = os.path.join(Path(__file__).parent.parent.parent.parent, 'towhee_logo.png')
+logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
 img = PILImage.open(logo_path)
 img_bytes = img.tobytes()
-img_size = img.size
 img_width = img.width
 img_height = img.height
 img_channel = len(img.split())
@@ -57,9 +56,9 @@ class TestImage(unittest.TestCase):
         self.assertTrue((towhee_img.array == img_array).all())
 
         towhee_img_1 = Image(img_bytes, img_width, img_height, img_channel, img_mode)
-        with self.assertLogs(level='ERROR') as log:
-            missing_array = towhee_img_1.array
-            self.assertIn('The array of image is not given, please call `Image.to_ndarray()` function to get the ndarray.', log.output[0])
+        with self.assertRaises(AttributeError):
+            _ = towhee_img_1.array
+            # self.assertIn('The array of image is not given, please call `Image.to_ndarray()` function to get the ndarray.', log.output[0])
 
     def test_toarray(self):
         towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode)
