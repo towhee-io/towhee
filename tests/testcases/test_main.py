@@ -6,8 +6,12 @@ from test_image_object_embedding import *
 
 def pipeline_register():
 
-    pipeline_names = ["image-embedding", "towhee/video_embedding_resnet50",
-                      "towhee/img_object_embedding"]
+    pipeline_names = ["image-embedding", "towhee/image-embedding-efficientnetb5",
+                      "towhee/image-embedding-efficientnetb7", "towhee/image-embedding-resnet101",
+                      "towhee/video_embedding_resnet50", "towhee/image-embedding-swinbase",
+                      "towhee/image-embedding-swinlarge", "towhee/image-embedding-vitlarge",
+                      "towhee/img_object_embedding", "towhee/audio-embedding-clmr",
+                      "towhee/audio-embedding-vggish"]
 
     return pipeline_names
 
@@ -16,6 +20,7 @@ def pipeline_runner():
     invalid_pipeline_obj = TestPipelineInvalid()
     for func in dir(TestPipelineInvalid):
         if not func.startswith("__"):
+            print("Testing %s" % func)
             res = methodcaller(func)(invalid_pipeline_obj)
             if res == None:
                 print("%s PASS" % func)
@@ -27,6 +32,7 @@ def pipeline_runner():
         valid_pipeline_obj = TestPipelineValid()
         for func in dir(TestPipelineValid):
             if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
                 res = methodcaller(func, pipeline_name)(valid_pipeline_obj)
                 if res == None:
                     print("%s:%s PASS" % (func, pipeline_name))
@@ -36,17 +42,28 @@ def pipeline_runner():
 
 def image_class_pipeline_register():
 
-    pipeline_names = ["image-embedding"]
+    pipeline_names = ["image-embedding", "towhee/image-embedding-efficientnetb5",
+                      "towhee/image-embedding-efficientnetb7", "towhee/image-embedding-resnet101",
+                      "towhee/image-embedding-resnet50", "towhee/image-embedding-swinbase",
+                      "towhee/image-embedding-swinlarge", "towhee/image-embedding-vitlarge"]
 
-    return pipeline_names
+    embedding_sizes = [2048, 2048, 2560, 2048, 2048, 1024, 1536, 1024]
+
+    skipped_cases = []
+
+
+    return pipeline_names, embedding_sizes, skipped_cases
 
 def image_class_pipeline_runner():
 
-    pipeline_names = image_class_pipeline_register()
-    for pipeline_name in pipeline_names:
+    pipeline_names, embedding_sizes, skipped_cases = image_class_pipeline_register()
+    for (pipeline_name, embedding_size_each) in zip(pipeline_names, embedding_sizes):
         invalid_embedding_obj = TestImageEmbeddingInvalid()
         for func in dir(TestImageEmbeddingInvalid):
+            if func in skipped_cases:
+                continue
             if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
                 res = methodcaller(func, pipeline_name)(invalid_embedding_obj)
                 if res == 1:
                     print("%s:%s PASS" % (func, pipeline_name))
@@ -54,8 +71,11 @@ def image_class_pipeline_runner():
                     print("%s:%s FAIL" % (func, pipeline_name))
         valid_embedding_obj = TestImageEmbeddingValid()
         for func in dir(TestImageEmbeddingValid):
+            if func in skipped_cases:
+                continue
             if not func.startswith("__"):
-                res = methodcaller(func, pipeline_name)(valid_embedding_obj)
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name, embedding_size_each)(valid_embedding_obj)
                 if res == 1:
                     print("%s:%s PASS" % (func, pipeline_name))
                 else:
