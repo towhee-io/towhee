@@ -70,6 +70,14 @@ class TestPipeline(unittest.TestCase):
         res = p(img)
         self.assertEqual(res[0][0].size, 1000)
 
+    def test_embedding_pipeline_with_format(self):
+        p = pipeline('local/resnet50_embedding_with_format')
+        img_path = CACHE_PATH / 'data' / 'dataset' / 'kaggle_dataset_small' / \
+            'train' / '0021f9ceb3235effd7fcde7f7538ed62.jpg'
+        img = Image.open(str(img_path))
+        res = p(img)
+        self.assertEqual(res.size, 1000)
+
     def test_error_input(self):
         p = pipeline('local/simple_pipeline')
         with self.assertRaises(OpFailedError):
