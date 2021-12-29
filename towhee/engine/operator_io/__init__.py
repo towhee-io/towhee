@@ -1,3 +1,4 @@
+
 # Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from towhee.engine.operator_io import reader as io_reader
 from towhee.engine.operator_io import writer as io_writer
 from towhee.dataframe import DataFrame
-from typing import Any, Dict, List
+from typing import Dict, List
 
 
 def create_reader(
-    inputs: Dict[str, Any],
-    input_order: List,
+    df: DataFrame,
     iter_type: str,
+    inputs_index: Dict[str, int]
 ) -> io_reader.DataFrameReader:
 
-    if iter_type.lower() in ['map', 'flatmap']:
-        return io_reader.BlockMapDataFrameReader(inputs, input_order)
+    if iter_type.lower() in ['map', 'flatmap', 'concat']:
+        return io_reader.BlockMapDataFrameReader(df, inputs_index)
     elif iter_type.lower() == 'filter':
-        return io_reader.BlockMapReaderWithOriginData(inputs, input_order)
+        return io_reader.BlockMapReaderWithOriginData(df, inputs_index)
     else:
         raise NameError('Can not find %s iters' % iter_type)
 
@@ -38,5 +40,7 @@ def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFra
         return io_writer.NamedTupleDataFrameWriter(outputs[0])
     elif iter_type.lower() == 'filter':
         return io_writer.RowDataFrameWriter(outputs[0])
+    elif iter_type.lower() == 'concat':
+        return io_writer.DictDataFrameWriter(outputs[0])
     else:
         raise NameError('Can not find %s iters' % iter_type)

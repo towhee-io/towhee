@@ -64,7 +64,7 @@ class TestFilterRunner(unittest.TestCase):
         writer = MockWriter()
         runner = FilterRunner('test', 0, 'zero_operator',
                               'mock_operators', {},
-                              MockReader(data_queue), writer)
+                              [MockReader(data_queue)], writer)
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -107,7 +107,7 @@ class TestFilterRunner(unittest.TestCase):
         writer = MockWriter()
         runner = FilterRunner('test', 0, 'zero_operator',
                               'mock_operators', {},
-                              MockReader(data_queue), writer)
+                              [MockReader(data_queue)], writer)
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()

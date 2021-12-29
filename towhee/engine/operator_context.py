@@ -14,6 +14,7 @@
 
 from typing import Dict
 from enum import Enum, auto
+from collections import defaultdict
 
 from towhee.dag.operator_repr import OperatorRepr
 from towhee.engine.operator_runner.runner_base import RunnerStatus
@@ -38,38 +39,44 @@ class OperatorContext:
     The abstraction of OperatorContext hides the complexity of Dataframe management,
     input iteration, and data dependency between Operators. It offers a Task-based
     scheduling context.
-
     Args:
         op_repr: (OperatorRepr)
             The operator representation
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
-    def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
+
+    def __init__(
+        self,
+        op_repr: OperatorRepr,
+        dataframes: Dict[str, DataFrame]
+    ):
         self._repr = op_repr
-        iter_type = op_repr.iter_info['type']
-        reader_inputs = {}
-        input_order = []
-        for x in op_repr.inputs:
-            # If a dataframe is already added, append the new columns.
-            if x['df'] in reader_inputs.keys():
-                reader_inputs[x['df']]['cols'].append((x['name'], x['col']))
-                input_order.append(x['name'])
-            else:
-                reader_inputs[x['df']] = {}
-                reader_inputs[x['df']]['df'] = dataframes[x['df']]
-                reader_inputs[x['df']]['cols'] = [(x['name'], x['col'])]
-                input_order.append(x['name'])
-
-        self._reader = create_reader(reader_inputs, input_order, iter_type)
-
-        outputs = list({dataframes[output['df']] for output in op_repr.outputs})
-
-        self._writer = create_writer(iter_type, outputs)
+        self._readers = OperatorContext._create_reader(op_repr, dataframes)
+        self._writer = OperatorContext._create_writer(op_repr, dataframes)
         self._op_runners = []
-
         self._op_status = OpStatus.NOT_RUNNING
         self._err_msg = None
+
+    @staticmethod
+    def _create_reader(op_repr, dataframes):
+        inputs_index = defaultdict(dict)
+        for item in op_repr.inputs:
+            inputs_index[item['df']][item['name']] = item['col']
+        iter_type = op_repr.iter_info['type']
+
+        inputs = dict((item['df'], dataframes[item['df']]) for item in op_repr.inputs)
+        readers = []
+        for df_name, indexs in inputs_index.items():
+            readers.append(create_reader(inputs[df_name], iter_type, indexs))
+        return readers
+
+    @staticmethod
+    def _create_writer(op_repr, dataframes):
+        outputs = list({dataframes[output['df']]
+                       for output in op_repr.outputs})
+        iter_type = op_repr.iter_info['type']
+        return create_writer(iter_type, outputs)
 
     @property
     def name(self):
@@ -108,31 +115,31 @@ class OperatorContext:
 
         self._op_status = OpStatus.RUNNING
 
-        for i in range(count):
-            self._op_runners.append(
-                create_runner(
-                    self._repr.iter_info['type'],
-                    self._repr.name,
-                    i,
-                    self._repr.name,
-                    self._repr.function,
-                    self._repr.init_args,
-                    self._reader,
-                    self._writer
+        try:
+            for i in range(count):
+                self._op_runners.append(
+                    create_runner(self._repr.iter_info['type'],
+                                  self._repr.name, i, self._repr.name,
+                                  self._repr.function, self._repr.init_args,
+                                  self._readers, self._writer)
                 )
-            )
+        except AttributeError as e:
+            self._err_msg = str(e)
+            self._op_status = OpStatus.FAILED
+            return
+
         for runner in self._op_runners:
             executor.push_task(runner)
 
     def stop(self):
         if self.status != OpStatus.RUNNING:
-            raise RuntimeError('Op ctx is already stopped.')
+            raise RuntimeError('Op ctx is already not running.')
 
         for runner in self._op_runners:
             runner.set_stop()
 
     def join(self):
-        # Waits all runner finished.
+        # Wait all runners finished.
         for runner in self._op_runners:
             runner.join()
         self._writer.close()

@@ -19,6 +19,7 @@ from shutil import copy2, copytree, rmtree
 
 from towhee.utils.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
+from towhee.utils.log import engine_log
 from towhee.hub.hub_tools import download_repo
 
 
@@ -35,6 +36,7 @@ class FileManagerConfig():
             The default cache to check in, if nothing supplied, the default cache of $HOME/.towhee
             will be used.
     """
+
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
         self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
@@ -124,8 +126,7 @@ class FileManagerConfig():
                 try:
                     self._cache_paths.remove(Path(path))
                 except ValueError:
-                    # TODO: Log this instead of print.
-                    print(str(Path(path)) + ' not found.')
+                    engine_log.error('%s%s ', str(Path(path)), ' not found.')
 
             if len(self._cache_paths) <= 1:
                 self._cache_paths.append(default_path)
@@ -213,6 +214,7 @@ class FileManager():
             Accepts an optional FileManager config, once a FileManagerConfig is selected,
             it cannot be changed for the current runtime.
     """
+
     def __init__(self, fmc: FileManagerConfig = FileManagerConfig()):
         self._config = fmc
         # TODO: #1 seperate ranking for different pipelines?
@@ -253,7 +255,7 @@ class FileManager():
                 if new_path.is_file():
                     # TODO: filip-halt
                     # Error logging.
-                    print('Did not overwrite.')
+                    engine_log.info('Did not overwrite.')
                 else:
                     # TODO: filip-halt
                     # Figure out exception types.
@@ -273,7 +275,7 @@ class FileManager():
                 if new_path.is_dir():
                     # TODO: filip-halt
                     # Error logging.
-                    print('Did not overwrite.')
+                    engine_log('Did not overwrite.')
                 else:
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
@@ -329,7 +331,7 @@ class FileManager():
                 if found_existing is False:
                     # TODO: filip-halt
                     # Error logging.
-                    print('Local file not found, has it been imported?')
+                    engine_log.info('Local file not found, has it been imported?')
                     file_path = None
             else:
                 if redownload:
@@ -393,7 +395,7 @@ class FileManager():
                 if found_existing is False:
                     # TODO: filip-halt
                     # Error logging.
-                    print('Local file not found, has it been imported?')
+                    engine_log.info('Local file not found, has it been imported?')
                     file_path = None
             else:
                 if redownload:

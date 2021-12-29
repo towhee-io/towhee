@@ -17,11 +17,12 @@ import threading
 from collections import namedtuple
 from typing import Dict, Tuple, Union, List
 
+from towhee.dataframe import DataFrame, Variable, DataFrameIterator
+
 
 class ReaderBase(ABC):
     """
     The reader base class.
-
     The read() could be blocking or non-blocking function, if it's a blocking function,
     the runner may be blocked. When need to stop the graph, we call close to interrupting it.
     """
@@ -41,30 +42,30 @@ class DataFrameReader(ReaderBase):
     One op_ctx has one dataframe reader.
     """
 
-    def __init__(self, input_readers: List[iter], input_order: List):
-        self._iters = input_readers
-        self._iters_count = len(self._iters)
-        self._input_order = input_order
-
-    @property
-    def size(self) -> int:
-        return min([x.accessible_size for x in self._iters])
-
-    @property
-    def input_order(self) -> List:
-        return self._input_order
-
-    @property
-    def iters_count(self) -> int:
-        return self._iters_count
+    def __init__(self, it: DataFrameIterator, op_inputs_index: Dict[str, int]):
+        self._op_inputs_index = op_inputs_index
+        self._iter = it
 
     @abstractmethod
     def read(self) -> Union[Dict[str, any], List[Dict[str, any]]]:
         pass
 
+    @property
+    def size(self) -> int:
+        return self._iter.accessible_size
+
     @abstractmethod
     def close(self):
         raise NotImplementedError
+
+    def _to_op_inputs(self, cols: Tuple[Variable]) -> Dict[str, any]:
+        """
+        Read from cols, combine op inputs
+        """
+        ret = {}
+        for key, index in self._op_inputs_index.items():
+            ret[key] = cols[index].value
+        return ret
 
 
 class BlockMapReaderWithOriginData(DataFrameReader):
@@ -72,60 +73,34 @@ class BlockMapReaderWithOriginData(DataFrameReader):
     Return both op's input data and origin data.
     """
 
-    def __init__(self, input_dfs: dict, input_order: List):
-        iters = []
-        for _, x in input_dfs.items():
-            ite = x['df'].map_iter(block=True)
-            iters.append([ite, x['cols']])
-
-        super().__init__(iters, input_order)
+    def __init__(
+        self,
+        input_df: DataFrame,
+        op_inputs_index: Dict[str, int]
+    ):
+        super().__init__(input_df.map_iter(True), op_inputs_index)
         self._lock = threading.Lock()
         self._close = False
 
     def read(self) -> Tuple[Dict[str, any], Tuple]:
         """
-        Read data from dataframe.
-
-        Can read data from multi dataframes or a single one. If reading from multiple,
-        shorter df's will fill their values with None.
+        Read data from dataframe, get cols by operator_repr info
         """
         if self._close:
             raise StopIteration
 
-        ret = {}
-        origin_data = ()
-        count_stop = self.iters_count
-
         with self._lock:
-            for x in self._iters:
-                try:
-                    data = next(x[0])
-                except StopIteration:
-                    # If stop iteration raised, fill data with None
-                    if self._close:
-                        raise StopIteration  #pylint: disable=raise-missing-from
-                    for (key, index) in x[1]:
-                        ret[key] = None
-                    origin_data += (None,)
-                    count_stop -= 1
-                    continue
-
-                if self._close:
-                    raise StopIteration
-                if data is not None:
-                    for (key, index) in x[1]:
-                        ret[key] = data[index].value
-                    origin_data += data
-
-            if count_stop == 0:
+            data = next(self._iter)
+            if self._close:
                 raise StopIteration
-            # TODO: origin_data ordering with filter
-            return ret, origin_data
+
+            if not data:
+                return {}, ()
+            return self._to_op_inputs(data), data
 
     def close(self):
         self._close = True
-        for x in self._iters:
-            x[0].notify()
+        self._iter.notify()
 
 
 class BlockMapDataFrameReader(BlockMapReaderWithOriginData):
@@ -141,64 +116,33 @@ class BlockMapDataFrameReader(BlockMapReaderWithOriginData):
 class BatchFrameReader(DataFrameReader):
     """
     Batch reader.
-
-    Reads batches of data from one or multiple dataframes. Missing values will be
-    replaced with none.
     """
 
-    def __init__(self, input_dfs: dict, input_order: List, batch_size: int, step: int):
+    def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, int],
+                 batch_size: int, step: int):
         assert batch_size >= 1 and step >= 1
-        iters = []
-        for _, x in input_dfs.items():
-            ite = x['df'].batch_iter(batch_size, step, block=True)
-            iters.append([ite, x['cols']])
-
-        super().__init__(iters, input_order)
-        self._lock = threading.Lock()
+        super().__init__(input_df.batch_iter(batch_size, step, True), op_inputs_index)
         self._close = False
+        self._lock = threading.Lock()
 
     def read(self) -> List[Dict[str, any]]:
         if self._close:
             raise StopIteration
 
-        ret = {}
-        count_stop = self.iters_count
-
         with self._lock:
-            for x in self._iters:
-                try:
-                    data = next(x[0])
-                except StopIteration:
-                    count_stop -= 1
-                    if self._close:
-                        raise StopIteration #pylint: disable=raise-missing-from
-                    continue
-
-                if self._close:
-                    raise StopIteration
-                if data is not None:
-                    for i, row in enumerate(data):
-                        if i not in ret:
-                            ret[i] = {}
-                        for (key, index) in x[1]:
-                            ret[i][key] = row[index].value
-
-            if count_stop == 0:
+            data = next(self._iter)
+            if self._close:
                 raise StopIteration
 
-            # Fill missing values with Nones
-            # TODO: Figure out faster/better logic for this
-            for key, val in ret.items():
-                for x in self.input_order:
-                    if x not in val:
-                        val[x] = None
-
-            res = []
-            for i in range(len(ret)):
-                res.append(namedtuple('input', ret[i].keys())(**ret[i]))
-            return res
+            if not data:
+                return []
+            else:
+                res = []
+                for row in data:
+                    data_dict = self._to_op_inputs(row)
+                    res.append(namedtuple('input', data_dict.keys())(**data_dict))
+                return res
 
     def close(self):
         self._close = True
-        for x in self._iters:
-            x[0].notify()
+        self._iter.notify()

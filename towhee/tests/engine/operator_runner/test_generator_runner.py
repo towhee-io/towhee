@@ -64,7 +64,7 @@ class TestGeneratorRunner(unittest.TestCase):
         writer = MockWriter()
         runner = GeneratorRunner('test', 0, 'generator_operator',
                                  'mock_operators', {},
-                                 MockReader(data_queue), writer)
+                                 [MockReader(data_queue)], writer)
         runner.set_op(generator_operator.GeneratoOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -94,7 +94,7 @@ class TestGeneratorRunner(unittest.TestCase):
         writer = MockWriter()
         runner = GeneratorRunner('test', 0, 'generator_operator',
                                  'mock_operators', {},
-                                 MockReader(data_queue), writer)
+                                 [MockReader(data_queue)], writer)
         runner.set_op(generator_operator.GeneratoOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()

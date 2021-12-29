@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
+from typing import NamedTuple, Tuple, Dict
+
 from towhee.dataframe import DataFrame
-from typing import NamedTuple, Tuple
 from towhee.utils.log import engine_log
 
 
@@ -50,6 +51,17 @@ class NamedTupleDataFrameWriter(DataFrameWriter):
 
     def _write(self, output_data: NamedTuple) -> None:
         self._output_df.put_dict(output_data._asdict())
+
+
+class DictDataFrameWriter(DataFrameWriter):
+    """
+    Df writer
+
+    Write dict to the next dataframe.
+    """
+
+    def _write(self, output_data: Dict[str, any]) -> None:
+        self._output_df.put_dict(output_data)
 
 
 class RowDataFrameWriter(DataFrameWriter):

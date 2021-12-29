@@ -19,6 +19,11 @@ class TowheeError(Exception):
     """
 
 
+class GraphError(TowheeError):  # pylint: disable=empty-docstring
+    """
+    """
+
+
 class OpIOTypeError(TowheeError):  # pylint: disable=empty-docstring
     """
     """

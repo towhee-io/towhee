@@ -54,7 +54,7 @@ def run(runner):
     runner.process()
 
 
-class TestMapRunner(unittest.TestCase):
+class TestFlatmapRunner(unittest.TestCase):
     """
     MapRunner test
     """
@@ -63,10 +63,9 @@ class TestMapRunner(unittest.TestCase):
         data_queue = Queue()
         writer = MockWriter()
 
-        # We
         runner = FlatMapRunner('flattest', 0, 'repeat_operator',
                                'mock_operators', {'repeat': 3},
-                               MockReader(data_queue), writer)
+                               [MockReader(data_queue)], writer)
 
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
@@ -94,7 +93,7 @@ class TestMapRunner(unittest.TestCase):
         writer = MockWriter()
         runner = FlatMapRunner('test', 0, 'repeat_operator',
                                'mock_operators', {'repeat': 3},
-                               MockReader(data_queue), writer)
+                               [MockReader(data_queue)], writer)
 
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))

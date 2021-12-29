@@ -70,11 +70,10 @@ operators:
         iter_info:
             type: map
     -
-        name: 'concat'
-        function: 'local/concat_operator'
+        name: '_concat'
+        function: '_concat'
         init_args:
-            repeat_end: True
-            # order: [0,1,2,3]
+          concat_type: 'row'
         inputs:
             -
                 df: 'sum1'
@@ -107,10 +106,8 @@ operators:
                 df: '_end_df'
 
         iter_info:
-            type: map
+            type: concat
         
-        
-            
 dataframes:
     -
         name: '_start_df'
