@@ -19,7 +19,7 @@ import numpy as np
 from pathlib import Path
 
 from towhee.types import Image
-from towhee.utils.ndarray_utils import from_ndarray, from_src, to_ndarray
+from towhee.utils.ndarray_utils import from_ndarray, from_src, to_ndarray, rgb2bgr
 
 logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
 
@@ -54,7 +54,15 @@ class TestPilUtils(unittest.TestCase):
         self.assertTrue((np.array(ndarray_img) == towhee_img.array).all())
 
     def test_to_ndarray(self):
-        towhee_img = from_src(logo_path)
+        ndarray_img = cv2.imread(logo_path)
+        img_bytes = ndarray_img.tobytes()
+        img_width = ndarray_img.shape[1]
+        img_height = ndarray_img.shape[0]
+        img_channel = len(cv2.split(ndarray_img))
+        img_mode = 'BGR'
+        img_array = ndarray_img
+
+        towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
         ndarray_img = to_ndarray(towhee_img)
 
         self.assertIsInstance(ndarray_img, np.ndarray)
@@ -62,5 +70,23 @@ class TestPilUtils(unittest.TestCase):
         self.assertEqual(ndarray_img.shape[0], towhee_img.height)
         self.assertEqual(ndarray_img.shape[1], towhee_img.width)
         self.assertEqual(ndarray_img.shape[2], towhee_img.channel)
-        self.assertEqual('RGB', towhee_img.mode)
-        self.assertTrue((np.array(ndarray_img) == towhee_img.array).all())
+        self.assertEqual('BGR', towhee_img.mode)
+        self.assertTrue((ndarray_img == towhee_img.array).all())
+
+    def test_rgb2bgr(self):
+        ndarray_img = cv2.imread(logo_path)
+        ndarray_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
+
+        img_bytes = ndarray_img.tobytes()
+        img_width = ndarray_img.shape[1]
+        img_height = ndarray_img.shape[0]
+        img_channel = len(cv2.split(ndarray_img))
+        img_mode = 'RGB'
+        img_array = ndarray_img
+
+        towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
+
+        towhee_bgr = rgb2bgr(towhee_img)
+        ndarray_bgr = rgb2bgr(ndarray_img)
+
+        self.assertTrue((towhee_bgr == ndarray_bgr).all())
