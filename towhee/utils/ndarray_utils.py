@@ -45,7 +45,7 @@ def from_src(src: Union[str, PosixPath]) -> 'towhee.types.Image':
 
 
 def from_ndarray(ndarray_img: np.ndarray, mode: str) -> 'towhee.types.Image':
-    '''
+    """
     Convert an image loaded by cv2 as ndarray into towhee.types.Image.
 
     Args:
@@ -55,7 +55,7 @@ def from_ndarray(ndarray_img: np.ndarray, mode: str) -> 'towhee.types.Image':
     Returns:
         (`towhee.types.Image`)
             The image wrapepd as towhee Image.
-    '''
+    """
     img_bytes = ndarray_img.tobytes()
     img_width = ndarray_img.shape[1]
     img_height = ndarray_img.shape[0]
@@ -88,3 +88,32 @@ def to_ndarray(towhee_img: 'towhee.type.Image') -> np.ndarray:
     ndarray_img = np.ndarray(shape, np.uint8, data)
 
     return ndarray_img
+
+
+def rgb2bgr(img: Union[np.ndarray, 'towhee.type.Image']) -> np.ndarray:
+    """
+    Convert an RGB image into ndarray of mode BGR.
+
+    Args:
+        img (`Union[np.ndarray, 'towhee.type.Image']`):
+            An RGB image either in the form of ndarray or towhee's Image.
+
+    Returns:
+        (`np.ndarray`)
+            An ndarray in the mode of BGR.
+    """
+    if isinstance(img, Image):
+        if not img.mode.upper() == 'RGB':
+            raise ValueError('The input image should be RGB mode.')
+        else:
+            rgb_img = img.array if isinstance(img.array, np.ndarray) else to_ndarray(img)
+
+    elif isinstance(img, np.ndarray):
+        rgb_img = img
+
+    else:
+        raise TypeError('Input image should either be an `np.ndarray` or a `towhee.type.Image`.')
+
+    bgr_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
+
+    return bgr_img
