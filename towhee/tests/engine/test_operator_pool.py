@@ -40,11 +40,6 @@ class TestOperatorPool(unittest.TestCase):
         fmc.cache_local_operator(operators)
         FileManager(fmc)
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     new_cache = (CACHE_PATH/'test_cache')
-    #     rmtree(str(new_cache))
-
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
         self._op_pool = OperatorPool(cache_path=cache_path)
@@ -67,6 +62,67 @@ class TestOperatorPool(unittest.TestCase):
         # Perform more operations.
         self.assertEqual(op(-1).sum, -1)
         self.assertEqual(op(100).sum, 100)
+
+    def test_shareable_pool(self):
+        # Shareable operator only need one
+        self._op_pool.clear()
+        hub_op_id = 'local/add_operator'
+        op_info = _OpInfo('add_operator', hub_op_id, {'factor': 0})
+
+        op1 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        op2 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+
+        self.assertEqual(len(self._op_pool), 1)
+        self._op_pool.release_op(op1)
+        self.assertEqual(len(self._op_pool), 1)
+        self._op_pool.release_op(op2)
+        self.assertEqual(len(self._op_pool), 1)
+
+    def test_notshareable_pool(self):
+        self._op_pool.clear()
+        hub_op_id = 'local/generator_operator'
+        op_info = _OpInfo('generator_operator', hub_op_id, {})
+
+        op1 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        op2 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+
+        self.assertEqual(len(self._op_pool), 0)
+        self._op_pool.release_op(op1)
+        self.assertEqual(len(self._op_pool), 1)
+        self._op_pool.release_op(op2)
+        self.assertEqual(len(self._op_pool), 2)
+        op3 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        self.assertEqual(len(self._op_pool), 1)
+
+        op4 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        op5 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        self._op_pool.release_op(op3)
+        self._op_pool.release_op(op4)
+        self._op_pool.release_op(op5)
+        self.assertEqual(len(self._op_pool), 3)
+
+    def test_notreusable(self):
+        self._op_pool.clear()
+        hub_op_id = 'local/flat_operator'
+        op_info = _OpInfo('flat_operator', hub_op_id, {})
+
+        op1 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        op2 = self._op_pool.acquire_op(op_info.hub_op_id,
+                                       op_info.op_args)
+        self.assertEqual(len(self._op_pool), 0)
+        self._op_pool.release_op(op2)
+        self.assertEqual(len(self._op_pool), 0)
+
+        self._op_pool.release_op(op1)
+        self.assertEqual(len(self._op_pool), 0)
 
 
 if __name__ == '__main__':

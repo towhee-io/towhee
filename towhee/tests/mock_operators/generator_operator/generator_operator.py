@@ -20,7 +20,7 @@ from towhee.operator import Operator, SharedType
 Outputs = NamedTuple("Outputs", [("sum", int)])
 
 
-class GeneratoOperator(Operator):
+class GeneratorOperator(Operator):
     """
     Generator operator.
     """

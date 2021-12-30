@@ -31,4 +31,4 @@ class FlatOperator(Operator):
 
     @property
     def shared_type(self):
-        return SharedType.Shareable
+        return SharedType.NotReusable
