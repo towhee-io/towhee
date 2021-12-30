@@ -73,9 +73,8 @@ class OperatorLoader:
         if path is None:
             raise FileExistsError('Cannot find operator.')
 
-        fname = str(path).rsplit('/', maxsplit=1)[-1][:-3]
+        fname = Path(path).stem
         modname = 'towhee.operator.' + fname
-
         spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
         # Create the module and then execute the module in its own namespace.
