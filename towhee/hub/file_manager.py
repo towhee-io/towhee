@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Union, List
 from shutil import copy2, copytree, rmtree
 
+import git
+from git.exc import GitCommandError
 from towhee.utils.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 from towhee.utils.log import engine_log
@@ -36,7 +38,6 @@ class FileManagerConfig():
             The default cache to check in, if nothing supplied, the default cache of $HOME/.towhee
             will be used.
     """
-
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
         self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
@@ -214,7 +215,6 @@ class FileManager():
             Accepts an optional FileManager config, once a FileManagerConfig is selected,
             it cannot be changed for the current runtime.
     """
-
     def __init__(self, fmc: FileManagerConfig = FileManagerConfig()):
         self._config = fmc
         # TODO: #1 seperate ranking for different pipelines?
@@ -228,12 +228,11 @@ class FileManager():
         try:
             file_name, file_type = name.split('.')
         except ValueError:
-            return name.replace('-', '_') + '&' + author + '$' + branch
-
+            return Path(author) / name.replace('-', '_') / branch
         # If pointing directly to pipeline or operator file.
         if file_type in ['py', 'yaml']:
-            return file_name.replace('-', '_') + '&' + author + '$' + branch
-        # If not pointing to a pipeline or operator file.
+            return Path(author) / file_name.replace('-', '_') / branch
+        # If not pointing to a pipeline or an operator file.
         else:
             raise ValueError('Unsupported file type.')
 
@@ -280,7 +279,7 @@ class FileManager():
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
 
-    def get_pipeline(self, pipeline: str, branch: str = 'main', redownload: bool = False, install_reqs=True):
+    def get_pipeline(self, pipeline: str, branch: str = 'main', install_reqs=True):
         """
         Obtain the path to the requested pipeline.
 
@@ -293,8 +292,6 @@ class FileManager():
                 The pipeline in 'author/repo' format. Author will be 'local' if locally imported.
             branch (`str`):
                 Which branch version to use of the pipeline. Branch will be 'main' if locally imported.
-            redownload (`bool`):
-                Whether to delete and redownload the pipeline files
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
 
@@ -315,7 +312,7 @@ class FileManager():
             repo = pipeline_split[1]
             file_name = repo.replace('-', '_')
 
-            pipeline_path = self._cache_name(repo, author, branch) + '/' + file_name + '.yaml'
+            pipeline_path = self._cache_name(repo, author, branch) / (file_name + '.yaml')
 
             file_path = self._config.default_cache / 'pipelines' / pipeline_path
             found_existing = False
@@ -329,22 +326,26 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    # TODO: filip-halt
-                    # Error logging.
-                    engine_log.info('Local file not found, has it been imported?')
-                    file_path = None
-            else:
-                if redownload:
-                    # TODO: filip-halt
-                    # Error logging.
-                    rmtree(file_path.parent)
+                    engine_log.warning('Local file not found, has it been imported?')
+                    raise FileNotFoundError('Local file not found, has it been imported?')
+                return file_path
 
-                if not file_path.is_file():
-                    download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+            if not file_path.is_file():
+                download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+            else:
+                repo_path = path.parent
+                repo_name = path.stem
+                repo = git.Repo(repo_path)
+                if not 'working tree clean' in repo.git.status():
+                    engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', repo_name)
+                    try:
+                        repo.remote('origin').pull('main')
+                    except GitCommandError:
+                        engine_log.warning('Your local repo has conflicts with remote repo, skip automatic update.')
 
         return file_path
 
-    def get_operator(self, operator: str, branch: str = 'main', redownload: bool = False, install_reqs=True):
+    def get_operator(self, operator: str, branch: str = 'main', install_reqs=True):
         """
         Obtain the path to the requested operator.
 
@@ -357,8 +358,6 @@ class FileManager():
                 The operator in 'author/repo' format. Author will be 'local' if locally imported.
             branch (`str`):
                 Which branch version to use of the opeartor. Branch will be 'main' if locally imported.
-            redownload (`bool`):
-                Whether to delete and redownload the operator files
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
 
@@ -379,7 +378,7 @@ class FileManager():
             repo = operator_split[1]
             file_name = repo.replace('-', '_')
 
-            operator_path = self._cache_name(repo, author, branch) + '/' + file_name + '.py'
+            operator_path = self._cache_name(repo, author, branch) / (file_name + '.py')
 
             file_path = self._config.default_cache / 'operators' / operator_path
             found_existing = False
@@ -393,16 +392,21 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    # TODO: filip-halt
-                    # Error logging.
                     engine_log.info('Local file not found, has it been imported?')
-                    file_path = None
-            else:
-                if redownload:
-                    # TODO: filip-halt
-                    # Error logging.
-                    rmtree(file_path.parent)
+                    raise FileNotFoundError('Local file not found, has it been imported?')
+                return file_path
 
-                if file_path.is_file() is False:
-                    download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+            if not file_path.is_file():
+                download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+            else:
+                repo_path = path.parent
+                repo_name = path.stem
+                repo = git.Repo(repo_path)
+                if not 'working tree clean' in repo.git.status():
+                    engine_log.warning('Your local operator %s is not up to date, updating to latest version...', repo_name)
+                    try:
+                        repo.remote('origin').pull('main')
+                    except GitCommandError:
+                        engine_log.warning('Your local repo has conflicts with remote repo, skip automatic update.')
+
         return file_path
