@@ -6,8 +6,7 @@ from test_image_object_embedding import *
 
 def pipeline_register():
 
-    pipeline_names = ["image-embedding", "towhee/video_embedding_resnet50",
-                      "towhee/img_object_embedding"]
+    pipeline_names = ["image-embedding", "towhee/img_object_embedding"]
 
     return pipeline_names
 
