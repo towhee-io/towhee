@@ -33,7 +33,6 @@ class _OperatorStorage:
 
     def get(self):
         assert self._shared_type is not None and len(self._ops) != 0
-
         op = self._ops[-1]
         if self._shared_type != SharedType.Shareable:
             self._ops.pop()
@@ -43,9 +42,11 @@ class _OperatorStorage:
         if self._shared_type is None:
             self._shared_type = op.shared_type
 
-        if force_put or self._shared_type in [SharedType.Shareable,
-                                              SharedType.NotShareable]:
+        if force_put or self._shared_type == SharedType.NotShareable:
             self._ops.append(op)
+
+    def __len__(self):
+        return len(self._ops)
 
 
 class OperatorPool:
@@ -65,6 +66,15 @@ class OperatorPool:
         else:
             args_tup = ()
         return (hub_op_id, ) + args_tup
+
+    def __len__(self):
+        num = 0
+        for _, op_storage in self._all_ops.items():
+            num += len(op_storage)
+        return num
+
+    def clear(self):
+        self._all_ops = {}
 
     def acquire_op(self, hub_op_id: str,
                    op_args: Dict[str, any]) -> Operator:

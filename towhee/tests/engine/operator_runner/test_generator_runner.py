@@ -65,7 +65,7 @@ class TestGeneratorRunner(unittest.TestCase):
         runner = GeneratorRunner('test', 0, 'generator_operator',
                                  'mock_operators', {},
                                  [MockReader(data_queue)], writer)
-        runner.set_op(generator_operator.GeneratoOperator())
+        runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
@@ -95,7 +95,7 @@ class TestGeneratorRunner(unittest.TestCase):
         runner = GeneratorRunner('test', 0, 'generator_operator',
                                  'mock_operators', {},
                                  [MockReader(data_queue)], writer)
-        runner.set_op(generator_operator.GeneratoOperator())
+        runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         data_queue.put('error_data')
