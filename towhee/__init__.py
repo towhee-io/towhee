@@ -18,6 +18,7 @@ from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
+from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline']
@@ -68,16 +69,8 @@ class _PipelineWrapper:
         in_df = DataFrame('_in_df')
         in_df.put(vargs)
         out_df = self._pipeline(in_df)
-
-        res = []
-        it = out_df.map_iter()
-        for data in it:
-            # data is Tuple[Variable]
-            data_value = []
-            for item in data:
-                data_value.append(item.value)
-            res.append(tuple(data_value))
-        return res
+        format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
+        return format_handler(out_df)
 
 
 def pipeline(pipeline_src: str, branch: str = 'main', force_download: bool = False):
