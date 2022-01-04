@@ -16,7 +16,7 @@
 import unittest
 import numpy as np
 
-from towhee.array import (
+from towhee.dataframe.array import (
     Array,
     full,
 )

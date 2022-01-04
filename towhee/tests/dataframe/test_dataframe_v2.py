@@ -15,7 +15,7 @@
 
 import unittest
 
-from towhee.array import Array
+from towhee.dataframe.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame
 
 

@@ -14,7 +14,7 @@
 
 
 from itertools import repeat
-from towhee.array.array import Array
+from towhee.dataframe.array.array import Array
 
 
 def full(size: int, fill_value):

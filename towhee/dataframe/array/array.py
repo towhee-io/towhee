@@ -14,7 +14,7 @@
 
 
 from typing import List
-from towhee.array._array_ref import _ArrayRef
+from towhee.dataframe.array._array_ref import _ArrayRef
 
 
 class Array:

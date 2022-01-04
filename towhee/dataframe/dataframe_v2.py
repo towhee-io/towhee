@@ -15,7 +15,7 @@
 import threading
 from typing import Iterable, List, Tuple, Any
 
-from towhee.array import Array
+from towhee.dataframe.array import Array
 
 
 class DataFrame:
