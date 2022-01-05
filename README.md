@@ -61,7 +61,7 @@ If you find that one of our default embedding pipelines does not suit you, you c
 >>> embedding_pipeline = pipeline('towhee/image-embedding-resnet101')
 ```
 
-For a full list of supported pipelines, visit our [docs page]().
+For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
 
 Custom machine learning pipelines can be defined in a YAML file or via a Spark-like high-level programming interface (coming soon &trade;). The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
 
