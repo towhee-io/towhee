@@ -438,7 +438,7 @@ def update_text(ori_str_list: list, tar_str_list: list, file: str, new_file: str
             new_file (`str`):
                 The target file name after update
     """
-    with open(file, 'r') as f1:
+    with open(file, 'r', encoding='utf-8') as f1:
         file_text = f1.read()
     # Replace the target string
     for ori_str, tar_str in zip(ori_str_list, tar_str_list):
