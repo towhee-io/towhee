@@ -57,9 +57,10 @@ class Worker(Thread):
 
     def run(self):
         # Creating the directory tree to the file.
-        if not os.path.exists(os.path.dirname(self.local_dir + self.file_name)):
+        file_path = self.local_dir + self.file_name
+        if not Path(file_path).parent.resolve().exists():
             try:
-                os.makedirs(os.path.dirname(self.local_dir + self.file_name))
+                Path(file_path).parent.resolve().mkdir()
             except FileExistsError:
                 pass
             except OSError as e:
@@ -320,7 +321,7 @@ def download_repo(author: str, repo: str, tag: str, local_dir: str, install_reqs
 
     if install_reqs:
         if 'requirements.txt' in os.listdir(local_dir):
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + '/requirements.txt'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', Path(local_dir) / 'requirements.txt'])
 
 
 ### Repo Creation related functions
@@ -447,12 +448,22 @@ def init_file_structure(author: str, repo: str, repo_type: str) -> None:
     subprocess.call(['git', 'clone', links])
     repo_file_name = repo.replace('-', '_')
     if repo_type == 'operator':
-        download_repo('towhee', 'operator-template', 'main', os.getcwd() + '/' + repo)
-        os.rename(repo + '/operator_template.py', repo + '/' + repo_file_name + '.py')
-        os.rename(repo + '/operator_template.yaml', repo + '/' + repo_file_name + '.yaml')
+        # TODO: distinguish nnop and pyop (Shiyu)
+        lfs_files = obtain_lfs_extensions('towhee', 'operator-template', 'main')
+        commit = latest_branch_commit('towhee', 'operator-template', 'main')
+        file_list = get_file_list('towhee', 'operator-template', commit)
+        download_files('towhee', 'operator-template', 'main', file_list, lfs_files, str(Path.cwd() / repo), False)
+
+        (Path(repo) / 'operator_template.py').rename(Path(repo) / (repo_file_name + '.py'))
+        (Path(repo) / 'operator_template.yaml').rename(Path(repo) / (repo_file_name + '.yaml'))
+
     elif repo_type == 'pipeline':
-        download_repo('towhee', 'pipeline-template', 'main', os.getcwd() + '/' + repo)
-        os.rename(repo + '/pipeline_template.yaml', repo + '/' + repo_file_name + '.yaml')
+        lfs_files = obtain_lfs_extensions('towhee', 'pipeline-template', 'main')
+        commit = latest_branch_commit('towhee', 'pipeline-template', 'main')
+        file_list = get_file_list('towhee', 'pipeline-template', commit)
+        download_files('towhee', 'pipeline-template', 'main', file_list, lfs_files, str(Path.cwd() / repo), False)
+
+        (Path(repo) / 'pipeline_template.yaml').rename(Path(repo) / (repo_file_name + '.yaml'))
 
 
 def covert_dic(dicts: dict) -> dict:
