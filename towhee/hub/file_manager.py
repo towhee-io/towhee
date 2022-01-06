@@ -224,14 +224,14 @@ class FileManager():
         self._cache_locals()
 
     # Move to a utils location?
-    def _cache_name(self, name: str, author: str, branch: str):
+    def _cache_name(self, name: str, author: str, tag: str):
         try:
             file_name, file_type = name.split('.')
         except ValueError:
-            return Path(author) / name.replace('-', '_') / branch
+            return Path(author) / name.replace('-', '_') / tag
         # If pointing directly to pipeline or operator file.
         if file_type in ['py', 'yaml']:
-            return Path(author) / file_name.replace('-', '_') / branch
+            return Path(author) / file_name.replace('-', '_') / tag
         # If not pointing to a pipeline or an operator file.
         else:
             raise ValueError('Unsupported file type.')
@@ -242,7 +242,7 @@ class FileManager():
     def _cache_locals(self):
         with self._pipeline_lock and self._config.pipeline_lock:
             for pipe in self._config.cache_pipelines:
-                new_dir = self._cache_name(pipe['name'], author='local', branch='main')
+                new_dir = self._cache_name(pipe['name'], author='local', tag='main')
                 file = pipe['name']
                 cache_path = pipe['cache']
                 old_path = pipe['path']
@@ -263,7 +263,7 @@ class FileManager():
 
         with self._operator_lock and self._config.operator_lock:
             for op in self._config.cache_operators:
-                new_dir = self._cache_name(op['name'], author='local', branch='main')
+                new_dir = self._cache_name(op['name'], author='local', tag='main')
                 cache_path = op['cache']
                 old_path = op['path']
                 new_path = cache_path / 'operators' / new_dir
@@ -279,7 +279,7 @@ class FileManager():
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
 
-    def get_pipeline(self, pipeline: str, branch: str = 'main', install_reqs=True):
+    def get_pipeline(self, pipeline: str, tag: str = 'main', install_reqs=True):
         """
         Obtain the path to the requested pipeline.
 
@@ -290,8 +290,8 @@ class FileManager():
         Args:
             pipeline (`str`):
                 The pipeline in 'author/repo' format. Author will be 'local' if locally imported.
-            branch (`str`):
-                Which branch version to use of the pipeline. Branch will be 'main' if locally imported.
+            tag (`str`):
+                Which tag to use of the pipeline. Will use 'main' if locally imported.
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
 
@@ -312,7 +312,7 @@ class FileManager():
             repo = pipeline_split[1]
             file_name = repo.replace('-', '_')
 
-            pipeline_path = self._cache_name(repo, author, branch) / (file_name + '.yaml')
+            pipeline_path = self._cache_name(repo, author, tag) / (file_name + '.yaml')
 
             file_path = self._config.default_cache / 'pipelines' / pipeline_path
             found_existing = False
@@ -331,7 +331,7 @@ class FileManager():
                 return file_path
 
             if not file_path.is_file():
-                download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+                download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
             else:
                 repo_path = path.parent
                 repo_name = path.stem
@@ -345,7 +345,7 @@ class FileManager():
 
         return file_path
 
-    def get_operator(self, operator: str, branch: str = 'main', install_reqs=True):
+    def get_operator(self, operator: str, tag: str = 'main', install_reqs=True):
         """
         Obtain the path to the requested operator.
 
@@ -356,8 +356,8 @@ class FileManager():
         Args:
             operator (`str`):
                 The operator in 'author/repo' format. Author will be 'local' if locally imported.
-            branch (`str`):
-                Which branch version to use of the opeartor. Branch will be 'main' if locally imported.
+            tag (`str`):
+                Which tag version to use of the opeartor. Will use 'main' if locally imported.
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
 
@@ -378,7 +378,7 @@ class FileManager():
             repo = operator_split[1]
             file_name = repo.replace('-', '_')
 
-            operator_path = self._cache_name(repo, author, branch) / (file_name + '.py')
+            operator_path = self._cache_name(repo, author, tag) / (file_name + '.py')
 
             file_path = self._config.default_cache / 'operators' / operator_path
             found_existing = False
@@ -397,7 +397,7 @@ class FileManager():
                 return file_path
 
             if not file_path.is_file():
-                download_repo(author, repo, branch, str(file_path.parent), install_reqs=install_reqs)
+                download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
             else:
                 repo_path = path.parent
                 repo_name = path.stem
