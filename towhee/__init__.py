@@ -43,7 +43,6 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
-
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -73,7 +72,7 @@ class _PipelineWrapper:
         return format_handler(out_df)
 
 
-def pipeline(pipeline_src: str, branch: str = 'main', force_download: bool = False):
+def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -83,10 +82,10 @@ def pipeline(pipeline_src: str, branch: str = 'main', force_download: bool = Fal
     Args:
         pipeline_src (`str`):
             pipeline name or YAML file location to use.
-        branch (`str`):
-            Which branch to use for operators/pipelines on hub, defaults to `main`.
-        force_download (`bool`):
-            Whether to redownload pipeline and operators.
+        tag (`str`):
+            Which tag to use for operators/pipelines on hub, defaults to `main`.
+        install_reqs (`bool`):
+            Whether to download the python packages if a requirements.txt file is included in the repo.
 
     Returns
         (`typing.Any`)
@@ -99,7 +98,7 @@ def pipeline(pipeline_src: str, branch: str = 'main', force_download: bool = Fal
     else:
         fm = FileManager()
         p_repo = DEFAULT_PIPELINES.get(pipeline_src, pipeline_src)
-        yaml_path = fm.get_pipeline(p_repo, branch, force_download)
+        yaml_path = fm.get_pipeline(p_repo, tag, install_reqs)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))

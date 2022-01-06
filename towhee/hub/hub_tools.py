@@ -21,6 +21,7 @@ import time
 import subprocess
 import re
 import yaml
+from pathlib import Path
 from importlib import import_module
 
 from typing import List, Tuple
@@ -107,7 +108,7 @@ def exists(author: str, repo: str) -> bool:
         raise e
 
 
-def obtain_lfs_extensions(author: str, repo: str, branch: str) -> List[str]:
+def obtain_lfs_extensions(author: str, repo: str, tag: str) -> List[str]:
     """
     Download the .gitattributes file from the specified repo in order to figure out
     which files are being tracked by git-lfs.
@@ -123,14 +124,14 @@ def obtain_lfs_extensions(author: str, repo: str, branch: str) -> List[str]:
             The account name.
         repo (`str`):
             The repo name.
-        branch (`str`):
-            The branch name.
+        tag (`str`):
+            The tag name.
 
     Returns:
         (`List[str]`)
             The list of file extentions tracked by git-lfs.
     """
-    url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/.gitattributes?ref={branch}'
+    url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/.gitattributes?ref={tag}'
     lfs_files = []
 
     # Using temporary file in order to avoid double download, cleaner to not split up downloads everywhere.
@@ -228,7 +229,7 @@ def get_file_list(author: str, repo: str, commit: str) -> List[str]:
     return file_list
 
 
-def download_files(author: str, repo: str, branch: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
+def download_files(author: str, repo: str, tag: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
     """
     Download the files from hub. One url is used for git-lfs files and another for the other files.
 
@@ -237,8 +238,8 @@ def download_files(author: str, repo: str, branch: str, file_list: List[str], lf
             The account name.
         repo (`str`):
             The repo name.
-        branch (`str`):
-            The branch name.
+        tag (`str`):
+            The tag name.
         file_list (`List[str]`):
             The hub file paths.
         lfs_files (`List[str]`):
@@ -266,9 +267,9 @@ def download_files(author: str, repo: str, branch: str, file_list: List[str], lf
     for file_name in file_list:
         # Files dealt with lfs have a different url.
         if file_name.endswith(lfs_files):
-            url = f'https://hub.towhee.io/{author}/{repo}/media/branch/{branch}/{file_name}'
+            url = f'https://hub.towhee.io/{author}/{repo}/media/branch/{tag}/{file_name}'
         else:
-            url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/{file_name}?ref={branch}'
+            url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/{file_name}?ref={tag}'
 
         threads.append(Worker(url, local_dir, file_name))
         threads[-1].start()
@@ -282,7 +283,7 @@ def download_files(author: str, repo: str, branch: str, file_list: List[str], lf
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
 
 
-def download_repo(author: str, repo: str, branch: str, local_dir: str, install_reqs: bool = True) -> None:
+def download_repo(author: str, repo: str, tag: str, local_dir: str, install_reqs: bool = True) -> None:
     """
     Performs a download of the selected repo to specified location.
 
@@ -294,8 +295,8 @@ def download_repo(author: str, repo: str, branch: str, local_dir: str, install_r
             The account name.
         repo (`str`):
             The repo name.
-        branch (`str`):
-            The branch name.
+        tag (`str`):
+            The tag name.
         local_dir (`str`):
             The local directory being downloaded to
         install_reqs (`bool`):
@@ -310,12 +311,12 @@ def download_repo(author: str, repo: str, branch: str, local_dir: str, install_r
     if not exists(author, repo):
         raise ValueError(author + '/' + repo + ' repo doesnt exist.')
 
-    # lfs_files = obtain_lfs_extensions(author, repo, branch)
-    # commit = latest_branch_commit(author, repo, branch)
+    # lfs_files = obtain_lfs_extensions(author, repo, tag)
+    # commit = latest_branch_commit(author, repo, tag)
     # file_list = get_file_list(author, repo, commit)
-    # download_files(author, repo, branch, file_list, lfs_files, local_dir, install_reqs)
+    # download_files(author, repo, tag, file_list, lfs_files, local_dir, install_reqs)
     url = f'https://towhee.io/{author}/{repo}.git'
-    git.Repo.clone_from(url=url, to_path=local_dir, branch=branch)
+    git.Repo.clone_from(url=url, to_path=local_dir, branch=tag)
 
     if install_reqs:
         if 'requirements.txt' in os.listdir(local_dir):
@@ -405,7 +406,7 @@ def create_repo(repo: str, token: str, repo_type: str) -> None:
     # Commented out things in data that are breaking the creation
     data = {
         'auto_init': True,
-        'default_branch': 'main',
+        'default_tag': 'main',
         'description': 'This is another test repo',
         'name': repo,
         'private': False,
@@ -545,12 +546,12 @@ def main(argv):
         opts, _ = getopt.getopt(
             argv[1:],
             'a:p:r:t:b:d:',
-            ['create', 'download', 'generate-yaml', 'init', 'author=', 'password=', 'repo=', 'type=', 'branch=', 'dir=']
+            ['create', 'download', 'generate-yaml', 'init', 'author=', 'password=', 'repo=', 'type=', 'tag=', 'dir=']
         )
     except getopt.GetoptError:
         print(
             'Usage: hub_tool.py -<manipulate type> -a <author> -p ' +
-            '<password> -r <repository> -t <repository type> -b <download branch> -d <download directory>'
+            '<password> -r <repository> -t <repository type> -b <download tag> -d <download directory>'
         )
         sys.exit(2)
     else:
@@ -562,8 +563,8 @@ def main(argv):
     password = ''
     repo = ''
     repo_type = ''
-    branch = 'main'
-    directory = os.getcwd()
+    tag = 'main'
+    directory = Path.cwd()
     # TODO(Filip) figure out how to store the token
     token_name = random.randint(0, 10000)
     manipulation = argv[0]
@@ -577,8 +578,10 @@ def main(argv):
             repo = arg
         elif opt in ['-t', '--type']:
             repo_type = arg
+        elif opt in ['-b', '--tag']:
+            tag = arg
         elif opt in ['-d', '--dir']:
-            directory = arg
+            directory = Path(arg)
 
     if manipulation == 'create':
         if not author:
@@ -617,8 +620,8 @@ def main(argv):
         if not repo_type:
             repo = input('Please enter the repo type: ')
         print('Downloading repo...')
-        directory = directory + f'/{repo_type}/{repo}&{author}${branch}'
-        download_repo(author, repo, branch, directory)
+        directory = directory / (repo_type + 's') / author / repo / tag
+        download_repo(author, repo, tag, directory)
 
     elif manipulation == 'generate-yaml':
         if not author:
