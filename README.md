@@ -106,3 +106,5 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/wxywb"><img src="https://avatars.githubusercontent.com/u/5432721?v=4" width="30px" /></a>
 <a href="https://github.com/zhousicong"><img src="https://avatars.githubusercontent.com/u/7541863?v=4" width="30px" /></a>
 <br><!-- Do not remove end of hero-bot --><br>
+
+Looking for a database to store and index your embedding vectors? Check out [Milvus](https://github.com/milvus-io/milvus).
