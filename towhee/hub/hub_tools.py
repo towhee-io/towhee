@@ -22,6 +22,9 @@ import subprocess
 import re
 import yaml
 from importlib import import_module
+from pathlib import Path
+import git
+import shutil
 
 from typing import List, Tuple
 from tqdm import tqdm
@@ -375,11 +378,34 @@ def download_files(author: str, repo: str, branch: str, file_list: List[str], lf
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
 
 
-def init_file_structure(author: str, repo: str, repo_type: str) -> None:
+def update_text(ori_str_list: list, tar_str_list: list, file: str, new_file: str) -> None:
     """
-    Initialized the file structure with template.
+        Update the text in the file and rename it with the new file name.
 
-    First clone the repo, then download and rename the template repo file.
+        Args:
+            ori_str_list (`list`):
+                The original str list to be replaced
+            tar_str_list (`list`):
+                The target str list after replace
+            file (`str`):
+                The original file name to be updated
+            new_file (`str`):
+                The target file name after update
+    """
+    with open(file, 'r') as f1:
+        file_text = f1.read()
+    # Replace the target string
+    for ori_str, tar_str in zip(ori_str_list, tar_str_list):
+        file_text = file_text.replace(ori_str, tar_str)
+    with open(new_file, 'w', encoding='utf-8') as f2:
+        f2.write(file_text)
+
+
+def init_file_structure(author: str, repo: str, repo_type: str, tag: str) -> None:
+    """
+    Initialize the file structure with template.
+
+    First clone the repo, then initialize it with the template file structure.
 
     Args:
         author (`str`):
@@ -387,8 +413,9 @@ def init_file_structure(author: str, repo: str, repo_type: str) -> None:
         repo (`str`):
             The repo name.
         repo_type (`str`):
-            Which category of repo to create, only one can be used, includes
-            ('model', 'operator', 'pipeline', 'dataset').
+            Which category of repo to create, only one can be used, includes ('operator', 'pipeline').
+        tag (`str`):
+            The tag of the repo.
 
     Raises:
         (`HTTPError`)
@@ -396,16 +423,32 @@ def init_file_structure(author: str, repo: str, repo_type: str) -> None:
         (`OSError`)
             Raise error in writing file.
     """
-    links = 'https://hub.towhee.io/' + author + '/' + repo + '.git'
-    subprocess.call(['git', 'clone', links])
-    repo_file_name = repo.replace('-', '_')
+    repo_temp = 'pipeline-template'
     if repo_type == 'operator':
-        download_repo('towhee', 'operator-template', 'main', os.getcwd() + '/' + repo)
-        os.rename(repo + '/operator_template.py', repo + '/' + repo_file_name + '.py')
-        os.rename(repo + '/operator_template.yaml', repo + '/' + repo_file_name + '.yaml')
-    elif repo_type == 'pipeline':
-        download_repo('towhee', 'pipeline-template', 'main', os.getcwd() + '/' + repo)
-        os.rename(repo + '/pipeline_template.yaml', repo + '/' + repo_file_name + '.yaml')
+        repo_temp = 'pyoperator-template'
+        op_choice = input('Is it NNOperator (there are neural network or model related codes)? '
+                          '[Y|n, press Enter will default to \'No\']  ')
+        if op_choice.lower() in ['yes', 'y']:
+            nn_framework = input('What\'s the framework of your model? [press Enter will default to \'pytorch\']  ')
+            repo_temp = 'nnoperator-template'
+
+    print('Clone the repo and initialize it with template...')
+    url = f'https://towhee.io/{author}/{repo}.git'
+    url_temp = f'https://towhee.io/towhee/{repo_temp}.git'
+    git.Repo.clone_from(url=url, to_path=repo, branch=tag)
+    git.Repo.clone_from(url=url_temp, to_path=f'{repo}/{repo_temp}', branch='main')
+
+    ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+    tar_str_list = [f'{author}/{repo}', repo, ''.join(x.title() for x in repo.split('-'))]
+    for file in (Path(repo)/repo_temp).glob('*'):
+        if file.name.endswith(('.md', '.yaml', 'template.py')):
+            new_file = Path(repo) / str(file.name).replace(repo_temp.replace('-', '_'), repo.replace('-', '_'))
+            update_text(ori_str_list, tar_str_list, file, new_file)
+        elif file.name.endswith('pytorch'):
+            os.rename(file, Path(repo) / nn_framework)
+        elif file.name != '.git':
+            os.rename(file, Path(repo) / file.name)
+    shutil.rmtree(Path(repo) / repo_temp)
 
 
 def covert_dic(dicts: dict) -> dict:
@@ -528,7 +571,8 @@ def download_repo(author: str, repo: str, branch: str, local_dir: str, install_r
     download_files(author, repo, branch, file_list, lfs_files, local_dir, install_reqs)
 
 
-def main(argv):
+def main():
+    argv = sys.argv[1:]
     try:
         opts, _ = getopt.getopt(
             argv[1:],
@@ -551,6 +595,7 @@ def main(argv):
     repo = ''
     repo_type = ''
     branch = 'main'
+    tag = 'main'
     directory = os.getcwd()
     # TODO(Filip) figure out how to store the token
     token_name = random.randint(0, 10000)
@@ -584,11 +629,10 @@ def main(argv):
 
         print('Creating repo...')
         create_repo(repo, token_hash, repo_type)
-        init_choice = input('Do you want to clone the repo from hub with template? [Y|n]\n')
+        init_choice = input('Do you want to clone and initialize it with template? [Y|n]  ')
 
         if init_choice.lower() in ['yes', 'y']:
-            print('Clone with template...')
-            init_file_structure(author, repo, repo_type)
+            init_file_structure(author, repo, repo_type, tag)
 
         print('Done')
 
@@ -624,9 +668,8 @@ def main(argv):
             repo = input('Please enter the repo name: ')
         if not repo_type:
             repo_type = input('Please enter the repo type, choose one from "operator | pipeline": ')
-        print('Clone with template...')
-        init_file_structure(author, repo, repo_type)
+        init_file_structure(author, repo, repo_type, tag)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
