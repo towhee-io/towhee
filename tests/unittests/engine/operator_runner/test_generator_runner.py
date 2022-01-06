@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -57,13 +56,10 @@ class TestGeneratorRunner(unittest.TestCase):
     """
     GeneratorRunner test
     """
-
     def test_map_runner(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = GeneratorRunner('test', 0, 'generator_operator',
-                                 'mock_operators', {},
-                                 [MockReader(data_queue)], writer)
+        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -91,9 +87,7 @@ class TestGeneratorRunner(unittest.TestCase):
     def test_generator_runner_with_error(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = GeneratorRunner('test', 0, 'generator_operator',
-                                 'mock_operators', {},
-                                 [MockReader(data_queue)], writer)
+        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()

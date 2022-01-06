@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -21,7 +20,6 @@ from queue import Queue
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.filter_runner import FilterRunner
 from tests.unittests.mock_operators.zero_drop import zero_drop
-
 
 DATA_QUEUE = Queue()
 
@@ -58,13 +56,10 @@ class TestFilterRunner(unittest.TestCase):
     """
     FilterRunner test
     """
-
     def test_filter_runner(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = FilterRunner('test', 0, 'zero_operator',
-                              'mock_operators', {},
-                              [MockReader(data_queue)], writer)
+        runner = FilterRunner('test', 0, 'zero_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -105,9 +100,7 @@ class TestFilterRunner(unittest.TestCase):
     def test_map_runner_with_error(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = FilterRunner('test', 0, 'zero_operator',
-                              'mock_operators', {},
-                              [MockReader(data_queue)], writer)
+        runner = FilterRunner('test', 0, 'zero_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()

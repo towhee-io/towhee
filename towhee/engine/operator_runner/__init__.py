@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import Dict
 
 from towhee.engine.operator_runner import runner_base
@@ -24,20 +23,24 @@ from towhee.engine.operator_io.reader import DataFrameReader
 from towhee.engine.operator_io.writer import DataFrameWriter
 
 
-def create_runner(runner_type: str, name: str, index: int,
-                  op_name: str, hub_op_id: str, op_args: Dict[str, any],
-                  reader: DataFrameReader, writer: DataFrameWriter) -> runner_base.RunnerBase:
+def create_runner(
+    runner_type: str,
+    name: str,
+    index: int,
+    op_name: str,
+    tag: str,
+    hub_op_id: str,
+    op_args: Dict[str, any],
+    reader: DataFrameReader,
+    writer: DataFrameWriter,
+) -> runner_base.RunnerBase:
     if runner_type.lower() == 'map':
-        return map_runner.MapRunner(name, index, op_name, hub_op_id,
-                                    op_args, reader, writer)
+        return map_runner.MapRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'flatmap':
-        return flatmap_runner.FlatMapRunner(name, index, op_name, hub_op_id,
-                                            op_args, reader, writer)
+        return flatmap_runner.FlatMapRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'filter':
-        return filter_runner.FilterRunner(name, index, op_name, hub_op_id,
-                                          op_args, reader, writer)
+        return filter_runner.FilterRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'concat':
-        return concat_runner.ConcatRunner(name, index, op_name, hub_op_id,
-                                          op_args, reader, writer)
+        return concat_runner.ConcatRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     else:
         raise AttributeError('No runner type named: {}'.format(runner_type))
