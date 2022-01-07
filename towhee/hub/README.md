@@ -28,12 +28,12 @@ $ towheehub -<command> -<option> param
 
 ## Commands
 
-- [`create`](#createcreateoperatorcreatepiepline)
-  - [`create operator`](#create/createoperator/createpiepline)
-  - [`create pipeline`](#createpipeline)
-- [`init`](#init)
-  - [`init operator`](#initoperator)
-  - [`init pipeline`](#initpipeline)
+- [`create`](#create--create-operator--create-pipeline)
+  - [`create operator`](#create--create-operator--create-pipeline)
+  - [`create pipeline`](#create--create-operator--create-pipeline)
+- [`init`](#init--init-operator--init-pipeline)
+  - [`init operator`](#init--init-operator--init-pipeline)
+  - [`init pipeline`](#init--init-operator--init-pipeline)
 - [`generate-yaml`](#generate-yaml)
 - [`download`](#download)
 
