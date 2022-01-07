@@ -28,8 +28,8 @@ $ towheehub -<command> -<option> param
 
 ## Commands
 
-- [`create`](#create/createoperator/create piepline)
-  - [`create operator`](#createoperator)
+- [`create`](#createcreateoperatorcreatepiepline)
+  - [`create operator`](#create/createoperator/createpiepline)
   - [`create pipeline`](#createpipeline)
 - [`init`](#init)
   - [`init operator`](#initoperator)
