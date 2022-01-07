@@ -1,0 +1,26 @@
+name: Check Towhee docs update
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - "docs/**"
+
+jobs:
+  dispatch-update:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Trigger docs.towhee.io rebuild
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: 'towhee-io',
+              repo: 'towhee-docs',
+              workflow_id: 'publish.yaml',
+              ref: 'main',
+            });
+          debug: true
+        
