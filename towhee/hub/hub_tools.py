@@ -407,7 +407,7 @@ def create_repo(repo: str, token: str, repo_type: str) -> None:
     # Commented out things in data that are breaking the creation
     data = {
         'auto_init': True,
-        'default_tag': 'main',
+        'default_branch': 'main',
         'description': 'This is another test repo',
         'name': repo,
         'private': False,
