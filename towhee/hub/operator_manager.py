@@ -14,13 +14,12 @@
 
 import requests
 import random
-import subprocess
 import sys
 import yaml
 from pathlib import Path
 from importlib import import_module
 
-from towhee.hub.download_tools import obtain_lfs_extensions, latest_commit, get_file_list, download_files
+import git
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
 from requests.exceptions import HTTPError
@@ -36,19 +35,18 @@ class OperatorManager(RepoManager):
         repo (`str`):
             The name of the repo.
     """
-    def __init__(self, author: str, repo: str):
-        super().__init__(author, repo)
-        self._repo_type = 'operator'
+    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
+        super().__init__(author, repo, root)
+        # 2 represents operators when creating a repo in Towhee's hub
+        self._class = 2
 
-    def create(self, password: str, private: bool = True) -> None:
+    def create(self, password: str) -> None:
         """
-        Create a repo under the account connected to the given token.
+        Create a repo under current account.
 
         Args:
             password (`str`):
                 Current author's password.
-            private (`bool`):
-                If the repo is private.
 
         Raises:
             (`HTTPError`)
@@ -63,13 +61,13 @@ class OperatorManager(RepoManager):
 
         data = {
             'auto_init': True,
-            'default_tag': 'main',
+            'default_branch': 'main',
             'description': 'This is another operator repo',
             'name': self._repo,
-            'private': private,
+            'private': False,
             'template': False,
             'trust_model': 'default',
-            'type': self._type_dict[self._repo_type]
+            'type': self._class
         }
         url = 'https://hub.towhee.io/api/v1/user/repos'
 
@@ -94,19 +92,24 @@ class OperatorManager(RepoManager):
             (`OSError`)
                 Raise error in writing file.
         """
-        links = 'https://hub.towhee.io/' + self._author + '/' + self._repo + '.git'
-        subprocess.call(['git', 'clone', links])
-
         repo_file_name = self._repo.replace('-', '_')
 
-        # TODO: distinguish nnop and pyop (Shiyu)
-        lfs_files = obtain_lfs_extensions('towhee', 'operator-template', 'main')
-        commit = latest_commit('towhee', 'operator-template', 'main')
-        file_list = get_file_list('towhee', 'operator-template', commit)
-        download_files('towhee', 'operator-template', 'main', file_list, lfs_files, str(Path.cwd() / self._repo), False)
+        url = 'https://hub.towhee.io/' + self._author + '/' + self._repo + '.git'
+        git.Repo.clone_from(url=url, to_path=Path.cwd() / repo_file_name, branch='main')
 
-        (Path(self._repo) / 'operator_template.py').rename(Path(self._repo) / (repo_file_name + '.py'))
-        (Path(self._repo) / 'operator_template.yaml').rename(Path(self._repo) / (repo_file_name + '.yaml'))
+        op_choice = input('Is it NNOperator(i.e. neural network or model related)[y|n]?')
+        if op_choice.lower() in ['y', 'yes']:
+            template = 'nnoperator-template'
+        else:
+            template = 'pyoperator-template'
+
+        lfs_files = self.obtain_lfs_extensions('towhee', template, 'main')
+        commit = self.latest_commit('towhee', template, 'main')
+        file_list = self.get_file_list('towhee', template, commit)
+        self.download_files('towhee', template, 'main', file_list, lfs_files, str(Path.cwd() / repo_file_name), False)
+
+        (Path(repo_file_name) / (template.replace('-', '_') + '.py')).rename(Path(repo_file_name) / (repo_file_name + '.py'))
+        (Path(repo_file_name) / (template.replace('-', '_') + '.yaml')).rename(Path(repo_file_name) / (repo_file_name + '.yaml'))
 
     def generate_yaml(self) -> None:
         """

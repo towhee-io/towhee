@@ -14,15 +14,10 @@
 
 import requests
 import time
-import subprocess
-import re
-import sys
 from pathlib import Path
-from typing import List
+
 from tqdm import tqdm
 from threading import Thread
-
-from tempfile import TemporaryFile
 from requests.exceptions import HTTPError
 
 
@@ -76,176 +71,173 @@ class Worker(Thread):
         progress_bar.close()
 
 
-def obtain_lfs_extensions(author: str, repo: str, tag: str) -> List[str]:
-    """
-    Download the .gitattributes file from the specified repo in order to figure out
-    which files are being tracked by git-lfs.
+# def obtain_lfs_extensions(author: str, repo: str, tag: str) -> List[str]:
+#     """
+#     Download the .gitattributes file from the specified repo in order to figure out
+#     which files are being tracked by git-lfs.
 
-    Lines that deal with git-lfs take on the following format:
+#     Lines that deal with git-lfs take on the following format:
 
-    ```
-        *.extension   filter=lfs  merge=lfs ...
-    ```
+#     ```
+#         *.extension   filter=lfs  merge=lfs ...
+#     ```
 
-    Args:
-        author (`str`):
-            The account name.
-        repo (`str`):
-            The repo name.
-        tag (`str`):
-            The tag name.
+#     Args:
+#         author (`str`):
+#             The account name.
+#         repo (`str`):
+#             The repo name.
+#         tag (`str`):
+#             The tag name.
 
-    Returns:
-        (`List[str]`)
-            The list of file extentions tracked by git-lfs.
-    """
-    url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/.gitattributes?ref={tag}'
-    lfs_files = []
+#     Returns:
+#         (`List[str]`)
+#             The list of file extentions tracked by git-lfs.
+#     """
+#     url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/.gitattributes?ref={tag}'
+#     lfs_files = []
 
-    # Using temporary file in order to avoid double download, cleaner to not split up downloads everywhere.
-    with TemporaryFile() as temp_file:
-        try:
-            r = requests.get(url)
-            r.raise_for_status()
-        except HTTPError:
-            return lfs_files
+#     # Using temporary file in order to avoid double download, cleaner to not split up downloads everywhere.
+#     with TemporaryFile() as temp_file:
+#         try:
+#             r = requests.get(url)
+#             r.raise_for_status()
+#         except HTTPError:
+#             return lfs_files
 
-        temp_file.write(r.content)
-        temp_file.seek(0)
+#         temp_file.write(r.content)
+#         temp_file.seek(0)
 
-        for line in temp_file:
-            parts = line.split()
-            # We only care if lfs filter is present.
-            if b'filter=lfs' in parts[1:]:
-                # Removing the `*` in `*.ext`, need work if filtering specific files.
-                lfs_files.append(parts[0].decode('utf-8')[1:])
+#         for line in temp_file:
+#             parts = line.split()
+#             # We only care if lfs filter is present.
+#             if b'filter=lfs' in parts[1:]:
+#                 # Removing the `*` in `*.ext`, need work if filtering specific files.
+#                 lfs_files.append(parts[0].decode('utf-8')[1:])
 
-    return lfs_files
+#     return lfs_files
 
+# def latest_commit(author: str, repo: str, tag: str) -> str:
+#     """
+#     Grab the latest commit of a tag.
 
-def latest_commit(author: str, repo: str, tag: str) -> str:
-    """
-    Grab the latest commit of a tag.
+#     Args:
+#         author (`str`):
+#             The account name.
+#         repo (`str`):
+#             The repo name.
+#         tag (`str`):
+#             The tag name.
 
-    Args:
-        author (`str`):
-            The account name.
-        repo (`str`):
-            The repo name.
-        tag (`str`):
-            The tag name.
+#     Returns:
+#         (`str`)
+#             The latest commit hash cut down to 10 characters.
 
-    Returns:
-        (`str`)
-            The latest commit hash cut down to 10 characters.
+#     Raises:
+#         (`HTTPError`)
+#             Raise error in request.
+#     """
 
-    Raises:
-        (`HTTPError`)
-            Raise error in request.
-    """
+#     url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/commits?limit=1&page=1&sha={tag}'
+#     try:
+#         r = requests.get(url, allow_redirects=True)
+#         r.raise_for_status()
+#     except HTTPError as e:
+#         raise e
 
-    url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/commits?limit=1&page=1&sha={tag}'
-    try:
-        r = requests.get(url, allow_redirects=True)
-        r.raise_for_status()
-    except HTTPError as e:
-        raise e
+#     res = r.json()
 
-    res = r.json()
+#     return res[0]['sha'][:10]
 
-    return res[0]['sha'][:10]
+# def get_file_list(author: str, repo: str, commit: str) -> List[str]:
+#     """
+#     Get all the files in the current repo at the given commit.
 
+#     This is done through forming a git tree recursively and filtering out all the files.
 
-def get_file_list(author: str, repo: str, commit: str) -> List[str]:
-    """
-    Get all the files in the current repo at the given commit.
+#     Args:
+#         author (`str`):
+#             The account name.
+#         repo (`str`):
+#             The repo name.
+#         commit (`str`):
+#             The commit to base current existing files.
 
-    This is done through forming a git tree recursively and filtering out all the files.
+#     Returns:
+#         (`List[str]`)
+#             The file paths for the repo
 
-    Args:
-        author (`str`):
-            The account name.
-        repo (`str`):
-            The repo name.
-        commit (`str`):
-            The commit to base current existing files.
+#     Raises:
+#         (`HTTPError`)
+#             Raise error in request.
+#     """
 
-    Returns:
-        (`List[str]`)
-            The file paths for the repo
+#     url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/git/trees/{commit}?recursive=1'
+#     file_list = []
+#     try:
+#         r = requests.get(url)
+#         r.raise_for_status()
+#     except HTTPError as e:
+#         raise e
 
-    Raises:
-        (`HTTPError`)
-            Raise error in request.
-    """
+#     res = r.json()
+#     # Check each object in the tree
+#     for file in res['tree']:
+#         # Ignore directories (they have the type 'tree')
+#         if file['type'] != 'tree':
+#             file_list.append(file['path'])
 
-    url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/git/trees/{commit}?recursive=1'
-    file_list = []
-    try:
-        r = requests.get(url)
-        r.raise_for_status()
-    except HTTPError as e:
-        raise e
+#     return file_list
 
-    res = r.json()
-    # Check each object in the tree
-    for file in res['tree']:
-        # Ignore directories (they have the type 'tree')
-        if file['type'] != 'tree':
-            file_list.append(file['path'])
+# def download_files(author: str, repo: str, tag: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
+#     """
+#     Download the files from hub. One url is used for git-lfs files and another for the other files.
 
-    return file_list
+#     Args:
+#         author (`str`):
+#             The account name.
+#         repo (`str`):
+#             The repo name.
+#         tag (`str`):
+#             The tag name.
+#         file_list (`List[str]`):
+#             The hub file paths.
+#         lfs_files (`List[str]`):
+#             The file extensions being tracked by git-lfs.
+#         local_dir (`str`):
+#             The local directory to download to.
+#         install_reqs (`bool`):
+#             Whether to install packages from requirements.txt
 
+#     Raises:
+#         (`HTTPError`)
+#             Rasie error in request.
+#         (`OSError`)
+#             Raise error in writing file.
+#     """
+#     threads = []
 
-def download_files(author: str, repo: str, tag: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool) -> None:
-    """
-    Download the files from hub. One url is used for git-lfs files and another for the other files.
+#     # If the trailing forward slash is missing, add it on.
+#     if local_dir[-1] != '/':
+#         local_dir += '/'
 
-    Args:
-        author (`str`):
-            The account name.
-        repo (`str`):
-            The repo name.
-        tag (`str`):
-            The tag name.
-        file_list (`List[str]`):
-            The hub file paths.
-        lfs_files (`List[str]`):
-            The file extensions being tracked by git-lfs.
-        local_dir (`str`):
-            The local directory to download to.
-        install_reqs (`bool`):
-            Whether to install packages from requirements.txt
+#     # endswith() can check multiple suffixes if they are a tuple.
+#     lfs_files = tuple(lfs_files)
 
-    Raises:
-        (`HTTPError`)
-            Rasie error in request.
-        (`OSError`)
-            Raise error in writing file.
-    """
-    threads = []
+#     for file_name in file_list:
+#         # Files dealt with lfs have a different url.
+#         if file_name.endswith(lfs_files):
+#             url = f'https://hub.towhee.io/{author}/{repo}/media/branch/{tag}/{file_name}'
+#         else:
+#             url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/{file_name}?ref={tag}'
 
-    # If the trailing forward slash is missing, add it on.
-    if local_dir[-1] != '/':
-        local_dir += '/'
+#         threads.append(Worker(url, local_dir, file_name))
+#         threads[-1].start()
 
-    # endswith() can check multiple suffixes if they are a tuple.
-    lfs_files = tuple(lfs_files)
+#     for thread in threads:
+#         thread.join()
 
-    for file_name in file_list:
-        # Files dealt with lfs have a different url.
-        if file_name.endswith(lfs_files):
-            url = f'https://hub.towhee.io/{author}/{repo}/media/branch/{tag}/{file_name}'
-        else:
-            url = f'https://hub.towhee.io/api/v1/repos/{author}/{repo}/raw/{file_name}?ref={tag}'
-
-        threads.append(Worker(url, local_dir, file_name))
-        threads[-1].start()
-
-    for thread in threads:
-        thread.join()
-
-    if install_reqs:
-        requirements = list(filter(lambda x: re.match(r'(.*/)?requirements.txt', x) is not None, file_list))
-        for req in requirements:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
+#     if install_reqs:
+#         requirements = list(filter(lambda x: re.match(r'(.*/)?requirements.txt', x) is not None, file_list))
+#         for req in requirements:
+#             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
