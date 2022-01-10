@@ -13,8 +13,7 @@
 # limitations under the License.
 
 
-from typing import List
-from towhee.dataframe.array._array_ref import _ArrayRef
+from typing import List, Union
 
 
 class Array:
@@ -40,7 +39,7 @@ class Array:
         # copy=False
     ):
 
-        self.name = name
+        self._name = name
 
         # For `data` is `list`
         if isinstance(data, list):
@@ -53,18 +52,26 @@ class Array:
             data = [data]
 
         self._data = data
-        self._ref = _ArrayRef()
         self._offset = 0
 
     def __iter__(self):
         return self._data.__iter__()
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: Union[int, slice]):
         if isinstance(key, int):
             if key >= self._offset:
                 return self._data[key - self._offset]
             else:
                 raise IndexError('element with index=%d has been released' % (key))
+        elif isinstance(key, slice):
+            if key.start >= self._offset:
+                if key.stop is None:
+                    stop = None
+                else:
+                    stop = key.stop - self._offset
+                return self._data[key.start - self._offset:stop]
+            else:
+                raise IndexError('element with index=%d has been released' % (key.start))
         else:
             raise IndexError('only integers are invalid indices')
 
@@ -85,6 +92,13 @@ class Array:
         return len(self._data) + self._offset
 
     @property
+    def name(self) -> str:
+        """
+        Name of the Array'.
+        """
+        return self._name
+
+    @property
     def physical_size(self) -> int:
         """
         Number of elements still existed in the `Array`
@@ -98,6 +112,9 @@ class Array:
         """
         return self._data
 
+    def get_relative(self, key: int):
+        return self._data[key + self._offset]
+
     def is_empty(self) -> bool:
         """
         Indicator whether `Array` is empty.
@@ -107,34 +124,6 @@ class Array:
                 Return `True` if `Array` has no elements.
         """
         return not self.size
-
-    def add_reader(self) -> int:
-        """
-        Add a read reference to `Array`
-        """
-        return self._ref.add_reader()
-
-    def remove_reader(self, ref_id: int):
-        """
-        Remove a read reference from `Array`
-
-        Args:
-            ref_id (`int`):
-                The reference ID
-        """
-        self._ref.remove(ref_id)
-
-    def update_reader_offset(self, ref_id: int, offset: int):
-        """
-        Update a reference offset
-
-        Args:
-            ref_id (`int`):
-                The reference ID
-            offset (`int`):
-                The new reference offset
-        """
-        self._ref.update_reader_offset(ref_id, offset)
 
     def put(self, item):
         """
@@ -155,12 +144,14 @@ class Array:
         elif isinstance(data, List):
             self._data.extend(data)
 
-    def gc(self):
+    # TODO: Get next 'count' elements, decide where to do blocking logic.
+    # TODO: Make iterator based to support next(array)
+
+    def gc(self, offset):
         """
-        Release the unreferenced upper part of the `Array`, if any
+        Release the unreferenced lower part of the `Array`, if any
         """
-        min_ref_offset = self._ref.min_reader_offsets
-        release_offset = min_ref_offset - self._offset
+        release_offset = offset - self._offset
         if release_offset > 0:
             del self._data[:release_offset]
-            self._offset = min_ref_offset
+            self._offset = offset
