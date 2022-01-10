@@ -68,7 +68,7 @@ optional arguments:
 
 ```bash
 $ towheehub init --help
-usage: towheehub init {operator,pipeline} [-h] -a AUTHOR -r REPO [-d DIR]
+usage: towheehub init {operator,pipeline} [-h] -a AUTHOR -r REPO
 
 Initialize the file structure for your Repo.
 
@@ -76,10 +76,10 @@ positional arguments:
   {operator,pipeline}   Repo type/class in ['operator', 'pipeline'].
 
 optional arguments:
-  -h, --help                  show this help message and exit
-  -a AUTHOR, --author AUTHOR  Author of the Repo.
-  -r REPO, --repo REPO        Repo name.
-  -d DIR, --dir DIR           Directory to clone the Repo file, defaults to '.'.
+  -h, --help            show this help message and exit
+  -a AUTHOR, --author AUTHOR
+                        Author of the Repo.
+  -r REPO, --repo REPO  Repo name.
 ```
 
 ### `generate-yaml`
@@ -149,18 +149,18 @@ You can create your own [Operators](https://towhee.io/operators) and [Pipelines]
 
 ### 2. Initialize the Repo with template
 
-You can also specify the path (defaults to the current working directory) to initialize your Repo, which will clone the repo and initialize it according to the template.
+You can also initialize your Repo to the current working directory, which will clone the repo and initialize it according to the template.
 
-- Initialize Operator to  `cwd`
+- Initialize Operator
 
   ```bash
 $ towheehub init operator -a <your-account-name> -r <your-operator-name>
   ```
 
-- Initialize Pipeline to specific directory
+- Initialize Pipeline
 
   ```bash
-  $ towheehub init pipeline -a <your-account-name> -r <your-pipeline-name> -d </your/workspace/path>
+  $ towheehub init pipeline -a <your-account-name> -r <your-pipeline-name>
   ```
 
 ### 3. Generate yaml for Operator Repo
