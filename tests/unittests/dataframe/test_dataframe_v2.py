@@ -16,7 +16,7 @@
 import unittest
 import queue
 
-from towhee.array import Array
+from towhee.dataframe.array import Array
 from towhee.dataframe.dataframe_v2 import DataFrame, Responses
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
@@ -54,14 +54,14 @@ class TestDataframe(unittest.TestCase):
         df.seal()
         check_data(df)
 
-        # from list[towhee.Array]
+        # from list[towhee.dataframe.Array]
         data = self.get_arrays()
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
-        # from dict[str, towhee.Array]
+        # from dict[str, towhee.dataframe.Array]
         data = self.get_dict()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()

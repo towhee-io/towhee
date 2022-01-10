@@ -16,7 +16,7 @@ import threading
 from enum import Enum
 from typing import List, Tuple, Any, Iterable
 
-from towhee.array import Array
+from towhee.dataframe.array import Array
 
 
 class DataFrame:
@@ -27,7 +27,7 @@ class DataFrame:
         name (`str`):
             Name of the dataframe; `DataFrame` names should be the same as its
             representation.
-        data (`list[towhee.Array]` or `list[Tuple]` or `dict[str, towhee.Array]`):
+        data (`list[towhee.dataframe.Array]` or `list[Tuple]` or `dict[str, towhee.dataframe.Array]`):
             The data of the `DataFrame`. Internally, the data will be organized
             in a column-based manner.
     """
@@ -81,7 +81,7 @@ class DataFrame:
             # For `data` is `list[tuple]`
             if container_type is tuple:
                 self._from_tuples(data)
-            # For `data` is `list[towhee.Array]`
+            # For `data` is `list[towhee.dataframe.Array]`
             elif container_type is Array:
                 self._from_arrays(data)
             else:
@@ -325,7 +325,7 @@ class DataFrame:
             self._types[key[0]] = key[1]
             self._columns.append(key[0])
             if not isinstance(value, Array):
-                raise ValueError('value type in data should be towhee.Array')
+                raise ValueError('value type in data should be towhee.dataframe.Array')
 
         # check arrays length
         array_lengths = set(len(array) for array in data.values())
