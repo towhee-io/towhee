@@ -14,7 +14,7 @@
 
 import threading
 from enum import Enum
-from typing import List, Tuple, Any, Iterable
+from typing import List, Tuple, Any
 
 from towhee.dataframe.array import Array
 
@@ -24,6 +24,8 @@ class DataFrame:
     A `DataFrame` is a collection of immutable, potentially heterogeneous blogs of data.
 
     Args:
+        columns (`list[Tuple[str, Any]]`)
+            The list of the column names and their corresponding data types.
         name (`str`):
             Name of the dataframe; `DataFrame` names should be the same as its
             representation.
@@ -43,8 +45,7 @@ class DataFrame:
 
         self._iterator_lock = threading.RLock()
         self._it_id = 0
-        self._iterators = []
-        self._iterator_offsets = []
+        self._iterators = {}
         self._min_offset = 0
 
         self._block_lock = threading.RLock()
@@ -66,7 +67,6 @@ class DataFrame:
                     'Cannot construct dataframe without colum names and types (except for dict).')
 
         # For `data` is empty
-        # TODO: Create arrays even when empty.
         if not data:
             self._from_none()
 
@@ -105,6 +105,9 @@ class DataFrame:
                 return self._data_as_dict[key]
 
     def __str__(self):
+        """
+        Simple to_string for printing and debugging dfs. Currently assumes that the data can be str()'ed.
+        """
         ret = ''
         formater = ''
         columns = []
@@ -143,11 +146,6 @@ class DataFrame:
             return self._iterators
 
     @property
-    def iterator_offsets(self) -> List[int]:
-        with self._iterator_lock:
-            return self._iterator_offsets
-
-    @property
     def data(self) -> List[Array]:
         with self._data_lock:
             return self._data_as_list
@@ -168,12 +166,20 @@ class DataFrame:
             return self._sealed
 
     def window_get(self, offset, start, end, col, iter_id):
-    #     with self._iterator_lock:
-    #         if iter_id is not None and self._iterators[iter_id] is None:
-    #             return 'Killed', None
         raise NotImplementedError
 
     def get(self, offset, count = 1, iter_id = None):
+        """
+        Dataframe's function to return data at current offset and count.
+
+        Args:
+            offset:
+                The index to get data from.
+            count:
+                How many rows to return
+            iter_id:
+
+        """
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] is None:
                 return Responses.KILLED, None
@@ -224,11 +230,6 @@ class DataFrame:
                 with cv:
                     cv.notify_all()
 
-            # if adding multiple, check for all below
-            # for index, cv in self._blocked.items():
-            #     if index <= self._len:
-            #         cv.notify_all()
-
     def _put_list(self, item: list):
         assert len(item) == len(self._types)
 
@@ -258,14 +259,6 @@ class DataFrame:
 
         for key, val in item.items():
             self._data_as_list[self._columns.index(key)].put(val)
-
-    def seal(self):
-        with self._data_lock:
-            self._sealed = True
-            for _, (cv, _) in self._blocked.items():
-                with cv:
-                    cv.notify_all()
-            self._blocked.clear()
 
     def _from_none(self):
         self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]
@@ -337,29 +330,35 @@ class DataFrame:
         self._data_as_list = list(data.values())
         self._data_as_dict = {key[0]: val for key, val in data.items()}
 
+    def seal(self):
+        with self._data_lock:
+            self._sealed = True
+            for _, (cv, _) in self._blocked.items():
+                with cv:
+                    cv.notify_all()
+            self._blocked.clear()
+
     def gc(self):
         with self._data_lock:
-            self._min_offset = min(self._iterator_offsets)
+            self._min_offset = min([value for _, value in self._iterators.items()])
             if self._min_offset == float('inf'):
                 raise ValueError('All iterators killed')
 
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
-    def register_iter(self, iterator: Iterable):
+    def register_iter(self):
         with self._iterator_lock:
             self._it_id += 1
-            self._iterators.append(iterator)
-            self._iterator_offsets.append(0)
-            return self._it_id - 1
+            self._iterators[self._it_id] = 0
+            return self._it_id
 
     # TODO kill blocked iters or kill all iters?
     def unblock_iters(self):
         with self._iterator_lock:
             for _, (cv, iters) in self._blocked.items():
                 for ite in iters:
-                    self._iterators[ite] = None
-                    self._iterator_offsets[ite] = float('inf')
+                    self._iterators[ite] = float('inf')
                 with cv:
                     cv.notify_all()
 
@@ -378,8 +377,8 @@ class DataFrame:
         """
         # No lock needed since iterators only deal with their index
         with self._iterator_lock:
-            if self._iterator_offsets[iter_id] <= (offset + 1):
-                self._iterator_offsets[iter_id] = offset + 1
+            if self._iterators[iter_id] <= (offset + 1):
+                self._iterators[iter_id] = offset + 1
         self.gc()
 
     def notify_block(self, iter_id, offset, count):
