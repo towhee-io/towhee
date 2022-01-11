@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from pathlib import Path
 
 import git
@@ -125,7 +125,7 @@ class RepoManager:
         except HTTPError as e:
             raise e
 
-    def clone(self, local_dir: str, tag: str = 'main', install_reqs: bool = True) -> None:
+    def clone(self, local_dir: Union[str, Path], tag: str = 'main', install_reqs: bool = True) -> None:
         """
         Performs a download of the selected repo to specified location.
 
@@ -135,7 +135,7 @@ class RepoManager:
         Args:
             tag (`str`):
                 The tag name.
-            local_dir (`str`):
+            local_dir (`Union[str, Path]`):
                 The local directory being downloaded to
             install_reqs (`bool`):
                 Whether to install packages from requirements.txt
@@ -276,7 +276,14 @@ class RepoManager:
         return file_list
 
     def download_files(
-        self, author: str, repo: str, tag: str, file_list: List[str], lfs_files: List[str], local_dir: str, install_reqs: bool = True
+        self,
+        author: str,
+        repo: str,
+        tag: str,
+        file_list: List[str],
+        lfs_files: List[str],
+        local_dir: Union[str, Path],
+        install_reqs: bool = True
     ) -> None:
         """
         Download the files from hub. One url is used for git-lfs files and another for the other files.
@@ -292,7 +299,7 @@ class RepoManager:
                 The hub file paths.
             lfs_files (`List[str]`):
                 The file extensions being tracked by git-lfs.
-            local_dir (`str`):
+            local_dir (`Union[str, Path]`):
                 The local directory to download to.
             install_reqs (`bool`):
                 Whether to install packages from requirements.txt
@@ -306,6 +313,9 @@ class RepoManager:
         threads = []
 
         # If the trailing forward slash is missing, add it on.
+        if isinstance(local_dir, Path):
+            local_dir = str(local_dir)
+
         if local_dir[-1] != '/':
             local_dir += '/'
 
@@ -330,12 +340,12 @@ class RepoManager:
             for req in requirements:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
 
-    def download(self, local_dir: str, tag: str = 'main'):
+    def download(self, local_dir: Union[str, Path], tag: str = 'main'):
         """
         Download repo without git.
 
         Agrs:
-            local_dir (`str`):
+            local_dir (`Union[str, Path]`):
                 Thre local dir to download the files into.
             tag (`str`):
                 The tag of the repo to download.
@@ -349,7 +359,8 @@ class RepoManager:
         file_list = self.get_file_list(self.author, self.repo, commit)
         self.download_files(self.author, self.repo, tag, file_list, lfs_files, local_dir, False)
 
-    def covert_dic(self, dicts: dict) -> dict:
+    @staticmethod
+    def convert_dict(dicts: dict) -> dict:
         """
         Convert all the values in a dictionary to str and replace char.
 
