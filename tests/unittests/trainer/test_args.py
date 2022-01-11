@@ -15,7 +15,7 @@
 
 import unittest
 
-from trainer.training_config import TrainingConfig
+from towhee.trainer.training_config import TrainingConfig
 
 
 class TrainerArgsTest(unittest.TestCase):

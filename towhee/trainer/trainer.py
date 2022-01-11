@@ -29,12 +29,12 @@ from torch import optim
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 
-from towhee.trainer.callback import (
+from towhee.trainer.trainer_callback import (
     # CallbackHandler,
     DefaultFlowCallback,
     PrinterCallback,
     ProgressCallback,
-    Callback,
+    TrainerCallback,
     # TrainerControl,
     # TrainerState,
 )
@@ -78,7 +78,7 @@ class Trainer:
             training_config: TrainingConfig = None,
             train_dataset: Optional[Dataset] = None,
             eval_dataset: Optional[Dataset] = None,
-            callbacks: Optional[List[Callback]] = None,
+            callbacks: Optional[List[TrainerCallback]] = None,
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
             = (None, None),
     ):

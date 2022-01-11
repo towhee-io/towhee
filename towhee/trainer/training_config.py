@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
-from towhee.trainer.callback import Callback
+from towhee.trainer.trainer_callback import TrainerCallback
 
 import torch
 
@@ -134,7 +134,7 @@ class TrainingConfig:
     _n_gpu: int = field(init=False, repr=False, default=-1)
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
 
-    call_back_list: Optional[List[Callback]] = field(
+    call_back_list: Optional[List[TrainerCallback]] = field(
         default=None, metadata={"help": "."}
     )
 

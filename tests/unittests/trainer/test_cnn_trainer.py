@@ -20,8 +20,8 @@ import torchvision
 from torch import nn
 from torchvision import transforms
 
-from trainer.trainer import Trainer
-from trainer.training_config import TrainingConfig
+from towhee.trainer.trainer import Trainer
+from towhee.trainer.training_config import TrainingConfig
 from towhee.data.dataset.image_datasets import PyTorchImageDataset
 
 cache_path = Path(__file__).parent.parent.resolve()
