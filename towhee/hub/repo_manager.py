@@ -17,15 +17,18 @@ import os
 import re
 import subprocess
 import sys
+import time
 from typing import Tuple, List, Union
+from shutil import rmtree, move
 from pathlib import Path
-
-import git
-from tempfile import TemporaryFile
-from towhee.hub.download_tools import Worker
-from towhee.utils.log import engine_log
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
+
+import git
+from tqdm import tqdm
+from tempfile import TemporaryFile
+from concurrent.futures import ThreadPoolExecutor
+from towhee.utils.log import engine_log
 
 
 class RepoManager:
@@ -75,7 +78,7 @@ class RepoManager:
             (`HTTPError`)
                 Raise the error in request.
         """
-        url = f'{self.root}/api/v1/users/{self._author}/tokens'
+        url = f'{self._root}/api/v1/users/{self._author}/tokens'
         data = {'name': token_name}
         try:
             r = requests.post(url, data=data, auth=HTTPBasicAuth(self._author, password))
@@ -99,7 +102,7 @@ class RepoManager:
             password (`str`):
                 The password of current author.
         """
-        url = f'{self.root}/api/v1/users/{self._author}/tokens/{token_id}'
+        url = f'{self._root}/api/v1/users/{self._author}/tokens/{token_id}'
         try:
             r = requests.delete(url, auth=HTTPBasicAuth(self._author, password))
             r.raise_for_status()
@@ -119,7 +122,7 @@ class RepoManager:
                 Raise the error in request.
         """
         try:
-            url = f'{self.root}/api/v1/repos/{self._author}/{self._repo}'
+            url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}'
             r = requests.get(url)
             return r.status_code == 200
         except HTTPError as e:
@@ -150,14 +153,14 @@ class RepoManager:
             engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
             raise ValueError(f'{self._author}/{self._author} repo does not exist.')
 
-        url = f'{self.root}/{self._author}/{self._repo}.git'
+        url = f'{self._root}/{self._author}/{self._repo}.git'
         git.Repo.clone_from(url=url, to_path=local_dir, branch=tag)
 
         if install_reqs:
             if 'requirements.txt' in os.listdir(local_dir):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', Path(local_dir) / 'requirements.txt'])
 
-    def obtain_lfs_extensions(self, author: str, repo: str, tag: str) -> List[str]:
+    def obtain_lfs_extensions(self, tag: str) -> List[str]:
         """
         Download the .gitattributes file from the specified repo in order to figure out
         which files are being tracked by git-lfs.
@@ -169,10 +172,6 @@ class RepoManager:
         ```
 
         Args:
-            author (`str`):
-                The account name.
-            repo (`str`):
-                The repo name.
             tag (`str`):
                 The tag name.
 
@@ -180,7 +179,7 @@ class RepoManager:
             (`List[str]`)
                 The list of file extentions tracked by git-lfs.
         """
-        url = f'{self.root}/api/v1/repos/{author}/{repo}/raw/.gitattributes?ref={tag}'
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/.gitattributes?ref={tag}'
         lfs_files = []
 
         # Using temporary file in order to avoid double download, cleaner to not split up downloads everywhere.
@@ -203,15 +202,11 @@ class RepoManager:
 
         return lfs_files
 
-    def latest_commit(self, author: str, repo: str, tag: str) -> str:
+    def latest_commit(self, tag: str) -> str:
         """
         Grab the latest commit of a tag.
 
         Args:
-            author (`str`):
-                The account name.
-            repo (`str`):
-                The repo name.
             tag (`str`):
                 The tag name.
 
@@ -224,7 +219,7 @@ class RepoManager:
                 Raise error in request.
         """
 
-        url = f'{self.root}/api/v1/repos/{author}/{repo}/commits?limit=1&page=1&sha={tag}'
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/commits?limit=1&page=1&sha={tag}'
         try:
             r = requests.get(url, allow_redirects=True)
             r.raise_for_status()
@@ -235,17 +230,13 @@ class RepoManager:
 
         return res[0]['sha'][:10]
 
-    def get_file_list(self, author: str, repo: str, commit: str) -> List[str]:
+    def get_file_list(self, commit: str) -> List[str]:
         """
         Get all the files in the current repo at the given commit.
 
         This is done through forming a git tree recursively and filtering out all the files.
 
         Args:
-            author (`str`):
-                The account name.
-            repo (`str`):
-                The repo name.
             commit (`str`):
                 The commit to base current existing files.
 
@@ -258,7 +249,7 @@ class RepoManager:
                 Raise error in request.
         """
 
-        url = f'{self.root}/api/v1/repos/{author}/{repo}/git/trees/{commit}?recursive=1'
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/git/trees/{commit}?recursive=1'
         file_list = []
         try:
             r = requests.get(url)
@@ -275,24 +266,11 @@ class RepoManager:
 
         return file_list
 
-    def download_files(
-        self,
-        author: str,
-        repo: str,
-        tag: str,
-        file_list: List[str],
-        lfs_files: List[str],
-        local_dir: Union[str, Path],
-        install_reqs: bool = True
-    ) -> None:
+    def download_executor(self, tag: str, file_name: str, lfs_files: Tuple[str], local_dir: Union[str, Path]) -> bool:
         """
-        Download the files from hub. One url is used for git-lfs files and another for the other files.
+        Load the content from url and write into local files.
 
         Args:
-            author (`str`):
-                The account name.
-            repo (`str`):
-                The repo name.
             tag (`str`):
                 The tag name.
             file_list (`List[str]`):
@@ -301,8 +279,6 @@ class RepoManager:
                 The file extensions being tracked by git-lfs.
             local_dir (`Union[str, Path]`):
                 The local directory to download to.
-            install_reqs (`bool`):
-                Whether to install packages from requirements.txt
 
         Raises:
             (`HTTPError`)
@@ -310,30 +286,79 @@ class RepoManager:
             (`OSError`)
                 Raise error in writing file.
         """
-        threads = []
+        if file_name.endswith(lfs_files):
+            url = f'{self._root}/{self._author}/{self._repo}/media/branch/{tag}/{file_name}'
+        else:
+            url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/{file_name}?ref={tag}'
 
-        # If the trailing forward slash is missing, add it on.
-        if isinstance(local_dir, Path):
-            local_dir = str(local_dir)
+        file_path = Path(local_dir) / file_name
 
-        if local_dir[-1] != '/':
-            local_dir += '/'
+        if not file_path.parent.resolve().exists():
+            try:
+                file_path.parent.resolve().mkdir()
+            except FileExistsError:
+                pass
+            except OSError as e:
+                raise e
+
+        # Get content.
+        for i in range(5):
+            try:
+                r = requests.get(url, stream=True)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 429 and i < 4:
+                    time.sleep(2)
+                    continue
+                r.raise_for_status()
+            except HTTPError as e:
+                raise e
+
+        # Create local files.
+        file_size = int(r.headers.get('content-length', 0))
+        chunk_size = 1024
+        progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True, desc=f'Downloading {file_name}')
+        with open(file_path, 'wb') as local_file:
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                local_file.write(chunk)
+                progress_bar.update(len(chunk))
+        progress_bar.close()
+
+    def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_dir: Union[str, Path], install_reqs: bool = True) -> None:
+        """
+        Download files with thread pool.
+
+        Args:
+            tag (`str`):
+                The tag name.
+            file_list (`List[str]`):
+                The hub file paths.
+            lfs_files (`List[str]`):
+                The file extensions being tracked by git-lfs.
+            local_dir (`str`):
+                The local directory to download to.
+            install_reqs (`bool`):
+                Whether to install packages from requirements.txt.
+        """
+        if isinstance(local_dir, str):
+            local_dir = Path(local_dir)
 
         # endswith() can check multiple suffixes if they are a tuple.
         lfs_files = tuple(lfs_files)
 
-        for file_name in file_list:
-            # Files dealt with lfs have a different url.
-            if file_name.endswith(lfs_files):
-                url = f'{self.root}/{author}/{repo}/media/branch/{tag}/{file_name}'
-            else:
-                url = f'{self.root}/api/v1/repos/{author}/{repo}/raw/{file_name}?ref={tag}'
+        futures = []
 
-            threads.append(Worker(url, local_dir, file_name))
-            threads[-1].start()
+        with ThreadPoolExecutor(max_workers=50) as pool:
+            for file_name in file_list:
+                temp = pool.submit(self.download_executor, tag, file_name, lfs_files, local_dir.parent / 'temp')
+                futures.append(temp)
 
-        for thread in threads:
-            thread.join()
+        try:
+            _ = [i.result() for i in futures]
+            move(local_dir.parent / 'temp', local_dir)
+        except Exception as e:
+            rmtree(local_dir.parent / 'temp')
+            raise e
 
         if install_reqs:
             requirements = list(filter(lambda x: re.match(r'(.*/)?requirements.txt', x) is not None, file_list))
@@ -354,10 +379,10 @@ class RepoManager:
             engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
             raise ValueError(f'{self._author}/{self._author} repo does not exist.')
 
-        lfs_files = self.obtain_lfs_extensions(self.author, self.repo, tag)
-        commit = self.latest_commit(self.author, self.repo, tag)
-        file_list = self.get_file_list(self.author, self.repo, commit)
-        self.download_files(self.author, self.repo, tag, file_list, lfs_files, local_dir, False)
+        lfs_files = self.obtain_lfs_extensions(tag)
+        commit = self.latest_commit(tag)
+        file_list = self.get_file_list(commit)
+        self.download_files(tag, file_list, lfs_files, local_dir, False)
 
     @staticmethod
     def convert_dict(dicts: dict) -> dict:

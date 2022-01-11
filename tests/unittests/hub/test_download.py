@@ -15,7 +15,6 @@
 import unittest
 import numpy as np
 from pathlib import Path
-from PIL import Image
 # from shutil import rmtree
 
 from towhee import pipeline
