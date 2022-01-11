@@ -1,6 +1,10 @@
 ---
 id: music-recognition-system
 title: Music recognition
+authors:
+  - name: Jael Gu
+    url: https://github.com/jaelgu
+    imageURL: https://github.com/jaelgu.png
 ---
 
 You can download the [music_recognition_tutorial.ipynb](https://github.com/towhee-io/towhee/blob/main/tutorials/music_recognition_tutorial.ipynb) and run it at local with [jupyter notebook](https://jupyter.org/install).
