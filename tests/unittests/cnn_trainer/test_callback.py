@@ -17,7 +17,7 @@ import unittest
 import torchvision
 
 from torch import optim
-from towhee.cnn_trainer.trainer_callback import DefaultFlowCallback, CallbackHandler, ProgressCallback
+from trainer.callback import DefaultFlowCallback, CallbackHandler, ProgressCallback
 
 DEFAULT_CALLBACKS = [DefaultFlowCallback]
 

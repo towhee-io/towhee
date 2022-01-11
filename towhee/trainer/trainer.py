@@ -23,26 +23,26 @@ import numpy as np
 import torch
 
 from typing import Dict, List, Optional, Tuple
+
 from torch import nn
 from torch import optim
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 
-from towhee.cnn_trainer.trainer_callback import (
-    CallbackHandler,
+from towhee.trainer.callback import (
+    # CallbackHandler,
     DefaultFlowCallback,
     PrinterCallback,
     ProgressCallback,
-    TrainerCallback,
-    TrainerControl,
-    TrainerState,
+    Callback,
+    # TrainerControl,
+    # TrainerState,
 )
-from towhee.cnn_trainer.trainer_utils import (
+from trainer.utils.trainer_utils import (
     PREFIX_CHECKPOINT_DIR,
-    TrainOutput,
 )
-from towhee.cnn_trainer.training_args import TrainingArguments
-from towhee.cnn_trainer.utils import logging
+from towhee.trainer.training_config import TrainingConfig
+from towhee.trainer.utils import logging
 
 DEFAULT_CALLBACKS = [DefaultFlowCallback]
 # DEFAULT_PRO = ProgressCallback
@@ -52,14 +52,14 @@ logger = logging.get_logger(__name__)
 WEIGHTS_NAME = "pytorch_model.bin"
 
 
-class PyTorchCNNTrainer:
+class Trainer:
     """
     PyTorchCNNTrainer is a simple but feature-complete training and eval loop for PyTorch.
 
     Args:
         model (:obj:`torch.nn.Module`):
             The model to train, evaluate or use for predictions.
-        args (:class:`~towhee.TrainingArguments`):
+        training_config (:class:`~towhee.TrainingArguments`):
             The arguments to tweak for training. Will default to a basic instance of
             :class:`~towhee.TrainingArguments` with the ``output_dir`` set to a directory named
             `tmp_trainer` in the current directory if not provided.
@@ -75,18 +75,18 @@ class PyTorchCNNTrainer:
     def __init__(
             self,
             model: nn.Module = None,
-            args: TrainingArguments = None,
+            training_config: TrainingConfig = None,
             train_dataset: Optional[Dataset] = None,
             eval_dataset: Optional[Dataset] = None,
-            callbacks: Optional[List[TrainerCallback]] = None,
+            callbacks: Optional[List[Callback]] = None,
             optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
             = (None, None),
     ):
-        if args is None:
+        if training_config is None:
             output_dir = "tmp_trainer"
             logger.info("No `TrainingArguments` passed, using `output_dir.")
-            args = TrainingArguments(output_dir=output_dir)
-        self.args = args
+            training_config = TrainingConfig(output_dir=output_dir)
+        self.args = training_config
 
         if model is None:
             raise RuntimeError("`Trainer` requires either a `model` or `model_init` argument")
@@ -99,22 +99,22 @@ class PyTorchCNNTrainer:
         self.optimizer, self.lr_scheduler = optimizers
         default_callbacks = DEFAULT_CALLBACKS
         callbacks = default_callbacks if callbacks is None else default_callbacks + callbacks
-        self.callback_handler = CallbackHandler(
-            callbacks, self.model, self.optimizer, self.lr_scheduler
-        )
+        # self.callback_handler = CallbackHandler(
+        #     callbacks, self.model, self.optimizer, self.lr_scheduler
+        # )
         self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
 
         os.makedirs(self.args.output_dir, exist_ok=True)
 
-        if args.max_steps > 0:
+        if training_config.max_steps > 0:
             logger.info("max_steps is given.")
 
-        if train_dataset is not None and not isinstance(train_dataset, collections.abc.Sized) and args.max_steps <= 0:
+        if train_dataset is not None and not isinstance(train_dataset, collections.abc.Sized) and training_config.max_steps <= 0:
             raise ValueError("train_dataset does not implement __len__, max_steps has to be specified")
 
-        self.state = TrainerState()
+        # self.state = TrainerState()
         # control the save condition
-        self.control = TrainerControl()
+        # self.control = TrainerControl()
         # Internal variable to count flos in each process, will be accumulated in `self.state.total_flos` then
         # returned to 0 every time flos need to be logged
         self.current_flcurrent_flosos = 0
@@ -122,7 +122,7 @@ class PyTorchCNNTrainer:
             ["labels"]
         )
         self.label_names = default_label_names if self.args.label_names is None else self.args.label_names
-        self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
+        # self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
 
     def add_callback(self, callback):
         """
@@ -133,7 +133,7 @@ class PyTorchCNNTrainer:
                A :class:`~towhee.TrainerCallback` class or an instance of a :class:`~towhee.TrainerCallback`.
                In the first case, will instantiate a member of that class.
         """
-        self.callback_handler.add_callback(callback)
+        # self.callback_handler.add_callback(callback)
 
     def get_train_dataloader(self) -> DataLoader:
         """
@@ -203,8 +203,8 @@ class PyTorchCNNTrainer:
                     args.max_steps % num_update_steps_per_epoch > 0
                 )
             else:
-                max_steps = math.ceil(args.num_train_epochs * num_update_steps_per_epoch)
-                num_train_epochs = math.ceil(args.num_train_epochs)
+                max_steps = math.ceil(args.epoch_num * num_update_steps_per_epoch)
+                num_train_epochs = math.ceil(args.epoch_num)
         else:
             max_steps = args.max_steps
             # Setting a very large number of epochs so we go as many times as necessary over the iterator.
@@ -212,7 +212,7 @@ class PyTorchCNNTrainer:
 
         self.create_optimizer_and_scheduler()
 
-        self.state = TrainerState()
+        # self.state = TrainerState()
 
         model = self.model
 
@@ -227,18 +227,18 @@ class PyTorchCNNTrainer:
         logger.info("  Total train batch size (w. parallel, distributed & accumulation) = %d", total_train_batch_size)
         logger.info("  Total optimization steps = %d", max_steps)
 
-        self.state.epoch = 0
+        # self.state.epoch = 0
         epochs_trained = 0
 
         # Update the references
-        self.callback_handler.model = self.model
-        self.callback_handler.optimizer = self.optimizer
-        self.callback_handler.lr_scheduler = self.lr_scheduler
-        self.callback_handler.train_dataloader = train_dataloader
+        # self.callback_handler.model = self.model
+        # self.callback_handler.optimizer = self.optimizer
+        # self.callback_handler.lr_scheduler = self.lr_scheduler
+        # self.callback_handler.train_dataloader = train_dataloader
         # This should be the same if the state has been saved but in case the training arguments changed, it's safer
         # to set this after the load.
-        self.state.max_steps = max_steps
-        self.state.num_train_epochs = num_train_epochs
+        # self.state.max_steps = max_steps
+        # self.state.num_train_epochs = num_train_epochs
 
         tr_loss = torch.tensor(0.0)
         tr_corrects = 0
@@ -246,7 +246,7 @@ class PyTorchCNNTrainer:
         self._total_loss_scalar = 0.0
         # model.zero_grad()
 
-        self.control = self.callback_handler.on_train_begin(args, self.state, self.control)
+        # self.control = self.callback_handler.on_train_begin(args, self.state, self.control)
 
         for epoch in range(epochs_trained, num_train_epochs):
             epoch_iterator = train_dataloader
@@ -254,10 +254,11 @@ class PyTorchCNNTrainer:
             steps_in_epoch = (
                 len(epoch_iterator) if train_dataset_is_sized else args.max_steps
             )
-            self.control = self.callback_handler.on_epoch_begin(args, self.state, self.control)
+            # self.control = self.callback_handler.on_epoch_begin(args, self.state, self.control)
 
             for step, inputs in enumerate(epoch_iterator):
                 loss, corrects = self.training_step(model, inputs)
+                print(loss)
                 tr_loss += loss
                 tr_corrects += corrects
 
@@ -269,12 +270,12 @@ class PyTorchCNNTrainer:
                     self.lr_scheduler.step()
 
                 self.optimizer.zero_grad()
-                self.state.global_step += 1
-                self.state.epoch = epoch + (step + 1) / steps_in_epoch
-                self.control = self.callback_handler.on_step_end(args, self.state, self.control)
+                # self.state.global_step += 1
+                # self.state.epoch = epoch + (step + 1) / steps_in_epoch
+                # self.control = self.callback_handler.on_step_end(args, self.state, self.control)
 
-            self.control = self.callback_handler.on_epoch_end(args, self.state, self.control)
-            self._maybe_log_save_evaluate(tr_loss, tr_corrects, num_examples)
+            # self.control = self.callback_handler.on_epoch_end(args, self.state, self.control)
+            # self._maybe_log_save_evaluate(tr_loss, tr_corrects, num_examples)
 
             if self.control.should_training_stop:
                 break
@@ -286,9 +287,10 @@ class PyTorchCNNTrainer:
         # train_loss = self._total_loss_scalar / self.state.global_step
         train_loss = self._total_loss_scalar / num_examples
 
-        self.control = self.callback_handler.on_train_end(args, self.state, self.control)
+        # self.control = self.callback_handler.on_train_end(args, self.state, self.control)
 
-        return TrainOutput(self.state.global_step, train_loss)
+        # return TrainOutput(self.state.global_step, train_loss)
+        return None
 
     def _maybe_log_save_evaluate(self, tr_loss, tr_corrects, num_examples):
         if self.control.should_log:
@@ -420,3 +422,7 @@ class PyTorchCNNTrainer:
 
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+
+    def push_model_to_hub(self):
+        pass
+

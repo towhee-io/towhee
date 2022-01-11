@@ -19,10 +19,11 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
+from towhee.trainer.callback import Callback
 
 import torch
 
-from towhee.cnn_trainer.utils import logging
+from towhee.trainer.utils import logging
 
 logger = logging.get_logger(__name__)
 log_levels = logging.get_log_levels_dict().copy()
@@ -39,7 +40,7 @@ def default_logdir() -> str:
 
 
 @dataclass
-class TrainingArguments:
+class TrainingConfig:
     """
         Training arguments of CNN trainer.
 
@@ -74,6 +75,7 @@ class TrainingArguments:
             label_names (:obj:`List[str]`, `optional`):
                 The list of keys in your dictionary of inputs that correspond to the labels.
         """
+
 
     output_dir: str = field(
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
@@ -113,7 +115,7 @@ class TrainingArguments:
         metadata={"help": "Number of predictions steps to accumulate before moving the tensors to the CPU."},
     )
 
-    num_train_epochs: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
+    epoch_num: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
     max_steps: int = field(
         default=-1,
         metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
@@ -131,6 +133,11 @@ class TrainingArguments:
 
     _n_gpu: int = field(init=False, repr=False, default=-1)
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
+
+    call_back_list: Optional[List[Callback]] = field(
+        default=None, metadata={"help": "."}
+    )
+
 
     def __post_init__(self):
         if self.output_dir is not None:
@@ -203,3 +210,10 @@ class TrainingArguments:
         The device used by this process.
         """
         return self._setup_devices
+
+
+    def load_from_yaml(self):
+        pass
+
+    def save_to_yaml(self):
+        pass

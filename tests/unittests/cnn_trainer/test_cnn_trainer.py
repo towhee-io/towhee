@@ -20,8 +20,8 @@ import torchvision
 from torch import nn
 from torchvision import transforms
 
-from towhee.cnn_trainer.cnn_trainer import PyTorchCNNTrainer
-from towhee.cnn_trainer.training_args import TrainingArguments
+from trainer.trainer import Trainer
+from trainer.training_config import TrainingConfig
 from towhee.data.dataset.image_datasets import PyTorchImageDataset
 
 cache_path = Path(__file__).parent.parent.resolve()
@@ -43,16 +43,16 @@ class TrainerTest(unittest.TestCase):
         self.model = torchvision.models.resnet50(pretrained=True)
         num_ftrs = self.model.fc.in_features
         self.model.fc = nn.Linear(num_ftrs, self.train_data.num_classes)
-        self.training_args = TrainingArguments(
+        self.training_args = TrainingConfig(
             output_dir='./ResNet50',
             overwrite_output_dir=True,
             num_train_epochs=5,
             per_gpu_train_batch_size=4,
             prediction_loss_only=True,
         )
-        self.trainer = PyTorchCNNTrainer(
+        self.trainer = Trainer(
             model=self.model,
-            args=self.training_args,
+            training_config=self.training_args,
             train_dataset=self.train_data
         )
 

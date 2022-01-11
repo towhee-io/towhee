@@ -15,12 +15,12 @@
 
 import unittest
 
-from towhee.cnn_trainer.training_args import TrainingArguments
+from trainer.training_config import TrainingConfig
 
 
 class TrainerArgsTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.training_args = TrainingArguments(
+        self.training_args = TrainingConfig(
             output_dir='./ResNet50',
             overwrite_output_dir=True,
             num_train_epochs=5,
