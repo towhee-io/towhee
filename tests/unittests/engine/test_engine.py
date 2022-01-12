@@ -18,13 +18,14 @@ import unittest
 from towhee.dag.graph_repr import GraphRepr
 from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
+from towhee.dag import OperatorRepr
 from towhee.engine.engine import Engine
 from towhee.engine.pipeline import Pipeline
 from towhee.dataframe import DataFrame, Variable
-from tests.unittests.test_util import SIMPLE_PIPELINE_YAML
-from towhee.dag import OperatorRepr
-from tests.unittests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
+
+from tests.unittests.test_util import SIMPLE_PIPELINE_YAML
+from tests.unittests import CACHE_PATH
 
 
 class TestEngine(unittest.TestCase):

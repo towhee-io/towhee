@@ -36,5 +36,5 @@ class EmbeddingExtractorTest(unittest.TestCase):
         image = Image.open(img)
         transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
         img = transform(image).unsqueeze(dim=0).to(device)
-        out = res(img)
+        res(img)
         self.assertTrue(emb.emb_out.embeddings[0].shape == torch.Size([1, 1000]))
