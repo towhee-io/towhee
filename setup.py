@@ -49,4 +49,9 @@ setup(
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",
+    entry_points={
+        'console_scripts': [
+            'towheehub=towhee.hub.bin.hub_tools:main'
+        ],
+    }
 )
