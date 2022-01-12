@@ -15,15 +15,15 @@
 
 import unittest
 
-from towhee.cnn_trainer.training_args import TrainingArguments
+from towhee.trainer.training_config import TrainingConfig
 
 
 class TrainerArgsTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.training_args = TrainingArguments(
+        self.training_args = TrainingConfig(
             output_dir='./ResNet50',
             overwrite_output_dir=True,
-            num_train_epochs=5,
+            epoch_num=5,
             per_gpu_train_batch_size=4,
             prediction_loss_only=True,
         )
