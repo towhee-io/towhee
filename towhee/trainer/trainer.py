@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020-present the HuggingFace Inc. team and 2021 Zilliz.
+# Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,418 +13,677 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
 import math
 import os
-import random
-import sys
-import warnings
-import numpy as np
 import torch
+import torch.distributed as dist
 
-from typing import Dict, List, Optional, Tuple
-
+from typing import Union, Dict, Any, Optional
+from pathlib import Path
 from torch import nn
 from torch import optim
+from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
+from torch.multiprocessing import Process
+from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
 
-#from towhee.trainer.callback import (
-#     Callback
-#     CallbackHandler,
-#     DefaultFlowCallback,
-#     PrinterCallback,
-#     ProgressCallback,
-#     Callback,
-#     TrainerControl,
-#     TrainerState,
-#)
-from towhee.trainer.utils.trainer_utils import (
-    PREFIX_CHECKPOINT_DIR,
-)
+from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpointCallback, \
+    EarlyStoppingCallback, TrainerControl
+from towhee.trainer.metrics import get_metric_by_name
+from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
+from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process, send_to_device
 from towhee.trainer.training_config import TrainingConfig
-from towhee.trainer.utils import logging
-
-# DEFAULT_CALLBACKS = [DefaultFlowCallback]
-# DEFAULT_PRO = ProgressCallback
-
-logger = logging.get_logger(__name__)
+from towhee.utils.log import trainer_log
+from towhee.trainer.optimization.optimization import get_scheduler
+from towhee.trainer.callback import CallbackList, _get_summary_writer_constructor
 
 WEIGHTS_NAME = "pytorch_model.bin"
+TEMP_INIT_WEIGHTS = "./temp_init_weights.pt"
+NAME = "name_"
+CUSTOM = "custom_"
+no_option_list = ["no", "null", "None", None, False]
+
+
+def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        instance = construct_name()
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        instance = construct_name(**kwargs)
+    return instance
+
+
+def _construct_scheduler_from_config(module: Any, config: Union[str, Dict]):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        instance = construct_name()
+    elif isinstance(config, Dict):
+        scheduler_construct_name = config[NAME]
+        construct_name = getattr(module, scheduler_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        instance = construct_name(**kwargs)
+    return instance
+
+
+def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], model=None):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        if model is not None:
+            instance = construct_name(model.parameters())
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        if model is not None:
+            trainable_params = [p for p in model.parameters() if p.requires_grad]
+            instance = construct_name(trainable_params, **kwargs)
+    return instance
+
+
+def freeze_bn(model):
+    classname = model.__class__.__name__
+    if classname.find("BatchNorm") != -1:
+        model.eval()
 
 
 class Trainer:
     """
-    PyTorchCNNTrainer is a simple but feature-complete training and eval loop for PyTorch.
-
-    Args:
-        model (:obj:`torch.nn.Module`):
-            The model to train, evaluate or use for predictions.
-        training_config (:class:`~towhee.TrainingArguments`):
-            The arguments to tweak for training. Will default to a basic instance of
-            :class:`~towhee.TrainingArguments` with the ``output_dir`` set to a directory named
-            `tmp_trainer` in the current directory if not provided.
-        train_dataset (:obj:`torch.utils.data.dataset.Dataset`):
-            The dataset to use for training.
-        eval_dataset (:obj:`torch.utils.data.dataset.Dataset`, `optional`):
-             The dataset to use for evaluation.
-        callbacks (List of :obj:`~towhee.TrainerCallback`, `optional`):
-            A list of callbacks to customize the training loop.
-
+    train an operator
     """
 
     def __init__(
             self,
             model: nn.Module = None,
             training_config: TrainingConfig = None,
-            train_dataset: Optional[Dataset] = None,
-            eval_dataset: Optional[Dataset] = None,
-            # callbacks: Optional[List[Callback]] = None,
-            optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
-            = (None, None),
+            train_dataset: Union[Dataset, TowheeDataSet] = None,
+            eval_dataset: Union[Dataset, TowheeDataSet] = None,
+            model_card: ModelCard = None,
+            train_dataloader: Optional[DataLoader] = None,
+            eval_dataloader: Optional[DataLoader] = None
     ):
         if training_config is None:
             output_dir = "tmp_trainer"
-            logger.info("No `TrainingArguments` passed, using `output_dir.")
+            trainer_log.info("No `TrainingArguments` passed, using `output_dir.")
             training_config = TrainingConfig(output_dir=output_dir)
-        self.args = training_config
+        self.configs = training_config
 
         if model is None:
             raise RuntimeError("`Trainer` requires either a `model` or `model_init` argument")
 
-        self.train_dataset = train_dataset
+        if isinstance(train_dataset, Dataset):
+            self.train_dataset = train_dataset
+        elif isinstance(train_dataset, TowheeDataSet):
+            self.train_dataset = train_dataset.dataset
+
         self.eval_dataset = eval_dataset
-
         self.model = model
+        self.model_card = model_card
+        self.optimizer = None
+        self.override_optimizer = False
+        self.lr_scheduler_type = self.configs.lr_scheduler_type
+        self.lr_scheduler = None
+        self.lr_value = self.configs.lr
+        self.metric = None
+        self.loss = None
+        self.override_loss = False
+        self.loss_value = 0.0
+        self.callbacks = CallbackList()
+        self.loss_metric = None
+        self.metric_value = 0.0
+        self.epoch = 0
+        self.train_dataloader = train_dataloader
+        self.train_sampler = None
+        self.eval_dataloader = eval_dataloader
+        self.distributed = False
 
-        self.optimizer, self.lr_scheduler = optimizers
-        # default_callbacks = DEFAULT_CALLBACKS
-        # callbacks = default_callbacks if callbacks is None else default_callbacks + callbacks
-        # self.callback_handler = CallbackHandler(
-        #     callbacks, self.model, self.optimizer, self.lr_scheduler
-        # )
-        #self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
+        os.makedirs(self.configs.output_dir, exist_ok=True)
+        if not isinstance(self.model_card, ModelCard):
+            self.model_card = ModelCard()
 
-        os.makedirs(self.args.output_dir, exist_ok=True)
+        if self.model_card.model_name is None:
+            self.model_card.model_name = type(self.model).__name__
+        self.model_card.model_architecture = str(self.model)
+        self.model_card.training_config = self.configs
 
-        if training_config.max_steps > 0:
-            logger.info("max_steps is given.")
+    def train(self, resume_checkpoint_path=None):
+        if self.configs.device_str == "cuda":
+            self.distributed = True
+            self._spawn_train_process(resume_checkpoint_path)
+        else:
+            self.distributed = False
+            self.run_train(resume_checkpoint_path)
 
-        if train_dataset is not None and not isinstance(train_dataset, collections.abc.Sized) and training_config.max_steps <= 0:
-            raise ValueError("train_dataset does not implement __len__, max_steps has to be specified")
+    def _spawn_train_process(self, resume_checkpoint_path):
+        # world_size = torch.cuda.device_count()
+        # mp.spawn(self.run_train,
+        #          args=(world_size, resume_checkpoint_path),
+        #          nprocs=world_size,  # opt.world_size,
+        #          join=True)
+        process_list = []
+        world_size = self.configs.n_gpu
+        if world_size < 1:
+            trainer_log.warning("when `device_str` is `cuda`, `n_gpu` must be a positive int number.")
+        for rank in range(world_size):
+            process = Process(target=self.run_train, args=(resume_checkpoint_path, rank, world_size))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
 
-        # self.state = TrainerState()
-        # control the save condition
-        # self.control = TrainerControl()
-        # Internal variable to count flos in each process, will be accumulated in `self.state.total_flos` then
-        # returned to 0 every time flos need to be logged
-        self.current_flcurrent_flosos = 0
-        default_label_names = (
-            ["labels"]
+    def _init_distributed(self, rank, world_size):
+        if self.distributed:
+            if torch.cuda.is_available() is False:
+                raise EnvironmentError("not find GPU device for training.")
+            os.environ["MASTER_ADDR"] = "localhost"
+            os.environ["MASTER_PORT"] = "12355"
+            print("_init_distributed(), rank=", rank)
+            torch.cuda.set_device(rank)
+            dist_backend = "nccl"
+            dist_url = "env://"
+            print("| distributed init (rank {}): {}".format(
+                rank, dist_url), flush=True)
+            dist.init_process_group(backend=dist_backend, init_method=dist_url,
+                                    world_size=world_size, rank=rank)
+            dist.barrier()
+
+    def _load_before_train(self, resume_checkpoint_path, rank):
+        sync_bn = self.configs.sync_bn
+        if resume_checkpoint_path is not None:
+            # weights_dict = torch.load(weights_path, map_location=device)
+            # load_weights_dict = {k: v for k, v in weights_dict.items()
+            #                      if model.state_dict()[k].numel() == v.numel()}
+            # model.load_state_dict(load_weights_dict, strict=False)
+            self.load(resume_checkpoint_path)
+        else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
+            if self.distributed:
+                # checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
+                checkpoint_path = TEMP_INIT_WEIGHTS
+                if rank == 0:
+                    torch.save(self.model.state_dict(), checkpoint_path)
+                dist.barrier()
+                self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.configs.device))
+        if self.distributed:
+            self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
+            if sync_bn:
+                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
+
+    def _create_logs(self):
+        logs = {"global_step": 0, "epoch": self.epoch}
+        if self.configs.eval_strategy not in no_option_list:
+            logs["eval_global_step"] = 0
+        return logs
+
+    def prepare_inputs(self, inputs):
+        return send_to_device(inputs, self.configs.device)
+
+    def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
+        """
+        Main training entry point.
+        """
+        # args = self.configs
+        set_seed(self.configs.seed)
+        self._init_distributed(rank, world_size)
+
+        print("device=", self.configs.device)
+        print("rank=", rank)
+        print("world_size=", world_size)
+
+        self.model = self.model.to(self.configs.device)
+        model = self.model
+        self.trainercontrol = TrainerControl()
+        self._load_before_train(resume_checkpoint_path, rank)
+        # Keeping track whether we can can len() on the dataset or not
+        # train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
+
+        train_dataloader = self.get_train_dataloader()
+
+        total_train_batch_size = self.configs.train_batch_size
+        # if train_dataset_is_sized:
+        num_update_steps_per_epoch = len(train_dataloader)
+        num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
+
+        train_last_epoch = self.epoch
+        num_train_epochs = math.ceil(self.configs.epoch_num - train_last_epoch)
+        num_train_steps = math.ceil(num_train_epochs * num_update_steps_per_epoch)
+
+        self._setup_before_train(num_training_steps=num_train_steps, init_lr=self.lr_value)
+
+        trainer_log.info("***** Running training *****")
+        trainer_log.info("  Num Epochs = %d", num_train_epochs)
+        trainer_log.info("  Total train batch size  = %d", total_train_batch_size)
+        trainer_log.info("****************************")
+
+        if is_main_process():
+            trainer_log.warning(self.configs)
+
+        logs = self._create_logs()
+        self.callbacks.on_train_begin(logs)
+
+        for epoch in range(train_last_epoch + 1, self.configs.epoch_num + 1):
+            self.epoch = logs["epoch"] = epoch
+            self.set_train_mode(model)
+            self._reset_controller()
+            self.optimizer.zero_grad()
+            if self.distributed:
+                self.train_sampler.set_epoch(self.epoch)
+            # batch_loss_sum = 0.0
+            self.callbacks.on_epoch_begin(self.epoch, logs)
+            self.loss_metric.reset()
+            self.metric.reset()
+            for step, inputs in enumerate(train_dataloader):
+                self.callbacks.on_train_batch_begin(inputs, logs)
+                inputs = self.prepare_inputs(inputs)
+                step_logs = self.train_step(model, inputs)  # , train_dataloader)
+                logs["lr"] = self.lr_scheduler.get_lr()[0]
+                logs["global_step"] += 1
+                logs.update(step_logs)
+                self.callbacks.on_train_batch_end(tuple(inputs), logs)
+                self._may_evaluate(model, logs, step)
+            self._may_evaluate(model, logs)
+            self.callbacks.on_epoch_end(self.epoch, logs)
+            self.loss_value = logs["epoch_loss"]
+            self.metric_value = logs["epoch_metric"]
+            self.lr_value = logs["lr"]
+            self._create_training_summary(
+                finetuned_from=resume_checkpoint_path,
+                resumed_from_epoch=train_last_epoch if train_last_epoch != 0 else None,
+                num_train_epochs=self.epoch - train_last_epoch,
+                current_epoch=self.epoch,
+                end_lr=self.lr_value,
+                loss={"type": self.configs.loss, "value": round(self.loss_value, 3)},
+                metric={"type": self.configs.metric, "value": round(self.metric_value, 3)}
+            )
+            if self.trainercontrol.should_training_stop:
+                break
+            if self.trainercontrol.should_save:
+                self.save(
+                    path=os.path.join(self.configs.output_dir, "epoch_" + str(self.epoch)),
+                    overwrite=self.configs.overwrite_output_dir
+                )
+        trainer_log.info("\nTraining completed.\n")
+
+        self._cleanup_distributed(rank)
+        self.callbacks.on_train_end(logs)
+
+        self.save(
+            path=os.path.join(self.configs.output_dir, "final_epoch"),
+            overwrite=self.configs.overwrite_output_dir
         )
-        self.label_names = default_label_names if self.args.label_names is None else self.args.label_names
-        # self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
+
+    def set_train_mode(self, model):
+        model.train()
+        if self.configs.freeze_bn:
+            model.apply(freeze_bn)
+
+    def _create_training_summary(self, **kwargs):
+        training_summary = dict(kwargs)
+        self.model_card.training_summary = training_summary
+
+    def _may_evaluate(self, model, logs, step=-1):
+        if step != -1:  # step end
+            if self.configs.eval_strategy in ["step", "steps"]:
+                assert self.configs.eval_steps > 0, "self.configs.eval_steps must be a positive int number"
+            if self.configs.eval_strategy in ["step", "steps"] and step % self.configs.eval_steps == 0:
+                eval_logs = self.evaluate(model, logs)
+                logs.update(eval_logs)
+        else:  # epoch end
+            if self.configs.eval_strategy in ["epoch", "eval_epoch"]:
+                eval_logs = self.evaluate(model, logs)
+                logs.update(eval_logs)
+
+    @torch.no_grad()
+    def evaluate_step(self, model, inputs):
+        inputs = self.prepare_inputs(inputs)
+        step_loss = self.compute_loss(model, inputs)
+        step_loss = reduce_value(step_loss, average=True)
+        step_loss = step_loss.detach()
+
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss, training=False)
+
+        step_logs = {"eval_step_loss": step_loss.item(), "eval_epoch_loss": loss_metric,
+                     "eval_epoch_metric": epoch_metric}
+        return step_logs
+
+    @torch.no_grad()
+    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor, training=True):
+        self.loss_metric.update(send_to_device(step_loss, self.configs.device))
+        loss_metric = self.loss_metric.compute().item()
+        if self.configs.eval_strategy == "eval_epoch" and training:
+            epoch_metric = 0
+        else:
+            epoch_metric = self.compute_metric(model, inputs)
+        return loss_metric, epoch_metric
+
+    @torch.no_grad()
+    def compute_metric(self, model: nn.Module, inputs: Any):
+        model.eval()
+        epoch_metric = None
+        labels = inputs[1]
+        outputs = model(inputs[0])
+        if self.metric is not None:
+            self.metric.update(send_to_device(outputs, self.configs.device),
+                               send_to_device(labels, self.configs.device))
+            epoch_metric = self.metric.compute().item()
+        return epoch_metric
+
+    @torch.no_grad()
+    def evaluate(self, model, logs):
+        model.eval()
+        self.callbacks.on_eval_begin(logs)
+        self.metric.reset()
+        eval_dataloader = self.get_eval_dataloader()
+        if eval_dataloader is None:
+            trainer_log.warning("eval_dataloader is None!")
+            return logs
+        for _, inputs in enumerate(eval_dataloader):
+            self.callbacks.on_eval_batch_begin(inputs, logs)
+            inputs = send_to_device(inputs, self.configs.device)
+            step_logs = self.evaluate_step(model, inputs)
+            logs.update(step_logs)
+            self.callbacks.on_eval_batch_end(tuple(inputs), logs)
+            logs["eval_global_step"] += 1
+        self.callbacks.on_eval_end(logs)
+        return logs
+
+    @torch.no_grad()
+    def predict(self, input_):
+        self.model.eval()
+        return self.model(input_)
+
+    def train_step(self, model, inputs):
+        step_loss = self.compute_loss(model, inputs)
+        step_loss = reduce_value(step_loss, average=True)
+        step_loss.backward()
+        step_loss = step_loss.detach()
+
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss, training=True)
+
+        self.optimizer.step()
+        self.lr_scheduler.step()
+        self.optimizer.zero_grad()
+        step_logs = {"step_loss": step_loss.item(), "epoch_loss": loss_metric, "epoch_metric": epoch_metric}
+        return step_logs
+
+    def _cleanup_distributed(self, rank):
+        if self.distributed:
+            if rank == 0:
+                if os.path.exists(TEMP_INIT_WEIGHTS) is True:
+                    os.remove(TEMP_INIT_WEIGHTS)
+            dist.destroy_process_group()
+
+    def compute_loss(self, model: nn.Module, inputs: Any):
+        """
+        Subclass and override for custom behavior.
+        """
+        self.set_train_mode(model)
+        labels = inputs[1]
+        outputs = model(inputs[0])
+        loss = self.loss(outputs, labels)
+        return loss
+
+    def push_model_to_hub(self):
+        pass
 
     def add_callback(self, callback):
-        """
-        Add a callback to the current list of :class:`~towhee.TrainerCallback`.
+        self.callbacks.add_callback(callback)
 
-        Args:
-           callback (:obj:`type` or :class:`~towhee.TrainerCallback`):
-               A :class:`~towhee.TrainerCallback` class or an instance of a :class:`~towhee.TrainerCallback`.
-               In the first case, will instantiate a member of that class.
+    def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str = None):
         """
-        # self.callback_handler.add_callback(callback)
+        set custom optimizer, `optimizer_name` is the optimizer str in training config
+        """
+        self.override_optimizer = True
+        self.configs.optimizer = CUSTOM if optimizer_name is None else optimizer_name
+        self.optimizer = optimizer
+
+    def set_loss(self, loss, loss_name=None):
+        """
+        set custom loss, `loss_name` is the loss str in training config
+        """
+        self.override_loss = True
+        self.configs.loss = CUSTOM if loss_name is None else loss_name
+        self.loss = loss
+
+    def _get_num_workers(self):
+        if self.configs.dataloader_num_workers == -1:
+            num_workers = min([os.cpu_count(), self.configs.batch_size if self.configs.batch_size > 1 else 0, 8])
+        else:
+            num_workers = self.configs.dataloader_num_workers
+        if is_main_process():
+            trainer_log.info("num_workers=%s", num_workers)
+        return num_workers
 
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
         """
+        if self.train_dataloader is not None:
+            return self.train_dataloader
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
+        if isinstance(self.train_dataset, TorchDataSet):
+            self.train_dataset = self.train_dataset.dataset
+        num_workers = self._get_num_workers()
+        # if isinstance(self.train_dataset, IterableDataset):
+        #     return DataLoader(
+        #         self.train_dataset,
+        #         batch_size=self.configs.train_batch_size,
+        #     )
+        if not self.distributed:
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.configs.train_batch_size,
+                shuffle=True,
+                num_workers=num_workers,  # self.configs.dataloader_num_workers,
+                pin_memory=self.configs.dataloader_pin_memory,
+                drop_last=self.configs.dataloader_drop_last
+            )
+        else:
+            self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
+            train_batch_sampler = torch.utils.data.BatchSampler(
+                self.train_sampler, self.configs.batch_size, drop_last=True)
+            return torch.utils.data.DataLoader(self.train_dataset,
+                                               batch_sampler=train_batch_sampler,
+                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
+                                               pin_memory=self.configs.dataloader_pin_memory,
+                                               )
 
-        train_dataset = self.train_dataset
+    def get_eval_dataloader(self) -> Optional[DataLoader]:
+        """
+        Returns the eval :class:`~torch.utils.data.DataLoader`.
+        """
+        if self.eval_dataloader is not None:
+            return self.eval_dataloader
+        if self.eval_dataset is None:
+            trainer_log.warning("Trainer: eval requires a train_dataset.")
+            return None
+        if isinstance(self.eval_dataset, TorchDataSet):
+            self.eval_dataset = self.eval_dataset.dataset
+        # if isinstance(self.eval_dataset, IterableDataset):
+        #     return DataLoader(
+        #         self.eval_dataset,
+        #         batch_size=self.configs.eval_batch_size,
+        #     )
+        num_workers = self._get_num_workers()
+        if not self.distributed:
+            return DataLoader(
+                self.eval_dataset,
+                batch_size=self.configs.eval_batch_size,
+                num_workers=num_workers,  # self.configs.dataloader_num_workers,
+                pin_memory=self.configs.dataloader_pin_memory,
+                drop_last=self.configs.dataloader_drop_last
+            )
+        else:
+            eval_sampler = torch.utils.data.distributed.DistributedSampler(self.eval_dataset)
+            eval_batch_sampler = torch.utils.data.BatchSampler(
+                eval_sampler, self.configs.batch_size, drop_last=True)
+            return torch.utils.data.DataLoader(self.eval_dataset,
+                                               batch_sampler=eval_batch_sampler,
+                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
+                                               pin_memory=self.configs.dataloader_pin_memory,
+                                               )
 
-        return DataLoader(
-            train_dataset,
-            batch_size=self.args.train_batch_size,
-            shuffle=True
-        )
-
-    def create_optimizer_and_scheduler(self):
+    def _setup_before_train(self, num_training_steps: int, init_lr: float):
         """
         Setup the optimizer and the learning rate scheduler.
         """
-        self.create_optimizer()
-        self.create_scheduler()
+        self._create_optimizer(init_lr=init_lr)
+        self._create_loss()
+        self._create_metric()
+        self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
+        self._create_callbacks()
 
-    def create_optimizer(self):
-        """
-        Setup the optimizer.
-        """
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
-
-    def create_scheduler(self):
-        """
-        Setup the scheduler. The optimizer of the cnn_trainer must have been set up before this method is called.
-        """
-        self.lr_scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=3, gamma=0.1)
-
-    def num_examples(self, dataloader: DataLoader) -> int:
-        """
-        Helper to get number of samples in a :class:`~torch.utils.data.DataLoader` by accessing its dataset.
-
-        Will raise an exception if the underlying dataset does not implement method :obj:`__len__`
-        """
-        return len(dataloader.dataset)
-
-    def train(self):
-        """
-        Main training entry point.
-        """
-        args = self.args
-
-        # Keeping track whether we can can len() on the dataset or not
-        train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
-
-        # Data loader and number of training steps
-        train_dataloader = self.get_train_dataloader()
-
-        # Setting up training control variables:
-        # number of training epochs: num_train_epochs
-        # number of training steps per epoch: num_update_steps_per_epoch
-        # total number of training steps to execute: max_steps
-        total_train_batch_size = args.train_batch_size
-        if train_dataset_is_sized:
-            num_update_steps_per_epoch = len(train_dataloader)
-            num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
-            if args.max_steps > 0:
-                max_steps = args.max_steps
-                num_train_epochs = args.max_steps // num_update_steps_per_epoch + int(
-                    args.max_steps % num_update_steps_per_epoch > 0
-                )
-            else:
-                max_steps = math.ceil(args.epoch_num * num_update_steps_per_epoch)
-                num_train_epochs = math.ceil(args.epoch_num)
+    def _create_callbacks(self):
+        # print or progressbar
+        if self.configs.print_steps is None:
+            self.callbacks.add_callback(ProgressBarCallBack(total_epoch_num=self.configs.epoch_num,
+                                                            train_dataloader=self.get_train_dataloader()))
         else:
-            max_steps = args.max_steps
-            # Setting a very large number of epochs so we go as many times as necessary over the iterator.
-            num_train_epochs = sys.maxsize
+            self.callbacks.add_callback(PrintCallBack(total_epoch_num=self.configs.epoch_num,
+                                                      step_frequency=self.configs.print_steps))
+        # early stop
+        if self.configs.early_stopping not in no_option_list:
+            self.callbacks.add_callback(EarlyStoppingCallback(self.trainercontrol, **self.configs.early_stopping))
+        # save checkpoint
+        if self.configs.model_checkpoint not in no_option_list:
+            self.callbacks.add_callback(ModelCheckpointCallback(self.trainercontrol, **self.configs.model_checkpoint))
+        # tensorboard
+        summary_writer_constructor = _get_summary_writer_constructor()
+        if summary_writer_constructor is not None and self.configs.tensorboard not in no_option_list:
+            self.callbacks.add_callback(
+                TensorBoardCallBack(summary_writer_constructor,
+                                    **self.configs.tensorboard))
 
-        self.create_optimizer_and_scheduler()
+    def _create_metric(self):
+        self.metric = get_metric_by_name(self.configs.metric)
+        self.metric.to(self.configs.device)
+        self.loss_metric = get_metric_by_name("MeanMetric")
+        self.loss_metric.to(self.configs.device)
 
-        # self.state = TrainerState()
+    def _create_loss(self):
+        if self.override_loss is True:
+            return
+        self.loss = _construct_loss_from_config(torch.nn.modules.loss, self.configs.loss)
 
-        model = self.model
-
-        # Train!
-        num_examples = (
-            self.num_examples(train_dataloader) if train_dataset_is_sized else total_train_batch_size * args.max_steps
+    def _create_optimizer(self, init_lr: float):
+        if self.override_optimizer is True:
+            return
+        self.optimizer = _construct_optimizer_from_config(
+            optim,
+            self.configs.optimizer,
+            model=self.model,
         )
+        for param in self.optimizer.param_groups:
+            param.setdefault("initial_lr", init_lr)
+        self.optimizer.lr = init_lr
 
-        logger.info("***** Running training *****")
-        logger.info("  Num examples = %d", num_examples)
-        logger.info("  Num Epochs = %d", num_train_epochs)
-        logger.info("  Total train batch size (w. parallel, distributed & accumulation) = %d", total_train_batch_size)
-        logger.info("  Total optimization steps = %d", max_steps)
-
-        # self.state.epoch = 0
-        epochs_trained = 0
-
-        # Update the references
-        # self.callback_handler.model = self.model
-        # self.callback_handler.optimizer = self.optimizer
-        # self.callback_handler.lr_scheduler = self.lr_scheduler
-        # self.callback_handler.train_dataloader = train_dataloader
-        # This should be the same if the state has been saved but in case the training arguments changed, it's safer
-        # to set this after the load.
-        # self.state.max_steps = max_steps
-        # self.state.num_train_epochs = num_train_epochs
-
-        tr_loss = torch.tensor(0.0)
-        tr_corrects = 0
-        # _total_loss_scalar is updated everytime .item() has to be called on tr_loss and stores the sum of all losses
-        self._total_loss_scalar = 0.0
-        # model.zero_grad()
-
-        # self.control = self.callback_handler.on_train_begin(args, self.state, self.control)
-
-        for _ in range(epochs_trained, num_train_epochs):
-            epoch_iterator = train_dataloader
-
-            # steps_in_epoch = (
-            #     len(epoch_iterator) if train_dataset_is_sized else args.max_steps
-            # )
-            # self.control = self.callback_handler.on_epoch_begin(args, self.state, self.control)
-
-            for _, inputs in enumerate(epoch_iterator):
-                loss, corrects = self.training_step(model, inputs)
-                print(loss)
-                tr_loss += loss
-                tr_corrects += corrects
-
-                # Optimizer step
-                optimizer_was_run = True
-                self.optimizer.step()
-
-                if optimizer_was_run:
-                    self.lr_scheduler.step()
-
-                self.optimizer.zero_grad()
-                # self.state.global_step += 1
-                # self.state.epoch = epoch + (step + 1) / steps_in_epoch
-                # self.control = self.callback_handler.on_step_end(args, self.state, self.control)
-
-            # self.control = self.callback_handler.on_epoch_end(args, self.state, self.control)
-            # self._maybe_log_save_evaluate(tr_loss, tr_corrects, num_examples)
-
-
-            # if self.control.should_training_stop:
-            #     break
-
-        logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
-
-        # add remaining tr_loss
-        self._total_loss_scalar += tr_loss.item() / num_examples
-        # train_loss = self._total_loss_scalar / self.state.global_step
-        # train_loss = self._total_loss_scalar / num_examples
-
-        # self.control = self.callback_handler.on_train_end(args, self.state, self.control)
-
-        # return TrainOutput(self.state.global_step, train_loss)
-
-
-    def _maybe_log_save_evaluate(self, tr_loss, tr_corrects, num_examples):
-        if self.control.should_log:
-            logs: Dict[str, float] = {}
-            tr_loss_scalar = tr_loss.item()
-            epoch_loss = tr_loss_scalar / num_examples
-            epoch_acc = tr_corrects / num_examples
-
-            # reset tr_loss to zero
-            tr_loss -= tr_loss
-            tr_corrects -= tr_corrects
-
-            logs["loss"] = epoch_loss
-            logs["accuracy"] = epoch_acc
-
-            self._total_loss_scalar += tr_loss_scalar
-            self.log(logs)
-
-        self.control.should_save = False
-        if self.control.should_save:
-            self._save_checkpoint()
-            self.control = self.callback_handler.on_save(self.args, self.state, self.control)
-
-    def _save_checkpoint(self):
-        # Save model checkpoint
-        checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
-
-        run_dir = self.args.output_dir
-
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir)
-
-        # Save optimizer and scheduler
-        if self.args.should_save:
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-            with warnings.catch_warnings(record=True):
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-
-        # Save the Trainer state
-        if self.args.should_save:
-            self.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
-
-        # Save RNG state in non-distributed training
-        rng_states = {
-            "python": random.getstate(),
-            "numpy": np.random.get_state(),
-            "cpu": torch.random.get_rng_state(),
-        }
-        if torch.cuda.is_available():
-            rng_states["cuda"] = torch.cuda.random.get_rng_state()
-
-    def log(self, logs: Dict[str, float]) -> None:
+    def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
         """
-        Log :obj:`logs` on the various objects watching training.
-
+        Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
+        passed as an argument.
         Args:
-            logs (:obj:`Dict[str, float]`):
-                The values to log.
+            num_training_steps (int): The number of training steps to do.
         """
-        if self.state.epoch is not None:
-            logs["epoch"] = round(self.state.epoch, 2)
+        if isinstance(self.configs.lr_scheduler_type, str):
+            self.lr_scheduler = get_scheduler(
+                self.configs.lr_scheduler_type,
+                optimizer=self.optimizer if optimizer is None else optimizer,
+                num_warmup_steps=self.get_warmup_steps(num_training_steps),
+                num_training_steps=num_training_steps,
+            )
+        else:
+            self.configs.lr_scheduler_type["optimizer"] = optimizer
+            self.lr_scheduler = _construct_scheduler_from_config(torch.optim.lr_scheduler,
+                                                                 self.configs.lr_scheduler_type)
+        return self.lr_scheduler
 
-        output = {**logs, **{"step": self.state.global_step}}
-        self.state.log_history.append(output)
-        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
-
-    def training_step(self, model: nn.Module, inputs: List[torch.Tensor]) -> torch.Tensor:
+    def get_warmup_steps(self, num_training_steps: int):
         """
-        Perform a training step on a batch of inputs.
-
-        Args:
-            model (:obj:`nn.Module`):
-                The model to train.
-            inputs (:obj:`Dict[str, Union[torch.Tensor, Any]]`):
-                The inputs and targets of the model.
-
-        Return:
-            :obj:`torch.Tensor`: The tensor with training loss on this batch.
+        Get number of steps used for a linear warmup.
         """
-        model.train()
-        # inputs = self._prepare_inputs(inputs)
+        warmup_steps = (
+            self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(
+                num_training_steps * self.configs.warmup_ratio)
+        )
+        return warmup_steps
 
-        loss, corrects = self.compute_loss(model, inputs)
 
-        if self.args.n_gpu > 1:
-            loss = loss.mean()  # mean() to average on multi-gpu parallel training
+    def load(self, path):
+        checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+        # modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
+        print(f"Loading from previous checkpoint: {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path, map_location=self.configs.device)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if self.lr_scheduler and checkpoint["lr_scheduler_state_dict"]:
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler_state_dict"])
+        if "end_lr" not in checkpoint:
+            return 0
+        self.lr_value = checkpoint["end_lr"]
+        if "epoch" not in checkpoint:
+            return 0
+        self.epoch = checkpoint["epoch"]
+        self.loss_value = checkpoint["loss_value"]
+        self.metric_value = checkpoint["metric_value"]
 
-        loss.backward()
 
-        return loss.detach(), corrects
+    def save(self, path, overwrite=True):
+        if is_main_process():
+            if not overwrite:
+                if Path(path).exists():
+                    raise FileExistsError("File already exists: ", str(Path(path).resolve()))
+            Path(path).mkdir(exist_ok=True)
+            checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+            modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
+            trainer_log.info("save checkpoint_path: %s", checkpoint_path)
+            optimizer_state_dict = None
+            lr_scheduler_state_dict = None
+            if isinstance(self.optimizer, Optimizer):  # if created
+                optimizer_state_dict = self.optimizer.state_dict()
+            if self.lr_scheduler is not None:
+                lr_scheduler_state_dict = self.lr_scheduler.state_dict()
+            torch.save({
+                "epoch": self.epoch,
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": optimizer_state_dict,
+                "lr_scheduler_state_dict": lr_scheduler_state_dict,
+                "loss_value": self.loss_value,
+                "metric_value": self.metric_value,
+                "end_lr": self.lr_value
+            }, checkpoint_path)
+            if isinstance(self.model_card, ModelCard):
+                self.model_card.save_model_card(modelcard_path)
+            else:
+                trainer_log.warning("model card is None.")
 
-    def compute_loss(self, model, inputs):
-        """
-        How the loss is computed by PyTorchCNNTrainer. By default, all models return the loss in the first element.
-
-        Subclass and override for custom behavior.
-        """
-        labels = inputs[1]
-        with torch.set_grad_enabled(True):
-            outputs = model(inputs[0])
-            _, preds = torch.max(outputs, 1)
-
-        if labels is not None:
-            criterion = nn.CrossEntropyLoss()
-            loss = criterion(outputs, labels)
-            corrects = torch.sum(preds == labels.data)
-
-        # return (loss, outputs) if return_outputs else loss
-        return loss, corrects
-
-    def save_model(self, output_dir: Optional[str] = None):
-        """
-        Will save the model.
-        """
-
-        if output_dir is None:
-            output_dir = self.args.output_dir
-
-        state_dict = self.model.state_dict()
-        if self.args.should_save:
-            self._save(output_dir, state_dict)
-
-    def _save(self, output_dir: Optional[str] = None, state_dict=None):
-        # If we are executing this function, we are the process zero, so we don't check for that.
-        output_dir = output_dir if output_dir is not None else self.args.output_dir
-        os.makedirs(output_dir, exist_ok=True)
-        logger.info("Saving model checkpoint to %s", output_dir)
-        torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
-
-        # Good practice: save your training arguments together with the trained model
-        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-
-    def push_model_to_hub(self):
-        pass
-
+    def _reset_controller(self):
+        self.trainercontrol.should_save = False
+        self.trainercontrol.should_training_stop = False
+        self.trainercontrol.should_log = False
+        self.trainercontrol.should_evaluate = False
+        self.trainercontrol.should_epoch_stop = False
