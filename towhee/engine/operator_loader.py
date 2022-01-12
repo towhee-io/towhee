@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from towhee.operator import Operator
-from towhee.operator.nop import NOPOperator
+from towhee.operator.nop import _StartOperator, _EndOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 from towhee.hub.file_manager import FileManager
@@ -40,8 +40,10 @@ class OperatorLoader:
             self._cache_path = Path(cache_path)
 
     def _load_interal_op(self, op_name: str, args: Dict[str, any]):
-        if op_name in ['_start_op', '_end_op']:
-            return NOPOperator()
+        if op_name == '_start_op':
+            return _StartOperator()
+        elif op_name == '_end_op':
+            return _EndOperator()
         elif op_name == '_concat':
             return ConcatOperator(**args)
         else:

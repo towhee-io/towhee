@@ -59,6 +59,7 @@ class NormalFormat(OutputFormat):
             # data is Tuple[Variable]
             data_value = []
             for item in data:
-                data_value.append(item.value)
+                if item is not None:
+                    data_value.append(item.value)
             res.append(tuple(data_value))
         return res

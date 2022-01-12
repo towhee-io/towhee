@@ -48,9 +48,9 @@ class TestRunner(unittest.TestCase):
     def test_window_runner(self):
         writer = MockWriter()
 
-        df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
+        df_in = DataFrame(
+            'inputs', [('num', 'int')])
 
-        # We
         runner = WindowRunner('window_test', 0, 'sum_operator',
                               'mock_operators', {},
                               [BatchFrameReader(df_in, {'num': 0}, 5, 3)],
@@ -79,7 +79,7 @@ class TestRunner(unittest.TestCase):
     def test_window_runner_with_error(self):
         writer = MockWriter()
 
-        df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
+        df_in = DataFrame('op_test_in', [('num', 'nt')])
 
         # We
         runner = WindowRunner('window_test', 0, 'sum_operator',

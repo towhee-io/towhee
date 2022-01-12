@@ -17,29 +17,33 @@ from typing import Any, Callable, List, Tuple, Dict
 import weakref
 
 from towhee.dataframe.variable import Variable
+from towhee.types._frame import FRAME
+from towhee.dataframe._schema import _Schema
 
 
 class DataFrame:
-    """A dataframe is a collection of immutable, potentially heterogeneous blogs of
-    data.
+    """
+    A dataframe is a collection of immutable, potentially heterogeneous blogs of data.
     """
 
     def __init__(self, name: str = None, cols=None, data: List[Tuple[Variable]] = None):
         """DataFrame constructor.
 
         Args:
-            name:
+            name (`str`):
                 Name of the dataframe; `DataFrame` names should be the same as its
                 representation.
-            data:
+            clos (`List[Tuple(str, str)]`):
+                Dataframe cols.
+            data (`List[Tuple[Variable]]`):
                 A list of data tuples - in all instances, the number of elements per
                 tuple should be identical throughout the entire lifetime of the
                 `Dataframe`. These tuples can be interpreted as being direct outputs
                 into downstream operators.
         """
         self._name = name
-        # TODO (junjie.jiangjjj) define col struct
-        self._cols = cols
+        self._schema = _Schema()
+        self._add_cols(cols)
         self._data = data if data else []
 
         # `_start_idx` corresponds to the actual index for the current 0th element in
@@ -57,6 +61,12 @@ class DataFrame:
         self._lock = threading.Lock()
         self._seal_cv = threading.Condition(self._lock)
         self._accessible_cv = threading.Condition(self._lock)
+
+    def _add_cols(self, cols):
+        if cols is not None:
+            for col in cols:
+                self._schema.add_col(*col)
+        self._schema.add_col(FRAME, '_Frame')
 
     @property
     def name(self) -> str:
@@ -86,10 +96,11 @@ class DataFrame:
             self._accessible_cv.notify()
 
     def put_dict(self, data: Dict[str, Any]):
-        datalist = [None] * len(self._cols)
+        datalist = [None] * self._schema.col_count
         for k, v in data.items():
-            datalist[self._cols[k]['index']] = Variable(
-                self._cols[k]['type'], v)
+            col_index = self._schema.col_index(k)
+            datalist[col_index] = Variable(
+                self._schema.col_type(col_index), v)
         self.put(tuple(datalist))
 
     def merge(self, df):

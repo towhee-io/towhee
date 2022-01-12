@@ -34,6 +34,7 @@ class Image:
         array (`np.ndarray`):
             The image in the form of ndarray.
     """
+
     def __init__(self, image: bytes, width: int, height: int, channel: int, mode: str, array: np.ndarray = None):
         self._image = image
         self._width = width
