@@ -11,7 +11,9 @@ class TestIterators(unittest.TestCase):
     """Basic test case for `TestIterators`.
     """
     def test_iters(self):
-        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), (7, 'c'), (8, 'd'), (9, 'e'),]
+        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'),
+            (7, 'c'), (8, 'd'), (9, 'e'),]
+
         columns = [('digit', int), ('letter', str)]
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
@@ -37,7 +39,9 @@ class TestIterators(unittest.TestCase):
         self.assertEqual(df.physical_size, 0)
 
     def test_blocking_iters(self):
-        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), (7, 'c'), (8, 'd'), (9, 'e'),]
+        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'),
+            (7, 'c'), (8, 'd'), (9, 'e'),]
+
         columns = [('digit', int), ('letter', str)]
         df = DataFrame(columns, name = 'my_df', data = data)
         q = queue.Queue()
@@ -58,32 +62,46 @@ class TestIterators(unittest.TestCase):
         df.put((11, 'g'))
         time.sleep(.1)
         self.assertEqual(list(q.queue), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
-            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')], [(10, 'f')], [(11, 'g')]])
+            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')],
+            [(10, 'f')], [(11, 'g')]])
+
         self.assertEqual(list(q2.queue), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
-            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'), (11, 'g')]])
+            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'),
+            (11, 'g')]])
+
         self.assertEqual(df.physical_size, 0)
         time.sleep(.1)
         df.put((12, 'h'))
         df.put((13, 'i'))
         time.sleep(.1)
         self.assertEqual(list(q.queue), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
-            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')], [(10, 'f')], [(11, 'g')], [(12, 'h')], [(13, 'i')]])
+            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')],
+            [(10, 'f')], [(11, 'g')], [(12, 'h')], [(13, 'i')]])
+
         self.assertEqual(list(q2.queue), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
-            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'), (11, 'g')]])
+            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'),
+            (11, 'g')]])
+
         self.assertEqual(df.physical_size, 2)
         time.sleep(.1)
         df.seal()
         time.sleep(.1)
         self.assertEqual(list(q.queue), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
-            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')], [(10, 'f')], [(11, 'g')], [(12, 'h')], [(13, 'i')]])
+            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')],
+            [(10, 'f')], [(11, 'g')], [(12, 'h')], [(13, 'i')]])
+
         self.assertEqual(list(q2.queue), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
-            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'), (11, 'g')], [(12, 'h'), (13, 'i')]])
+            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')], [(8, 'd'), (9, 'e'), (10, 'f'),
+            (11, 'g')], [(12, 'h'), (13, 'i')]])
+
         self.assertEqual(df.physical_size, 0)
         x.join()
         x2.join()
 
     def test_kill_iters(self):
-        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), (7, 'c'), (8, 'd'), (9, 'e'),]
+        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), 
+            (7, 'c'), (8, 'd'), (9, 'e'),]
+
         columns = [('digit', int), ('letter', str)]
         df = DataFrame(columns, name = 'my_df', data = data)
 
@@ -108,8 +126,12 @@ class TestIterators(unittest.TestCase):
         x.join()
         x2.join()
 
-        self.assertEqual(df.iterator_offsets, [float('inf'), float('inf')])
-        self.assertEqual(df.iterators, [None, None])
+        self.assertEqual(list(q.queue), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
+            [(4, 'e')], [(5, 'a')], [(6, 'b')], [(7, 'c')], [(8, 'd')], [(9, 'e')]])
 
+        self.assertEqual(list(q2.queue), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
+            [(4, 'e'), (5, 'a'), (6, 'b'), (7, 'c')]])
+
+        self.assertEqual([value for _, value in df.iterators.items()], [float('inf'), float('inf')])
 if __name__ == '__main__':
     unittest.main()

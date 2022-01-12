@@ -10,7 +10,7 @@ class BaseIterator:
         self._df_ref = weakref.ref(df)
         self._offset = 0
         self._block = block
-        self._id = df.register_iter(self)
+        self._id = df.register_iter()
         self._done = False
 
     def __iter__(self):
@@ -154,10 +154,9 @@ class WindowIterator(BaseIterator):
     """
     A row-based window `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame, window_size = 1, increasing = True, block = False):
-        self._batch_size = window_size
-        self._current_window = 0
-        self._increasing = increasing
+    def __init__(self, df: DataFrame, window_size = 1, block = False):
+        self._window_size = window_size
+        self._current_window = (0, window_size)
         super().__init__(df, block)
 
     def __iter__(self):
@@ -182,7 +181,7 @@ class WindowIterator(BaseIterator):
 
         df = self._df_ref()
 
-        code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
+        code, row = df.get_window(self._offset, count = self._batch_size, iter_id = self._id)
 
         if code == Responses.INDEX_GC:
             raise IndexError

@@ -58,6 +58,7 @@ class DataFrame:
 
         # TODO: Enforce columns everytime except for when dict passed in.
         # or supply default 'col_x' naming convention.
+        # TODO: This is equivalent to @junjie's schema
         if columns is not None:
             self._types = {x[0]: x[1] for x in columns}
             self._columns = [x[0] for x in columns]
@@ -181,7 +182,7 @@ class DataFrame:
 
         """
         with self._iterator_lock:
-            if iter_id is not None and self._iterators[iter_id] is None:
+            if iter_id is not None and self._iterators[iter_id] == float('inf'):
                 return Responses.KILLED, None
 
         with self._data_lock:
@@ -353,15 +354,6 @@ class DataFrame:
             self._iterators[self._it_id] = 0
             return self._it_id
 
-    # TODO kill blocked iters or kill all iters?
-    def unblock_iters(self):
-        with self._iterator_lock:
-            for _, (cv, iters) in self._blocked.items():
-                for ite in iters:
-                    self._iterators[ite] = float('inf')
-                with cv:
-                    cv.notify_all()
-
     def ack(self, iter_id, offset):
         """
         To notice the DataFrame that the iterated rows has been successfully processed.
@@ -388,6 +380,16 @@ class DataFrame:
                 self._blocked[index] = (threading.Condition(), [])
             self._blocked[index][1].append(iter_id)
             return self._blocked[index][0]
+    
+    # TODO kill blocked iters or kill all iters?
+    def unblock_iters(self):
+        with self._iterator_lock:
+            for _, (cv, iters) in self._blocked.items():
+                for ite in iters:
+                    self._iterators[ite] = float('inf')
+                with cv:
+                    cv.notify_all()
+
 
 class Responses(Enum):
     INDEX_GC = 1
