@@ -2,5 +2,5 @@
 #pip install -U pip
 #pip cache purge
 Pillow
-towhee==0.2.3.dev3
+towhee==0.4.1.dev21
 
