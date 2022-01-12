@@ -14,6 +14,8 @@
 
 import requests
 import random
+import os
+import shutil
 from pathlib import Path
 
 import git
@@ -36,6 +38,7 @@ class PipelineManager(RepoManager):
         super().__init__(author, repo, root)
         # 3 represents pipelines when creating a repo in Towhee's hub
         self._class = 3
+        self._temp = {'pipeline': 'pipeline-template'}
 
     def create(self, password: str) -> None:
         """
@@ -78,9 +81,7 @@ class PipelineManager(RepoManager):
 
     def init(self) -> None:
         """
-        Initialize the repo with template.
-
-        First clone the repo, then download and rename the template repo file.
+        Initialize the file structure with template. First clone the repo, then initialize it with the template file structure.
 
         Raises:
             (`HTTPError`)
@@ -88,14 +89,17 @@ class PipelineManager(RepoManager):
             (`OSError`)
                 Raise error in writing file.
         """
-        repo_file_name = self._repo.replace('-', '_')
+        self.clone(local_dir=self._repo, tag='main')
+        # Download the template repo file
+        repo_temp = self._temp['pipeline']
+        git.Repo.clone_from(url=f'{self.root}/towhee/{repo_temp}.git', to_path=f'{self._repo}/{repo_temp}', branch='main')
 
-        url = 'https://hub.towhee.io/' + self._author + '/' + self._repo + '.git'
-        git.Repo.clone_from(url=url, to_path=Path.cwd() / repo_file_name, branch='main')
-
-        lfs_files = self.obtain_lfs_extensions('towhee', 'pipeline-template', 'main')
-        commit = self.latest_commit('towhee', 'pipeline-template', 'main')
-        file_list = self.get_file_list('towhee', 'pipeline-template', commit)
-        self.download_files('towhee', 'pipeline-template', 'main', file_list, lfs_files, str(Path.cwd() / repo_file_name), False)
-
-        (Path(repo_file_name) / 'pipeline_template.yaml').rename(Path(repo_file_name) / (repo_file_name + '.yaml'))
+        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-'))]
+        for file in (Path(self._repo) / repo_temp).glob('*'):
+            if file.name.endswith(('.md', '.yaml')):
+                new_file = Path(self._repo) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
+                self.update_text(ori_str_list, tar_str_list, file, new_file)
+            elif file.name != '.git':
+                os.rename(file, Path(self._repo) / file.name)
+        shutil.rmtree(Path(self._repo) / repo_temp)

@@ -377,4 +377,25 @@ class RepoManager:
         """
         for keys in dicts:
             dicts[keys] = str(dicts[keys]).replace('<class ', '').replace('>', '').replace('\'', '')
-        return dicts
+        return dict(dicts)
+
+    def update_text(self, ori_str_list: list, tar_str_list: list, file: str, new_file: str) -> None:
+        """
+            Update the text in the file and rename it with the new file name.
+            Args:
+                ori_str_list (`list`):
+                    The original str list to be replaced
+                tar_str_list (`list`):
+                    The target str list after replace
+                file (`str`):
+                    The original file name to be updated
+                new_file (`str`):
+                    The target file name after update
+        """
+        with open(file, 'r', encoding='utf-8') as f1:
+            file_text = f1.read()
+        # Replace the target string
+        for ori_str, tar_str in zip(ori_str_list, tar_str_list):
+            file_text = file_text.replace(ori_str, tar_str)
+        with open(new_file, 'w', encoding='utf-8') as f2:
+            f2.write(file_text)
