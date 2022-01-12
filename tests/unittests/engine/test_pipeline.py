@@ -18,8 +18,9 @@ from PIL import Image
 
 from towhee import pipeline
 from towhee.errors import OpFailedError
-from tests.unittests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
+
+from tests.unittests import CACHE_PATH
 
 
 class TestPipeline(unittest.TestCase):

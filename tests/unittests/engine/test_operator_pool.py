@@ -15,13 +15,13 @@
 
 import unittest
 from pathlib import Path
-# from shutil import rmtree
 
 from towhee.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
 from towhee.engine.operator_runner.runner_base import _OpInfo
-from tests.unittests import CACHE_PATH
 from towhee.hub.file_manager import FileManagerConfig, FileManager
+
+from tests.unittests import CACHE_PATH
 
 
 class TestOperatorPool(unittest.TestCase):

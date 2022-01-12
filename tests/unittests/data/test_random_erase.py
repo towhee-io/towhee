@@ -26,7 +26,7 @@ test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/001cdf
 class RandomEraseTest(unittest.TestCase):
     def test_random_erase(self):
         img = cv2.imread(str(test_image))
-        RE = RandomErasing(p=1)
+        RE = RandomErasing(p=1)  # pylint: disable=invalid-name
         # for i in range(20):
         #     img1 = RE(img.copy())
         #     cv2.imshow("test", img1)

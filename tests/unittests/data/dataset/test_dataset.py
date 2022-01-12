@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import unittest
-import sys
 import os
 
 from torchvision import transforms
