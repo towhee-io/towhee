@@ -17,9 +17,6 @@ import unittest
 import torchvision
 
 from torch import optim
-from towhee.cnn_trainer.trainer_callback import DefaultFlowCallback, CallbackHandler, ProgressCallback
-
-DEFAULT_CALLBACKS = [DefaultFlowCallback]
 
 
 class TrainerCallbackTest(unittest.TestCase):
@@ -43,14 +40,6 @@ class TrainerCallbackTest(unittest.TestCase):
                 self.assertEqual(cb1.__class__, cb2)
             else:
                 self.assertEqual(cb1, cb2)
-
-    def test_add_callback(self) -> None:
-        callbacks = DEFAULT_CALLBACKS.copy() + [ProgressCallback]
-        callback_handler = CallbackHandler(
-            callbacks, self.model, self.optimizer, self.lr_scheduler
-        )
-        expected_callbacks = DEFAULT_CALLBACKS.copy() + [ProgressCallback]
-        self.check_callbacks_equality(callback_handler.callbacks, expected_callbacks)
 
 
 if __name__ == '__main__':
