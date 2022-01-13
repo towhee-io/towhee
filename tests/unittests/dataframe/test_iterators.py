@@ -99,7 +99,7 @@ class TestIterators(unittest.TestCase):
         x2.join()
 
     def test_kill_iters(self):
-        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'), 
+        data = [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd'), (4, 'e'), (5, 'a'), (6, 'b'),
             (7, 'c'), (8, 'd'), (9, 'e'),]
 
         columns = [('digit', int), ('letter', str)]

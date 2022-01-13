@@ -87,7 +87,7 @@ class Array:
     @property
     def size(self) -> int:
         """
-        Number of elements in the `Array`.
+        Total number of elements in the `Array` since creation.
         """
         return len(self._data) + self._offset
 
@@ -101,7 +101,7 @@ class Array:
     @property
     def physical_size(self) -> int:
         """
-        Number of elements still existed in the `Array`
+        Number of elements still existing in the `Array`
         """
         return len(self._data)
 
@@ -111,6 +111,9 @@ class Array:
         Data of the `Array`
         """
         return self._data
+
+    def set_name(self, name):
+        self._name = name
 
     def get_relative(self, key: int):
         return self._data[key + self._offset]

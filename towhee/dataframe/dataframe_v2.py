@@ -17,6 +17,7 @@ from enum import Enum
 from typing import List, Tuple, Any
 
 from towhee.dataframe.array import Array
+from towhee.dataframe._schema import _Schema
 
 
 class DataFrame:
@@ -56,23 +57,51 @@ class DataFrame:
         self._data_as_list = None
         self._data_as_dict = None
 
-        # TODO: Enforce columns everytime except for when dict passed in.
-        # or supply default 'col_x' naming convention.
-        # TODO: This is equivalent to @junjie's schema
-        if columns is not None:
-            self._types = {x[0]: x[1] for x in columns}
-            self._columns = [x[0] for x in columns]
 
-        elif not isinstance(data, dict):
-            raise ValueError(
-                    'Cannot construct dataframe without colum names and types (except for dict).')
+        self._schema = _Schema()
 
-        # For `data` is empty
-        if not data:
+        # TODO: Better solution for no data whatsoever
+        # if no columns and no data: delay to first data added
+        if columns is None and data is None:
+            raise ValueError('Cannot construct dataframe without columns or initial data')
+
+        # if column and no data: create empty arrays
+        elif columns is not None and data is None:
+            self._set_cols(columns)
             self._from_none()
 
+        # if no column and data: default names and types from data
+        elif columns is None and data is not None:
+            self._extract_data(data, default_cols=True)
+            self._schema_update_needed = True
+            self._update_schema()
+
+        # if column and data: create regular running.
+        elif columns is not None and data is not None:
+            self._set_cols(columns)
+            self._extract_data(data, default_cols=False)
+
+
+    def _from_none(self):
+        self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
+        self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
+
+    def _set_cols(self, columns):
+        for names, types in columns:
+                self._schema.add_col(name=names, col_type = types)
+
+    def _update_schema(self):
+        if self._data_as_list[0].physical_size > 0:
+            for x in self._data_as_list:
+                key = x.name
+                col_type = type(x.get_relative(0))
+                self._schema.add_col(key, col_type)
+            self._schema_update_needed = False
+
+    
+    def _extract_data(self, data, default_cols = False):
         # For `data` is `list`
-        elif isinstance(data, list):
+        if isinstance(data, list):
             container_types = set(type(i) for i in data)
             if len(container_types) != 1:
                 raise ValueError(
@@ -81,20 +110,111 @@ class DataFrame:
 
             # For `data` is `list[tuple]`
             if container_type is tuple:
-                self._from_tuples(data)
+                self._from_tuples(data, default_cols)
             # For `data` is `list[towhee.dataframe.Array]`
             elif container_type is Array:
-                self._from_arrays(data)
+                self._from_arrays(data, default_cols)
             else:
                 raise ValueError('can not construct DataFrame from list[%s]' % (container_type))
 
         # For `data` is `dict`
         elif isinstance(data, dict):
-            self._from_dict(data)
+            self._from_dict(data, default_cols)
 
         # Unrecognized data types
         else:
             raise ValueError('can not construct DataFrame from data type %s' % (type(data)))
+
+    def _from_tuples(self, data, default_cols):
+        # check tuple length
+        tuple_lengths = set(len(i) for i in data)
+        if len(tuple_lengths) == 1:
+            tuple_length = tuple_lengths.pop()
+        else:
+            raise ValueError('can not construct DataFrame from unequal-length tuples')
+
+        # create arrays
+        if default_cols:
+            self._data_as_list = [Array(name='Col_' + str(i)) for i in range(tuple_length)]
+            self._data_as_dict = {'Col_' + str(i): self._data_as_list[i] for i in range(tuple_length)}
+        else:
+            # check columns length
+            if self._schema.col_count != tuple_length:
+                raise ValueError('length of columns is not equal to the length of tuple')
+            self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
+            self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
+
+        # tuples to arrays
+        for row in data:
+            for i, element in enumerate(row):
+                self._data_as_list[i].put(element)
+
+        self._len = len(data)
+
+    def _from_arrays(self, data, default_cols):
+        # check array length
+        array_lengths = set(len(array) for array in data)
+        if len(array_lengths) != 1:
+            raise ValueError('arrays in data should have equal length')
+
+        self._len = array_lengths.pop()
+
+        if default_cols == 'old':
+            self._data_as_list = []
+            self._data_as_dict = {}
+            for i, arr in enumerate(data):
+                self._data_as_list.append(arr)
+                self._data_as_dict[arr.name] = self._data_as_list[-1]
+            for x in range(self._data_as_list):
+                key = x.name
+                col_type = x.get_relative(0)
+
+        elif default_cols == 'default':
+            self._data_as_list = []
+            self._data_as_dict = {}
+            for i, arr in enumerate(data):
+                arr.set_name('Col_' + str(i))
+                self._data_as_list.append(arr)
+                self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+
+        else:
+            # check columns length
+            if self._schema.col_count != len(data):
+                raise ValueError('length of columns is not equal to the number of arrays')
+            for i, arr in enumerate(data):
+                arr.set_name(self._schema.col_key(i))
+                self._data_as_list.append(arr)
+                self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+        
+    def _from_dict(self, data, default_cols = False):
+        # check dict values
+        vals = set(type(array) for array in data.values())
+        if len(vals) != 1 or not isinstance(vals.pop, Array):
+            raise ValueError('value type in data should be towhee.dataframe.Array')
+
+        # check arrays length
+        array_lengths = set(len(array) for array in data.values())
+        if len(array_lengths) != 1:
+            raise ValueError('arrays in data should have equal length')
+
+        self._len = array_lengths.pop()
+
+        if default_cols == 'old':
+            self._data_as_list = list(data.values())
+            self._data_as_dict = {key[0]: val for key, val in data.items()}
+        
+        elif default_cols == 'default':
+            for i, arr in enumerate(data.values()):
+                arr.set_name('Col_' + str(i))
+                self._data_as_list.append(arr)
+                self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+        else:
+            for i, arr in enumerate(data.values()):
+                arr.set_name(self._schema.col_key(i))
+                self._data_as_list.append(arr)
+                self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+        
+
 
     def __getitem__(self, key):
         with self._data_lock:
@@ -154,17 +274,18 @@ class DataFrame:
     @property
     def columns(self) -> List[str]:
         with self._data_lock:
-            return self._columns
+            return [x for x, _ in self._schema.cols]
 
     @property
     def types(self) -> List[Any]:
-        return self._types
+        return [y for _, y in self._schema.cols]
 
 
     @property
     def sealed(self) -> bool:
         with self._data_lock:
             return self._sealed
+    
 
     def window_get(self, offset, start, end, col, iter_id):
         raise NotImplementedError
@@ -221,122 +342,55 @@ class DataFrame:
                 self._put_dict(item)
             else: # type(item) is tuple:
                 self._put_tuple(item)
+            if self._schema_update_needed:
+                self._update_schema()
 
             self._len += 1
             cur_len = self._len
 
         with self._iterator_lock:
-            cv, _ = self._blocked.pop(cur_len, (None, None))
-            if cv is not None:
-                with cv:
-                    cv.notify_all()
+            id_event = self._blocked.pop(cur_len, None)
+            if id_event is not None:
+                for _, event in id_event:
+                    event.set()
+
 
     def _put_list(self, item: list):
-        assert len(item) == len(self._types)
+        assert len(item) == len(self._schema.col_count)
 
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
-            assert isinstance(x, self._types[self._columns[i]])
+            assert isinstance(x, self._schema.col_type(i))
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
 
     def _put_tuple(self, item: tuple):
-        assert len(item) == len(self._types)
+        assert len(item) == self._schema.col_count
 
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
-            assert isinstance(x, self._types[self._columns[i]])
+            assert isinstance(x, self._schema.col_type(i))
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
 
     def _put_dict(self, item: dict):
-        assert len(item) == len(self._types)
+        assert len(item) == self._schema.col_count
 
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():
-            assert isinstance(val, self._types[key])
+            assert isinstance(val, self._schema.col_type(self._schema.col_index(key)))
 
         for key, val in item.items():
-            self._data_as_list[self._columns.index(key)].put(val)
-
-    def _from_none(self):
-        self._data_as_list = [Array(name=self._columns[i]) for i in range(len(self._columns))]
-        self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(len(self._columns))}
-
-    def _from_tuples(self, data):
-        # check tuple length
-        tuple_lengths = set(len(i) for i in data)
-        if len(tuple_lengths) == 1:
-            tuple_length = tuple_lengths.pop()
-        else:
-            raise ValueError('can not construct DataFrame from unequal-length tuples')
-
-        # check columns length
-        if self._columns and len(self._columns) != tuple_length:
-            raise ValueError('length of columns is not equal to the length of tuple')
-
-        # create arrays
-        if self._columns:
-            self._data_as_list = [Array(name=self._columns[i]) for i in range(tuple_length)]
-            self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(tuple_length)}
-        else:
-            self._data_as_list = [Array()] * tuple_length
-            self._data_as_dict = None
-
-        # tuples to arrays
-        for row in data:
-            for i, element in enumerate(row):
-                self._data_as_list[i].put(element)
-
-        self._len = len(data)
-
-    def _from_arrays(self, data):
-        # check array length
-        array_lengths = set(len(array) for array in data)
-        if len(array_lengths) != 1:
-            raise ValueError('arrays in data should have equal length')
-
-        self._len = array_lengths.pop()
-
-        # check columns length
-        if self._columns and len(self._columns) != len(data):
-            raise ValueError('length of columns is not equal to the number of arrays')
-
-        self._data_as_list = data
-
-        if self._columns:
-            self._data_as_dict = {self._columns[i]: self._data_as_list[i] for i in range(len(data))}
-        else:
-            self._data_as_dict = None
-
-    def _from_dict(self, data):
-        # check dict values
-        self._types = {}
-        self._columns = []
-        for key, value in data.items():
-            self._types[key[0]] = key[1]
-            self._columns.append(key[0])
-            if not isinstance(value, Array):
-                raise ValueError('value type in data should be towhee.dataframe.Array')
-
-        # check arrays length
-        array_lengths = set(len(array) for array in data.values())
-        if len(array_lengths) != 1:
-            raise ValueError('arrays in data should have equal length')
-
-        self._len = array_lengths.pop()
-        # TODO: Check if data lines up by just converting to list
-        self._data_as_list = list(data.values())
-        self._data_as_dict = {key[0]: val for key, val in data.items()}
+            self._data_as_list[self._schema.col_index(key)].put(val)
 
     def seal(self):
         with self._data_lock:
             self._sealed = True
-            for _, (cv, _) in self._blocked.items():
-                with cv:
-                    cv.notify_all()
+            for _, id_event in self._blocked.items():
+                for _, event in id_event:
+                    event.set()
             self._blocked.clear()
 
     def gc(self):
@@ -373,22 +427,21 @@ class DataFrame:
                 self._iterators[iter_id] = offset + 1
         self.gc()
 
-    def notify_block(self, iter_id, offset, count):
+    def notify_block(self, iter_id, event, offset, count):
         with self._iterator_lock:
             index = offset + count
             if self._blocked.get(index) is None:
-                self._blocked[index] = (threading.Condition(), [])
-            self._blocked[index][1].append(iter_id)
-            return self._blocked[index][0]
-    
+                self._blocked[index] = []
+            self._blocked[index].append((iter_id, event))
+            return True
+
     # TODO kill blocked iters or kill all iters?
     def unblock_iters(self):
         with self._iterator_lock:
-            for _, (cv, iters) in self._blocked.items():
-                for ite in iters:
-                    self._iterators[ite] = float('inf')
-                with cv:
-                    cv.notify_all()
+            for _, id_event in self._blocked.items():
+                for it_id, event in id_event:
+                    self._iterators[it_id] = float('inf')
+                    event.set()
 
 
 class Responses(Enum):
