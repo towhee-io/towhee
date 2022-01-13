@@ -324,34 +324,33 @@ class RepoManager:
                 progress_bar.update(len(chunk))
         progress_bar.close()
 
-    def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_dir: Union[str, Path], install_reqs: bool = True) -> None:
+    def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_dir: Union[str, Path], install_reqs: bool):
         """
-        Download files with thread pool.
+        Download the given files.
 
-        Args:
+        Agrs:
             tag (`str`):
-                The tag name.
-            file_list (`List[str]`):
-                The hub file paths.
-            lfs_files (`List[str]`):
-                The file extensions being tracked by git-lfs.
-            local_dir (`str`):
-                The local directory to download to.
+                The tag of the repo to download.
+            file_list (List[str]):
+                The files to download
+            lfs_files (List[str]):
+                The lfs files extensions.
+            local_dir (`Union[str, Path]`):
+                Thre local dir to download the files into.
             install_reqs (`bool`):
                 Whether to install packages from requirements.txt.
         """
-        if isinstance(local_dir, str):
-            local_dir = Path(local_dir)
+        if not local_dir:
+            local_dir = Path.cwd()
+        local_dir = Path(local_dir)
 
         # endswith() can check multiple suffixes if they are a tuple.
         lfs_files = tuple(lfs_files)
-
         futures = []
 
         with ThreadPoolExecutor(max_workers=50) as pool:
             for file_name in file_list:
-                temp = pool.submit(self.download_executor, tag, file_name, lfs_files, local_dir.parent / 'temp')
-                futures.append(temp)
+                futures.append(pool.submit(self.download_executor, tag, file_name, lfs_files, local_dir.parent / 'temp'))
 
         try:
             _ = [i.result() for i in futures]
@@ -365,7 +364,7 @@ class RepoManager:
             for req in requirements:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_dir + req])
 
-    def download(self, local_dir: Union[str, Path], tag: str = 'main'):
+    def download(self, local_dir: Union[str, Path] = None, tag: str = 'main', install_reqs: bool = True):
         """
         Download repo without git.
 
@@ -374,53 +373,30 @@ class RepoManager:
                 Thre local dir to download the files into.
             tag (`str`):
                 The tag of the repo to download.
+            install_reqs (`bool`):
+                Whether to install packages from requirements.txt.
         """
         if not self.exists():
             engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
             raise ValueError(f'{self._author}/{self._author} repo does not exist.')
 
+        if not local_dir:
+            local_dir = Path.cwd()
+        local_dir = Path(local_dir)
+
         lfs_files = self.obtain_lfs_extensions(tag)
         commit = self.latest_commit(tag)
         file_list = self.get_file_list(commit)
-        self.download_files(tag, file_list, lfs_files, local_dir, False)
+        self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_dir=local_dir, install_reqs=install_reqs)
 
-    @staticmethod
-    def convert_dict(dicts: dict) -> dict:
-        """
-        Convert all the values in a dictionary to str and replace char.
+    def add(self):
+        pass
 
-        For example:
-        <class 'torch.Tensor'>(unknow type) to torch.Tensor(str type).
+    def commit(self):
+        pass
 
-        Args:
-            dicts (`dict`):
-                The dictionary to convert.
+    def push(self):
+        pass
 
-        Returns:
-            (`dict`)
-                The converted dictionary.
-        """
-        for keys in dicts:
-            dicts[keys] = str(dicts[keys]).replace('<class ', '').replace('>', '').replace('\'', '')
-        return dict(dicts)
-
-    def update_text(self, ori_str_list: list, tar_str_list: list, file: str, new_file: str) -> None:
-        """
-            Update the text in the file and rename it with the new file name.
-            Args:
-                ori_str_list (`list`):
-                    The original str list to be replaced
-                tar_str_list (`list`):
-                    The target str list after replace
-                file (`str`):
-                    The original file name to be updated
-                new_file (`str`):
-                    The target file name after update
-        """
-        with open(file, 'r', encoding='utf-8') as f1:
-            file_text = f1.read()
-        # Replace the target string
-        for ori_str, tar_str in zip(ori_str_list, tar_str_list):
-            file_text = file_text.replace(ori_str, tar_str)
-        with open(new_file, 'w', encoding='utf-8') as f2:
-            f2.write(file_text)
+    def pull(self):
+        pass

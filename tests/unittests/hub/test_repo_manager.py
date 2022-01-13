@@ -66,12 +66,12 @@ class TestRepoManager(unittest.TestCase):
         if repo_dir.is_dir():
             rmtree(repo_dir)
 
-        rm.download_files('main', ['README.md'], tuple([]), repo_dir)
+        rm.download_files('main', ['README.md'], tuple([]), repo_dir, False)
         self.assertTrue((repo_dir / 'README.md').is_file())
         rmtree(repo_dir)
 
         # When something goes wrong while download, throe error and delete all the other downloaded files.
-        self.assertRaises(Exception, rm.download_files, 'main', ['README.md', 'FileThatNotExists'], tuple([]), repo_dir)
+        self.assertRaises(Exception, rm.download_files, 'main', ['README.md', 'FileThatNotExists'], tuple([]), repo_dir, False)
         self.assertFalse((repo_dir / 'README.md').is_file())
 
     def test_download(self):
@@ -85,12 +85,6 @@ class TestRepoManager(unittest.TestCase):
         self.assertTrue(repo_dir.is_dir())
         self.assertNotIn('.git', files)
         rmtree(repo_dir)
-
-    def test_covert_dict(self):
-        d = {}
-        d['a'] = '<class \'torch.Tensor\'>'
-
-        self.assertEqual(RepoManager.convert_dict(d)['a'], 'torch.Tensor')
 
 
 if __name__ == '__main__':
