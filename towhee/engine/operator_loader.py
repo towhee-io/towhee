@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.util
+import importlib
 from pathlib import Path
 from typing import Any, Dict
 
@@ -74,18 +74,21 @@ class OperatorLoader:
             raise FileExistsError('Cannot find operator.')
 
         fname = Path(path).stem
-        modname = 'towhee.operator.' + fname
-        spec = importlib.util.spec_from_file_location(modname, path.resolve())
+        # modname = 'towhee.operator.' + fname
+        # spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
         # Create the module and then execute the module in its own namespace.
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        # module = importlib.util.module_from_spec(spec)
+        # spec.loader.exec_module(module)
 
         # Instantiate the operator object and return it to the caller for
         # `load_operator`. By convention, the operator class is simply the CamelCase
         # version of the snake_case operator.
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
         if args is not None:
-            return getattr(module, op_cls)(**args)
+            # return getattr(module, op_cls)(**args)
+            return getattr(importlib.import_module(fname), op_cls)(**args)
         else:
-            return getattr(module, op_cls)()
+            # return getattr(module, op_cls)()
+            return getattr(importlib.import_module(fname), op_cls)()
+
