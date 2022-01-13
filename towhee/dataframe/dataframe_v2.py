@@ -14,7 +14,7 @@
 
 import threading
 from enum import Enum
-from typing import List, Tuple, Any, Union
+from typing import List, Tuple, Any
 
 from towhee.dataframe.array.array import Array
 from towhee.dataframe._schema import _Schema
@@ -59,10 +59,7 @@ class DataFrame:
         self._data_as_list = None
         self._data_as_dict = None
 
-
         self._schema = _Schema()
-
-        # 
 
         # TODO: Better solution for no data whatsoever
         # if no columns and no data: delay to first data added
@@ -94,7 +91,7 @@ class DataFrame:
 
     def _set_cols(self, columns):
         for names, types in columns:
-                self._schema.add_col(name=names, col_type = types)
+            self._schema.add_col(name=names, col_type = types)
 
     def _update_schema(self):
         if self._data_as_list[0].physical_size > 0:
@@ -104,7 +101,7 @@ class DataFrame:
                 self._schema.add_col(key, col_type)
             self._schema_update_needed = False
 
-    
+
     def _extract_data(self, data, default_cols = False):
         # For `data` is `list`
         if isinstance(data, list):
@@ -190,7 +187,7 @@ class DataFrame:
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
-        
+
     def _from_dict(self, data, default_cols = False):
         # check dict values
         vals = set(type(array) for array in data.values())
@@ -206,7 +203,7 @@ class DataFrame:
 
         if default_cols == 'old':
             self._data_as_list = list(data.values())
-            self._data_as_dict = {key: val for key, val in data.items()}
+            self._data_as_dict = dict(data.items())
 
         elif default_cols == 'default':
             self._data_as_list = []
@@ -222,8 +219,6 @@ class DataFrame:
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
-        
-
 
     def __getitem__(self, key):
         with self._data_lock:
@@ -294,7 +289,6 @@ class DataFrame:
     def sealed(self) -> bool:
         with self._data_lock:
             return self._sealed
-    
 
     def window_get(self, offset, start, end, col, iter_id):
         raise NotImplementedError

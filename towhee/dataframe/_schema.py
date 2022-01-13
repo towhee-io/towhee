@@ -44,7 +44,7 @@ class _Schema:
     @property
     def col_count(self):
         return len(self._cols)
-    
+
     @property
     def cols(self):
         return self._cols
