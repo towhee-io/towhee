@@ -35,7 +35,7 @@ class TestDataframe(unittest.TestCase):
         return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
 
     def get_dict(self):
-        return {('digit', int): Array([0, 1, 2]), ('letter', str): Array(['a', 'b', 'c'])}
+        return {'digit': Array(name = 'digit', data=[0, 1, 2]), 'letter': Array(name='letter', data = ['a', 'b', 'c'])}
 
 
     def test_constructors(self):
@@ -63,7 +63,7 @@ class TestDataframe(unittest.TestCase):
 
         # from dict[str, towhee.dataframe.Array]
         data = self.get_dict()
-        df = DataFrame(None, name = 'my_df', data = data)
+        df = DataFrame(None, name = 'my_df', data = data, default_cols='old')
         df.seal()
         check_data(df)
 
