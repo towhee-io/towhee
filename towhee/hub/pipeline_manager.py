@@ -15,8 +15,9 @@
 import requests
 import random
 import os
-import shutil
 from pathlib import Path
+from typing import Union
+from shutil import copytree, copyfile
 
 import git
 from towhee.hub.repo_manager import RepoManager
@@ -38,7 +39,6 @@ class PipelineManager(RepoManager):
         super().__init__(author, repo, root)
         # 3 represents pipelines when creating a repo in Towhee's hub
         self._class = 3
-        self._temp = {'pipeline': 'pipeline-template'}
 
     def create(self, password: str) -> None:
         """
@@ -69,7 +69,7 @@ class PipelineManager(RepoManager):
             'trust_model': 'default',
             'type': self._class
         }
-        url = 'https://hub.towhee.io/api/v1/user/repos'
+        url = self._root + '/api/v1/user/repos'
         try:
             r = requests.post(url, data=data, headers={'Authorization': 'token ' + token_hash})
             r.raise_for_status()
@@ -79,9 +79,17 @@ class PipelineManager(RepoManager):
 
         self.delete_token(token_id, password)
 
-    def init(self) -> None:
+    def init(self, file_src: Union[str, Path], file_dst: Union[str, Path] = None) -> None:
         """
-        Initialize the file structure with template. First clone the repo, then initialize it with the template file structure.
+        Initialize the repo with template.
+
+        First clone the repo, then move and rename the template repo file.
+
+        Args:
+            file_src (`Union[str, Path]`):
+                The path to the template files.
+            file_dst (`Union[str, Path]`):
+                The path to the local repo to init.
 
         Raises:
             (`HTTPError`)
@@ -89,17 +97,22 @@ class PipelineManager(RepoManager):
             (`OSError`)
                 Raise error in writing file.
         """
-        self.clone(local_dir=self._repo, tag='main')
-        # Download the template repo file
-        repo_temp = self._temp['pipeline']
-        git.Repo.clone_from(url=f'{self.root}/towhee/{repo_temp}.git', to_path=f'{self._repo}/{repo_temp}', branch='main')
+        repo_file_name = self._repo.replace('-', '_')
 
-        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
-        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-'))]
-        for file in (Path(self._repo) / repo_temp).glob('*'):
-            if file.name.endswith(('.md', '.yaml')):
-                new_file = Path(self._repo) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
-                self.update_text(ori_str_list, tar_str_list, file, new_file)
-            elif file.name != '.git':
-                os.rename(file, Path(self._repo) / file.name)
-        shutil.rmtree(Path(self._repo) / repo_temp)
+        if not file_dst:
+            file_dst = Path.cwd() / repo_file_name
+        file_src = Path(file_src)
+        file_dst = Path(file_dst)
+
+        url = self._root + '/' + self._author + '/' + self._repo + '.git'
+        git.Repo.clone_from(url=url, to_path=file_dst, branch='main')
+
+        for f in os.listdir(file_src):
+            if (file_dst / f).is_file() or (file_dst / f).is_dir():
+                continue
+            if (file_src / f).is_file():
+                copyfile(file_src / f, file_dst / f)
+            elif (file_src / f).is_dir():
+                copytree(file_src / f, file_dst / f)
+
+        (file_dst / 'pipeline_template.yaml').rename(file_dst / (repo_file_name + '.yaml'))

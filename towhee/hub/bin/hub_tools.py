@@ -26,7 +26,7 @@ def get_repo_manager(args):
     elif args.command == 'generate-yaml' or args.type == 'pyoperator':
         manager = OperatorManager(args.author, args.repo)
     elif args.type == 'nnoperator':
-        manager = OperatorManager(args.author, args.repo, args.type, args.framework)
+        manager = OperatorManager(args.author, args.repo)
     elif args.type == 'pipeline':
         manager = PipelineManager(args.author, args.repo)
     return manager
@@ -57,18 +57,19 @@ def main():
     args = parser.parse_args()
     manager = get_repo_manager(args)
 
-    init_choice = ''
+    # init_choice = ''
     if args.command == 'create':
         if not args.password:
             args.password = getpass('Password: ')
         print('Creating repo...')
         manager.create(args.password)
         print('Done')
-        init_choice = input('Do you want to clone and initialize it with template? [Y|n]  ')
-    if args.command == 'init' or init_choice.lower() in ['yes', 'y']:
-        print('Clone the repo and initialize it with template...')
-        manager.init()
-        print('Done')
+        # init_choice = input('Do you want to clone and initialize it with template? [Y|n]  ')
+    # TODO(Kaiyuan): Add argue=ments
+    # if args.command == 'init' or init_choice.lower() in ['yes', 'y']:
+    #     print('Clone the repo and initialize it with template...')
+    #     manager.init()
+    #     print('Done')
     elif args.command == 'generate-yaml':
         print('Generating yaml for repo...')
         manager.generate_yaml()

@@ -15,10 +15,11 @@
 import requests
 import random
 import sys
-import yaml
 import os
-import shutil
+import yaml
 from pathlib import Path
+from typing import Union
+from shutil import copytree, copyfile
 from importlib import import_module
 
 import git
@@ -37,13 +38,10 @@ class OperatorManager(RepoManager):
         repo (`str`):
             The name of the repo.
     """
-    def __init__(self, author: str, repo: str, op_type: str = 'pyoperator', framework: str ='pytorch', root: str = 'https://hub.towhee.io'):
+    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         super().__init__(author, repo, root)
         # 2 represents operators when creating a repo in Towhee's hub
         self._class = 2
-        self._type = op_type
-        self._framework = framework
-        self._temp = {'pyoperator': 'pyoperator-template', 'nnoperator': 'nnoperator-template'}
 
     def create(self, password: str) -> None:
         """
@@ -74,7 +72,7 @@ class OperatorManager(RepoManager):
             'trust_model': 'default',
             'type': self._class
         }
-        url = 'https://hub.towhee.io/api/v1/user/repos'
+        url = self._root + '/api/v1/user/repos'
 
         try:
             r = requests.post(url, data=data, headers={'Authorization': 'token ' + token_hash})
@@ -85,9 +83,19 @@ class OperatorManager(RepoManager):
 
         self.delete_token(token_id, password)
 
-    def init(self) -> None:
+    def init(self, is_nn: bool, file_src: Union[str, Path], file_dst: Union[str, Path] = None) -> None:
         """
-        Initialize the file structure with template. First clone the repo, then initialize it with the template file structure.
+        Initialize the repo with template.
+
+        First clone the repo, then move and rename the template repo file.
+
+        Args:
+            is_nn (`bool`):
+                If the operator is an nnoperator(neural network related).
+            file_src (`Union[str, Path]`):
+                The path to the template files.
+            file_dst (`Union[str, Path]`):
+                The path to the local repo to init.
 
         Raises:
             (`HTTPError`)
@@ -95,22 +103,31 @@ class OperatorManager(RepoManager):
             (`OSError`)
                 Raise error in writing file.
         """
-        self.clone(local_dir=self._repo, tag='main')
-        # Download the template repo file
-        repo_temp = self._temp[self._type]
-        git.Repo.clone_from(url=f'{self.root}/towhee/{repo_temp}.git', to_path=f'{self._repo}/{repo_temp}', branch='main')
+        repo_file_name = self._repo.replace('-', '_')
 
-        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-')), 'pytorch']
-        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-')), self._framework]
-        for file in (Path(self._repo) / repo_temp).glob('*'):
-            if file.name.endswith(('.md', '.yaml', 'template.py')):
-                new_file = Path(self._repo) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
-                self.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
-            elif file.name != '.git':
-                os.rename(file, Path(self._repo) / file.name)
-        if self._type == 'nnoperator' and self._framework != 'pytorch':
-            os.rename(Path(self._repo) / 'pytorch', Path(self._repo) / self._framework)
-        shutil.rmtree(Path(self._repo) / repo_temp)
+        if not file_dst:
+            file_dst = Path().cwd() / repo_file_name
+        file_src = Path(file_src)
+        file_dst = Path(file_dst)
+
+        url = self._root + '/' + self._author + '/' + self._repo + '.git'
+        git.Repo.clone_from(url=url, to_path=file_dst, branch='main')
+
+        if is_nn:
+            template = 'nnoperator_template'
+        else:
+            template = 'pyoperator_template'
+
+        for f in os.listdir(file_src):
+            if (file_dst / f).is_file() or (file_dst / f).is_dir():
+                continue
+            if (file_src / f).is_file():
+                copyfile(file_src / f, file_dst / f)
+            elif (file_src / f).is_dir():
+                copytree(file_src / f, file_dst / f)
+
+        (file_dst / (template + '.py')).rename(file_dst / (repo_file_name + '.py'))
+        (file_dst / (template + '.yaml')).rename(file_dst / (repo_file_name + '.yaml'))
 
     def generate_yaml(self) -> None:
         """

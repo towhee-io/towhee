@@ -18,7 +18,7 @@ from shutil import rmtree
 
 from towhee.hub.repo_manager import RepoManager
 
-cache_path = Path(__file__).parent.parent.resolve()
+public_path = Path(__file__).parent.parent.resolve()
 
 
 class TestRepoManager(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestRepoManager(unittest.TestCase):
 
     def test_clone(self):
         rm = RepoManager('towhee', 'ci-test')
-        repo_dir = cache_path / 'test_cache' / 'ci_test'
+        repo_dir = public_path / 'test_cache' / 'ci_test'
         if repo_dir.is_dir():
             rmtree(repo_dir)
         rm.clone(repo_dir)
@@ -50,9 +50,33 @@ class TestRepoManager(unittest.TestCase):
         self.assertIn('.git', files)
         rmtree(repo_dir)
 
+    def test_download_executor(self):
+        rm = RepoManager('towhee', 'ci-test')
+        repo_dir = public_path / 'test_cache' / 'ci_test'
+        if repo_dir.is_dir():
+            rmtree(repo_dir)
+        rm.download_executor('main', 'README.md', tuple([]), repo_dir)
+
+        self.assertTrue((repo_dir / 'README.md').is_file())
+        rmtree(repo_dir)
+
+    def test_download_files(self):
+        rm = RepoManager('towhee', 'ci-test')
+        repo_dir = public_path / 'test_cache' / 'ci_test'
+        if repo_dir.is_dir():
+            rmtree(repo_dir)
+
+        rm.download_files('main', ['README.md'], tuple([]), repo_dir)
+        self.assertTrue((repo_dir / 'README.md').is_file())
+        rmtree(repo_dir)
+
+        # When something goes wrong while download, throe error and delete all the other downloaded files.
+        self.assertRaises(Exception, rm.download_files, 'main', ['README.md', 'FileThatNotExists'], tuple([]), repo_dir)
+        self.assertFalse((repo_dir / 'README.md').is_file())
+
     def test_download(self):
         rm = RepoManager('towhee', 'ci-test')
-        repo_dir = cache_path / 'test_cache' / 'ci_test'
+        repo_dir = public_path / 'test_cache' / 'ci_test'
         if repo_dir.is_dir():
             rmtree(repo_dir)
         rm.download(repo_dir)
@@ -67,3 +91,7 @@ class TestRepoManager(unittest.TestCase):
         d['a'] = '<class \'torch.Tensor\'>'
 
         self.assertEqual(RepoManager.convert_dict(d)['a'], 'torch.Tensor')
+
+
+if __name__ == '__main__':
+    unittest.main()
