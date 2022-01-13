@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -23,7 +22,6 @@ from towhee.engine.operator_io.reader import BatchFrameReader
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.window_runner import WindowRunner
 from tests.unittests.mock_operators.sum_operator.sum_operator import SumOperator
-
 
 DATA_QUEUE = Queue()
 
@@ -44,17 +42,13 @@ class TestRunner(unittest.TestCase):
     """
     MapRunner test
     """
-
     def test_window_runner(self):
         writer = MockWriter()
 
         df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
 
         # We
-        runner = WindowRunner('window_test', 0, 'sum_operator',
-                              'mock_operators', {},
-                              [BatchFrameReader(df_in, {'num': 0}, 5, 3)],
-                              writer)
+        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
 
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))
@@ -82,16 +76,13 @@ class TestRunner(unittest.TestCase):
         df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
 
         # We
-        runner = WindowRunner('window_test', 0, 'sum_operator',
-                              'mock_operators', {},
-                              [BatchFrameReader(df_in, {'num': 0}, 5, 3)],
-                              writer)
+        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
 
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        df_in.put(('error_data',))
+        df_in.put(('error_data', ))
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)

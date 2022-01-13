@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from pathlib import Path
 from typing import Dict
@@ -25,7 +24,6 @@ from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 from towhee.engine.operator_io._mock_reader import MockReader
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from tests.unittests import CACHE_PATH
-
 
 DATA_QUEUE = Queue()
 
@@ -42,12 +40,11 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
     """
     Thread pool task executor test
     """
-
     @classmethod
     def setUpClass(cls):
-        new_cache = (CACHE_PATH/'test_cache')
-        pipeline_cache = (CACHE_PATH/'test_util')
-        operator_cache = (CACHE_PATH/'mock_operators')
+        new_cache = (CACHE_PATH / 'test_cache')
+        pipeline_cache = (CACHE_PATH / 'test_util')
+        operator_cache = (CACHE_PATH / 'mock_operators')
         fmc = FileManagerConfig()
         fmc.update_default_cache(new_cache)
         pipelines = list(pipeline_cache.rglob('*.yaml'))
@@ -58,8 +55,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
 
     def setUp(self):
         cache_path = Path(__file__).parent.parent.resolve()
-        self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test',
-                                                 cache_path)
+        self._task_exec = ThreadPoolTaskExecutor('tread_pool_task_executor_test', cache_path)
         self._task_exec.start()
 
     def tearDown(self):
@@ -71,9 +67,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         data_queue = Queue()
         writer = MockWriter()
         hub_op_id = 'local/add_operator'
-        runner = MapRunner('test', 0, 'add_operator',
-                           hub_op_id, {'factor': 1},
-                           [MockReader(data_queue)], writer)
+        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [MockReader(data_queue)], writer)
         self._task_exec.push_task(runner)
 
         data_queue.put({'num': 1})
@@ -96,9 +90,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         data_queue = Queue()
         writer = MockWriter()
         hub_op_id = 'local/add_operator'
-        runner = MapRunner('test', 0, 'add_operator',
-                           hub_op_id, {'factor': 1},
-                           [MockReader(data_queue)], writer)
+        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [MockReader(data_queue)], writer)
         self._task_exec.push_task(runner)
 
         data_queue.put('error')

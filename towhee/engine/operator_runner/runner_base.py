@@ -37,11 +37,10 @@ class _OpInfo:
     """
     Operator hub info.
     """
-
-    def __init__(self, op_name: str, hub_op_id: str,
-                 op_args: Dict[str, any]) -> None:
+    def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, any], tag: str) -> None:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
+        self._tag = tag
         self._msg = None
         self._op_args = op_args
 
@@ -57,6 +56,10 @@ class _OpInfo:
     def op_args(self):
         return self._op_args
 
+    @property
+    def tag(self):
+        return self._tag
+
 
 class RunnerBase(ABC):
     """
@@ -64,15 +67,21 @@ class RunnerBase(ABC):
 
     The base class provides some function to control status.
     """
-
-    def __init__(self, name: str, index: int,
-                 op_name: str, hub_op_id: str,
-                 op_args: Dict[str, any],
-                 readers=None, writer=None) -> None:
+    def __init__(
+        self,
+        name: str,
+        index: int,
+        op_name: str,
+        tag: str,
+        hub_op_id: str,
+        op_args: Dict[str, any],
+        readers=None,
+        writer=None,
+    ) -> None:
         self._name = name
         self._index = index
         self._status = RunnerStatus.IDLE
-        self._op_info = _OpInfo(op_name, hub_op_id, op_args)
+        self._op_info = _OpInfo(op_name, hub_op_id, op_args, tag)
 
         self._readers = readers
 
@@ -96,6 +105,10 @@ class RunnerBase(ABC):
     @property
     def hub_op_id(self):
         return self._op_info.hub_op_id
+
+    @property
+    def tag(self):
+        return self._op_info.tag
 
     @property
     def op_args(self):

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+import numpy as np
 from pathlib import Path
 from PIL import Image
 # from shutil import rmtree
@@ -24,7 +25,7 @@ from tests.unittests import CACHE_PATH
 cache_path = Path(__file__).parent.parent.resolve()
 
 
-@unittest.skip('Not pass')
+# @unittest.skip('Not pass')
 class TestDownload(unittest.TestCase):
     """
     Simple hub download and run test.
@@ -43,10 +44,21 @@ class TestDownload(unittest.TestCase):
         FileManager(fmc)
 
     def test_pipeline(self):
-        p = pipeline('towhee/ci_test')
-        img = Image.open(CACHE_PATH / 'mock_pipelines/ci_test/towhee_logo.png')
+        p = pipeline('image-embedding')
+        img = str(CACHE_PATH / 'mock_pipelines/ci_test/towhee_logo.png')
         res = p(img)
-        self.assertEqual(res[0][0].size, 1000)
+        self.assertIsInstance(res, np.ndarray)
+
+    def test_tag(self):
+        p = pipeline('towhee/ci-test')
+        res = p('test')
+
+        self.assertIn('test on main', res[0])
+
+        p = pipeline('towhee/ci-test', tag='test')
+        res = p('test')
+
+        self.assertIn('test on test', res[0])
 
 
 if __name__ == '__main__':
