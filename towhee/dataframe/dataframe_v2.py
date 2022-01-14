@@ -283,16 +283,16 @@ class DataFrame:
             return self._sealed
 
     def get_window(self, offset, cutoff, col, use_timestamp, iter_id):
-        
+
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] == float('inf'):
                 return Responses.KILLED, None
-        
+
         if self._schema is None:
             raise ValueError('Schema not set.')
-        
+
         col = self._schema.col_index(col)
-        
+
         if col is None:
             raise ValueError('Not a column.')
 
@@ -316,7 +316,7 @@ class DataFrame:
             # Window valid but not fufilled by last value.
             if offset + count == self._len:
                 return Responses.INDEX_OOB_UNSEALED, None
-            
+
             # Window fufilled.
             elif offset + count <= self._len:
                 return Responses.APPROVED_CONTINUE, ret
@@ -327,7 +327,7 @@ class DataFrame:
 
             else:
                 return Responses.UNKOWN_ERROR, None
-        
+
 
     def get(self, offset, count = 1, iter_id = None):
         """
