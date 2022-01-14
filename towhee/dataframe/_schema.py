@@ -33,7 +33,7 @@ class _Schema:
         return True
 
     def col_index(self, col_name: str) -> int:
-        return self._key_index[col_name]
+        return self._key_index.get(col_name, default = None)
 
     def col_key(self, index: int) -> str:
         return self._cols[index][0]

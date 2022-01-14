@@ -46,7 +46,7 @@ class TestDataframe(unittest.TestCase):
                 self.assertEqual(df['letter'][i], chr(ord('a') + i))
                 self.assertEqual(df[i][0], i)
                 self.assertEqual(df[i][1], chr(ord('a') + i))
-        
+
         def check_data_default(df):
             for i in range(3):
                 self.assertEqual(df['Col_0'][i], i)
@@ -95,7 +95,7 @@ class TestDataframe(unittest.TestCase):
 
         self.assertEqual(df.name, 'my_df')
 
-        
+
     def test_put(self):
         columns = self.get_columns()
         data = (0, 'a')

@@ -18,6 +18,7 @@ from typing import List, Tuple, Any
 
 from towhee.dataframe.array.array import Array
 from towhee.dataframe._schema import _Schema
+from towhee.types._frame import _Frame
 
 
 class DataFrame:
@@ -41,7 +42,6 @@ class DataFrame:
         columns: List[Tuple[str, Any]] = None,
         name: str = None,
         data=None,
-        frames=True
     ):
         self._name = name
         self._sealed = False
@@ -60,8 +60,6 @@ class DataFrame:
         self._data_as_dict = None
 
         self._schema = None
-        if frame:
-            self._frame_col = Array(name = 'frame')
 
         # TODO: Better solution for no data whatsoever
         # if no columns and no data: delay to first data added
@@ -284,8 +282,52 @@ class DataFrame:
         with self._data_lock:
             return self._sealed
 
-    def window_get(self, offset, start, end, col, iter_id):
-        raise NotImplementedError
+    def get_window(self, offset, cutoff, col, use_timestamp, iter_id):
+        
+        with self._iterator_lock:
+            if iter_id is not None and self._iterators[iter_id] == float('inf'):
+                return Responses.KILLED, None
+        
+        if self._schema is None:
+            raise ValueError('Schema not set.')
+        
+        col = self._schema.col_index(col)
+        
+        if col is None:
+            raise ValueError('Not a column.')
+
+        if not isinstance(self._schema.col_type(col), _Frame):
+            raise ValueError('Column not a frame column.')
+
+        with self._data_lock:
+            if offset < self._min_offset:
+                return Responses.INDEX_GC, None
+
+            ret = []
+            count = 0
+            for x in range(offset, self._len):
+                if not use_timestamp and self.__getitem__(x)[col].row_id < cutoff:
+                    ret.append(self.__getitem__(x))
+                    count += 1
+                elif use_timestamp and self.__getitem__(x)[col].timestamp < cutoff:
+                    ret.append(self.__getitem__(x))
+                    count += 1
+
+            # Window valid but not fufilled by last value.
+            if offset + count == self._len:
+                return Responses.INDEX_OOB_UNSEALED, None
+            
+            # Window fufilled.
+            elif offset + count <= self._len:
+                return Responses.APPROVED_CONTINUE, ret
+
+            #If sealed, return remainder as the final window.
+            elif self._sealed:
+                return Responses.APPROVED_DONE, ret
+
+            else:
+                return Responses.UNKOWN_ERROR, None
+        
 
     def get(self, offset, count = 1, iter_id = None):
         """
@@ -322,7 +364,7 @@ class DataFrame:
             else:
                 return Responses.UNKOWN_ERROR, None
 
-    def put(self, item, frame = None) -> None:
+    def put(self, item) -> None:
         """Put values into dictionary
 
         For now it takes:
