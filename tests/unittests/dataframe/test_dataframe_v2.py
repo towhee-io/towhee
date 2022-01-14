@@ -35,7 +35,7 @@ class TestDataframe(unittest.TestCase):
         return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
 
     def get_dict(self):
-        return {'digit': Array(name = 'digit', data=[0, 1, 2]), 'letter': Array(name='letter', data = ['a', 'b', 'c'])}
+        return {'Col_0': Array(name = 'digit', data=[0, 1, 2]), 'Col_1': Array(name='letter', data = ['a', 'b', 'c'])}
 
 
     def test_constructors(self):
@@ -46,29 +46,56 @@ class TestDataframe(unittest.TestCase):
                 self.assertEqual(df['letter'][i], chr(ord('a') + i))
                 self.assertEqual(df[i][0], i)
                 self.assertEqual(df[i][1], chr(ord('a') + i))
+        
+        def check_data_default(df):
+            for i in range(3):
+                self.assertEqual(df['Col_0'][i], i)
+                self.assertEqual(df['Col_1'][i], chr(ord('a') + i))
+                self.assertEqual(df[i][0], i)
+                self.assertEqual(df[i][1], chr(ord('a') + i))
 
-        # from list[tuple]
+        # from list[tuple] with cols
         data = self.get_tuples()
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
-        # from list[towhee.dataframe.Array]
+        # from list[tuple] without cols
+        data = self.get_tuples()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
+        # from list[towhee.dataframe.Array] with cols
         data = self.get_arrays()
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
-        # from dict[str, towhee.dataframe.Array]
+         # from list[towhee.dataframe.Array] without cols
+        data = self.get_arrays()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
+        # from dict[str, towhee.dataframe.Array] with cols.
         data = self.get_dict()
-        df = DataFrame(None, name = 'my_df', data = data, default_cols='old')
+        columns = self.get_columns()
+        df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
         check_data(df)
 
+        # from dict[str, towhee.dataframe.Array] without cols.
+        data = self.get_dict()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
         self.assertEqual(df.name, 'my_df')
 
+        
     def test_put(self):
         columns = self.get_columns()
         data = (0, 'a')

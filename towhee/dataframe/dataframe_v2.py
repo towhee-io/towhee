@@ -41,7 +41,7 @@ class DataFrame:
         columns: List[Tuple[str, Any]] = None,
         name: str = None,
         data=None,
-        default_cols = False
+        frames=True
     ):
         self._name = name
         self._sealed = False
@@ -59,7 +59,9 @@ class DataFrame:
         self._data_as_list = None
         self._data_as_dict = None
 
-        self._schema = _Schema()
+        self._schema = None
+        if frame:
+            self._frame_col = Array(name = 'frame')
 
         # TODO: Better solution for no data whatsoever
         # if no columns and no data: delay to first data added
@@ -68,21 +70,21 @@ class DataFrame:
 
         # if column and no data: create empty arrays
         elif columns is not None and data is None:
+            self._schema = _Schema()
             self._set_cols(columns)
             self._from_none()
-            self._schema_update_needed = False
 
         # if no column and data: default names and types from data
         elif columns is None and data is not None:
-            self._extract_data(data, default_cols=default_cols)
-            self._schema_update_needed = True
-            self._update_schema()
+            self._extract_data(data)
+            self._schema = _Schema()
+            self._set_schema()
 
         # if column and data: create regular running.
         elif columns is not None and data is not None:
+            self._schema = _Schema()
             self._set_cols(columns)
-            self._extract_data(data, default_cols=False)
-            self._schema_update_needed = False
+            self._extract_data(data)
 
 
     def _from_none(self):
@@ -93,16 +95,17 @@ class DataFrame:
         for names, types in columns:
             self._schema.add_col(name=names, col_type = types)
 
-    def _update_schema(self):
+    def _set_schema(self):
         if self._data_as_list[0].physical_size > 0:
             for x in self._data_as_list:
                 key = x.name
                 col_type = type(x.get_relative(0))
                 self._schema.add_col(key, col_type)
-            self._schema_update_needed = False
+        else:
+            raise ValueError('Can\'t create df from empty data and column.')
 
 
-    def _extract_data(self, data, default_cols = False):
+    def _extract_data(self, data):
         # For `data` is `list`
         if isinstance(data, list):
             container_types = set(type(i) for i in data)
@@ -113,22 +116,22 @@ class DataFrame:
 
             # For `data` is `list[tuple]`
             if container_type is tuple:
-                self._from_tuples(data, default_cols)
+                self._from_tuples(data)
             # For `data` is `list[towhee.dataframe.Array]`
             elif container_type is Array:
-                self._from_arrays(data, default_cols)
+                self._from_arrays(data)
             else:
                 raise ValueError('can not construct DataFrame from list[%s]' % (container_type))
 
         # For `data` is `dict`
         elif isinstance(data, dict):
-            self._from_dict(data, default_cols)
+            self._from_dict(data)
 
         # Unrecognized data types
         else:
             raise ValueError('can not construct DataFrame from data type %s' % (type(data)))
 
-    def _from_tuples(self, data, default_cols):
+    def _from_tuples(self, data):
         # check tuple length
         tuple_lengths = set(len(i) for i in data)
         if len(tuple_lengths) == 1:
@@ -137,7 +140,7 @@ class DataFrame:
             raise ValueError('can not construct DataFrame from unequal-length tuples')
 
         # create arrays
-        if  default_cols is not False:
+        if self._schema is None:
             self._data_as_list = [Array(name='Col_' + str(i)) for i in range(tuple_length)]
             self._data_as_dict = {'Col_' + str(i): self._data_as_list[i] for i in range(tuple_length)}
         else:
@@ -154,7 +157,7 @@ class DataFrame:
 
         self._len = len(data)
 
-    def _from_arrays(self, data, default_cols):
+    def _from_arrays(self, data):
         # check array length
         array_lengths = set(len(array) for array in data)
         if len(array_lengths) != 1:
@@ -162,33 +165,29 @@ class DataFrame:
 
         self._len = array_lengths.pop()
 
-        if default_cols == 'old':
-            self._data_as_list = []
-            self._data_as_dict = {}
-            for i, arr in enumerate(data):
-                self._data_as_list.append(arr)
-                self._data_as_dict[arr.name] = self._data_as_list[-1]
+        self._data_as_list = []
+        self._data_as_dict = {}
 
-        elif default_cols == 'default':
-            self._data_as_list = []
-            self._data_as_dict = {}
+        if self._schema is None:
             for i, arr in enumerate(data):
-                arr.set_name('Col_' + str(i))
-                self._data_as_list.append(arr)
-                self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+                if arr.name is None:
+                    arr.set_name('Col_' + str(i))
+                    self._data_as_list.append(arr)
+                    self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+                else:
+                    self._data_as_list.append(arr)
+                    self._data_as_dict[arr.name] = self._data_as_list[-1]
 
         else:
             # check columns length
             if self._schema.col_count != len(data):
                 raise ValueError('length of columns is not equal to the number of arrays')
-            self._data_as_list = []
-            self._data_as_dict = {}
             for i, arr in enumerate(data):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
 
-    def _from_dict(self, data, default_cols = False):
+    def _from_dict(self, data):
         # check dict values
         vals = set(type(array) for array in data.values())
         if len(vals) != 1 or not vals.pop() == Array:
@@ -201,20 +200,15 @@ class DataFrame:
 
         self._len = array_lengths.pop()
 
-        if default_cols == 'old':
-            self._data_as_list = list(data.values())
-            self._data_as_dict = dict(data.items())
+        self._data_as_list = []
+        self._data_as_dict = {}
 
-        elif default_cols == 'default':
-            self._data_as_list = []
-            self._data_as_dict = {}
-            for i, arr in enumerate(data.values()):
-                arr.set_name('Col_' + str(i))
-                self._data_as_list.append(arr)
-                self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+        if self._schema is None:
+            for key, val in data.items():
+                val.set_name(key)
+                self._data_as_list.append(val)
+                self._data_as_dict[key] = self._data_as_list[-1]
         else:
-            self._data_as_list = []
-            self._data_as_dict = {}
             for i, arr in enumerate(data.values()):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
@@ -328,7 +322,7 @@ class DataFrame:
             else:
                 return Responses.UNKOWN_ERROR, None
 
-    def put(self, item) -> None:
+    def put(self, item, frame = None) -> None:
         """Put values into dictionary
 
         For now it takes:
@@ -345,8 +339,6 @@ class DataFrame:
                 self._put_dict(item)
             else: # type(item) is tuple:
                 self._put_tuple(item)
-            if self._schema_update_needed:
-                self._update_schema()
 
             self._len += 1
             cur_len = self._len
