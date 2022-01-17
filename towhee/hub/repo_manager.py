@@ -389,14 +389,72 @@ class RepoManager:
         file_list = self.get_file_list(commit)
         self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_dir=local_dir, install_reqs=install_reqs)
 
-    def add(self):
-        pass
+    def add(self, repo_path: Union[str, Path]):
+        """
+        A wrapper function for git add.
 
-    def commit(self):
-        pass
+        Stage current changes in the repo.
 
-    def push(self):
-        pass
+        Args:
+            repo_path (`Union[str, Path]`):
+                The local repo cloned from remote.
+        """
+        if isinstance(repo_path, str):
+            repo_path = Path(repo_path)
 
-    def pull(self):
-        pass
+        repo = git.Repo(repo_path)
+        changed_files = repo.git.diff(None, name_only=True)
+
+        for changed_file in changed_files.split('\n'):
+            repo.git.add(changed_file)
+
+    def commit(self, repo_path: Union[str, Path], cmt_msg: str):
+        """
+        A wrapper function for git commit.
+
+        Commit current changes in the repo.
+
+        Args:
+            repo_path (`Union[str, Path]`):
+                The local repo cloned from remote.
+            mode (`str`):
+                The way of commit.
+            cmt_msg (`str`):
+                The commit message.
+        """
+        repo = git.Repo(repo_path)
+        repo.git.commit('-sm', cmt_msg)
+
+    def push(self, repo_path: Union[str, Path], remote: str = 'origin', branch: str = 'main'):
+        """
+        A wrapper function for git push.
+
+        Push local commits to remote.
+
+        Args:
+            repo_path (`Union[str, Path]`):
+                The local repo cloned from remote.
+            remote (`str`):
+                The remote repo.
+            branch (`str`):
+                The remote branch.
+        """
+        repo = git.Repo(repo_path)
+        repo.git.push(remote, branch)
+
+    def pull(self, repo_path: Union[str, Path], remote: str = 'origin', branch: str = 'main'):
+        """
+        A wrapper function for git pull.
+
+        pull from remote.
+
+        Args:
+            repo_path (`Union[str, Path]`):
+                The local repo cloned from remote.
+            remote (`str`):
+                The remote repo.
+            branch (`str`):
+                The remote branch.
+        """
+        repo = git.Repo(repo_path)
+        repo.git.pull(remote, branch)
