@@ -22,6 +22,7 @@ from towhee.errors import OpIOTypeError
 class GeneratorRunner(RunnerBase):
     """
     GeneratorRunner, the ops must return a generator.
+
     """
 
     def _set_outputs(self, output: Generator):

@@ -13,17 +13,57 @@
 # limitations under the License.
 
 
+from typing import Optional
+from towhee.errors import TowheeError
+
+
 FRAME = 'frame'
 
 
 class _Frame:
     """
     Row info of dataframe.
+
+    row_id (`int`):
+        Row id of dataframe, an auto-increment data.
+    parent_path (`str`):
+        FlatMap's output data, will set the data.
+
+        Example:
+        The parent_path changes between flatmap operators.
+
+                   dataframe                  dataframe                    dataframe
+
+                    frame                       frame                       frame
+                 ┌───────────┐               ┌───────────┐               ┌───────────┐
+           f1    │1  '' None │     f1-1      │1   1  None│       f1-1-1  │1  1-1 None│
+                 ├───────────┤               ├───────────┤               ├───────────┤
+           f2    │2  '' None │     f1-2      │2   1  None│       f1-1-2  │2  1-1 None│
+                 ├───────────┤               ├───────────┤               ├───────────┤
+                 │           │     f2-3      │3   2  None│       f1-2-3  │3  1-2 None│
+                 ├───────────┤               ├───────────┤               ├───────────┤
+                 │           │               │           │       f2-3-4  │4  2-3 None│
+                 │           │               │           │               │           │
+                 └───────────┘               └───────────┘               └───────────┘
+
+                                 ┌───────────┐           ┌───────────┐
+                                 │           │           │           │
+                ───────────────► │  FlatMap  ├──────────►│  FlatMap  ├────────────────►
+                                 │           │           │           │
+                                 └───────────┘           └───────────┘
+
+
+    timestamp (`int`):
+        Video images will have timestamp attribute, the video-decoder will add the info to frames.
+    empty(`bool`):
+        Filter-operator will set empty = True is this frame is filtered.
     """
 
-    def __init__(self, row_id, timestamp=None):
+    def __init__(self, row_id: int = -1, parent_path: str = '', timestamp: int = Optional[None], empty: bool = False):
         self._row_id = row_id
         self._timestamp = timestamp
+        self._parent_path = parent_path
+        self._empty = empty
 
     @property
     def row_id(self):
@@ -32,3 +72,32 @@ class _Frame:
     @property
     def timestamp(self):
         return self._timestamp
+
+    @property
+    def parent_path(self):
+        return self._parent_path
+
+    @property
+    def empty(self):
+        return self._empty
+
+    @row_id.setter
+    def row_id(self, row_id: int):
+        self._row_id = row_id
+
+    @timestamp.setter
+    def timestamp(self, timestamp: int):
+        if self._timestamp is not None:
+            raise TowheeError('Timestamp already exist')
+
+        self._timestamp = timestamp
+
+    @parent_path.setter
+    def parent_path(self, parent_path: str):
+        if self._parent_path != '':
+            raise TowheeError('Parent path already exist')
+
+        self._parent_path = parent_path
+
+    def __str__(self) -> str:
+        return f'row_id={self.row_id}:parent_path={self.parent_path}:timestamp={self.timestamp}:empty={self.empty}'

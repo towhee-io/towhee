@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+from towhee.utils.log import engine_log
+
+
 class _Schema:
     """
     Schema of dataframe.
@@ -23,9 +26,15 @@ class _Schema:
     def __init__(self):
         self._cols = []
         self._key_index = {}
+        self._sealed = False
 
     def add_col(self, name: str, col_type: str) -> bool:
+        if self._sealed:
+            engine_log.error('Schema already sealed, can not change cols')
+            return False
+
         if name in self._key_index:
+            engine_log.error(f'Col name {name} already exist')
             return False
 
         self._cols.append((name, col_type))

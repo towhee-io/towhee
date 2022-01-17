@@ -17,7 +17,7 @@ from typing import Any, Callable, List, Tuple, Dict
 import weakref
 
 from towhee.dataframe.variable import Variable
-from towhee.types._frame import FRAME
+from towhee.types._frame import FRAME, _Frame
 from towhee.dataframe._schema import _Schema
 
 
@@ -87,10 +87,21 @@ class DataFrame:
         """
         return self._sealed
 
+    def _set_frame(self, item):
+        if isinstance(item, Variable) and item[-1].vtype == FRAME:
+            item[-1].value.row_id = self._total
+        else:
+            f = _Frame(row_id=self._total)
+            item = list(item)
+            item.append(Variable(FRAME, f))
+            item = tuple(item)
+        return item
+
     def put(self, item: Tuple[Variable]) -> None:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, tuple), 'Dataframe needs tuple, not %s' % (type(item))
         with self._lock:
+            self._set_frame(item)
             self._data.append(item)
             self._total += 1
             self._accessible_cv.notify()
@@ -102,14 +113,6 @@ class DataFrame:
             datalist[col_index] = Variable(
                 self._schema.col_type(col_index), v)
         self.put(tuple(datalist))
-
-    def merge(self, df):
-        assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
-        # TODO: Check `df` compatibility with `self`.
-        with self._lock:
-            self._data += df.data
-            self._total += len(df.data)
-            self._accessible_cv.notify_all()
 
     def get(self, start: int, count: int, block: bool = False) -> List[Tuple[Variable]]:
         """

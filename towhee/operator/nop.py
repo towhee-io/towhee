@@ -31,9 +31,6 @@ class _StartOperator(PyOperator):
 
     def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
         fields = [(name, type(val)) for name, val in args.items()]
-        fields.append((FRAME, _Frame))
-        args[FRAME] = _Frame(self._id)
-        self._id += 1
         return NamedTuple('Outputs', fields)(**args)  # pylint: disable=not-callable
 
 

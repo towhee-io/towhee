@@ -19,6 +19,7 @@ import threading
 from queue import Queue
 
 from towhee.dataframe import DataFrame
+from towhee.types._frame import _Frame
 from towhee.engine.operator_io.reader import BatchFrameReader
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.window_runner import WindowRunner
@@ -91,7 +92,7 @@ class TestRunner(unittest.TestCase):
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        df_in.put(('error_data',))
+        df_in.put(('error_data', ))
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
