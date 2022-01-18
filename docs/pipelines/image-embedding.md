@@ -7,8 +7,8 @@ Image embedding pipelines are used for reduction the dimensionality of the input
 
 ### Popular Scenarios
 
-- [Reverse image search](../tutorials/reverse-image-search)
-- [Image deduplication](../tutorials/image-deduplication)
+- [Reverse image search](../tutorials/reverse-image-search.md)
+- [Image deduplication](../tutorials/image-deduplication.md)
 - Copyright infringement detection
 - Item tagging
 - Celebrity tagging
@@ -39,7 +39,7 @@ These are the pipelines containing pre-trained Swin Transformers implemented bas
 
 Each pipeline mentioned above employs a single model. In contrast, an ensemble combines multiple models to generate a better embedding, at the cost of higher resource consumption. Towhee offers image embedding pipelines based on emsembles:
 
-**[image-embedding-efficientnetb7-swinlarge-concat](https://hub.towhee.io/towhee/image-embedding-efficientnetb7-swinlarge-concat)**
+**[image-embedding-efficientnetb7-swinlarge-ensemble](https://hub.towhee.io/towhee/image-embedding-efficientnetb7-swinlarge-ensemble)**
 
 ### Pipeline family
 

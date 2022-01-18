@@ -12,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
 from queue import Queue
 
 from towhee.dataframe import DataFrame
-from towhee.types._frame import _Frame
 from towhee.engine.operator_io.reader import BatchFrameReader
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.window_runner import WindowRunner
 from tests.unittests.mock_operators.sum_operator.sum_operator import SumOperator
-
 
 DATA_QUEUE = Queue()
 
@@ -52,10 +49,7 @@ class TestRunner(unittest.TestCase):
         df_in = DataFrame(
             'inputs', [('num', 'int')])
 
-        runner = WindowRunner('window_test', 0, 'sum_operator',
-                              'mock_operators', {},
-                              [BatchFrameReader(df_in, {'num': 0}, 5, 3)],
-                              writer)
+        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
 
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))
@@ -83,10 +77,7 @@ class TestRunner(unittest.TestCase):
         df_in = DataFrame('op_test_in', [('num', 'nt')])
 
         # We
-        runner = WindowRunner('window_test', 0, 'sum_operator',
-                              'mock_operators', {},
-                              [BatchFrameReader(df_in, {'num': 0}, 5, 3)],
-                              writer)
+        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
 
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))

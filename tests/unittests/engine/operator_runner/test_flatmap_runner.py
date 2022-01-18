@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -21,7 +20,6 @@ from queue import Queue
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.flatmap_runner import FlatMapRunner
 from tests.unittests.mock_operators.repeat_operator.repeat_operator import RepeatOperator
-
 
 DATA_QUEUE = Queue()
 
@@ -58,14 +56,11 @@ class TestFlatmapRunner(unittest.TestCase):
     """
     MapRunner test
     """
-
     def test_flatmap_runner(self):
         data_queue = Queue()
         writer = MockWriter()
 
-        runner = FlatMapRunner('flattest', 0, 'repeat_operator',
-                               'mock_operators', {'repeat': 3},
-                               [MockReader(data_queue)], writer)
+        runner = FlatMapRunner('flattest', 0, 'repeat_operator', 'main', 'mock_operators', {'repeat': 3}, [MockReader(data_queue)], writer)
 
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
@@ -91,9 +86,7 @@ class TestFlatmapRunner(unittest.TestCase):
     def test_flatmap_runner_with_error(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = FlatMapRunner('test', 0, 'repeat_operator',
-                               'mock_operators', {'repeat': 3},
-                               [MockReader(data_queue)], writer)
+        runner = FlatMapRunner('test', 0, 'repeat_operator', 'main', 'mock_operators', {'repeat': 3}, [MockReader(data_queue)], writer)
 
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))

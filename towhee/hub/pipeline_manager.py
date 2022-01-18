@@ -14,9 +14,7 @@
 
 import requests
 import random
-from pathlib import Path
 
-import git
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
 from requests.exceptions import HTTPError
@@ -31,6 +29,8 @@ class PipelineManager(RepoManager):
             The author of the repo.
         repo (`str`):
             The name of the repo.
+        root (`str`):
+            The root url where the repo located.
     """
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         super().__init__(author, repo, root)
@@ -66,7 +66,7 @@ class PipelineManager(RepoManager):
             'trust_model': 'default',
             'type': self._class
         }
-        url = 'https://hub.towhee.io/api/v1/user/repos'
+        url = self._root + '/api/v1/user/repos'
         try:
             r = requests.post(url, data=data, headers={'Authorization': 'token ' + token_hash})
             r.raise_for_status()
@@ -75,27 +75,3 @@ class PipelineManager(RepoManager):
             raise e
 
         self.delete_token(token_id, password)
-
-    def init(self) -> None:
-        """
-        Initialize the repo with template.
-
-        First clone the repo, then download and rename the template repo file.
-
-        Raises:
-            (`HTTPError`)
-                Raise error in request.
-            (`OSError`)
-                Raise error in writing file.
-        """
-        repo_file_name = self._repo.replace('-', '_')
-
-        url = 'https://hub.towhee.io/' + self._author + '/' + self._repo + '.git'
-        git.Repo.clone_from(url=url, to_path=Path.cwd() / repo_file_name, branch='main')
-
-        lfs_files = self.obtain_lfs_extensions('towhee', 'pipeline-template', 'main')
-        commit = self.latest_commit('towhee', 'pipeline-template', 'main')
-        file_list = self.get_file_list('towhee', 'pipeline-template', commit)
-        self.download_files('towhee', 'pipeline-template', 'main', file_list, lfs_files, str(Path.cwd() / repo_file_name), False)
-
-        (Path(repo_file_name) / 'pipeline_template.yaml').rename(Path(repo_file_name) / (repo_file_name + '.yaml'))

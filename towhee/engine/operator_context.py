@@ -45,12 +45,7 @@ class OperatorContext:
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
-
-    def __init__(
-        self,
-        op_repr: OperatorRepr,
-        dataframes: Dict[str, DataFrame]
-    ):
+    def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
         self._readers = OperatorContext._create_reader(op_repr, dataframes)
         self._writer = OperatorContext._create_writer(op_repr, dataframes)
@@ -73,8 +68,7 @@ class OperatorContext:
 
     @staticmethod
     def _create_writer(op_repr, dataframes):
-        outputs = list({dataframes[output['df']]
-                       for output in op_repr.outputs})
+        outputs = list({dataframes[output['df']] for output in op_repr.outputs})
         iter_type = op_repr.iter_info['type']
         return create_writer(iter_type, outputs)
 
@@ -118,10 +112,17 @@ class OperatorContext:
         try:
             for i in range(count):
                 self._op_runners.append(
-                    create_runner(self._repr.iter_info['type'],
-                                  self._repr.name, i, self._repr.name,
-                                  self._repr.function, self._repr.init_args,
-                                  self._readers, self._writer)
+                    create_runner(
+                        self._repr.iter_info['type'],
+                        self._repr.name,
+                        i,
+                        self._repr.name,
+                        self._repr.tag,
+                        self._repr.function,
+                        self._repr.init_args,
+                        self._readers,
+                        self._writer,
+                    )
                 )
         except AttributeError as e:
             self._err_msg = str(e)

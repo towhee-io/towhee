@@ -41,10 +41,12 @@ class OperatorRepr(BaseRepr):
         init_args: Dict[str, Any],
         inputs: List[Dict[str, Any]],
         outputs: List[Dict[str, Any]],
-        iter_info: Dict[str, Any]
+        iter_info: Dict[str, Any],
+        tag: str = 'main'
     ):
         super().__init__(name)
         self._function = function
+        self._tag = tag
         self._inputs = inputs
         self._outputs = outputs
         self._init_args = init_args
@@ -82,6 +84,15 @@ class OperatorRepr(BaseRepr):
         return self._init_args
 
     @property
+    def tag(self) -> str:
+        """
+        Returns:
+            (`str`)
+                The tag to load of the operator.
+        """
+        return self._tag
+
+    @property
     def iter_info(self) -> Dict[str, Any]:
         """
         Returns:
@@ -106,4 +117,7 @@ class OperatorRepr(BaseRepr):
         if not BaseRepr.is_valid(info, {'name', 'init_args', 'function', 'inputs', 'outputs', 'iter_info'}):
             raise ValueError('Invalid operator info.')
 
-        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'])
+        if 'tag' not in info:
+            info['tag'] = 'main'
+
+        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'], info['tag'])

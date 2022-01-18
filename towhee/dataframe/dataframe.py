@@ -88,7 +88,7 @@ class DataFrame:
         return self._sealed
 
     def _set_frame(self, item):
-        if isinstance(item, Variable) and item[-1].vtype == FRAME:
+        if len(item) != 0 and isinstance(item[-1], Variable) and item[-1].vtype == FRAME:
             item[-1].value.row_id = self._total
         else:
             f = _Frame(row_id=self._total)
@@ -101,7 +101,9 @@ class DataFrame:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, tuple), 'Dataframe needs tuple, not %s' % (type(item))
         with self._lock:
-            self._set_frame(item)
+            item = self._set_frame(item)
+            if item[-1].value.empty:
+                return
             self._data.append(item)
             self._total += 1
             self._accessible_cv.notify()

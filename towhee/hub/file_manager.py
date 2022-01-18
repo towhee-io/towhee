@@ -279,7 +279,7 @@ class FileManager():
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
 
-    def get_pipeline(self, pipeline: str, tag: str = 'main', install_reqs=True):
+    def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True):
         """
         Obtain the path to the requested pipeline.
 
@@ -311,11 +311,8 @@ class FileManager():
             author = pipeline_split[0]
             repo = pipeline_split[1]
             file_name = repo.replace('-', '_')
-
             pipeline_path = self._cache_name(repo, author, tag) / (file_name + '.yaml')
-
             file_path = self._config.default_cache / 'pipelines' / pipeline_path
-            found_existing = False
 
             for path in self._config.cache_paths:
                 path = path / 'pipelines' / pipeline_path
@@ -326,15 +323,16 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.warning('Local file not found, has it been imported?')
+                    engine_log.error('Local file not found, has it been imported?')
                     raise FileNotFoundError('Local file not found, has it been imported?')
                 return file_path
 
             if not file_path.is_file():
                 download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
+                file_path = self._config.default_cache / 'pipelines' / pipeline_path
             else:
-                repo_path = path.parent
-                repo_name = path.stem
+                repo_path = file_path.parent
+                repo_name = file_path.stem
                 repo = git.Repo(repo_path)
                 if not 'working tree clean' in repo.git.status():
                     engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', repo_name)
@@ -345,7 +343,7 @@ class FileManager():
 
         return file_path
 
-    def get_operator(self, operator: str, tag: str = 'main', install_reqs=True):
+    def get_operator(self, operator: str, tag, install_reqs: bool = True):
         """
         Obtain the path to the requested operator.
 
@@ -377,11 +375,8 @@ class FileManager():
             author = operator_split[0]
             repo = operator_split[1]
             file_name = repo.replace('-', '_')
-
             operator_path = self._cache_name(repo, author, tag) / (file_name + '.py')
-
             file_path = self._config.default_cache / 'operators' / operator_path
-            found_existing = False
 
             for path in self._config.cache_paths:
                 path = path / 'operators' / operator_path
@@ -392,15 +387,16 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.info('Local file not found, has it been imported?')
+                    engine_log.error('Local file not found, has it been imported?')
                     raise FileNotFoundError('Local file not found, has it been imported?')
                 return file_path
 
-            if not file_path.is_file():
+            if not Path(file_path).is_file():
                 download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
+                file_path = self._config.default_cache / 'operators' / operator_path
             else:
-                repo_path = path.parent
-                repo_name = path.stem
+                repo_path = file_path.parent
+                repo_name = file_path.stem
                 repo = git.Repo(repo_path)
                 if not 'working tree clean' in repo.git.status():
                     engine_log.warning('Your local operator %s is not up to date, updating to latest version...', repo_name)

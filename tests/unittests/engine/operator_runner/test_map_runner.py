@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -57,13 +56,10 @@ class TestMapRunner(unittest.TestCase):
     """
     MapRunner test
     """
-
     def test_map_runner(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = MapRunner('test', 0, 'add_operator',
-                           'mock_operators', {'num': 1},
-                           [MockReader(data_queue)], writer)
+        runner = MapRunner('test', 0, 'add_operator', 'main', 'mock_operators', {'num': 1}, [MockReader(data_queue)], writer)
         runner.set_op(add_operator.AddOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
@@ -95,9 +91,7 @@ class TestMapRunner(unittest.TestCase):
     def test_map_runner_with_error(self):
         data_queue = Queue()
         writer = MockWriter()
-        runner = MapRunner('test', 0, 'add_operator',
-                           'mock_operators', {'num': 1},
-                           [MockReader(data_queue)], writer)
+        runner = MapRunner('test', 0, 'add_operator', 'main', 'mock_operators', {'num': 1}, [MockReader(data_queue)], writer)
 
         runner.set_op(add_operator.AddOperator(3))
         t = threading.Thread(target=run, args=(runner, ))

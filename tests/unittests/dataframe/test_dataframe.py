@@ -213,8 +213,12 @@ class TestBatchIter(unittest.TestCase):
         runner.join()
         self.assertEqual(q.qsize(), 25)
         while not q.empty():
-            item = q.get()
-            self.assertEqual(item, [(), (), ()])
+            items = q.get()
+            count = 0
+            self.assertEqual(3, len(items))
+            for item in items:
+                item[0].value.row_id = count
+                # self.assertEqual(item, [(), (), ()])
 
     def test_block_batch_iterator(self):
         df = DataFrame('test')
@@ -237,11 +241,11 @@ class TestBatchIter(unittest.TestCase):
         self.assertEqual(q.qsize(), 50)
         num = 0
         while not q.empty():
-            item = q.get()
+            items = q.get()
             if num < 49:
-                self.assertEqual(item, [(), (), (), ()])
+                self.assertEqual(4, len(items))
             else:
-                self.assertEqual(item, [(), ()])
+                self.assertEqual(2, len(items))
             num += 1
 
 

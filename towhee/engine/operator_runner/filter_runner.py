@@ -14,7 +14,8 @@
 
 from typing import Tuple, Dict
 
-
+from towhee.types._frame import _Frame, FRAME
+from towhee.dataframe.variable import Variable
 from towhee.engine.operator_runner.runner_base import RunnerBase
 from towhee.errors import OpIOTypeError
 
@@ -40,3 +41,8 @@ class FilterRunner(RunnerBase):
 
         if output:
             self._writer.write(self._row_data)
+        else:
+            f = self._row_data[-1]
+            assert f.vtype == FRAME
+            f.value.empty = True
+            self._writer.write((f, ))

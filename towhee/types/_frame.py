@@ -57,33 +57,30 @@ class _Frame:
         Video images will have timestamp attribute, the video-decoder will add the info to frames.
     empty(`bool`):
         Filter-operator will set empty = True is this frame is filtered.
+    prev_id: (`int`):
+        Operator input-data's row_id
     """
 
-    def __init__(self, row_id: int = -1, parent_path: str = '', timestamp: int = Optional[None], empty: bool = False):
+    def __init__(self, row_id: int = -1, parent_path: str = '',
+                 timestamp: int = Optional[None], empty: bool = False,
+                 prev_id=-1):
         self._row_id = row_id
         self._timestamp = timestamp
         self._parent_path = parent_path
         self._empty = empty
+        self._prev_id = prev_id
 
     @property
     def row_id(self):
         return self._row_id
 
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def parent_path(self):
-        return self._parent_path
-
-    @property
-    def empty(self):
-        return self._empty
-
     @row_id.setter
     def row_id(self, row_id: int):
         self._row_id = row_id
+
+    @property
+    def timestamp(self):
+        return self._timestamp
 
     @timestamp.setter
     def timestamp(self, timestamp: int):
@@ -92,12 +89,32 @@ class _Frame:
 
         self._timestamp = timestamp
 
+    @property
+    def parent_path(self):
+        return self._parent_path
+
     @parent_path.setter
     def parent_path(self, parent_path: str):
         if self._parent_path != '':
             raise TowheeError('Parent path already exist')
 
         self._parent_path = parent_path
+
+    @property
+    def prev_id(self):
+        return self._prev_id
+
+    @prev_id.setter
+    def prev_id(self, prev_id: int):
+        self._prev_id = prev_id
+
+    @property
+    def empty(self):
+        return self._empty
+
+    @empty.setter
+    def empty(self, empty: bool):
+        self._empty = empty
 
     def __str__(self) -> str:
         return f'row_id={self.row_id}:parent_path={self.parent_path}:timestamp={self.timestamp}:empty={self.empty}'
