@@ -45,6 +45,7 @@ class OperatorContext:
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
+
     def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
         self._readers = OperatorContext._create_reader(op_repr, dataframes)
@@ -59,11 +60,12 @@ class OperatorContext:
         for item in op_repr.inputs:
             inputs_index[item['df']][item['name']] = item['col']
         iter_type = op_repr.iter_info['type']
+        iter_params = op_repr.iter_info.get('params')
 
         inputs = dict((item['df'], dataframes[item['df']]) for item in op_repr.inputs)
         readers = []
         for df_name, indexs in inputs_index.items():
-            readers.append(create_reader(inputs[df_name], iter_type, indexs))
+            readers.append(create_reader(inputs[df_name], iter_type, indexs, iter_params))
         return readers
 
     @staticmethod

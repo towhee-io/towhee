@@ -58,7 +58,7 @@ class _Frame:
     empty(`bool`):
         Filter-operator will set empty = True is this frame is filtered.
     prev_id: (`int`):
-        Operator input-data's row_id
+        Operator input-data's row_id.
     """
 
     def __init__(self, row_id: int = -1, parent_path: str = '',

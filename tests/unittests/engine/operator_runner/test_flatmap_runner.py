@@ -13,39 +13,13 @@
 # limitations under the License.
 
 import unittest
-from typing import Dict
 import threading
-from queue import Queue
 
+from towhee.dataframe import DataFrame, Variable
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.flatmap_runner import FlatMapRunner
+from towhee.engine.operator_io import create_reader, create_writer
 from tests.unittests.mock_operators.repeat_operator.repeat_operator import RepeatOperator
-
-DATA_QUEUE = Queue()
-
-
-class StopFrame:
-    pass
-
-
-class MockReader:
-    def __init__(self, queue: Queue):
-        self._queue = queue
-
-    def read(self):
-        data = self._queue.get()
-        if not isinstance(data, StopFrame):
-            return data
-        else:
-            raise StopIteration()
-
-
-class MockWriter:
-    def __init__(self):
-        self.res = []
-
-    def write(self, data: Dict):
-        self.res.append(data)
 
 
 def run(runner):
@@ -56,41 +30,41 @@ class TestFlatmapRunner(unittest.TestCase):
     """
     MapRunner test
     """
-    def test_flatmap_runner(self):
-        data_queue = Queue()
-        writer = MockWriter()
 
-        runner = FlatMapRunner('flattest', 0, 'repeat_operator', 'main', 'mock_operators', {'repeat': 3}, [MockReader(data_queue)], writer)
+    def _create_test_obj(self):
+        input_df = DataFrame('input', [('num', 'int')])
+        out_df = DataFrame('output', [('num', 'int')])
+        writer = create_writer('map', [out_df])
+        reader = create_reader(input_df, 'map', {'num': 0})
+        runner = FlatMapRunner('test', 0, 'repeat_operator', 'main',
+                               'mock_operators', {'repeat': 3},
+                               [reader], writer)
+        return input_df, out_df, runner
+
+    def test_flatmap_runner(self):
+        input_df, out_df, runner = self._create_test_obj()
 
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 1})
-        data_queue.put({'num': 2})
-        data_queue.put({'num': 3})
-        data_queue.put(None)
+        input_df.put_dict({'num': 1})
+        input_df.put_dict({'num': 2})
+        input_df.put_dict({'num': 3})
+        input_df.seal()
         t.join()
-        self.assertEqual(runner.status, RunnerStatus.IDLE)
 
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 4})
-        data_queue.put({'num': 5})
-        data_queue.put(StopFrame())
         runner.join()
+        out_df.seal()
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
-        self.assertEqual(len(writer.res), 15)
+        self.assertEqual(out_df.size, 9)
 
     def test_flatmap_runner_with_error(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = FlatMapRunner('test', 0, 'repeat_operator', 'main', 'mock_operators', {'repeat': 3}, [MockReader(data_queue)], writer)
-
+        input_df, _, runner = self._create_test_obj()
         runner.set_op(RepeatOperator(3))
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        data_queue.put('error_data')
+        input_df.put((Variable('str', 'errdata'), ))
         runner.join()
+        self.assertTrue('Input is not int type' in runner.msg)
         self.assertEqual(runner.status, RunnerStatus.FAILED)

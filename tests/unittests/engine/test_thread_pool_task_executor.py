@@ -14,26 +14,15 @@
 
 import unittest
 from pathlib import Path
-from typing import Dict
-from queue import Queue
 import time
 
 from towhee.engine.operator_runner.map_runner import MapRunner
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
-from towhee.engine.operator_io._mock_reader import MockReader
+from towhee.engine.operator_io import create_reader, create_writer
+from towhee.dataframe import DataFrame
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from tests.unittests import CACHE_PATH
-
-DATA_QUEUE = Queue()
-
-
-class MockWriter:
-    def __init__(self):
-        self.res = []
-
-    def write(self, data: Dict):
-        self.res.append(data)
 
 
 class TestThreadPoolTaskExecutor(unittest.TestCase):
@@ -63,40 +52,46 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
             self._task_exec.stop()
             self._task_exec.join()
 
-    def test_pool_with_map_runner(self):
-        data_queue = Queue()
-        writer = MockWriter()
+    def _create_test_obj(self):
+        input_df = DataFrame('input', [('num', 'int')])
+        out_df = DataFrame('output', [('sum', 'int')])
+        reader = create_reader(input_df, 'map', {'num': 0})
+        writer = create_writer('map', [out_df])
         hub_op_id = 'local/add_operator'
-        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [MockReader(data_queue)], writer)
+        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [reader], writer)
+        return input_df, out_df, runner
+
+    def test_pool_with_map_runner(self):
+        input_df, out_df, runner = self._create_test_obj()
         self._task_exec.push_task(runner)
 
-        data_queue.put({'num': 1})
-        data_queue.put({'num': 2})
-        data_queue.put({'num': 3})
+        input_df.put_dict({'num': 1})
+        input_df.put_dict({'num': 2})
+        input_df.put_dict({'num': 3})
+        input_df.seal()
 
         time.sleep(0.1)
         runner.set_stop()
         time.sleep(0.1)
         self._task_exec.stop()
+        out_df.seal()
 
         res = 2
-        for item in writer.res:
-            self.assertEqual(item[0], res)
+        it = out_df.map_iter(True)
+        for item in it:
+            self.assertEqual(item[0].value, res)
             res += 1
 
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
     def test_pool_with_map_runner_error(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        hub_op_id = 'local/add_operator'
-        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [MockReader(data_queue)], writer)
+        input_df, out_df, runner = self._create_test_obj()
         self._task_exec.push_task(runner)
-
-        data_queue.put('error')
+        input_df.put_dict({'num': 'error'})
+        input_df.seal()
         time.sleep(0.1)
         runner.set_stop()
         time.sleep(0.1)
         self._task_exec.stop()
-        self.assertEqual(len(writer.res), 0)
+        self.assertEqual(out_df.size, 0)
         self.assertEqual(runner.status, RunnerStatus.FAILED)

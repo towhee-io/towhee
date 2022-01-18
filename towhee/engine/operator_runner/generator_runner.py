@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from typing import Generator
+from copy import deepcopy
 
 
 from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.types._frame import FRAME
 from towhee.errors import OpIOTypeError
 
 
@@ -30,4 +32,8 @@ class GeneratorRunner(RunnerBase):
             raise OpIOTypeError("Op {}'s output is not a generator".format(self.op_name))
 
         for data in output:
-            self._writer.write(data)
+            item = data._asdict()
+            frame = deepcopy(self._frame_var.value)
+
+            item.update({FRAME: frame})
+            self._writer.write(item)

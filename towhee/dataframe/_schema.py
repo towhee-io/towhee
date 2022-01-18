@@ -34,7 +34,7 @@ class _Schema:
             return False
 
         if name in self._key_index:
-            engine_log.error(f'Col name {name} already exist')
+            engine_log.error('Col name {%s} already exist', name)
             return False
 
         self._cols.append((name, col_type))
@@ -49,6 +49,9 @@ class _Schema:
 
     def col_type(self, index: str):
         return self._cols[index][1]
+
+    def seal(self):
+        self._sealed = True
 
     @property
     def col_count(self):

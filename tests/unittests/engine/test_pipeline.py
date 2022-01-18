@@ -59,6 +59,7 @@ class TestPipeline(unittest.TestCase):
         p = pipeline('local/filter_pipeline')
         res = p([1, 0, 2, 0, 3, 4])
         num = 1
+        self.assertEqual(len(res), 4)
         for item in res:
             self.assertEqual(item[0], num)
             num += 1

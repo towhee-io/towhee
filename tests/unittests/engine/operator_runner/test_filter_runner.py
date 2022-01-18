@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import unittest
-from typing import Dict
 import threading
-from queue import Queue
 
 from towhee.dataframe import DataFrame
 from towhee.engine.operator_io import create_reader, create_writer

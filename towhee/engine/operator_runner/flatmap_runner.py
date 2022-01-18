@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from typing import List
+from copy import deepcopy
 
 from towhee.engine.operator_runner.runner_base import RunnerBase
 from towhee.errors import OpIOTypeError
+from towhee.types._frame import FRAME
 
 
 class FlatMapRunner(RunnerBase):
@@ -28,4 +30,8 @@ class FlatMapRunner(RunnerBase):
             raise OpIOTypeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
 
         for data in output:
-            self._writer.write(data)
+            item = data._asdict()
+            frame = deepcopy(self._frame_var.value)
+
+            item.update({FRAME: frame})
+            self._writer.write(item)

@@ -13,25 +13,13 @@
 # limitations under the License.
 
 import unittest
-from typing import Dict
 import threading
-from queue import Queue
 
 from towhee.dataframe import DataFrame
-from towhee.engine.operator_io.reader import BatchFrameReader
+from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.window_runner import WindowRunner
 from tests.unittests.mock_operators.sum_operator.sum_operator import SumOperator
-
-DATA_QUEUE = Queue()
-
-
-class MockWriter:
-    def __init__(self):
-        self.res = []
-
-    def write(self, data: Dict):
-        self.res.append(data)
 
 
 def run(runner):
@@ -43,13 +31,19 @@ class TestRunner(unittest.TestCase):
     MapRunner test
     """
 
+    def _create_test_obj(self):
+        input_df = DataFrame('input', [('num', 'int')])
+        out_df = DataFrame('output', [('sum', 'int')])
+        writer = create_writer('window', [out_df])
+        params = {'batch_size': 5, 'step': 3}
+        reader = create_reader(input_df, 'window', {'num': 0}, params)
+        runner = WindowRunner('window_test', 0, 'sum_operator', 'main',
+                              'mock_operators', {},
+                              [reader], writer)
+        return input_df, out_df, runner
+
     def test_window_runner(self):
-        writer = MockWriter()
-
-        df_in = DataFrame(
-            'inputs', [('num', 'int')])
-
-        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
+        df_in, out_df, runner = self._create_test_obj()
 
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))
@@ -60,30 +54,27 @@ class TestRunner(unittest.TestCase):
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
-        self.assertEqual(len(writer.res), 68)
+        self.assertEqual(out_df.size, 68)
+        out_df.seal()
+        it = out_df.map_iter(True)
+
         count = 0
-        for item in writer.res:
+        for item in it:
             if count < 64:
-                self.assertEqual(item.sum, 5)
+                self.assertEqual(item[0].value, 5)
             elif count < 66:
-                self.assertEqual(item.sum, 4)
+                self.assertEqual(item[0].value, 4)
             else:
-                self.assertEqual(item.sum, 1)
+                self.assertEqual(item[0].value, 1)
             count += 1
 
     def test_window_runner_with_error(self):
-        writer = MockWriter()
-
-        df_in = DataFrame('op_test_in', [('num', 'nt')])
-
-        # We
-        runner = WindowRunner('window_test', 0, 'sum_operator', 'main', 'mock_operators', {}, [BatchFrameReader(df_in, {'num': 0}, 5, 3)], writer)
-
+        df_in, _, runner = self._create_test_obj()
         runner.set_op(SumOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        df_in.put(('error_data', ))
+        df_in.put_dict({'num': 'error_data'})
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)

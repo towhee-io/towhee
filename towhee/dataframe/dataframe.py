@@ -67,6 +67,7 @@ class DataFrame:
             for col in cols:
                 self._schema.add_col(*col)
         self._schema.add_col(FRAME, '_Frame')
+        self._schema.seal()
 
     @property
     def name(self) -> str:

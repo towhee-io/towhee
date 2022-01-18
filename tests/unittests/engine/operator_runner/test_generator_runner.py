@@ -13,39 +13,13 @@
 # limitations under the License.
 
 import unittest
-from typing import Dict
 import threading
-from queue import Queue
 
+from towhee.dataframe import DataFrame
+from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.generator_runner import GeneratorRunner
 from tests.unittests.mock_operators.generator_operator import generator_operator
-
-DATA_QUEUE = Queue()
-
-
-class StopFrame:
-    pass
-
-
-class MockReader:
-    def __init__(self, queue: Queue):
-        self._queue = queue
-
-    def read(self):
-        data = self._queue.get()
-        if not isinstance(data, StopFrame):
-            return data
-        else:
-            raise StopIteration()
-
-
-class MockWriter:
-    def __init__(self):
-        self.res = []
-
-    def write(self, data: Dict):
-        self.res.append(data)
 
 
 def run(runner):
@@ -56,41 +30,53 @@ class TestGeneratorRunner(unittest.TestCase):
     """
     GeneratorRunner test
     """
-    def test_map_runner(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
+
+    def _create_test_obj(self):
+        input_df = DataFrame('input', [('num', 'int')])
+        out_df = DataFrame('output', [('sum', 'int')])
+        writer = create_writer('map', [out_df])
+        reader = create_reader(input_df, 'map', {'num': 0})
+        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {'num': 1},
+                                 [reader], writer)
+        return input_df, out_df, runner
+
+    def test_generator_runner(self):
+        input_df, out_df, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 10})
-        data_queue.put(None)
+        input_df.put_dict({'num': 10})
+        input_df.seal()
         t.join()
+        runner.join()
+        out_df.seal()
+        it = out_df.map_iter(True)
         res = 0
-        for item in writer.res:
-            self.assertEqual(item[0], res)
+        for item in it:
+            self.assertEqual(item[0].value, res)
             res += 1
-        self.assertEqual(len(writer.res), 10)
-        self.assertEqual(runner.status, RunnerStatus.IDLE)
+        self.assertEqual(out_df.size, 10)
+        self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
+    def test_generator_runner2(self):
+        input_df, out_df, runner = self._create_test_obj()
+        runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 4})
-        data_queue.put({'num': 5})
-        data_queue.put(StopFrame())
+        input_df.put_dict({'num': 10})
+        input_df.put_dict({'num': 5})
+        input_df.seal()
+        t.join()
         runner.join()
-        self.assertEqual(len(writer.res), 19)
+        out_df.seal()
+        self.assertEqual(out_df.size, 15)
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
     def test_generator_runner_with_error(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
+        input_df, _, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        data_queue.put('error_data')
+        input_df.put_dict({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)

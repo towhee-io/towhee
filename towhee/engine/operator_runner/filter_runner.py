@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Dict
-
-from towhee.types._frame import _Frame, FRAME
-from towhee.dataframe.variable import Variable
 from towhee.engine.operator_runner.runner_base import RunnerBase
 from towhee.errors import OpIOTypeError
 
@@ -28,13 +24,6 @@ class FilterRunner(RunnerBase):
     the next operator else drop it.
     """
 
-    def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
-        try:
-            data, self._row_data = self._reader.read()
-            return False, data
-        except StopIteration:
-            return True, None
-
     def _set_outputs(self, output: bool):
         if not isinstance(output, bool):
             raise OpIOTypeError('Filter operator\'s output must be a bool type, this one is {}'.format(type(output)))
@@ -42,7 +31,5 @@ class FilterRunner(RunnerBase):
         if output:
             self._writer.write(self._row_data)
         else:
-            f = self._row_data[-1]
-            assert f.vtype == FRAME
-            f.value.empty = True
-            self._writer.write((f, ))
+            self._frame_var.value.empty = True
+            self._writer.write((self._frame_var, ))

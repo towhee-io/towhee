@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from towhee.operator import Operator
-from towhee.operator.nop import _StartOperator, _EndOperator
+from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 from towhee.hub.file_manager import FileManager
@@ -32,6 +32,7 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
+
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
@@ -39,10 +40,8 @@ class OperatorLoader:
             self._cache_path = Path(cache_path)
 
     def _load_interal_op(self, op_name: str, args: Dict[str, any]):
-        if op_name == '_start_op':
-            return _StartOperator()
-        elif op_name == '_end_op':
-            return _EndOperator()
+        if op_name in ['_start_op', '_end_op']:
+            return NOPOperator()
         elif op_name == '_concat':
             return ConcatOperator(**args)
         else:

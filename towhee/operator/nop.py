@@ -16,33 +16,16 @@
 from typing import Any, Dict, NamedTuple
 
 from towhee.operator import PyOperator
-from towhee.types._frame import _Frame, FRAME
 
 
-class _StartOperator(PyOperator):
-    """
-    _start_op it will add _Frame to dataframe.
-
+class NOPOperator(PyOperator):
+    """No-op operator. Input arguments are redefined as a `NamedTuple` and returned as
+    outputs.
     """
 
     def __init__(self):
+        #pylint: disable=useless-super-delegation
         super().__init__()
-        self._id = 0
-
-    def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
-        fields = [(name, type(val)) for name, val in args.items()]
-        return NamedTuple('Outputs', fields)(**args)  # pylint: disable=not-callable
-
-
-class _EndOperator(PyOperator):
-    """
-    _end_op, pass data to _output_df
-
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._id = 0
 
     def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
         fields = [(name, type(val)) for name, val in args.items()]
