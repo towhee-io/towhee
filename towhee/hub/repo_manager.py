@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import requests
-import os
 import re
 import subprocess
 import sys
@@ -24,7 +23,6 @@ from pathlib import Path
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
-import git
 from tqdm import tqdm
 from tempfile import TemporaryFile
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +38,8 @@ class RepoManager:
             The author of the repo.
         repo (`str`):
             The name of the repo.
+        root (`str`):
+            The root url of the repo.
     """
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         self._author = author
@@ -127,38 +127,6 @@ class RepoManager:
             return r.status_code == 200
         except HTTPError as e:
             raise e
-
-    def clone(self, local_dir: Union[str, Path], tag: str = 'main', install_reqs: bool = True) -> None:
-        """
-        Performs a download of the selected repo to specified location.
-
-        First checks to see if lfs is tracking files, then finds all the filepaths
-        in the repo and lastly downloads them to the location.
-
-        Args:
-            tag (`str`):
-                The tag name.
-            local_dir (`Union[str, Path]`):
-                The local directory being downloaded to
-            install_reqs (`bool`):
-                Whether to install packages from requirements.txt
-
-        Raises:
-            (`HTTPError`)
-                Raise error in request.
-            (`OSError`)
-                Raise error in writing file.
-        """
-        if not self.exists():
-            engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
-            raise ValueError(f'{self._author}/{self._author} repo does not exist.')
-
-        url = f'{self._root}/{self._author}/{self._repo}.git'
-        git.Repo.clone_from(url=url, to_path=local_dir, branch=tag)
-
-        if install_reqs:
-            if 'requirements.txt' in os.listdir(local_dir):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', Path(local_dir) / 'requirements.txt'])
 
     def obtain_lfs_extensions(self, tag: str) -> List[str]:
         """
@@ -388,73 +356,3 @@ class RepoManager:
         commit = self.latest_commit(tag)
         file_list = self.get_file_list(commit)
         self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_dir=local_dir, install_reqs=install_reqs)
-
-    def add(self, repo_path: Union[str, Path]):
-        """
-        A wrapper function for git add.
-
-        Stage current changes in the repo.
-
-        Args:
-            repo_path (`Union[str, Path]`):
-                The local repo cloned from remote.
-        """
-        if isinstance(repo_path, str):
-            repo_path = Path(repo_path)
-
-        repo = git.Repo(repo_path)
-        changed_files = repo.git.diff(None, name_only=True)
-
-        for changed_file in changed_files.split('\n'):
-            repo.git.add(changed_file)
-
-    def commit(self, repo_path: Union[str, Path], cmt_msg: str):
-        """
-        A wrapper function for git commit.
-
-        Commit current changes in the repo.
-
-        Args:
-            repo_path (`Union[str, Path]`):
-                The local repo cloned from remote.
-            mode (`str`):
-                The way of commit.
-            cmt_msg (`str`):
-                The commit message.
-        """
-        repo = git.Repo(repo_path)
-        repo.git.commit('-sm', cmt_msg)
-
-    def push(self, repo_path: Union[str, Path], remote: str = 'origin', branch: str = 'main'):
-        """
-        A wrapper function for git push.
-
-        Push local commits to remote.
-
-        Args:
-            repo_path (`Union[str, Path]`):
-                The local repo cloned from remote.
-            remote (`str`):
-                The remote repo.
-            branch (`str`):
-                The remote branch.
-        """
-        repo = git.Repo(repo_path)
-        repo.git.push(remote, branch)
-
-    def pull(self, repo_path: Union[str, Path], remote: str = 'origin', branch: str = 'main'):
-        """
-        A wrapper function for git pull.
-
-        pull from remote.
-
-        Args:
-            repo_path (`Union[str, Path]`):
-                The local repo cloned from remote.
-            remote (`str`):
-                The remote repo.
-            branch (`str`):
-                The remote branch.
-        """
-        repo = git.Repo(repo_path)
-        repo.git.pull(remote, branch)
