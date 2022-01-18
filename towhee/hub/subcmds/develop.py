@@ -12,49 +12,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, sys
+import os
+import sys
 import pathlib
 from setuptools import setup
+
 
 class DevelopCommand:
     """
     Implementation for subcmd `towhee develop`
     """
+
     def __init__(self, args) -> None:
         self._args = args
         print(args)
-    
+
     def __call__(self):
         os.chdir(self._args.path)
         cwd = os.getcwd()
         operator_name = os.path.basename(cwd)
         package_name = 'towheeoperator.{}'.format(operator_name)
-        print("pack op/pipeline {} in {}".format(operator_name, cwd))
-
+        requirements = self.read_requirements()
         if self._args.pack:
             sys.argv = 'setup.py bdist_wheel --universal'.split()
         if self._args.install:
             sys.argv = ['setup.py', 'install']
         if self._args.develop:
             sys.argv = ['setup.py', 'develop']
-        
-        setup(
-            name=package_name,
-            packages=[package_name],
-            package_dir={package_name: "."},
-            package_data={"": ["*.txt", "*.rst"]},
-            zip_safe=False
-        )
+            os.chdir(cwd + '/../..')
+        setup(name=package_name,
+              packages=[package_name],
+              package_dir={package_name: '.'},
+              package_data={'': ['*.txt', '*.rst']},
+              install_requires=requirements,
+              zip_safe=False)
+
+    def read_requirements(self):
+        try:
+            with open('requirements.txt', encoding='utf-8') as f:
+                required = f.read().splitlines()
+        except Exception:           # pylint: disable=broad-except)
+            required = []
+        return required
 
     @staticmethod
     def install(subparsers):
-        parser_develop = subparsers.add_parser('develop', help='develop op/pipeline')
+        parser_develop = subparsers.add_parser('develop',
+                                               help='develop op/pipeline')
         group = parser_develop.add_mutually_exclusive_group(required=True)
-        group.add_argument('-d', '--develop', action='store_true', 
-            help='install `egg-link` file for development')
-        group.add_argument('-p', '--pack', action='store_true', 
-            help='pack the op/pipeline with `wheel` format')
-        group.add_argument('-i', '--install', action='store_true', 
-            help='install the op/pipeline')
-        parser_develop.add_argument('path', type=pathlib.Path, nargs='?', default='.',
-            help='root path of op/pipeline')
+        group.add_argument('-d',
+                           '--develop',
+                           action='store_true',
+                           help='install `egg-link` file for development')
+        group.add_argument('-p',
+                           '--pack',
+                           action='store_true',
+                           help='pack the op/pipeline with `wheel` format')
+        group.add_argument('-i',
+                           '--install',
+                           action='store_true',
+                           help='install the op/pipeline')
+        parser_develop.add_argument('path',
+                                    type=pathlib.Path,
+                                    nargs='?',
+                                    default='.',
+                                    help='root path of op/pipeline')
