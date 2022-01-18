@@ -30,7 +30,8 @@ class DevelopCommand:
     def __call__(self):
         os.chdir(self._args.path)
         cwd = os.getcwd()
-        operator_name = os.path.basename(cwd)
+        has_pytorch =  os.path.isdir('./pytorch')
+        operator_name = os.path.basename(cwd).replace('-', '_')
         package_name = 'towheeoperator.{}'.format(operator_name)
         requirements = self.read_requirements()
         if self._args.pack:
@@ -41,7 +42,7 @@ class DevelopCommand:
             sys.argv = ['setup.py', 'develop']
             os.chdir(cwd + '/../..')
         setup(name=package_name,
-              packages=[package_name],
+              packages=[package_name, package_name+'.pytorch'] if has_pytorch else [package_name],
               package_dir={package_name: '.'},
               package_data={'': ['*.txt', '*.rst']},
               install_requires=requirements,
