@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests
-import random
+import os
+from typing import Union
+from pathlib import Path
 
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
-from requests.exceptions import HTTPError
 
 
 class PipelineManager(RepoManager):
@@ -51,27 +51,50 @@ class PipelineManager(RepoManager):
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
-            return None
+        else:
+            self.hub_utils.create(password, self._class)
 
-        token_name = random.randint(0, 10000)
-        token_id, token_hash = self.create_token(token_name, password)
+    def init_pipeline(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
+        """
+        Initialize the files under file_dest by moving and updating the text under file_temp.
 
-        data = {
-            'auto_init': True,
-            'default_branch': 'main',
-            'description': 'This is another pipeline repo',
-            'name': self._repo,
-            'private': False,
-            'template': False,
-            'trust_model': 'default',
-            'type': self._class
-        }
-        url = self._root + '/api/v1/user/repos'
-        try:
-            r = requests.post(url, data=data, headers={'Authorization': 'token ' + token_hash})
-            r.raise_for_status()
-        except HTTPError as e:
-            self.delete_token(token_id, password)
-            raise e
+        Args:
+            file_temp (`Union[str, Path]`):
+                The path to the template files.
+            file_dest (`Union[str, Path]`):
+                The path to the local repo to init.
 
-        self.delete_token(token_id, password)
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+            (`OSError`)
+                Raise error in writing file.
+        """
+        repo_temp = self._temp['pipeline']
+
+        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-'))]
+        for file in Path(file_temp).glob('*'):
+            if file.name.endswith(('.md', '.yaml', 'template.py')):
+                new_file = Path(file_dest) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
+                self.hub_utils.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
+            elif file.name != '.git':
+                os.rename(file, Path(file_dest) / file.name)
+
+    def check(self, local_dir: Union[str, Path] = Path().cwd()) -> bool:
+        """
+        Check if the main file exists and match the file name
+
+        Args:
+            local_dir (`Union[str, Path]`):
+                The directory to the repo.
+
+        Returns:
+            (`bool`)
+                Check if passed.
+        """
+        file_name = self._repo.replace('-', '_')
+        for file in ['README.md', f'{file_name}.yaml']:
+            if not (Path(local_dir) / file).exists():
+                return False
+        return True

@@ -12,200 +12,276 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-import yaml
-from typing import Union
-from pathlib import Path
-from shutil import copyfile, copytree, rmtree
-from importlib import import_module
-
-import git
-from towhee.utils.log import engine_log
+import requests
+import random
+from requests.exceptions import HTTPError
+from requests.auth import HTTPBasicAuth
 
 
-def convert_dict(dicts: dict) -> dict:
+class HubUtils:
     """
-    Convert all the values in a dictionary to str and replace char.
-
-    For example:
-    <class 'torch.Tensor'>(unknow type) to torch.Tensor(str type).
-
-    Args:
-        dicts (`dict`):
-            The dictionary to convert.
-
-    Returns:
-        (`dict`)
-            The converted dictionary.
-    """
-    for keys in dicts:
-        dicts[keys] = str(dicts[keys]).replace('<class ', '').replace('>', '').replace('\'', '')
-    return dict(dicts)
-
-
-def copy_files(src: Union[str, Path], dst: Union[str, Path], replace: bool):
-    """
-    Copy files in src dir to dst dir.
-
-    Args:
-        src (`Union[str, Path]`):
-            The source dir.
-        dst (`Union[str, Path]`):
-            The destination dir.
-        replace (`bool`):
-            Whether to replace the file with same name.
-    """
-    src = Path(src)
-    dst = Path(dst)
-
-    for f in os.listdir(src):
-        if (dst / f).exists():
-            if replace:
-                rmtree(dst / f)
-            else:
-                continue
-        if (src / f).is_file():
-            copyfile(src / f, dst / f)
-        elif (src / f).is_dir():
-            copytree(src / f, dst / f)
-
-
-def init_operator(
-    author: str, repo: str, is_nn: bool, file_src: Union[str, Path], file_dst: Union[str, Path] = None, root: str = 'https://hub.towhee.io'
-) -> None:
-    """
-    Initialize the repo with template.
-
-    First clone the repo, then move and rename the template repo file.
+    The Hub Utils to deal with the http request. And other staticmethod for hub.
 
     Args:
         author (`str`):
             The author of the repo.
         repo (`str`):
             The name of the repo.
-        is_nn (`bool`):
-            If the operator is an nnoperator(neural network related).
-        file_src (`Union[str, Path]`):
-            The path to the template files.
-        file_dst (`Union[str, Path]`):
-            The path to the local repo to init.
         root (`str`):
             The root url where the repo located.
-
-    Raises:
-        (`HTTPError`)
-            Raise error in request.
-        (`OSError`)
-            Raise error in writing file.
     """
-    repo_file_name = repo.replace('-', '_')
+    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
+        self._author = author
+        self._repo = repo
+        self._root = root
 
-    if not file_dst:
-        file_dst = Path().cwd() / repo_file_name
-    file_src = Path(file_src)
-    file_dst = Path(file_dst)
+    def get_info(self) -> requests.Response:
+        """
+        Get a repo.
 
-    url = root + '/' + author + '/' + repo + '.git'
-    git.Repo.clone_from(url=url, to_path=file_dst, branch='main')
+        Returns:
+            (`Response`)
+                The information about the repo.
 
-    if is_nn:
-        template = 'nnoperator_template'
-    else:
-        template = 'pyoperator_template'
+        Raises:
+            (`HTTPError`)
+                Raise the error in request.
+        """
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}'
+        try:
+            response = requests.get(url)
+            return response
+        except HTTPError as e:
+            raise e
 
-    copy_files(src=file_src, dst=file_dst, replace=False)
+    def get_commits(self, limit: int, page: int, tag: str) -> requests.Response:
+        """
+        Get a list of all commits of a repo.
 
-    (file_dst / (template + '.py')).rename(file_dst / (repo_file_name + '.py'))
-    (file_dst / (template + '.yaml')).rename(file_dst / (repo_file_name + '.yaml'))
+        Args:
+            limit (`int`):
+                Page size of results.
+            page (`int`):
+                Page number of results.
+            tag (`str`):
+                The tag name.
 
+        Returns:
+            (`Response`)
+                A list of all commits of a repo.
 
-def init_pipeline(author: str, repo: str, file_src: Union[str, Path], file_dst: Union[str, Path] = None, root: str = 'https://hub.towhee.io') -> None:
-    """
-    Initialize the repo with template.
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
 
-    First clone the repo, then move and rename the template repo file.
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/commits?limit={limit}&page={page}&sha={tag}'
+        try:
+            response = requests.get(url, allow_redirects=True)
+            response.raise_for_status()
+            return response
+        except HTTPError as e:
+            raise e
 
-    Args:
-        author (`str`):
-            The author of the repo.
-        repo (`str`):
-            The name of the repo.
-        file_src (`Union[str, Path]`):
-            The path to the template files.
-        file_dst (`Union[str, Path]`):
-            The path to the local repo to init.
-        root (`str`):
-            The root url where the repo located.
+    def get_tree(self, commit: str) -> requests.Response:
+        """
+        Get a git tree in the current repo at the given commit.
 
-    Raises:
-        (`HTTPError`)
-            Raise error in request.
-        (`OSError`)
-            Raise error in writing file.
-    """
-    repo_file_name = repo.replace('-', '_')
+        Args:
+            commit (`str`):
+                The commit to base current existing files.
 
-    if not file_dst:
-        file_dst = Path.cwd() / repo_file_name
-    file_src = Path(file_src)
-    file_dst = Path(file_dst)
+        Returns:
+            (`Response`)
+                A git tree for the repo
 
-    url = root + '/' + author + '/' + repo + '.git'
-    git.Repo.clone_from(url=url, to_path=file_dst, branch='main')
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
 
-    copy_files(src=file_src, dst=file_dst, replace=False)
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/git/trees/{commit}?recursive=1'
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response
+        except HTTPError as e:
+            raise e
 
-    (file_dst / 'pipeline_template.yaml').rename(file_dst / (repo_file_name + '.yaml'))
+    def get_file(self, file_path: str, tag: str) -> requests.Response:
+        """
+        Get a file from a repo.
 
+        Args:
+            file_path (`str`):
+                filepath of the file to get.
+            tag (`str`):
+                The tag name.
 
-def generate_yaml(author: str, repo: str, local_dir: Union[str, Path] = None) -> None:
-    """
-    Generate the yaml of Operator.
+        Returns:
+            (`Response`)
+                A file content in the file_path.
 
-    Raises:
-        (`HTTPError`)
-            Raise error in request.
-        (`OSError`)
-            Raise error in writing file.
-    """
-    if not local_dir:
-        local_dir = Path.cwd() / repo.replace('-', '_')
-    local_dir = Path(local_dir).resolve()
-    sys.path.append(str(local_dir))
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/{file_path}?ref={tag}'
+        try:
+            response = requests.get(url, stream=True)
+            return response
+        except HTTPError:
+            return None
 
-    yaml_file = local_dir / (repo.replace('-', '_') + '.yaml')
-    if yaml_file.exists():
-        engine_log.error('%s already exists in %s.', yaml_file, local_dir)
-        return
+    def get_lfs(self, file_path: str, tag: str) -> requests.Response:
+        """
+        Get a file from a repo.
 
-    class_name = ''.join(x.title() for x in repo.split('-'))
-    author_operator = author + '/' + repo
+        Args:
+            file_path (`str`):
+                filepath of the file to get.
+            tag (`str`):
+                The tag name.
 
-    # import the class from repo
-    cls = getattr(import_module(repo.replace('-', '_')), class_name)
-    init_args = cls.__init__.__annotations__
-    try:
-        del init_args['return']
-    except KeyError:
-        pass
-    call_func = cls.__call__.__annotations__
-    try:
-        call_output = call_func.pop('return')
-        call_output = call_output.__annotations__
-    except KeyError:
-        pass
+        Returns:
+            (`Response`)
+                A file content in the file_path.
 
-    data = {
-        'name': repo,
-        'labels': {
-            'recommended_framework': '', 'class': '', 'others': ''
-        },
-        'operator': author_operator,
-        'init': convert_dict(init_args),
-        'call': {
-            'input': convert_dict(call_func), 'output': convert_dict(call_output)
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = f'{self._root}/{self._author}/{self._repo}/media/branch/{tag}/{file_path}'
+        try:
+            response = requests.get(url, stream=True)
+            return response
+        except HTTPError as e:
+            raise e
+
+    def create_token(self, token_name: str, password: str) -> requests.Response:
+        """
+        Create an account verification token. This token allows for avoiding HttpBasicAuth for subsequent calls.
+
+        Args:
+            token_name (`str`):
+                The name to be given to the token.
+            password (`str`):
+                The password of current author.
+
+        Returns:
+            (`Response`)
+                Return the token(id, name, sha1, token_last_eight).
+
+        Raises:
+            (`HTTPError`)
+                Raise the error in request.
+        """
+        url = f'{self._root}/api/v1/users/{self._author}/tokens'
+        data = {'name': token_name}
+        try:
+            response = requests.post(url, data=data, auth=HTTPBasicAuth(self._author, password))
+            response.raise_for_status()
+            return response
+        except HTTPError as e:
+            raise e
+
+    def delete_token(self, token_id: int, password: str) -> None:
+        """
+        Delete the token with the given name. Useful for cleanup after changes.
+
+        Args:
+            token_id (`int`):
+                The token id.
+            password (`str`):
+                The password of current author.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = f'{self._root}/api/v1/users/{self._author}/tokens/{token_id}'
+        try:
+            r = requests.delete(url, auth=HTTPBasicAuth(self._author, password))
+            r.raise_for_status()
+        except HTTPError as e:
+            raise e
+
+    def create(self, password: str, repo_class: int) -> None:
+        """
+        Create a repo under current account.
+
+        Args:
+            password (`str`):
+                Current author's password.
+            repo_class (`int`):
+                The repo class
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        token_name = random.randint(0, 10000)
+        r = self.create_token(token_name, password)
+        token = r.json()
+
+        data = {
+            'auto_init': True,
+            'default_branch': 'main',
+            'description': repo_class,
+            'name': self._repo,
+            'private': False,
+            'template': False,
+            'trust_model': 'default',
+            'type': repo_class
         }
-    }
-    with open(yaml_file, 'a', encoding='utf-8') as outfile:
-        yaml.dump(data, outfile, default_flow_style=False, sort_keys=False)
+        url = self._root + '/api/v1/user/repos'
+        try:
+            r = requests.post(url, data=data, headers={'Authorization': 'token ' + str(token['sha1'])})
+            r.raise_for_status()
+        except HTTPError as e:
+            raise e
+        finally:
+            self.delete_token(str(token['id']), password)
+
+    @staticmethod
+    def convert_dict(dicts: dict) -> dict:
+        """
+        Convert all the values in a dictionary to str and replace char.
+
+        For example:
+        <class 'torch.Tensor'>(unknow type) to torch.Tensor(str type).
+
+        Args:
+            dicts (`dict`):
+                The dictionary to convert.
+
+        Returns:
+            (`dict`)
+                The converted dictionary.
+        """
+        for keys in dicts:
+            dicts[keys] = str(dicts[keys]).replace('<class ', '').replace('>', '').replace('\'', '')
+        return dict(dicts)
+
+    @staticmethod
+    def update_text(ori_str_list: list, tar_str_list: list, file: str, new_file: str) -> None:
+        """
+        Update the file from ori_str_list to tar_str_list and rename it with the new filename.
+
+        Args:
+            ori_str_list (`list`):
+                The original str list to be replaced
+            tar_str_list (`list`):
+                The target str list after replace
+            file (`str`):
+                The original file name to be updated
+            new_file (`str`):
+                The target file name after update
+        """
+        with open(file, 'r', encoding='utf-8') as f1:
+            file_text = f1.read()
+        # Replace the target string
+        for ori_str, tar_str in zip(ori_str_list, tar_str_list):
+            file_text = file_text.replace(ori_str, tar_str)
+        with open(new_file, 'w', encoding='utf-8') as f2:
+            f2.write(file_text)

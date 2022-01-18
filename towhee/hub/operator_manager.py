@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests
-import random
+import os
+import sys
+from typing import Union
+import yaml
+from pathlib import Path
+from importlib import import_module
 
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
-from requests.exceptions import HTTPError
 
 
 class OperatorManager(RepoManager):
@@ -32,6 +35,7 @@ class OperatorManager(RepoManager):
         root (`str`):
             The root url where the repo located.
     """
+
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         super().__init__(author, repo, root)
         # 2 represents operators when creating a repo in Towhee's hub
@@ -51,28 +55,149 @@ class OperatorManager(RepoManager):
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
-            return None
+        else:
+            self.hub_utils.create(password, self._class)
 
-        token_name = random.randint(0, 10000)
-        token_id, token_hash = self.create_token(token_name, password)
+    def init_nnoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path], framework: str = 'pytorch') -> None:
+        """
+        Initialize the files under file_dest by moving and updating the text under file_temp.
+
+        Args:
+            file_temp (`Union[str, Path]`):
+                The path to the template files.
+            file_dest (`Union[str, Path]`):
+                The path to the local repo to init.
+            framework (`str, Path`):
+                The framework for the model, defaults to 'pytorch'
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+            (`OSError`)
+                Raise error in writing file.
+        """
+        repo_temp = self._temp['nnoperator']
+
+        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-')), 'pytorch']
+        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-')), framework]
+        for file in Path(file_temp).glob('*'):
+            if file.name.endswith(('.md', '.yaml', 'template.py')):
+                new_file = Path(file_dest) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
+                self.hub_utils.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
+            elif file.name != '.git':
+                os.rename(file, Path(file_dest) / file.name)
+        if framework != 'pytorch':
+            os.rename(Path(file_dest) / 'pytorch', Path(file_dest) / framework)
+
+    def init_pyoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
+        """
+        Initialize the files under file_dest by moving and updating the text under file_temp.
+
+        Args:
+            file_temp (`Union[str, Path]`):
+                The path to the template files.
+            file_dest (`Union[str, Path]`):
+                The path to the local repo to init.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+            (`OSError`)
+                Raise error in writing file.
+        """
+        repo_temp = self._temp['pyoperator']
+
+        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-'))]
+        for file in Path(file_temp).glob('*'):
+            if file.name.endswith(('.md', '.yaml', 'template.py')):
+                new_file = Path(file_dest) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
+                self.hub_utils.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
+            elif file.name != '.git':
+                os.rename(file, Path(file_dest) / file.name)
+
+    def generate_yaml(self, local_dir: Union[str, Path] = Path.cwd()) -> None:
+        """
+        Generate the yaml of Operator.
+
+        Args:
+            local_dir (`Union[str, Path]`):
+                The directory to the repo.
+        """
+        sys.path.append(str(local_dir))
+
+        yaml_file = Path(local_dir) / (self._repo.replace('-', '_') + '.yaml')
+        if yaml_file.exists():
+            engine_log.error('There already exists %s.', yaml_file)
+            return
+
+        class_name = ''.join(x.title() for x in self._repo.split('-'))
+        author_operator = self._author + '/' + self._repo
+
+        # import the class from repo
+        cls = getattr(import_module(self._repo.replace('-', '_')), class_name)
+        init_args = cls.__init__.__annotations__
+        try:
+            del init_args['return']
+        except KeyError:
+            pass
+        call_func = cls.__call__.__annotations__
+        try:
+            call_output = call_func.pop('return')
+            call_output = call_output.__annotations__
+        except KeyError:
+            pass
 
         data = {
-            'auto_init': True,
-            'default_branch': 'main',
-            'description': 'This is another operator repo',
             'name': self._repo,
-            'private': False,
-            'template': False,
-            'trust_model': 'default',
-            'type': self._class
+            'labels': {
+                'recommended_framework': '', 'class': '', 'others': ''
+            },
+            'operator': author_operator,
+            'init': self.hub_utils.convert_dict(init_args),
+            'call': {
+                'input': self.hub_utils.convert_dict(call_func), 'output': self.hub_utils.convert_dict(call_output)
+            }
         }
-        url = self._root + '/api/v1/user/repos'
+        with open(yaml_file, 'a', encoding='utf-8') as outfile:
+            yaml.dump(data, outfile, default_flow_style=False, sort_keys=False)
 
+    def check(self, local_dir: Union[str, Path] = Path().cwd()) -> bool:
+        """
+        Check if the main file exists and match the file name.
+
+        Args:
+            local_dir (`Union[str, Path]`):
+                The directory to the repo.
+
+        Returns:
+            (`bool`)
+                Check if passed.
+        """
+        # check if the main file exists and match the file name
+        file_name = self._repo.replace('-', '_')
+        for file in [f'{file_name}.py', f'{file_name}.yaml']:
+            if not (Path(local_dir) / file).exists():
+                return False
+        return self.check_yaml(local_dir)
+
+    def check_yaml(self, local_dir : Union[str, Path] = Path().cwd()) -> bool:
+        """
+        Check if the yaml file matches the format.
+
+        Args:
+            local_dir (`Union[str, Path]`):
+                The directory to the repo.
+
+        Returns:
+            (`bool`)
+                Check if passed.
+        """
         try:
-            r = requests.post(url, data=data, headers={'Authorization': 'token ' + token_hash})
-            r.raise_for_status()
-        except HTTPError as e:
-            self.delete_token(token_id, password)
-            raise e
-
-        self.delete_token(token_id, password)
+            yaml_file = Path(local_dir ) / (self._repo.replace('-', '_') + '.yaml')
+            with open(yaml_file, 'r', encoding='utf-8') as f:
+                dicts = yaml.load(f.read(), Loader=yaml.FullLoader)
+                if 'init' in dicts.keys() and dicts['call']['input'] is not None and dicts['call']['output'] is not None:
+                    return True
+        except KeyError:
+            return False
