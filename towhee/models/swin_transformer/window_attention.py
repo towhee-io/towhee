@@ -14,7 +14,7 @@
 import torch
 from torch import nn
 from typing import Optional
-from towhee.trainer.models.layers import trunc_normal_
+from towhee.models.utils.weight_init import trunc_normal_
 
 class WindowAttention(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
