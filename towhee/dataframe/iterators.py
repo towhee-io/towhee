@@ -106,7 +106,7 @@ class WindowIterator(BaseIterator):
             self._comparator = 'timestamp'
         else:
             self._comparator = 'row_id'
-        super().__init__(df, block)
+        super().__init__(df, block = block)
 
     def __next__(self):
         """
@@ -128,23 +128,30 @@ class WindowIterator(BaseIterator):
         df = self._df_ref()
         cutoff = (self._comparator, self._current_window)
         code, rows = df.get_window(offset = self._offset, cutoff = cutoff, iter_id = self._id)
+        print(code, rows)
 
         if code == Responses.INDEX_GC:
             raise IndexError
 
         elif code == Responses.WINDOW_NOT_DONE:
             if self._block:
-                df.notify_window_block(self._id, self._event, self._current_window)
+                df.notify_window_block(self._id, self._event, (self._comparator, self._current_window))
                 self._event.wait()
                 self._event.clear()
-                return self.__next__()
+                print("got here")
+                x = self.__next__()
+                print(x, 'current', self._current_window)
+                return x
 
-            return rows if len(rows) > 0 else None
+            # line if window doesnt need to wait for all if not blocking
+            # return rows if len(rows) > 0 else None
+            return None
 
         elif code == Responses.APPROVED_CONTINUE:
             # subtract one due to step.
             df.ack(self._id, self._offset + len(rows) - 1)
             self._offset += len(rows)
+            self._current_window += self._window_size
             return rows
 
         elif code == Responses.APPROVED_DONE:

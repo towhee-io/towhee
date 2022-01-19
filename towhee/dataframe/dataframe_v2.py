@@ -298,7 +298,7 @@ class DataFrame:
         if col is None:
             raise ValueError('Not a column.')
 
-        if not isinstance(self._schema.col_type(col), _Frame):
+        if self._schema.col_type(col) != _Frame:
             raise ValueError('Column not a frame column.')
 
         with self._data_lock:
@@ -307,27 +307,33 @@ class DataFrame:
 
             ret = []
             count = 0
+            filled = False
             # cutoff = ('timestamp' or 'row_id', int)
             for x in range(offset, self._len):
-                if not cutoff[0] == 'row_id' and self.__getitem__(x)[col].row_id < cutoff[1]:
+                if cutoff[0] == 'row_id' and self.__getitem__(x)[col].row_id < cutoff[1]:
                     ret.append(self.__getitem__(x))
                     count += 1
+                    if self.__getitem__(x)[col].row_id == cutoff[1]:
+                        filled=True
+
                 elif cutoff[0] == 'timestamp' and self.__getitem__(x)[col].timestamp < cutoff[1]:
                     ret.append(self.__getitem__(x))
                     count += 1
+                    if self.__getitem__(x)[col].timestamp == cutoff[1]:
+                        filled=True
 
             # Window valid but not fufilled by last value.
-            if offset + count == self._len:
-                return Responses.WINDOW_NOT_DONE, ret
-
+            if offset + count == self._len and not self._sealed and filled:
+                return Responses.APPROVED_CONTINUE, ret
+            if offset + count == self._len and not self._sealed and not filled:
+                # Line if window doesnt need to wait for all if not blocking
+                # return Responses.WINDOW_NOT_DONE, ret
+                return Responses.WINDOW_NOT_DONE, None
+            elif offset + count == self._len and self._sealed:
+                return Responses.APPROVED_DONE, ret
             # Window fufilled.
             elif offset + count <= self._len:
                 return Responses.APPROVED_CONTINUE, ret
-
-            #If sealed, return remainder as the final window.
-            elif self._sealed:
-                return Responses.APPROVED_DONE, ret
-
             else:
                 return Responses.UNKOWN_ERROR, None
 
@@ -389,18 +395,28 @@ class DataFrame:
             cur_len = self._len
             frame = self._data_as_dict['_frame'][-1]
 
+        
+
         with self._iterator_lock:
+            print(self._window_blocked)
+            print(frame.__getattribute__('row_id'))
             if len(self._map_blocked) > 0:
                 id_event = self._map_blocked.pop(cur_len, None)
                 if id_event is not None:
                     for _, event in id_event:
                         event.set()
-
             if len(self._window_blocked) > 0:
+                rem = []
                 for cutoff, id_events in self._window_blocked.items():
-                    if cutoff[1] < getattr(frame, cutoff[0]):
+                    print(cutoff[1], getattr(frame, cutoff[0]) )
+                    if cutoff[1] <= getattr(frame, cutoff[0]):
                         for _, event in id_events:
                             event.set()
+                        rem.append(cutoff)
+                for key in rem:
+                    del self._window_blocked[key]
+            print(self._window_blocked)
+                    
 
                     
 
@@ -449,7 +465,6 @@ class DataFrame:
     def gc(self):
         with self._data_lock:
             self._min_offset = min([value for _, value in self._iterators.items()])
-
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
