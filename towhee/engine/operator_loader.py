@@ -20,8 +20,6 @@ from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
-from towhee.hub.file_manager import FileManager
-
 
 class OperatorLoader:
     """Wrapper class used to load operators from either local cache or a remote
@@ -67,28 +65,12 @@ class OperatorLoader:
         if op is not None:
             return op
 
-        fm = FileManager()
-        path = fm.get_operator(function)
-
-        if path is None:
-            raise FileExistsError('Cannot find operator.')
-
-        fname = Path(path).stem
-        # modname = 'towhee.operator.' + fname
-        # spec = importlib.util.spec_from_file_location(modname, path.resolve())
-
-        # Create the module and then execute the module in its own namespace.
-        # module = importlib.util.module_from_spec(spec)
-        # spec.loader.exec_module(module)
-
-        # Instantiate the operator object and return it to the caller for
-        # `load_operator`. By convention, the operator class is simply the CamelCase
-        # version of the snake_case operator.
+        module, fname = function.split('/')
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-        if args is not None:
-            # return getattr(module, op_cls)(**args)
-            return getattr(importlib.import_module(fname), op_cls)(**args)
-        else:
-            # return getattr(module, op_cls)()
-            return getattr(importlib.import_module(fname), op_cls)()
 
+        module = '.'.join([module, fname, fname])
+
+        if args is not None:
+            return getattr(importlib.import_module(module), op_cls)(**args)
+        else:
+            return getattr(importlib.import_module(module), op_cls)()

@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # testable entrance
 def main_body(args):
     import argparse  # pylint: disable=import-outside-toplevel
 
     parser = argparse.ArgumentParser('towhee', 'Towhee command line tool')
-    subparsers = parser.add_subparsers(dest='action',
-                                       help='towhee actions')
+    subparsers = parser.add_subparsers(dest='action', help='towhee actions')
 
-    from .subcmds.develop import DevelopCommand  # pylint: disable=import-outside-toplevel
-    from .subcmds.template import TemplateCommand  # pylint: disable=import-outside-toplevel
-
-    actions = {'develop': DevelopCommand, 'template': TemplateCommand}
+    from .subcmds.develop import DevelopCommand    # pylint: disable=import-outside-toplevel
+    from .subcmds.execute import ExecuteCommand    # pylint: disable=import-outside-toplevel
+    actions = {
+        'develop': DevelopCommand,
+        'execute': ExecuteCommand
+    }
 
     for _, impl in actions.items():
         impl.install(subparsers)
