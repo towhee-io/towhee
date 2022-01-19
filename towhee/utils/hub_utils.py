@@ -48,11 +48,8 @@ class HubUtils:
                 Raise the error in request.
         """
         url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}'
-        try:
-            response = requests.get(url)
-            return response
-        except HTTPError as e:
-            raise e
+        response = requests.get(url)
+        return response
 
     def get_commits(self, limit: int, page: int, tag: str) -> requests.Response:
         """
@@ -127,11 +124,8 @@ class HubUtils:
                 Raise error in request.
         """
         url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/{file_path}?ref={tag}'
-        try:
-            response = requests.get(url, stream=True)
-            return response
-        except HTTPError:
-            return None
+        response = requests.get(url, stream=True)
+        return response
 
     def get_lfs(self, file_path: str, tag: str) -> requests.Response:
         """
@@ -152,11 +146,8 @@ class HubUtils:
                 Raise error in request.
         """
         url = f'{self._root}/{self._author}/{self._repo}/media/branch/{tag}/{file_path}'
-        try:
-            response = requests.get(url, stream=True)
-            return response
-        except HTTPError as e:
-            raise e
+        response = requests.get(url, stream=True)
+        return response
 
     def create_token(self, token_name: str, password: str) -> requests.Response:
         """

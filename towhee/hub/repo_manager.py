@@ -37,6 +37,8 @@ class RepoManager:
             The author of the repo.
         repo (`str`):
             The name of the repo.
+        root (`str`):
+            The root url of the repo.
     """
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         self._author = author
@@ -173,7 +175,7 @@ class RepoManager:
         file_path = Path(local_dir) / file_name
         if not file_path.parent.resolve().exists():
             try:
-                file_path.parent.resolve().mkdir()
+                file_path.parent.resolve().mkdir(parents=True)
             except FileExistsError:
                 pass
             except OSError as e:

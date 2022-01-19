@@ -32,23 +32,11 @@ class TestRepoManager(unittest.TestCase):
         self.assertEqual(rm.root, 'https://hub.towhee.io')
 
     def test_exists(self):
-        rm_1 = RepoManager('towhee', 'test-repo')
+        rm_1 = RepoManager('towhee', 'test-towhee')
         self.assertFalse(rm_1.exists())
 
         rm_2 = RepoManager('towhee', 'ci-test')
         self.assertTrue(rm_2.exists())
-
-    def test_clone(self):
-        rm = RepoManager('towhee', 'ci-test')
-        repo_dir = public_path / 'test_cache' / 'ci_test'
-        if repo_dir.is_dir():
-            rmtree(repo_dir)
-        rm.clone(repo_dir)
-        files = [f.name for f in repo_dir.iterdir()]
-
-        self.assertTrue(repo_dir.is_dir())
-        self.assertIn('.git', files)
-        rmtree(repo_dir)
 
     def test_download_executor(self):
         rm = RepoManager('towhee', 'ci-test')
@@ -61,12 +49,12 @@ class TestRepoManager(unittest.TestCase):
         rmtree(repo_dir)
 
     def test_download_files(self):
-        rm = RepoManager('towhee', 'ci-test')
-        repo_dir = public_path / 'test_cache' / 'ci_test'
+        rm = RepoManager('towhee', 'ci-install')
+        repo_dir = public_path / 'test_cache' / 'ci_install'
         if repo_dir.is_dir():
             rmtree(repo_dir)
 
-        rm.download_files('main', ['README.md'], tuple([]), repo_dir, False)
+        rm.download_files('main', ['README.md'], tuple([]), repo_dir, True)
         self.assertTrue((repo_dir / 'README.md').is_file())
         rmtree(repo_dir)
 
@@ -75,8 +63,8 @@ class TestRepoManager(unittest.TestCase):
         self.assertFalse((repo_dir / 'README.md').is_file())
 
     def test_download(self):
-        rm = RepoManager('towhee', 'ci-test')
-        repo_dir = public_path / 'test_cache' / 'ci_test'
+        rm = RepoManager('shiyu', 'test-lfs')
+        repo_dir = public_path / 'test_cache' / 'test-lfs'
         if repo_dir.is_dir():
             rmtree(repo_dir)
         rm.download(repo_dir)
@@ -85,6 +73,11 @@ class TestRepoManager(unittest.TestCase):
         self.assertTrue(repo_dir.is_dir())
         self.assertNotIn('.git', files)
         rmtree(repo_dir)
+
+    def test_none_download(self):
+        rm = RepoManager('towhee', 'tests-towhee')
+        with self.assertRaises(ValueError):
+            rm.download()
 
 
 if __name__ == '__main__':
