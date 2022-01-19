@@ -38,18 +38,6 @@ class TestRepoManager(unittest.TestCase):
         rm_2 = RepoManager('towhee', 'ci-test')
         self.assertTrue(rm_2.exists())
 
-    def test_clone(self):
-        rm = RepoManager('towhee', 'ci-test')
-        repo_dir = public_path / 'test_cache' / 'ci_test'
-        if repo_dir.is_dir():
-            rmtree(repo_dir)
-        rm.clone(repo_dir)
-        files = [f.name for f in repo_dir.iterdir()]
-
-        self.assertTrue(repo_dir.is_dir())
-        self.assertIn('.git', files)
-        rmtree(repo_dir)
-
     def test_download_executor(self):
         rm = RepoManager('towhee', 'ci-test')
         repo_dir = public_path / 'test_cache' / 'ci_test'
