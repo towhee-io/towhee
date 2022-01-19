@@ -52,7 +52,9 @@ class DataFrame:
         self._min_offset = 0
 
         self._block_lock = threading.RLock()
-        self._blocked = {}
+        self._map_blocked = {}
+        self._window_blocked = {}
+
 
         self._data_lock = threading.RLock()
         self._len = 0
@@ -282,7 +284,7 @@ class DataFrame:
         with self._data_lock:
             return self._sealed
 
-    def get_window(self, offset, cutoff, col, use_timestamp, iter_id):
+    def get_window(self, offset, cutoff, iter_id):
 
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] == float('inf'):
@@ -291,7 +293,7 @@ class DataFrame:
         if self._schema is None:
             raise ValueError('Schema not set.')
 
-        col = self._schema.col_index(col)
+        col = self._schema.col_index('_frame')
 
         if col is None:
             raise ValueError('Not a column.')
@@ -305,17 +307,18 @@ class DataFrame:
 
             ret = []
             count = 0
+            # cutoff = ('timestamp' or 'row_id', int)
             for x in range(offset, self._len):
-                if not use_timestamp and self.__getitem__(x)[col].row_id < cutoff:
+                if not cutoff[0] == 'row_id' and self.__getitem__(x)[col].row_id < cutoff[1]:
                     ret.append(self.__getitem__(x))
                     count += 1
-                elif use_timestamp and self.__getitem__(x)[col].timestamp < cutoff:
+                elif cutoff[0] == 'timestamp' and self.__getitem__(x)[col].timestamp < cutoff[1]:
                     ret.append(self.__getitem__(x))
                     count += 1
 
             # Window valid but not fufilled by last value.
             if offset + count == self._len:
-                return Responses.INDEX_OOB_UNSEALED, None
+                return Responses.WINDOW_NOT_DONE, ret
 
             # Window fufilled.
             elif offset + count <= self._len:
@@ -384,13 +387,22 @@ class DataFrame:
 
             self._len += 1
             cur_len = self._len
+            frame = self._data_as_dict['_frame'][-1]
 
         with self._iterator_lock:
-            id_event = self._blocked.pop(cur_len, None)
-            if id_event is not None:
-                for _, event in id_event:
-                    event.set()
+            if len(self._map_blocked) > 0:
+                id_event = self._map_blocked.pop(cur_len, None)
+                if id_event is not None:
+                    for _, event in id_event:
+                        event.set()
 
+            if len(self._window_blocked) > 0:
+                for cutoff, id_events in self._window_blocked.items():
+                    if cutoff[1] < getattr(frame, cutoff[0]):
+                        for _, event in id_events:
+                            event.set()
+
+                    
 
     def _put_list(self, item: list):
         assert len(item) == len(self._schema.col_count)
@@ -425,16 +437,18 @@ class DataFrame:
     def seal(self):
         with self._data_lock:
             self._sealed = True
-            for _, id_event in self._blocked.items():
+            for _, id_event in self._map_blocked.items():
                 for _, event in id_event:
                     event.set()
-            self._blocked.clear()
+            self._map_blocked.clear()
+            for _, id_event in self._window_blocked.items():
+                for _, event in id_event:
+                    event.set()
+            self._window_blocked.clear()
 
     def gc(self):
         with self._data_lock:
             self._min_offset = min([value for _, value in self._iterators.items()])
-            if self._min_offset == float('inf'):
-                raise ValueError('All iterators killed')
 
             for x in self._data_as_list:
                 x.gc(self._min_offset)
@@ -458,24 +472,36 @@ class DataFrame:
             offset (`int`):
                 The latest accepted offset.
         """
-        # No lock needed since iterators only deal with their index
         with self._iterator_lock:
             if self._iterators[iter_id] <= (offset + 1):
                 self._iterators[iter_id] = offset + 1
         self.gc()
 
-    def notify_block(self, iter_id, event, offset, count):
+    def notify_map_block(self, iter_id, event, offset, count):
         with self._iterator_lock:
             index = offset + count
-            if self._blocked.get(index) is None:
-                self._blocked[index] = []
-            self._blocked[index].append((iter_id, event))
+            if self._map_blocked.get(index) is None:
+                self._map_blocked[index] = []
+            self._map_blocked[index].append((iter_id, event))
             return True
+    
+    def notify_window_block(self, iter_id, event, cutoff):
+        # cutoff = ('timestamp' or 'row_id', int)
+        with self._iterator_lock:
+            if self._window_blocked.get(cutoff) is None:
+                self._window_blocked[cutoff] = []
+            self._window_blocked[cutoff].append((iter_id, event))
+
+
 
     # TODO kill blocked iters or kill all iters?
     def unblock_iters(self):
         with self._iterator_lock:
-            for _, id_event in self._blocked.items():
+            for _, id_event in self._map_blocked.items():
+                for it_id, event in id_event:
+                    self._iterators[it_id] = float('inf')
+                    event.set()
+            for _, id_event in self._window_blocked.items():
                 for it_id, event in id_event:
                     self._iterators[it_id] = float('inf')
                     event.set()
@@ -489,3 +515,5 @@ class Responses(Enum):
     APPROVED_DONE = 5
     KILLED = 6
     UNKOWN_ERROR = 7
+    WINDOW_NOT_DONE = 8
+    

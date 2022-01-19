@@ -145,6 +145,8 @@ class TestArray(unittest.TestCase):
         self.assertEqual(x, [0, 1])
         x = array[1:]
         self.assertEqual(x, [1, 2, 3])
+        x = array[-1]
+        self.assertEqual(x, 3)
 
     def test_properties(self):
         array = Array([0, 1, 2, 3])

@@ -46,7 +46,7 @@ class BaseIterator:
 
         elif code == Responses.INDEX_OOB_UNSEALED:
             if self._block:
-                df.notify_block(self._id, self._event, self._offset, self._batch_size)
+                df.notify_map_block(self._id, self._event, self._offset, self._batch_size)
                 self._event.wait()
                 self._event.clear()
                 return self.__next__()
@@ -64,8 +64,8 @@ class BaseIterator:
 
         elif code == Responses.APPROVED_DONE:
             self._done = True
-            df.ack(self._id, len(df) - 1)
-            self._offset = len(df)
+            df.ack(self._id, float('inf'))
+            self._offset = 0
             return row
 
         elif code == Responses.KILLED:
@@ -83,7 +83,7 @@ class MapIterator(BaseIterator):
     """
     A row-based map `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame, block = False):
+    def __init__(self, df: DataFrame, block = True):
         super().__init__(df, batch_size = 1, step = 1, block = block)
 
 
@@ -91,7 +91,7 @@ class BatchIterator(BaseIterator):
     """
     A row-based batch `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame, batch_size = 1, step = 1, block = False):
+    def __init__(self, df: DataFrame, batch_size = 1, step = 1, block = True):
         super().__init__(df, batch_size = batch_size, step = step, block = block)
 
 
@@ -99,9 +99,13 @@ class WindowIterator(BaseIterator):
     """
     A row-based window `DataFrame` iterator.
     """
-    def __init__(self, df: DataFrame, window_size = 1, block = False):
+    def __init__(self, df: DataFrame, window_size = 1, block = True, use_timestamp = False):
         self._window_size = window_size
-        self._current_window = (0, window_size)
+        self._current_window = window_size
+        if use_timestamp:
+            self._comparator = 'timestamp'
+        else:
+            self._comparator = 'row_id'
         super().__init__(df, block)
 
     def __next__(self):
@@ -122,35 +126,32 @@ class WindowIterator(BaseIterator):
             raise StopIteration
 
         df = self._df_ref()
-
-        code, row = df.get_window(self._offset, count = self._batch_size, iter_id = self._id)
+        cutoff = (self._comparator, self._current_window)
+        code, rows = df.get_window(offset = self._offset, cutoff = cutoff, iter_id = self._id)
 
         if code == Responses.INDEX_GC:
             raise IndexError
 
-        elif code == Responses.INDEX_OOB_UNSEALED:
+        elif code == Responses.WINDOW_NOT_DONE:
             if self._block:
-                df.notify_block(self._id, self._event, self._offset, 1)
+                df.notify_window_block(self._id, self._event, self._current_window)
                 self._event.wait()
                 self._event.clear()
                 return self.__next__()
 
-            return None
+            return rows if len(rows) > 0 else None
 
         elif code == Responses.APPROVED_CONTINUE:
             # subtract one due to step.
-            df.ack(self._id, self._offset + self._step - 1)
-            self._offset += self._step
-            return row
-
-        elif code == Responses.INDEX_OOB_SEALED:
-            raise StopIteration
+            df.ack(self._id, self._offset + len(rows) - 1)
+            self._offset += len(rows)
+            return rows
 
         elif code == Responses.APPROVED_DONE:
             self._done = True
-            df.ack(self._id, len(df) - 1)
-            self._offset = len(df)
-            return row
+            df.ack(self._id, float('inf'))
+            self._offset = 0
+            return rows
 
         elif code == Responses.KILLED:
             raise StopIteration

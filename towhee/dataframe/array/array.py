@@ -61,6 +61,8 @@ class Array:
         if isinstance(key, int):
             if key >= self._offset:
                 return self._data[key - self._offset]
+            elif key < 0:
+                return self._data[len(self._data) + key]
             else:
                 raise IndexError('element with index=%d has been released' % (key))
         elif isinstance(key, slice):
@@ -114,6 +116,10 @@ class Array:
 
     def set_name(self, name):
         self._name = name
+    
+    def clear(self):
+        self._data = []
+        self._offset = 0
 
     def get_relative(self, key: int):
         return self._data[key + self._offset]
@@ -154,7 +160,10 @@ class Array:
         """
         Release the unreferenced lower part of the `Array`, if any
         """
-        release_offset = offset - self._offset
-        if release_offset > 0:
-            del self._data[:release_offset]
-            self._offset = offset
+        if offset == float('inf'):
+            self.clear()
+        else:
+            release_offset = offset - self._offset
+            if release_offset > 0:
+                del self._data[:release_offset]
+                self._offset = offset
