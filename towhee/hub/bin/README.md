@@ -173,7 +173,7 @@ You can also initialize your Repo to specific directory, and defaults to the cur
 - Initialize NNOperator with your model framework
 
   ```bash
-$ towhee init -a <your-account-name> -r <your-operator-name> -c nnoperator -f </your/model/framework>
+  $ towhee init -a <your-account-name> -r <your-operator-name> -c nnoperator -f </your/model/framework>
   ```
 
 - Initialize Pipeline to specific directory
