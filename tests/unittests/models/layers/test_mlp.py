@@ -26,6 +26,7 @@ class MlpTest(unittest.TestCase):
         mod = Mlp(in_features, hidden_features, out_features)
         fake_input = torch.rand(1, in_features)
         output = mod(fake_input)
+        mod.test_forward(fake_input)
         gt_output_shape = torch.Size([1, out_features])
         self.assertTrue(output.shape == gt_output_shape)
 
