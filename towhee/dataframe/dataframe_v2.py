@@ -222,7 +222,7 @@ class DataFrame:
         if self._schema is None:
             for key, val in data.items():
                 val.set_name(key)
-                val.append()
+                val.append(val)
                 self._data_as_list.append(val)
                 self._data_as_dict[key] = self._data_as_list[-1]
 
