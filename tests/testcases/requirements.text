@@ -2,5 +2,6 @@
 #pip install -U pip
 #pip cache purge
 Pillow
+numpy
 towhee==0.4.1.dev31
 

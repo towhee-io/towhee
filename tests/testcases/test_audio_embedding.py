@@ -1,9 +1,11 @@
 # coding : UTF-8
+import numbers
 import sys
 sys.path.append("../../tests")
 import time
 import threading
-from towhee import pipeline
+import numpy as np 
+from towhee import pipeline 
 from common import common_func as cf
 
 data_path = "audios/"
@@ -180,5 +182,47 @@ class TestAudioEmbeddingValid:
             t.join()
 
         return True
+
+
+class TestAudioEmbeddingStress:
+    """ Test case of stress """
+
+    def test_embedding_more_times(self, pipeline_name):
+        nums=1000
+        for i in range(nums):
+            embedding_pipeline = pipeline(pipeline_name)
+            try:
+                embedding = embedding_pipeline(data_path + "towhee_test_audio_1.wav")
+            except Exception as e:
+                print( "Raise Exception: %s" % e)
+
+        print("embedding audios for %d round" % (i+1))
+
+        return True
+
+
+class TestAudioEmbeddingPerformance:
+    """ Test case of performance """
+
+    def test_embedding_avg_time(self, pipeline_name):
+        embedding_pipeline = pipeline(pipeline_name)
+        avg_time=0
+        time_cost = []
+        num =10
+        for i in range (num):
+            try:
+                time_start = time.time()
+                embedding = embedding_pipeline(data_path + "towhee_test_audio_1.wav")
+                time_cost.append(time.time() - time_start)
+            except Exception as e:
+                print( "Raise Exception: %s" % e)
+        time_cost = np.array(time_cost)
+        total_time = np.sum(time_cost)
+        avg_time = round(total_time/num, 3)
+        print(f"The average time is",avg_time)
+
+        
+        return True
+
 
 

@@ -3,6 +3,7 @@ import sys
 sys.path.append("../../tests")
 import time
 import threading
+import numpy as np 
 from towhee import pipeline
 from common import common_func as cf
 
@@ -182,3 +183,43 @@ class TestImageEmbeddingValid:
         return True
 
 
+class TestImageEmbeddingStress:
+    """ Test case of stress """
+
+    def test_embedding_more_times(self,pipeline_name):
+
+       embedding_pipeline = pipeline(pipeline_name)
+       nums=1000
+       for i in range(nums):
+            try:
+                embedding = embedding_pipeline(data_path + "towhee_test_image0.jpg")
+            except Exception as e:
+                print("Raise Exception: %s" % e)
+
+       print("embedding images for %d round" % (i+1))
+
+       return True
+
+class TestImageEmbeddingPerformance:
+    """ Test case of performance """
+
+    def test_embedding_avg_time(self, pipeline_name):
+        embedding_pipeline = pipeline(pipeline_name)
+        avg_time=0
+        time_cost = []
+        num =10
+        for i in range (num):
+            try:
+                time_start = time.time()
+                embedding = embedding_pipeline(data_path + "towhee_test_image0.jpg")
+                time_cost.append(time.time() - time_start)
+            except Exception as e:
+                print( "Raise Exception: %s" % e)
+        time_cost = np.array(time_cost)
+        total_time = np.sum(time_cost)
+        print(f"The total time is",total_time)
+        avg_time = round(total_time/num, 3)
+        print(f"The average time is",avg_time)
+
+        
+        return True

@@ -57,7 +57,7 @@ def image_class_pipeline_register():
 
     # skip multiple threads tests for memory shortage
     skipped_cases = ["test_embedding_concurrent_multi_threads"]
-
+ 
 
     return pipeline_names, embedding_sizes, skipped_cases
 
@@ -83,6 +83,28 @@ def image_class_pipeline_runner():
             if not func.startswith("__"):
                 print("Testing %s:%s" % (func, pipeline_name))
                 res = methodcaller(func, pipeline_name, embedding_size_each)(valid_embedding_obj)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))
+        
+        test_valid_embedding = TestImageEmbeddingStress()
+        for func in dir(TestImageEmbeddingStress):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                res = methodcaller(func, pipeline_name)(test_valid_embedding)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))
+
+        test_valid_embedding_per = TestImageEmbeddingPerformance()
+        for func in dir(TestImageEmbeddingPerformance):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                res = methodcaller(func, pipeline_name)(test_valid_embedding_per)
                 if res == 1:
                     print("%s:%s PASS" % (func, pipeline_name))
                 else:
@@ -131,6 +153,30 @@ def audio_class_pipeline_runner():
                     print("%s:%s PASS" % (func, pipeline_name))
                 else:
                     print("%s:%s FAIL" % (func, pipeline_name))
+
+        test_valid_embedding = TestAudioEmbeddingStress()
+        for func in dir(TestAudioEmbeddingStress):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name)(test_valid_embedding)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))     
+
+        test_valid_embedding_per = TestAudioEmbeddingPerformance()
+        for func in dir(TestAudioEmbeddingPerformance):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name)(test_valid_embedding_per)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))    
 
     return True
 
