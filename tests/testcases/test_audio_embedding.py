@@ -188,7 +188,12 @@ class TestAudioEmbeddingStress:
     """ Test case of stress """
 
     def test_embedding_more_times(self, pipeline_name):
-        nums=1000
+        """
+        target: test embedding for stress scenario
+        method: embedding for N times
+        expected: return embeddings
+        """
+        nums = 1000
         for i in range(nums):
             embedding_pipeline = pipeline(pipeline_name)
             try:
@@ -205,10 +210,15 @@ class TestAudioEmbeddingPerformance:
     """ Test case of performance """
 
     def test_embedding_avg_time(self, pipeline_name):
+        """
+        target: test embedding for performance scenario
+        method: embedding N times and calculate the average embedding time 
+        expected: return embeddings
+        """
         embedding_pipeline = pipeline(pipeline_name)
-        avg_time=0
+        avg_time = 0
         time_cost = []
-        num =10
+        num = 10
         for i in range (num):
             try:
                 time_start = time.time()
