@@ -34,7 +34,6 @@ class DataFrame:
         data (`list[towhee.dataframe.Array]` or `list[Tuple]` or `dict[str, towhee.dataframe.Array]`):
             The data of the `DataFrame`. Internally, the data will be organized
             in a column-based manner.
-        default_cols -> provided_columns -> whats
     """
 
     def __init__(
@@ -89,6 +88,7 @@ class DataFrame:
         self._add_frame()
 
     def _add_frame(self):
+        """Adds _frame column to initialization data."""
         arr = Array(name = '_frame')
         for _ in range(self._len):
             arr.put(_Frame(self._row_iter))
@@ -98,14 +98,17 @@ class DataFrame:
         self._data_as_dict['_frame'] = self._data_as_list[-1]
 
     def _from_none(self):
+        """Initialize empty Arrays."""
         self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
         self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
 
     def _set_cols(self, columns):
+        """Set the columns in the schema based on the passed in cols."""
         for names, types in columns:
             self._schema.add_col(name=names, col_type = types)
 
     def _set_schema(self):
+        """Set the columns in the schema based on the inserted data."""
         if self._data_as_list[0].physical_size > 0:
             for x in self._data_as_list:
                 key = x.name
@@ -116,6 +119,7 @@ class DataFrame:
 
 
     def _extract_data(self, data):
+        """Convert the passed in data and store it."""
         # For `data` is `list`
         if isinstance(data, list):
             container_types = set(type(i) for i in data)
@@ -142,6 +146,7 @@ class DataFrame:
             raise ValueError('can not construct DataFrame from data type %s' % (type(data)))
 
     def _from_tuples(self, data):
+        """Convert passed in data from tuples to Arrays"""
         # check tuple length
         tuple_lengths = set(len(i) for i in data)
         if len(tuple_lengths) == 1:
@@ -168,6 +173,7 @@ class DataFrame:
         self._len = len(data)
 
     def _from_arrays(self, data):
+        """Convert passed in data from arrays to Arrays"""
         # check array length
         array_lengths = set(len(array) for array in data)
         if len(array_lengths) != 1:
@@ -198,7 +204,7 @@ class DataFrame:
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
 
     def _from_dict(self, data):
-        # check dict values
+        """Convert passed in data from dict to Arrays"""
         vals = set(type(array) for array in data.values())
         if len(vals) != 1 or not vals.pop() == Array:
             raise ValueError('value type in data should be towhee.dataframe.Array')
@@ -228,6 +234,7 @@ class DataFrame:
         
 
     def __getitem__(self, key):
+        """Get data at the passed in offset."""
         with self._data_lock:
             # access a row
             if isinstance(key, int):
@@ -267,6 +274,7 @@ class DataFrame:
 
     @property
     def physical_size(self):
+        """The number of elements left in the Dataframe."""
         with self._data_lock:
             if self._data_as_list is None:
                 return 0
@@ -302,29 +310,52 @@ class DataFrame:
             return self._sealed
 
     def get_window(self, offset, cutoff, iter_id):
+        """
+        Window based data retrieval. Windows include everything up to but not including
+        the cutoff.
 
+        Args:
+            offset (`int`):
+                The starting index to read data from.
+            cutoff ("timestamp" | "row_id", `int`):
+                The current upper window limit. 
+            iter_id (`int`):
+                Which iterator is reading the data.
+        Raises:
+            ValueError:
+                Incorrect _Frame column.
+        Returns:
+            Responses: 
+                Different states of response codes depending on the dataframe state.
+        """
+
+        # When the iterator is forcefully unblocked using unblock_iters().
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] == float('inf'):
                 return Responses.KILLED, None
-
+        
+        # If there is no schema that means that initialization broke at some point.
         if self._schema is None:
             raise ValueError('Schema not set.')
 
+        # TODO: Maybe remove if _frame column is always the last one.
         col = self._schema.col_index('_frame')
 
+        # If there is no _frame column something has broken.
         if col is None:
             raise ValueError('Not a column.')
 
+        # If the '_frame' column doesnt hold _Frames then something is broken.
         if self._schema.col_type(col) != _Frame:
             raise ValueError('Column not a frame column.')
 
         with self._data_lock:
+            # Up to iterators to decide what to do if the value they want is GCed.
             if offset < self._min_offset:
                 return Responses.INDEX_GC, None
 
             ret = []
             count = 0
-            # cutoff = ('timestamp' or 'row_id', int)
             for x in range(offset, self._len):
                 if cutoff[0] == 'row_id':
                     if self.__getitem__(x)[col].row_id < cutoff[1]:
@@ -332,64 +363,88 @@ class DataFrame:
                         count += 1
                     else:
                         break
-                # elif cutoff[0] == 'timestamp':
-                #     if self.__getitem__(x)[col].timestamp < cutoff[1]:
-                #         ret.append(self.__getitem__(x))
-                #         count += 1
-                #     if self.__getitem__(x)[col].timestamp == cutoff[1]:
-                #         filled=True
+                elif cutoff[0] == 'timestamp':
+                    if self.__getitem__(x)[col].timestamp < cutoff[1]:
+                        ret.append(self.__getitem__(x))
+                        count += 1
+                    else:
+                        break
 
             # Window valid but not fufilled by last value.
             if offset + count == self._len and not self._sealed:
-                # Line if window doesnt need to wait for all if not blocking
-                # return Responses.WINDOW_NOT_DONE, ret
                 return Responses.WINDOW_NOT_DONE, None
+
+            # Window valid, finished and sealed.
             elif offset + count == self._len and self._sealed:
                 return Responses.APPROVED_DONE, ret
-            # Window fufilled.
+
+            # Window fufilled and available next window.
             elif offset + count <= self._len:
                 return Responses.APPROVED_CONTINUE, ret
+
+            # Something broke.
             else:
                 return Responses.UNKOWN_ERROR, None
 
-
     def get(self, offset, count = 1, iter_id = None):
         """
-        Dataframe's function to return data at current offset and count.
+        Get data from dataframe based on offset and how many values requested.
 
         Args:
-            offset:
-                The index to get data from.
-            count:
-                How many rows to return
-            iter_id:
+            offset (`int`):
+                The starting index to read data from.
+            count (`int`):
+                How many values to retrieve.
+            iter_id (`int`):
+                Which iterator is reading the data.
 
+        Returns:
+            Responses:
+                Different states of response codes depending on the dataframe state.
         """
+
+        # When the iterator is forcefully unblocked using unblock_iters().
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] == float('inf'):
                 return Responses.KILLED, None
 
         with self._data_lock:
+            # Up to iterators to decide what to do if the value they want is GCed.
             if offset < self._min_offset:
                 return Responses.INDEX_GC, None
 
+            # The batch of data is available and there is more available. 
             elif offset + count <= self._len:
                 return Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, offset + count)]
 
             elif self._sealed:
+                # If no more data is left and trying to get more, iterator will stop and no data returned.
                 if self._len <= offset:
                     return Responses.INDEX_OOB_SEALED, None
+
+                # If dataframe is sealed, remaining values will be returned.
                 else:
                     return Responses.APPROVED_DONE, [self.__getitem__(x) for x in range(offset, self._len)]
 
+            # If the requested offset is out of bounds but dataframe is still writing data.
             elif offset + count >= self._len:
-                return Responses.INDEX_OOB_UNSEALED, None # [self.__getitem__(x) for x in range(offset, self._len)]
+                return Responses.INDEX_OOB_UNSEALED, None 
 
+            # Something broke.
             else:
                 return Responses.UNKOWN_ERROR, None
 
     def put(self, item) -> None:
-        """Put values into dictionary
+        """
+        Append a new value to the dataframe.
+
+        Args:
+            item (dict(towhee.Array) | ):
+                The starting index to read data from.
+            count (`int`):
+                How many values to retrieve.
+            iter_id (`int`):
+                Which iterator is reading the data.
 
         For now it takes:
         tuple
