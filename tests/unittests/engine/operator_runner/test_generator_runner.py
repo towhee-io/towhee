@@ -34,10 +34,10 @@ class TestGeneratorRunner(unittest.TestCase):
     def _create_test_obj(self):
         input_df = DataFrame('input', [('num', 'int')])
         out_df = DataFrame('output', [('sum', 'int')])
-        writer = create_writer('map', [out_df])
-        reader = create_reader(input_df, 'map', {'num': 0})
-        runner = GeneratorRunner('test', 0, 'generator_operator', 'main', 'mock_operators', {'num': 1},
-                                 [reader], writer)
+        writer = create_writer('generator', [out_df])
+        reader = create_reader(input_df, 'generator', {'num': 0})
+        runner = GeneratorRunner('test', 0, 'generator_operator', 'main',
+                                 'mock_operators', {'num': 1}, [reader], writer)
         return input_df, out_df, runner
 
     def test_generator_runner(self):
@@ -58,7 +58,7 @@ class TestGeneratorRunner(unittest.TestCase):
         self.assertEqual(out_df.size, 10)
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
-    def test_generator_runner2(self):
+    def test_generator_runner_with_multidata(self):
         input_df, out_df, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
@@ -71,6 +71,45 @@ class TestGeneratorRunner(unittest.TestCase):
         out_df.seal()
         self.assertEqual(out_df.size, 15)
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
+
+    def test_generator_runner_with_multirunners(self):
+        input_df_1, out_df_1, runner_1 = self._create_test_obj()
+        out_df_2 = DataFrame('output', [('sum', 'int')])
+        writer = create_writer('generator', [out_df_2])
+        reader = create_reader(out_df_1, 'generator', {'num': 0})
+        runner_2 = GeneratorRunner('test', 0, 'generator_operator', 'main',
+                                   'mock_operators', {'num': 1}, [reader], writer)
+
+        runner_1.set_op(generator_operator.GeneratorOperator())
+        t1 = threading.Thread(target=run, args=(runner_1, ))
+        t1.start()
+
+        runner_2.set_op(generator_operator.GeneratorOperator())
+        t2 = threading.Thread(target=run, args=(runner_2, ))
+        t2.start()
+
+        input_df_1.put_dict({'num': 1})
+        input_df_1.put_dict({'num': 2})
+        input_df_1.put_dict({'num': 3})
+        input_df_1.seal()
+        t1.join()
+        runner_1.join()
+
+        # In engine, the op_ctx will do it
+        out_df_1.seal()
+        t2.join()
+        runner_2.join()
+        out_df_2.seal()
+
+        self.assertEqual(runner_1.status, RunnerStatus.FINISHED)
+        self.assertEqual(runner_2.status, RunnerStatus.FINISHED)
+        self.assertEqual(out_df_2.size, 4)
+        it = out_df_2.map_iter(True)
+        expect = ['1-2', '2-4', '2-5', '2-5']
+        index = 0
+        for item in it:
+            self.assertEqual(item[-1].value.parent_path, expect[index])
+            index += 1
 
     def test_generator_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()

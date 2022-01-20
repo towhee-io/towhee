@@ -32,8 +32,12 @@ class GeneratorRunner(RunnerBase):
             raise OpIOTypeError("Op {}'s output is not a generator".format(self.op_name))
 
         for data in output:
-            item = data._asdict()
             frame = deepcopy(self._frame_var.value)
+            if frame.parent_path == '':
+                frame.parent_path = str(frame.prev_id)
+            else:
+                frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
 
+            item = data._asdict()
             item.update({FRAME: frame})
             self._writer.write(item)

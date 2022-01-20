@@ -26,7 +26,7 @@ def create_reader(
     inputs_index: Dict[str, int],
     iter_params: Optional[Dict] = None
 ) -> io_reader.DataFrameReader:
-    if iter_type.lower() in ['map', 'flatmap', 'concat', 'filter']:
+    if iter_type.lower() in ['map', 'flatmap', 'concat', 'filter', 'generator']:
         return io_reader.BlockMapReaderWithOriginData(df, inputs_index)
     elif iter_type.lower() == 'window':
         return io_reader.BatchFrameReader(df, inputs_index, **iter_params)
@@ -36,7 +36,7 @@ def create_reader(
 
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFrameWriter:
     assert len(outputs) == 1
-    if iter_type.lower() in ['map', 'flatmap', 'concat', 'window']:
+    if iter_type.lower() in ['map', 'flatmap', 'concat', 'window', 'generator']:
         return io_writer.DictDataFrameWriter(outputs[0])
     elif iter_type.lower() == 'filter':
         return io_writer.RowDataFrameWriter(outputs[0])

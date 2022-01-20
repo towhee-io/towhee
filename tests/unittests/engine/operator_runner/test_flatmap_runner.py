@@ -34,8 +34,8 @@ class TestFlatmapRunner(unittest.TestCase):
     def _create_test_obj(self):
         input_df = DataFrame('input', [('num', 'int')])
         out_df = DataFrame('output', [('num', 'int')])
-        writer = create_writer('map', [out_df])
-        reader = create_reader(input_df, 'map', {'num': 0})
+        writer = create_writer('flatmap', [out_df])
+        reader = create_reader(input_df, 'flatmap', {'num': 0})
         runner = FlatMapRunner('test', 0, 'repeat_operator', 'main',
                                'mock_operators', {'repeat': 3},
                                [reader], writer)
@@ -67,8 +67,8 @@ class TestFlatmapRunner(unittest.TestCase):
     def test_multi_flatmap(self):
         input_df_1, out_df_1, runner_1 = self._create_test_obj()
         out_df_2 = DataFrame('output', [('num', 'int')])
-        writer = create_writer('map', [out_df_2])
-        reader = create_reader(out_df_1, 'map', {'num': 0})
+        writer = create_writer('flatmap', [out_df_2])
+        reader = create_reader(out_df_1, 'flatmap', {'num': 0})
         runner_2 = FlatMapRunner('test', 0, 'repeat_operator', 'main',
                                  'mock_operators', {'repeat': 4},
                                  [reader], writer)

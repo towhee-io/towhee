@@ -30,11 +30,13 @@ class FlatMapRunner(RunnerBase):
             raise OpIOTypeError("Flatmap operator's output must be a list, not a {}".format(type(output)))
 
         for data in output:
-            item = data._asdict()
+
             frame = deepcopy(self._frame_var.value)
             if frame.parent_path == '':
                 frame.parent_path = str(frame.prev_id)
             else:
                 frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
+
+            item = data._asdict()
             item.update({FRAME: frame})
             self._writer.write(item)
