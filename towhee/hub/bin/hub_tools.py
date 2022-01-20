@@ -14,73 +14,97 @@
 
 import argparse
 from getpass import getpass
+from pathlib import Path
+from shutil import rmtree
 
 from towhee.hub.operator_manager import OperatorManager
 from towhee.hub.pipeline_manager import PipelineManager
 from towhee.hub.repo_manager import RepoManager
+from towhee.utils.git_utils import GitUtils
 
 
-def get_repo_manager(args):
-    if args.command in ['download', 'clone']:
-        manager = RepoManager(args.author, args.repo)
-    elif args.command == 'generate-yaml' or args.type == 'pyoperator':
-        manager = OperatorManager(args.author, args.repo)
-    elif args.type == 'nnoperator':
-        manager = OperatorManager(args.author, args.repo)
-    elif args.type == 'pipeline':
-        manager = PipelineManager(args.author, args.repo)
-    return manager
+def get_repo_obj(args):
+    if args.command == 'download':
+        repo_obj = RepoManager(args.author, args.repo)
+    elif args.command == 'clone':
+        repo_obj = GitUtils(args.author, args.repo)
+    elif args.command == 'generate-yaml' or args.classes in ['pyoperator', 'nnoperator', 'operator']:
+        repo_obj = OperatorManager(args.author, args.repo)
+    elif args.classes == 'pipeline':
+        repo_obj = PipelineManager(args.author, args.repo)
+    return repo_obj
+
+
+def init_repo(args):
+    repo_manager = get_repo_obj(args)
+    repo_path = Path(args.dir) / args.repo
+    GitUtils(args.author, args.repo).clone(local_repo_path=repo_path)
+    if args.classes == 'pipeline':
+        temp_path = Path(args.dir) / 'pipeline-template'
+        GitUtils('towhee', 'pipeline-template').clone(local_repo_path=repo_path)
+        repo_manager.init_pipeline(temp_path, repo_path)
+    elif args.classes == 'pyoperator':
+        temp_path = Path(args.dir) / 'pyoperator-template'
+        GitUtils('towhee', 'pyoperator-template').clone(local_repo_path=repo_path)
+        repo_manager.init_pyoperator(temp_path, repo_path)
+    elif args.classes == 'nnoperator':
+        temp_path = Path(args.dir) / 'nnoperator-template'
+        GitUtils('towhee', 'nnoperator-template').clone(local_repo_path=repo_path)
+        repo_manager.init_nnoperator(temp_path, repo_path, args.framework)
+    rmtree(temp_path)
 
 
 # Get more usage in README.md
 def main():
-    parser = argparse.ArgumentParser(prog='towheehub')
+    parser = argparse.ArgumentParser(prog='towhee')
     ar_parser = argparse.ArgumentParser()
     ar_parser.add_argument('-a', '--author', required=True, help='Author of the Repo.')
     ar_parser.add_argument('-r', '--repo', required=True, help='Repo name.')
-    c_parser = argparse.ArgumentParser(add_help=False)
-    c_parser.add_argument('type', choices=['pyoperator', 'nnoperator', 'pipeline'], help='Repo type/class.')
+    c1_parser = argparse.ArgumentParser(add_help=False)
+    c1_parser.add_argument('classes', choices=['operator', 'pipeline'], help='Repo class in [\'operator\', \'pipeline\'].')
+    c2_parser = argparse.ArgumentParser(add_help=False)
+    c2_parser.add_argument('-c', '--classes', choices=['pyoperator', 'nnoperator', 'pipeline'],
+                           help='Repo class in [\'pyoperator\', \'nnoperator\', \'pipeline\'].')
     f_parser = argparse.ArgumentParser(add_help=False)
     f_parser.add_argument('-f', '--framework', default='pytorch', help='The framework of nnoperator, defaults to \'pytorch\'.')
-    td_parser = argparse.ArgumentParser(add_help=False)
-    td_parser.add_argument('-t', '--tag', default='main', help='Repo tag, defaults to \'main\'.')
-    td_parser.add_argument('-d', '--dir', default='.', help='Directory to clone the Repo file, defaults to \'.\'.')
+    t_parser = argparse.ArgumentParser(add_help=False)
+    t_parser.add_argument('-t', '--tag', default='main', help='Repo tag, defaults to \'main\'.')
+    d_parser = argparse.ArgumentParser(add_help=False)
+    d_parser.add_argument('-d', '--dir', default='.', help='Directory to the Repo file, defaults to \'.\'.')
 
     subparsers = parser.add_subparsers(dest='command')
-    create = subparsers.add_parser('create', parents=[c_parser, ar_parser, f_parser], add_help=False, description='Create Repo on Towhee hub.')
+    create = subparsers.add_parser('create', parents=[c1_parser, ar_parser], add_help=False, description='Create Repo on Towhee hub.')
     create.add_argument('-p', '--password', nargs='?', required=True, help='Password of the author.')
-    subparsers.add_parser('download', parents=[ar_parser, td_parser], add_help=False, description='Download repo file(without .git) to local.')
-    subparsers.add_parser('clone', parents=[ar_parser, td_parser], add_help=False, description='Clone repo to local.')
-    subparsers.add_parser('init', parents=[ar_parser, c_parser, f_parser], add_help=False, description='Initialize the file structure for your Repo.')
-    subparsers.add_parser('generate-yaml', parents=[ar_parser], add_help=False, description='Generate yaml file for your Operator Repo.')
+    subparsers.add_parser('init', parents=[ar_parser, c2_parser, d_parser, f_parser], add_help=False,
+                          description='Initialize the file for your Repo.')
+    subparsers.add_parser('generate-yaml', parents=[ar_parser, d_parser], add_help=False, description='Generate yaml file for your Operator Repo.')
+    subparsers.add_parser('download', parents=[ar_parser, t_parser, d_parser], add_help=False, description='Download repo(without .git) to local.')
+    subparsers.add_parser('clone', parents=[ar_parser, t_parser, d_parser], add_help=False, description='Clone repo to local.')
 
     args = parser.parse_args()
-    manager = get_repo_manager(args)
+    repo_obj = get_repo_obj(args)
 
-    # init_choice = ''
     if args.command == 'create':
         if not args.password:
             args.password = getpass('Password: ')
         print('Creating repo...')
-        manager.create(args.password)
+        repo_obj.create(args.password)
         print('Done')
-        # init_choice = input('Do you want to clone and initialize it with template? [Y|n]  ')
-    # TODO(Kaiyuan): Add argue=ments
-    # if args.command == 'init' or init_choice.lower() in ['yes', 'y']:
-    #     print('Clone the repo and initialize it with template...')
-    #     manager.init()
-    #     print('Done')
+    if args.command == 'init':
+        print('Clone the repo and initialize it with template...')
+        init_repo(args)
+        print('Done')
     elif args.command == 'generate-yaml':
         print('Generating yaml for repo...')
-        manager.generate_yaml()
+        repo_obj.generate_yaml(Path(args.dir))
         print('Done')
     elif args.command == 'download':
         print('Downloading repo...')
-        manager.download(args.dir, args.tag)
+        repo_obj.download(Path(args.dir) / args.repo, args.tag, False)
         print('Done')
     elif args.command == 'clone':
         print('Cloning repo...')
-        manager.clone(args.dir, args.tag, False)
+        repo_obj.clone(args.tag, False, Path(args.dir) / args.repo)
         print('Done')
 
 
