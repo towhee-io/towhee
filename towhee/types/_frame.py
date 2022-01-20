@@ -95,9 +95,6 @@ class _Frame:
 
     @parent_path.setter
     def parent_path(self, parent_path: str):
-        if self._parent_path != '':
-            raise TowheeError('Parent path already exist')
-
         self._parent_path = parent_path
 
     @property

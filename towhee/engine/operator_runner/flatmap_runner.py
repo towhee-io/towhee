@@ -32,6 +32,9 @@ class FlatMapRunner(RunnerBase):
         for data in output:
             item = data._asdict()
             frame = deepcopy(self._frame_var.value)
-
+            if frame.parent_path == '':
+                frame.parent_path = str(frame.prev_id)
+            else:
+                frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
             item.update({FRAME: frame})
             self._writer.write(item)

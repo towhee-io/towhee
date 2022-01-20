@@ -18,7 +18,7 @@ from enum import Enum, auto
 from threading import Event
 import traceback
 
-from towhee.types._frame import FRAME
+from towhee.types._frame import FRAME, _Frame
 from towhee.engine.status import Status
 from towhee.utils.log import engine_log
 
@@ -181,7 +181,7 @@ class RunnerBase(ABC):
     def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
             data, self._row_data = self._reader.read()
-            assert self._row_data[-1].vtype == FRAME
+            assert isinstance(self._row_data[-1].value, _Frame)
             self._frame_var = self._row_data[-1]
             self._frame_var.value.prev_id = self._frame_var.value.row_id
             return False, data

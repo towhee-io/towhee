@@ -57,7 +57,60 @@ class TestFlatmapRunner(unittest.TestCase):
         runner.join()
         out_df.seal()
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
+        it = out_df.map_iter(True)
+        count = 0
+        for item in it:
+            self.assertEqual(item[1].value.parent_path, str(count // 3))
+            count += 1
         self.assertEqual(out_df.size, 9)
+
+    def test_multi_flatmap(self):
+        input_df_1, out_df_1, runner_1 = self._create_test_obj()
+        out_df_2 = DataFrame('output', [('num', 'int')])
+        writer = create_writer('map', [out_df_2])
+        reader = create_reader(out_df_1, 'map', {'num': 0})
+        runner_2 = FlatMapRunner('test', 0, 'repeat_operator', 'main',
+                                 'mock_operators', {'repeat': 4},
+                                 [reader], writer)
+
+        runner_1.set_op(RepeatOperator(3))
+        t1 = threading.Thread(target=run, args=(runner_1, ))
+        t1.start()
+
+        runner_2.set_op(RepeatOperator(4))
+        t2 = threading.Thread(target=run, args=(runner_2, ))
+        t2.start()
+
+        input_df_1.put_dict({'num': 1})
+        input_df_1.put_dict({'num': 2})
+        input_df_1.put_dict({'num': 3})
+        input_df_1.seal()
+        t1.join()
+        runner_1.join()
+
+        # In engine, the op_ctx will do it
+        out_df_1.seal()
+        t2.join()
+        runner_2.join()
+        out_df_2.seal()
+        self.assertEqual(runner_1.status, RunnerStatus.FINISHED)
+        self.assertEqual(runner_2.status, RunnerStatus.FINISHED)
+        self.assertEqual(out_df_2.size, 36)
+        it = out_df_2.map_iter(True)
+        expect = []
+        expect.extend(['0' + '-' + '0'] * 4)
+        expect.extend(['0' + '-' + '1'] * 4)
+        expect.extend(['0' + '-' + '2'] * 4)
+        expect.extend(['1' + '-' + '3'] * 4)
+        expect.extend(['1' + '-' + '4'] * 4)
+        expect.extend(['1' + '-' + '5'] * 4)
+        expect.extend(['2' + '-' + '6'] * 4)
+        expect.extend(['2' + '-' + '7'] * 4)
+        expect.extend(['2' + '-' + '8'] * 4)
+        index = 0
+        for item in it:
+            self.assertEqual(item[-1].value.parent_path, expect[index])
+            index += 1
 
     def test_flatmap_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()

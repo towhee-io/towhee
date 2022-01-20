@@ -89,7 +89,7 @@ class DataFrame:
         return self._sealed
 
     def _set_frame(self, item):
-        if len(item) != 0 and isinstance(item[-1], Variable) and item[-1].vtype == FRAME:
+        if len(item) != 0 and isinstance(item[-1], Variable) and isinstance(item[-1].value, _Frame):
             item[-1].value.row_id = self._total
         else:
             f = _Frame(row_id=self._total)
