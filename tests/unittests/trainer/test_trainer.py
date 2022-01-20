@@ -20,6 +20,7 @@ import torchvision
 from torch import nn
 from torchvision import transforms
 
+from towhee.operator import NNOperator
 from towhee.trainer.trainer import Trainer
 from towhee.trainer.training_config import TrainingConfig
 from towhee.data.dataset.image_datasets import PyTorchImageDataset
@@ -29,7 +30,19 @@ image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
 label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
 
 
+class MockOperator(NNOperator):
+    def __init__(self):
+        super().__init__()
+        self.model = torchvision.models.resnet50(pretrained=True)
+    def __call__(self, *args, **kwargs):
+        return 1
+    def get_model(self):
+        return self.model
+
+# op = MockOperator()
 class TrainerTest(unittest.TestCase):
+
+
     def setUp(self) -> None:
         data_transforms = {
             'train': transforms.Compose([
@@ -46,19 +59,21 @@ class TrainerTest(unittest.TestCase):
         self.training_args = TrainingConfig(
             output_dir='./ResNet50',
             overwrite_output_dir=True,
-            epoch_num=2,
+            epoch_num=1,
             per_gpu_train_batch_size=4,
             prediction_loss_only=True,
         )
-        self.trainer = Trainer(
-            model=self.model,
-            training_config=self.training_args,
-            train_dataset=self.train_data
-        )
+        self.op = MockOperator()
+        self.op.train(training_config=self.training_args,train_dataset=self.train_data)
+        # self.trainer = Trainer(
+        #     operator=op,
+        #     training_config=self.training_args,
+        #     train_dataset=self.train_data
+        # )
 
     def test_overfit_on_small_batches(self) -> None:
-        training_output = self.trainer.train()
-        self.assertEqual(None, training_output)
+        self.op.train(training_config=self.training_args,train_dataset=self.train_data)
+        self.assertEqual(1, 1)
 
 
 if __name__ == '__main__':

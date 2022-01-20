@@ -20,12 +20,17 @@ from datetime import datetime
 from enum import Enum
 
 import torch
+from torch import nn
 
 from typing import List, Optional
+
+from torch.nn.modules.loss import _Loss
+from torch import optim
+from torch.optim import Optimizer
+
 from towhee.trainer.callback import Callback
 from towhee.trainer.utils import logging
-
-
+from towhee.trainer.utils.trainer_utils import SchedulerType
 
 logger = logging.get_logger(__name__)
 log_levels = logging.get_log_levels_dict().copy()
@@ -139,6 +144,20 @@ class TrainingConfig:
     call_back_list: Optional[List[Callback]] = field(
         default=None, metadata={"help": "."}
     )
+    loss: Optional[_Loss] = field(
+        default=nn.CrossEntropyLoss(), metadata={"help": "pytorch loss"}
+    )
+    optimizer: Optional[Optimizer] = field(
+        default=optim.Adam, metadata={"help": "pytorch optimizer"}
+    )
+    lr_scheduler_type: SchedulerType = field(
+        default="linear",
+        metadata={"help": "The scheduler type to use."},
+    )
+    warmup_ratio: float = field(
+        default=0.0, metadata={"help": "Linear warmup over warmup_ratio fraction of total steps."}
+    )
+    warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
 
 
     def __post_init__(self):

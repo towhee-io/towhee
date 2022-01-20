@@ -22,12 +22,11 @@ import warnings
 import numpy as np
 import torch
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Union
 
 from torch import nn
-from torch import optim
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.dataset import Dataset
+from torch.utils.data.dataset import Dataset, IterableDataset
 
 
 #from towhee.trainer.callback import (
@@ -46,6 +45,8 @@ from towhee.trainer.utils.trainer_utils import (
 )
 from towhee.trainer.training_config import TrainingConfig
 from towhee.trainer.utils import logging
+from towhee.trainer.dataset import TowheeDataSet
+from towhee.trainer.optimization.optimization import get_scheduler
 
 # DEFAULT_CALLBACKS = [DefaultFlowCallback]
 # DEFAULT_PRO = ProgressCallback
@@ -57,49 +58,42 @@ WEIGHTS_NAME = "pytorch_model.bin"
 
 class Trainer:
     """
-    PyTorchCNNTrainer is a simple but feature-complete training and eval loop for PyTorch.
-
-    Args:
-        model (:obj:`torch.nn.Module`):
-            The model to train, evaluate or use for predictions.
-        training_config (:class:`~towhee.TrainingArguments`):
-            The arguments to tweak for training. Will default to a basic instance of
-            :class:`~towhee.TrainingArguments` with the ``output_dir`` set to a directory named
-            `tmp_trainer` in the current directory if not provided.
-        train_dataset (:obj:`torch.utils.data.dataset.Dataset`):
-            The dataset to use for training.
-        eval_dataset (:obj:`torch.utils.data.dataset.Dataset`, `optional`):
-             The dataset to use for evaluation.
-        callbacks (List of :obj:`~towhee.TrainerCallback`, `optional`):
-            A list of callbacks to customize the training loop.
-
+    train an operator
     """
 
     def __init__(
             self,
-            model: nn.Module = None,
+            operator: "NNOperator" = None,
+            # model: nn.Module = None,
             training_config: TrainingConfig = None,
-            train_dataset: Optional[Dataset] = None,
-            eval_dataset: Optional[Dataset] = None,
+            train_dataset: Union[Dataset, TowheeDataSet] = None,
+            eval_dataset: Union[Dataset, TowheeDataSet] = None,
             # callbacks: Optional[List[Callback]] = None,
-            optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
-            = (None, None),
+            # optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
+            # = (None, None),
     ):
         if training_config is None:
             output_dir = "tmp_trainer"
             logger.info("No `TrainingArguments` passed, using `output_dir.")
             training_config = TrainingConfig(output_dir=output_dir)
-        self.args = training_config
-
+        self.configs = training_config
+        # operator.model
+        model = operator.get_model()
         if model is None:
             raise RuntimeError("`Trainer` requires either a `model` or `model_init` argument")
 
-        self.train_dataset = train_dataset
-        self.eval_dataset = eval_dataset
+        if isinstance(train_dataset, Dataset):
+            self.train_dataset = train_dataset
+        elif isinstance(train_dataset, TowheeDataSet):
+            self.train_dataset = train_dataset.dataset
 
+        self.eval_dataset = eval_dataset
+        self.operator = operator
         self.model = model
 
-        self.optimizer, self.lr_scheduler = optimizers
+        self.optimizer = self.configs.optimizer
+        self.lr_scheduler_type = self.configs.lr_scheduler_type
+        self.lr_scheduler = None
         # default_callbacks = DEFAULT_CALLBACKS
         # callbacks = default_callbacks if callbacks is None else default_callbacks + callbacks
         # self.callback_handler = CallbackHandler(
@@ -109,7 +103,7 @@ class Trainer:
         #self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
 
 
-        os.makedirs(self.args.output_dir, exist_ok=True)
+        os.makedirs(self.configs.output_dir, exist_ok=True)
 
         if training_config.max_steps > 0:
             logger.info("max_steps is given.")
@@ -126,7 +120,7 @@ class Trainer:
         default_label_names = (
             ["labels"]
         )
-        self.label_names = default_label_names if self.args.label_names is None else self.args.label_names
+        self.label_names = default_label_names if self.configs.label_names is None else self.configs.label_names
         # self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
 
     def add_callback(self, callback):
@@ -140,39 +134,63 @@ class Trainer:
         """
         # self.callback_handler.add_callback(callback)
 
+
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
         """
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
-
-        train_dataset = self.train_dataset
-
+        if isinstance(self.train_dataset, IterableDataset):
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.configs.train_batch_size,
+            )
         return DataLoader(
-            train_dataset,
-            batch_size=self.args.train_batch_size,
+            self.train_dataset,
+            batch_size=self.configs.train_batch_size,
             shuffle=True
         )
 
-    def create_optimizer_and_scheduler(self):
+    def create_optimizer_and_scheduler(self, num_training_steps: int):
         """
         Setup the optimizer and the learning rate scheduler.
         """
         self.create_optimizer()
-        self.create_scheduler()
+        self.create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
 
     def create_optimizer(self):
         """
         Setup the optimizer.
         """
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
+        # self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
+        self.optimizer = self.configs.optimizer(self.model.parameters())
 
-    def create_scheduler(self):
+    def create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
         """
-        Setup the scheduler. The optimizer of the cnn_trainer must have been set up before this method is called.
+        Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
+        passed as an argument.
+
+        Args:
+            num_training_steps (int): The number of training steps to do.
         """
-        self.lr_scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=3, gamma=0.1)
+        if self.lr_scheduler is None:
+            self.lr_scheduler = get_scheduler(
+                self.configs.lr_scheduler_type,
+                optimizer=self.optimizer if optimizer is None else optimizer,
+                num_warmup_steps=self.get_warmup_steps(num_training_steps),
+                num_training_steps=num_training_steps,
+            )
+        return self.lr_scheduler
+
+    def get_warmup_steps(self, num_training_steps: int):
+        """
+        Get number of steps used for a linear warmup.
+        """
+        warmup_steps = (
+            self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(num_training_steps * self.configs.warmup_ratio)
+        )
+        return warmup_steps
 
     def num_examples(self, dataloader: DataLoader) -> int:
         """
@@ -186,7 +204,7 @@ class Trainer:
         """
         Main training entry point.
         """
-        args = self.args
+        args = self.configs
 
         # Keeping track whether we can can len() on the dataset or not
         train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
@@ -215,7 +233,7 @@ class Trainer:
             # Setting a very large number of epochs so we go as many times as necessary over the iterator.
             num_train_epochs = sys.maxsize
 
-        self.create_optimizer_and_scheduler()
+        self.create_optimizer_and_scheduler(num_training_steps=max_steps)
 
         # self.state = TrainerState()
 
@@ -318,25 +336,25 @@ class Trainer:
         self.control.should_save = False
         if self.control.should_save:
             self._save_checkpoint()
-            self.control = self.callback_handler.on_save(self.args, self.state, self.control)
+            self.control = self.callback_handler.on_save(self.configs, self.state, self.control)
 
     def _save_checkpoint(self):
         # Save model checkpoint
         checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
 
-        run_dir = self.args.output_dir
+        run_dir = self.configs.output_dir
 
         output_dir = os.path.join(run_dir, checkpoint_folder)
         self.save_model(output_dir)
 
         # Save optimizer and scheduler
-        if self.args.should_save:
+        if self.configs.should_save:
             torch.save(self.optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
             with warnings.catch_warnings(record=True):
                 torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
 
         # Save the Trainer state
-        if self.args.should_save:
+        if self.configs.should_save:
             self.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
 
         # Save RNG state in non-distributed training
@@ -361,7 +379,7 @@ class Trainer:
 
         output = {**logs, **{"step": self.state.global_step}}
         self.state.log_history.append(output)
-        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
+        self.control = self.callback_handler.on_log(self.configs, self.state, self.control, logs)
 
     def training_step(self, model: nn.Module, inputs: List[torch.Tensor]) -> torch.Tensor:
         """
@@ -381,7 +399,7 @@ class Trainer:
 
         loss, corrects = self.compute_loss(model, inputs)
 
-        if self.args.n_gpu > 1:
+        if self.configs.n_gpu > 1:
             loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
         loss.backward()
@@ -413,22 +431,85 @@ class Trainer:
         """
 
         if output_dir is None:
-            output_dir = self.args.output_dir
+            output_dir = self.configs.output_dir
 
         state_dict = self.model.state_dict()
-        if self.args.should_save:
+        if self.configs.should_save:
             self._save(output_dir, state_dict)
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         # If we are executing this function, we are the process zero, so we don't check for that.
-        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        output_dir = output_dir if output_dir is not None else self.configs.output_dir
         os.makedirs(output_dir, exist_ok=True)
         logger.info("Saving model checkpoint to %s", output_dir)
         torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
 
         # Good practice: save your training arguments together with the trained model
-        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+        torch.save(self.configs, os.path.join(output_dir, "training_args.bin"))
 
     def push_model_to_hub(self):
         pass
 
+# if __name__ == '__main__':
+#     from torchvision import transforms
+#     # data_train = datasets.MNIST(root="./data/",
+#     #                             transform=transform,
+#     #                             train=True,
+#     #                             download=True)
+#     #
+#     # data_test = datasets.MNIST(root="./data/",
+#     #                            transform=transform,
+#     #                            train=False)
+#     # data_loader_train = torch.utils.data.DataLoader(dataset=data_train,
+#     #                                                 batch_size=64,
+#     #                                                 shuffle=True)
+#     #
+#     # data_loader_test = torch.utils.data.DataLoader(dataset=data_test,
+#     #                                                batch_size=64,
+#     #                                                shuffle=True)
+#
+#     class Model(torch.nn.Module):
+#         def __init__(self):
+#             super(Model, self).__init__()
+#             self.conv1 = torch.nn.Sequential(torch.nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+#                                              torch.nn.ReLU(),
+#                                              torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+#                                              torch.nn.ReLU(),
+#                                              torch.nn.MaxPool2d(stride=2, kernel_size=2))
+#             self.dense = torch.nn.Sequential(torch.nn.Linear(14 * 14 * 128, 1024),
+#                                              torch.nn.ReLU(),
+#                                              torch.nn.Dropout(p=0.5),
+#                                              torch.nn.Linear(1024, 10))
+#
+#         def forward(self, x):
+#             x = self.conv1(x)
+#             x = x.view(-1, 14 * 14 * 128)
+#             x = self.dense(x)
+#             return x
+#
+#     model = Model()
+#     cost = torch.nn.CrossEntropyLoss()
+#     optimizer = torch.optim.Adam(model.parameters())
+#
+#     training_config = TrainingConfig(
+#             output_dir='./temp_output',
+#             overwrite_output_dir=True,
+#             epoch_num=2,
+#             per_gpu_train_batch_size=64,
+#             prediction_loss_only=True,
+#         )
+#     mnist_transform = transforms.Compose([transforms.ToTensor(),
+#                                     transforms.Normalize(mean=[0.5], std=[0.5])])
+#     data_train = get_dataset('mnist', transform=mnist_transform)
+#     # data_train = get_dataset('imdb', root='./data1', split='test')#, transform=mnist_transform)
+#     # s = data_train.dataset.extra_repr()
+#     # print('1')
+#     # print(isinstance(data_train, torch.utils.data.IterableDataset))
+#     # print(s)
+#     print(data_train.get_framework())
+#     trainer = Trainer(
+#         model=model,
+#         training_config=training_config,
+#         train_dataset=data_train
+#     )
+#     trainer.train()

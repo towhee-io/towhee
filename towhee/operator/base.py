@@ -24,6 +24,8 @@ from enum import Enum
 
 # Shareable:
 #    Stateless operator
+from towhee.trainer.trainer import Trainer
+
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
 
@@ -90,6 +92,8 @@ class NNOperator(Operator):
     def __init__(self, framework: str = 'pytorch'):
         super().__init__()
         self._framework = framework
+        self.model = None
+        self.trainer = None
 
     @property
     def framework(self):
@@ -99,12 +103,29 @@ class NNOperator(Operator):
     def framework(self, framework: str):
         self._framework = framework
 
-    def train(self):
+    def get_model(self):
+        """
+        get the framework naive model
+        """
+        raise NotImplementedError()
+
+    def train(self, training_config=None, train_dataset=None, eval_dataset=None):
         """
         For training model
         """
-        raise NotImplementedError
+        if self.trainer is None:
+            self.trainer = Trainer(self, training_config, train_dataset, eval_dataset)
+        self.trainer.train()
 
+    def set_trainer(self, training_config, train_dataset=None, eval_dataset=None):
+        self.trainer = Trainer(self, training_config, train_dataset, eval_dataset)
+
+    #     self.tainer.train()
+    #     raise NotImplementedError
+    # def load_weithts(self):
+    #     self.trainer.load()
+    # def save(self):
+    #     self.trainer.save(..)
 
 class PyOperator(Operator):
     """
