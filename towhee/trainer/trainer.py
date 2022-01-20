@@ -29,6 +29,7 @@ from torch import optim
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 
+
 #from towhee.trainer.callback import (
 #     Callback
 #     CallbackHandler,
@@ -39,6 +40,7 @@ from torch.utils.data.dataset import Dataset
 #     TrainerControl,
 #     TrainerState,
 #)
+
 from towhee.trainer.utils.trainer_utils import (
     PREFIX_CHECKPOINT_DIR,
 )
@@ -103,7 +105,9 @@ class Trainer:
         # self.callback_handler = CallbackHandler(
         #     callbacks, self.model, self.optimizer, self.lr_scheduler
         # )
+
         #self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
+
 
         os.makedirs(self.args.output_dir, exist_ok=True)
 

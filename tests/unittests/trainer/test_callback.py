@@ -201,5 +201,6 @@ class TestCallback(unittest.TestCase):
         _assert_eval_attrs('on_eval_begin', 1 * num_callbacks)
         _assert_eval_attrs('on_eval_end', 1 * num_callbacks)
 
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
