@@ -116,7 +116,7 @@ class Array:
 
     def set_name(self, name):
         self._name = name
-    
+
     def clear(self):
         self._data = []
         self._offset = 0
