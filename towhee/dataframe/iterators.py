@@ -23,15 +23,14 @@ class BaseIterator:
     def __next__(self):
         """
         Returns:
-            (`Tuple[Any, ...]`)
-                In the normal case, the iterator will return a `Tuple` at each call.
+            (`list(tuple([Any, ...])`)
+                In the normal case, the iterator will return a list of tuples at each call.
             (`None`)
                 In the case that the `DataFrame` is not sealed and the new rows are
-                not ready yet, the iterator will return `None`. The caller should
-                determine whether to block the iteration or exit the loop.
+                not ready yet, the iterator will return `None`.
         Raises:
             (`StopIteration`)
-                The iteration end iff the `DataFrame` is sealed and the last row is
+                The iteration end if the `DataFrame` is sealed and the last row is
                 reached.
         """
         if self._done:
@@ -89,7 +88,7 @@ class MapIterator(BaseIterator):
 
 class BatchIterator(BaseIterator):
     """
-    A row-based batch `DataFrame` iterator.
+    A row-based batched map `DataFrame` iterator.
     """
     def __init__(self, df: DataFrame, batch_size = 1, step = 1, block = True):
         super().__init__(df, batch_size = batch_size, step = step, block = block)
@@ -111,8 +110,8 @@ class WindowIterator(BaseIterator):
     def __next__(self):
         """
         Returns:
-            (`Tuple[Any, ...]`)
-                In the normal case, the iterator will return a `Tuple` at each call.
+            (`list(Tuple[Any, ...])`)
+                In the normal case, the iterator will return a list of `tuple` at each call.
             (`None`)
                 In the case that the `DataFrame` is not sealed and the new rows are
                 not ready yet, the iterator will return `None`. The caller should

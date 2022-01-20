@@ -19,7 +19,7 @@ class TestIterators(unittest.TestCase):
             return temp
         else:
             values = list(inputs)
-            values = [value for value in values if type(value) != _Frame]
+            values = [value for value in values if not isinstance(value, _Frame)]
             return tuple(values)
 
     def gen_data(self):
@@ -32,9 +32,9 @@ class TestIterators(unittest.TestCase):
         data, columns = self.gen_data()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
-
         it = MapIterator(df)
-        it2 = BatchIterator(df, batch_size=4, step= 4) 
+        it2 = BatchIterator(df, batch_size=4, step= 4)
+        print(df)
 
         # MapIter
         res = []
@@ -149,7 +149,7 @@ class TestIterators(unittest.TestCase):
 
         # Assert cleared df
         self.assertEqual(df.physical_size, 0)
-    
+
     def test_blocking_window_iters(self):
         data, columns = self.gen_data()
         df = DataFrame(columns, name = 'my_df', data = data)
@@ -169,10 +169,10 @@ class TestIterators(unittest.TestCase):
         df.put((10, 'f'))
         df.put((11, 'g'))
         time.sleep(.1)
-        self.assertEqual(self.remove_frame(list(q.queue)), [[(0, 'a'), (1, 'b')], 
-            [(2, 'c'), (3, 'd')], [(4, 'e'), (5, 'a')], [(6, 'b'), (7, 'c')], [(8, 'd'), 
+        self.assertEqual(self.remove_frame(list(q.queue)), [[(0, 'a'), (1, 'b')],
+            [(2, 'c'), (3, 'd')], [(4, 'e'), (5, 'a')], [(6, 'b'), (7, 'c')], [(8, 'd'),
             (9, 'e')]])
-        self.assertEqual(self.remove_frame(list(q2.queue)), [[(0, 'a'), (1, 'b'), (2, 'c')], 
+        self.assertEqual(self.remove_frame(list(q2.queue)), [[(0, 'a'), (1, 'b'), (2, 'c')],
             [(3, 'd'), (4, 'e'), (5, 'a')], [(6, 'b'), (7, 'c'), (8, 'd')]])
         self.assertEqual(df.physical_size, 3)
         df.put((12, 'h'))

@@ -225,13 +225,13 @@ class DataFrame:
                 val.append()
                 self._data_as_list.append(val)
                 self._data_as_dict[key] = self._data_as_list[-1]
-            
+
         else:
             for i, arr in enumerate(data.values()):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
-        
+
 
     def __getitem__(self, key):
         """Get data at the passed in offset."""
@@ -255,13 +255,11 @@ class DataFrame:
                 columns.append(self._data_as_list[x].name)
                 formater += '{' + str(x) + ':30}'
             ret += formater.format(*columns) + '\n'
-            print(self.physical_size)
             for x in range(self._min_offset, self._min_offset + self.physical_size):
                 values = []
-                print(x)
                 for i in range(len(self._data_as_list)):
                     val = self._data_as_list[i][x]
-                    if type(val) == _Frame:
+                    if isinstance(val, _Frame):
                         val = (val.row_id, val.timestamp)
                     values.append(str(val))
                 ret += formater.format(*values) + '\n'
@@ -318,14 +316,14 @@ class DataFrame:
             offset (`int`):
                 The starting index to read data from.
             cutoff ("timestamp" | "row_id", `int`):
-                The current upper window limit. 
+                The current upper window limit.
             iter_id (`int`):
                 Which iterator is reading the data.
         Raises:
             ValueError:
                 Incorrect _Frame column.
         Returns:
-            Responses: 
+            Responses:
                 Different states of response codes depending on the dataframe state.
         """
 
@@ -333,7 +331,7 @@ class DataFrame:
         with self._iterator_lock:
             if iter_id is not None and self._iterators[iter_id] == float('inf'):
                 return Responses.KILLED, None
-        
+
         # If there is no schema that means that initialization broke at some point.
         if self._schema is None:
             raise ValueError('Schema not set.')
@@ -413,7 +411,7 @@ class DataFrame:
             if offset < self._min_offset:
                 return Responses.INDEX_GC, None
 
-            # The batch of data is available and there is more available. 
+            # The batch of data is available and there is more available.
             elif offset + count <= self._len:
                 return Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, offset + count)]
 
@@ -428,7 +426,7 @@ class DataFrame:
 
             # If the requested offset is out of bounds but dataframe is still writing data.
             elif offset + count >= self._len:
-                return Responses.INDEX_OOB_UNSEALED, None 
+                return Responses.INDEX_OOB_UNSEALED, None
 
             # Something broke.
             else:
@@ -439,17 +437,9 @@ class DataFrame:
         Append a new value to the dataframe.
 
         Args:
-            item (dict(towhee.Array) | ):
-                The starting index to read data from.
-            count (`int`):
-                How many values to retrieve.
-            iter_id (`int`):
-                Which iterator is reading the data.
+            item (dict | list | Array | tuple):
+                The row to insert.
 
-        For now it takes:
-        tuple
-        towhee array
-        dict(requires col names)
         """
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, (tuple, dict, list)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
@@ -458,7 +448,7 @@ class DataFrame:
                 self._put_list(item)
             elif isinstance(item, dict):
                 self._put_dict(item)
-            else: # type(item) is tuple:
+            else:
                 self._put_tuple(item)
 
             self._data_as_dict['_frame'].put(_Frame(self._row_iter))
@@ -484,6 +474,7 @@ class DataFrame:
                     del self._window_blocked[key]
 
     def _put_list(self, item: list):
+        """Appending a list to the dataframe."""
         assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
@@ -494,6 +485,7 @@ class DataFrame:
             self._data_as_list[i].put(x)
 
     def _put_tuple(self, item: tuple):
+        """Appending a tuple to the dataframe."""
         assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
@@ -504,6 +496,7 @@ class DataFrame:
             self._data_as_list[i].put(x)
 
     def _put_dict(self, item: dict):
+        """Appending a dict to the dataframe."""
         assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
@@ -514,6 +507,10 @@ class DataFrame:
             self._data_as_list[self._schema.col_index(key)].put(val)
 
     def seal(self):
+        """
+        Function to seal the dataframe. A sealed dataframe will not accept anymore data and
+        the act of sealing the dataframe will trigger blocked iterators to pull the remaining data.
+        """
         with self._data_lock:
             self._sealed = True
             for _, id_event in self._map_blocked.items():
@@ -526,12 +523,20 @@ class DataFrame:
             self._window_blocked.clear()
 
     def gc(self):
+        """Internal garbage collection function to trigger towhee.Array GC."""
         with self._data_lock:
             self._min_offset = min([value for _, value in self._iterators.items()])
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
     def register_iter(self):
+        """
+        Registering an iter allows the df to keep track of where each iterator is in order
+        to coordinate garbage collection and other processes.
+
+        Returns:
+            An iterator ID that is used for a majority of iterator-dataframe interaction.
+        """
         with self._iterator_lock:
             self._it_id += 1
             self._iterators[self._it_id] = 0
@@ -539,10 +544,8 @@ class DataFrame:
 
     def ack(self, iter_id, offset):
         """
-        To notice the DataFrame that the iterated rows has been successfully processed.
-
         An acknowledgement (ack) will notice the `DataFrame`s that the rows already
-        iterated over are no longer used, and can be deleted from the system.
+        iterated over are no longer used, and can be garbage collected.
 
         Args:
             iter_id (`int`):
@@ -556,15 +559,38 @@ class DataFrame:
         self.gc()
 
     def notify_map_block(self, iter_id, event, offset, count):
+        """
+        Used by map based iterators to notify the dataframe that it is waiting on a value.
+
+        Args:
+            iter_id (`int`):
+                The iterator id of the blocked iterator.
+            event (`threading.Event`):
+                The event to trigger once the value being waited on is available.
+            offset (`int`):
+                The offset that is being waited on.
+            count (`int):
+                How many values are being waited on.
+        """
         with self._iterator_lock:
             index = offset + count
             if self._map_blocked.get(index) is None:
                 self._map_blocked[index] = []
             self._map_blocked[index].append((iter_id, event))
             return True
-    
+
     def notify_window_block(self, iter_id, event, cutoff):
-        # cutoff = ('timestamp' or 'row_id', int)
+        """
+        Used by window based iterators to notify the dataframe that it is waiting on a value.
+
+        Args:
+            iter_id (`int`):
+                The iterator id of the blocked iterator.
+            event (`threading.Event`):
+                The event to trigger once the value being waited on is available.
+            cutoff ("timestamp" | "row_id", `int`):
+                The window cutoff that is is being waited on.
+        """
         with self._iterator_lock:
             if self._window_blocked.get(cutoff) is None:
                 self._window_blocked[cutoff] = []
@@ -574,6 +600,9 @@ class DataFrame:
 
     # TODO kill blocked iters or kill all iters?
     def unblock_iters(self):
+        """
+        Forceful unblocking/killing of the blocked iters.
+        """
         with self._iterator_lock:
             for _, id_event in self._map_blocked.items():
                 for it_id, event in id_event:
@@ -594,4 +623,3 @@ class Responses(Enum):
     KILLED = 6
     UNKOWN_ERROR = 7
     WINDOW_NOT_DONE = 8
-    
