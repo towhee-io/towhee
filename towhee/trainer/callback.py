@@ -1,5 +1,4 @@
-# coding=utf-8
-# Copyright 2020-present the HuggingFace Inc. team and 2021 Zilliz.
+# Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,131 +11,202 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Dict, Tuple, List
 
-# import collections
-#
-# from tqdm.auto import tqdm
+from torch import nn
+from torch.optim import Optimizer
+
 from towhee.trainer.utils import logging
+
+__all__ = [
+    'Callback',
+    'CallbackList',
+    'TrainerControl'
+]
+
+def configure_callbacklist(configs: Dict) -> None:
+    # TODO: construct the callbacks from configure file.
+    raise NotImplementedError
 
 logger = logging.get_logger(__name__)
 
+class TrainerControl:
+    """
+    `TrainerControl` defines a set of current control status which trainer
+    can get and take the corresponding action. It can be used by customized
+    `Callback` to interfere the trainer.
+
+    Args:
+        should_training_stop: (`bool`)
+            whether or not training should be interrupted.
+        should_epoch_stop: (`bool`)
+            whether or not current training epoch should be interrupted.
+        should_save: (`bool`)
+            whether or not trainer should save current model.
+        should_evaluate: (`bool`)
+            whether or not trainer should evaluate current model.
+        should_log: (`bool`)
+            whether or not trainer should report the log.
+    """
+
+    def __init__(self,
+                should_training_stop = False,
+                should_epoch_stop = False,
+                should_save = False,
+                should_evaluate = False,
+                should_log = False):
+        self.should_training_stop = should_training_stop
+        self.should_epoch_stop = should_epoch_stop
+        self.should_save = should_save
+        self.should_evaluate = should_evaluate
+        self.should_log = should_log
 
 class Callback:
     """
-    A class for objects that will inspect the state of the training loop at some events and take some decisions. At
-    each of those events the following arguments are available:
-    Args:
-        args (:class:`~towhee.TrainingArguments`):
-            The training arguments used to instantiate the :class:`~towhee.Trainer`.
-        state (:class:`~towhee.TrainerState`):
-            The current state of the :class:`~towhee.Trainer`.
-        control (:class:`~towhee.TrainerControl`):
-            The object that is returned to the :class:`~towhee.Trainer` and can be used to make some decisions.
-        model (:obj:`torch.nn.Module`):
-            The model being trained.
-        optimizer (:obj:`torch.optim.Optimizer`):
-            The optimizer used for the training steps.
-        lr_scheduler (:obj:`torch.optim.lr_scheduler.LambdaLR`):
-            The scheduler used for setting the learning rate.
-        train_dataloader (:obj:`torch.utils.data.dataloader.DataLoader`, `optional`):
-            The current dataloader used for training.
-        eval_dataloader (:obj:`torch.utils.data.dataloader.DataLoader`, `optional`):
-            The current dataloader used for training.
-        logs  (:obj:`Dict[str, float]`):
-            The values to log.
-            Those are only accessible in the event :obj:`on_log`.
-    The :obj:`control` object is the only one that can be changed by the callback, in which case the event that changes
-    it should return the modified version.
-    The argument :obj:`args`, :obj:`state` and :obj:`control` are positionals for all events, all the others are
-    grouped in :obj:`kwargs`. You can unpack the ones you need in the signature of the event using them. As an example,
-    see the code of the simple :class:`~towhee.PrinterCallback`.
-    """
-
-    def on_init_end(self ):
-        """
-        Event called at the end of the initialization of the :class:`~towhee.Trainer`.
-        """
-        pass
-
-    def on_train_begin(self ):
-        """
-        Event called at the beginning of training.
-        """
-        pass
-
-    def on_train_end(self ):
-        """
-        Event called at the end of training.
-        """
-        pass
-
-    def on_epoch_begin(self ):
-        """
-        Event called at the beginning of an epoch.
-        """
-        pass
-
-    def on_epoch_end(self ):
-        """
-        Event called at the end of an epoch.
-        """
-        pass
-
-    def on_step_begin(self ):
-        """
-        Event called at the beginning of a training step. If using gradient accumulation, one training step might take
-        several inputs.
-        """
-        pass
-
-    def on_step_end(self ):
-        """
-        Event called at the end of a training step. If using gradient accumulation, one training step might take
-        several inputs.
-        """
-        pass
-
-    def on_evaluate(self ):
-        """
-        Event called after an evaluation phase.
-        """
-        pass
-
-    def on_save(self ):
-        """
-        Event called after a checkpoint save.
-        """
-        pass
-
-    def on_log(self ):
-        """
-        Event called after logging the last logs.
-        """
-        pass
-
-    def on_prediction_step(self ):
-        """
-        Event called after a prediction step.
-        """
-        pass
-
-
-
-
-class ProgressCallback(Callback):
-    """
-    A :class:`~towhee.TrainerCallback` that displays the progress of training or evaluation.
+    `Callback` defines a set of functions which will be called in the training
+    process. Customized `Callback` could inherent the base `Callback` and
+    overwrite its methods to control the training process or handle the training
+    information.
     """
 
     def __init__(self):
-        self.training_bar = None
-        self.prediction_bar = None
+        self.model = None
+        self.optimizer = None
+        self.trainercontrol = None
 
+    def set_model(self, model: nn.Module) -> None:
+        self.model = model
 
-class PrinterCallback(Callback):
-    """
-    A bare :class:`~towhee.TrainerCallback` that just prints the logs.
-    """
+    def set_optimizer(self, optimizer: Optimizer) -> None:
+        self.optimizer = optimizer
 
-    def on_log(self ):
+    def set_trainercontrol(self, trainercontrol: TrainerControl) -> None:
+        self.trainercontrol = trainercontrol
+
+    def on_batch_begin(self, batch: Tuple, logs: Dict) -> None:
         pass
+
+    def on_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        pass
+
+    def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
+        pass
+
+    def on_epoch_end(self, epochs: int, logs: Dict) -> None:
+        pass
+
+    def on_train_begin(self, logs: Dict) -> None:
+        pass
+
+    def on_train_end(self, logs: Dict) -> None:
+        pass
+
+    def on_train_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        self.on_batch_begin(batch, logs)
+
+    def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        self.on_batch_end(batch, logs)
+
+    def on_eval_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        self.on_batch_begin(batch, logs)
+
+    def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        self.on_batch_end(batch, logs)
+
+    def on_eval_begin(self, logs: Dict) -> Dict:
+        pass
+
+    def on_eval_end(self, logs: Dict) -> Dict:
+        pass
+
+class CallbackList:
+    """
+    `CallbackList` aggregate multiple `Callback` in the same object. Invoke the
+    callbacks of `CallbackList` will invoke corresponding callback in each
+    'Callback' in the FIFO sequential order.
+    """
+    def __init__(self, callbacks: List[Callback]):
+        self.callbacks = []
+        self.callbacks.extend(callbacks)
+
+    def __len__(self) -> int:
+        return len(self.callbacks)
+
+    def __getitem__(self, idx: int) -> Callback:
+        return self.callbacks[idx]
+
+    def __repr__(self):
+        callback_desc = ''
+        for cb in self.callbacks:
+            callback_desc += cb.__repr__() + ','
+        return 'towhee.trainer.CallbackList([{}])'.format(callback_desc)
+
+    def set_model(self, model: nn.Module):
+        self.model = model
+        for cb in self.callbacks:
+            cb.set_model(model)
+
+    def set_optimizer(self, optimizer: Optimizer):
+        self.optimizer = optimizer
+        for cb in self.callbacks:
+            cb.set_optimizer(optimizer)
+
+    def set_trainercontrol(self, trainercontrol: TrainerControl):
+        self.trainercontrol = TrainerControl
+        for cb in self.callbacks:
+            cb.set_trainercontrol(trainercontrol)
+
+    def add_callback(self, callback: Callback):
+        self.callbacks.append(callback)
+
+    def pop_callback(self, callback: Callback):
+        self.callbacks.remove(callback)
+
+    def on_batch_begin(self, epochs: int, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_batch_begin(epochs, batch, logs)
+
+    def on_batch_end(self, epochs: int, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_batch_end(epochs, batch, logs)
+
+    def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_epoch_begin(epochs, logs)
+
+    def on_epoch_end(self, epochs: int, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_epoch_end(epochs, logs)
+
+    def on_train_begin(self, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_train_begin(logs)
+
+    def on_train_end(self, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_train_end(logs)
+
+    def on_train_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_train_batch_begin(batch, logs)
+
+    def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_train_batch_end(batch, logs)
+
+    def on_eval_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_eval_batch_begin(batch, logs)
+
+    def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        for cb in self.callbacks:
+            cb.on_eval_batch_end(batch, logs)
+
+    def on_eval_begin(self, logs: Dict) -> Dict:
+        for cb in self.callbacks:
+            cb.on_eval_begin(logs)
+
+    def on_eval_end(self, logs: Dict) -> Dict:
+        for cb in self.callbacks:
+            cb.on_eval_end(logs)
+
