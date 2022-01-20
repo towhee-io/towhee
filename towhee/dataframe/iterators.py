@@ -128,7 +128,6 @@ class WindowIterator(BaseIterator):
         df = self._df_ref()
         cutoff = (self._comparator, self._current_window)
         code, rows = df.get_window(offset = self._offset, cutoff = cutoff, iter_id = self._id)
-        print(code, rows)
 
         if code == Responses.INDEX_GC:
             raise IndexError
@@ -138,9 +137,7 @@ class WindowIterator(BaseIterator):
                 df.notify_window_block(self._id, self._event, (self._comparator, self._current_window))
                 self._event.wait()
                 self._event.clear()
-                print("got here")
                 x = self.__next__()
-                print(x, 'current', self._current_window)
                 return x
 
             # line if window doesnt need to wait for all if not blocking
