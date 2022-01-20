@@ -60,7 +60,7 @@ class DataFrame:
         self._len = 0
         self._data_as_list = None
         self._data_as_dict = None
-
+        self._row_iter = 0
         self._schema = None
 
         # TODO: Better solution for no data whatsoever
@@ -86,6 +86,16 @@ class DataFrame:
             self._set_cols(columns)
             self._extract_data(data)
 
+        self._add_frame()
+
+    def _add_frame(self):
+        arr = Array(name = '_frame')
+        for _ in range(self._len):
+            arr.put(_Frame(self._row_iter))
+            self._row_iter += 1
+        self._schema.add_col('_frame', col_type=_Frame)
+        self._data_as_list.append(arr)
+        self._data_as_dict['_frame'] = self._data_as_list[-1]
 
     def _from_none(self):
         self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
@@ -206,13 +216,16 @@ class DataFrame:
         if self._schema is None:
             for key, val in data.items():
                 val.set_name(key)
+                val.append()
                 self._data_as_list.append(val)
                 self._data_as_dict[key] = self._data_as_list[-1]
+            
         else:
             for i, arr in enumerate(data.values()):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
                 self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+        
 
     def __getitem__(self, key):
         with self._data_lock:
@@ -235,11 +248,15 @@ class DataFrame:
                 columns.append(self._data_as_list[x].name)
                 formater += '{' + str(x) + ':30}'
             ret += formater.format(*columns) + '\n'
-
+            print(self.physical_size)
             for x in range(self._min_offset, self._min_offset + self.physical_size):
                 values = []
+                print(x)
                 for i in range(len(self._data_as_list)):
-                    values.append(str(self._data_as_list[i][x]))
+                    val = self._data_as_list[i][x]
+                    if type(val) == _Frame:
+                        val = (val.row_id, val.timestamp)
+                    values.append(str(val))
                 ret += formater.format(*values) + '\n'
 
             return ret
@@ -389,11 +406,11 @@ class DataFrame:
             else: # type(item) is tuple:
                 self._put_tuple(item)
 
+            self._data_as_dict['_frame'].put(_Frame(self._row_iter))
+            self._row_iter += 1
             self._len += 1
             cur_len = self._len
             frame = self._data_as_dict['_frame'][-1]
-
-        
 
         with self._iterator_lock:
             if len(self._map_blocked) > 0:
@@ -410,12 +427,9 @@ class DataFrame:
                         rem.append(cutoff)
                 for key in rem:
                     del self._window_blocked[key]
-                    
-
-                    
 
     def _put_list(self, item: list):
-        assert len(item) == len(self._schema.col_count)
+        assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
@@ -425,7 +439,7 @@ class DataFrame:
             self._data_as_list[i].put(x)
 
     def _put_tuple(self, item: tuple):
-        assert len(item) == self._schema.col_count
+        assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
         for i, x in enumerate(item):
@@ -435,7 +449,7 @@ class DataFrame:
             self._data_as_list[i].put(x)
 
     def _put_dict(self, item: dict):
-        assert len(item) == self._schema.col_count
+        assert len(item) == self._schema.col_count - 1
 
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():

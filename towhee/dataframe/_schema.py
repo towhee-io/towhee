@@ -13,6 +13,9 @@
  # limitations under the License.
 
 
+from typing import Any
+
+
 class _Schema:
     """
     Schema of dataframe.
@@ -24,7 +27,7 @@ class _Schema:
         self._cols = []
         self._key_index = {}
 
-    def add_col(self, name: str, col_type: str) -> bool:
+    def add_col(self, name: str, col_type: Any) -> bool:
         if name in self._key_index:
             return False
 
