@@ -423,7 +423,7 @@ def create_repo(repo: str, token: str, repo_type: str) -> None:
         raise e
 
 
-def init_file_structure(author: str, repo: str, repo_type: str) -> None:
+def init_file_structure(author: str, repo: str, repo_type: str, is_nn: bool = False) -> None:
     """
     Initialized the file structure with template.
 
@@ -448,14 +448,22 @@ def init_file_structure(author: str, repo: str, repo_type: str) -> None:
     subprocess.call(['git', 'clone', links])
     repo_file_name = repo.replace('-', '_')
     if repo_type == 'operator':
-        # TODO: distinguish nnop and pyop (Shiyu)
-        lfs_files = obtain_lfs_extensions('towhee', 'operator-template', 'main')
-        commit = latest_branch_commit('towhee', 'operator-template', 'main')
-        file_list = get_file_list('towhee', 'operator-template', commit)
-        download_files('towhee', 'operator-template', 'main', file_list, lfs_files, str(Path.cwd() / repo), False)
+        if is_nn:
+            lfs_files = obtain_lfs_extensions('towhee', 'nnoperator-template', 'main')
+            commit = latest_branch_commit('towhee', 'nnoperator-template', 'main')
+            file_list = get_file_list('towhee', 'nnoperator-template', commit)
+            download_files('towhee', 'nnoperator-template', 'main', file_list, lfs_files, str(Path.cwd() / repo), False)
 
-        (Path(repo) / 'operator_template.py').rename(Path(repo) / (repo_file_name + '.py'))
-        (Path(repo) / 'operator_template.yaml').rename(Path(repo) / (repo_file_name + '.yaml'))
+            (Path(repo) / 'nnoperator_template.py').rename(Path(repo) / (repo_file_name + '.py'))
+            (Path(repo) / 'nnoperator_template.yaml').rename(Path(repo) / (repo_file_name + '.yaml'))
+        else:
+            lfs_files = obtain_lfs_extensions('towhee', 'pyoperator-template', 'main')
+            commit = latest_branch_commit('towhee', 'pyoperator-template', 'main')
+            file_list = get_file_list('towhee', 'pyoperator-template', commit)
+            download_files('towhee', 'pyoperator-template', 'main', file_list, lfs_files, str(Path.cwd() / repo), False)
+
+            (Path(repo) / 'pyoperator_template.py').rename(Path(repo) / (repo_file_name + '.py'))
+            (Path(repo) / 'pyoperator_template.yaml').rename(Path(repo) / (repo_file_name + '.yaml'))
 
     elif repo_type == 'pipeline':
         lfs_files = obtain_lfs_extensions('towhee', 'pipeline-template', 'main')
@@ -613,8 +621,13 @@ def main(argv):
         init_choice = input('Do you want to clone the repo from hub with template? [Y|n]\n')
 
         if init_choice.lower() in ['yes', 'y']:
+            is_nn = False
+            if repo_type == 'operator':
+                nn_choice = input('Is it an nnoperator(neural network related)? [Y|n]\n')
+                if nn_choice.lower() in ['yes', 'y']:
+                    is_nn = True
             print('Clone with template...')
-            init_file_structure(author, repo, repo_type)
+            init_file_structure(author, repo, repo_type, is_nn)
 
         print('Done')
 
@@ -650,8 +663,14 @@ def main(argv):
             repo = input('Please enter the repo name: ')
         if not repo_type:
             repo_type = input('Please enter the repo type, choose one from "operator | pipeline": ')
+
+        is_nn = False
+        if repo_type == 'operator':
+            nn_choice = input('Is it an nnoperator(neural network related)? [Y|n]\n')
+            if nn_choice.lower() in ['yes', 'y']:
+                is_nn = True
         print('Clone with template...')
-        init_file_structure(author, repo, repo_type)
+        init_file_structure(author, repo, repo_type, is_nn)
 
 
 if __name__ == '__main__':
