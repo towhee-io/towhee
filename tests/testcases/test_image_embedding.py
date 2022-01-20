@@ -199,8 +199,7 @@ class TestImageEmbeddingStress:
                 embedding = embedding_pipeline(data_path + "towhee_test_image0.jpg")
             except Exception as e:
                 print("Raise Exception: %s" % e)
-
-       print("embedding images for %d round" % (i+1))
+            print("embedding images for %d round" % (i+1))
 
        return True
 
@@ -224,6 +223,7 @@ class TestImageEmbeddingPerformance:
                 time_cost.append(time.time() - time_start)
             except Exception as e:
                 print( "Raise Exception: %s" % e)
+            print("embedding audios for %d round" % (i+1))
         time_cost = np.array(time_cost)
         total_time = np.sum(time_cost)
         print(f"The total time is",total_time)

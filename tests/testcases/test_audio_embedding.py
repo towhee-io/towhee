@@ -200,8 +200,7 @@ class TestAudioEmbeddingStress:
                 embedding = embedding_pipeline(data_path + "towhee_test_audio_1.wav")
             except Exception as e:
                 print( "Raise Exception: %s" % e)
-
-        print("embedding audios for %d round" % (i+1))
+            print("embedding audios for %d round" % (i+1))
 
         return True
 
@@ -226,6 +225,7 @@ class TestAudioEmbeddingPerformance:
                 time_cost.append(time.time() - time_start)
             except Exception as e:
                 print( "Raise Exception: %s" % e)
+            print("embedding audios for %d round" % (i+1))
         time_cost = np.array(time_cost)
         total_time = np.sum(time_cost)
         avg_time = round(total_time/num, 3)
