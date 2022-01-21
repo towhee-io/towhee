@@ -23,7 +23,7 @@ from towhee.dag.graph_repr import GraphRepr
 from tests.unittests.test_util import GRAPH_TEST_YAML, GRAPH_TEST_ISO_DF_YAML, GRAPH_TEST_ISO_OP_YAML, GRAPH_TEST_LOOP_YAML
 
 
-@unittest.skip('')
+# @unittest.skip('')
 class TestRepr(unittest.TestCase):
     """
     Basic test cases for `Repr`.
@@ -110,3 +110,21 @@ class TestRepr(unittest.TestCase):
         del err2['operators'][0]['init_args']
         with self.assertRaises(ValueError):
             GraphRepr.from_dict(err2)
+
+    def test_load_str(self):
+        with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
+            res = BaseRepr.load_str(f)
+
+        self.assertIsInstance(res, dict)
+
+    def test_load_file(self):
+        res = BaseRepr.load_file(GRAPH_TEST_YAML)
+
+        self.assertIsInstance(res, dict)
+
+    def test_load_src(self):
+        res_1 = BaseRepr.load_src(GRAPH_TEST_YAML)
+        with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
+            res_2 = BaseRepr.load_str(f)
+
+        self.assertEqual(res_1, res_2)

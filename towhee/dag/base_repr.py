@@ -15,7 +15,7 @@ import yaml
 import requests
 import os
 import logging
-from typing import List, Dict, Set, Any
+from typing import Dict, Set, Any
 
 
 class BaseRepr:
@@ -59,7 +59,7 @@ class BaseRepr:
         return True
 
     @staticmethod
-    def load_str(string: str) -> List[dict]:
+    def load_str(string: str) -> dict:
         """
         Load the representation(s) information from a YAML file (pre-loaded as string).
 
@@ -68,14 +68,14 @@ class BaseRepr:
                 The string pre-loaded from a YAML.
 
         Returns:
-            (`List[dict]`)
-                The list loaded from the YAML file that contains the representation
+            (`dict`)
+                The dict loaded from the YAML file that contains the representation
                 information.
         """
         return yaml.safe_load(string)
 
     @staticmethod
-    def load_file(file: str) -> List[dict]:
+    def load_file(file: str) -> dict:
         """
         Load the representation(s) information from a local YAML file.
 
@@ -84,15 +84,15 @@ class BaseRepr:
                 The file path.
 
         Returns:
-            (`List[dict]`)
-                The list loaded from the YAML file that contains the representation
+            (`dict`)
+                The dict loaded from the YAML file that contains the representation
                 information.
         """
         with open(file, 'r', encoding='utf-8') as f:
             return BaseRepr.load_str(f)
 
     @staticmethod
-    def load_url(url: str) -> List[dict]:
+    def load_url(url: str) -> dict:
         """
         Load the representation information from a remote YAML file.
 
@@ -101,15 +101,15 @@ class BaseRepr:
                 The url points to the remote YAML file.
 
         Returns:
-            (`List[dict]`)
-                The list loaded from the YAML file that contains the representation
+            (`dict`)
+                The dict loaded from the YAML file that contains the representation
                 information.
         """
         src = requests.get(url, timeout=5).text
         return BaseRepr.load_str(src)
 
     @staticmethod
-    def load_src(file_or_src: str) -> List[dict]:
+    def load_src(file_or_src: str) -> dict:
         """
         Load the information for the representation. We support file from local
         file/HTTP/HDFS.
@@ -120,8 +120,8 @@ class BaseRepr:
                 loaded from source file.
 
         returns:
-            (`List[dict]`)
-                The YAML file loaded as list.
+            (`dict`)
+                The YAML file loaded as dict.
         """
         # If `file_or_src` is a loacl file.
         if os.path.isfile(file_or_src):

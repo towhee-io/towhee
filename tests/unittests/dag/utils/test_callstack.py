@@ -43,7 +43,9 @@ s4 = generate_callstack(ignore=3)
 
 
 class TestCallStack(unittest.TestCase):
-    """In this class, we test the functions in Callstack class.
+    """
+    Unit tests for Callstack class.
+
     We do not initialize the Callstack directly. Instead, we create two functions
     `generate_frames` and `collect_frames` to initialize the Callstack as well as
     block the frames produced by the unittest. We do not care about the process of
