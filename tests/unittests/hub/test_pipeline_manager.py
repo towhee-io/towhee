@@ -53,6 +53,11 @@ class TestPipelineManager(unittest.TestCase):
         rmtree(public_path / 'test_cache' / temp_repo)
         rmtree(public_path / 'test_cache' / pipeline_repo)
 
+    def test_check(self):
+        repo = 'ci-test'
+        manager = PipelineManager('towhee', repo)
+        self.assertTrue(manager.check(public_path / 'mock_pipelines/ci_test'))
+
 
 if __name__ == '__main__':
     unittest.main()
