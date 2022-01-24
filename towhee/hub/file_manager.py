@@ -38,6 +38,7 @@ class FileManagerConfig():
             The default cache to check in, if nothing supplied, the default cache of $HOME/.towhee
             will be used.
     """
+
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
         self._cache_paths = [DEFAULT_LOCAL_CACHE_ROOT]
@@ -215,6 +216,7 @@ class FileManager():
             Accepts an optional FileManager config, once a FileManagerConfig is selected,
             it cannot be changed for the current runtime.
     """
+
     def __init__(self, fmc: FileManagerConfig = FileManagerConfig()):
         self._config = fmc
         # TODO: #1 seperate ranking for different pipelines?
@@ -314,6 +316,8 @@ class FileManager():
             pipeline_path = self._cache_name(repo, author, tag) / (file_name + '.yaml')
             file_path = self._config.default_cache / 'pipelines' / pipeline_path
 
+            found_existing = False
+
             for path in self._config.cache_paths:
                 path = path / 'pipelines' / pipeline_path
                 if path.is_file():
@@ -323,8 +327,8 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.error('Local file not found, has it been imported?')
-                    raise FileNotFoundError('Local file not found, has it been imported?')
+                    msg = f'Pipeline {pipeline} not find, has it been imported?'
+                    raise FileNotFoundError(msg)
                 return file_path
 
             if not file_path.is_file():
@@ -378,6 +382,8 @@ class FileManager():
             operator_path = self._cache_name(repo, author, tag) / (file_name + '.py')
             file_path = self._config.default_cache / 'operators' / operator_path
 
+            found_existing = False
+
             for path in self._config.cache_paths:
                 path = path / 'operators' / operator_path
                 if path.is_file():
@@ -387,8 +393,8 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.error('Local file not found, has it been imported?')
-                    raise FileNotFoundError('Local file not found, has it been imported?')
+                    msg = f'Operator {operator} not found, has it been imported?'
+                    raise FileNotFoundError(msg)
                 return file_path
 
             if not Path(file_path).is_file():

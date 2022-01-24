@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 
 from towhee.dataframe import DataFrame
-from towhee.types._frame import FRAME
+from towhee.types._frame import _Frame
 
 
 class OutputFormat(ABC):
@@ -60,7 +60,7 @@ class NormalFormat(OutputFormat):
             # data is Tuple[Variable]
             data_value = []
             for item in data:
-                if item is not None and item.vtype != FRAME:
+                if item is not None and not isinstance(item.value, _Frame):
                     data_value.append(item.value)
             res.append(tuple(data_value))
         return res
