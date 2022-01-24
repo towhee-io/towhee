@@ -36,7 +36,7 @@ class TestFilterRunner(unittest.TestCase):
         out_df = DataFrame('output', [('num', 'int')])
         writer = create_writer('filter', [out_df])
         reader = create_reader(input_df, 'filter', {'num': 0})
-        runner = FilterRunner('test', 0, 'zero_operator',
+        runner = FilterRunner('test', 0, 'zero_operator', 'main',
                               'mock_operators', {},
                               [reader], writer)
         return input_df, out_df, runner

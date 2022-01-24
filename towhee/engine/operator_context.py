@@ -45,7 +45,6 @@ class OperatorContext:
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
-
     def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
         self._readers = OperatorContext._create_reader(op_repr, dataframes)

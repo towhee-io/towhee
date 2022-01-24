@@ -38,7 +38,6 @@ class _OpInfo:
     """
     Operator hub info.
     """
-
     def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, any], tag: str) -> None:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
@@ -68,7 +67,6 @@ class RunnerBase(ABC):
 
     The base class provides some function to control status.
     """
-
     def __init__(
         self,
         name: str,

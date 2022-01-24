@@ -100,6 +100,20 @@ class TestPipeline(unittest.TestCase):
             else:
                 self.assertEqual(res[i][0], 2)
 
+    def test_generator(self):
+        p = pipeline('local/test_generator')
+        input_data = 10
+        res = p(input_data)
+        self.assertEqual(len(res), input_data)
+        for i in range(input_data):
+            self.assertEqual(res[i][0], i)
+
+        input_data = 20
+        res = p(input_data)
+        self.assertEqual(len(res), input_data)
+        for i in range(input_data):
+            self.assertEqual(res[i][0], i)
+
 
 if __name__ == '__main__':
     unittest.main()
