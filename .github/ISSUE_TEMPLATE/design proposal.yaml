@@ -1,0 +1,33 @@
+name: Design proposal
+description: As a developer, I want to provide a design proposal for Towhee
+title: "[DesignProposal]: "
+body:
+- type: markdown
+  attributes:
+    value: |
+      Thanks for your design proposal! Please fill the form in English.
+- type: textarea
+  attributes:
+    label: Background and Motivation
+    description: An introduction of the background and the motivation will help us better understand your design and its importance.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Design
+    description: An interface overview and a concise description of your design.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Pros and Cons
+    description: Any benefits or risks?
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Anything else? (Additional Context)
+    description: |
+      Further discussion? Links? References? Anything that will give us more context about this!
+  validations:
+    required: false
