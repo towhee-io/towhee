@@ -34,7 +34,6 @@ class TestIterators(unittest.TestCase):
         df.seal()
         it = MapIterator(df)
         it2 = BatchIterator(df, batch_size=4, step= 4)
-        print(df)
 
         # MapIter
         res = []

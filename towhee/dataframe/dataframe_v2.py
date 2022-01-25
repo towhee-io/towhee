@@ -58,8 +58,7 @@ class DataFrame:
         self._data_lock = threading.RLock()
         self._len = 0
         self._data_as_list = None
-        self._data_as_dict = None
-        self._row_iter = 0
+        # self._data_as_dict = None
         self._schema = None
 
         # TODO: Better solution for no data whatsoever
@@ -70,53 +69,59 @@ class DataFrame:
         # if column and no data: create empty arrays
         elif columns is not None and data is None:
             self._schema = _Schema()
-            self._set_cols(columns)
+            self._set_schema(columns)
             self._from_none()
+            self._add_frame(init=True)
 
         # if no column and data: default names and types from data
         elif columns is None and data is not None:
             self._extract_data(data)
             self._schema = _Schema()
             self._set_schema()
+            self._add_frame(init=True)
 
         # if column and data: create regular running.
         elif columns is not None and data is not None:
             self._schema = _Schema()
-            self._set_cols(columns)
+            self._set_schema(columns)
             self._extract_data(data)
+            self._add_frame(init=True)
 
-        self._add_frame()
+        self._add_frame(init=True)
 
-    def _add_frame(self):
-        """Adds _frame column to initialization data."""
-        arr = Array(name = '_frame')
-        for _ in range(self._len):
-            arr.put(_Frame(self._row_iter))
-            self._row_iter += 1
-        self._schema.add_col('_frame', col_type=_Frame)
-        self._data_as_list.append(arr)
-        self._data_as_dict['_frame'] = self._data_as_list[-1]
+    def _add_frame(self, init = False):
+        """Adds _frame column to data."""
+
+        col_index = self._schema.col_index('_frame')
+
+        if init:
+            for x in range(self._len):
+                if col_index is not None:
+                    self._data_as_list[col_index][x].row_id = x
+                else:
+                    arr.put(_Frame(x))
 
     def _from_none(self):
         """Initialize empty Arrays."""
         self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
-        self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
 
-    def _set_cols(self, columns):
-        """Set the columns in the schema based on the passed in cols."""
-        for names, types in columns:
-            self._schema.add_col(name=names, col_type = types)
-
-    def _set_schema(self):
-        """Set the columns in the schema based on the inserted data."""
-        if self._data_as_list[0].physical_size > 0:
-            for x in self._data_as_list:
-                key = x.name
-                col_type = type(x.get_relative(0))
-                self._schema.add_col(key, col_type)
+    def _set_schema(self, columns = None):
+        """Set the columns in the schema."""
+        if columns is not None:
+            for names, types in columns:
+                self._schema.add_col(name=names, col_type = types)
+            if self._schema.col_index('_frame') is None:
+                    self._schema.add_col('_frame', _Frame)
         else:
-            raise ValueError('Can\'t create df from empty data and column.')
-
+            if self._data_as_list[0].physical_size > 0:
+                for x in self._data_as_list:
+                    key = x.name
+                    col_type = type(x.get_relative(0))
+                    self._schema.add_col(key, col_type)
+                if self._schema.col_index('_frame') is None:
+                    self._schema.add_col('_frame', _Frame)
+            else:
+                raise ValueError('Can\'t create df from empty data and no columns.')
 
     def _extract_data(self, data):
         """Convert the passed in data and store it."""
@@ -157,13 +162,13 @@ class DataFrame:
         # create arrays
         if self._schema is None:
             self._data_as_list = [Array(name='Col_' + str(i)) for i in range(tuple_length)]
-            self._data_as_dict = {'Col_' + str(i): self._data_as_list[i] for i in range(tuple_length)}
         else:
             # check columns length
+    
             if self._schema.col_count != tuple_length:
                 raise ValueError('length of columns is not equal to the length of tuple')
             self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
-            self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
+            # self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
 
         # tuples to arrays
         for row in data:
@@ -182,17 +187,17 @@ class DataFrame:
         self._len = array_lengths.pop()
 
         self._data_as_list = []
-        self._data_as_dict = {}
+        # self._data_as_dict = {}
 
         if self._schema is None:
             for i, arr in enumerate(data):
                 if arr.name is None:
                     arr.set_name('Col_' + str(i))
                     self._data_as_list.append(arr)
-                    self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
+                    # self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
                 else:
                     self._data_as_list.append(arr)
-                    self._data_as_dict[arr.name] = self._data_as_list[-1]
+                    # self._data_as_dict[arr.name] = self._data_as_list[-1]
 
         else:
             # check columns length
@@ -201,7 +206,7 @@ class DataFrame:
             for i, arr in enumerate(data):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
-                self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+                # self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
 
     def _from_dict(self, data):
         """Convert passed in data from dict to Arrays"""
@@ -217,20 +222,20 @@ class DataFrame:
         self._len = array_lengths.pop()
 
         self._data_as_list = []
-        self._data_as_dict = {}
+        # self._data_as_dict = {}
 
         if self._schema is None:
             for key, val in data.items():
                 val.set_name(key)
                 val.append(val)
                 self._data_as_list.append(val)
-                self._data_as_dict[key] = self._data_as_list[-1]
+                # self._data_as_dict[key] = self._data_as_list[-1]
 
         else:
             for i, arr in enumerate(data.values()):
                 arr.set_name(self._schema.col_key(i))
                 self._data_as_list.append(arr)
-                self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+                # self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
 
 
     def __getitem__(self, key):
@@ -241,7 +246,8 @@ class DataFrame:
                 return tuple(self._data_as_list[i][key] for i in range(len(self._data_as_list)))
             # access a column
             elif isinstance(key, str):
-                return self._data_as_dict[key]
+                index = self._schema.col_index(key)
+                return self._data_as_list[index]
 
     def __str__(self):
         """
@@ -451,11 +457,9 @@ class DataFrame:
             else:
                 self._put_tuple(item)
 
-            self._data_as_dict['_frame'].put(_Frame(self._row_iter))
-            self._row_iter += 1
+            frame = self._data_as_list[self._schema.col_index('_frame')][-1]
             self._len += 1
             cur_len = self._len
-            frame = self._data_as_dict['_frame'][-1]
 
         with self._iterator_lock:
             if len(self._map_blocked) > 0:
@@ -475,20 +479,34 @@ class DataFrame:
 
     def _put_list(self, item: list):
         """Appending a list to the dataframe."""
-        assert len(item) == self._schema.col_count - 1
 
-        # I believe its faster to loop through and check than list comp
+        # If frame is there, simply change its row_id.
+        if len(item) == self._schema.col_count:
+            item[self._schema.col_index('_frame')].row_id = self._len
+
+        # If frame is not there, assume that the dataframe added it to end of schema on init.
+        # If that is not the case then the inputted data is wrong and the assert will be
+        # triggered.
+        else:
+            item.append((_Frame(self._len)))
+
         for i, x in enumerate(item):
             assert isinstance(x, self._schema.col_type(i))
-
+        
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
 
     def _put_tuple(self, item: tuple):
         """Appending a tuple to the dataframe."""
-        assert len(item) == self._schema.col_count - 1
+        
+        item = list(item)
 
-        # I believe its faster to loop through and check than list comp
+        if len(item) == self._schema.col_count:
+            item[self._schema.col_index('_frame')].row_id = self._len
+
+        else:
+            item.append((_Frame(self._len)))
+
         for i, x in enumerate(item):
             assert isinstance(x, self._schema.col_type(i))
 
@@ -497,7 +515,11 @@ class DataFrame:
 
     def _put_dict(self, item: dict):
         """Appending a dict to the dataframe."""
-        assert len(item) == self._schema.col_count - 1
+
+        if len(item) == self._schema.col_count:
+            item['_frame'].row_id = self._len
+        else:
+            item['_frame'] = _Frame(self._len)
 
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():

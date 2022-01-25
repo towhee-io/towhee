@@ -17,6 +17,7 @@ import unittest
 import queue
 
 from towhee.dataframe.array import Array
+from towhee.types._frame import _Frame
 from towhee.dataframe.dataframe_v2 import DataFrame, Responses
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
@@ -25,16 +26,24 @@ class TestDataframe(unittest.TestCase):
     """Basic test case for `DataFrame`.
     """
 
-    def get_columns(self):
+    def get_columns(self, frames = False):
+        if frames:
+            return [('digit', int), ('letter', str), ('_frame', _Frame)]
         return [('digit', int), ('letter', str)]
 
-    def get_tuples(self):
+    def get_tuples(self, frames = False):
+        if frames:
+            return [(0, 'a', _Frame(4)), (1, 'b', _Frame(5)), (2, 'c', _Frame(6))]
         return [(0, 'a'), (1, 'b'), (2, 'c')]
 
-    def get_arrays(self):
+    def get_arrays(self, frames = False):
+        if frames:
+            return [Array([0, 1, 2]), Array(['a', 'b', 'c']), Array([_Frame(4), _Frame(5), _Frame(6)])]
         return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
 
-    def get_dict(self):
+    def get_dict(self, frames = False):
+        if frames:
+            return {'Col_0': Array(name = 'digit', data=[0, 1, 2]), 'Col_1': Array(name='letter', data = ['a', 'b', 'c']), '_frame': Array(name='_frame', data = [_Frame(4), _Frame(5), _Frame(6)])}
         return {'Col_0': Array(name = 'digit', data=[0, 1, 2]), 'Col_1': Array(name='letter', data = ['a', 'b', 'c'])}
 
 
@@ -44,6 +53,7 @@ class TestDataframe(unittest.TestCase):
             for i in range(3):
                 self.assertEqual(df['digit'][i], i)
                 self.assertEqual(df['letter'][i], chr(ord('a') + i))
+                self.assertEqual(df['_frame'][i].row_id, i)
                 self.assertEqual(df[i][0], i)
                 self.assertEqual(df[i][1], chr(ord('a') + i))
 
@@ -51,6 +61,7 @@ class TestDataframe(unittest.TestCase):
             for i in range(3):
                 self.assertEqual(df['Col_0'][i], i)
                 self.assertEqual(df['Col_1'][i], chr(ord('a') + i))
+                self.assertEqual(df['_frame'][i].row_id, i)
                 self.assertEqual(df[i][0], i)
                 self.assertEqual(df[i][1], chr(ord('a') + i))
 
@@ -62,6 +73,27 @@ class TestDataframe(unittest.TestCase):
         check_data(df)
 
         # from list[tuple] without cols
+        data = self.get_tuples()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
+        # from list[tuple] with _frame col and with _frame data
+        data = self.get_tuples(frames = True)
+        columns = self.get_columns(frames = True)
+        df = DataFrame(columns, name = 'my_df', data = data)
+        df.seal()
+        check_data(df)
+
+        # from list[tuple] without _frame col and with _frame_data
+        data = self.get_tuples(frames = True)
+        columns = self.get_columns()
+        df = DataFrame(columns, name = 'my_df', data = data)
+        df.seal()
+        print(df)
+        check_data(df)
+
+        # from list[tuple] without _frame col and with _frame_data
         data = self.get_tuples()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()
@@ -88,6 +120,22 @@ class TestDataframe(unittest.TestCase):
         check_data(df)
 
         # from dict[str, towhee.dataframe.Array] without cols.
+        data = self.get_dict()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
+        self.assertEqual(df.name, 'my_df')
+
+        # from dict[str, towhee.dataframe.Array] with frame col and frames.
+        data = self.get_dict()
+        df = DataFrame(None, name = 'my_df', data = data)
+        df.seal()
+        check_data_default(df)
+
+        self.assertEqual(df.name, 'my_df')
+
+        # from dict[str, towhee.dataframe.Array] with frame col and frames.
         data = self.get_dict()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()
