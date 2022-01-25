@@ -21,6 +21,9 @@ from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
 
+from .operator_registry import OperatorRegistry
+
+
 class OperatorLoader:
     """Wrapper class used to load operators from either local cache or a remote
     location.
@@ -65,12 +68,17 @@ class OperatorLoader:
         if op is not None:
             return op
 
+        op = OperatorRegistry.resolve(function)
+        if op is not None:
+            return self.instance_operator(op, args)
+
         module, fname = function.split('/')
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
 
         module = '.'.join([module, fname, fname])
+        op = getattr(importlib.import_module(module), op_cls)
 
-        if args is not None:
-            return getattr(importlib.import_module(module), op_cls)(**args)
-        else:
-            return getattr(importlib.import_module(module), op_cls)()
+        return self.instance_operator(op, args)
+
+    def instance_operator(self, op, args) -> Operator:
+        return op(**args) if args is not None else op()
