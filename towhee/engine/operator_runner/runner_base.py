@@ -18,6 +18,7 @@ from enum import Enum, auto
 from threading import Event
 import traceback
 
+from towhee.types._frame import FRAME, _Frame
 from towhee.engine.status import Status
 from towhee.utils.log import engine_log
 
@@ -41,7 +42,6 @@ class _OpInfo:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
         self._tag = tag
-        self._msg = None
         self._op_args = op_args
 
     @property
@@ -81,6 +81,7 @@ class RunnerBase(ABC):
         self._name = name
         self._index = index
         self._status = RunnerStatus.IDLE
+        self._msg = None
         self._op_info = _OpInfo(op_name, hub_op_id, op_args, tag)
 
         self._readers = readers
@@ -143,7 +144,6 @@ class RunnerBase(ABC):
 
     def _set_failed(self, msg: str) -> None:
         error_info = '{} runs failed, error msg: {}'.format(str(self), msg)
-        engine_log.error(error_info)
         self._msg = error_info
         self._set_end_status(RunnerStatus.FAILED)
 
@@ -178,12 +178,21 @@ class RunnerBase(ABC):
 
     def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
-            data = self._reader.read()
+            data, self._row_data = self._reader.read()
+            assert isinstance(self._row_data[-1].value, _Frame)
+            self._frame_var = self._row_data[-1]
+            self._frame_var.value.prev_id = self._frame_var.value.row_id
             return False, data
         except StopIteration:
             return True, None
 
     def _set_outputs(self, output: any):
+        if hasattr(output, '_asdict'):
+            output = output._asdict()
+
+        if isinstance(output, dict):
+            output.update({FRAME: self._frame_var.value})
+
         self._writer.write(output)
 
     def process_step(self) -> bool:

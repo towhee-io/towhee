@@ -53,8 +53,8 @@ class TestOperatorContext(unittest.TestCase):
             self._task_exec.join()
 
     def _create_op_ctx(self):
-        df_in = DataFrame('op_test_in', {'num': {'type': 'int', 'index': 0}})
-        df_out = DataFrame('op_test_out', {'sum': {'type': 'int', 'index': 0}})
+        df_in = DataFrame('op_test_in', [('num', 'int')])
+        df_out = DataFrame('op_test_out', [('sum', 'int')])
         dfs = {'op_test_in': df_in, 'op_test_out': df_out}
 
         op_repr = OperatorRepr(

@@ -19,6 +19,8 @@ from towhee.engine.operator_runner import map_runner
 from towhee.engine.operator_runner import concat_runner
 from towhee.engine.operator_runner import flatmap_runner
 from towhee.engine.operator_runner import filter_runner
+from towhee.engine.operator_runner import window_runner
+from towhee.engine.operator_runner import generator_runner
 from towhee.engine.operator_io.reader import DataFrameReader
 from towhee.engine.operator_io.writer import DataFrameWriter
 
@@ -42,5 +44,9 @@ def create_runner(
         return filter_runner.FilterRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'concat':
         return concat_runner.ConcatRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+    elif runner_type.lower() == 'window':
+        return window_runner.WindowRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+    elif runner_type.lower() == 'generator':
+        return generator_runner.GeneratorRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     else:
         raise AttributeError('No runner type named: {}'.format(runner_type))

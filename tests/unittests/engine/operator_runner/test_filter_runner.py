@@ -13,39 +13,13 @@
 # limitations under the License.
 
 import unittest
-from typing import Dict
 import threading
-from queue import Queue
 
+from towhee.dataframe import DataFrame
+from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.filter_runner import FilterRunner
 from tests.unittests.mock_operators.zero_drop import zero_drop
-
-DATA_QUEUE = Queue()
-
-
-class StopFrame:
-    pass
-
-
-class MockReader:
-    def __init__(self, queue: Queue):
-        self._queue = queue
-
-    def read(self):
-        data = self._queue.get()
-        if not isinstance(data, StopFrame):
-            return (data, data)
-        else:
-            raise StopIteration()
-
-
-class MockWriter:
-    def __init__(self):
-        self.res = []
-
-    def write(self, data: Dict):
-        self.res.append(data)
 
 
 def run(runner):
@@ -56,54 +30,46 @@ class TestFilterRunner(unittest.TestCase):
     """
     FilterRunner test
     """
+
+    def _create_test_obj(self):
+        input_df = DataFrame('input', [('num', 'int')])
+        out_df = DataFrame('output', [('num', 'int')])
+        writer = create_writer('filter', [out_df])
+        reader = create_reader(input_df, 'filter', {'num': 0})
+        runner = FilterRunner('test', 0, 'zero_operator', 'main',
+                              'mock_operators', {},
+                              [reader], writer)
+        return input_df, out_df, runner
+
     def test_filter_runner(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = FilterRunner('test', 0, 'zero_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
+        input_df, out_df, runner = self._create_test_obj()
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 1})
-        data_queue.put({'num': 2})
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 3})
-        data_queue.put({'num': 0})
-
-        data_queue.put(None)
-        t.join()
-        res = 1
-        for item in writer.res:
-            self.assertEqual(item['num'], res)
-            res += 1
-        self.assertEqual(runner.status, RunnerStatus.IDLE)
-
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
-        self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 4})
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 0})
-        data_queue.put({'num': 5})
-        data_queue.put(StopFrame())
+        input_df.put_dict({'num': 0})
+        input_df.put_dict({'num': 1})
+        input_df.put_dict({'num': 2})
+        input_df.put_dict({'num': 0})
+        input_df.put_dict({'num': 0})
+        input_df.put_dict({'num': 3})
+        input_df.put_dict({'num': 0})
+        input_df.seal()
         runner.join()
+        out_df.seal()
         res = 1
-        for item in writer.res:
-            self.assertEqual(item['num'], res)
+        it = out_df.map_iter(True)
+        for item in it:
+            self.assertEqual(item[0].value, res)
             res += 1
+
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
     def test_map_runner_with_error(self):
-        data_queue = Queue()
-        writer = MockWriter()
-        runner = FilterRunner('test', 0, 'zero_operator', 'main', 'mock_operators', {}, [MockReader(data_queue)], writer)
+        input_df, _, runner = self._create_test_obj()
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        data_queue.put('error_data')
+        input_df.put_dict({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)

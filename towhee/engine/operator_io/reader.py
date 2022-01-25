@@ -103,16 +103,6 @@ class BlockMapReaderWithOriginData(DataFrameReader):
         self._iter.notify()
 
 
-class BlockMapDataFrameReader(BlockMapReaderWithOriginData):
-    """
-    Map dataframe reader.
-    """
-
-    def read(self) -> Dict[str, any]:
-        output, _ = super().read()
-        return output
-
-
 class BatchFrameReader(DataFrameReader):
     """
     Batch reader.

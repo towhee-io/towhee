@@ -15,10 +15,10 @@
 
 from typing import Any, Dict, NamedTuple
 
-from towhee.operator import Operator
+from towhee.operator import PyOperator
 
 
-class NOPOperator(Operator):
+class NOPOperator(PyOperator):
     """No-op operator. Input arguments are redefined as a `NamedTuple` and returned as
     outputs.
     """
@@ -29,4 +29,4 @@ class NOPOperator(Operator):
 
     def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
         fields = [(name, type(val)) for name, val in args.items()]
-        return NamedTuple('Outputs', fields)(**args)  #pylint: disable=not-callable
+        return NamedTuple('Outputs', fields)(**args)  # pylint: disable=not-callable
