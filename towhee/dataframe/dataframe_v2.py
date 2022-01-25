@@ -63,43 +63,51 @@ class DataFrame:
 
         # TODO: Better solution for no data whatsoever
         # if no columns and no data: delay to first data added
+
         if columns is None and data is None:
             raise ValueError('Cannot construct dataframe without columns or initial data')
+        elif isinstance(data, dict):
+            self._extract_data(data)
+            self._schema = _Schema()
+            self._set_schema()
+            self._add_frame(init = True)
 
         # if column and no data: create empty arrays
         elif columns is not None and data is None:
             self._schema = _Schema()
             self._set_schema(columns)
             self._from_none()
-            self._add_frame(init=True)
 
         # if no column and data: default names and types from data
         elif columns is None and data is not None:
             self._extract_data(data)
             self._schema = _Schema()
             self._set_schema()
-            self._add_frame(init=True)
+            self._add_frame(init = True)
 
         # if column and data: create regular running.
         elif columns is not None and data is not None:
             self._schema = _Schema()
             self._set_schema(columns)
             self._extract_data(data)
-            self._add_frame(init=True)
-
-        self._add_frame(init=True)
 
     def _add_frame(self, init = False):
-        """Adds _frame column to data."""
+        """Adds/corrects frame data."""
 
         col_index = self._schema.col_index('_frame')
+        created = False
+
+        if col_index == len(self._data_as_list):
+            arr = Array(name = '_frame')
+            self._data_as_list.append(arr)
+            created = True
 
         if init:
             for x in range(self._len):
-                if col_index is not None:
+                if not created:
                     self._data_as_list[col_index][x].row_id = x
                 else:
-                    arr.put(_Frame(x))
+                    self._data_as_list[col_index].put(_Frame(x))
 
     def _from_none(self):
         """Initialize empty Arrays."""
@@ -162,20 +170,14 @@ class DataFrame:
         # create arrays
         if self._schema is None:
             self._data_as_list = [Array(name='Col_' + str(i)) for i in range(tuple_length)]
+            for row in data:
+                for i, element in enumerate(row):
+                    self._data_as_list[i].put(element)
+            self._len = len(data)
         else:
-            # check columns length
-    
-            if self._schema.col_count != tuple_length:
-                raise ValueError('length of columns is not equal to the length of tuple')
             self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
-            # self._data_as_dict = {name: self._data_as_list[i] for i, (name, _) in enumerate(self._schema.cols)}
-
-        # tuples to arrays
-        for row in data:
-            for i, element in enumerate(row):
-                self._data_as_list[i].put(element)
-
-        self._len = len(data)
+            for row in data:
+                self.put(row)
 
     def _from_arrays(self, data):
         """Convert passed in data from arrays to Arrays"""
@@ -184,29 +186,22 @@ class DataFrame:
         if len(array_lengths) != 1:
             raise ValueError('arrays in data should have equal length')
 
-        self._len = array_lengths.pop()
-
         self._data_as_list = []
-        # self._data_as_dict = {}
 
         if self._schema is None:
             for i, arr in enumerate(data):
                 if arr.name is None:
                     arr.set_name('Col_' + str(i))
                     self._data_as_list.append(arr)
-                    # self._data_as_dict['Col_' + str(i)] = self._data_as_list[-1]
                 else:
                     self._data_as_list.append(arr)
-                    # self._data_as_dict[arr.name] = self._data_as_list[-1]
+            self._len = array_lengths.pop()
 
         else:
-            # check columns length
-            if self._schema.col_count != len(data):
-                raise ValueError('length of columns is not equal to the number of arrays')
-            for i, arr in enumerate(data):
-                arr.set_name(self._schema.col_key(i))
-                self._data_as_list.append(arr)
-                # self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
+            self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
+            for x in range(array_lengths.pop()):
+                current_line = [i[x] for i in data]
+                self.put(current_line)
 
     def _from_dict(self, data):
         """Convert passed in data from dict to Arrays"""
@@ -219,24 +214,12 @@ class DataFrame:
         if len(array_lengths) != 1:
             raise ValueError('arrays in data should have equal length')
 
-        self._len = array_lengths.pop()
-
         self._data_as_list = []
-        # self._data_as_dict = {}
 
-        if self._schema is None:
-            for key, val in data.items():
-                val.set_name(key)
-                val.append(val)
-                self._data_as_list.append(val)
-                # self._data_as_dict[key] = self._data_as_list[-1]
-
-        else:
-            for i, arr in enumerate(data.values()):
-                arr.set_name(self._schema.col_key(i))
-                self._data_as_list.append(arr)
-                # self._data_as_dict[self._schema.col_key(i)] = self._data_as_list[-1]
-
+        for key, val in data.items():
+            val.set_name(key)
+            self._data_as_list.append(val)
+        self._len = array_lengths.pop()
 
     def __getitem__(self, key):
         """Get data at the passed in offset."""
@@ -448,9 +431,9 @@ class DataFrame:
 
         """
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
-        assert isinstance(item, (tuple, dict, list)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
+        assert isinstance(item, (tuple, dict, list, Array)), 'Dataframe needs to be of type (tuple, dict, list), not %s' % (type(item))
         with  self._data_lock:
-            if isinstance(item, list):
+            if isinstance(item, list) or isinstance(item, Array):
                 self._put_list(item)
             elif isinstance(item, dict):
                 self._put_dict(item)

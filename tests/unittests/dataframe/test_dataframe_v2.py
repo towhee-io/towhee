@@ -33,18 +33,18 @@ class TestDataframe(unittest.TestCase):
 
     def get_tuples(self, frames = False):
         if frames:
-            return [(0, 'a', _Frame(4)), (1, 'b', _Frame(5)), (2, 'c', _Frame(6))]
+            return [(0, 'a', _Frame(row_id = 4, timestamp=4)), (1, 'b', _Frame(5, timestamp=5)), (2, 'c', _Frame(6, timestamp=6))]
         return [(0, 'a'), (1, 'b'), (2, 'c')]
 
     def get_arrays(self, frames = False):
         if frames:
-            return [Array([0, 1, 2]), Array(['a', 'b', 'c']), Array([_Frame(4), _Frame(5), _Frame(6)])]
+            return [Array([0, 1, 2]), Array(['a', 'b', 'c']), Array([_Frame(4, timestamp=4), _Frame(5, timestamp=5), _Frame(6, timestamp=6)])]
         return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
 
     def get_dict(self, frames = False):
         if frames:
-            return {'Col_0': Array(name = 'digit', data=[0, 1, 2]), 'Col_1': Array(name='letter', data = ['a', 'b', 'c']), '_frame': Array(name='_frame', data = [_Frame(4), _Frame(5), _Frame(6)])}
-        return {'Col_0': Array(name = 'digit', data=[0, 1, 2]), 'Col_1': Array(name='letter', data = ['a', 'b', 'c'])}
+            return {'digit': Array(name = 'digit', data=[0, 1, 2]), 'letter': Array(name='letter', data = ['a', 'b', 'c']), '_frame': Array(name='_frame', data = [_Frame(4, timestamp=4), _Frame(5, timestamp=5), _Frame(6, timestamp=6)])}
+        return {'digit': Array(name = 'digit', data=[0, 1, 2]), 'letter': Array(name='letter', data = ['a', 'b', 'c'])}
 
 
     def test_constructors(self):
@@ -70,12 +70,14 @@ class TestDataframe(unittest.TestCase):
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data(df)
 
         # from list[tuple] without cols
         data = self.get_tuples()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data_default(df)
 
         # from list[tuple] with _frame col and with _frame data
@@ -83,6 +85,7 @@ class TestDataframe(unittest.TestCase):
         columns = self.get_columns(frames = True)
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data(df)
 
         # from list[tuple] without _frame col and with _frame_data
@@ -90,59 +93,89 @@ class TestDataframe(unittest.TestCase):
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
-        print(df)
+        # print(df)
         check_data(df)
 
-        # from list[tuple] without _frame col and with _frame_data
+        # from list[tuple] with _frame col and without _frame_data
         data = self.get_tuples()
-        df = DataFrame(None, name = 'my_df', data = data)
+        columns = self.get_columns(frames = True)
+        df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
-        check_data_default(df)
+        # print(df)
+        check_data(df)
+
+        # # from list[tuple] without _frame col and with _frame_data
+        # # Only way to do this is to examine data and look for frame.
+        # data = self.get_tuples(frames = True)
+        # df = DataFrame(None, name = 'my_df', data = data)
+        # df.seal()
+        # print(df)
+        # check_data_default(df)
 
         # from list[towhee.dataframe.Array] with cols
         data = self.get_arrays()
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data(df)
 
-         # from list[towhee.dataframe.Array] without cols
+        # from list[towhee.dataframe.Array] without cols
         data = self.get_arrays()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data_default(df)
+
+        # from list[Array] with _frame col and with _frame data
+        data = self.get_arrays(frames = True)
+        columns = self.get_columns(frames = True)
+        df = DataFrame(columns, name = 'my_df', data = data)
+        df.seal()
+        # print(df)
+        check_data(df)
+
+        # from list[Array] without _frame col and with _frame_data
+        data = self.get_arrays(frames = True)
+        columns = self.get_columns()
+        df = DataFrame(columns, name = 'my_df', data = data)
+        df.seal()
+        # print(df)
+        check_data(df)
+
+        # from list[Array] with _frame col and without _frame_data
+        data = self.get_arrays()
+        columns = self.get_columns(frames = True)
+        df = DataFrame(columns, name = 'my_df', data = data)
+        df.seal()
+        # print(df)
+        check_data(df)
+
+        # # from list[Array] without _frame col and with _frame_data
+        # # Only way to do this is to examine data and look for frame.
+        # data = self.get_arrays(frames = True)
+        # df = DataFrame(None, name = 'my_df', data = data)
+        # df.seal()
+        # print(df)
+        # check_data_default(df)
+
 
         # from dict[str, towhee.dataframe.Array] with cols.
         data = self.get_dict()
         columns = self.get_columns()
         df = DataFrame(columns, name = 'my_df', data = data)
         df.seal()
+        # print(df)
         check_data(df)
 
         # from dict[str, towhee.dataframe.Array] without cols.
         data = self.get_dict()
         df = DataFrame(None, name = 'my_df', data = data)
         df.seal()
-        check_data_default(df)
+        # print(df)
+        check_data(df)
 
         self.assertEqual(df.name, 'my_df')
-
-        # from dict[str, towhee.dataframe.Array] with frame col and frames.
-        data = self.get_dict()
-        df = DataFrame(None, name = 'my_df', data = data)
-        df.seal()
-        check_data_default(df)
-
-        self.assertEqual(df.name, 'my_df')
-
-        # from dict[str, towhee.dataframe.Array] with frame col and frames.
-        data = self.get_dict()
-        df = DataFrame(None, name = 'my_df', data = data)
-        df.seal()
-        check_data_default(df)
-
-        self.assertEqual(df.name, 'my_df')
-
 
     def test_put(self):
         columns = self.get_columns()
