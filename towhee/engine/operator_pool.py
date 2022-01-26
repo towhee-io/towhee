@@ -23,7 +23,6 @@ class _OperatorStorage:
     """
     Impl operator get and put by different shared_type.
     """
-
     def __init__(self):
         self._shared_type = None
         self._ops = []
@@ -53,19 +52,18 @@ class OperatorPool:
     """`OperatorPool` manages `Operator` creation, acquisition, release, and garbage
     collection. Each `TaskExecutor` has one `OperatorPool`.
     """
-
     def __init__(self, cache_path: str = None):
         self._op_loader = OperatorLoader(cache_path)
         self._all_ops = {}
         self._lock = threading.Lock()
 
     @staticmethod
-    def _operator_id(hub_op_id: str, op_args: Dict[str, any]):
+    def _operator_id(hub_op_id: str, op_args: Dict[str, any], tag: str):
         if op_args:
             args_tup = tuple(sorted(op_args.items()))
         else:
             args_tup = ()
-        return (hub_op_id, ) + args_tup
+        return (hub_op_id, tag) + args_tup
 
     def __len__(self):
         num = 0
@@ -76,8 +74,7 @@ class OperatorPool:
     def clear(self):
         self._all_ops = {}
 
-    def acquire_op(self, hub_op_id: str,
-                   op_args: Dict[str, any]) -> Operator:
+    def acquire_op(self, hub_op_id: str, op_args: Dict[str, any], tag: str) -> Operator:
         """
         Instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
@@ -94,7 +91,7 @@ class OperatorPool:
 
         # Load the operator if the computed key does not exist in the operator
         # dictionary.
-        op_key = OperatorPool._operator_id(hub_op_id, op_args)
+        op_key = OperatorPool._operator_id(hub_op_id, op_args, tag)
         with self._lock:
             storage = self._all_ops.get(op_key, None)
             if storage is None:
@@ -102,7 +99,7 @@ class OperatorPool:
                 self._all_ops[op_key] = storage
 
             if not storage.op_available():
-                op = self._op_loader.load_operator(hub_op_id, op_args)
+                op = self._op_loader.load_operator(hub_op_id, op_args, tag)
                 op.key = op_key
                 storage.put(op, True)
             return storage.get()

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import unittest
 from typing import Dict
 import threading
@@ -21,7 +20,6 @@ from queue import Queue
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.concat_runner import ConcatRunner
 from towhee.operator.concat_operator import ConcatOperator
-
 
 DATA_QUEUE = Queue()
 
@@ -34,7 +32,6 @@ class MockReader:
     """
     Mock reader
     """
-
     def __init__(self, queue: Queue):
         self._queue = queue
 
@@ -63,19 +60,19 @@ class TestConcatRunner(unittest.TestCase):
     """
     Concat runner test
     """
-
     def test_concat_runner(self):
         data_queue_1 = Queue()
         data_queue_2 = Queue()
         data_queue_3 = Queue()
         writer = MockWriter()
-        runner = ConcatRunner('test', 0, 'add_operator',
-                              'mock_operators', {'num': 1},
-                              [
-                                  MockReader(data_queue_1),
-                                  MockReader(data_queue_2),
-                                  MockReader(data_queue_3)
-                              ], writer)
+        runner = ConcatRunner(
+            'test',
+            0,
+            'add_operator',
+            'main',
+            'mock_operators', {'num': 1}, [MockReader(data_queue_1), MockReader(data_queue_2), MockReader(data_queue_3)],
+            writer
+        )
         runner.set_op(ConcatOperator('row'))
         t = threading.Thread(target=run, args=(runner, ))
         t.start()

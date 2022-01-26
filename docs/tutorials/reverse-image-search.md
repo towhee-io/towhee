@@ -1,6 +1,10 @@
 ---
 id: reverse-image-search
 title: Reverse image search
+authors:
+  - name: Shiyu Chen
+    url: https://github.com/shiyu22
+    imageURL: https://github.com/shiyu22.png
 ---
 
 This tutorial can run as [jupyter notebook](https://jupyter.org/install), you can refer to [reverse_image_search.jupyter](https://github.com/towhee-io/towhee/blob/main/tutorials/reverse_image_search.ipynb). Have fun with it!
@@ -21,11 +25,7 @@ Building a reverse image search system typically involves the following steps:
 
 A block diagram for a basic reverse image search system is shown in the images below. The first image shows how an existing image dataset is transformed into embedding vectors and inserted into a vector database, while the second image shows how the system processes query images.
 
-**FIRST IMAGE HERE(INSERT)**
-
 ![img](./reverse_image_search_step1.png)
-
-**SECOND IMAGE HERE(SEARCH)**
 
 ![img](./reverse_image_search_step2.png)
 

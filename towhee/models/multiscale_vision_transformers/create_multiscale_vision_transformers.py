@@ -18,12 +18,11 @@ from torch import nn
 from functools import partial
 
 from towhee.models.layers.vision_transformer_basic_head import VisionTransformerBasicHead
-from towhee.models.layers.patch_embedding import PatchEmbedding
+from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from towhee.models.layers.spatial_temporal_cls_positional_encoding import SpatialTemporalClsPositionalEncoding
 from towhee.models.utils.round_width import round_width
-from towhee.models.layers.muti_scale_transformer_block import MultiScaleBlock
-from towhee.models.layers.multiscale_vision_transformers import MultiscaleVisionTransformers
-
+from towhee.models.layers.multi_scale_transformer_block import MultiScaleBlock
+from towhee.models.multiscale_vision_transformers.multiscale_vision_transformers import MultiscaleVisionTransformers
 
 def create_multiscale_vision_transformers(
     spatial_size,
@@ -168,7 +167,7 @@ def create_multiscale_vision_transformers(
 
     conv_patch_op = nn.Conv2d if use_2d_patch else nn.Conv3d
     if enable_patch_embed:
-        patch_embed = PatchEmbedding(
+        patch_embed = PatchEmbed2D(
             in_channels=input_channels,
             out_channels=patch_embed_dim,
             conv_kernel_size=conv_patch_embed_kernel,

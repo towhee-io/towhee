@@ -16,11 +16,11 @@ Audio describes human-hearable sound, which is normally recorded and transmitted
 
 Music and other audio snippets have seen great success using 1D convolutional neural networks, just as images have. Most models include some form of preprocessing such as data cropping, downsampling, and other transformations. Towhee maintains the following pipelines for audio generation:
 
-**[audio-embedding-vggish](https://hub.towhee.io/towhee/audio-embedding-vggish)**
+**[audio-embedding-vggish](https://towhee.io/towhee/audio-embedding-vggish)**
 
 This pipeline contains a pre-trained model based on [VGGish](https://arxiv.org/abs/1609.09430). VGGish is a supervised model pretrained with [AudioSet](https://research.google.com/audioset/), a large scale audio classification task.
 
-**[audio-embedding-clmr](https://hub.towhee.io/towhee/audio-embedding-clmr)**
+**[audio-embedding-clmr](https://towhee.io/towhee/audio-embedding-clmr)**
 
 The pipeline contains a pre-trained model based on [CLMR](https://arxiv.org/abs/2103.09410). CLMR is a semi-supervised encoder-based model which works well for audio/music fingerprinting.
 

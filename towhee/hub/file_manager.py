@@ -13,16 +13,17 @@
 # limitations under the License.
 
 import threading
+import os
 from pathlib import Path
 from typing import Union, List
 from shutil import copy2, copytree, rmtree
 
-import git
-from git.exc import GitCommandError
 from towhee.utils.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 from towhee.utils.log import engine_log
-from towhee.hub.hub_tools import download_repo
+from towhee.hub.pipeline_manager import PipelineManager
+from towhee.hub.operator_manager import OperatorManager
+from towhee.utils.git_utils import GitUtils
 
 
 @singleton
@@ -224,11 +225,11 @@ class FileManager():
         self._cache_locals()
 
     # Move to a utils location?
-    def _cache_name(self, name: str, author: str, tag: str):
+    def _cache_name(self, repo: str, author: str, tag: str):
         try:
-            file_name, file_type = name.split('.')
+            file_name, file_type = repo.split('.')
         except ValueError:
-            return Path(author) / name.replace('-', '_') / tag
+            return Path(author) / repo.replace('-', '_') / tag
         # If pointing directly to pipeline or operator file.
         if file_type in ['py', 'yaml']:
             return Path(author) / file_name.replace('-', '_') / tag
@@ -279,7 +280,7 @@ class FileManager():
                     # TODO: Figure out exception types
                     copytree(str(old_path), str(new_path))
 
-    def get_pipeline(self, pipeline: str, tag: str = 'main', install_reqs=True):
+    def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True):
         """
         Obtain the path to the requested pipeline.
 
@@ -311,14 +312,13 @@ class FileManager():
             author = pipeline_split[0]
             repo = pipeline_split[1]
             file_name = repo.replace('-', '_')
-
+            # This path leads to 'author/repo/tag/file_name.yaml'
             pipeline_path = self._cache_name(repo, author, tag) / (file_name + '.yaml')
 
-            file_path = self._config.default_cache / 'pipelines' / pipeline_path
             found_existing = False
-
-            for path in self._config.cache_paths:
-                path = path / 'pipelines' / pipeline_path
+            for path_iter in self._config.cache_paths:
+                # This path leads to 'cache/pipelines/author/repo/tag/file_name.yaml'
+                path = path_iter / 'pipelines' / pipeline_path
                 if path.is_file():
                     file_path = path
                     found_existing = True
@@ -326,26 +326,54 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.warning('Local file not found, has it been imported?')
-                    raise FileNotFoundError('Local file not found, has it been imported?')
+                    msg = f'Pipeline {pipeline} not find, has it been imported?'
+                    raise FileNotFoundError(msg)
                 return file_path
 
-            if not file_path.is_file():
-                download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
-            else:
-                repo_path = path.parent
-                repo_name = path.stem
-                repo = git.Repo(repo_path)
-                if not 'working tree clean' in repo.git.status():
-                    engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', repo_name)
-                    try:
-                        repo.remote('origin').pull('main')
-                    except GitCommandError:
-                        engine_log.warning('Your local repo has conflicts with remote repo, skip automatic update.')
+            if not found_existing:
+                file_path = self._config.default_cache / 'pipelines' / pipeline_path
+                repo_path = file_path.parent
+
+                # If yaml file missing but repo exists.
+                if repo_path.is_dir():
+                    engine_log.warning('Your local opreator repo %s exists, but not complete, \'.py\' file missing, please check on hub.', file_name)
+                    rmtree(repo_path)
+                    raise FileNotFoundError('Repo exists but \'.yaml\' file missing.')
+
+                # If user has git, clone the repo, otherwise try to download.
+                try:
+                    git = GitUtils(author, repo)
+                    git.clone(tag=tag, install_reqs=install_reqs, local_repo_path=repo_path)
+                # If user does not have git in the system, subprocess throws FileNotFound error.
+                except FileNotFoundError:
+                    engine_log.warning(
+                        '\'git\' not found, execute download instead of clone. ' \
+                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+                    )
+                    pipeline_manager = PipelineManager(author=author, repo=repo)
+                    pipeline_manager.download(local_repo_path=file_path.parent, tag=tag, install_reqs=install_reqs)
+                    return file_path
+
+            # Check updates for repo.
+            elif tag == 'main':
+                repo_path = file_path.parent
+                cwd = Path.cwd()
+                os.chdir(repo_path)
+                try:
+                    git = GitUtils(author, repo)
+                    if 'Your branch is behind' in git.status():
+                        engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', file_name)
+                        git.pull()
+                except FileNotFoundError:
+                    engine_log.warning(
+                        '\'git\' not found, cannot update. ' \
+                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+                    )
+                os.chdir(cwd)
 
         return file_path
 
-    def get_operator(self, operator: str, tag: str = 'main', install_reqs=True):
+    def get_operator(self, operator: str, tag, install_reqs: bool = True):
         """
         Obtain the path to the requested operator.
 
@@ -377,14 +405,13 @@ class FileManager():
             author = operator_split[0]
             repo = operator_split[1]
             file_name = repo.replace('-', '_')
-
+            # This path leads to 'author/repo/tag/file_name.yaml'
             operator_path = self._cache_name(repo, author, tag) / (file_name + '.py')
 
-            file_path = self._config.default_cache / 'operators' / operator_path
             found_existing = False
-
-            for path in self._config.cache_paths:
-                path = path / 'operators' / operator_path
+            for path_iter in self._config.cache_paths:
+                # This path leads to 'cache/operators/author/repo/tag/file_name.py'
+                path = path_iter / 'operators' / operator_path
                 if path.is_file():
                     file_path = path
                     found_existing = True
@@ -392,21 +419,48 @@ class FileManager():
 
             if author == 'local':
                 if found_existing is False:
-                    engine_log.info('Local file not found, has it been imported?')
-                    raise FileNotFoundError('Local file not found, has it been imported?')
+                    msg = f'Operator {operator} not found, has it been imported?'
+                    raise FileNotFoundError(msg)
                 return file_path
 
-            if not file_path.is_file():
-                download_repo(author, repo, tag, str(file_path.parent), install_reqs=install_reqs)
-            else:
-                repo_path = path.parent
-                repo_name = path.stem
-                repo = git.Repo(repo_path)
-                if not 'working tree clean' in repo.git.status():
-                    engine_log.warning('Your local operator %s is not up to date, updating to latest version...', repo_name)
-                    try:
-                        repo.remote('origin').pull('main')
-                    except GitCommandError:
-                        engine_log.warning('Your local repo has conflicts with remote repo, skip automatic update.')
+            if not found_existing:
+                file_path = self._config.default_cache / 'operators' / operator_path
+                repo_path = file_path.parent
+                # If py file missing but repo exists.
+                if repo_path.is_dir():
+                    engine_log.error('Your local opreator repo %s exists, but not complete, \'.py\' file missing, please check on hub.', file_name)
+                    rmtree(repo_path)
+                    raise FileNotFoundError('Repo exists but \'.py\' file missing.')
+
+                # If user has git, clone the repo, otherwise try to download.
+                try:
+                    git = GitUtils(author, repo)
+                    git.clone(tag=tag, install_reqs=install_reqs, local_repo_path=repo_path)
+                # If user does not have git in the system, subprocess throws FileNotFound error.
+                except FileNotFoundError:
+                    engine_log.warning(
+                        '\'git\' not found, execute download instead of clone. ' \
+                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+                    )
+                    operator_manager = OperatorManager(author=author, repo=repo)
+                    operator_manager.download(local_repo_path=file_path.parent, tag=tag, install_reqs=install_reqs)
+                    return file_path
+
+            # Check updates fro repo.
+            elif tag == 'main':
+                repo_path = file_path.parent
+                cwd = Path.cwd()
+                os.chdir(repo_path)
+                try:
+                    git = GitUtils(author, repo)
+                    if 'Your branch is behind' in git.status():
+                        engine_log.warning('Your local operator %s is not up to date, updating to latest version...', file_name)
+                        git.pull()
+                except FileNotFoundError:
+                    engine_log.warning(
+                        '\'git\' not found, cannot update. ' \
+                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+                    )
+                os.chdir(cwd)
 
         return file_path

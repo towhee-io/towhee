@@ -40,7 +40,7 @@ class ConcatOperator(Operator):
     @staticmethod
     def _read(reader):
         try:
-            data = reader.read()
+            data, _ = reader.read()
             return False, data
         except StopIteration:
             return True, None

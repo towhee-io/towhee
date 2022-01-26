@@ -13,9 +13,10 @@
 # limitations under the License.
 import torch
 from torch import nn
-from towhee.models.layers import Mlp
-from towhee.models.layers import DropPath
-from .utils import window_reverse, window_partition, to_2tuple
+from towhee.models.layers.mlp import Mlp
+from towhee.models.layers.droppath import DropPath
+from towhee.models.utils.general_utils import to_2tuple
+from .utils import window_reverse, window_partition
 from .window_attention import WindowAttention
 
 

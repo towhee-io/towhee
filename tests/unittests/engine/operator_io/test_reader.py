@@ -18,7 +18,7 @@ from queue import Queue
 from collections import namedtuple
 
 from towhee.dataframe import DataFrame, Variable
-from towhee.engine.operator_io.reader import DataFrameReader, BlockMapDataFrameReader, BatchFrameReader
+from towhee.engine.operator_io.reader import DataFrameReader, BatchFrameReader
 from towhee.engine.operator_io import create_reader
 
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
@@ -50,26 +50,26 @@ class TestReader(unittest.TestCase):
         t.start()
         return df
 
-    def test_block_map_reader(self):
+    # def test_block_map_reader(self):
 
-        data_size = 100
-        df = self._create_test_df(data_size)
+    #     data_size = 100
+    #     df = self._create_test_df(data_size)
 
-        map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
+    #     map_reader = BlockMapDataFrameReader(df, {'v1': 0, 'v2': 2})
 
-        q = Queue()
+    #     q = Queue()
 
-        runner = MultiThreadRunner(
-            target=read, args=(map_reader, q), thread_num=10)
+    #     runner = MultiThreadRunner(
+    #         target=read, args=(map_reader, q), thread_num=10)
 
-        runner.start()
-        runner.join()
+    #     runner.start()
+    #     runner.join()
 
-        count = 0
-        while not q.empty():
-            self.assertEqual(q.get(), {'v1': 1, 'v2': 0.1})
-            count += 1
-        self.assertEqual(count, data_size)
+    #     count = 0
+    #     while not q.empty():
+    #         self.assertEqual(q.get(), {'v1': 1, 'v2': 0.1})
+    #         count += 1
+    #     self.assertEqual(count, data_size)
 
     def test_batch_reader(self):
 

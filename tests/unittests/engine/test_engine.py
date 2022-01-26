@@ -44,12 +44,7 @@ class TestEngine(unittest.TestCase):
         operators = [f for f in operator_cache.iterdir() if f.is_dir()]
         fmc.cache_local_pipeline(pipelines)
         fmc.cache_local_operator(operators)
-        fm = FileManager(fmc)  # pylint: disable=unused-variable
-
-    # @classmethod
-    # def tearDownClass(cls):
-    #     new_cache = (CACHE_PATH/'test_cache')
-    #     rmtree(str(new_cache))
+        FileManager(fmc)
 
     def test_engine(self):
 
@@ -126,7 +121,7 @@ class TestEngine(unittest.TestCase):
         engine.add_pipeline(self._pipeline)
 
         df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+            'inputs', [('num', 'int')])
         df_in.put((Variable('int', 1), ))
         df_in.seal()
 
@@ -135,7 +130,7 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(ret[0][0].value, 3)
 
         df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+            'inputs', [('num', 'int')])
         df_in.put((Variable('int', 3), ))
         df_in.seal()
 
@@ -150,7 +145,7 @@ class TestEngine(unittest.TestCase):
         engine.add_pipeline(p)
 
         df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+            'inputs', [('num', 'int')])
         df_in.put((Variable('int', 3), ))
         df_in.seal()
         result = p(df_in)
@@ -158,7 +153,7 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(ret[0][0].value, 6)
 
         df_in = DataFrame(
-            'inputs', {'num': {'index': 0, 'type': 'int'}})
+            'inputs', [('num', 'int')])
         df_in.put((Variable('int', 4), ))
         df_in.seal()
         result = p(df_in)

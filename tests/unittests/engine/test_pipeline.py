@@ -59,6 +59,7 @@ class TestPipeline(unittest.TestCase):
         p = pipeline('local/filter_pipeline')
         res = p([1, 0, 2, 0, 3, 4])
         num = 1
+        self.assertEqual(len(res), 4)
         for item in res:
             self.assertEqual(item[0], num)
             num += 1
@@ -84,10 +85,34 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(OpFailedError):
             p('xx')
 
-    def test_test_concat(self):
+    def test_concat(self):
         p = pipeline('local/test_concat')
         res = p(0, 0, 0)
         self.assertEqual(res, [(1, 0, 2, 0, 3, 0)])
+
+    def test_window(self):
+        p = pipeline('local/test_window')
+        res = p(1)
+        self.assertEqual(len(res), 20)
+        for i in range(20):
+            if i < 18:
+                self.assertEqual(res[i][0], 4)
+            else:
+                self.assertEqual(res[i][0], 2)
+
+    def test_generator(self):
+        p = pipeline('local/test_generator')
+        input_data = 10
+        res = p(input_data)
+        self.assertEqual(len(res), input_data)
+        for i in range(input_data):
+            self.assertEqual(res[i][0], i)
+
+        input_data = 20
+        res = p(input_data)
+        self.assertEqual(len(res), input_data)
+        for i in range(input_data):
+            self.assertEqual(res[i][0], i)
 
 
 if __name__ == '__main__':

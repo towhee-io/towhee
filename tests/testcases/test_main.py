@@ -56,8 +56,8 @@ def image_class_pipeline_register():
     embedding_sizes = [2048, 2048, 2048, 2048, 1024, 1536, 1024]
 
     # skip multiple threads tests for memory shortage
-    skipped_cases = ["test_embedding_concurrent_multi_threads"]
-
+    skipped_cases = ["test_embedding_concurrent_multi_threads", "test_embedding_more_times", "test_embedding_avg_time"]
+ 
 
     return pipeline_names, embedding_sizes, skipped_cases
 
@@ -87,6 +87,30 @@ def image_class_pipeline_runner():
                     print("%s:%s PASS" % (func, pipeline_name))
                 else:
                     print("%s:%s FAIL" % (func, pipeline_name))
+        
+        test_valid_embedding = TestImageEmbeddingStress()
+        for func in dir(TestImageEmbeddingStress):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name, embedding_size_each)(test_valid_embedding)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))
+
+        test_valid_embedding_per = TestImageEmbeddingPerformance()
+        for func in dir(TestImageEmbeddingPerformance):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name, embedding_size_each)(test_valid_embedding_per)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))
 
     return True
 
@@ -100,7 +124,7 @@ def audio_class_pipeline_register():
     embedding_sizes = [128]
 
     # skip multiple threads tests for memory shortage
-    skipped_cases = ["test_embedding_concurrent_multi_threads"]
+    skipped_cases = ["test_embedding_concurrent_multi_threads", "test_embedding_more_times", "test_embedding_avg_time"]
 
 
     return pipeline_names, embedding_sizes, skipped_cases
@@ -131,6 +155,30 @@ def audio_class_pipeline_runner():
                     print("%s:%s PASS" % (func, pipeline_name))
                 else:
                     print("%s:%s FAIL" % (func, pipeline_name))
+
+        test_valid_embedding = TestAudioEmbeddingStress()
+        for func in dir(TestAudioEmbeddingStress):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name, embedding_size_each)(test_valid_embedding)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))     
+
+        test_valid_embedding_per = TestAudioEmbeddingPerformance()
+        for func in dir(TestAudioEmbeddingPerformance):
+            if func in skipped_cases:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, pipeline_name))
+                res = methodcaller(func, pipeline_name, embedding_size_each)(test_valid_embedding_per)
+                if res == 1:
+                    print("%s:%s PASS" % (func, pipeline_name))
+                else:
+                    print("%s:%s FAIL" % (func, pipeline_name))    
 
     return True
 
