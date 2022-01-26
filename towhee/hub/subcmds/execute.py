@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hyperparameter import param_scope
-
+from hyperparameter import param_scope, HyperParameter
+import yaml
 
 class ExecuteCommand:
     """
@@ -28,6 +28,10 @@ class ExecuteCommand:
             sys.path.append('.')
             import threading  # pylint: disable=import-outside-toplevel
             threading.setprofile(lambda f, e, a: param_scope.init(hp))
+
+            if self._args.dry_run:
+                return self.dry_run()
+
             from towhee import pipeline  # pylint: disable=import-outside-toplevel
             pipe = pipeline(self._args.pipeline)
 
@@ -40,6 +44,18 @@ class ExecuteCommand:
                     cv2.imshow('imshow', output)
                     cv2.waitKey(1)
                 i += 1
+
+    def dry_run(self):
+        with open(self._args.pipeline, encoding='utf-8') as f:
+            pipeline = yaml.safe_load(f)
+            pipeline = HyperParameter(**pipeline)
+        with param_scope(*self._args.define) as hp:
+            pipeline.update(hp)
+            with open(self._args.pipeline, encoding='utf-8') as f:
+                template = f.read()
+        
+        print(pipeline.variables)
+        print(template.format(**pipeline.variables))
 
     @staticmethod
     def install(subparsers):
