@@ -106,4 +106,4 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
 
     return _PipelineWrapper(pipeline_)
 
-from towhee.engine import register, resolve, operator # pylint: disable=import-outside-toplevel
+from towhee.engine import register, resolve # pylint: disable=import-outside-toplevel
