@@ -27,8 +27,8 @@ from pathlib import Path
 #    Stateless operator
 from towhee.trainer.trainer import Trainer
 # from towhee.trainer.modelcard import ModelCard
-from towhee.trainer.load_weights import LoadWeights
-from towhee.trainer.save_weights import SaveWeights
+from towhee.trainer.utils.load_weights import LoadWeights
+from towhee.trainer.utils.save_weights import SaveWeights
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
