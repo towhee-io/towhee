@@ -152,7 +152,7 @@ class RepoManager:
                 file_list.append(file['path'])
         return file_list
 
-    def download_executor(self, tag: str, file_name: str, lfs_files: Tuple[str], local_dir: Union[str, Path]) -> None:
+    def download_executor(self, tag: str, file_name: str, lfs_files: Tuple[str], local_repo_path: Union[str, Path]) -> None:
         """
         Load the content from url and write into local files.
 
@@ -163,7 +163,7 @@ class RepoManager:
                 The hub file paths.
             lfs_files (`str):
                 The file extensions being tracked by git-lfs.
-            local_dir (`Union[str, Path]`):
+            local_repo_path (`Union[str, Path]`):
                 The local directory to download to.
 
         Raises:
@@ -172,7 +172,7 @@ class RepoManager:
             (`OSError`)
                 Raise error in writing file.
         """
-        file_path = Path(local_dir) / file_name
+        file_path = Path(local_repo_path) / file_name
         if not file_path.parent.resolve().exists():
             try:
                 file_path.parent.resolve().mkdir(parents=True)
@@ -208,7 +208,7 @@ class RepoManager:
                 progress_bar.update(len(chunk))
         progress_bar.close()
 
-    def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_dir: Union[str, Path], install_reqs: bool) -> None:
+    def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_repo_path: Union[str, Path], install_reqs: bool) -> None:
         """
         Download the given files.
 
@@ -219,25 +219,25 @@ class RepoManager:
                 The files to download
             lfs_files (List[str]):
                 The lfs files extensions.
-            local_dir (`Union[str, Path]`):
+            local_repo_path (`Union[str, Path]`):
                 Thre local dir to download the files into.
             install_reqs (`bool`):
                 Whether to install packages from requirements.txt.
         """
-        local_dir = Path(local_dir)
+        local_repo_path = Path(local_repo_path)
 
         # endswith() can check multiple suffixes if they are a tuple.
         lfs_files = tuple(lfs_files)
         futures = []
 
-        temp_path = local_dir.parent / 'dl-temp'
+        temp_path = local_repo_path.parent / 'dl-temp'
         with ThreadPoolExecutor(max_workers=50) as pool:
             for file_name in file_list:
                 futures.append(pool.submit(self.download_executor, tag, file_name, lfs_files, temp_path))
 
         try:
             _ = [i.result() for i in futures]
-            temp_path.rename(local_dir)
+            temp_path.rename(local_repo_path)
         except Exception as e:
             rmtree(temp_path)
             raise e
@@ -245,14 +245,14 @@ class RepoManager:
         if install_reqs:
             requirements = list(filter(lambda x: re.match(r'(.*/)?requirements.txt', x) is not None, file_list))
             for req in requirements:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(local_dir / req)])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(local_repo_path / req)])
 
-    def download(self, local_dir: Union[str, Path] = Path.cwd(), tag: str = 'main', install_reqs: bool = True) -> None :
+    def download(self, local_repo_path: Union[str, Path] = Path.cwd(), tag: str = 'main', install_reqs: bool = True) -> None:
         """
         Download repo without git.
 
         Agrs:
-            local_dir (`Union[str, Path]`):
+            local_repo_path (`Union[str, Path]`):
                 Thre local dir to download the files into.
             tag (`str`):
                 The tag of the repo to download.
@@ -263,8 +263,8 @@ class RepoManager:
             engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
             raise ValueError(f'{self._author}/{self._author} repo does not exist.')
 
-        local_dir = Path(local_dir)
+        local_repo_path = Path(local_repo_path)
         lfs_files = self.obtain_lfs_extensions(tag)
         commit = self.latest_commit(tag)
         file_list = self.get_file_list(commit)
-        self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_dir=local_dir, install_reqs=install_reqs)
+        self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_repo_path=local_repo_path, install_reqs=install_reqs)

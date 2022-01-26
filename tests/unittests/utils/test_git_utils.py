@@ -54,6 +54,6 @@ class TestGitUtils(unittest.TestCase):
     def test_status(self):
         cwd = Path.cwd()
         os.chdir(repo_path)
-        res_code = git.status()
-        self.assertEqual(res_code, 0)
+        res = git.status()
+        self.assertIn('up to date with', res)
         os.chdir(cwd)

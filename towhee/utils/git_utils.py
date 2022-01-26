@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import os
+import sys
 import subprocess
 from pathlib import Path
 from typing import Union, List
-import sys
+from requests.exceptions import HTTPError
 
-# TODO
-# from towhee.utils.hub_utils import HubUtils
+from towhee.utils.hub_utils import HubUtils
 from towhee.utils.log import engine_log
 
 
@@ -64,13 +64,11 @@ class GitUtils:
             (`HTTPError`)
                 Raise the error in request.
         """
-        # TODO: Adjust according to Shiyu's modification to RepoManager and HubUtils.
-        # try:
-        #     response = HubUtils(self._author, self._repo).get_info()
-        #     return response.status_code == 200
-        # except HTTPError as e:
-        #     raise e
-        return True
+        try:
+            response = HubUtils(self._author, self._repo).get_info()
+            return response.status_code == 200
+        except HTTPError as e:
+            raise e
 
     def clone(self, tag: str = 'main', install_reqs: bool = True, local_repo_path: Union[str, Path] = None) -> None:
         """
@@ -107,7 +105,7 @@ class GitUtils:
         """
         Check the status of local repo.
         """
-        return subprocess.check_call(['git', 'status'])
+        return subprocess.check_output(['git', 'status']).decode('utf-8')
 
     def add(self, files: Union[str, List[str]] = None):
         """

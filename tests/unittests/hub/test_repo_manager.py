@@ -79,6 +79,26 @@ class TestRepoManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             rm.download()
 
+    def test_obtain_lfs_extensions(self):
+        rm = RepoManager('towhee', 'ci-test')
+        lfs_extensions = rm.obtain_lfs_extensions('main')
+
+        self.assertFalse(bool(lfs_extensions))
+
+    def test_latest_commit(self):
+        rm = RepoManager('towhee', 'ci-test')
+        latest_commit = rm.latest_commit('main')
+
+        self.assertIsInstance(latest_commit, str)
+
+    def test_get_file_list(self):
+        rm = RepoManager('towhee', 'ci-test')
+        latest_commit = rm.latest_commit('main')
+        files = rm.get_file_list(latest_commit)
+
+        self.assertIsInstance(files, list)
+        self.assertTrue(bool(files))
+
 
 if __name__ == '__main__':
     unittest.main()
