@@ -22,16 +22,22 @@ class ConcatRunner(RunnerBase):
 
     Concat can not run in multi-thread.
     """
-
-    def __init__(self, name: str, index: int,
-                 op_name: str, hub_op_id: str,
-                 op_args: Dict[str, any],
-                 readers=None, writer=None) -> None:
+    def __init__(
+        self,
+        name: str,
+        index: int,
+        op_name: str,
+        tag: str,
+        hub_op_id: str,
+        op_args: Dict[str, any],
+        readers=None,
+        writer=None,
+    ) -> None:
         if len(readers) <= 1:
             self._set_failed('Concat operator\'s inputs are at leaset two, current is %s' % len(readers))
             return
 
-        super().__init__(name, index, op_name, hub_op_id, op_args, readers, writer)
+        super().__init__(name, index, op_name, tag, hub_op_id, op_args, readers, writer)
 
     def process_step(self):
         self._op._readers = self._readers  # pylint: disable=protected-access

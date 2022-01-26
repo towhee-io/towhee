@@ -27,7 +27,10 @@ class RepeatOperator(Operator):
         self._repeat = repeat
 
     def __call__(self, num: int):
-        Outputs = NamedTuple("Outputs", [("num", int)])
+        if not isinstance(num, int):
+            raise RuntimeError('Input is not int type')
+
+        Outputs = NamedTuple('Outputs', [('num', int)])
         return [Outputs(num) for i in range(self._repeat)]
 
     @property

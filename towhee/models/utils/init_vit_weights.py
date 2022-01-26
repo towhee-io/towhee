@@ -38,3 +38,5 @@ def init_vit_weights(model, trunc_normal_std=0.02) -> None:
         elif isinstance(m, SpatialTemporalClsPositionalEncoding):
             for weights in m.parameters():
                 nn.init.trunc_normal_(weights, std=trunc_normal_std)
+
+

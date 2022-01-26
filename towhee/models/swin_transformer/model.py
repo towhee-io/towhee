@@ -14,9 +14,9 @@
 import math
 import torch
 from torch import nn
-from towhee.models.layers import trunc_normal_
-from .patch_embed2d import PatchEmbed2D
-from .patch_merging import PatchMerging
+from towhee.models.utils.weight_init import trunc_normal_
+from towhee.models.layers.patch_embed2d import PatchEmbed2D
+from towhee.models.layers.patch_merging import PatchMerging
 from .basic_layer import BasicLayer
 from .utils import init_vit_weights
 

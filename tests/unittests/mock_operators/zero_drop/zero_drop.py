@@ -25,6 +25,8 @@ class ZeroDrop(Operator):
         pass
 
     def __call__(self, num: int) -> bool:
+        if not isinstance(num, int):
+            raise RuntimeError(f'Input {num} is not int type')
         return num != 0
 
     @property

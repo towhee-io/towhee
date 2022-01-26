@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from torch import nn
-from towhee.models.swin_transformer.utils import to_2tuple
+from towhee.models.utils.general_utils import to_2tuple
 
 class PatchEmbed2D(nn.Module):
     """ 2D Image to Patch Embedding

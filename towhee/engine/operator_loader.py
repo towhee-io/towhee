@@ -33,7 +33,6 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
-
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
@@ -49,7 +48,7 @@ class OperatorLoader:
             # Not a interal operator
             return None
 
-    def load_operator(self, function: str, args: Dict[str, Any]) -> Operator:
+    def load_operator(self, function: str, args: Dict[str, Any], tag: str) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must

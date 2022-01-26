@@ -32,10 +32,7 @@ class GraphRepr(BaseRepr):
         file_or_url (`str`):
             The file or remote url that stores the information of this representation.
     """
-
-    def __init__(self, name: str, graph_type: str,
-                 op_reprs: Dict[str, OperatorRepr],
-                 df_reprs: Dict[str, DataFrameRepr]):
+    def __init__(self, name: str, graph_type: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataFrameRepr]):
         super().__init__(name)
         self._graph_type = graph_type
         self._operators = op_reprs
@@ -234,7 +231,20 @@ class GraphRepr(BaseRepr):
                 The GraphRepr object.
         """
         info = BaseRepr.load_src(src)
-        return GraphRepr.from_dict(info)
+        g_repr = GraphRepr.from_dict(info)
+
+        iso_df = g_repr.get_isolated_df()
+        iso_op = g_repr.get_isolated_op()
+        loop = g_repr.get_loop()
+
+        err_msg = (
+            f'The YAML contains isolated dataframe {iso_df}. ' if bool(iso_df) else '' +
+            f'The YAML contains isolated dataframe {iso_op}. ' if bool(iso_op) else '' + f'The YAML contains loop {loop}' if bool(loop) else ''
+        )
+        if bool(iso_df) or bool(iso_op) or bool(loop):
+            raise ValueError(err_msg)
+
+        return g_repr
 
     def to_yaml(self) -> str:
         """Export a YAML file describing this graph.

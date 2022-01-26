@@ -102,12 +102,7 @@ class GraphContext:
         # Build dataframes.
         dfs = {}
         for df_name, df_repr in self._repr.dataframes.items():
-            cols = {}
-            for i in range(len(df_repr.columns)):
-                col = df_repr.columns[i]
-                cols[col.name] = {}
-                cols[col.name]['index'] = i
-                cols[col.name]['type'] = col.vtype
+            cols = [(col.name, col.vtype) for col in df_repr.columns]
             dfs[df_name] = DataFrame(df_name, cols)
         self._dataframes = dfs
 
