@@ -35,7 +35,7 @@ class OperatorRegistry:
         return None
 
     @staticmethod
-    def operator(version,
+    def register(version,
                  name: str = None,
                  author: str = None,
                  description: str = None,
@@ -46,7 +46,7 @@ class OperatorRegistry:
         metainfo = {}
         def wrapper(cls):
             cls.metainfo = metainfo
-            OperatorRegistry.register(name, cls)
+            OperatorRegistry.REGISTRY[name] = cls
             return cls
 
         return wrapper
