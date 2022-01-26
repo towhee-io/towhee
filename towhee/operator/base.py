@@ -15,6 +15,7 @@
 from abc import abstractmethod
 from abc import ABC
 from enum import Enum
+from pathlib import Path
 
 # NotShareable:
 #    Stateful & reusable operator.
@@ -25,6 +26,9 @@ from enum import Enum
 # Shareable:
 #    Stateless operator
 from towhee.trainer.trainer import Trainer
+# from towhee.trainer.modelcard import ModelCard
+from towhee.trainer.load_weights import LoadWeights
+from towhee.trainer.save_weights import SaveWeights
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
@@ -92,8 +96,10 @@ class NNOperator(Operator):
     def __init__(self, framework: str = 'pytorch'):
         super().__init__()
         self._framework = framework
+        self.operator_name = type(self).__name__
         self.model = None
         self.trainer = None
+        self.model_card = None
 
     @property
     def framework(self):
@@ -120,12 +126,26 @@ class NNOperator(Operator):
     def set_trainer(self, training_config, train_dataset=None, eval_dataset=None):
         self.trainer = Trainer(self, training_config, train_dataset, eval_dataset)
 
-    #     self.tainer.train()
+    #     self.trainer.train()
     #     raise NotImplementedError
-    # def load_weithts(self):
-    #     self.trainer.load()
-    # def save(self):
-    #     self.trainer.save(..)
+
+    def load_weights(self, op_dir: str = None):
+        model = self.get_model()
+        weights_loader = LoadWeights()
+
+        weights_path = Path(op_dir).joinpath(
+            self.framework + '_' + 'weights.pth')
+        weights_loader.load_weights(model, weights_path)
+
+    def save(self, op_dir: str, overwrite: bool = True):
+        Path(op_dir).mkdir(exist_ok=True)
+        model = self.get_model()
+        weights_saver = SaveWeights(overwrite=overwrite)
+
+        weights_path = Path(op_dir).joinpath(
+            self.framework + '_' + 'weights.pth')
+        weights_saver.save_weights(model, weights_path)
+
 
 class PyOperator(Operator):
     """
