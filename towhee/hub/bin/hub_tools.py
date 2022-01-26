@@ -37,19 +37,19 @@ def get_repo_obj(args):
 
 def init_repo(args):
     repo_manager = get_repo_obj(args)
-    repo_path = Path(args.dir) / args.repo
+    repo_path = Path(args.dir) / args.repo.replace('-', '_')
     GitUtils(args.author, args.repo).clone(local_repo_path=repo_path)
     if args.classes == 'pipeline':
-        temp_path = Path(args.dir) / 'pipeline-template'
-        GitUtils('towhee', 'pipeline-template').clone(local_repo_path=repo_path)
+        temp_path = Path(args.dir) / 'pipeline_template'
+        GitUtils('towhee', 'pipeline-template').clone(local_repo_path=temp_path)
         repo_manager.init_pipeline(temp_path, repo_path)
     elif args.classes == 'pyoperator':
-        temp_path = Path(args.dir) / 'pyoperator-template'
-        GitUtils('towhee', 'pyoperator-template').clone(local_repo_path=repo_path)
+        temp_path = Path(args.dir) / 'pyoperator_template'
+        GitUtils('towhee', 'pyoperator-template').clone(local_repo_path=temp_path)
         repo_manager.init_pyoperator(temp_path, repo_path)
     elif args.classes == 'nnoperator':
-        temp_path = Path(args.dir) / 'nnoperator-template'
-        GitUtils('towhee', 'nnoperator-template').clone(local_repo_path=repo_path)
+        temp_path = Path(args.dir) / 'nnoperator_template'
+        GitUtils('towhee', 'nnoperator-template').clone(local_repo_path=temp_path)
         repo_manager.init_nnoperator(temp_path, repo_path, args.framework)
     rmtree(temp_path)
 
@@ -63,8 +63,9 @@ def main():
     c1_parser = argparse.ArgumentParser(add_help=False)
     c1_parser.add_argument('classes', choices=['operator', 'pipeline'], help='Repo class in [\'operator\', \'pipeline\'].')
     c2_parser = argparse.ArgumentParser(add_help=False)
-    c2_parser.add_argument('-c', '--classes', choices=['pyoperator', 'nnoperator', 'pipeline'],
-                           help='Repo class in [\'pyoperator\', \'nnoperator\', \'pipeline\'].')
+    c2_parser.add_argument(
+        '-c', '--classes', choices=['pyoperator', 'nnoperator', 'pipeline'], help='Repo class in [\'pyoperator\', \'nnoperator\', \'pipeline\'].'
+    )
     f_parser = argparse.ArgumentParser(add_help=False)
     f_parser.add_argument('-f', '--framework', default='pytorch', help='The framework of nnoperator, defaults to \'pytorch\'.')
     t_parser = argparse.ArgumentParser(add_help=False)
@@ -75,8 +76,9 @@ def main():
     subparsers = parser.add_subparsers(dest='command')
     create = subparsers.add_parser('create', parents=[c1_parser, ar_parser], add_help=False, description='Create Repo on Towhee hub.')
     create.add_argument('-p', '--password', nargs='?', required=True, help='Password of the author.')
-    subparsers.add_parser('init', parents=[ar_parser, c2_parser, d_parser, f_parser], add_help=False,
-                          description='Initialize the file for your Repo.')
+    subparsers.add_parser(
+        'init', parents=[ar_parser, c2_parser, d_parser, f_parser], add_help=False, description='Initialize the file for your Repo.'
+    )
     subparsers.add_parser('generate-yaml', parents=[ar_parser, d_parser], add_help=False, description='Generate yaml file for your Operator Repo.')
     subparsers.add_parser('download', parents=[ar_parser, t_parser, d_parser], add_help=False, description='Download repo(without .git) to local.')
     subparsers.add_parser('clone', parents=[ar_parser, t_parser, d_parser], add_help=False, description='Clone repo to local.')
