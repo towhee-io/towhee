@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.util
+import importlib
 from pathlib import Path
 from typing import Any, Dict
 
@@ -20,7 +20,8 @@ from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
-from towhee.hub.file_manager import FileManager
+
+from .operator_registry import OperatorRegistry
 
 
 class OperatorLoader:
@@ -66,25 +67,17 @@ class OperatorLoader:
         if op is not None:
             return op
 
-        fm = FileManager()
-        path = fm.get_operator(operator=function, tag=tag)
+        op = OperatorRegistry.resolve(function)
+        if op is not None:
+            return self.instance_operator(op, args)
 
-        if path is None:
-            raise FileExistsError('Cannot find operator.')
-
-        fname = Path(path).stem
-        modname = 'towhee.operator.' + fname
-        spec = importlib.util.spec_from_file_location(modname, path.resolve())
-
-        # Create the module and then execute the module in its own namespace.
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Instantiate the operator object and return it to the caller for
-        # `load_operator`. By convention, the operator class is simply the CamelCase
-        # version of the snake_case operator.
+        module, fname = function.split('/')
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-        if args is not None:
-            return getattr(module, op_cls)(**args)
-        else:
-            return getattr(module, op_cls)()
+
+        module = '.'.join([module, fname, fname])
+        op = getattr(importlib.import_module(module), op_cls)
+
+        return self.instance_operator(op, args)
+
+    def instance_operator(self, op, args) -> Operator:
+        return op(**args) if args is not None else op()

@@ -1,3 +1,4 @@
 pyyaml>=5.3.0
 requests>=2.12.5
 tqdm>=4.59.0
+hyperparameter>=0.1.4

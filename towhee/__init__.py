@@ -105,3 +105,5 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
     engine.add_pipeline(pipeline_)
 
     return _PipelineWrapper(pipeline_)
+
+from towhee.engine import register, resolve, operator # pylint: disable=import-outside-toplevel
