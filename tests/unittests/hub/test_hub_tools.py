@@ -14,8 +14,10 @@
 
 import unittest
 import argparse
+from pathlib import Path
+from shutil import rmtree
 
-from towhee.hub.bin.hub_tools import get_repo_obj
+from towhee.hub.bin.hub_tools import get_repo_obj, init_repo
 from towhee.hub.repo_manager import RepoManager
 from towhee.hub.operator_manager import OperatorManager
 from towhee.hub.pipeline_manager import PipelineManager
@@ -44,3 +46,31 @@ class TestHubTools(unittest.TestCase):
         self.assertIsInstance(repo_obj_3, OperatorManager)
         self.assertIsInstance(repo_obj_4, PipelineManager)
         self.assertIsInstance(repo_obj_5, OperatorManager)
+
+    def test_init_repo(self):
+        public_path = Path(__file__).parent.parent.resolve()
+        pipeline_dir = public_path / 'test_cache' / 'pipelines' / 'temp'
+        nnop_dir = public_path / 'test_cache' / 'operators' / 'nntemp'
+        pyop_dir = public_path / 'test_cache' / 'operators' / 'pytemp'
+        args_pipeline = argparse.Namespace(command='init', author='towhee', repo='ci-test', classes='pipeline', dir=pipeline_dir)
+        args_nnop = argparse.Namespace(
+            command='init', author='towhee', repo='ci-test-operator', classes='nnoperator', framework='pytorch', dir=nnop_dir
+        )
+        args_pyop = argparse.Namespace(command='init', author='towhee', repo='ci-test-operator', classes='pyoperator', dir=pyop_dir)
+
+        init_repo(args_pipeline)
+        init_repo(args_nnop)
+        init_repo(args_pyop)
+
+        self.assertTrue(nnop_dir.is_dir())
+        self.assertTrue(pyop_dir.is_dir())
+        self.assertTrue(pipeline_dir.is_dir())
+
+        self.assertTrue((pipeline_dir / 'ci_test' / 'ci_test.yaml').is_file())
+        self.assertTrue((nnop_dir / 'ci_test_operator' / 'ci_test_operator.py').is_file())
+        self.assertTrue((nnop_dir / 'ci_test_operator' / 'pytorch').is_dir())
+        self.assertTrue((pyop_dir / 'ci_test_operator' / 'ci_test_operator.py').is_file())
+
+        rmtree(pipeline_dir)
+        rmtree(nnop_dir)
+        rmtree(pyop_dir)
