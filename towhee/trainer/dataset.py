@@ -39,11 +39,12 @@ def get_dataset(name, **kwargs) -> TorchDataSet:
     """
     dataset_construct_map = {
         'mnist': datasets.MNIST,
-        'cifar10': datasets.cifar.CIFAR10
+        'cifar10': datasets.cifar.CIFAR10,
+        'fake': datasets.FakeData
         # 'imdb': IMDB  # ,()
     }
-    default_args = {'root': 'data'}
-    kwargs = {**default_args, **kwargs}
+    #default_args = {'root': 'data'}
+    #kwargs = {**default_args, **kwargs}
     torch_dataset = dataset_construct_map[name](
         **kwargs)  # , transform=transform, target_transform=target_transform, **kwargs)
     return TorchDataSet(torch_dataset)
