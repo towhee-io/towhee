@@ -16,6 +16,7 @@ import requests
 import os
 import logging
 from typing import Dict, Set, Any
+from hyperparameter import param_scope, HyperParameter
 
 
 class BaseRepr:
@@ -59,6 +60,17 @@ class BaseRepr:
         return True
 
     @staticmethod
+    def render_template(string: str):
+        string = string.read()
+        retval = yaml.safe_load(string)
+        retval = HyperParameter(**retval)
+        variables = retval().variables({})
+        with param_scope(**variables) as hp:
+            variables.update(hp().variables({}))
+            rendered = string.format(**variables)
+        return rendered
+
+    @staticmethod
     def load_str(string: str) -> dict:
         """
         Load the representation(s) information from a YAML file (pre-loaded as string).
@@ -72,7 +84,8 @@ class BaseRepr:
                 The dict loaded from the YAML file that contains the representation
                 information.
         """
-        return yaml.safe_load(string)
+        rendered = BaseRepr.render_template(string)
+        return yaml.safe_load(rendered)
 
     @staticmethod
     def load_file(file: str) -> dict:
