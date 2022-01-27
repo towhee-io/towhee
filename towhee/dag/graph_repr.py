@@ -192,7 +192,7 @@ class GraphRepr(BaseRepr):
         return GraphRepr(info['name'], info.get('type', ''), operators, dataframes)
 
     @staticmethod
-    def from_yaml(src: str, init_edits: dict):
+    def from_yaml(src: str, init_edits: dict = None):
         """
         Import a YAML file describing this graph.
         Example YAML look like this:
