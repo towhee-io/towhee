@@ -53,7 +53,6 @@ class ExecuteCommand:
             pipeline.update(hp)
             with open(self._args.pipeline, encoding='utf-8') as f:
                 template = f.read()
-        
         print(pipeline.variables)
         print(template.format(**pipeline.variables))
 
