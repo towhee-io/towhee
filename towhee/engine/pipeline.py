@@ -27,20 +27,23 @@ class Pipeline:
         graph_repr: (`str` or `towhee.dag.GraphRepr`)
             The graph representation either as a YAML-formatted string, or directly
             as an instance of `GraphRepr`.
+        init_edits: (`dict`)
+            Changes to operator parameters during pipeline creation. In the form of
+            {operator_name: {param1: value1, param2: value2, ...}, ...}
         parallelism: (`int`)
             The parallelism parameter dictates how many copies of the graph context
             we create. This is likely a low number (1-4) for local engines, but may
             be much higher for cloud instances.
     """
 
-    def __init__(self, graph_repr: GraphRepr, parallelism: int = 1) -> None:
+    def __init__(self, graph_repr: GraphRepr, init_edits: dict = None, parallelism: int = 1) -> None:
         self._parallelism = parallelism
         self.on_graph_finish_handlers = []
         self._scheduler = None
         self._graph_count = 0
 
         if isinstance(graph_repr, str):
-            self._graph_repr = GraphRepr.from_yaml(graph_repr)
+            self._graph_repr = GraphRepr.from_yaml(graph_repr, init_edits)
         else:
             self._graph_repr = graph_repr
 

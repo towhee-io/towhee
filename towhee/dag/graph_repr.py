@@ -192,7 +192,7 @@ class GraphRepr(BaseRepr):
         return GraphRepr(info['name'], info.get('type', ''), operators, dataframes)
 
     @staticmethod
-    def from_yaml(src: str):
+    def from_yaml(src: str, init_edits: dict):
         """
         Import a YAML file describing this graph.
         Example YAML look like this:
@@ -225,14 +225,22 @@ class GraphRepr(BaseRepr):
         Args:
             src (`str`):
                 YAML file (could be pre-loaded as string) to import.
+            init_edits (`dict`):
+                Optional changes to the init_args of a pipeline during runtime.
+                In the form of {operator_name: {param1: value1, param2: value2, ...}, ...}
 
         Returns:
             (`towhee.dag.GraphRepr`)
                 The GraphRepr object.
         """
         info = BaseRepr.load_src(src)
-        g_repr = GraphRepr.from_dict(info)
 
+        if init_edits is not None:
+            for op in info['operators']:
+                if op['name'] in init_edits:
+                    op['init_args'] = {k: init_edits[op['name']].get(k, v) for k, v in op['init_args'].items()}
+
+        g_repr = GraphRepr.from_dict(info)
         iso_df = g_repr.get_isolated_df()
         iso_op = g_repr.get_isolated_op()
         loop = g_repr.get_loop()

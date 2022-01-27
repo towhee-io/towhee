@@ -72,7 +72,7 @@ class _PipelineWrapper:
         return format_handler(out_df)
 
 
-def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
+def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True, init_edits: dict = None):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -86,6 +86,9 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
             Which tag to use for operators/pipelines on hub, defaults to `main`.
         install_reqs (`bool`):
             Whether to download the python packages if a requirements.txt file is included in the repo.
+        init_edits (`dict`):
+            Optional argument that allows changes to operator init_args when creating a
+            pipeline. In the form of {operator_name: {param1: value1, param2: value2, ...}, ...}
 
     Returns
         (`typing.Any`)
@@ -101,7 +104,7 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
         yaml_path = fm.get_pipeline(p_repo, tag, install_reqs)
 
     engine = Engine()
-    pipeline_ = Pipeline(str(yaml_path))
+    pipeline_ = Pipeline(str(yaml_path), init_edits = init_edits)
     engine.add_pipeline(pipeline_)
 
     return _PipelineWrapper(pipeline_)
