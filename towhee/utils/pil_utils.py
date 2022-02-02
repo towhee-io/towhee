@@ -26,7 +26,7 @@ except ModuleNotFoundError as e:
     raise ModuleNotFoundError('PIL not found, you can install via `pip install pillow`.') from e
 
 
-def from_src(src: Union[str, PosixPath]) -> 'towhee.types.Image':
+def from_src(src: Union[str, PosixPath]) -> Image:
     """
     Load the image from url/path as towhee's Image object.
 
@@ -44,7 +44,7 @@ def from_src(src: Union[str, PosixPath]) -> 'towhee.types.Image':
     return img
 
 
-def from_pil(pil_img: PILImage.Image) -> 'towhee.types.Image':
+def from_pil(pil_img: PILImage.Image) -> Image:
     '''
     Convert a PIL.Image.Image into towhee.types.Image.
 
@@ -68,7 +68,7 @@ def from_pil(pil_img: PILImage.Image) -> 'towhee.types.Image':
     return towhee_img
 
 
-def to_pil(towhee_img: 'towhee.type.Image') -> PILImage.Image:
+def to_pil(towhee_img: Image) -> PILImage.Image:
     """
     Convert a towhee.types.Image into PIL.Image.Image.
 
