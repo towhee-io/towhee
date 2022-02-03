@@ -24,6 +24,7 @@ const sidebars = {
       'Getting started': [
         'get-started/install',
         'get-started/quick-start',
+        'get-started/troubleshooting',
         //'get-started/pipeline-config',
       ],
     },
