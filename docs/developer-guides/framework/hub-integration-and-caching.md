@@ -3,7 +3,7 @@ id: hub-integration-and-caching
 title: Hub integration and caching
 ---
 
-A large part of what makes Towhee unique compared to other pipelining software is its emphasis on open source and integration with its own hub. Towhee hub allows for sharing and contributing to pipelines and operators that cover a wide range of use cases, ultimately allowing everyone to further their applications together. Lets go over how the hub works and how we ultimately integrate it into the framework. 
+A large part of what makes Towhee unique compared to other pipelining software is its emphasis on open source and integration with its own hub. Towhee hub allows for sharing and contributing pipelines and operators that cover a wide range of use cases, allowing everyone to develop embedding and other ML applications with just a few lines of code.
 
 
 ### Towhee Hub
@@ -15,9 +15,7 @@ Towhee hub is deployed on a Gitea server. Gitea is an open-source, self-hosted g
 
 **Integration**
 
-All of Towhees communication with the hub is done through http requests. This was done in order to avoid requiring git installations on the system. 
-
-Towhee operations that interact with the hub can be split into two categories, those that require authorization and those that do not. Lets begin with those that do not. 
+Towhee operations that interact with the hub can be split into two categories, those that require authorization and those that do not. Lets begin with those that do not.
 
 **Non-Authorization**
 
@@ -25,7 +23,7 @@ The main operation that does not require authorization is downloading the repo. 
 
 **Authorized Requests**
 
-Authorized requests require that you have login credentials setup with our hub. The main operations that require authorization and creating and deleting a repo. These requests use temporary tokens to speed up execution. 
+Authorized requests require that you have login credentials setup with our hub. The main operations that require authorization are creating and deleting a repositories. These requests use temporary tokens to speed up execution.
 
 ## Caching
 

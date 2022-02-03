@@ -1,13 +1,15 @@
 ---
-id: pipeline-overview
+id: Pipeline-overview
 title: Pipeline overview
 ---
 
 ### Pipeline overview
 
-All Towhee pipelines are represented through a `YAML` file. This file defines how individual operators are chained together to generate a usable result. Within Towhee, YAML files are loaded and converted into a [graph representation](./DAG-details.md), which is essentially a Python object instance that is easily readable by Towhee engines.
+_Note: if you have not done so, we highly recommend you read our [architecture overview](./architecture-overview.md) section first_
 
-Here's an example of a pipeline YAML, pulled directly from the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50/src/branch/main/image_embedding_resnet50.yaml).
+All Towhee Pipelines are represented through a `YAML` file. This file defines how individual Operators are chained together to generate a usable result. Within Towhee, YAML files are loaded and converted into a [graph representation](./DAG-details.md), which is essentially a Python object instance that is easily readable by a Towhee Engine.
+
+Here's an example of a Pipeline YAML, pulled directly from the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50/src/branch/main/image_embedding_resnet50.yaml).
 
 ```
 name: 'image-embedding-resnet50'
@@ -105,33 +107,33 @@ dataframes:
                 vtype: 'numpy.ndarray'
 ```
 
-Let's go over this pipeline file line-by-line.
+Let's go over this Pipeline file line-by-line.
 
 **Pipeline name**
 
-The first line of a Towhee pipeline YAML should be the actual name of the pipeline:
+The first line of a Towhee Pipeline YAML should be the actual name of the Pipeline:
 
 ```
 name: 'image-embedding-resnet50'
 ```
 
-If you're Towhee pipeline developer, be sure this pipeline name does not conflict with other repository names under your username - the Towhee hub tool will automatically use this name as the repository name if you choose to upload your pipeline to the Towhee hub.
+If you're Pipeline developer, be sure this Pipeline name does not conflict with other repository names under your username - the Towhee hub tool will automatically use this name as the repository name if you choose to upload your Pipeline to the Towhee hub.
 
 **Pipeline type**
 
-All pipelines should be associated with a type (also known as a "category" on the Towhee hub):
+Most Pipelines will associated with an optional `type` (also known as a "category" on the Towhee hub):
 
 ```
 type: 'image-embedding'
 ```
 
-In the example above, we have defined the `image-embedding-resnet50` pipeline to be an `image-embedding` pipeline. All pipeline types have pre-defined input and output formats; `image-embedding`'s are `str` (image path) and `numpy.ndarray`, respectively.
+In the example above, we have defined the `image-embedding-resnet50` Pipeline to be an `image-embedding` Pipeline. All Pipeline types have pre-defined input and output formats; `image-embedding`'s are `str` (image path) and `numpy.ndarray`, respectively.
+
+While the `type` parameter is optional, we do not recommend leaving it blank, as this will leave the Pipeline's inputs and outputs unconstrained.
 
 **Operator list**
 
-Operators are not limited to neural networks; traditional ML models, image processing algorithms, or even simple Python scripts can all be packaged as Towhee operators and provided to users via the Towhee hub. In this sense, operators are simply transformations on a set of input data.
-
-All operators are classes which inherit Towhee's `Operator` class (neural network operators should inherit `NNOperator`). Operators within a pipeline can be specified as follows:
+All Operators are classes which inherit Towhee's `Operator` class (neural network Operators should inherit `NNOperator`). Operators within a Pipeline can be specified as follows:
 
 ```
 operators:
@@ -143,13 +145,13 @@ operators:
         model_name: 'resnet50'
 ```
 
-The corresponding operator for the above snippet can be found [here](https://towhee.io/towhee/resnet-image-embedding/).
+The corresponding Operator for the above snippet can be found [here](https://towhee.io/towhee/resnet-image-embedding/).
 
-- `name` denotes the name of the operator - this can be anything so long as it does not conflict with other operator names in the same pipeline. We recommend using something descriptive.
-- `function` and `tag` specify the local `git` repository and repository tag under `$CACHE_DIR` to load the operator from; if this repository+tag combination is not found, the engine will automatically attempt to download it from the Towhee hub.
-- `init_args` are initialization arguments passed to the operator upon instantiation. When the operator is loaded by the engine, these initialization arguments are passed into the `__init__` function of the operator.
+- `name` denotes the name of the Operator - this can be anything so long as it does not conflict with other Operator names in the same Pipeline. We recommend using something descriptive.
+- `function` and `tag` specify the local `git` repository and repository tag under `$CACHE_DIR` to load the Operator from; if this repository+tag combination is not found, the engine will automatically attempt to download it from the Towhee hub.
+- `init_args` are initialization arguments passed to the Operator upon instantiation. When the Operator is loaded by the engine, these initialization arguments are passed into the `__init__` function of the Operator.
 
-In addition to the operator name, repository, and initialization parameters, operators must also receive input data from one or many dataframes within the pipeline. The below snippet is an example of a single operator input:
+In addition to the Operator name, repository, and initialization parameters, Operators must also receive input data from one or many DataFrames within the Pipeline. The below snippet is an example of a single Operator input:
 
 ```
     inputs:
@@ -159,9 +161,9 @@ In addition to the operator name, repository, and initialization parameters, ope
             col: 0
 ```
 
-Here, `df` specifies the input dataframe, `col` is the column index within the dataframe to extract data frame, and `name` is the operator's parameter name that `df.col` should map to. For more information on dataframes, please see the next section.
+Here, `df` specifies the input DataFrame, `col` is the column index within the DataFrame to extract data frame, and `name` is the Operator's parameter name that `df.col` should map to. For more information on DataFrames, please see the next section.
 
-While an operator can have any number of inputs, only one output dataframe is allowed:
+While an Operator can have any number of inputs, only one output DataFrame is allowed:
 
 ```
     outputs:
@@ -169,13 +171,13 @@ While an operator can have any number of inputs, only one output dataframe is al
             df: 'embedding'
 ```
 
-To maintain compatibility with the `inputs` parameter, the `outputs` parameter is formatted as a YAML list as well (the list should always have only one element). The columns of the dataframe specified by `outputs[0]['df']` must match the outputs of the operator.
+To maintain compatibility with the `inputs` parameter, the `outputs` parameter is formatted as a YAML list as well (the list should always have only one element). The columns of the DataFrame specified by `outputs[0]['df']` must match the outputs of the Operator.
 
-Note that `_start_op` and `_end_op` are reserved keywords that denote special operators used by Towhee engines to signify the start and end of a pipeline; they should not be used anywhere else.
+Note that `_start_op` and `_end_op` are reserved keywords that denote special Operators used by Towhee engines to signify the start and end of a Pipeline; they should not be used anywhere else.
 
 **Dataframe list**
 
-Dataframes are simply data containers in tabular format. Each row of a dataframe corresponds to a single "line" of data, while columns represent the field:
+Dataframes are simply data containers in tabular format. Each row of a DataFrame corresponds to a single "line" of data, while columns represent the field:
 
 ```
 dataframes:
@@ -187,4 +189,4 @@ dataframes:
             vtype: 'towhee.types.Image'
 ```
 
-Here, `name` denotes the name of the dataframe, while `columns` lists each dataframe field in standard array indexing order. Within `column`, `vtype` represents the field/variable type. This is required by the Engine so that it can perform static type checks prior to running the pipelines.
+Here, `name` denotes the name of the DataFrame, while `columns` lists each DataFrame field in standard array indexing order. Within `column`, `vtype` represents the field/variable type. This is required by the Engine so that it can perform static type checks prior to running the Pipelines.
