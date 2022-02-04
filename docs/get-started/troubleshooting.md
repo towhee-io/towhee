@@ -11,7 +11,7 @@ title: Troubleshooting
 ![Example](troubleshooting.jpg)
 ### No Module named Towhee
 
-This can be solved by reinstalling the Towhee. To check if Towhee was installed, use the `pip freeze` command and check the installation. Restarting the notebook in case of jupyter notebook, 
+This can be solved by reinstalling the Towhee. To check if Towhee was installed, use the `pip freeze` command and check the installation. Restarting the notebook in case of jupyter notebook.
 
 
 ### The dependencies are not getting automatically installed. 
