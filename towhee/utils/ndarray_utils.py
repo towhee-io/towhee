@@ -25,7 +25,7 @@ except ModuleNotFoundError as e:
     raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from e
 
 
-def from_src(src: Union[str, PosixPath]) -> 'towhee.types.Image':
+def from_src(src: Union[str, PosixPath]) -> Image:
     """
     Load the image from url/path as towhee's Image object.
 
@@ -44,7 +44,7 @@ def from_src(src: Union[str, PosixPath]) -> 'towhee.types.Image':
     return img
 
 
-def from_ndarray(ndarray_img: np.ndarray, mode: str) -> 'towhee.types.Image':
+def from_ndarray(ndarray_img: np.ndarray, mode: str) -> Image:
     """
     Convert an image loaded by cv2 as ndarray into towhee.types.Image.
 
@@ -68,7 +68,7 @@ def from_ndarray(ndarray_img: np.ndarray, mode: str) -> 'towhee.types.Image':
     return towhee_img
 
 
-def to_ndarray(towhee_img: 'towhee.type.Image') -> np.ndarray:
+def to_ndarray(towhee_img: Image) -> np.ndarray:
     """
     Convert a towhee.types.Image into ndarray.
 
@@ -90,12 +90,12 @@ def to_ndarray(towhee_img: 'towhee.type.Image') -> np.ndarray:
     return ndarray_img
 
 
-def rgb2bgr(img: Union[np.ndarray, 'towhee.type.Image']) -> np.ndarray:
+def rgb2bgr(img: Union[np.ndarray, Image]) -> np.ndarray:
     """
     Convert an RGB image into ndarray of mode BGR.
 
     Args:
-        img (`Union[np.ndarray, 'towhee.type.Image']`):
+        img (`Union[np.ndarray, 'towhee.types.Image']`):
             An RGB image either in the form of ndarray or towhee's Image.
 
     Returns:
@@ -112,7 +112,7 @@ def rgb2bgr(img: Union[np.ndarray, 'towhee.type.Image']) -> np.ndarray:
         rgb_img = img
 
     else:
-        raise TypeError('Input image should either be an `np.ndarray` or a `towhee.type.Image`.')
+        raise TypeError('Input image should either be an `np.ndarray` or a `towhee.types.Image`.')
 
     bgr_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
 
