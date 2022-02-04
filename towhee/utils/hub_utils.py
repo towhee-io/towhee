@@ -197,6 +197,27 @@ class HubUtils:
         except HTTPError as e:
             raise e
 
+
+
+    def basic_create(self, password, repo_class):
+        data = {
+            'auto_init': True,
+            'default_branch': 'main',
+            'description': repo_class,
+            'name': self._repo,
+            'private': False,
+            'template': False,
+            'trust_model': 'default',
+            'type': repo_class
+        }
+        url = self._root + '/api/v1/user/repos'
+        try:
+            r = requests.post(url, data=data, auth=HTTPBasicAuth(self._author, password))
+            r.raise_for_status()
+        except HTTPError as e:
+            raise e
+
+
     def create(self, password: str, repo_class: int) -> None:
         """
         Create a repo under current account.
@@ -231,6 +252,29 @@ class HubUtils:
             r.raise_for_status()
         except HTTPError as e:
             raise e
+        finally:
+            self.delete_token(str(token['id']), password)
+
+    def delete(self, password: str):
+        """
+        Delete a repo under current account.
+
+        Args:
+            password (`str`):
+                Current author's password.
+        """
+        token_name = random.randint(0, 10000)
+        r = self.create_token(token_name, password)
+        token = r.json()
+        url = self._root + '/api/v1//repos/' + self._author + '/' + self._repo
+        try:
+            r = requests.delete(url, headers={'Authorization': 'token ' + str(token['sha1'])})
+            r.raise_for_status()
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                print('Repo not found.')
+            else:
+                raise e
         finally:
             self.delete_token(str(token['id']), password)
 
