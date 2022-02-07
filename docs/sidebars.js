@@ -54,13 +54,18 @@ const sidebars = {
         },
         {
           Framework: [
-            'developer-guides/framework/architectural-overview',
+            'developer-guides/framework/architecture-overview',
             'developer-guides/framework/pipeline-overview',
-            'developer-guides/framework/DAG-details',
+            'developer-guides/framework/dag-details',
             'developer-guides/framework/engine-details',
-            'developer-guides/framework/layer-details',
+            'developer-guides/framework/layer-subframework',
             'developer-guides/framework/hub-integration-and-caching',
             'developer-guides/framework/image-ensemble-training',
+          ],
+        },
+        {
+          Models: [
+            'developer-guides/models/layers-overview.md',
           ],
         },
       ],
