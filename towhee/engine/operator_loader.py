@@ -36,7 +36,6 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
-
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
