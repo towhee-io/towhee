@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
@@ -21,6 +21,7 @@ from towhee.engine.pipeline import Pipeline
 from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.engine import register, resolve
+from towhee.engine.operator_loader import OperatorLoader
 
 __all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve']
 
@@ -107,3 +108,28 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
 
     return _PipelineWrapper(pipeline_)
 
+
+def op(operator_src: str, tag: str = 'main', **kwargs):
+    """
+    Entry method which takes either operator tasks or paths to python files or class in notebook.
+    An `Operator` object is created with the init args(kwargs).
+    Args:
+        operator_src (`str`):
+            operator name or python file location or class in notebook.
+        tag (`str`):
+            Which tag to use for operators on hub, defaults to `main`.
+    Returns
+        (`typing.Any`)
+            The `Operator` output.
+    """
+    if isinstance(operator_src, type):
+        class_op = type('operator', (operator_src, ), kwargs)
+        return class_op.__new__(class_op, **kwargs)
+
+    loader = OperatorLoader()
+    if os.path.isfile(operator_src):
+        op_obj = loader.load_operator_from_path(operator_src, kwargs)
+    else:
+        op_obj = loader.load_operator(operator_src, kwargs, tag)
+
+    return op_obj
