@@ -24,6 +24,7 @@ const sidebars = {
       'Getting started': [
         'get-started/install',
         'get-started/quick-start',
+        'get-started/troubleshooting',
         //'get-started/pipeline-config',
       ],
     },
@@ -54,6 +55,7 @@ const sidebars = {
         {
           Framework: [
             'developer-guides/framework/architectural-overview',
+            'developer-guides/framework/pipeline-overview',
             'developer-guides/framework/DAG-details',
             'developer-guides/framework/engine-details',
             'developer-guides/framework/layer-details',
