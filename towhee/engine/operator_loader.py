@@ -14,7 +14,7 @@
 
 import importlib
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
@@ -79,14 +79,19 @@ class OperatorLoader:
                 else:
                     return None
 
-    def load_operator_from_cache(
-            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
-        fm = FileManager()
-        path = fm.get_operator(operator=function, tag=tag)
-
-        if path is None:
-            raise FileExistsError('Cannot find operator.')
-
+    def load_operator_from_path(self, path: Union[str, Path], args: Dict[str, Any]) -> Operator:
+        """
+        Load operator form local path.
+        Args:
+            path (`Union[str, Path]`):
+                Path to the operator python file.
+            args (`Dict[str, Any]`):
+                The init args for OperatorClass.
+        Returns
+            (`typing.Any`)
+                The `Operator` output.
+        """
+        path = Path(path)
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
         spec = importlib.util.spec_from_file_location(modname, path.resolve())
@@ -101,6 +106,16 @@ class OperatorLoader:
         op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
         op = getattr(module, op_cls)
         return self.instance_operator(op, args) if op is not None else None
+
+    def load_operator_from_cache(
+            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        fm = FileManager()
+        path = fm.get_operator(operator=function, tag=tag)
+
+        if path is None:
+            raise FileExistsError('Cannot find operator.')
+
+        return self.load_operator_from_path(path, args)
 
     def load_operator(self, function: str, args: Dict[str, Any],
                       tag: str) -> Operator:
