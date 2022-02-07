@@ -17,6 +17,8 @@ import sys
 import pathlib
 from setuptools import setup
 
+from typing import List
+
 
 class DevelopCommand:
     """
@@ -30,9 +32,10 @@ class DevelopCommand:
     def __call__(self):
         os.chdir(self._args.path)
         cwd = os.getcwd()
-        has_pytorch =  os.path.isdir('./pytorch')
+        has_pytorch = os.path.isdir('./pytorch')
         operator_name = os.path.basename(cwd).replace('-', '_')
-        package_name = 'towheeoperator.{}'.format(operator_name)
+        package_name = 'towheeoperator.{}_{}'.format(self._args.namespace,
+                                                     operator_name)
         requirements = self.read_requirements()
         if self._args.pack:
             sys.argv = 'setup.py bdist_wheel --universal'.split()
@@ -40,19 +43,25 @@ class DevelopCommand:
             sys.argv = ['setup.py', 'install']
         if self._args.develop:
             sys.argv = ['setup.py', 'develop']
-            os.chdir(cwd + '/../..')
+            if not os.path.isdir('./towheeoperator'):
+                os.mkdir('towheeoperator')
+            link_target = 'towheeoperator/{}_{}'.format(
+                self._args.namespace, operator_name)
+            if not os.path.islink(link_target):
+                os.symlink('..', link_target)
         setup(name=package_name,
-              packages=[package_name, package_name+'.pytorch'] if has_pytorch else [package_name],
+              packages=[package_name, package_name +
+                        '.pytorch'] if has_pytorch else [package_name],
               package_dir={package_name: '.'},
               package_data={'': ['*.txt', '*.rst']},
               install_requires=requirements,
               zip_safe=False)
 
-    def read_requirements(self):
+    def read_requirements(self) -> List[str]:
         try:
             with open('requirements.txt', encoding='utf-8') as f:
                 required = f.read().splitlines()
-        except Exception:           # pylint: disable=broad-except)
+        except Exception:  # pylint: disable=broad-except)
             required = []
         return required
 
@@ -73,6 +82,11 @@ class DevelopCommand:
                            '--install',
                            action='store_true',
                            help='install the op/pipeline')
+        parser_develop.add_argument('-n',
+                                    '--namespace',
+                                    type=str,
+                                    default='towhee',
+                                    help='operator namespace')
         parser_develop.add_argument('path',
                                     type=pathlib.Path,
                                     nargs='?',

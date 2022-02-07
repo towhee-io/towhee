@@ -20,8 +20,9 @@ from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
 from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
+from towhee.engine import register, resolve
 
-__all__ = ['DEFAULT_PIPELINES', 'pipeline']
+__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
@@ -106,4 +107,3 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
 
     return _PipelineWrapper(pipeline_)
 
-from towhee.engine import register, resolve # pylint: disable=import-outside-toplevel
