@@ -41,12 +41,6 @@ const sidebars = {
         'pipelines/audio-embedding',
       ],
     },
-    /*{
-      'Supported operators': [
-        'operators/image-loading-and-transforms',
-        'operators/model-based-operators',
-      ],
-    },*/
     {
       'Developer guides': [
         {
