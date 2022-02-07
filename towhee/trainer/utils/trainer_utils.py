@@ -17,7 +17,6 @@ Utilities for the Trainer.
 """
 
 import random
-import re
 from typing import NamedTuple
 from enum import Enum
 import numpy as np
@@ -41,8 +40,8 @@ class TrainOutput(NamedTuple):
     training_loss: float
 
 
-PREFIX_CHECKPOINT_DIR = "checkpoint"
-_re_checkpoint = re.compile(r"^" + PREFIX_CHECKPOINT_DIR + r"\-(\d+)$")
+CHECKPOINT_NAME = "checkpoint.pt"
+# _re_checkpoint = re.compile(r"^" + CHECKPOINT_NAME + r"\-(\d+)$")
 
 class SchedulerType(Enum):
     LINEAR = "linear"

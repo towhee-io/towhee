@@ -17,7 +17,14 @@ import torch
 import torchvision
 from pathlib import Path
 
+from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
+
+from towhee.trainer.training_config import TrainingConfig
+
+from towhee.trainer.trainer import Trainer
+
 from towhee.operator import NNOperator
+from towhee.trainer.modelcard import ModelCard
 
 
 class MockOperator(NNOperator):
@@ -36,17 +43,27 @@ class TestWeights(unittest.TestCase):
     """
     op = MockOperator()
     x = torch.rand([1, 3, 224, 224])
+    training_config = TrainingConfig(
+        output_dir='./temp_output',
+        overwrite_output_dir=True,
+        epoch_num=2,
+        per_gpu_train_batch_size=8,
+        prediction_loss_only=True,
+    )
+    model_card = ModelCard(model_details='efficientnet test modelcard',
+                           training_data='use efficientnet test data')
 
     def test_weights(self):
+        self.op.trainer = Trainer(self.op.get_model(), self.training_config, None, None, model_card=self.model_card)
         self.op.save('./test_save')
-        filepath = './test_save/pytorch_weights.pth'
+        filepath = Path('./test_save').joinpath(CHECKPOINT_NAME)
         self.assertTrue(Path(filepath).is_file())
 
         with self.assertRaises(FileExistsError):
             self.op.save('./test_save', overwrite=False)
 
         out1 = self.op(self.x)
-        self.op.load_weights('./test_save')
+        self.op.load('./test_save')
         out2 = self.op(self.x)
         self.assertTrue((out1==out2).all())
 

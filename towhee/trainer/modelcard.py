@@ -19,8 +19,7 @@ from towhee.trainer.utils import logging
 
 logger = logging.get_logger(__name__)
 
-MODEL_CARD_NAME = "modelcard.json"
-
+MODEL_CARD_NAME = "model_card.json"
 
 class ModelCard():
     """
@@ -51,7 +50,7 @@ class ModelCard():
         return self.__dict__ == other.__dict__
 
     def __repr__(self):
-        return str(self.to_json_string())
+        return str(self._to_json_string())
 
     def save_model_card(self, save_directory_or_file):
         """
@@ -83,11 +82,19 @@ class ModelCard():
         output = copy.deepcopy(self.__dict__)
         return output
 
-#
+    @staticmethod
+    def load_from_file(file_path):
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                model_card_dict = json.loads(f.read())
+                return ModelCard(**model_card_dict)
+        raise FileNotFoundError
+
 # if __name__ == '__main__':  # todo: delete
-#     mc = ModelCard(model_details="abc", factors=1234, type='aaabbb')
+#     # mc = ModelCard(model_details="abc", factors=1234, type='aaabbb')
+#     mc = ModelCard.load_from_file('./aaa.txt')
 #     print(mc)
 #     print(mc.to_dict())
-#     print(mc.to_json_string())
-#     mc.save_model_card('./aaa.txt')
+#     # print(mc.to_json_string())
+#     # mc.save_model_card('./aaa.txt')
 #     print(1)
