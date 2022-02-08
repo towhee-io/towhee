@@ -30,7 +30,7 @@ class HubUtils:
         root (`str`):
             The root url where the repo located.
     """
-    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
+    def __init__(self, author: str, repo: str, root: str = 'https://towhee.io'):
         self._author = author
         self._repo = repo
         self._root = root

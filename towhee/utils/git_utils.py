@@ -35,7 +35,7 @@ class GitUtils:
         root (`str`):
             The root url of the repo.
     """
-    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
+    def __init__(self, author: str, repo: str, root: str = 'https://towhee.io'):
         self._author = author
         self._repo = repo
         self._root = root
