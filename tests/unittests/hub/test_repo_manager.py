@@ -63,8 +63,8 @@ class TestRepoManager(unittest.TestCase):
         self.assertFalse((repo_dir / 'README.md').is_file())
 
     def test_download(self):
-        rm = RepoManager('shiyu', 'test-lfs')
-        repo_dir = public_path / 'test_cache' / 'test-lfs'
+        rm = RepoManager('towhee', 'ci-test')  # towhee/ci-lfs for large files
+        repo_dir = public_path / 'test_cache' / 'ci_test'
         if repo_dir.is_dir():
             rmtree(repo_dir)
         rm.download(repo_dir)
