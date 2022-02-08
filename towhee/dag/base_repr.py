@@ -16,7 +16,7 @@ import requests
 import os
 import logging
 from typing import Dict, Set, Any
-from hyperparameter import param_scope, HyperParameter
+from towhee.hparam import param_scope
 
 
 class BaseRepr:
@@ -63,7 +63,7 @@ class BaseRepr:
     def render_template(string: str):
         string = string.read() if hasattr(string, 'read') else string
         retval = yaml.safe_load(string)
-        retval = HyperParameter(**retval)
+        retval = param_scope(**retval)
         variables = retval().variables({})
         with param_scope(**variables) as hp:
             variables.update(hp().variables({}))

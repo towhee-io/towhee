@@ -22,8 +22,9 @@ from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.engine import register, resolve
 from towhee.engine.operator_loader import OperatorLoader
+from towhee.hparam import param_scope, auto_param
 
-__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve']
+__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
