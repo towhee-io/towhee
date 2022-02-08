@@ -61,7 +61,7 @@ class BaseRepr:
 
     @staticmethod
     def render_template(string: str):
-        string = string.read()
+        string = string.read() if hasattr(string, 'read') else string
         retval = yaml.safe_load(string)
         retval = HyperParameter(**retval)
         variables = retval().variables({})
