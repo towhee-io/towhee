@@ -22,9 +22,11 @@ import warnings
 import numpy as np
 import torch
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
+from pathlib import Path
 
 from torch import nn
+from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, IterableDataset
 
@@ -39,9 +41,10 @@ from torch.utils.data.dataset import Dataset, IterableDataset
 #     TrainerControl,
 #     TrainerState,
 #)
+from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 
 from towhee.trainer.utils.trainer_utils import (
-    PREFIX_CHECKPOINT_DIR,
+    CHECKPOINT_NAME
 )
 from towhee.trainer.training_config import TrainingConfig
 from towhee.trainer.utils import logging
@@ -63,11 +66,12 @@ class Trainer:
 
     def __init__(
             self,
-            operator: "NNOperator" = None,
-            # model: nn.Module = None,
+            # operator: "NNOperator" = None,
+            model: nn.Module = None,
             training_config: TrainingConfig = None,
             train_dataset: Union[Dataset, TowheeDataSet] = None,
             eval_dataset: Union[Dataset, TowheeDataSet] = None,
+            model_card: ModelCard = None
             # callbacks: Optional[List[Callback]] = None,
             # optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]
             # = (None, None),
@@ -78,7 +82,7 @@ class Trainer:
             training_config = TrainingConfig(output_dir=output_dir)
         self.configs = training_config
         # operator.model
-        model = operator.get_model()
+        # model = operator.get_model()
         if model is None:
             raise RuntimeError("`Trainer` requires either a `model` or `model_init` argument")
 
@@ -88,9 +92,9 @@ class Trainer:
             self.train_dataset = train_dataset.dataset
 
         self.eval_dataset = eval_dataset
-        self.operator = operator
+        # self.operator = operator
         self.model = model
-
+        self.model_card = model_card
         self.optimizer = self.configs.optimizer
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
@@ -340,7 +344,7 @@ class Trainer:
 
     def _save_checkpoint(self):
         # Save model checkpoint
-        checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
+        checkpoint_folder = f"{CHECKPOINT_NAME}-{self.state.global_step}"
 
         run_dir = self.configs.output_dir
 
@@ -425,30 +429,49 @@ class Trainer:
         # return (loss, outputs) if return_outputs else loss
         return loss, corrects
 
-    def save_model(self, output_dir: Optional[str] = None):
-        """
-        Will save the model.
-        """
-
-        if output_dir is None:
-            output_dir = self.configs.output_dir
-
-        state_dict = self.model.state_dict()
-        if self.configs.should_save:
-            self._save(output_dir, state_dict)
-
-    def _save(self, output_dir: Optional[str] = None, state_dict=None):
-        # If we are executing this function, we are the process zero, so we don't check for that.
-        output_dir = output_dir if output_dir is not None else self.configs.output_dir
-        os.makedirs(output_dir, exist_ok=True)
-        logger.info("Saving model checkpoint to %s", output_dir)
-        torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
-
-        # Good practice: save your training arguments together with the trained model
-        torch.save(self.configs, os.path.join(output_dir, "training_args.bin"))
-
     def push_model_to_hub(self):
         pass
+
+    def load(self, path):
+        device = "cpu" #todo
+        checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+        modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        epoch = checkpoint["epoch"]
+        print("epoch = ", epoch)#todo
+        loss = checkpoint["loss"]
+        print("loss = ", loss) #todo
+        if Path(modelcard_path).exists():
+            self.model_card = ModelCard.load_from_file(modelcard_path)
+            print("model_card = ", self.model_card.to_dict())
+        else:
+            logger.warning("model card file not exist.")
+
+    def save(self, path, overwrite=True):
+        Path(path).mkdir(exist_ok=True)
+        if not overwrite:
+            if Path(path).exists():
+                raise FileExistsError("File already exists: ", str(Path(path).resolve()))
+        checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+        modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
+        print("save checkpoint_path:", checkpoint_path)
+        optimizer_state_dict = None
+        if isinstance(self.optimizer, Optimizer): # if created
+            optimizer_state_dict = self.optimizer.state_dict()
+        torch.save({
+            "epoch": 22, #todo
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": optimizer_state_dict,
+            "loss": 0.12, #todo
+        }, checkpoint_path)
+        if self.model_card is not None:
+            self.model_card.save_model_card(modelcard_path)
+        else:
+            logger.warning("model card is None.")
+
 
 # if __name__ == '__main__':
 #     from torchvision import transforms

@@ -15,7 +15,6 @@
 from abc import abstractmethod
 from abc import ABC
 from enum import Enum
-from pathlib import Path
 
 # NotShareable:
 #    Stateful & reusable operator.
@@ -27,8 +26,6 @@ from pathlib import Path
 #    Stateless operator
 from towhee.trainer.trainer import Trainer
 # from towhee.trainer.modelcard import ModelCard
-from towhee.trainer.utils.load_weights import LoadWeights
-from towhee.trainer.utils.save_weights import SaveWeights
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
@@ -98,8 +95,8 @@ class NNOperator(Operator):
         self._framework = framework
         self.operator_name = type(self).__name__
         self.model = None
-        self.trainer = None
         self.model_card = None
+        self.trainer = None
 
     @property
     def framework(self):
@@ -120,31 +117,18 @@ class NNOperator(Operator):
         For training model
         """
         if self.trainer is None:
-            self.trainer = Trainer(self, training_config, train_dataset, eval_dataset)
+            self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset, model_card=self.model_card)
         self.trainer.train()
 
     def set_trainer(self, training_config, train_dataset=None, eval_dataset=None):
-        self.trainer = Trainer(self, training_config, train_dataset, eval_dataset)
+        self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset)
 
-    #     self.trainer.train()
-    #     raise NotImplementedError
 
-    def load_weights(self, op_dir: str = None):
-        model = self.get_model()
-        weights_loader = LoadWeights()
+    def load(self, path: str = None):
+        self.trainer.load(path)
 
-        weights_path = Path(op_dir).joinpath(
-            self.framework + '_' + 'weights.pth')
-        weights_loader.load_weights(model, weights_path)
-
-    def save(self, op_dir: str, overwrite: bool = True):
-        Path(op_dir).mkdir(exist_ok=True)
-        model = self.get_model()
-        weights_saver = SaveWeights(overwrite=overwrite)
-
-        weights_path = Path(op_dir).joinpath(
-            self.framework + '_' + 'weights.pth')
-        weights_saver.save_weights(model, weights_path)
+    def save(self, path: str, overwrite: bool = True):
+        self.trainer.save(path, overwrite)
 
 
 class PyOperator(Operator):
