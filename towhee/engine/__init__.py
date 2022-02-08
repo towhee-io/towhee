@@ -14,6 +14,12 @@
 
 
 from pathlib import Path
+from .operator_registry import OperatorRegistry # pylint: disable=import-outside-toplevel
+
+
+register = OperatorRegistry.register
+resolve = OperatorRegistry.resolve
+
 
 DEFAULT_LOCAL_CACHE_ROOT = Path.home() / '.towhee'
 LOCAL_PIPELINE_CACHE = DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
@@ -24,3 +30,5 @@ MOCK_PIPELINES = str(Path(__file__).parent.parent /
 
 MOCK_OPS = str(Path(__file__).parent.parent / 'tests/mock_operators')
 MOCK_PIPES = str(Path(__file__).parent.parent / 'tests/mock_pipelines')
+
+

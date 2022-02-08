@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.util
+import importlib
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
+
+from .operator_registry import OperatorRegistry
 from towhee.hub.file_manager import FileManager
+
+from hyperparameter import param_scope
 
 
 class OperatorLoader:
@@ -47,7 +51,73 @@ class OperatorLoader:
             # Not a interal operator
             return None
 
-    def load_operator(self, function: str, args: Dict[str, Any], tag: str) -> Operator:
+    def load_operator_from_internal(
+            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        return self._load_interal_op(function, args)
+
+    def load_operator_from_registry(
+            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        op = OperatorRegistry.resolve(function)
+        return self.instance_operator(op, args) if op is not None else None
+
+    def load_operator_from_packages(
+            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        try:
+            module, fname = function.split('/')
+            op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+
+            # module = '.'.join([module, fname, fname])
+            module = '.'.join(
+                ['towheeoperator', '{}_{}'.format(module, fname), fname])
+            op = getattr(importlib.import_module(module), op_cls)
+            return self.instance_operator(op, args) if op is not None else None
+        except Exception:  # pylint: disable=broad-except
+            with param_scope() as hp:
+                if hp().towhee.hub.use_pip(False):
+                    return None  # TODO: download and install pip package from hub
+                else:
+                    return None
+
+    def load_operator_from_path(self, path: Union[str, Path], args: Dict[str, Any]) -> Operator:
+        """
+        Load operator form local path.
+        Args:
+            path (`Union[str, Path]`):
+                Path to the operator python file.
+            args (`Dict[str, Any]`):
+                The init args for OperatorClass.
+        Returns
+            (`typing.Any`)
+                The `Operator` output.
+        """
+        path = Path(path)
+        fname = Path(path).stem
+        modname = 'towhee.operator.' + fname
+        spec = importlib.util.spec_from_file_location(modname, path.resolve())
+
+        # Create the module and then execute the module in its own namespace.
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Instantiate the operator object and return it to the caller for
+        # `load_operator`. By convention, the operator class is simply the CamelCase
+        # version of the snake_case operator.
+        op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+        op = getattr(module, op_cls)
+        return self.instance_operator(op, args) if op is not None else None
+
+    def load_operator_from_cache(
+            self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        fm = FileManager()
+        path = fm.get_operator(operator=function, tag=tag)
+
+        if path is None:
+            raise FileExistsError('Cannot find operator.')
+
+        return self.load_operator_from_path(path, args)
+
+    def load_operator(self, function: str, args: Dict[str, Any],
+                      tag: str) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
@@ -62,29 +132,15 @@ class OperatorLoader:
                 Cannot find operator.
         """
 
-        op = self._load_interal_op(function, args)
-        if op is not None:
-            return op
+        for factory in [
+                self.load_operator_from_internal,
+                self.load_operator_from_registry,
+                self.load_operator_from_packages, self.load_operator_from_cache
+        ]:
+            op = factory(function, args, tag)
+            if op is not None:
+                return op
+        return None
 
-        fm = FileManager()
-        path = fm.get_operator(operator=function, tag=tag)
-
-        if path is None:
-            raise FileExistsError('Cannot find operator.')
-
-        fname = Path(path).stem
-        modname = 'towhee.operator.' + fname
-        spec = importlib.util.spec_from_file_location(modname, path.resolve())
-
-        # Create the module and then execute the module in its own namespace.
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Instantiate the operator object and return it to the caller for
-        # `load_operator`. By convention, the operator class is simply the CamelCase
-        # version of the snake_case operator.
-        op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-        if args is not None:
-            return getattr(module, op_cls)(**args)
-        else:
-            return getattr(module, op_cls)()
+    def instance_operator(self, op, args: Dict[str, Any]) -> Operator:
+        return op(**args) if args is not None else op()
