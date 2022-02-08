@@ -286,7 +286,7 @@ class FileManager():
 
         This function will obtain the first reference to the pipeline from the cache locations.
         If no pipeline is found, this function will download it to the default cache location
-        from hub.towhee.io.
+        from the Towhee hub.
 
         Args:
             pipeline (`str`):
@@ -379,7 +379,7 @@ class FileManager():
 
         This function will obtain the first reference to the operator from the cache locations.
         If no opeartor is found, this function will download it to the default cache location
-        from hub.towhee.io.
+        from the Towhee hub.
 
         Args:
             operator (`str`):

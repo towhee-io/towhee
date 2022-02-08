@@ -29,7 +29,7 @@ class TestRepoManager(unittest.TestCase):
         rm = RepoManager('towhee', 'test-repo')
         self.assertEqual(rm.author, 'towhee')
         self.assertEqual(rm.repo, 'test-repo')
-        self.assertEqual(rm.root, 'https://hub.towhee.io')
+        self.assertEqual(rm.root, 'https://towhee.io')
 
     def test_exists(self):
         rm_1 = RepoManager('towhee', 'test-towhee')

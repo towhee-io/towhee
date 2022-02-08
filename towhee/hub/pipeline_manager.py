@@ -32,7 +32,7 @@ class PipelineManager(RepoManager):
         root (`str`):
             The root url where the repo located.
     """
-    def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
+    def __init__(self, author: str, repo: str, root: str = 'https://towhee.io'):
         super().__init__(author, repo, root)
         # 3 represents pipelines when creating a repo in Towhee's hub
         self._class = 3
