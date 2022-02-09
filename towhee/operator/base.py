@@ -117,18 +117,28 @@ class NNOperator(Operator):
         For training model
         """
         if self.trainer is None:
-            self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset, model_card=self.model_card)
+            self.trainer = Trainer(
+                self.get_model(),
+                training_config,
+                train_dataset,
+                eval_dataset,
+                model_card=self.model_card
+            )
         self.trainer.train()
 
     def set_trainer(self, training_config, train_dataset=None, eval_dataset=None):
         self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset)
 
-
     def load(self, path: str = None):
+        if self.trainer is None:
+            self.set_trainer(training_config=None)
         self.trainer.load(path)
 
     def save(self, path: str, overwrite: bool = True):
+        if self.trainer is None:
+            self.set_trainer(training_config=None)
         self.trainer.save(path, overwrite)
+
 
 
 class PyOperator(Operator):
