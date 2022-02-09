@@ -27,6 +27,7 @@ from typing import List, Optional
 from torch.nn.modules.loss import _Loss
 from torch import optim
 from torch.optim import Optimizer
+import yaml
 
 from towhee.trainer.callback import Callback
 from towhee.trainer.utils import logging
@@ -83,8 +84,8 @@ class TrainingConfig:
                 The list of keys in your dictionary of inputs that correspond to the labels.
         """
 
-
     output_dir: str = field(
+        default=None,
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
     )
     overwrite_output_dir: bool = field(
@@ -95,6 +96,13 @@ class TrainingConfig:
                 "Use this to continue training if output_dir points to a checkpoint directory."
             )
         },
+    )
+    do_train: bool = field(default=False, metadata={"help": "Whether to run training."})
+    do_eval: bool = field(default=False, metadata={"help": "Whether to run eval on the dev set."})
+    do_predict: bool = field(default=False, metadata={"help": "Whether to run predictions on the test set."})
+    eval_strategy: str = field(
+        default="no",
+        metadata={"help": "The evaluation strategy to use."},
     )
 
     prediction_loss_only: bool = field(
@@ -116,19 +124,55 @@ class TrainingConfig:
                     "Batch size per GPU/TPU core/CPU for evaluation."
         },
     )
-
-    eval_accumulation_steps: Optional[int] = field(
+    gradient_accumulation_num: int = field(
+        default=1,
+        metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
+    )
+    prediction_accumulation_num: Optional[int] = field(
         default=None,
         metadata={"help": "Number of predictions steps to accumulate before moving the tensors to the CPU."},
     )
+    seed: int = field(default=42, metadata={"help": "Random seed that will be set at the beginning of training."})
 
     epoch_num: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
     max_steps: int = field(
         default=-1,
         metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
     )
+    dataloader_drop_last: bool = field(
+        default=False, metadata={"help": "Drop the last incomplete batch if it is not divisible by the batch size."}
+    )
 
     eval_steps: int = field(default=None, metadata={"help": "Run an evaluation every X steps."})
+    dataloader_num_workers: int = field(
+        default=0,
+        metadata={
+            "help": "Number of subprocesses to use for data loading (PyTorch only). 0 means "
+                    "that the data will be loaded in the main process."
+        },
+    )
+    group_by_length: bool = field(
+        default=False,
+        metadata={"help": "Whether or not to group samples of roughly the same length together when batching."},
+    )
+    length_column_name: Optional[str] = field(
+        default="length",
+        metadata={"help": "Column name with precomputed lengths to use when grouping by length."},
+    )
+    resume_from_checkpoint: Optional[str] = field(
+        default=None,
+        metadata={"help": "The path to a folder with a valid checkpoint for your model."},
+    )
+    lr: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
+    weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})
+    adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
+    adam_beta2: float = field(default=0.999, metadata={"help": "Beta2 for AdamW optimizer"})
+    adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for AdamW optimizer."})
+    max_norm_grad: float = field(default=1.0, metadata={"help": "Max gradient norm."})
+    use_adafactor: bool = field(default=False, metadata={"help": "Wif Adafactor is used."})
+    metric: Optional[str] = field(
+        default=None, metadata={"help": "The metric to use to compare two different models."}
+    )
 
     disable_tqdm: Optional[bool] = field(
         default=None, metadata={"help": "Whether or not to disable the tqdm progress bars."}
@@ -137,12 +181,30 @@ class TrainingConfig:
     label_names: Optional[List[str]] = field(
         default=None, metadata={"help": "The list of keys in your dictionary of inputs that correspond to the labels."}
     )
+    past_index: int = field(
+        default=-1,
+        metadata={"help": "If >=0, uses the corresponding part of the output as the past state for next step."},
+    )
+    load_best_model_at_end: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether or not to load the best model found during training at the end of training."},
+    )
 
     _n_gpu: int = field(init=False, repr=False, default=-1)
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
 
     call_back_list: Optional[List[Callback]] = field(
         default=None, metadata={"help": "."}
+    )
+    greater_is_better: Optional[bool] = field(
+        default=None, metadata={"help": "Whether the `metric_for_best_model` should be maximized or not."}
+    )
+    ignore_data_skip: bool = field(
+        default=False,
+        metadata={
+            "help": "When resuming training, whether or not to skip the first epochs "
+                    "and batches to get to the same training data."
+        },
     )
     loss: Optional[_Loss] = field(
         default=nn.CrossEntropyLoss(), metadata={"help": "pytorch loss"}
@@ -158,7 +220,48 @@ class TrainingConfig:
         default=0.0, metadata={"help": "Linear warmup over warmup_ratio fraction of total steps."}
     )
     warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
-
+    logging_dir: Optional[str] = field(default=None, metadata={"help": "Tensorboard log dir."})
+    logging_strategy: str = field(
+        default="steps",
+        metadata={"help": "The logging strategy to use."},
+    )
+    logging_first_step: bool = field(default=False, metadata={"help": "Log the first global_step"})
+    logging_steps: int = field(default=500, metadata={"help": "Log every X updates steps."})
+    logging_nan_inf_filter: str = field(default=True, metadata={"help": "Filter nan and inf losses for logging."})
+    save_strategy: str = field(
+        default="steps",
+        metadata={"help": "The checkpoint save strategy to use."},
+    )
+    saving_steps: int = field(default=500, metadata={"help": "Save checkpoint every X updates steps."})
+    save_total_limit: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "Limit the total amount of checkpoints. "
+                "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
+            )
+        },
+    )
+    saving_strategy: str = field(
+        default="steps",
+        metadata={"help": "The checkpoint save strategy to use."},
+    )
+    saving_total_limit: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "Limit the total amount of checkpoints. "
+                "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
+            )
+        },
+    )
+    saving_on_each_node: bool = field(
+        default=False,
+        metadata={
+            "help": "When doing multi-node distributed training, whether to save models "
+                    "and checkpoints on each node, or only on the main one"
+        },
+    )
 
     def __post_init__(self):
         if self.output_dir is not None:
@@ -232,9 +335,66 @@ class TrainingConfig:
         """
         return self._setup_devices
 
+    def load_from_yaml(self, path2yaml: str = None):
+        f = open(path2yaml)
+        conf = yaml.load(f)
+        # args for training
+        self.output_dir = conf["train"]["args"]["output_dir"]
+        self.overwrite_output_dir = conf["train"]["args"]["overwrite_output_dir"]
+        self.do_train = conf["train"]["args"]["do_train"]
+        self.do_eval = conf["train"]["args"]["do_eval"]
+        self.do_predict = conf["train"]["args"]["do_predict"]
+        self.eval_strategy = conf["train"]["args"]["eval_strategy"]
+        self.prediction_loss_only = conf["train"]["args"]["prediction_loss_only"]
+        self.per_gpu_train_batch_size = conf["train"]["args"]["per_gpu_train_batch_size"]
+        self.per_gpu_eval_batch_size = conf["train"]["args"]["per_gpu_eval_batch_size"]
+        self.gradient_accumulation_num = conf["train"]["args"]["gradient_accumulation_num"]
+        self.prediction_accumulation_num = conf["train"]["args"]["prediction_accumulation_num"]
+        self.epoch_num = conf["train"]["args"]["epoch_num"]
+        self.max_steps = conf["train"]["args"]["max_steps"]
+        self.no_cuda = conf["train"]["args"]["no_cuda"]
+        self.seed = conf["train"]["args"]["seed"]
+        self.dataloader_drop_last = conf["train"]["args"]["dataloader_drop_last"]
+        self.eval_steps = conf["train"]["args"]["eval_steps"]
+        self.dataloader_num_workers = conf["train"]["args"]["dataloader_num_workers"]
+        self.past_index = conf["train"]["args"]["past_index"]
+        self.load_best_model_at_end = conf["train"]["args"]["load_best_model_at_end"]
+        self.greater_is_better = conf["train"]["args"]["greater_is_better"]
+        self.ignore_data_skip = conf["train"]["args"]["ignore_data_skip"]
+        self.group_by_length = conf["train"]["args"]["group_by_length"]
+        self.length_column_name = conf["train"]["args"]["length_column_name"]
+        self.resume_from_checkpoint = conf["train"]["args"]["resume_from_checkpoint"]
+        self.label_names = conf["train"]["args"]["label_names"]
 
-    def load_from_yaml(self):
-        pass
+        # args for learning
+        self.optimizer = conf["learning"]["args"]["optimizer"]
+        self.use_adafactor = conf["learning"]["args"]["use_adafactor"]
+        self.lr_scheduler_type = conf["learning"]["args"]["lr_scheduler_type"]
+        self.warmup_ratio = conf["learning"]["args"]["warmup_ratio"]
+        self.warmup_steps = conf["learning"]["args"]["warmup_steps"]
+        self.lr = conf["learning"]["args"]["lr"]
+        self.weight_decay = conf["learning"]["args"]["weight_decay"]
+        self.adam_beta1 = conf["learning"]["args"]["adam_beta1"]
+        self.adam_beta2 = conf["learning"]["args"]["adam_beta2"]
+        self.adam_epsilon = conf["learning"]["args"]["adam_epsilon"]
+        self.max_norm_grad = conf["learning"]["args"]["max_norm_grad"]
+        self.use_adafactor = conf["learning"]["args"]["use_adafactor"]
+
+        # args for callbacks
+        self.call_back_list = conf["callback"]["args"]["call_back_list"]
+
+        # args for metrics
+        self.metric = conf["metrics"]["args"]["metric"]
+
+        # args for logging
+        self.logging_dir = conf["logging"]["args"]["logging_dir"]
+        self.logging_strategy = conf["logging"]["args"]["logging_strategy"]
+        self.logging_steps = conf["logging"]["args"]["logging_steps"]
+        self.saving_strategy = conf["logging"]["args"]["saving_strategy"]
+        self.saving_steps = conf["logging"]["args"]["saving_steps"]
+        self.saving_total_limit = conf["logging"]["args"]["saving_total_limit"]
+        self.saving_on_each_node = conf["logging"]["args"]["save_on_each_node"]
+        self.disable_tqdm = conf["logging"]["args"]["disable_tqdm"]
 
     def save_to_yaml(self):
         pass
