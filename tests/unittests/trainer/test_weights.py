@@ -53,8 +53,7 @@ class TestWeights(unittest.TestCase):
     model_card = ModelCard(model_details='efficientnet test modelcard',
                            training_data='use efficientnet test data')
 
-    def test_weights(self):
-        self.op.trainer = Trainer(self.op.get_model(), self.training_config, None, None, model_card=self.model_card)
+    def test_with_trainer(self):
         self.op.save('./test_save')
         filepath = Path('./test_save').joinpath(CHECKPOINT_NAME)
         self.assertTrue(Path(filepath).is_file())
@@ -65,7 +64,7 @@ class TestWeights(unittest.TestCase):
         out1 = self.op(self.x)
         self.op.load('./test_save')
         out2 = self.op(self.x)
-        self.assertTrue((out1==out2).all())
+        self.assertTrue((out1 == out2).all())
 
 
 if __name__ == '__main__':
