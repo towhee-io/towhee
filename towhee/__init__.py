@@ -24,7 +24,7 @@ from towhee.engine import register, resolve
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hparam import param_scope, auto_param
 
-__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param']
+__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param', 'Build', 'Inject']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
@@ -74,6 +74,9 @@ class _PipelineWrapper:
         format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
         return format_handler(out_df)
 
+    def __repr__(self) -> str:
+        return repr(self._pipeline)
+
 
 def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
     """
@@ -105,7 +108,9 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))
-    engine.add_pipeline(pipeline_)
+    with param_scope() as hp:
+        if not hp().towhee.dry_run(False):
+            engine.add_pipeline(pipeline_)
 
     return _PipelineWrapper(pipeline_)
 
@@ -134,3 +139,31 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
         op_obj = loader.load_operator(operator_src, kwargs, tag)
 
     return op_obj
+
+
+class Build:
+    """
+    Build a pipeline with template variables.
+    """
+    def __init__(self, **kws) -> None:
+        self._kws = kws
+
+    def pipeline(self, *arg, **kws):
+        with param_scope() as hp:
+            hp().variables = self._kws
+            return pipeline(*arg, **kws)
+
+
+class Inject:
+    """
+    Build a pipeline by operator injection.
+    """
+    def __init__(self, **kws) -> None:
+        self._injections = {}
+        for k, v in kws.items():
+            self._injections[k] = v
+
+    def pipeline(self, *arg, **kws):
+        with param_scope() as hp:
+            hp().injections = self._injections
+            return pipeline(*arg, **kws)

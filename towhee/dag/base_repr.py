@@ -15,8 +15,10 @@ import yaml
 import requests
 import os
 import logging
+import json
 from typing import Dict, Set, Any
-from towhee.hparam import param_scope
+
+from towhee.hparam import param_scope, HyperParameter
 
 
 class BaseRepr:
@@ -71,6 +73,23 @@ class BaseRepr:
         return rendered
 
     @staticmethod
+    def inject_template(info: Dict[str, Any]) -> Dict:
+        def inject(op, injections):
+            if op['name'] in injections:
+                patch = injections[op['name']]
+                op = HyperParameter(**op)
+                op.update(patch)
+            return op
+        with param_scope() as hp:
+            if hp().injections(None) is not None:
+                info['operators'] = [inject(op, hp().injections()) for op in info['operators']]
+                if 'ir' in info:
+                    del info['ir']
+                info = json.loads(json.dumps(info))
+                info['ir'] = yaml.safe_dump(info)
+        return info
+
+    @staticmethod
     def load_str(string: str) -> dict:
         """
         Load the representation(s) information from a YAML file (pre-loaded as string).
@@ -85,7 +104,10 @@ class BaseRepr:
                 information.
         """
         rendered = BaseRepr.render_template(string)
-        return yaml.safe_load(rendered)
+        info = yaml.safe_load(rendered)
+        info['ir'] = rendered
+        info = BaseRepr.inject_template(info)
+        return info
 
     @staticmethod
     def load_file(file: str) -> dict:

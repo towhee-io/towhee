@@ -62,6 +62,12 @@ class Pipeline:
     def register(self, scheduler: TaskScheduler):
         self._scheduler = scheduler
 
+    def __repr__(self) -> str:
+        if self._graph_repr._ir is not None:
+            return self._graph_repr._ir
+        else:
+            return object.__repr__(self)
+
     def __call__(self, inputs: DataFrame) -> DataFrame:
         """
         Process an input `DataFrame`. This function instantiates an output `DataFrame`;

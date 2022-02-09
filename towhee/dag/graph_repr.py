@@ -32,11 +32,12 @@ class GraphRepr(BaseRepr):
         file_or_url (`str`):
             The file or remote url that stores the information of this representation.
     """
-    def __init__(self, name: str, graph_type: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataFrameRepr]):
+    def __init__(self, name: str, graph_type: str, op_reprs: Dict[str, OperatorRepr], df_reprs: Dict[str, DataFrameRepr], ir: str=None):
         super().__init__(name)
         self._graph_type = graph_type
         self._operators = op_reprs
         self._dataframes = df_reprs
+        self._ir = ir
 
     @property
     def graph_type(self):
@@ -189,7 +190,7 @@ class GraphRepr(BaseRepr):
             raise ValueError('file or src is not a valid YAML file to describe a DAG in Towhee.')
         dataframes = dict((df_info['name'], DataFrameRepr.from_dict(df_info)) for df_info in info['dataframes'])
         operators = dict((op_info['name'], OperatorRepr.from_dict(op_info)) for op_info in info['operators'])
-        return GraphRepr(info['name'], info.get('type', ''), operators, dataframes)
+        return GraphRepr(info['name'], info.get('type', ''), operators, dataframes, info.get('ir', None))
 
     @staticmethod
     def from_yaml(src: str):

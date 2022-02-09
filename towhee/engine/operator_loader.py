@@ -143,4 +143,8 @@ class OperatorLoader:
         return None
 
     def instance_operator(self, op, args: Dict[str, Any]) -> Operator:
-        return op(**args) if args is not None else op()
+        with param_scope() as hp:
+            if hp().towhee.dry_run(False):
+                return NOPOperator()
+            else:
+                return op(**args) if args is not None else op()
