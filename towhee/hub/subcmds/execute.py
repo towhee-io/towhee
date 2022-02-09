@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hyperparameter import param_scope, HyperParameter
+from towhee.hparam import param_scope
 import yaml
 
 class ExecuteCommand:
@@ -48,7 +48,7 @@ class ExecuteCommand:
     def dry_run(self):
         with open(self._args.pipeline, encoding='utf-8') as f:
             pipeline = yaml.safe_load(f)
-            pipeline = HyperParameter(**pipeline)
+            pipeline = param_scope(**pipeline)
         with param_scope(*self._args.define) as hp:
             pipeline.update(hp)
             with open(self._args.pipeline, encoding='utf-8') as f:

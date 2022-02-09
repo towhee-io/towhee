@@ -24,7 +24,7 @@ from towhee.engine import LOCAL_OPERATOR_CACHE
 from .operator_registry import OperatorRegistry
 from towhee.hub.file_manager import FileManager
 
-from hyperparameter import param_scope
+from towhee.hparam import param_scope
 
 
 class OperatorLoader:
