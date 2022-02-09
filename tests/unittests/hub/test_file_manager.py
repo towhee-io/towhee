@@ -31,7 +31,5 @@ class TestFileManager(unittest.TestCase):
         self.assertNotIn(Path('test_path'), fmc.cache_paths)
 
     def test_reset_cache_path(self):
-        fmc.add_cache_path(Path('test_path'))
-        self.assertEqual(len(fmc.cache_paths), 3)
         fmc.reset_cache_path()
         self.assertEqual(len(fmc.cache_paths), 1)
