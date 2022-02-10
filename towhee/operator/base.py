@@ -126,7 +126,15 @@ class NNOperator(Operator):
             )
         self.trainer.train()
 
-    def set_trainer(self, training_config, train_dataset=None, eval_dataset=None):
+    def resume_train(self, last_checkpoint=None):
+        """
+        Resume training from checkpoint
+        """
+        if self.trainer is None:
+            raise ValueError(f'Invalid Trainer: {self.trainer}')
+        self.trainer.resume_from_checkpoint(last_checkpoint)
+
+    def set_trainer(self, training_config=None, train_dataset=None, eval_dataset=None):
         self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset)
 
     def load(self, path: str = None):
