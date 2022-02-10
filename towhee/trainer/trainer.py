@@ -16,11 +16,11 @@
 import collections
 import math
 import os
-import random
 import sys
-import warnings
-import numpy as np
 import torch
+# import random
+# import warnings
+# import numpy as np
 
 from typing import Dict, List, Union
 from pathlib import Path
@@ -30,8 +30,7 @@ from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, IterableDataset
 
-
-#from towhee.trainer.callback import (
+# from towhee.trainer.callback import (
 #     Callback
 #     CallbackHandler,
 #     DefaultFlowCallback,
@@ -40,11 +39,12 @@ from torch.utils.data.dataset import Dataset, IterableDataset
 #     Callback,
 #     TrainerControl,
 #     TrainerState,
-#)
+# )
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 
 from towhee.trainer.utils.trainer_utils import (
-    CHECKPOINT_NAME
+    CHECKPOINT_NAME,
+    get_last_checkpoint
 )
 from towhee.trainer.training_config import TrainingConfig
 from towhee.trainer.utils import logging
@@ -95,6 +95,7 @@ class Trainer:
         # self.operator = operator
         self.model = model
         self.model_card = model_card
+        self.checkpoint = None
         self.optimizer = self.configs.optimizer
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
@@ -104,15 +105,15 @@ class Trainer:
         #     callbacks, self.model, self.optimizer, self.lr_scheduler
         # )
 
-        #self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
-
+        # self.add_callback(PrinterCallback if self.args.disable_tqdm else ProgressCallback)
 
         os.makedirs(self.configs.output_dir, exist_ok=True)
 
         if training_config.max_steps > 0:
             logger.info("max_steps is given.")
 
-        if train_dataset is not None and not isinstance(train_dataset, collections.abc.Sized) and training_config.max_steps <= 0:
+        if train_dataset is not None and not isinstance(train_dataset,
+                                                        collections.abc.Sized) and training_config.max_steps <= 0:
             raise ValueError("train_dataset does not implement __len__, max_steps has to be specified")
 
         # self.state = TrainerState()
@@ -127,84 +128,7 @@ class Trainer:
         self.label_names = default_label_names if self.configs.label_names is None else self.configs.label_names
         # self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
 
-    def add_callback(self, callback):
-        """
-        Add a callback to the current list of :class:`~towhee.TrainerCallback`.
-
-        Args:
-           callback (:obj:`type` or :class:`~towhee.TrainerCallback`):
-               A :class:`~towhee.TrainerCallback` class or an instance of a :class:`~towhee.TrainerCallback`.
-               In the first case, will instantiate a member of that class.
-        """
-        # self.callback_handler.add_callback(callback)
-
-
-    def get_train_dataloader(self) -> DataLoader:
-        """
-        Returns the training :class:`~torch.utils.data.DataLoader`.
-        """
-        if self.train_dataset is None:
-            raise ValueError("Trainer: training requires a train_dataset.")
-        if isinstance(self.train_dataset, IterableDataset):
-            return DataLoader(
-                self.train_dataset,
-                batch_size=self.configs.train_batch_size,
-            )
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.configs.train_batch_size,
-            shuffle=True
-        )
-
-    def create_optimizer_and_scheduler(self, num_training_steps: int):
-        """
-        Setup the optimizer and the learning rate scheduler.
-        """
-        self.create_optimizer()
-        self.create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
-
-    def create_optimizer(self):
-        """
-        Setup the optimizer.
-        """
-        # self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
-        self.optimizer = self.configs.optimizer(self.model.parameters())
-
-    def create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
-        """
-        Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
-        passed as an argument.
-
-        Args:
-            num_training_steps (int): The number of training steps to do.
-        """
-        if self.lr_scheduler is None:
-            self.lr_scheduler = get_scheduler(
-                self.configs.lr_scheduler_type,
-                optimizer=self.optimizer if optimizer is None else optimizer,
-                num_warmup_steps=self.get_warmup_steps(num_training_steps),
-                num_training_steps=num_training_steps,
-            )
-        return self.lr_scheduler
-
-    def get_warmup_steps(self, num_training_steps: int):
-        """
-        Get number of steps used for a linear warmup.
-        """
-        warmup_steps = (
-            self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(num_training_steps * self.configs.warmup_ratio)
-        )
-        return warmup_steps
-
-    def num_examples(self, dataloader: DataLoader) -> int:
-        """
-        Helper to get number of samples in a :class:`~torch.utils.data.DataLoader` by accessing its dataset.
-
-        Will raise an exception if the underlying dataset does not implement method :obj:`__len__`
-        """
-        return len(dataloader.dataset)
-
-    def train(self):
+    def train(self, epochs_trained: int = 0):
         """
         Main training entry point.
         """
@@ -255,7 +179,6 @@ class Trainer:
         logger.info("  Total optimization steps = %d", max_steps)
 
         # self.state.epoch = 0
-        epochs_trained = 0
 
         # Update the references
         # self.callback_handler.model = self.model
@@ -304,7 +227,6 @@ class Trainer:
             # self.control = self.callback_handler.on_epoch_end(args, self.state, self.control)
             # self._maybe_log_save_evaluate(tr_loss, tr_corrects, num_examples)
 
-
             # if self.control.should_training_stop:
             #     break
 
@@ -319,56 +241,10 @@ class Trainer:
 
         # return TrainOutput(self.state.global_step, train_loss)
 
-
-    def _maybe_log_save_evaluate(self, tr_loss, tr_corrects, num_examples):
-        if self.control.should_log:
-            logs: Dict[str, float] = {}
-            tr_loss_scalar = tr_loss.item()
-            epoch_loss = tr_loss_scalar / num_examples
-            epoch_acc = tr_corrects / num_examples
-
-            # reset tr_loss to zero
-            tr_loss -= tr_loss
-            tr_corrects -= tr_corrects
-
-            logs["loss"] = epoch_loss
-            logs["accuracy"] = epoch_acc
-
-            self._total_loss_scalar += tr_loss_scalar
-            self.log(logs)
-
-        self.control.should_save = False
-        if self.control.should_save:
-            self._save_checkpoint()
-            self.control = self.callback_handler.on_save(self.configs, self.state, self.control)
-
-    def _save_checkpoint(self):
-        # Save model checkpoint
-        checkpoint_folder = f"{CHECKPOINT_NAME}-{self.state.global_step}"
-
-        run_dir = self.configs.output_dir
-
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir)
-
-        # Save optimizer and scheduler
-        if self.configs.should_save:
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-            with warnings.catch_warnings(record=True):
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-
-        # Save the Trainer state
-        if self.configs.should_save:
-            self.state.save_to_json(os.path.join(output_dir, "trainer_state.json"))
-
-        # Save RNG state in non-distributed training
-        rng_states = {
-            "python": random.getstate(),
-            "numpy": np.random.get_state(),
-            "cpu": torch.random.get_rng_state(),
-        }
-        if torch.cuda.is_available():
-            rng_states["cuda"] = torch.cuda.random.get_rng_state()
+        self.save(
+            path=os.path.join(args.output_dir, "epoch_" + str(num_train_epochs)),
+            overwrite=args.overwrite_output_dir
+        )
 
     def log(self, logs: Dict[str, float]) -> None:
         """
@@ -432,18 +308,95 @@ class Trainer:
     def push_model_to_hub(self):
         pass
 
+    def add_callback(self, callback):
+        """
+        Add a callback to the current list of :class:`~towhee.TrainerCallback`.
+
+        Args:
+           callback (:obj:`type` or :class:`~towhee.TrainerCallback`):
+               A :class:`~towhee.TrainerCallback` class or an instance of a :class:`~towhee.TrainerCallback`.
+               In the first case, will instantiate a member of that class.
+        """
+        # self.callback_handler.add_callback(callback)
+
+    def get_train_dataloader(self) -> DataLoader:
+        """
+        Returns the training :class:`~torch.utils.data.DataLoader`.
+        """
+        if self.train_dataset is None:
+            raise ValueError("Trainer: training requires a train_dataset.")
+        if isinstance(self.train_dataset, IterableDataset):
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.configs.train_batch_size,
+            )
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.configs.train_batch_size,
+            shuffle=True
+        )
+
+    def create_optimizer_and_scheduler(self, num_training_steps: int):
+        """
+        Setup the optimizer and the learning rate scheduler.
+        """
+        self.create_optimizer()
+        self.create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
+
+    def create_optimizer(self):
+        """
+        Setup the optimizer.
+        """
+        # self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
+        self.optimizer = self.configs.optimizer(self.model.parameters())
+
+    def create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
+        """
+        Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
+        passed as an argument.
+
+        Args:
+            num_training_steps (int): The number of training steps to do.
+        """
+        if self.lr_scheduler is None:
+            self.lr_scheduler = get_scheduler(
+                self.configs.lr_scheduler_type,
+                optimizer=self.optimizer if optimizer is None else optimizer,
+                num_warmup_steps=self.get_warmup_steps(num_training_steps),
+                num_training_steps=num_training_steps,
+            )
+        return self.lr_scheduler
+
+    def get_warmup_steps(self, num_training_steps: int):
+        """
+        Get number of steps used for a linear warmup.
+        """
+        warmup_steps = (
+            self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(
+                num_training_steps * self.configs.warmup_ratio)
+        )
+        return warmup_steps
+
+    def num_examples(self, dataloader: DataLoader) -> int:
+        """
+        Helper to get number of samples in a :class:`~torch.utils.data.DataLoader` by accessing its dataset.
+
+        Will raise an exception if the underlying dataset does not implement method :obj:`__len__`
+        """
+        return len(dataloader.dataset)
+
     def load(self, path):
-        device = "cpu" #todo
+        device = "cpu"  # todo
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-        checkpoint = torch.load(checkpoint_path, map_location=device)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        epoch = checkpoint["epoch"]
-        print("epoch = ", epoch)#todo
-        loss = checkpoint["loss"]
-        print("loss = ", loss) #todo
+        self.checkpoint = torch.load(checkpoint_path, map_location=device)
+        self.model.load_state_dict(self.checkpoint["model_state_dict"])
+        if isinstance(self.optimizer, Optimizer) and self.checkpoint["optimizer_state_dict"]:
+            self.optimizer.load_state_dict(self.checkpoint["optimizer_state_dict"])
+        epoch = self.checkpoint["epoch"]
+        print("epoch = ", epoch)  # todo
+        loss = self.checkpoint["loss"]
+        print("loss = ", loss)  # todo
         if Path(modelcard_path).exists():
             self.model_card = ModelCard.load_from_file(modelcard_path)
             print("model_card = ", self.model_card.to_dict())
@@ -459,19 +412,24 @@ class Trainer:
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
         print("save checkpoint_path:", checkpoint_path)
         optimizer_state_dict = None
-        if isinstance(self.optimizer, Optimizer): # if created
+        if isinstance(self.optimizer, Optimizer):  # if created
             optimizer_state_dict = self.optimizer.state_dict()
         torch.save({
-            "epoch": 22, #todo
+            "epoch": 20,  # todo
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": optimizer_state_dict,
-            "loss": 0.12, #todo
+            "loss": 0.12,  # todo
         }, checkpoint_path)
         if self.model_card is not None:
             self.model_card.save_model_card(modelcard_path)
         else:
             logger.warning("model card is None.")
 
+    def resume_from_checkpoint(self, last_checkpoint=None):
+        if last_checkpoint is None:
+            last_checkpoint = get_last_checkpoint(self.configs.output_dir)
+        self.load(last_checkpoint)
+        self.train(epochs_trained=self.checkpoint["epoch"])
 
 # if __name__ == '__main__':
 #     from torchvision import transforms

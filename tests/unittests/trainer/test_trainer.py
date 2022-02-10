@@ -64,12 +64,17 @@ class TrainerTest(unittest.TestCase):
             prediction_loss_only=True,
         )
         self.op = MockOperator()
-        self.op.train(training_config=self.training_args,train_dataset=self.train_data)
+        self.op.train(training_config=self.training_args, train_dataset=self.train_data)
         # self.trainer = Trainer(
         #     operator=op,
         #     training_config=self.training_args,
         #     train_dataset=self.train_data
         # )
+
+    def test_resume_trainer(self):
+        self.op.set_trainer(training_config=self.training_args, train_dataset=self.train_data)
+        self.op.resume_train()
+        self.assertEqual(1, 1)
 
     def test_overfit_on_small_batches(self) -> None:
         self.op.train(training_config=self.training_args,train_dataset=self.train_data)

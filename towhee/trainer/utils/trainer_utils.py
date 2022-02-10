@@ -21,6 +21,8 @@ from typing import NamedTuple
 from enum import Enum
 import numpy as np
 import torch
+import os
+from pathlib import Path
 
 
 def set_seed(seed: int):
@@ -35,12 +37,21 @@ def set_seed(seed: int):
     torch.manual_seed(seed)
 
 
+def get_last_checkpoint(out_dir: str):
+    checkpoints = [path for path in Path(out_dir).iterdir() if path.is_dir()]
+    if len(checkpoints) == 0:
+        raise ValueError(f"No checkpoints found at {out_dir}.")
+    return max(checkpoints, key=os.path.getmtime).resolve()
+
+
 class TrainOutput(NamedTuple):
     global_step: int
     training_loss: float
 
 
 CHECKPOINT_NAME = "checkpoint.pt"
+
+
 # _re_checkpoint = re.compile(r"^" + CHECKPOINT_NAME + r"\-(\d+)$")
 
 class SchedulerType(Enum):
