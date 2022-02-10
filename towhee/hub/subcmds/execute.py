@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from towhee.hparam import param_scope
-import yaml
 
 class ExecuteCommand:
     """
@@ -30,31 +29,23 @@ class ExecuteCommand:
             threading.setprofile(lambda f, e, a: param_scope.init(hp))
 
             if self._args.dry_run:
-                return self.dry_run()
-
+                hp().towhee.dry_run = True
             from towhee import pipeline  # pylint: disable=import-outside-toplevel
             pipe = pipeline(self._args.pipeline)
 
-            i = 0
-            while i < self._args.iterations:
-                output = pipe(0)[0][0]
+            if self._args.dry_run:
+                print(repr(pipe))
+            else:
+                i = 0
+                while i < self._args.iterations:
+                    output = pipe(0)[0][0]
 
-                if self._args.output == 'imshow':
-                    import cv2 # pylint: disable=import-outside-toplevel
-                    cv2.imshow('imshow', output)
-                    cv2.waitKey(1)
-                i += 1
+                    if self._args.output == 'imshow':
+                        import cv2 # pylint: disable=import-outside-toplevel
+                        cv2.imshow('imshow', output)
+                        cv2.waitKey(1)
+                    i += 1
 
-    def dry_run(self):
-        with open(self._args.pipeline, encoding='utf-8') as f:
-            pipeline = yaml.safe_load(f)
-            pipeline = param_scope(**pipeline)
-        with param_scope(*self._args.define) as hp:
-            pipeline.update(hp)
-            with open(self._args.pipeline, encoding='utf-8') as f:
-                template = f.read()
-        print(pipeline.variables)
-        print(template.format(**pipeline.variables))
 
     @staticmethod
     def install(subparsers):
