@@ -428,7 +428,7 @@ def auto_param(func):
     >>> foo(1)
     1 2 c None
 
-    >>> with param_scope('foo.b=3'):
+    >>> with param_scope('towhee.hparam.hyperparameter.foo.b=3'):
     ...     foo(2)
     2 3 c None
 
@@ -441,7 +441,7 @@ def auto_param(func):
     >>> obj = foo(1)
     1 2 c None
 
-    >>> with param_scope('foo.b=3'):
+    >>> with param_scope('towhee.hparam.hyperparameter.foo.b=3'):
     ...     obj = foo(2)
     2 3 c None
     """
@@ -463,7 +463,6 @@ def auto_param(func):
             predef_kws[k] = name
             _read_tracker.add(name)
             predef_val[name] = v.default
-
     def wrapper(*arg, **kws):
         with param_scope() as hp:
             local_params = {}
