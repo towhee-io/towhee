@@ -18,8 +18,6 @@ import os
 
 
 root_path = os.path.dirname(__file__)
-os.chdir(root_path+'/../../../')
-print(os.getcwd())
 suit = doctest.DocFileSuite('../../../README.md')
 unittest.TextTestRunner(verbosity=2).run(suit)
 
