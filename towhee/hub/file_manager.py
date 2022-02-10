@@ -282,7 +282,7 @@ class FileManager():
                     copytree(str(old_path), str(new_path))
 
     def get_builtin_pipeline(self, file_name: str) -> str:
-        with importlib.resources.path('towhee.builtin.pipelines', '{}.yaml'.format(file_name)) as path:
+        with importlib.resources.path('towhee.hub.builtin.pipelines', '{}.yaml'.format(file_name)) as path:
             return path
 
     def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True):
