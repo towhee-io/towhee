@@ -14,6 +14,7 @@
 
 import json
 import os
+import sys
 import socket
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -32,6 +33,7 @@ import yaml
 from towhee.trainer.callback import Callback
 from towhee.trainer.utils import logging
 from towhee.trainer.utils.trainer_utils import SchedulerType
+from towhee.trainer import metrics
 
 logger = logging.get_logger(__name__)
 log_levels = logging.get_log_levels_dict().copy()
@@ -367,7 +369,8 @@ class TrainingConfig:
             self.label_names = conf["train"]["args"]["label_names"]
 
             # args for learning
-            self.optimizer = conf["learning"]["args"]["optimizer"]
+            s_temp = conf["learning"]["args"]["optimizer"]
+            self.optimizer = getattr(sys.modules["torch.optim"],  s_temp.split(".")[-1])
             self.use_adafactor = conf["learning"]["args"]["use_adafactor"]
             self.lr_scheduler_type = conf["learning"]["args"]["lr_scheduler_type"]
             self.warmup_ratio = conf["learning"]["args"]["warmup_ratio"]
@@ -384,7 +387,10 @@ class TrainingConfig:
             self.call_back_list = conf["callback"]["args"]["call_back_list"]
 
             # args for metrics
-            self.metric = conf["metrics"]["args"]["metric"]
+            if conf["metrics"]["args"]["metric"] == "None":
+                self.metric = None
+            else:
+                self.metric = metrics.get_metric_by_name(conf["metrics"]["args"]["metric"])
 
             # args for logging
             self.logging_dir = conf["logging"]["args"]["logging_dir"]
@@ -396,5 +402,80 @@ class TrainingConfig:
             self.saving_on_each_node = conf["logging"]["args"]["save_on_each_node"]
             self.disable_tqdm = conf["logging"]["args"]["disable_tqdm"]
 
-    def save_to_yaml(self):
-        pass
+    def save_to_yaml(self, path2yaml: str = None):
+        train_args = {
+            "args": {
+                "output_dir": self.output_dir,
+                "overwrite_output_dir": self.overwrite_output_dir,
+                "do_train": self.do_train,
+                "do_eval": self.do_eval,
+                "do_predict": self.do_predict,
+                "eval_strategy": self.eval_strategy,
+                "prediction_loss_only": self.prediction_loss_only,
+                "per_gpu_train_batch_size": self.per_gpu_train_batch_size,
+                "per_gpu_eval_batch_size": self.per_gpu_eval_batch_size,
+                "gradient_accumulation_num": self.gradient_accumulation_num,
+                "prediction_accumulation_num": self.prediction_accumulation_num,
+                "epoch_num": self.epoch_num,
+                "max_steps": self.max_steps,
+                "no_cuda": self.no_cuda,
+                "seed": self.seed,
+                "dataloader_drop_last": self.dataloader_drop_last,
+                "eval_steps": self.eval_steps,
+                "dataloader_num_workers": self.dataloader_num_workers,
+                "past_index": self.past_index,
+                "label_names": self.label_names,
+                "load_best_model_at_end": self.load_best_model_at_end,
+                "greater_is_better": self.greater_is_better,
+                "ignore_data_skip": self.ignore_data_skip,
+                "group_by_length": self.group_by_length,
+                "length_column_name": self.length_column_name,
+                "resume_from_checkpoint": self.resume_from_checkpoint,
+            }
+        }
+        learning_args = {
+            "args": {
+                "optimizer": self.optimizer.__name__,
+                "use_adafactor": self.use_adafactor,
+                "lr_scheduler_type": self.lr_scheduler_type,
+                "warmup_ratio": self.warmup_ratio,
+                "warmup_steps": self.warmup_steps,
+                "lr": self.lr,
+                "weight_decay": self.weight_decay,
+                "adam_beta1": self.adam_beta1,
+                "adam_beta2": self.adam_beta2,
+                "adam_epsilon": self.adam_epsilon,
+                "max_norm_grad": self.max_norm_grad,
+            }
+        }
+        callback_args = {
+            "args": {
+                "call_back_list": self.call_back_list,
+            }
+        }
+        metrics_args = {
+            "args": {
+                "metric": self.metric.__name__ if self.metric else "None",
+            }
+        }
+        logging_args = {
+            "args": {
+                "logging_dir": self.logging_dir,
+                "logging_strategy": self.logging_strategy,
+                "logging_steps": self.logging_steps,
+                "saving_strategy": self.saving_strategy,
+                "saving_steps": self.saving_steps,
+                "saving_total_limit": self.saving_total_limit,
+                "save_on_each_node": self.saving_on_each_node,
+                "disable_tqdm": self.disable_tqdm,
+            }
+        }
+        conf = {
+            "train": train_args,
+            "learning": learning_args,
+            "callback": callback_args,
+            "metrics": metrics_args,
+            "logging": logging_args,
+        }
+        with open(path2yaml, "w") as file:
+            yaml.dump(conf, file)
