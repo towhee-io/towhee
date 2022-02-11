@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 import threading
 from collections import namedtuple
-from typing import Dict, Tuple, Union, List
+from typing import Dict, Tuple, Union, List, Optional
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
 
@@ -132,6 +132,108 @@ class BatchFrameReader(DataFrameReader):
                     data_dict = self._to_op_inputs(row)
                     res.append(namedtuple('input', data_dict.keys())(**data_dict))
                 return res
+
+    def close(self):
+        self._close = True
+        self._iter.notify()
+
+
+class _TimeWindow:
+    '''
+    '''
+
+    def __init__(self, time_range_sec: int, time_step_sec: int, start_time_sec: int = 0):
+        self._start_time_m = start_time_sec * 1000
+        self._end_time_m = self._start_time_m + time_range_sec * 1000
+        self._next_start_time_m = (start_time_sec + time_step_sec) * 1000
+        self._time_range_sec = time_range_sec
+        self._time_step_sec = time_step_sec
+        self._window = []
+        self._next_window = None
+
+    def __call__(self, row_data) -> bool:
+        frame = row_data[-1].value
+        if frame.timestamp < self._start_time_m:
+            return False
+
+        if frame.timestamp < self._end_time_m:
+            self._window.append(row_data)
+            if frame.timestamp >= self._next_start_time_m:
+                if self._next_window is None:
+                    self._next_window = _TimeWindow(self._time_range_sec, self._time_step_sec, self._next_start_time_m // 1000)
+                self._next_window(row_data)
+            return False
+
+        if len(self._window) == 0:
+            self._start_time_m = frame.timestamp // 1000 // self._time_step_sec * self._time_step_sec * 1000
+            self._end_time_m = self._start_time_m + self._time_range_sec * 1000
+            self._next_start_time_m = (self._start_time_m // 1000 + self._time_step_sec) * 1000
+            if frame.timestamp >= self._start_time_m and frame.timestamp < self._end_time_m:
+                self(row_data)
+            return False
+
+        if self._next_window is None:
+            self._next_window = _TimeWindow(self._time_range_sec, self._time_step_sec, self._next_start_time_m // 1000)
+        self._next_window(row_data)
+        return True
+
+    @property
+    def data(self):
+        return self._window
+
+    @property
+    def next_window(self):
+        return self._next_window
+
+
+class TimeWindowReader(DataFrameReader):
+    """
+    Time window reader
+    """
+
+    def __init__(
+        self,
+        input_df: DataFrame,
+        op_inputs_index: Dict[str, int],
+        time_range_sec: int,
+        time_step_sec: int
+    ):
+        super().__init__(input_df.map_iter(True), op_inputs_index)
+        self._window = _TimeWindow(time_range_sec, time_step_sec)
+        self._lock = threading.Lock()
+        self._close = False
+
+    def read(self) -> Tuple[Dict[str, any], Tuple]:
+        """
+        Read data from dataframe, get cols by operator_repr info
+        """
+        with self._lock:
+            if self._close or self._window is None:
+                raise StopIteration
+
+            while True:
+                if self._window is None:
+                    raise StopIteration
+
+                try:
+                    data = next(self._iter)
+                except StopIteration:
+                    if self._window is not None:
+                        ret = [self._to_op_inputs(row) for row in self._window.data]
+                        self._window = self._window.next_window
+                        return ret
+
+                if self._close:
+                    raise StopIteration
+
+                if data is None:
+                    continue
+
+                is_end = self._window(data)
+                if is_end and len(self._window.data) != 0:
+                    ret = [self._to_op_inputs(row) for row in self._window.data]
+                    self._window = self._window.next_window
+                    return ret
 
     def close(self):
         self._close = True
