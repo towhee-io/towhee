@@ -21,7 +21,6 @@ from torch import nn
 from torchvision import transforms
 
 from towhee.operator import NNOperator
-from towhee.trainer.trainer import Trainer
 from towhee.trainer.training_config import TrainingConfig
 from towhee.data.dataset.image_datasets import PyTorchImageDataset
 
@@ -71,10 +70,6 @@ class TrainerTest(unittest.TestCase):
         #     train_dataset=self.train_data
         # )
 
-    def test_resume_trainer(self):
-        self.op.set_trainer(training_config=self.training_args, train_dataset=self.train_data)
-        self.op.resume_train()
-        self.assertEqual(1, 1)
 
     def test_overfit_on_small_batches(self) -> None:
         self.op.train(training_config=self.training_args,train_dataset=self.train_data)

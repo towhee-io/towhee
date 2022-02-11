@@ -192,8 +192,8 @@ class TrainingConfig:
         metadata={"help": "Whether or not to load the best model found during training at the end of training."},
     )
 
-    _n_gpu: int = field(init=False, repr=False, default=-1)
-    no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
+
+    # no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
 
     call_back_list: Optional[List[Callback]] = field(
         default=None, metadata={"help": "."}
@@ -264,6 +264,24 @@ class TrainingConfig:
                     "and checkpoints on each node, or only on the main one"
         },
     )
+    device_str: str = field(
+        default=None,
+        metadata={
+            "help": (
+                "None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
+                "'cpu' -> use cpu only;"
+                "'cuda' -> use some gpu devices, and the using gpu number should be specified in args 'n_gpu';"
+                "'cuda:2' -> use the number 2 gpu."
+            )
+        }
+    )
+    n_gpu: int = field(default=-1, metadata={
+            "help": "should be specified when device_str is 'cuda'"
+        })
+    sync_bn: bool = field(default=True, metadata={
+            "help": "will be work if device_str is 'cuda', the True sync_bn would make training a little slower"
+        })
+
 
     def __post_init__(self):
         if self.output_dir is not None:
@@ -271,7 +289,8 @@ class TrainingConfig:
 
         # if self.disable_tqdm is None:
         #     self.disable_tqdm = logger.getEffectiveLevel() > logging.WARN
-
+        if self.device_str == "cuda" and self.n_gpu < 1:
+            raise ValueError("must specify the using gpu number when device_str is 'cuda'")
         self.should_save = True
 
     @property
@@ -285,19 +304,8 @@ class TrainingConfig:
                 "version."
             )
         per_device_batch_size = self.per_gpu_train_batch_size
-        train_batch_size = per_device_batch_size * max(1, self.n_gpu)
+        train_batch_size = per_device_batch_size # * max(1, self.n_gpu)
         return train_batch_size
-
-    def _setup_devices(self) -> "torch.device":
-        logger.info("PyTorch: setting up devices")
-        if self.no_cuda:
-            device = torch.device("cpu")
-            self._n_gpu = 0
-        else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            self._n_gpu = torch.cuda.device_count()
-
-        return device
 
     def to_dict(self):
         """
@@ -318,24 +326,12 @@ class TrainingConfig:
         return json.dumps(self.to_dict(), indent=2)
 
     @property
-    def n_gpu(self):
-        """
-        The number of GPUs used by this process.
-
-        Note:
-            This will only be greater than one when you have multiple GPUs available but are not using distributed
-            training. For distributed training, it will always be 1.
-        """
-        # Make sure `self._n_gpu` is properly setup.
-        _ = self._setup_devices
-        return self._n_gpu
-
-    @property
     def device(self) -> "torch.device":
-        """
-        The device used by this process.
-        """
-        return self._setup_devices
+        if self.device_str is None:
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            device = torch.device(self.device_str)
+        return device
 
     def load_from_yaml(self, path2yaml: str = None):
         with open(path2yaml, "r", encoding="utf-8") as f:

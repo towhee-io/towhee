@@ -112,7 +112,7 @@ class NNOperator(Operator):
         """
         raise NotImplementedError()
 
-    def train(self, training_config=None, train_dataset=None, eval_dataset=None):
+    def train(self, training_config=None, train_dataset=None, eval_dataset=None, resume_checkpoint_path=None):
         """
         For training model
         """
@@ -124,15 +124,7 @@ class NNOperator(Operator):
                 eval_dataset,
                 model_card=self.model_card
             )
-        self.trainer.train()
-
-    def resume_train(self, last_checkpoint=None):
-        """
-        Resume training from checkpoint
-        """
-        if self.trainer is None:
-            raise ValueError(f'Invalid Trainer: {self.trainer}')
-        self.trainer.resume_from_checkpoint(last_checkpoint)
+        self.trainer.train(resume_checkpoint_path)
 
     def set_trainer(self, training_config=None, train_dataset=None, eval_dataset=None):
         self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset)
