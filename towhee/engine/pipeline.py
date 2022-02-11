@@ -52,6 +52,10 @@ class Pipeline:
     def parallelism(self) -> int:
         return self._parallelism
 
+    @property
+    def graph_repr(self) -> GraphRepr:
+        return self._graph_repr
+
     @parallelism.setter
     def parallelism(self, val):
         if isinstance(val, int) and val > 0:

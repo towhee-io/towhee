@@ -1,0 +1,1 @@
+from .image_embedding_pipeline import image_embedding_pipeline
