@@ -17,7 +17,6 @@ import random
 import math
 
 import numpy
-import numpy as np
 
 
 class RandomErasing:
@@ -56,16 +55,16 @@ class RandomErasing:
 
         else:
             while True:
-                Se = random.uniform(*self.s) * img.shape[0] * img.shape[1]
+                se = random.uniform(*self.s) * img.shape[0] * img.shape[1]
                 re = random.uniform(*self.r)
 
-                He = int(round(math.sqrt(Se * re)))
-                We = int(round(math.sqrt(Se / re)))
+                he = int(round(math.sqrt(se * re)))
+                we = int(round(math.sqrt(se / re)))
 
                 xe = random.randint(0, img.shape[1])
                 ye = random.randint(0, img.shape[0])
 
-                if xe + We <= img.shape[1] and ye + He <= img.shape[0]:
-                    img[ye: ye + He, xe: xe + We, :] = np.random.randint(low=0, high=255, size=(He, We, img.shape[2]))
+                if xe + we <= img.shape[1] and ye + he <= img.shape[0]:
+                    img[ye: ye + he, xe: xe + we, :] = numpy.random.randint(low=0, high=255, size=(he, we, img.shape[2]))
 
                     return img

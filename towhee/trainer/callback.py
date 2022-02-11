@@ -127,9 +127,10 @@ class CallbackList:
     callbacks of `CallbackList` will invoke corresponding callback in each
     'Callback' in the FIFO sequential order.
     """
-    def __init__(self, callbacks: List[Callback]):
+    def __init__(self, callbacks: List[Callback] = None):
         self.callbacks = []
-        self.callbacks.extend(callbacks)
+        if callbacks is not None:
+            self.callbacks.extend(callbacks)
 
     def __len__(self) -> int:
         return len(self.callbacks)

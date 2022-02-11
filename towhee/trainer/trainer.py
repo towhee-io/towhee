@@ -50,6 +50,7 @@ from towhee.trainer.training_config import TrainingConfig
 from towhee.trainer.utils import logging
 from towhee.trainer.dataset import TowheeDataSet
 from towhee.trainer.optimization.optimization import get_scheduler
+from towhee.trainer.callback import CallbackList
 
 # DEFAULT_CALLBACKS = [DefaultFlowCallback]
 # DEFAULT_PRO = ProgressCallback
@@ -100,6 +101,7 @@ class Trainer:
         self.optimizer = self.configs.optimizer
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
+        self.callbacks = CallbackList()
         # default_callbacks = DEFAULT_CALLBACKS
         # callbacks = default_callbacks if callbacks is None else default_callbacks + callbacks
         # self.callback_handler = CallbackHandler(
@@ -268,8 +270,10 @@ class Trainer:
         # model.zero_grad()
 
         # self.control = self.callback_handler.on_train_begin(args, self.state, self.control)
-
+        train_log = {}
+        self.callbacks.on_train_begin(train_log)
         for _ in range(epochs_trained, num_train_epochs):
+            self.callbacks.on_epoch_begin(epochs_trained, train_log)
             epoch_iterator = train_dataloader
 
             # steps_in_epoch = (
@@ -278,8 +282,8 @@ class Trainer:
             # self.control = self.callback_handler.on_epoch_begin(args, self.state, self.control)
 
             for _, inputs in enumerate(epoch_iterator):
+                self.callbacks.on_train_batch_begin(inputs, train_log)
                 loss = self.training_step(model, inputs)
-                print(loss)
                 tr_loss += loss
                 # tr_corrects += corrects
 
@@ -294,10 +298,12 @@ class Trainer:
                 # self.state.global_step += 1
                 # self.state.epoch = epoch + (step + 1) / steps_in_epoch
                 # self.control = self.callback_handler.on_step_end(args, self.state, self.control)
+                self.callbacks.on_train_batch_end(inputs, train_log)
 
             # self.control = self.callback_handler.on_epoch_end(args, self.state, self.control)
             # self._maybe_log_save_evaluate(tr_loss, tr_corrects, num_examples)
 
+            self.callbacks.on_epoch_end(epochs_trained, train_log)
             # if self.control.should_training_stop:
             #     break
 
@@ -318,6 +324,7 @@ class Trainer:
                 path=os.path.join(args.output_dir, "epoch_" + str(num_train_epochs)),
                 overwrite=args.overwrite_output_dir
             )
+        self.callbacks.on_train_end(train_log)
 
     def _cleanup_distributed(self, rank):
         if self.distributed:
