@@ -64,6 +64,7 @@ class OperatorLoader:
             self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
         try:
             module, fname = function.split('/')
+            fname = fname.replace('-', '_')
             op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
 
             # module = '.'.join([module, fname, fname])
@@ -135,7 +136,8 @@ class OperatorLoader:
         for factory in [
                 self.load_operator_from_internal,
                 self.load_operator_from_registry,
-                self.load_operator_from_packages, self.load_operator_from_cache
+                self.load_operator_from_packages,
+                self.load_operator_from_cache
         ]:
             op = factory(function, args, tag)
             if op is not None:
