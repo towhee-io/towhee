@@ -51,14 +51,14 @@ class PyTorchImageDataset(Dataset):
         for i in range(len(image_names)):
             if os.path.splitext(image_names[i])[1] == '':
                 image_names[i] += '.jpg'
-        images = [name for name in image_names]
+        images = image_names.tolist()
         self.images = [os.path.join(self.image_path, i) for i in images]
 
         categories = Series.to_numpy(df['category'])
         # Count the categories
         breed_set = set(categories)
         breed_list = list(breed_set)
-        dic = dict()
+        dic = {}
         for i in range(len(breed_list)):
             dic[breed_list[i]] = i
         self.labels = [dic[categories[i]] for i in range(len(categories))]
