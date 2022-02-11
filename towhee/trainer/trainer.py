@@ -18,9 +18,7 @@ import math
 import os
 import sys
 import torch
-# import random
-# import warnings
-# import numpy as np
+import tempfile
 
 from typing import Dict, List, Union
 from pathlib import Path
@@ -29,6 +27,9 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, IterableDataset
+from torch.multiprocessing import Process
+import torch.distributed as dist
+
 
 # from towhee.trainer.callback import (
 #     Callback
@@ -44,7 +45,6 @@ from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 
 from towhee.trainer.utils.trainer_utils import (
     CHECKPOINT_NAME,
-    get_last_checkpoint
 )
 from towhee.trainer.training_config import TrainingConfig
 from towhee.trainer.utils import logging
@@ -57,6 +57,7 @@ from towhee.trainer.optimization.optimization import get_scheduler
 logger = logging.get_logger(__name__)
 
 WEIGHTS_NAME = "pytorch_model.bin"
+TEMP_INIT_WEIGHTS = "initial_weights.pt"
 
 
 class Trainer:
@@ -95,7 +96,7 @@ class Trainer:
         # self.operator = operator
         self.model = model
         self.model_card = model_card
-        self.checkpoint = None
+        # self.checkpoint = None
         self.optimizer = self.configs.optimizer
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
@@ -128,12 +129,82 @@ class Trainer:
         self.label_names = default_label_names if self.configs.label_names is None else self.configs.label_names
         # self.control = self.callback_handler.on_init_end(self.args, self.state, self.control)
 
-    def train(self, epochs_trained: int = 0):
+    def train(self, resume_checkpoint_path=None):
+        if self.configs.device_str == "cuda":
+            self.distributed = True
+            self.spawn_train_process(resume_checkpoint_path)
+        else:
+            self.distributed = False
+            self.run_train(resume_checkpoint_path)
+
+    def spawn_train_process(self, resume_checkpoint_path):
+        # world_size = torch.cuda.device_count()
+        # world_size = torch.cuda.device_count()
+        # mp.spawn(self.run_train,
+        #          args=(world_size, resume_checkpoint_path),
+        #          nprocs=world_size,  # opt.world_size,
+        #          join=True)
+        process_list = []
+        world_size = self.configs.n_gpu
+        for rank in range(world_size):
+            process = Process(target=self.run_train, args=(resume_checkpoint_path, rank, world_size))
+            process.start()
+            process_list.append(process)
+        for process in process_list:
+            process.join()
+
+    def _init_distributed(self, rank, world_size):
+        if self.distributed:
+            if torch.cuda.is_available() is False:
+                raise EnvironmentError("not find GPU device for training.")
+            os.environ["MASTER_ADDR"] = "localhost"
+            os.environ["MASTER_PORT"] = "12355"
+            print("_init_distributed(), rank=", rank)
+            torch.cuda.set_device(rank)
+            dist_backend = "nccl"
+            dist_url = "env://"
+            print("| distributed init (rank {}): {}".format(
+                rank, dist_url), flush=True)
+            dist.init_process_group(backend=dist_backend, init_method=dist_url,
+                                    world_size=world_size, rank=rank)
+            dist.barrier()
+
+    def _load_before_train(self, resume_checkpoint_path, rank):
+        epochs_trained = 0
+        sync_bn = self.configs.sync_bn
+        if resume_checkpoint_path is not None:
+            # weights_dict = torch.load(weights_path, map_location=device)
+            # load_weights_dict = {k: v for k, v in weights_dict.items()
+            #                      if model.state_dict()[k].numel() == v.numel()}
+            # model.load_state_dict(load_weights_dict, strict=False)
+            epochs_trained = self.load(resume_checkpoint_path)
+        else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
+            if self.distributed:
+                checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
+                if rank == 0:
+                    torch.save(self.model.state_dict(), checkpoint_path)
+                dist.barrier()
+                self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.configs.device))
+        if self.distributed:
+            self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
+            if sync_bn:
+                # 使用SyncBatchNorm后训练会更耗时
+                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
+        return epochs_trained
+
+    def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
         """
         Main training entry point.
         """
         args = self.configs
+        self._init_distributed(rank, world_size)
 
+        print("device=", self.configs.device)
+        print("rank=", rank)
+        print("world_size=", world_size)
+
+        self.model = self.model.to(self.configs.device)
+        epochs_trained = self._load_before_train(resume_checkpoint_path, rank)
         # Keeping track whether we can can len() on the dataset or not
         train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
 
@@ -190,8 +261,8 @@ class Trainer:
         # self.state.max_steps = max_steps
         # self.state.num_train_epochs = num_train_epochs
 
-        tr_loss = torch.tensor(0.0)
-        tr_corrects = 0
+        tr_loss = torch.tensor(0.0).to(self.configs.device)
+        # tr_corrects = 0
         # _total_loss_scalar is updated everytime .item() has to be called on tr_loss and stores the sum of all losses
         self._total_loss_scalar = 0.0
         # model.zero_grad()
@@ -207,10 +278,10 @@ class Trainer:
             # self.control = self.callback_handler.on_epoch_begin(args, self.state, self.control)
 
             for _, inputs in enumerate(epoch_iterator):
-                loss, corrects = self.training_step(model, inputs)
+                loss = self.training_step(model, inputs)
                 print(loss)
                 tr_loss += loss
-                tr_corrects += corrects
+                # tr_corrects += corrects
 
                 # Optimizer step
                 optimizer_was_run = True
@@ -241,10 +312,19 @@ class Trainer:
 
         # return TrainOutput(self.state.global_step, train_loss)
 
-        self.save(
-            path=os.path.join(args.output_dir, "epoch_" + str(num_train_epochs)),
-            overwrite=args.overwrite_output_dir
-        )
+        self._cleanup_distributed(rank)
+        if rank == 0 or rank is None: # todo
+            self.save(
+                path=os.path.join(args.output_dir, "epoch_" + str(num_train_epochs)),
+                overwrite=args.overwrite_output_dir
+            )
+
+    def _cleanup_distributed(self, rank):
+        if self.distributed:
+            if rank == 0:
+                if os.path.exists(TEMP_INIT_WEIGHTS) is True:
+                    os.remove(TEMP_INIT_WEIGHTS)
+            dist.destroy_process_group()
 
     def log(self, logs: Dict[str, float]) -> None:
         """
@@ -276,15 +356,15 @@ class Trainer:
         """
         model.train()
         # inputs = self._prepare_inputs(inputs)
+        inputs = [input_.to(self.configs.device) for input_ in inputs]
+        loss, _ = self.compute_loss(model, inputs)
 
-        loss, corrects = self.compute_loss(model, inputs)
-
-        if self.configs.n_gpu > 1:
-            loss = loss.mean()  # mean() to average on multi-gpu parallel training
+        # if self.configs.n_gpu > 1:
+        #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
         loss.backward()
 
-        return loss.detach(), corrects
+        return loss.detach() #, corrects
 
     def compute_loss(self, model, inputs):
         """
@@ -386,22 +466,24 @@ class Trainer:
         return len(dataloader.dataset)
 
     def load(self, path):
-        device = "cpu"  # todo
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-        self.checkpoint = torch.load(checkpoint_path, map_location=device)
-        self.model.load_state_dict(self.checkpoint["model_state_dict"])
-        if isinstance(self.optimizer, Optimizer) and self.checkpoint["optimizer_state_dict"]:
-            self.optimizer.load_state_dict(self.checkpoint["optimizer_state_dict"])
-        epoch = self.checkpoint["epoch"]
+        checkpoint = torch.load(checkpoint_path, map_location=self.configs.device)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if "epoch" not in checkpoint:
+            return 0
+        epoch = checkpoint["epoch"]
         print("epoch = ", epoch)  # todo
-        loss = self.checkpoint["loss"]
+        loss = checkpoint["loss"]
         print("loss = ", loss)  # todo
         if Path(modelcard_path).exists():
             self.model_card = ModelCard.load_from_file(modelcard_path)
             print("model_card = ", self.model_card.to_dict())
         else:
             logger.warning("model card file not exist.")
+        return epoch
 
     def save(self, path, overwrite=True):
         Path(path).mkdir(exist_ok=True)
@@ -425,11 +507,11 @@ class Trainer:
         else:
             logger.warning("model card is None.")
 
-    def resume_from_checkpoint(self, last_checkpoint=None):
-        if last_checkpoint is None:
-            last_checkpoint = get_last_checkpoint(self.configs.output_dir)
-        self.load(last_checkpoint)
-        self.train(epochs_trained=self.checkpoint["epoch"])
+    # def resume_from_checkpoint(self, last_checkpoint=None):
+    #     if last_checkpoint is None:
+    #         last_checkpoint = get_last_checkpoint(self.configs.output_dir)
+    #     self.load(last_checkpoint)
+    #     self.train(epochs_trained=self.checkpoint["epoch"])
 
 # if __name__ == '__main__':
 #     from torchvision import transforms
