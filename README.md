@@ -13,43 +13,43 @@
 
 ## What is Towhee?
 
-Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data. It aims to make democratize `anything2vec`, allowing everyone - from beginner developers to large organizations - to train and deploy complex machine learning pipelines with just a few lines of code.
+Towhee is a flexible, application-oriented framework for running machine learning (ML) pipelines. It aims to make greatly simply your application's ML requirements, allowing everyone - from beginner developers to large organizations - to deploy complex pipelines with just a few lines of code.
 
 Towhee has pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://towhee.io).
 
+Our initial focus will be on generating *embeddings*, i.e. dense vectors which can be used to represent the contents of images, video, text, and other human-generated data.
+
 ## Key features
 
-- __Easy embedding for everyone__: Transform your data into vectors with less than five lines of code.
+- __Easy ML for everyone__: Run a machine learning pipeline with less than five lines of code.
 
 - __Rich operators and pipelines__: No more reinventing the wheel! Collaborate and share pipelines with the open source community.
 
 - __Automatic versioning__: Our versioning mechanism for pipelines and operators ensures that you never run into [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell).
 
-- __Support for fine-tuning models__*: Feed your dataset into our `Trainer` and get a new model in just a few easy steps.
+- __Support for fine-tuning models__: Feed your dataset into our `Trainer` and get a new model in just a few easy steps.
 
 - __Deploy to cloud__*: Ready-made pipelines can be deployed to the cloud with minimal effort.
-
 
 Features marked with a star (\*) are on our roadmap and have not yet been implemented. Help is always appreciated, so come join our [Slack](https://slack.towhee.io) or check out our [docs](https://docs.towhee.io) for more information.
 
 ## Getting started
 
-Towhee requires Python 3.6+ and Pytorch 1.4.0+. Support for Tensorflow and scikit-learn models is coming soon. Towhee can be installed via `pip`:
+Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 
 ```bash
 % pip install -U pip  # if you run into installation issues, try updating pip
 % pip install towhee
 ```
 
-Towhee provides a variety of pre-built embedding pipelines. For example, generating an embedding can be done in as little as five lines of code:
+Towhee provides a variety of pre-built pipelines. For example, generating an image embedding can be done in as little as five lines of code:
 
 ```python
 >>> from towhee import pipeline
 
-# Use our in-built embedding pipeline
->>> img_path = 'towhee_logo.png'
+# Our built-in image embedding pipeline takes
 >>> embedding_pipeline = pipeline('image-embedding')
->>> embedding = embedding_pipeline(img_path)
+>>> embedding = embedding_pipeline('https://docs.towhee.io/img/logo.png')
 ```
 
 Your image embedding is now stored in `embedding`. It's that simple.
@@ -59,7 +59,7 @@ Your image embedding is now stored in `embedding`. It's that simple.
 If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
 
 ```python
->>> embedding_pipeline = pipeline('towhee/image-embedding-resnet101')
+>>> embedding_pipeline = pipeline('towhee/image-embedding-convnext_base')
 ```
 
 For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
