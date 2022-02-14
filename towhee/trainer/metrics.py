@@ -50,6 +50,9 @@ class Metrics:
     def reset(self) -> None:
         pass
 
+    def to(self, *args, **kwargs):
+        pass
+
 class TMMetrics(Metrics):
     """
     `TMMetrics` use torchmetric as the implementation of metrics.
@@ -158,6 +161,10 @@ class TMMetrics(Metrics):
 
     def reset(self) -> None:
         self._metric.reset()
+
+    def to(self, *args, **kwargs):
+        self._metric.to(*args, **kwargs)
+
 
 _metrics_impls['TMMetrics'] = TMMetrics
 

@@ -1,4 +1,4 @@
-# Copyright 2020 The HuggingFace Team and 2021 Zilliz. All rights reserved.
+# Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
 import json
 import os
 from dataclasses import asdict, dataclass, field, fields
-from enum import Enum
 
 import torch
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
 import yaml
 
 from towhee.trainer.callback import Callback
@@ -31,9 +30,12 @@ OTHER_CATEGORY = "other"
 
 
 def dump_default_yaml(yaml_path):
+    """
+    dump a default yaml, which can be overridden by the custom operator.
+    """
     training_config = TrainingConfig()
     training_config.save_to_yaml(path2yaml=yaml_path)
-    # print(training_config)
+    trainer_log.info("dump default yaml to %s", yaml_path)
 
 
 @dataclass
@@ -64,12 +66,10 @@ class TrainingConfig:
         default="no",
         metadata={HELP: "The evaluation strategy to use.", CATEGORY: "train"},
     )
-
     prediction_loss_only: bool = field(
         default=False,
         metadata={HELP: "When performing evaluation and predictions, only returns the loss.", CATEGORY: "train"},
     )
-
     batch_size: Optional[int] = field(
         default=8,
         metadata={
@@ -81,7 +81,7 @@ class TrainingConfig:
     seed: int = field(default=42,
                       metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
 
-    epoch_num: float = field(default=3.0,
+    epoch_num: float = field(default=2,
                              metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
     max_steps: int = field(
         default=-1,
@@ -121,31 +121,18 @@ class TrainingConfig:
     disable_tqdm: Optional[bool] = field(
         default=None, metadata={HELP: "Whether or not to disable the tqdm progress bars.", CATEGORY: "learning"}
     )
-
-    label_names: Optional[List[str]] = field(
-        default=None, metadata={HELP: "The list of keys in your dictionary of inputs that correspond to the labels."}
-    )
-    past_index: int = field(
-        default=-1,
-        metadata={HELP: "If >=0, uses the corresponding part of the output as the past state for next step."},
-    )
     load_best_model_at_end: Optional[bool] = field(
         default=False,
-        metadata={HELP: "Whether or not to load the best model found during training at the end of training."},
+        metadata={HELP: "Whether or not to load the best model found during training at the end of training.",
+                  CATEGORY: "train"},
     )
-
-    # no_cuda: bool = field(default=False, metadata={HELP: "Do not use CUDA even when it is available"})
-
     call_back_list: Optional[List[Callback]] = field(
         default=None, metadata={HELP: ".", CATEGORY: "callback"}
     )
-    # loss: Optional[_Loss] = field(
-    loss: Optional[str] = field(
-        # default=nn.CrossEntropyLoss(), metadata={HELP: "pytorch loss"}
+    loss: Union[str, Dict[str, Any]] = field(
         default="CrossEntropyLoss", metadata={HELP: "pytorch loss in torch.nn package", CATEGORY: "learning"}
     )
-    # optimizer: Optional[Optimizer] = field(
-    optimizer: Optional[str] = field(
+    optimizer: Union[str, Dict[str, Any]] = field(
         default="Adam", metadata={HELP: "pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"}
     )
     lr_scheduler_type: str = field(
@@ -217,51 +204,37 @@ class TrainingConfig:
                 "`cpu` -> use cpu only;"
                 "`cuda` -> use some gpu devices, and the using gpu count should be specified in args `n_gpu`;"
                 "`cuda:2` -> use the No.2 gpu."
-            )
+            ),
+            CATEGORY: "device"
         }
     )
     n_gpu: int = field(default=-1, metadata={
-        HELP: "should be specified when device_str is `cuda`"
+        HELP: "should be specified when device_str is `cuda`",
+        CATEGORY: "device"
     })
     sync_bn: bool = field(default=True, metadata={
-        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training a little slower"
+        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training a little slower",
+        CATEGORY: "device"
     })
 
     def __post_init__(self):
         if self.output_dir is not None:
             self.output_dir = os.path.expanduser(self.output_dir)
-        # if self.disable_tqdm is None:
-        #     self.disable_tqdm = logger.getEffectiveLevel() > logging.WARN
         if self.device_str == "cuda" and self.n_gpu < 1:
             raise ValueError("must specify the using gpu number when device_str is `cuda`")
         self.should_save = True
-
         self._get_config_categories()
 
     @property
     def train_batch_size(self) -> int:
-        """
-        The actual batch size for training.
-        """
-        train_batch_size = self.batch_size * max(1, self.n_gpu)
+        assert self.batch_size > 0
+        train_batch_size = self.batch_size  # * max(1, self.n_gpu)
         return train_batch_size
 
     def to_dict(self):
-        """
-        Serializes this instance while replace `Enum` by their values (for JSON serialization support).
-        """
-        d = asdict(self)
-        for k, v in d.items():
-            if isinstance(v, Enum):
-                d[k] = v.value
-            if isinstance(v, list) and len(v) > 0 and isinstance(v[0], Enum):
-                d[k] = [x.value for x in v]
-        return d
+        return asdict(self)
 
     def to_json_string(self):
-        """
-        Serializes this instance to a JSON string.
-        """
         return json.dumps(self.to_dict(), indent=2)
 
     @property
@@ -275,30 +248,26 @@ class TrainingConfig:
     def load_from_yaml(self, path2yaml: str = None):
         with open(path2yaml, "r", encoding="utf-8") as f:
             config_dict = yaml.safe_load(f)
-            train_config_dict = config_dict["train"]["args"]
-            learning_config_dict = config_dict["learning"]["args"]
-            callback_config_dict = config_dict["callback"]["args"]
-            metrics_config_dict = config_dict["metrics"]["args"]
-            logging_config_dict = config_dict["logging"]["args"]
-            self._set_attr_from_dict(train_config_dict)
-            self._set_attr_from_dict(learning_config_dict)
-            self._set_attr_from_dict(callback_config_dict)
-            self._set_attr_from_dict(metrics_config_dict)
-            self._set_attr_from_dict(logging_config_dict)
+            for file_category in config_dict:
+                if file_category not in self.config_category_set:
+                    trainer_log.warning("category %s is not a attribute in TrainingConfig", file_category)
+            for category in self.config_category_set:
+                category_dict = config_dict.get(category, {})
+                self._set_attr_from_dict(category_dict)
 
     def save_to_yaml(self, path2yaml: str = None):
         config_dict = {}
         for config_category in self.config_category_set:
-            config_dict[config_category] = {"args": {}}
+            config_dict[config_category] = {}
         config_fields = fields(TrainingConfig)
         for config_field in config_fields:
             metadata_dict = config_field.metadata
             field_name = config_field.name
             if CATEGORY in metadata_dict:
                 category = metadata_dict[CATEGORY]
-                config_dict[category]["args"][field_name] = getattr(self, field_name)
+                config_dict[category][field_name] = getattr(self, field_name)
             else:
-                config_dict[OTHER_CATEGORY]["args"][field_name] = getattr(self, field_name)
+                config_dict[OTHER_CATEGORY][field_name] = getattr(self, field_name)
                 trainer_log.warning("metadata in self.%s has no CATEGORY", config_field.name)
         # print(config_dict)
         with open(path2yaml, "w", encoding="utf-8") as file:
