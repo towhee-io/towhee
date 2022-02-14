@@ -14,297 +14,236 @@
 
 import json
 import os
-import sys
-import socket
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
 
 import torch
-from torch import nn
 
 from typing import List, Optional
-
-from torch.nn.modules.loss import _Loss
-from torch import optim
-from torch.optim import Optimizer
 import yaml
 
 from towhee.trainer.callback import Callback
-from towhee.trainer.utils import logging
-from towhee.trainer.utils.trainer_utils import SchedulerType
-from towhee.trainer import metrics
+from towhee.utils.log import trainer_log
 
-logger = logging.get_logger(__name__)
-log_levels = logging.get_log_levels_dict().copy()
-trainer_log_levels = dict(**log_levels, passive=-1)
+HELP = "help"
+CATEGORY = "category"
+OTHER_CATEGORY = "other"
 
 
-def default_logdir() -> str:
-    """
-    Same default as PyTorch
-    """
-
-    current_time = datetime.now().strftime("%b%d_%H-%M-%S")
-    return os.path.join("runs", current_time + "_" + socket.gethostname())
+def dump_default_yaml(yaml_path):
+    training_config = TrainingConfig()
+    training_config.save_to_yaml(path2yaml=yaml_path)
+    # print(training_config)
 
 
 @dataclass
 class TrainingConfig:
     """
-        Training arguments of CNN trainer.
-
-        Parameters:
-            output_dir (:obj:`str`):
-                The output directory where the model predictions and checkpoints will be written.
-            overwrite_output_dir (:obj:`bool`, `optional`, defaults to :obj:`False`):
-                If :obj:`True`, overwrite the content of the output directory. Use this to continue training if
-                :obj:`output_dir` points to a checkpoint directory.
-            prediction_loss_only (:obj:`bool`, `optional`, defaults to `False`):
-                When performing evaluation and generating predictions, only returns the loss.
-            per_device_train_batch_size (:obj:`int`, `optional`, defaults to 8):
-                The batch size per GPU core/CPU for training.
-            per_device_eval_batch_size (:obj:`int`, `optional`, defaults to 8):
-                The batch size per GPU core/CPU for evaluation.
-            eval_accumulation_steps (:obj:`int`, `optional`):
-                Number of predictions steps to accumulate the output tensors for, before moving the results to the CPU. If
-                left unset, the whole predictions are accumulated on GPU before being moved to the CPU (faster but
-                requires more memory).
-            num_train_epochs(:obj:`float`, `optional`, defaults to 3.0):
-                Total number of training epochs to perform (if not an integer, will perform the decimal part percents of
-                the last epoch before stopping training).
-            max_steps (:obj:`int`, `optional`, defaults to -1):
-                If set to a positive number, the total number of training steps to perform. Overrides
-                :obj:`num_train_epochs`.
-            no_cuda (:obj:`bool`, `optional`, defaults to :obj:`False`):
-                Whether to not use CUDA even when it is available or not.
-            eval_steps (:obj:`int`, `optional`):
-                Number of update steps between two evaluations if :obj:`evaluation_strategy="steps"`.
-            disable_tqdm (:obj:`bool`, `optional`):
-                Whether or not to disable the tqdm progress bars.
-            label_names (:obj:`List[str]`, `optional`):
-                The list of keys in your dictionary of inputs that correspond to the labels.
-        """
-
+    the training config, it can be defined in a yaml file
+    """
     output_dir: str = field(
-        default=None,
-        metadata={"help": "The output directory where the model predictions and checkpoints will be written."},
+        default="./output_dir",
+        metadata={HELP: "The output directory where the model predictions and checkpoints will be written.",
+                  CATEGORY: "train"},
     )
     overwrite_output_dir: bool = field(
         default=False,
         metadata={
-            "help": (
+            HELP: (
                 "Overwrite the content of the output directory."
                 "Use this to continue training if output_dir points to a checkpoint directory."
-            )
+            ),
+            CATEGORY: "train"
         },
     )
-    do_train: bool = field(default=False, metadata={"help": "Whether to run training."})
-    do_eval: bool = field(default=False, metadata={"help": "Whether to run eval on the dev set."})
-    do_predict: bool = field(default=False, metadata={"help": "Whether to run predictions on the test set."})
+    do_train: bool = field(default=False, metadata={HELP: "Whether to run training.", CATEGORY: "train"})
+    do_eval: bool = field(default=False, metadata={HELP: "Whether to run eval on the dev set.", CATEGORY: "train"})
+    do_predict: bool = field(default=False,
+                             metadata={HELP: "Whether to run predictions on the test set.", CATEGORY: "train"})
     eval_strategy: str = field(
         default="no",
-        metadata={"help": "The evaluation strategy to use."},
+        metadata={HELP: "The evaluation strategy to use.", CATEGORY: "train"},
     )
 
     prediction_loss_only: bool = field(
         default=False,
-        metadata={"help": "When performing evaluation and predictions, only returns the loss."},
+        metadata={HELP: "When performing evaluation and predictions, only returns the loss.", CATEGORY: "train"},
     )
 
-    per_gpu_train_batch_size: Optional[int] = field(
-        default=None,
+    batch_size: Optional[int] = field(
+        default=8,
         metadata={
-            "help": "Deprecated, the use of `--per_device_train_batch_size` is preferred. "
-                    "Batch size per GPU/TPU core/CPU for training."
-        },
+            HELP: "Deprecated, the use of `--per_device_train_batch_size` is preferred. "
+                  "Batch size per GPU/TPU core/CPU for training.",
+            CATEGORY: "train"
+        }
     )
-    per_gpu_eval_batch_size: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "Deprecated, the use of `--per_device_eval_batch_size` is preferred."
-                    "Batch size per GPU/TPU core/CPU for evaluation."
-        },
-    )
-    gradient_accumulation_num: int = field(
-        default=1,
-        metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
-    )
-    prediction_accumulation_num: Optional[int] = field(
-        default=None,
-        metadata={"help": "Number of predictions steps to accumulate before moving the tensors to the CPU."},
-    )
-    seed: int = field(default=42, metadata={"help": "Random seed that will be set at the beginning of training."})
+    seed: int = field(default=42,
+                      metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
 
-    epoch_num: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
+    epoch_num: float = field(default=3.0,
+                             metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
     max_steps: int = field(
         default=-1,
-        metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
+        metadata={HELP: "If > 0: set total number of training steps to perform. Override num_train_epochs.",
+                  CATEGORY: "train"},
     )
     dataloader_drop_last: bool = field(
-        default=False, metadata={"help": "Drop the last incomplete batch if it is not divisible by the batch size."}
+        default=False,
+        metadata={HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"}
     )
 
-    eval_steps: int = field(default=None, metadata={"help": "Run an evaluation every X steps."})
+    eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
     dataloader_num_workers: int = field(
         default=0,
         metadata={
-            "help": "Number of subprocesses to use for data loading (PyTorch only). 0 means "
-                    "that the data will be loaded in the main process."
+            HELP: "Number of subprocesses to use for data loading (PyTorch only). 0 means "
+                  "that the data will be loaded in the main process.",
+            CATEGORY: "train"
         },
-    )
-    group_by_length: bool = field(
-        default=False,
-        metadata={"help": "Whether or not to group samples of roughly the same length together when batching."},
-    )
-    length_column_name: Optional[str] = field(
-        default="length",
-        metadata={"help": "Column name with precomputed lengths to use when grouping by length."},
     )
     resume_from_checkpoint: Optional[str] = field(
         default=None,
-        metadata={"help": "The path to a folder with a valid checkpoint for your model."},
+        metadata={HELP: "The path to a folder with a valid checkpoint for your model.", CATEGORY: "train"},
     )
-    lr: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
-    weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})
-    adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
-    adam_beta2: float = field(default=0.999, metadata={"help": "Beta2 for AdamW optimizer"})
-    adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for AdamW optimizer."})
-    max_norm_grad: float = field(default=1.0, metadata={"help": "Max gradient norm."})
-    use_adafactor: bool = field(default=False, metadata={"help": "Wif Adafactor is used."})
+    lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
+    weight_decay: float = field(default=0.0,
+                                metadata={HELP: "Weight decay for AdamW if we apply some.", CATEGORY: "learning"})
+    adam_beta1: float = field(default=0.9, metadata={HELP: "Beta1 for AdamW optimizer", CATEGORY: "learning"})
+    adam_beta2: float = field(default=0.999, metadata={HELP: "Beta2 for AdamW optimizer", CATEGORY: "learning"})
+    adam_epsilon: float = field(default=1e-8, metadata={HELP: "Epsilon for AdamW optimizer.", CATEGORY: "learning"})
+    max_norm_grad: float = field(default=1.0, metadata={HELP: "Max gradient norm.", CATEGORY: "learning"})
+    use_adafactor: bool = field(default=False, metadata={HELP: "Wif Adafactor is used.", CATEGORY: "learning"})
     metric: Optional[str] = field(
-        default=None, metadata={"help": "The metric to use to compare two different models."}
+        default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"}
     )
 
     disable_tqdm: Optional[bool] = field(
-        default=None, metadata={"help": "Whether or not to disable the tqdm progress bars."}
+        default=None, metadata={HELP: "Whether or not to disable the tqdm progress bars.", CATEGORY: "learning"}
     )
 
     label_names: Optional[List[str]] = field(
-        default=None, metadata={"help": "The list of keys in your dictionary of inputs that correspond to the labels."}
+        default=None, metadata={HELP: "The list of keys in your dictionary of inputs that correspond to the labels."}
     )
     past_index: int = field(
         default=-1,
-        metadata={"help": "If >=0, uses the corresponding part of the output as the past state for next step."},
+        metadata={HELP: "If >=0, uses the corresponding part of the output as the past state for next step."},
     )
     load_best_model_at_end: Optional[bool] = field(
         default=False,
-        metadata={"help": "Whether or not to load the best model found during training at the end of training."},
+        metadata={HELP: "Whether or not to load the best model found during training at the end of training."},
     )
 
-
-    # no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
+    # no_cuda: bool = field(default=False, metadata={HELP: "Do not use CUDA even when it is available"})
 
     call_back_list: Optional[List[Callback]] = field(
-        default=None, metadata={"help": "."}
+        default=None, metadata={HELP: ".", CATEGORY: "callback"}
     )
-    greater_is_better: Optional[bool] = field(
-        default=None, metadata={"help": "Whether the `metric_for_best_model` should be maximized or not."}
+    # loss: Optional[_Loss] = field(
+    loss: Optional[str] = field(
+        # default=nn.CrossEntropyLoss(), metadata={HELP: "pytorch loss"}
+        default="CrossEntropyLoss", metadata={HELP: "pytorch loss in torch.nn package", CATEGORY: "learning"}
     )
-    ignore_data_skip: bool = field(
-        default=False,
+    # optimizer: Optional[Optimizer] = field(
+    optimizer: Optional[str] = field(
+        default="Adam", metadata={HELP: "pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"}
+    )
+    lr_scheduler_type: str = field(
+        default="linear",
         metadata={
-            "help": "When resuming training, whether or not to skip the first epochs "
-                    "and batches to get to the same training data."
+            HELP: (
+                "The scheduler type to use."
+                "eg. `linear`, `cosine`, `cosine_with_restarts`, `polynomial`, `constant`, `constant_with_warmup`"
+            ),
+            CATEGORY: "learning"
         },
     )
-    loss: Optional[_Loss] = field(
-        default=nn.CrossEntropyLoss(), metadata={"help": "pytorch loss"}
-    )
-    optimizer: Optional[Optimizer] = field(
-        default=optim.Adam, metadata={"help": "pytorch optimizer"}
-    )
-    lr_scheduler_type: SchedulerType = field(
-        default="linear",
-        metadata={"help": "The scheduler type to use."},
-    )
     warmup_ratio: float = field(
-        default=0.0, metadata={"help": "Linear warmup over warmup_ratio fraction of total steps."}
+        default=0.0, metadata={HELP: "Linear warmup over warmup_ratio fraction of total steps.",
+                               CATEGORY: "learning"}
     )
-    warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
-    logging_dir: Optional[str] = field(default=None, metadata={"help": "Tensorboard log dir."})
+    warmup_steps: int = field(default=0, metadata={HELP: "Linear warmup over warmup_steps.", CATEGORY: "learning"})
+    logging_dir: Optional[str] = field(default=None, metadata={HELP: "Tensorboard log dir.", CATEGORY: "logging"})
     logging_strategy: str = field(
         default="steps",
-        metadata={"help": "The logging strategy to use."},
+        metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
     )
-    logging_first_step: bool = field(default=False, metadata={"help": "Log the first global_step"})
-    logging_steps: int = field(default=500, metadata={"help": "Log every X updates steps."})
-    logging_nan_inf_filter: str = field(default=True, metadata={"help": "Filter nan and inf losses for logging."})
+    logging_first_step: bool = field(default=False, metadata={HELP: "Log the first global_step", CATEGORY: "logging"})
+    logging_steps: int = field(default=500, metadata={HELP: "Log every X updates steps.", CATEGORY: "logging"})
+    logging_nan_inf_filter: str = field(default=True, metadata={HELP: "Filter nan and inf losses for logging.",
+                                                                CATEGORY: "logging"})
     save_strategy: str = field(
         default="steps",
-        metadata={"help": "The checkpoint save strategy to use."},
+        metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
     )
-    saving_steps: int = field(default=500, metadata={"help": "Save checkpoint every X updates steps."})
+    saving_steps: int = field(default=500, metadata={HELP: "Save checkpoint every X updates steps.", CATEGORY: "logging"})
     save_total_limit: Optional[int] = field(
         default=None,
         metadata={
-            "help": (
+            HELP: (
                 "Limit the total amount of checkpoints. "
                 "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
-            )
+            ),
+            CATEGORY: "logging"
         },
     )
     saving_strategy: str = field(
         default="steps",
-        metadata={"help": "The checkpoint save strategy to use."},
+        metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
     )
     saving_total_limit: Optional[int] = field(
         default=None,
         metadata={
-            "help": (
+            HELP: (
                 "Limit the total amount of checkpoints. "
                 "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
-            )
+            ),
+            CATEGORY: "logging"
         },
     )
     saving_on_each_node: bool = field(
         default=False,
         metadata={
-            "help": "When doing multi-node distributed training, whether to save models "
-                    "and checkpoints on each node, or only on the main one"
+            HELP: "When doing multi-node distributed training, whether to save models "
+                  "and checkpoints on each node, or only on the main one",
+            CATEGORY: "logging"
         },
     )
     device_str: str = field(
         default=None,
         metadata={
-            "help": (
+            HELP: (
                 "None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
-                "'cpu' -> use cpu only;"
-                "'cuda' -> use some gpu devices, and the using gpu number should be specified in args 'n_gpu';"
-                "'cuda:2' -> use the number 2 gpu."
+                "`cpu` -> use cpu only;"
+                "`cuda` -> use some gpu devices, and the using gpu count should be specified in args `n_gpu`;"
+                "`cuda:2` -> use the No.2 gpu."
             )
         }
     )
     n_gpu: int = field(default=-1, metadata={
-            "help": "should be specified when device_str is 'cuda'"
-        })
+        HELP: "should be specified when device_str is `cuda`"
+    })
     sync_bn: bool = field(default=True, metadata={
-            "help": "will be work if device_str is 'cuda', the True sync_bn would make training a little slower"
-        })
-
+        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training a little slower"
+    })
 
     def __post_init__(self):
         if self.output_dir is not None:
             self.output_dir = os.path.expanduser(self.output_dir)
-
         # if self.disable_tqdm is None:
         #     self.disable_tqdm = logger.getEffectiveLevel() > logging.WARN
         if self.device_str == "cuda" and self.n_gpu < 1:
-            raise ValueError("must specify the using gpu number when device_str is 'cuda'")
+            raise ValueError("must specify the using gpu number when device_str is `cuda`")
         self.should_save = True
+
+        self._get_config_categories()
 
     @property
     def train_batch_size(self) -> int:
         """
         The actual batch size for training.
         """
-        if self.per_gpu_train_batch_size:
-            logger.warning(
-                "Using deprecated `--per_gpu_train_batch_size` argument which will be removed in a future "
-                "version."
-            )
-        per_device_batch_size = self.per_gpu_train_batch_size
-        train_batch_size = per_device_batch_size # * max(1, self.n_gpu)
+        train_batch_size = self.batch_size * max(1, self.n_gpu)
         return train_batch_size
 
     def to_dict(self):
@@ -335,143 +274,49 @@ class TrainingConfig:
 
     def load_from_yaml(self, path2yaml: str = None):
         with open(path2yaml, "r", encoding="utf-8") as f:
-            conf = yaml.safe_load(f)
-            # args for training
-            self.output_dir = conf["train"]["args"]["output_dir"]
-            self.overwrite_output_dir = conf["train"]["args"]["overwrite_output_dir"]
-            self.do_train = conf["train"]["args"]["do_train"]
-            self.do_eval = conf["train"]["args"]["do_eval"]
-            self.do_predict = conf["train"]["args"]["do_predict"]
-            self.eval_strategy = conf["train"]["args"]["eval_strategy"]
-            self.prediction_loss_only = conf["train"]["args"]["prediction_loss_only"]
-            self.per_gpu_train_batch_size = conf["train"]["args"]["per_gpu_train_batch_size"]
-            self.per_gpu_eval_batch_size = conf["train"]["args"]["per_gpu_eval_batch_size"]
-            self.gradient_accumulation_num = conf["train"]["args"]["gradient_accumulation_num"]
-            self.prediction_accumulation_num = conf["train"]["args"]["prediction_accumulation_num"]
-            self.epoch_num = conf["train"]["args"]["epoch_num"]
-            self.max_steps = conf["train"]["args"]["max_steps"]
-            self.no_cuda = conf["train"]["args"]["no_cuda"]
-            self.seed = conf["train"]["args"]["seed"]
-            self.dataloader_drop_last = conf["train"]["args"]["dataloader_drop_last"]
-            self.eval_steps = conf["train"]["args"]["eval_steps"]
-            self.dataloader_num_workers = conf["train"]["args"]["dataloader_num_workers"]
-            self.past_index = conf["train"]["args"]["past_index"]
-            self.load_best_model_at_end = conf["train"]["args"]["load_best_model_at_end"]
-            self.greater_is_better = conf["train"]["args"]["greater_is_better"]
-            self.ignore_data_skip = conf["train"]["args"]["ignore_data_skip"]
-            self.group_by_length = conf["train"]["args"]["group_by_length"]
-            self.length_column_name = conf["train"]["args"]["length_column_name"]
-            self.resume_from_checkpoint = conf["train"]["args"]["resume_from_checkpoint"]
-            self.label_names = conf["train"]["args"]["label_names"]
-
-            # args for learning
-            s_temp = conf["learning"]["args"]["optimizer"]
-            self.optimizer = getattr(sys.modules["torch.optim"],  s_temp.split(".")[-1])
-            self.use_adafactor = conf["learning"]["args"]["use_adafactor"]
-            self.lr_scheduler_type = conf["learning"]["args"]["lr_scheduler_type"]
-            self.warmup_ratio = conf["learning"]["args"]["warmup_ratio"]
-            self.warmup_steps = conf["learning"]["args"]["warmup_steps"]
-            self.lr = conf["learning"]["args"]["lr"]
-            self.weight_decay = conf["learning"]["args"]["weight_decay"]
-            self.adam_beta1 = conf["learning"]["args"]["adam_beta1"]
-            self.adam_beta2 = conf["learning"]["args"]["adam_beta2"]
-            self.adam_epsilon = conf["learning"]["args"]["adam_epsilon"]
-            self.max_norm_grad = conf["learning"]["args"]["max_norm_grad"]
-            self.use_adafactor = conf["learning"]["args"]["use_adafactor"]
-
-            # args for callbacks
-            self.call_back_list = conf["callback"]["args"]["call_back_list"]
-
-            # args for metrics
-            if conf["metrics"]["args"]["metric"] == "None":
-                self.metric = None
-            else:
-                self.metric = metrics.get_metric_by_name(conf["metrics"]["args"]["metric"])
-
-            # args for logging
-            self.logging_dir = conf["logging"]["args"]["logging_dir"]
-            self.logging_strategy = conf["logging"]["args"]["logging_strategy"]
-            self.logging_steps = conf["logging"]["args"]["logging_steps"]
-            self.saving_strategy = conf["logging"]["args"]["saving_strategy"]
-            self.saving_steps = conf["logging"]["args"]["saving_steps"]
-            self.saving_total_limit = conf["logging"]["args"]["saving_total_limit"]
-            self.saving_on_each_node = conf["logging"]["args"]["save_on_each_node"]
-            self.disable_tqdm = conf["logging"]["args"]["disable_tqdm"]
+            config_dict = yaml.safe_load(f)
+            train_config_dict = config_dict["train"]["args"]
+            learning_config_dict = config_dict["learning"]["args"]
+            callback_config_dict = config_dict["callback"]["args"]
+            metrics_config_dict = config_dict["metrics"]["args"]
+            logging_config_dict = config_dict["logging"]["args"]
+            self._set_attr_from_dict(train_config_dict)
+            self._set_attr_from_dict(learning_config_dict)
+            self._set_attr_from_dict(callback_config_dict)
+            self._set_attr_from_dict(metrics_config_dict)
+            self._set_attr_from_dict(logging_config_dict)
 
     def save_to_yaml(self, path2yaml: str = None):
-        train_args = {
-            "args": {
-                "output_dir": self.output_dir,
-                "overwrite_output_dir": self.overwrite_output_dir,
-                "do_train": self.do_train,
-                "do_eval": self.do_eval,
-                "do_predict": self.do_predict,
-                "eval_strategy": self.eval_strategy,
-                "prediction_loss_only": self.prediction_loss_only,
-                "per_gpu_train_batch_size": self.per_gpu_train_batch_size,
-                "per_gpu_eval_batch_size": self.per_gpu_eval_batch_size,
-                "gradient_accumulation_num": self.gradient_accumulation_num,
-                "prediction_accumulation_num": self.prediction_accumulation_num,
-                "epoch_num": self.epoch_num,
-                "max_steps": self.max_steps,
-                "no_cuda": self.no_cuda,
-                "seed": self.seed,
-                "dataloader_drop_last": self.dataloader_drop_last,
-                "eval_steps": self.eval_steps,
-                "dataloader_num_workers": self.dataloader_num_workers,
-                "past_index": self.past_index,
-                "label_names": self.label_names,
-                "load_best_model_at_end": self.load_best_model_at_end,
-                "greater_is_better": self.greater_is_better,
-                "ignore_data_skip": self.ignore_data_skip,
-                "group_by_length": self.group_by_length,
-                "length_column_name": self.length_column_name,
-                "resume_from_checkpoint": self.resume_from_checkpoint,
-            }
-        }
-        learning_args = {
-            "args": {
-                "optimizer": self.optimizer.__name__,
-                "use_adafactor": self.use_adafactor,
-                "lr_scheduler_type": self.lr_scheduler_type,
-                "warmup_ratio": self.warmup_ratio,
-                "warmup_steps": self.warmup_steps,
-                "lr": self.lr,
-                "weight_decay": self.weight_decay,
-                "adam_beta1": self.adam_beta1,
-                "adam_beta2": self.adam_beta2,
-                "adam_epsilon": self.adam_epsilon,
-                "max_norm_grad": self.max_norm_grad,
-            }
-        }
-        callback_args = {
-            "args": {
-                "call_back_list": self.call_back_list,
-            }
-        }
-        metrics_args = {
-            "args": {
-                "metric": self.metric.__name__ if self.metric else "None",
-            }
-        }
-        logging_args = {
-            "args": {
-                "logging_dir": self.logging_dir,
-                "logging_strategy": self.logging_strategy,
-                "logging_steps": self.logging_steps,
-                "saving_strategy": self.saving_strategy,
-                "saving_steps": self.saving_steps,
-                "saving_total_limit": self.saving_total_limit,
-                "save_on_each_node": self.saving_on_each_node,
-                "disable_tqdm": self.disable_tqdm,
-            }
-        }
-        conf = {
-            "train": train_args,
-            "learning": learning_args,
-            "callback": callback_args,
-            "metrics": metrics_args,
-            "logging": logging_args,
-        }
+        config_dict = {}
+        for config_category in self.config_category_set:
+            config_dict[config_category] = {"args": {}}
+        config_fields = fields(TrainingConfig)
+        for config_field in config_fields:
+            metadata_dict = config_field.metadata
+            field_name = config_field.name
+            if CATEGORY in metadata_dict:
+                category = metadata_dict[CATEGORY]
+                config_dict[category]["args"][field_name] = getattr(self, field_name)
+            else:
+                config_dict[OTHER_CATEGORY]["args"][field_name] = getattr(self, field_name)
+                trainer_log.warning("metadata in self.%s has no CATEGORY", config_field.name)
+        # print(config_dict)
         with open(path2yaml, "w", encoding="utf-8") as file:
-            yaml.dump(conf, file)
+            yaml.dump(config_dict, file)
+
+    def _set_attr_from_dict(self, train_config_dict):
+        for key, value in train_config_dict.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                trainer_log.warning("TrainingConfig has no attribute %s", key)
+
+    def _get_config_categories(self):
+        self.config_category_set = set()
+        config_fields = fields(TrainingConfig)
+        for config_field in config_fields:
+            metadata_dict = config_field.metadata
+            if CATEGORY in metadata_dict:
+                self.config_category_set.add(metadata_dict[CATEGORY])
+            else:
+                self.config_category_set.add(OTHER_CATEGORY)

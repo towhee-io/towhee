@@ -15,9 +15,8 @@
 import os
 import json
 import copy
-from towhee.trainer.utils import logging
 
-logger = logging.get_logger(__name__)
+from towhee.utils.log import trainer_log
 
 MODEL_CARD_NAME = "model_card.json"
 
@@ -42,7 +41,7 @@ class ModelCard():
             try:
                 setattr(self, key, value)
             except AttributeError as err:
-                logger.error("Can't set %s with value %s for %s", key, value, self)
+                trainer_log.error("Can't set %s with value %s for %s", key, value, self)
                 # todo:test this line
                 raise err
 
@@ -66,7 +65,7 @@ class ModelCard():
             output_model_card_file = save_directory_or_file
 
         self._to_json_file(output_model_card_file)
-        logger.info("Model card saved in %s", output_model_card_file) #todo:logger.info can't show
+        trainer_log.info("Model card saved in %s", output_model_card_file) #todo:logger.info can't show
 
     def _to_json_file(self, json_file_path):
         """Save this instance to a json file."""
