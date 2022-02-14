@@ -20,21 +20,25 @@ from towhee.utils.log import trainer_log
 
 MODEL_CARD_NAME = "model_card.json"
 
-class ModelCard():
+
+class ModelCard:
     """
     Recommended attributes from https://arxiv.org/abs/1810.03993 (see papers)
     https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/actionrecognitionnet
     """
+
     def __init__(self, **kwargs):
         self.model_details = kwargs.pop("model_details", {})
-        self.intended_use = kwargs.pop("intended_use", {})
-        self.factors = kwargs.pop("factors", {})
-        self.metrics = kwargs.pop("metrics", {})
-        self.evaluation_data = kwargs.pop("evaluation_data", {})
+        # self.intended_use = kwargs.pop("intended_use", {})
+        # self.factors = kwargs.pop("factors", {})
+        # self.metrics = kwargs.pop("metrics", {})
+        # self.evaluation_data = kwargs.pop("evaluation_data", {})
         self.training_data = kwargs.pop("training_data", {})
-        self.quantitative_analyses = kwargs.pop("quantitative_analyses", {})
-        self.ethical_considerations = kwargs.pop("ethical_considerations", {})
-        self.caveats_and_recommendations = kwargs.pop("caveats_and_recommendations", {})
+        self.training_configs = kwargs.pop("training_configs", {})
+        self.training_summary = kwargs.pop("training_summary", {})
+        # self.quantitative_analyses = kwargs.pop("quantitative_analyses", {})
+        # self.ethical_considerations = kwargs.pop("ethical_considerations", {})
+        # self.caveats_and_recommendations = kwargs.pop("caveats_and_recommendations", {})
 
         # Open additional attributes
         for key, value in kwargs.items():
@@ -65,7 +69,7 @@ class ModelCard():
             output_model_card_file = save_directory_or_file
 
         self._to_json_file(output_model_card_file)
-        trainer_log.info("Model card saved in %s", output_model_card_file) #todo:logger.info can't show
+        trainer_log.info("Model card saved in %s", output_model_card_file)  # todo:logger.info can't show
 
     def _to_json_file(self, json_file_path):
         """Save this instance to a json file."""
