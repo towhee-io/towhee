@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 import threading
 from collections import namedtuple
-from typing import Dict, Tuple, Union, List, Optional
+from typing import Dict, Tuple, Union, List
 
 from towhee.dataframe import DataFrame, Variable, DataFrameIterator
 
@@ -140,6 +140,9 @@ class BatchFrameReader(DataFrameReader):
 
 class _TimeWindow:
     '''
+    TimeWindow
+
+    The unit of timestamp is milliseconds, the unit of window(range, step) is seconds.
     '''
 
     def __init__(self, time_range_sec: int, time_step_sec: int, start_time_sec: int = 0):
@@ -203,6 +206,13 @@ class TimeWindowReader(DataFrameReader):
         self._lock = threading.Lock()
         self._close = False
 
+    def _format_to_namedtuple(self, rows):
+        ret = []
+        for row in rows:
+            data_dict = self._to_op_inputs(row)
+            ret.append(namedtuple('input', data_dict.keys())(**data_dict))
+        return ret
+
     def read(self) -> Tuple[Dict[str, any], Tuple]:
         """
         Read data from dataframe, get cols by operator_repr info
@@ -219,7 +229,7 @@ class TimeWindowReader(DataFrameReader):
                     data = next(self._iter)
                 except StopIteration:
                     if self._window is not None:
-                        ret = [self._to_op_inputs(row) for row in self._window.data]
+                        ret = self._format_to_namedtuple(self._window.data)
                         self._window = self._window.next_window
                         return ret
 
@@ -231,7 +241,7 @@ class TimeWindowReader(DataFrameReader):
 
                 is_end = self._window(data)
                 if is_end and len(self._window.data) != 0:
-                    ret = [self._to_op_inputs(row) for row in self._window.data]
+                    ret = self._format_to_namedtuple(self._window.data)
                     self._window = self._window.next_window
                     return ret
 

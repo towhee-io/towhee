@@ -93,6 +93,10 @@ class TestReader(unittest.TestCase):
 
 class TestWindowReader(unittest.TestCase):
 
+    '''
+    time window test
+    '''
+
     def _prepare_data(self, df):
         for i in range(5000, 11000, 40):
             f = _Frame(timestamp=i)
@@ -109,39 +113,39 @@ class TestWindowReader(unittest.TestCase):
         # [4, 6)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 5000)
-        self.assertEqual(res[-1]['test'], 5960)
+        self.assertEqual(res[0].test, 5000)
+        self.assertEqual(res[-1].test, 5960)
         # [6, 8)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 6000)
-        self.assertEqual(res[-1]['test'], 7960)
+        self.assertEqual(res[0].test, 6000)
+        self.assertEqual(res[-1].test, 7960)
         # [8, 10)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 8000)
-        self.assertEqual(res[-1]['test'], 9960)
+        self.assertEqual(res[0].test, 8000)
+        self.assertEqual(res[-1].test, 9960)
         # [10, 12)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 10000)
-        self.assertEqual(res[-1]['test'], 10960)
+        self.assertEqual(res[0].test, 10000)
+        self.assertEqual(res[-1].test, 10960)
 
         # [20, 22)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 21000)
-        self.assertEqual(res[-1]['test'], 21960)
+        self.assertEqual(res[0].test, 21000)
+        self.assertEqual(res[-1].test, 21960)
         # [22, 24)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 22000)
-        self.assertEqual(res[-1]['test'], 23960)
+        self.assertEqual(res[0].test, 22000)
+        self.assertEqual(res[-1].test, 23960)
         # [24, 26)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 24000)
-        self.assertEqual(res[-1]['test'], 24960)
+        self.assertEqual(res[0].test, 24000)
+        self.assertEqual(res[-1].test, 24960)
 
         # exception
         with self.assertRaises(StopIteration):
@@ -152,25 +156,25 @@ class TestWindowReader(unittest.TestCase):
         # [6, 8)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 6000)
-        self.assertEqual(res[-1]['test'], 7960)
+        self.assertEqual(res[0].test, 6000)
+        self.assertEqual(res[-1].test, 7960)
         # [9, 11)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 9000)
-        self.assertEqual(res[-1]['test'], 10960)
+        self.assertEqual(res[0].test, 9000)
+        self.assertEqual(res[-1].test, 10960)
 
         # [21, 23)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 21000)
-        self.assertEqual(res[-1]['test'], 22960)
+        self.assertEqual(res[0].test, 21000)
+        self.assertEqual(res[-1].test, 22960)
 
         # [24, 26]
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 24000)
-        self.assertEqual(res[-1]['test'], 24960)
+        self.assertEqual(res[0].test, 24000)
+        self.assertEqual(res[-1].test, 24960)
 
         # exception
         with self.assertRaises(StopIteration):
@@ -181,44 +185,44 @@ class TestWindowReader(unittest.TestCase):
         # [4, 7)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 5000)
-        self.assertEqual(res[-1]['test'], 6960)
+        self.assertEqual(res[0].test, 5000)
+        self.assertEqual(res[-1].test, 6960)
 
         # [6, 9)
         res = reader.read()
         self.assertEqual(len(res), 75)
-        self.assertEqual(res[0]['test'], 6000)
-        self.assertEqual(res[-1]['test'], 8960)
+        self.assertEqual(res[0].test, 6000)
+        self.assertEqual(res[-1].test, 8960)
 
         # [8, 11)
         res = reader.read()
         self.assertEqual(len(res), 75)
-        self.assertEqual(res[0]['test'], 8000)
-        self.assertEqual(res[-1]['test'], 10960)
+        self.assertEqual(res[0].test, 8000)
+        self.assertEqual(res[-1].test, 10960)
 
         # [10, 13)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 10000)
-        self.assertEqual(res[-1]['test'], 10960)
+        self.assertEqual(res[0].test, 10000)
+        self.assertEqual(res[-1].test, 10960)
 
         # [20, 23)
         res = reader.read()
         self.assertEqual(len(res), 50)
-        self.assertEqual(res[0]['test'], 21000)
-        self.assertEqual(res[-1]['test'], 22960)
+        self.assertEqual(res[0].test, 21000)
+        self.assertEqual(res[-1].test, 22960)
 
         # [22, 25)
         res = reader.read()
         self.assertEqual(len(res), 75)
-        self.assertEqual(res[0]['test'], 22000)
-        self.assertEqual(res[-1]['test'], 24960)
+        self.assertEqual(res[0].test, 22000)
+        self.assertEqual(res[-1].test, 24960)
 
         # [24, 27)
         res = reader.read()
         self.assertEqual(len(res), 25)
-        self.assertEqual(res[0]['test'], 24000)
-        self.assertEqual(res[-1]['test'], 24960)
+        self.assertEqual(res[0].test, 24000)
+        self.assertEqual(res[-1].test, 24960)
 
         # exception
         with self.assertRaises(StopIteration):
@@ -265,3 +269,37 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
+
+    def test_empty(self):
+        df = DataFrame('test', [('test', 'int')])
+        df.seal()
+        reader1 = TimeWindowReader(df, {'test': 0}, 3, 2)
+        res = reader1.read()
+        self.assertEqual(len(res), 0)
+
+        reader2 = TimeWindowReader(df, {'test': 0}, 3, 3)
+        res = reader2.read()
+        self.assertEqual(len(res), 0)
+
+        reader3 = TimeWindowReader(df, {'test': 0}, 3, 4)
+        res = reader3.read()
+        self.assertEqual(len(res), 0)
+
+    def test_normal(self):
+        df = DataFrame('test', [('test', 'int')])
+        for i in range(0, 1000, 40):
+            f = _Frame(timestamp=i)
+            df.put_dict({'test': i, FRAME: f})
+        df.seal()
+
+        reader1 = TimeWindowReader(df, {'test': 0}, 3, 2)
+        res = reader1.read()
+        self.assertEqual(len(res), 25)
+
+        reader2 = TimeWindowReader(df, {'test': 0}, 3, 3)
+        res = reader2.read()
+        self.assertEqual(len(res), 25)
+
+        reader3 = TimeWindowReader(df, {'test': 0}, 3, 4)
+        res = reader3.read()
+        self.assertEqual(len(res), 25)
