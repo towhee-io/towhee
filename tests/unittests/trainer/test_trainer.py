@@ -64,6 +64,12 @@ class TrainerTest(unittest.TestCase):
         )
         self.op = MockOperator()
         self.op.train(training_config=self.training_args, train_dataset=self.train_data)
+        self.training_args.epoch_num = 2
+        self.op.train(
+            training_config=self.training_args,
+            train_dataset=self.train_data,
+            resume_checkpoint_path=self.training_args.output_dir + '/epoch_1'
+        )
         # self.trainer = Trainer(
         #     operator=op,
         #     training_config=self.training_args,
