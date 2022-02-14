@@ -14,8 +14,6 @@ train:
     per_gpu_train_batch_size: 8 #int, batch size for each device(GPU,CPU or TPU)
     per_gpu_eval_batch_size: 1 #Optional, int, batch size for each device(GPU,CPU or TPU)
     gradient_accumulation_num: 1 #int, number of gradient accumulation before backward pass
-    prediction_accumulation_num: 1 #Optional, int, output tensors are accumulated for prediction_accumulation_num steps before being
-    #being moved to CPU
     epoch_num: 3.0 #float, training epochs
     max_steps: -1 #Optional, int, overides num_train_epochs if max_steps > 0
     no_cuda: False #bool, cuda is not used

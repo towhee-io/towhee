@@ -18,8 +18,6 @@ from typing import Dict, Tuple, List
 from torch import nn
 from torch.optim import Optimizer
 
-from towhee.trainer.utils import logging
-
 __all__ = [
     'Callback',
     'CallbackList',
@@ -29,8 +27,6 @@ __all__ = [
 def configure_callbacklist(configs: Dict) -> None:
     # TODO: construct the callbacks from configure file.
     raise NotImplementedError
-
-logger = logging.get_logger(__name__)
 
 class TrainerControl:
     """

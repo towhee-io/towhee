@@ -17,16 +17,11 @@
 import math
 from typing import Optional, Union
 
-# import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
 
 from towhee.trainer.utils.trainer_utils import SchedulerType
-from towhee.trainer.utils import logging
-# from .utils.versions import require_version
 
-
-logger = logging.get_logger(__name__)
 
 optimizer_default_args_map = {
     "adam": {}

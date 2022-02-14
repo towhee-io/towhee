@@ -21,8 +21,6 @@ from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
 
 from towhee.trainer.training_config import TrainingConfig
 
-from towhee.trainer.trainer import Trainer
-
 from towhee.operator import NNOperator
 from towhee.trainer.modelcard import ModelCard
 
@@ -47,7 +45,7 @@ class TestWeights(unittest.TestCase):
         output_dir='./temp_output',
         overwrite_output_dir=True,
         epoch_num=2,
-        per_gpu_train_batch_size=8,
+        batch_size=8,
         prediction_loss_only=True,
     )
     model_card = ModelCard(model_details='efficientnet test modelcard',
