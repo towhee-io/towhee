@@ -167,3 +167,29 @@ class Inject:
         with param_scope() as hp:
             hp().injections = self._injections
             return pipeline(*arg, **kws)
+
+
+class _OperatorLazyWrapper:
+    """
+    operator wrapper for lazy initialization.
+    """
+    def __init__(self, name: str, tag: str='main', **kws) -> None:
+        self._name = name.replace('.', '/').replace('_', '-')
+        self._tag = tag
+        self._kws = kws
+        self._op = None
+
+    def __call__(self, *arg, **kws):
+        if self._op is None:
+            self._op = op(self._name, self._tag, **self._kws)
+        return self._op(*arg, **kws)
+
+    @staticmethod
+    def callback(name, *arg, **kws):
+        if len(arg) == 0:
+            return _OperatorLazyWrapper(name, **kws)
+        else:
+            return _OperatorLazyWrapper(name, arg[0], **kws)
+
+
+ops = param_scope().callholder(_OperatorLazyWrapper.callback)
