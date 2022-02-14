@@ -6,29 +6,43 @@ learning:
     adam_beta1: 0.9
     adam_beta2: 0.999
     adam_epsilon: 1e-8
+    disable_tqdm: None
+    loss: CrossEntropyLoss
     lr: 5e-5
     lr_scheduler_type: linear
     max_norm_grad: 1.0
-    optimizer: Adam
+    optimizer: optim.Adam
     use_adafactor: false
     warmup_ratio: 0.0
     warmup_steps: 0
     weight_decay: 0
 logging:
   args:
-    disable_tqdm: None
     logging_dir: Node
+    logging_first_step: false
+    logging_nan_inf_filter: true
     logging_steps: 500
     logging_strategy: steps
-    save_on_each_node: false
+    save_strategy: steps
+    save_total_limit: null
+    saving_on_each_node: false
     saving_steps: 500
     saving_strategy: steps
     saving_total_limit: None
 metrics:
   args:
     metric: None
+other:
+  args:
+    device_str: null
+    label_names: None
+    load_best_model_at_end: false
+    n_gpu: -1
+    past_index: -1
+    sync_bn: true
 train:
   args:
+    batch_size: 8
     dataloader_drop_last: false
     dataloader_num_workers: 0
     do_eval: false
@@ -37,21 +51,9 @@ train:
     epoch_num: 3.0
     eval_steps: None
     eval_strategy: 'no'
-    gradient_accumulation_num: 1
-    greater_is_better: None
-    group_by_length: length
-    ignore_data_skip: false
-    label_names: None
-    length_column_name: length
-    load_best_model_at_end: false
     max_steps: -1
-    no_cuda: false
     output_dir: None
     overwrite_output_dir: false
-    past_index: -1
-    per_gpu_eval_batch_size: 1
-    per_gpu_train_batch_size: 8
-    prediction_accumulation_num: 1
     prediction_loss_only: false
     resume_from_checkpoint: None
     seed: 42

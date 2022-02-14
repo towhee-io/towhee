@@ -59,7 +59,7 @@ class TrainerTest(unittest.TestCase):
             output_dir='./ResNet50',
             overwrite_output_dir=True,
             epoch_num=1,
-            per_gpu_train_batch_size=4,
+            batch_size=4,
             prediction_loss_only=True,
         )
         self.op = MockOperator()
