@@ -109,6 +109,7 @@ class Trainer:
         self.loss = None
         self.callbacks = CallbackList()
         self.mean_loss_metric = None
+        self.epoch = 0
 
         os.makedirs(self.configs.output_dir, exist_ok=True)
         if training_config.max_steps > 0:
@@ -116,6 +117,11 @@ class Trainer:
         if train_dataset is not None and not isinstance(train_dataset,
                                                         collections.abc.Sized) and training_config.max_steps <= 0:
             raise ValueError("train_dataset does not implement __len__, max_steps has to be specified")
+
+        if self.model_card is None:
+            self.model_card = ModelCard()
+        self.model_card.model_details = str(self.model)
+        self.model_card.training_configs = str(self.configs)
 
     def train(self, resume_checkpoint_path=None):
         if self.configs.device_str == "cuda":
@@ -243,6 +249,8 @@ class Trainer:
         print("metric:", self.configs.metric)
         global_step = 0
         self.mean_loss_metric = get_metric_by_name("MeanMetric")
+
+        self.epoch = epochs_trained
         for epoch in range(epochs_trained, num_train_epochs):
             model.train()
             # loss_sum = torch.tensor(0.0).to(self.configs.device)
@@ -267,7 +275,7 @@ class Trainer:
                 # # tr_corrects += corrects
                 # mean_loss = loss_sum / (step + 1)  # update mean losses
                 if rank == 0 or rank is None:
-                    train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch,
+                    train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch+1,
                                                                                       int(self.configs.epoch_num),
                                                                                       round(loss.item(), 3),
                                                                                       round(step_metric.item(), 3))
@@ -289,11 +297,21 @@ class Trainer:
 
             # self._maybe_log_save_evaluate(loss_sum, tr_corrects, num_examples)
 
+            self.epoch += 1
             self.callbacks.on_epoch_end(epochs_trained, logs)
             # if self.control.should_training_stop:
             #     break
 
         trainer_log.info("\nTraining completed.\n")
+
+        training_summary = {
+            "device": str(self.configs.device),
+            "finetuned_from": resume_checkpoint_path,
+            "start_epoch": epochs_trained,
+            "num_train_epochs": self.epoch - epochs_trained,
+            "loss": self._total_loss_scalar
+        }
+        self.model_card.training_summary = training_summary
 
         self._cleanup_distributed(rank)
         if rank == 0 or rank is None:  # todo
@@ -421,7 +439,8 @@ class Trainer:
         print("loss = ", loss)  # todo
         if Path(modelcard_path).exists():
             self.model_card = ModelCard.load_from_file(modelcard_path)
-            print("model_card = ", self.model_card.to_dict())
+            print(f"Model card is loaded from {modelcard_path}")
+            # print("model_card = ", self.model_card.to_dict())
         else:
             trainer_log.warning("model card file not exist.")
         return epoch
@@ -438,7 +457,7 @@ class Trainer:
         if isinstance(self.optimizer, Optimizer):  # if created
             optimizer_state_dict = self.optimizer.state_dict()
         torch.save({
-            "epoch": 20,  # todo
+            "epoch": self.epoch,  # todo
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": optimizer_state_dict,
             "loss": 0.12,  # todo
