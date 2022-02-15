@@ -17,6 +17,7 @@ import argparse
 
 from towhee.command.develop import DevelopRepo
 from towhee.command.execute import ExecutePipeline
+from towhee.command.user import UserConfig
 
 
 def main_body(args):
@@ -26,7 +27,10 @@ def main_body(args):
     actions = {
         'install': DevelopRepo,
         'develop': DevelopRepo,
-        'run': ExecutePipeline
+        'run': ExecutePipeline,
+        'login': UserConfig,
+        'logout': UserConfig,
+        'whoami': UserConfig
     }
 
     for _, impl in actions.items():
