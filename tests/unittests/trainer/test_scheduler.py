@@ -1,4 +1,4 @@
-# Copyright 2021 Zilliz. All rights reserved.
+# Copyright 2020-present the HuggingFace Inc. team and 2021 Zilliz.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.

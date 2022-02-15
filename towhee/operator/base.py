@@ -96,7 +96,7 @@ class NNOperator(Operator):
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
-        self.trainer = None
+        self.trainer = None #Trainer(self.get_model())
 
     @property
     def framework(self):
@@ -112,33 +112,44 @@ class NNOperator(Operator):
         """
         raise NotImplementedError()
 
-    def train(self, training_config=None, train_dataset=None, eval_dataset=None, resume_checkpoint_path=None):
+    def train(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None, resume_checkpoint_path=None):
         """
         For training model
         """
-        if self.trainer is None:
-            self.trainer = Trainer(
-                self.get_model(),
-                training_config,
-                train_dataset,
-                eval_dataset,
-                model_card=self.model_card
-            )
+        self.setup_trainer(training_config, train_dataset, eval_dataset, model_card)
         self.trainer.train(resume_checkpoint_path)
 
-    def set_trainer(self, training_config=None, train_dataset=None, eval_dataset=None):
-        self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset)
+    def create_trainer(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None):
+        self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset, model_card)
+
+    def setup_trainer(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None) -> Trainer:
+        """
+        set up the trainer instance in operator before training.
+        """
+        if self.trainer is None:
+            self.create_trainer(training_config, train_dataset, eval_dataset, model_card)
+        else:
+            if training_config is not None:
+                self.trainer.configs = training_config
+            if train_dataset is not None:
+                self.trainer.train_dataset = train_dataset
+            if eval_dataset is not None:
+                self.trainer.eval_dataset = eval_dataset
+            if model_card is not None:
+                self.trainer.model_card = model_card
+        return self.trainer
 
     def load(self, path: str = None):
         if self.trainer is None:
-            self.set_trainer(training_config=None)
+            self.create_trainer(training_config=None)
         self.trainer.load(path)
 
     def save(self, path: str, overwrite: bool = True):
         if self.trainer is None:
-            self.set_trainer(training_config=None)
+            self.create_trainer(training_config=None)
         self.trainer.save(path, overwrite)
 
+    # def set_optimizer
 
 
 class PyOperator(Operator):
