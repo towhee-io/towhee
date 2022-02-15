@@ -148,6 +148,7 @@ class Trainer:
         self.lr_scheduler = None
         self.metric = None
         self.loss = None
+        self.loss_val = 0.0
         self.callbacks = CallbackList()
         self.mean_loss_metric = None
         self.epoch = 0
@@ -205,13 +206,16 @@ class Trainer:
 
     def _load_before_train(self, resume_checkpoint_path, rank):
         epochs_trained = 0
+        last_loss_val = 0.0
         sync_bn = self.configs.sync_bn
         if resume_checkpoint_path is not None:
             # weights_dict = torch.load(weights_path, map_location=device)
             # load_weights_dict = {k: v for k, v in weights_dict.items()
             #                      if model.state_dict()[k].numel() == v.numel()}
             # model.load_state_dict(load_weights_dict, strict=False)
-            epochs_trained = self.load(resume_checkpoint_path)
+            last_epoch, last_loss = self.load(resume_checkpoint_path)
+            epochs_trained = last_epoch + 1
+            _, last_loss_val = last_loss
         else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
             if self.distributed:
                 checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
@@ -224,7 +228,7 @@ class Trainer:
             if sync_bn:
                 # 使用SyncBatchNorm后训练会更耗时
                 self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
-        return epochs_trained
+        return epochs_trained, last_loss_val
 
     def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
         """
@@ -238,7 +242,7 @@ class Trainer:
         print("world_size=", world_size)
 
         self.model = self.model.to(self.configs.device)
-        epochs_trained = self._load_before_train(resume_checkpoint_path, rank)
+        epochs_trained, last_loss_val = self._load_before_train(resume_checkpoint_path, rank)
         # Keeping track whether we can can len() on the dataset or not
         train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
 
@@ -277,7 +281,6 @@ class Trainer:
         trainer_log.info("  Total optimization steps = %d", max_steps)
         trainer_log.info("****************************")
 
-        self._total_loss_scalar = 0.0
         # model.zero_grad()
 
         # tb_writer = None
@@ -290,10 +293,11 @@ class Trainer:
         global_step = 0
         self.mean_loss_metric = get_metric_by_name("MeanMetric")
 
-        self.epoch = epochs_trained
+        total_loss_val = last_loss_val * epochs_trained
+        self.epoch = epochs_trained - 1
         for epoch in range(epochs_trained, num_train_epochs):
             model.train()
-            # loss_sum = torch.tensor(0.0).to(self.configs.device)
+            loss_sum = 0.0
             self.callbacks.on_epoch_begin(epochs_trained, logs)
             # steps_in_epoch = (
             #     len(epoch_iterator) if train_dataset_is_sized else args.max_steps
@@ -301,7 +305,7 @@ class Trainer:
             if rank == 0 or rank is None:
                 train_dataloader = tqdm(train_dataloader, unit="step")  # , file=sys.stdout)
             # for step, inputs in enumerate(train_dataloader):
-            for _, inputs in enumerate(train_dataloader):
+            for i, inputs in enumerate(train_dataloader):
                 self.callbacks.on_train_batch_begin(inputs, logs)
                 inputs = [input_.to(self.configs.device) for input_ in inputs]
                 labels = inputs[1]
@@ -310,9 +314,8 @@ class Trainer:
                 loss = reduce_value(loss, average=True)
                 loss.backward()
                 loss = loss.detach()
-                # loss_sum += loss
-                # # tr_corrects += corrects
-                # mean_loss = loss_sum / (step + 1)  # update mean losses
+                loss_sum += loss.item()
+                mean_loss = loss_sum / (i + 1)  # update mean losses
                 if step_metric is None:
                     show_metric = None
                 else:
@@ -320,7 +323,7 @@ class Trainer:
                 if rank == 0 or rank is None:
                     train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch + 1,
                                                                                       int(self.configs.epoch_num),
-                                                                                      round(loss.item(), 3),
+                                                                                      round(mean_loss, 3),
                                                                                       show_metric)
                 # Optimizer step
                 optimizer_was_run = True
@@ -340,19 +343,22 @@ class Trainer:
 
             # self._maybe_log_save_evaluate(loss_sum, tr_corrects, num_examples)
 
+            total_loss_val += mean_loss
             self.epoch += 1
             self.callbacks.on_epoch_end(epochs_trained, logs)
             # if self.control.should_training_stop:
             #     break
 
         trainer_log.info("\nTraining completed.\n")
-
+        self.loss_val = round(total_loss_val / (self.epoch + 1), 3)
         training_summary = {
             "device": str(self.configs.device),
             "finetuned_from": resume_checkpoint_path,
             "start_epoch": epochs_trained,
-            "num_train_epochs": self.epoch - epochs_trained,
-            "loss": self._total_loss_scalar
+            "num_train_epochs": self.epoch + 1 - epochs_trained,
+            "loss": {
+                str(self.loss): self.loss_val
+            }
         }
         self.model_card.training_summary = training_summary
 
@@ -482,13 +488,13 @@ class Trainer:
             # print("model_card = ", self.model_card.to_dict())
         else:
             trainer_log.warning("model card file not exist.")
-        return epoch
+        return epoch, loss
 
     def save(self, path, overwrite=True):
-        Path(path).mkdir(exist_ok=True)
         if not overwrite:
             if Path(path).exists():
                 raise FileExistsError("File already exists: ", str(Path(path).resolve()))
+        Path(path).mkdir(exist_ok=True)
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
         print("save checkpoint_path:", checkpoint_path)
@@ -496,10 +502,10 @@ class Trainer:
         if isinstance(self.optimizer, Optimizer):  # if created
             optimizer_state_dict = self.optimizer.state_dict()
         torch.save({
-            "epoch": self.epoch,  # todo
+            "epoch": self.epoch,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": optimizer_state_dict,
-            "loss": 0.12,  # todo
+            "loss": (self.loss, self.loss_val),
         }, checkpoint_path)
         if self.model_card is not None:
             self.model_card.save_model_card(modelcard_path)
