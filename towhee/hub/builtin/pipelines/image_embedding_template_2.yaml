@@ -2,7 +2,7 @@ name: image_embedding_efficientnet_b3
 type: image-embedding
 variables:
     embedding_op: 'filip-halt/timm-image-embedding'
-    model_name: 'efficientnet_b3'
+    embedding_model_1: 'efficientnet_b3'
 operators:
 - name: _start_op
   function: _start_op
@@ -27,24 +27,69 @@ operators:
   - df: image
   iter_info:
     type: map
-- name: embedding_model
+- name: embedding_model_1
   function: '{embedding_op}'
   tag: main
   init_args:
-    model_name: {model_name}
+    model_name: {embedding_model_1}
   inputs:
   - df: image
     name: image
     col: 0
   outputs:
-  - df: embedding
+  - df: embedding1
   iter_info:
     type: map
+- name: embedding_model_2
+  function: '{embedding_op}'
+  tag: main
+  init_args:
+    model_name: {embedding_model_2}
+  inputs:
+  - df: image
+    name: image
+    col: 0
+  outputs:
+  - df: embedding2
+  iter_info:
+    type: map
+- name: 'concat'
+  function: '_concat'
+  init_args:
+      concat_type: 'row'
+  inputs:
+      -
+          df: 'embedding1'
+          name: 'feature_vector'
+          col: 0
+      -
+          df: 'embedding2'
+          name: 'feature_vector'
+          col: 0
+  outputs:
+      -
+          df: 'concat_df'
+  iter_info:
+      type: concat
+- name: 'fintuned_head'
+  function: 'towhee/embeddings-ensemble-head'
+  init_args:
+  inputs:
+      - df: 'concat_df'
+        name: 'embedding_way1'
+        col: 0
+      - df: 'concat_df'
+        name: 'embedding_way2'
+        col: 1
+  outputs:
+      - df: 'embedding_fusion'
+  iter_info:
+      type: map
 - name: _end_op
   function: _end_op
   init_args: null
   inputs:
-  - df: embedding
+  - df: embedding_fusion
     name: feature_vector
     col: 0
   outputs:

@@ -77,6 +77,10 @@ class _PipelineWrapper:
     def __repr__(self) -> str:
         return repr(self._pipeline)
 
+    @property
+    def pipeline(self) -> Pipeline:
+        return self._pipeline
+
 
 def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
     """
