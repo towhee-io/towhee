@@ -2,7 +2,7 @@ import threading
 from typing import List, Tuple
 import weakref
 
-from towhee.dataframe.dataframe_v2 import DataFrame, Responses
+from towhee.dataframe.dataframe import DataFrame, Responses
 
 class DataFrameIterator:
     """Base iterator implementation. All iterators should be subclasses of
@@ -53,7 +53,7 @@ class DataFrameIterator:
     def notify(self):
         df = self._df_ref()
         df.remove_iter(self._id)
-
+        self.done = True
 class MapIterator(DataFrameIterator):
     """
     A row-based map `DataFrame` iterator.

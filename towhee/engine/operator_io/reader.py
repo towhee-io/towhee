@@ -17,7 +17,9 @@ import threading
 from collections import namedtuple
 from typing import Dict, Tuple, Union, List
 
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
+from towhee.dataframe.dataframe import DataFrame
+from towhee.dataframe.variable import Variable
+from towhee.dataframe.iterators import DataFrameIterator, MapIterator, BatchIterator
 
 
 class ReaderBase(ABC):
@@ -78,7 +80,7 @@ class BlockMapReaderWithOriginData(DataFrameReader):
         input_df: DataFrame,
         op_inputs_index: Dict[str, int]
     ):
-        super().__init__(input_df.map_iter(True), op_inputs_index)
+        super().__init__(MapIterator(input_df, True), op_inputs_index)
         self._lock = threading.Lock()
         self._close = False
 
@@ -111,7 +113,7 @@ class BatchFrameReader(DataFrameReader):
     def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, int],
                  batch_size: int, step: int):
         assert batch_size >= 1 and step >= 1
-        super().__init__(input_df.batch_iter(batch_size, step, True), op_inputs_index)
+        super().__init__(BatchIterator(input_df, batch_size, step, True), op_inputs_index)
         self._close = False
         self._lock = threading.Lock()
 
