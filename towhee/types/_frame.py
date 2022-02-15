@@ -14,7 +14,6 @@
 
 
 from typing import Optional
-from towhee.errors import TowheeError
 
 
 FRAME = 'frame'
@@ -84,9 +83,6 @@ class _Frame:
 
     @timestamp.setter
     def timestamp(self, timestamp: int):
-        if self._timestamp is not None:
-            raise TowheeError('Timestamp already exist')
-
         self._timestamp = timestamp
 
     @property

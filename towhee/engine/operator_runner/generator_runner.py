@@ -39,5 +39,9 @@ class GeneratorRunner(RunnerBase):
                 frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
 
             item = data._asdict()
+
+            if item.get('TIMESTAMP') is not None:
+                frame.timestamp = item['TIMESTAMP']
+                del item['TIMESTAMP']
             item.update({FRAME: frame})
             self._writer.write(item)

@@ -114,6 +114,20 @@ class TestPipeline(unittest.TestCase):
         for i in range(input_data):
             self.assertEqual(res[i][0], i)
 
+    def test_time_window(self):
+        '''
+        timestamp (ms)
+            [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
+        data: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        window: (2, 3)
+        windows: [0, 1, 2, 3], [6, 7, 8, 9]
+        result: [6, 6, 30, 30]
+        '''
+        p = pipeline('local/test_timestamp')
+        input_data = 10
+        res = p(input_data)
+        self.assertEqual([item[0] for item in res], [6, 6, 30, 30])
+
 
 if __name__ == '__main__':
     unittest.main()
