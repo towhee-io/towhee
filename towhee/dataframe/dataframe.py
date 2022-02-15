@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import threading
-from typing import Any, Callable, List, Tuple, Dict
+from typing import Any, List, Tuple, Dict
 import weakref
 
+from towhee.utils.atomic_count import AtomicCount
 from towhee.dataframe.variable import Variable
 from towhee.types._frame import FRAME, _Frame
 from towhee.dataframe._schema import _Schema
@@ -82,6 +83,10 @@ class DataFrame:
         return self._total
 
     @property
+    def current_size(self):
+        return max([self._total - self._start_idx, 0])
+
+    @property
     def sealed(self) -> bool:
         """
         Sealed `DataFrame`s are disabled.
@@ -138,12 +143,6 @@ class DataFrame:
                 not enough elements are available.
         """
 
-        # TODO (junjie.jiang)
-        # 1. call gc function
-        # 2. put and seal will be called by the same operator
-        # 3. seal will always be called after put
-        # 4. iterators never ends until they meet df._sealed == True
-
         with self._accessible_cv:
             if start < self._start_idx:
                 raise IndexError(
@@ -164,7 +163,7 @@ class DataFrame:
             if self._sealed:
                 if self._total <= start:
                     return None
-                return self._data[start:]
+                return self._data[start - self._start_idx:]
             return None
 
     def notify_block_readers(self):
@@ -196,12 +195,18 @@ class DataFrame:
             self._total = 0
             self._sealed = False
 
-    def _gc(self) -> None:
+    def gc(self) -> None:
         """
         Delete the data which all registered iter has read
         """
-        # TODO (junjie.jiangjjj)
-        raise NotImplementedError
+        with self._lock:
+            if len(self._iters) == 0:
+                return
+
+            min_index = min([it.current_index for it in self._iters])
+            if min_index > self._start_idx:
+                self._data = self._data[min_index - self._start_idx:]
+                self._start_idx = min_index
 
     def map_iter(self, block: bool = False):
         it = MapIterator(self, block)
@@ -229,7 +234,7 @@ class DataFrameIterator:
 
     def __init__(self, df: DataFrame):
         self._df_ref = weakref.ref(df)
-        self._cur_idx = 0
+        self._cur_idx = AtomicCount(0)
         self._df_name = df.name
 
     def __iter__(self):
@@ -249,13 +254,13 @@ class DataFrameIterator:
     def current_index(self) -> int:
         """Returns the current index.
         """
-        return self._cur_idx
+        return self._cur_idx.count
 
     @property
     def accessible_size(self) -> int:
         """Returns current accessible data size.
         """
-        return self._df_ref().size - self._cur_idx
+        return self._df_ref().size - self._cur_idx.count
 
     def notify(self):
         df = self._df_ref()
@@ -275,7 +280,7 @@ class MapIterator(DataFrameIterator):
         self._block = block
 
     def __next__(self) -> List[Tuple]:
-        data = self._df_ref().get(self._cur_idx, 1, self._block)
+        data = self._df_ref().get(self._cur_idx.count, 1, self._block)
         if self._df_ref().sealed and not data:
             raise StopIteration
         if data is not None:
@@ -304,53 +309,13 @@ class BatchIterator(DataFrameIterator):
     def __next__(self):
         data = None
         while data is None:
-            data = self._df_ref().get(self._cur_idx, self._size, self._block)
-            if self._df_ref().sealed and not data:
+            df = self._df_ref()
+            data = df.get(self._cur_idx.count, self._size, self._block)
+            if not data and self._df_ref().sealed and self._cur_idx.count >= df.size:
                 raise StopIteration
 
-            if data is not None:
+            if data is not None and len(data) > 0:
                 self._cur_idx += self._step
                 return data
 
-            elif not self._block:
-                return None
-
-
-class GroupIterator:
-    """Iterator implementation that traverses the dataframe based on a custom group-by
-    function.
-
-    Args:
-        df:
-            The dataframe to iterate over.
-        func:
-            The function used to return grouped data within the dataframe.
-    """
-
-    def __init__(self, df: DataFrame, func: Callable[[], None]):
-        super().__init__(df)
-        self._func = func
-
-    def __next__(self):
-        raise NotImplementedError
-
-
-class RepeatIterator:
-    """Iterator implementation that repeatedly accesses the first line of the dataframe.
-
-        Args:
-            df:
-                The dataframe to iterate over.
-            n:
-                the repeat times. If `None`, the iterator will loop continuously.
-    """
-
-    def __init__(self, df: DataFrame, n: int = None):
-        # self._n = n
-        # self._i = 0
-        raise NotImplementedError
-
-    def __next__(self):
-        if self._i >= self._n:
-            raise StopIteration
-        return self._data[0]
+            return None

@@ -17,7 +17,7 @@ import unittest
 import time
 import queue
 
-from towhee.dataframe import DataFrame, DataFrameIterator
+from towhee.dataframe import DataFrame, DataFrameIterator, Variable
 
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
@@ -46,6 +46,51 @@ class TestDataframe(unittest.TestCase):
 
         datas = df.get(8, 4)
         self.assertEqual(len(datas), 2)
+
+    def test_gc(self):
+        df = DataFrame('test', [('test', 'int')])
+        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t.start()
+        t.join()
+        df.seal()
+        self.assertEqual(df.size, 10)
+
+        it = df.map_iter(True)
+        count = 10
+        for _ in it:
+            df.gc()
+            self.assertEqual(df.size, 10)
+            count -= 1
+            self.assertEqual(df.current_size, count)
+
+    def test_gc_with_batch(self):
+        df = DataFrame('test', [('test', 'int')])
+        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t.start()
+        t.join()
+        df.seal()
+        self.assertEqual(df.size, 10)
+
+        batch_it = df.batch_iter(2, 3, True)
+        count = 10
+        for _ in batch_it:
+            df.gc()
+            count -= 3
+            self.assertEqual(max([count, 0]), df.current_size)
+
+    def test_multithread_gc(self):
+        df = DataFrame('test', [('test', 'int')])
+        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t.set_sealed_when_stop()
+        t.start()
+
+        it = df.map_iter(True)
+        for _ in it:
+            pass
+        t.join()
+        df.gc()
+        self.assertEqual(df.size, 10)
+        self.assertEqual(df.current_size, 0)
 
     def test_multithread(self):
         df = DataFrame('test')

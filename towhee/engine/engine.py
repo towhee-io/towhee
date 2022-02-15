@@ -30,7 +30,7 @@ class EngineConfig:
     def __init__(self):
         self._sched_type = 'basic'
         self._cache_path = None
-        self._sched_interval_ms = 20
+        self._sched_interval_ms = 10 * 1000
 
     @property
     def sched_type(self):

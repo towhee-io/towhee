@@ -90,6 +90,10 @@ class GraphContext:
         for op in self._op_ctxs:
             op.stop()
 
+    def gc(self):
+        for _, df in self._dataframes.items():
+            df.gc()
+
     def join(self):
         for op in self._op_ctxs.values():
             op.join()
