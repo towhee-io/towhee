@@ -197,3 +197,10 @@ class _OperatorLazyWrapper:
 
 
 ops = param_scope().callholder(_OperatorLazyWrapper.callback)
+
+
+def _pipeline_callback(name, *arg, **kws):
+    name = name.replace('.', '/').replace('_', '-')
+    return Build(**kws).pipeline(name, *arg)
+
+pipes = param_scope().callholder(_pipeline_callback)
