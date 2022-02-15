@@ -54,6 +54,7 @@ class DataFrameIterator:
         df = self._df_ref()
         df.remove_iter(self._id)
         self.done = True
+
 class MapIterator(DataFrameIterator):
     """
     A row-based map `DataFrame` iterator.
@@ -113,7 +114,7 @@ class MapIterator(DataFrameIterator):
             df.remove_iter(self._id)
             self._offset = 0
             self._done = True
-            raise StopIteration
+            return []
 
         elif code == Responses.APPROVED_DONE:
             self._done = True
@@ -166,8 +167,14 @@ class WindowIterator(DataFrameIterator):
     """
     def __init__(self, df: DataFrame, start = 0, window_size = 1, step = None, use_timestamp = False, block = True):
         super().__init__(df, block = block)
+
+        if use_timestamp:
+            start *= 1000
+            window_size *= 1000
+            step *= 1000
+
         self._window_size = window_size
-        self._current_window = (start, start + window_size)
+        self._current_window = (start, (start + window_size))
         self._step = step
 
         if step is None:
@@ -197,12 +204,12 @@ class WindowIterator(DataFrameIterator):
         if self._done:
             df.remove_iter(self._id)
             raise StopIteration
-        code, rows, offset = df.get_window(self._current_window[0], self._current_window[1], self._step, self._comparator, self._id)
 
+        code, rows, offset = df.get_window(self._current_window[0], self._current_window[1], self._step, self._comparator, self._id)
         if code in (Responses.EMPTY_SEALED, Responses.FUTURE_WINDOW_SEALED):
             self._done = True
             df.remove_iter(self._id)
-            raise StopIteration
+            return []
 
         elif code == Responses.EMPTY:
             df.notify_window_block(self._id, self._event, 'start', (self._comparator, self._current_window[0]))

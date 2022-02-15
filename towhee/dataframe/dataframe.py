@@ -99,8 +99,8 @@ class DataFrame:
                     values = []
                     for i in range(len(self._data_as_list)):
                         val = self._data_as_list[i][x]
-                        if isinstance(val, _Frame):
-                            val = (val.row_id, val.prev_id, val.timestamp,)
+                        if isinstance(val.value, _Frame):
+                            val = (val.value.row_id, val.value.prev_id, val.value.timestamp,)
                         values.append(str(val))
                     ret += formater.format(*values) + '\n'
 
@@ -210,6 +210,8 @@ class DataFrame:
         rets = []
         min_offset = None
         max_offset = base_offset
+        next_offset = None
+        next_window = start + step
 
         with self._data_lock:
             #  If the df is empty, we dont want to do anything but wait for a next value if unsealed.
@@ -219,12 +221,17 @@ class DataFrame:
                 else:
                     return Responses.EMPTY, None, None
             #  If the first element in the df is larger than the window end we want to move to the next viable window
-            if getattr(self._data_as_list[-1][base_offset], comparator) >= end:
-                goal = getattr(self._data_as_list[-1][base_offset], comparator)
+            if getattr(self._data_as_list[-1][base_offset].value, comparator) >= end:
+                goal = getattr(self._data_as_list[-1][base_offset].value, comparator)
                 new_start = start + step * ((goal - start)//step)
+                new_end = (new_start - start) + end
+                if new_end <= goal:
+                    new_start += step
+                    new_end += step
                 return Responses.OLD_WINDOW, None, (new_start, (new_start - start) + end)
+
             #  If the last element of the df is smaller than the start of the window, proceed to next windows.
-            elif getattr(self._data_as_list[-1][-1], comparator) < start:
+            elif getattr(self._data_as_list[-1][-1].value, comparator) < start:
                 if self.sealed:
                     return Responses.FUTURE_WINDOW_SEALED, None, None
                 else:
@@ -232,28 +239,33 @@ class DataFrame:
 
             # iterating through values to see which ones fall in the window. min offset = first value, max offset = last value
             for i in range(base_offset, self._len):
-                if getattr(self._data_as_list[-1][i], comparator) >= start and getattr(self._data_as_list[-1][i], comparator) < end:
+                if getattr(self._data_as_list[-1][i].value, comparator) >= start and getattr(self._data_as_list[-1][i].value, comparator) < end:
                     if min_offset is None:
                         min_offset = i
+                    if next_offset is None:
+                        if getattr(self._data_as_list[-1][i].value, comparator) >= next_window:
+                            next_offset = i
                     max_offset = i
                     rets.append(self.__getitem__(max_offset))
-                if getattr(self._data_as_list[-1][i], comparator) >= end:
+                elif getattr(self._data_as_list[-1][i].value, comparator) >= end:
+                    if next_offset is None:
+                        next_offset = i
                     break
 
-        # If the max offset is the length of the df
-        if max_offset == self._len - 1 and self.sealed:
-            # Need to check if there is a next window that fits, if so, continue
-            if min_offset + step < self._len:
-                return Responses.APPROVED_CONTINUE, rets, min_offset + step
-            # If not, return whats left and have iterator close.
+            # If the max offset is the length of the df
+            if max_offset == self._len - 1 and self.sealed:
+                # Need to check if there is a next window that fits, if so, continue
+                if next_offset:
+                    return Responses.APPROVED_CONTINUE, rets, next_offset
+                # If not, return whats left and have iterator close.
+                else:
+                    return Responses.APPROVED_DONE, rets, max_offset
+            # If the last value that fits in window is also the last value of df, cant close
+            # window yet as we dont know if the next value fits in the same window.
+            elif max_offset == self._len - 1 and not self.sealed:
+                return Responses.WINDOW_NOT_DONE, None, None
             else:
-                return Responses.APPROVED_DONE, rets, max_offset
-        # If the last value that fits in window is also the last value of df, cant close
-        # window yet as we dont know if the next value fits in the same window.
-        elif max_offset == self._len - 1 and not self.sealed:
-            return Responses.WINDOW_NOT_DONE, None, None
-        else:
-            return Responses.APPROVED_CONTINUE, rets, min_offset + step
+                return Responses.APPROVED_CONTINUE, rets, next_offset
 
 
     def get(self, offset, count = 1, iter_id = None):
