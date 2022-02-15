@@ -21,7 +21,7 @@ import torch
 import tempfile
 import torch.distributed as dist
 
-from typing import Union
+from typing import Union, Dict, Any
 from pathlib import Path
 # from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -45,6 +45,7 @@ from towhee.trainer.callback import CallbackList
 
 WEIGHTS_NAME = "pytorch_model.bin"
 TEMP_INIT_WEIGHTS = "initial_weights.pt"
+NAME = "name_"
 
 
 def is_dist_avail_and_initialized():
@@ -70,6 +71,46 @@ def reduce_value(value, average=True):
         if average:
             value /= world_size
         return value
+
+
+def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        instance = construct_name()
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        instance = construct_name(**kwargs)
+    return instance
+
+
+def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], model=None):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        if model is not None:
+            instance = construct_name(model.parameters())
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        if model is not None:
+            instance = construct_name(model.parameters(), **kwargs)
+    return instance
 
 
 class Trainer:
@@ -246,7 +287,6 @@ class Trainer:
         # tb_writer = SummaryWriter()
         logs = {}
         self.callbacks.on_train_begin(logs)
-        print("metric:", self.configs.metric)
         global_step = 0
         self.mean_loss_metric = get_metric_by_name("MeanMetric")
 
@@ -266,7 +306,6 @@ class Trainer:
                 inputs = [input_.to(self.configs.device) for input_ in inputs]
                 labels = inputs[1]
                 outputs = model(inputs[0])
-
                 loss, step_metric = self.compute_loss(labels, outputs)
                 loss = reduce_value(loss, average=True)
                 loss.backward()
@@ -274,11 +313,15 @@ class Trainer:
                 # loss_sum += loss
                 # # tr_corrects += corrects
                 # mean_loss = loss_sum / (step + 1)  # update mean losses
+                if step_metric is None:
+                    show_metric = None
+                else:
+                    show_metric = round(step_metric.item(), 3)
                 if rank == 0 or rank is None:
-                    train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch+1,
+                    train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch + 1,
                                                                                       int(self.configs.epoch_num),
                                                                                       round(loss.item(), 3),
-                                                                                      round(step_metric.item(), 3))
+                                                                                      show_metric)
                 # Optimizer step
                 optimizer_was_run = True
                 self.optimizer.step()
@@ -336,6 +379,7 @@ class Trainer:
         loss = self.loss(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         # return (loss, outputs) if return_outputs else loss
+        step_metric = None
         if self.metric is not None:
             self.metric.update(outputs, labels)
             step_metric = self.metric.compute()
@@ -376,18 +420,13 @@ class Trainer:
         self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
 
     def _create_metric(self):
-        self.metric = get_metric_by_name(self.configs.metric)
+        self.metric = get_metric_by_name(self.configs.metric).to(self.configs.device)
 
     def _create_loss(self):
-        # assert "loss" in self.configs.loss
-        loss_construct = getattr(torch.nn.modules.loss, self.configs.loss)
-        self.loss = loss_construct()
+        self.loss = _construct_loss_from_config(torch.nn.modules.loss, self.configs.loss)
 
     def _create_optimizer(self):
-        # self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
-        optimizer_construct = getattr(optim, self.configs.optimizer)
-        self.optimizer = optimizer_construct(self.model.parameters())
-        # self.optimizer = self.configs.optimizer(self.model.parameters())
+        self.optimizer = _construct_optimizer_from_config(optim, self.configs.optimizer, model=self.model)
 
     def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
         """

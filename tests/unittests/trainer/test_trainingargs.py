@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import unittest
-import torch
 from pathlib import Path
 
 from towhee.trainer.training_config import TrainingConfig
@@ -28,7 +27,7 @@ class TestTrainConfig(unittest.TestCase):
         conf = Path(__file__).parent / 'config.yaml'
         ta = TrainingConfig()
         ta.load_from_yaml(conf)
-        self.assertEqual(ta.epoch_num, 3.0)
+        self.assertEqual(ta.epoch_num, 2)
 
 
 if __name__ == '__main__':
