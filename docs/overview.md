@@ -7,7 +7,7 @@ slug: /
 
 ### What is Towhee?
 
-Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data. It aims to make democratize `anything2vec`, allowing everyone - from beginner developers to large organizations - to train and deploy complex machine learning pipelines with just a few lines of code.
+Towhee is a flexible, application-oriented framework for computing embedding vectors over unstructured data. It aims to democratize `anything2vec`, allowing anyone - from beginner developers to large organizations - to train and deploy complex machine learning pipelines with just a few lines of code.
 
 To accomplish this, we built Towhee atop popular machine learning and unstructured data processing libraries, i.e. PyTorch, scikit-learn, OpenCV. Models or functions from different libraries are wrapped as standard Towhee operators, and can be integrated freely into application-oriented pipelines. To ensure user-friendliness, pipelines can be called in just a single line of code, without the need to understand the underlying models or modules used to build it. For more information, take a look at our [quick start](get-started/quick-start) page.
 
