@@ -14,12 +14,12 @@
 # limitations under the License.
 
 import unittest
-from pathlib import Path
-
 import torchvision
-from torch import nn
-from torchvision import transforms
 
+from pathlib import Path
+from torch import nn
+from torch.optim import AdamW
+from torchvision import transforms
 from towhee.operator import NNOperator
 from towhee.trainer.training_config import TrainingConfig
 from towhee.data.dataset.image_datasets import PyTorchImageDataset
@@ -80,6 +80,21 @@ class TrainerTest(unittest.TestCase):
     def test_overfit_on_small_batches(self) -> None:
         self.op.train(training_config=self.training_args,train_dataset=self.train_data)
         self.assertEqual(1, 1)
+
+    def test_set_loss(self) -> None:
+        trainer = self.op.setup_trainer()
+        my_loss = nn.BCELoss()
+        loss_name = 'my_loss'
+        trainer.set_loss(my_loss, loss_name=loss_name)
+        self.assertEqual(loss_name, trainer.configs.loss)
+
+
+    def test_set_optimizer(self) -> None:
+        trainer = self.op.setup_trainer()
+        my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
+        optimizer_name = 'my_optimizer'
+        trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
+        self.assertEqual(optimizer_name, trainer.configs.optimizer)
 
 
 if __name__ == '__main__':
