@@ -106,7 +106,7 @@ class MapIterator(DataFrameIterator):
             return None
 
         elif code == Responses.APPROVED_CONTINUE:
-            df.ack(self._id, self._offset + self._step)
+            df.ack(self._id, self._offset + min(len(row), self._step))
             self._offset += self._step
             return row
 
@@ -115,12 +115,6 @@ class MapIterator(DataFrameIterator):
             self._offset = 0
             self._done = True
             raise StopIteration
-
-        elif code == Responses.APPROVED_DONE:
-            self._done = True
-            df.remove_iter(self._id)
-            self._offset = 0
-            return row
 
         elif code == Responses.KILLED:
             raise StopIteration

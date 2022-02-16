@@ -299,15 +299,15 @@ class DataFrame:
 
             elif self._sealed:
                 # If no more data is left and trying to get more, iterator will stop and no data returned.
-                if self._len <= offset:
+                if offset >= self._len:
                     return Responses.INDEX_OOB_SEALED, None
 
-                # If dataframe is sealed, remaining values will be returned.
+                # If dataframe is sealed, remaining values will be returned and allow for next step
                 else:
-                    return Responses.APPROVED_DONE, [self.__getitem__(x) for x in range(offset, self._len)]
+                    return Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, self._len)]
 
             # If the requested offset is out of bounds but dataframe is still writing data.
-            elif offset + count >= self._len:
+            elif offset + count > self._len:
                 return Responses.INDEX_OOB_UNSEALED, None
 
             # Something broke.

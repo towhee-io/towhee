@@ -1,4 +1,3 @@
-# from pprint import pprint
 import unittest
 import time
 import threading
@@ -56,7 +55,8 @@ class TestIterators(unittest.TestCase):
             res.append(rows)
         res = self.remove_frame(res)
         self.assertEqual(res, [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
-            [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j')]])
+            [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')],
+            [(8, 'i'), (9, 'j')]])
 
         # Assert cleared df
         self.assertEqual(len(df), 0)
@@ -81,14 +81,14 @@ class TestIterators(unittest.TestCase):
         time.sleep(.1)
         df.put((10, 'f'))
         df.put((11, 'g'))
-        time.sleep(.1)
+        time.sleep(.5)
         self.assertEqual(self.remove_frame(list(q.queue)), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
             [(4, 'e')], [(5, 'f')], [(6, 'g')], [(7, 'h')], [(8, 'i')], [(9, 'j')],
             [(10, 'f')], [(11, 'g')]])
 
         self.assertEqual(self.remove_frame(list(q2.queue)), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
-            [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j'), (10, 'f'),
-            (11, 'g')]])
+            [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')],
+            [(8, 'i'), (9, 'j'), (10, 'f'), (11, 'g')]])
 
         self.assertEqual(len(df), 0)
         time.sleep(.1)
@@ -352,7 +352,7 @@ class TestIterators(unittest.TestCase):
 
         self.assertEqual(self.remove_frame(list(q.queue)), [[(0, 'a')], [(1, 'b')], [(2, 'c')], [(3, 'd')],
             [(4, 'e')], [(5, 'f')], [(6, 'g')], [(7, 'h')], [(8, 'i')], [(9, 'j')]])
-
+        
         self.assertEqual(self.remove_frame(list(q2.queue)), [[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')]])
 

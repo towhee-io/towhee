@@ -121,16 +121,16 @@ class TestArray(unittest.TestCase):
 
     def test_gc(self):
         array = Array([0, 1, 2, 3])
+        self.assertEqual(array.size, 4)
         self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
 
         array.gc(0)
+        self.assertEqual(array.size, 4)
         self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
 
         array.gc(2)
         self.assertEqual(array.size, 4)
-        self.assertEqual(array.physical_size, 2)
+        self.assertEqual(len(array), 2)
 
         self.assertEqual(array[2], 2)
         self.assertEqual(array[3], 3)
@@ -151,11 +151,9 @@ class TestArray(unittest.TestCase):
     def test_properties(self):
         array = Array([0, 1, 2, 3])
         array.put(1)
-        x = array.physical_size
+        x = len(array)
         self.assertEqual(x, 5)
         x = array.size
-        self.assertEqual(x, 5)
-        x = len(array)
         self.assertEqual(x, 5)
 
 

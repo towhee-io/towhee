@@ -48,29 +48,29 @@ class TestMapRunner(unittest.TestCase):
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        input_df.put({'num': Variable('int', 1)})
-        input_df.put({'num': Variable('int', 2)})
-        input_df.put({'num': Variable('int', 3)})
-        input_df.put({'num': Variable('int', 4)})
-        input_df.put({'num': Variable('int', 5)})
+        input_df.put({'num': 1})
+        input_df.put({'num': 2})
+        input_df.put({'num': 3})
+        input_df.put({'num': 4})
+        input_df.put({'num': 5})
         input_df.seal()
         runner.join()
         out_df.seal()
         res = 4
-        # it = iterators.MapIterator(out_df, True)
-        # for item in it:
-        #     print(item)
-        #     # self.assertEqual(item[0].value, res)
-        #     # res += 1
-        # self.assertEqual(runner.status, RunnerStatus.FINISHED)
+        it = iterators.MapIterator(out_df, True)
+        for item in it:
+            self.assertEqual(item[0][0], res)
+            res += 1
+        self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
+    # Need better test, already caught at df level.
     # def test_map_runner_with_error(self):
     #     input_df, _, runner = self._create_test_obj()
 
     #     runner.set_op(add_operator.AddOperator(3))
     #     t = threading.Thread(target=run, args=(runner, ))
     #     t.start()
-    #     input_df.put_dict({'num': 'error_data'})
+    #     input_df.put({'num': 'error_data'})
     #     runner.join()
     #     self.assertEqual(runner.status, RunnerStatus.FAILED)
 

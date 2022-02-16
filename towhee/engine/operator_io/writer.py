@@ -50,7 +50,7 @@ class DictDataFrameWriter(DataFrameWriter):
     """
 
     def _write(self, output_data: Dict[str, any]) -> None:
-        self._output_df.put_dict(output_data)
+        self._output_df.put(output_data)
 
 
 class RowDataFrameWriter(DataFrameWriter):

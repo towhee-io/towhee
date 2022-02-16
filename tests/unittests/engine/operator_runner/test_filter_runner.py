@@ -16,6 +16,7 @@ import unittest
 import threading
 
 from towhee.dataframe import DataFrame
+from towhee.dataframe.iterators import MapIterator
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.filter_runner import FilterRunner
@@ -47,19 +48,20 @@ class TestFilterRunner(unittest.TestCase):
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
-        input_df.put_dict({'num': 0})
-        input_df.put_dict({'num': 1})
-        input_df.put_dict({'num': 2})
-        input_df.put_dict({'num': 0})
-        input_df.put_dict({'num': 0})
-        input_df.put_dict({'num': 3})
-        input_df.put_dict({'num': 0})
+        input_df.put({'num': 0})
+        input_df.put({'num': 1})
+        input_df.put({'num': 2})
+        input_df.put({'num': 0})
+        input_df.put({'num': 0})
+        input_df.put({'num': 3})
+        input_df.put({'num': 0})
         input_df.seal()
         runner.join()
         out_df.seal()
         res = 1
-        it = out_df.map_iter(True)
+        it = MapIterator(out_df, block=True)
         for item in it:
+            print(item)
             self.assertEqual(item[0].value, res)
             res += 1
 
@@ -70,6 +72,9 @@ class TestFilterRunner(unittest.TestCase):
         runner.set_op(zero_drop.ZeroDrop())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        input_df.put_dict({'num': 'error_data'})
+        input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
+if __name__ == '__main__':
+    unittest.main()
