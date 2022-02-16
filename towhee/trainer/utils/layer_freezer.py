@@ -7,6 +7,7 @@ class LayerFreezer:
         freezer = LayerFreezer(model)
         freezer.status('classifier')
         freezer.status(-1)
+        freezer.set_all()
         freezer.by_name(['classifier'])
         freezer.by_idx([-1])
     """
@@ -45,4 +46,9 @@ class LayerFreezer:
     def by_idx(self, idx: list, freeze: bool = True):
         for i in idx:
             for param in list(self.model.children())[i].parameters():
+                param.requires_grad = not freeze
+
+    def set_all(self, freeze: bool = True):
+        for layer in self.model.children():
+            for param in layer.parameters():
                 param.requires_grad = not freeze
