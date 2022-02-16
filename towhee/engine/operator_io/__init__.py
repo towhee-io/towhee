@@ -30,13 +30,15 @@ def create_reader(
         return io_reader.BlockMapReaderWithOriginData(df, inputs_index)
     elif iter_type.lower() == 'window':
         return io_reader.BatchFrameReader(df, inputs_index, **iter_params)
+    elif iter_type.lower() == 'time_window':
+        return io_reader.TimeWindowReader(df, inputs_index, **iter_params)
     else:
         raise NameError('Can not find %s iters' % iter_type)
 
 
 def create_writer(iter_type: str, outputs: List[DataFrame]) -> io_writer.DataFrameWriter:
     assert len(outputs) == 1
-    if iter_type.lower() in ['map', 'flatmap', 'concat', 'window', 'generator']:
+    if iter_type.lower() in ['map', 'flatmap', 'concat', 'window', 'generator', 'time_window']:
         return io_writer.DictDataFrameWriter(outputs[0])
     elif iter_type.lower() == 'filter':
         return io_writer.RowDataFrameWriter(outputs[0])

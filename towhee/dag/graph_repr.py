@@ -51,6 +51,10 @@ class GraphRepr(BaseRepr):
     def dataframes(self) -> Dict[str, DataFrameRepr]:
         return self._dataframes
 
+    @property
+    def ir(self) -> str:
+        return self._ir
+
     @staticmethod
     def dfs(cur: str, adj: Dict[str, List[str]], flag: Dict[str, int], cur_list: List[str]) -> Tuple[bool, List[str]]:
         """

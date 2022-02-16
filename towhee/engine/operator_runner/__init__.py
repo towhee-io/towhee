@@ -44,7 +44,7 @@ def create_runner(
         return filter_runner.FilterRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'concat':
         return concat_runner.ConcatRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
-    elif runner_type.lower() == 'window':
+    elif runner_type.lower() in ['window', 'time_window']:
         return window_runner.WindowRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
     elif runner_type.lower() == 'generator':
         return generator_runner.GeneratorRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)

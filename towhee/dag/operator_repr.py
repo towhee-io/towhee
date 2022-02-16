@@ -121,3 +121,7 @@ class OperatorRepr(BaseRepr):
             info['tag'] = 'main'
 
         return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'], info['tag'])
+
+    @staticmethod
+    def from_ir(function: str, init_args: Dict[str, Any]) -> 'OperatorRepr':
+        return OperatorRepr('', function, init_args, None, None, None)
