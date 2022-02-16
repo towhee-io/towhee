@@ -13,12 +13,14 @@
 # limitations under the License.
 
 import os
-from typing import List, Union
+from typing import Any, List, Union
 
 import yaml
+from towhee.hparam.hyperparameter import param_scope
 
+from towhee.pipelines.alias_resolvers import get_resolver
 from towhee.pipelines.base import PipelineBase
-from towhee import Build, pipeline
+from towhee import Inject, pipeline
 
 
 class ImageEmbeddingPipeline(PipelineBase):
@@ -46,24 +48,33 @@ class ImageEmbeddingPipeline(PipelineBase):
     """
 
     def __init__(self,
-                 model: Union[str, List[str]] = None,
+                 model: Union[Any, List[Any]] = None,
                  ensemble: str = None):
-        models = []
+        with param_scope() as hp:
+            resolver = get_resolver(hp().towhee.alias_resolver('local'))
+
+        models: List[Any] = []
         if isinstance(model, str):
             models = [model]
         else:
             models = model
         num_branch = len(models)
 
-        models = dict(
+        models = [resolver.resolve(model) if isinstance(model, str) else model for model in models]
+        operators = dict(
             zip([
                 'embedding_model_1',
                 'embedding_model_2',
                 'embedding_model_3',
             ], models))
-        if ensemble:
-            models['ensemble_model'] = ensemble
-        self._pipeline = Build(**models).pipeline(
+        if ensemble is not None:
+            operators['ensemble_model'] = resolver.resolve(ensemble) if isinstance(ensemble, str) else ensemble
+
+        injections = {
+            name: {'function': model.function, 'init_args': model.init_args}
+            for name, model in operators.items()
+        }
+        self._pipeline = Inject(**injections).pipeline(
             'builtin/image_embedding_template_{}'.format(num_branch))
 
     def __call__(self, *arg, **kws):
