@@ -17,7 +17,7 @@ import unittest
 from queue import Queue
 from collections import namedtuple
 
-from towhee.dataframe import DataFrame, Variable
+from towhee.dataframe import DataFrame
 from towhee.types._frame import _Frame, FRAME
 from towhee.engine.operator_io.reader import DataFrameReader, BatchFrameReader, TimeWindowReader
 from towhee.engine.operator_io import create_reader
@@ -44,8 +44,7 @@ class TestReader(unittest.TestCase):
     def _create_test_df(self, data_size):
         cols = [('int', 'int'), ('str', 'str'), ('float', 'float')]
         df = DataFrame('test', cols)
-        data = (Variable('int', 1), Variable(
-            'str', 'test'), Variable('float', 0.1))
+        data = [(1, 'test', 0.1)]
         self.data_size = 100
         t = DfWriter(df, data_size, data=data)
         t.set_sealed_when_stop()
@@ -101,11 +100,11 @@ class TestWindowReader(unittest.TestCase):
     def _prepare_data(self, df):
         for i in range(5000, 11000, 40):
             f = _Frame(timestamp=i)
-            df.put({'test': Variable('int', i), FRAME: Variable(FRAME, f)})
+            df.put({'test': i, FRAME:  f})
 
         for i in range(21000, 25000, 40):
             f = _Frame(timestamp=i)
-            df.put({'test': Variable('int', i), FRAME: Variable(FRAME, f)})
+            df.put({'test': i, FRAME: f})
 
         df.seal()
 
@@ -272,6 +271,7 @@ class TestWindowReader(unittest.TestCase):
         self.assertEqual(df.physical_size, 0)
 
     def test_multithread_greater(self):
+        
         df = DataFrame('test', [('test', 'int')])
         write_runner = MultiThreadRunner(target=self._prepare_data, args=(df,), thread_num=1)
         read_runner = MultiThreadRunner(target=self._range_greater_than_step, args=(df,), thread_num=1)
@@ -299,8 +299,8 @@ class TestWindowReader(unittest.TestCase):
     def test_normal(self):
         df = DataFrame('test', [('test', 'int')])
         for i in range(0, 1000, 40):
-            f = Variable(FRAME, _Frame(timestamp=i))
-            df.put({'test': Variable(int, i), FRAME: f})
+            f = _Frame(timestamp=i)
+            df.put({'test': i, FRAME: f})
         df.seal()
 
         reader1 = TimeWindowReader(df, {'test': 0}, 3, 2)

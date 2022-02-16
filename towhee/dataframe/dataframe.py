@@ -17,7 +17,6 @@ from enum import Enum
 from typing import List, Tuple, Any
 
 
-from towhee.dataframe.variable import Variable
 from towhee.dataframe.array.array import Array
 from towhee.dataframe._schema import _Schema
 from towhee.types._frame import _Frame, FRAME
@@ -99,14 +98,18 @@ class DataFrame:
                     values = []
                     for i in range(len(self._data_as_list)):
                         val = self._data_as_list[i][x]
-                        if isinstance(val.value, _Frame):
-                            val = (val.value.row_id, val.value.prev_id, val.value.timestamp,)
+                        if isinstance(val, _Frame):
+                            val = (val.row_id, val.prev_id, val.timestamp,)
                         values.append(str(val))
                     ret += formater.format(*values) + '\n'
 
             return ret
 
     def __len__(self):
+        return self._len
+
+    @property
+    def size(self):
         return self._len
 
     @property
@@ -221,8 +224,8 @@ class DataFrame:
                 else:
                     return Responses.EMPTY, None, None
             #  If the first element in the df is larger than the window end we want to move to the next viable window
-            if getattr(self._data_as_list[-1][base_offset].value, comparator) >= end:
-                goal = getattr(self._data_as_list[-1][base_offset].value, comparator)
+            if getattr(self._data_as_list[-1][base_offset], comparator) >= end:
+                goal = getattr(self._data_as_list[-1][base_offset], comparator)
                 new_start = start + step * ((goal - start)//step)
                 new_end = (new_start - start) + end
                 if new_end <= goal:
@@ -231,7 +234,7 @@ class DataFrame:
                 return Responses.OLD_WINDOW, None, (new_start, (new_start - start) + end)
 
             #  If the last element of the df is smaller than the start of the window, proceed to next windows.
-            elif getattr(self._data_as_list[-1][-1].value, comparator) < start:
+            elif getattr(self._data_as_list[-1][-1], comparator) < start:
                 if self.sealed:
                     return Responses.FUTURE_WINDOW_SEALED, None, None
                 else:
@@ -239,15 +242,15 @@ class DataFrame:
 
             # iterating through values to see which ones fall in the window. min offset = first value, max offset = last value
             for i in range(base_offset, self._len):
-                if getattr(self._data_as_list[-1][i].value, comparator) >= start and getattr(self._data_as_list[-1][i].value, comparator) < end:
+                if getattr(self._data_as_list[-1][i], comparator) >= start and getattr(self._data_as_list[-1][i], comparator) < end:
                     if min_offset is None:
                         min_offset = i
                     if next_offset is None:
-                        if getattr(self._data_as_list[-1][i].value, comparator) >= next_window:
+                        if getattr(self._data_as_list[-1][i], comparator) >= next_window:
                             next_offset = i
                     max_offset = i
                     rets.append(self.__getitem__(max_offset))
-                elif getattr(self._data_as_list[-1][i].value, comparator) >= end:
+                elif getattr(self._data_as_list[-1][i], comparator) >= end:
                     if next_offset is None:
                         next_offset = i
                     break
@@ -338,7 +341,7 @@ class DataFrame:
                 else:
                     raise ValueError('Input data is of wrong format.')
 
-            frame = self._data_as_list[-1][-1].value
+            frame = self._data_as_list[-1][-1]
             cur_len = self._len
 
         # Release blocked iterators if their criteria met.
@@ -375,14 +378,13 @@ class DataFrame:
 
         item = list(item)
 
-        if isinstance(item[-1], Variable) and not isinstance(item[-1].value, _Frame):
-            item.append(Variable(FRAME, _Frame(row_id=self._len)))
+        if not isinstance(item[-1], _Frame):
+            item.append(_Frame(row_id=self._len))
         else:
-            item[-1].value.row_id = self._len
+            item[-1].row_id = self._len
 
         for i, x in enumerate(item):
-            assert isinstance(x, Variable)
-            assert str(x.value.__class__.__name__) == self._schema.col_type(i)
+            assert str(x.__class__.__name__) == self._schema.col_type(i)
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
@@ -393,14 +395,13 @@ class DataFrame:
         """Appending a dict to the dataframe."""
 
         if item.get(FRAME, None) is None:
-            item[FRAME] = Variable(FRAME, _Frame(self._len))
+            item[FRAME] = FRAME, _Frame(self._len)
         else:
-            item[FRAME].value.row_id = self._len
+            item[FRAME].row_id = self._len
 
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():
-            assert isinstance(val, Variable)
-            assert str(val.value.__class__.__name__) == self._schema.col_type(self._schema.col_index(key))
+            assert str(val.__class__.__name__) == self._schema.col_type(self._schema.col_index(key))
 
         for key, val in item.items():
             self._data_as_list[self._schema.col_index(key)].put(val)

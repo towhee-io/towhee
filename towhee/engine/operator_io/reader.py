@@ -66,7 +66,7 @@ class DataFrameReader(ReaderBase):
         """
         ret = {}
         for key, index in self._op_inputs_index.items():
-            ret[key] = cols[index].value
+            ret[key] = cols[index]
         return ret
 
 
