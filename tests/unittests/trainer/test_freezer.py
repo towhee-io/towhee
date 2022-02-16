@@ -51,6 +51,23 @@ class TestFreezer(unittest.TestCase):
         res2 = self.freezer.status(-1)
         self.assertEqual(res1 + res2, ['unfreezed' for _ in range(len(res1 + res2))])
 
+    def test_freezer_all(self):
+        self.freezer.set_all()
+        res = []
+        for i in range(len(self.freezer.layer_names)):
+            r = self.freezer.status(i)
+            for x in r:
+                res.append(x)
+        self.assertEqual(res, ['freezed' for _ in range(len(res))])
+
+        self.freezer.set_all(freeze=False)
+        res = []
+        for i in range(len(self.freezer.layer_names)):
+            r = self.freezer.status(i)
+            for x in r:
+                res.append(x)
+        self.assertEqual(res, ['unfreezed' for _ in range(len(res))])
+
 
 if __name__ == '__main__':
     unittest.main()
