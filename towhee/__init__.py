@@ -188,6 +188,14 @@ class _OperatorLazyWrapper:
             self._op = op(self._name, self._tag, **self._kws)
         return self._op(*arg, **kws)
 
+    @property
+    def function(self):
+        return self._name
+
+    @property
+    def init_args(self):
+        return self._kws
+
     @staticmethod
     def callback(name, *arg, **kws):
         if len(arg) == 0:

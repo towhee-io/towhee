@@ -15,6 +15,7 @@
 import unittest
 
 from towhee.pipelines import image_embedding_pipeline
+from towhee import ops
 
 
 class TestImageEmbeddingPipeline(unittest.TestCase):
@@ -23,8 +24,20 @@ class TestImageEmbeddingPipeline(unittest.TestCase):
     """
 
     def test_image_embedding_pipeline(self):
-        pipeline = image_embedding_pipeline('vgg')
+        pipeline = image_embedding_pipeline('efficientnet-b3')
         pipeline.save('test_image_embedding_pipeline')
+
+        pipeline = image_embedding_pipeline([
+            'efficientnet-b3',
+            ops.filip_halt.timm_image_embedding(model_name='regnety-004')
+        ])
+        pipeline.save('test_image_embedding_pipeline_2way')
+
+        pipeline = image_embedding_pipeline([
+            'efficientnet-b3', 'efficientnet-b3',
+            ops.filip_halt.timm_image_embedding(model_name='regnety-004')
+        ])
+        pipeline.save('test_image_embedding_pipeline_3way')
 
 
 if __name__ == '__main__':
