@@ -361,6 +361,7 @@ class Trainer:
                 str(self.loss): self.loss_val
             }
         }
+        self.model_card = ModelCard()
         self.model_card.training_summary = training_summary
 
         self._cleanup_distributed(rank)
