@@ -48,8 +48,8 @@ class TestWeights(unittest.TestCase):
         batch_size=8,
         prediction_loss_only=True,
     )
-    model_card = ModelCard(model_details='efficientnet test modelcard',
-                           training_data='use efficientnet test data')
+    model_card = ModelCard(model_overview='efficientnet test modelcard',
+                           datasets='use efficientnet test data')
 
     def test_with_trainer(self):
         self.op.save('./test_save')

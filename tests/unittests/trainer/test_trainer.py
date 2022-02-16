@@ -15,7 +15,7 @@
 
 import unittest
 import torchvision
-
+import os
 from pathlib import Path
 from torch import nn
 from torch.optim import AdamW
@@ -80,6 +80,9 @@ class TrainerTest(unittest.TestCase):
     def test_overfit_on_small_batches(self) -> None:
         self.op.train(training_config=self.training_args,train_dataset=self.train_data)
         self.assertEqual(1, 1)
+        test_path = Path(__file__).parent.joinpath('test_modelcard')
+        self.op.trainer.save(test_path)
+        self.assertEqual(True, os.path.exists(test_path.joinpath('README.md')))
 
     def test_set_loss(self) -> None:
         trainer = self.op.setup_trainer()
