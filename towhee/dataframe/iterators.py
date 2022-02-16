@@ -91,7 +91,7 @@ class MapIterator(DataFrameIterator):
         if self._done:
             raise StopIteration
 
-        code, row = df.get(self._offset, count = self._batch_size, iter_id = self._id)
+        code, row, _ = df.get(self._offset, count = self._batch_size, iter_id = self._id)
 
         if code == Responses.INDEX_GC:
             raise IndexError

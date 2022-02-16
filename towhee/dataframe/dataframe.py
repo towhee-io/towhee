@@ -140,7 +140,7 @@ class DataFrame:
     def sealed(self) -> bool:
         return self._sealed
 
-    def get_window(self, start, end, step, comparator, iter_id):
+    def get_window(self, start, end, step, comparator, iter_id = False):
         """
         Window based data retrieval. Windows include everything up to but not including
         the cutoff.
@@ -201,7 +201,7 @@ class DataFrame:
 
         # When the iterator is forcefully unblocked using unblock_iters().
         with self._iterator_lock:
-            if iter_id is not None and self._iterators.get(iter_id) is None:
+            if iter_id is not False and self._iterators.get(iter_id) is None:
                 return Responses.KILLED, None, None
 
         base_offset = self._iterators[iter_id]
@@ -215,9 +215,9 @@ class DataFrame:
             #  If the df is empty, we dont want to do anything but wait for a next value if unsealed.
             if self.__len__() == 0:
                 if self.sealed:
-                    return Responses.EMPTY_SEALED, None, None
+                    return self.ret(Responses.EMPTY_SEALED, None, None, iter_id)
                 else:
-                    return Responses.EMPTY, None, None
+                    return self.ret(Responses.EMPTY, None, None, iter_id)
             #  If the first element in the df is larger than the window end we want to move to the next viable window
             if getattr(self._data_as_list[-1][base_offset], comparator) >= end:
                 goal = getattr(self._data_as_list[-1][base_offset], comparator)
@@ -226,14 +226,14 @@ class DataFrame:
                 if new_end <= goal:
                     new_start += step
                     new_end += step
-                return Responses.OLD_WINDOW, None, (new_start, (new_start - start) + end)
+                return self.ret(Responses.OLD_WINDOW, None, (new_start, (new_start - start) + end), iter_id)
 
             #  If the last element of the df is smaller than the start of the window, proceed to next windows.
             elif getattr(self._data_as_list[-1][-1], comparator) < start:
                 if self.sealed:
-                    return Responses.FUTURE_WINDOW_SEALED, None, None
+                    return self.ret(Responses.FUTURE_WINDOW_SEALED, None, None, iter_id)
                 else:
-                    return Responses.FUTURE_WINDOW, None, self._len
+                    return self.ret(Responses.FUTURE_WINDOW, None, self._len, iter_id)
 
             # iterating through values to see which ones fall in the window. min offset = first value, max offset = last value
             for i in range(base_offset, self._len):
@@ -254,19 +254,19 @@ class DataFrame:
             if max_offset == self._len - 1 and self.sealed:
                 # Need to check if there is a next window that fits, if so, continue
                 if next_offset:
-                    return Responses.APPROVED_CONTINUE, rets, next_offset
+                    return self.ret(Responses.APPROVED_CONTINUE, rets, next_offset, iter_id)
                 # If not, return whats left and have iterator close.
                 else:
-                    return Responses.APPROVED_DONE, rets, max_offset
+                    return self.ret(Responses.APPROVED_DONE, rets, max_offset, iter_id)
             # If the last value that fits in window is also the last value of df, cant close
             # window yet as we dont know if the next value fits in the same window.
             elif max_offset == self._len - 1 and not self.sealed:
-                return Responses.WINDOW_NOT_DONE, None, None
+                return self.ret(Responses.WINDOW_NOT_DONE, None, None, iter_id)
             else:
-                return Responses.APPROVED_CONTINUE, rets, next_offset
+                return self.ret(Responses.APPROVED_CONTINUE, rets, next_offset, iter_id)
 
 
-    def get(self, offset, count = 1, iter_id = None):
+    def get(self, offset, count = 1, iter_id = False):
         """
         Get data from dataframe based on offset and how many values requested.
 
@@ -285,34 +285,41 @@ class DataFrame:
 
         # When the iterator is forcefully unblocked using unblock_iters().
         with self._iterator_lock:
-            if iter_id is not None and self._iterators.get(iter_id) is None:
-                return Responses.KILLED, None
+            if iter_id is not False and self._iterators.get(iter_id) is None:
+                return self.ret(Responses.KILLED, None, None, iter_id)
 
         with self._data_lock:
             # Up to iterators to decide what to do if the value they want is GCed.
             if offset < self._min_offset:
-                return Responses.INDEX_GC, None
+                return self.ret(Responses.INDEX_GC, None, None, iter_id)
 
             # The batch of data is available and there is more available.
             elif offset + count <= self._len:
-                return Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, offset + count)]
+                return self.ret(Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, offset + count)], None, iter_id)
 
             elif self._sealed:
                 # If no more data is left and trying to get more, iterator will stop and no data returned.
                 if offset >= self._len:
-                    return Responses.INDEX_OOB_SEALED, None
+                    return self.ret(Responses.INDEX_OOB_SEALED, None, None, iter_id)
 
                 # If dataframe is sealed, remaining values will be returned and allow for next step
                 else:
-                    return Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, self._len)]
+                    return self.ret(Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, self._len)], None, iter_id)
 
             # If the requested offset is out of bounds but dataframe is still writing data.
             elif offset + count > self._len:
-                return Responses.INDEX_OOB_UNSEALED, None
+                return self.ret(Responses.INDEX_OOB_UNSEALED, None, None, iter_id)
 
             # Something broke.
             else:
-                return Responses.UNKOWN_ERROR, None
+                return self.ret(Responses.UNKOWN_ERROR, None, None, iter_id)
+
+    def ret(self, code, ret, offset, need_code):
+        if need_code:
+            return code, ret, offset
+        else:
+            return ret, offset
+
 
     def put(self, item) -> None:
         """
