@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2021 Zilliz. All rights reserved.
+# Copyright 2020-present the HuggingFace Inc. team and 2021 Zilliz.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import collections
 import math
 import os
@@ -35,7 +36,7 @@ from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
-from towhee.trainer.dataset import TowheeDataSet, TorchDataSet
+from towhee.trainer.dataset import TowheeDataSet
 from towhee.trainer.optimization.optimization import get_scheduler
 from towhee.trainer.callback import CallbackList
 
@@ -45,7 +46,6 @@ from towhee.trainer.callback import CallbackList
 WEIGHTS_NAME = "pytorch_model.bin"
 TEMP_INIT_WEIGHTS = "initial_weights.pt"
 NAME = "name_"
-CUSTOM = "custom_"
 
 
 def is_dist_avail_and_initialized():
@@ -64,7 +64,7 @@ def get_world_size():
 
 def reduce_value(value, average=True):
     world_size = get_world_size()
-    if world_size < 2:  # one gpu
+    if world_size < 2:  # 单GPU的情况
         return value
     with torch.no_grad():
         dist.all_reduce(value)
@@ -142,14 +142,14 @@ class Trainer:
 
         self.eval_dataset = eval_dataset
         self.model = model
+        if not model_card:
+            model_card = ModelCard()
         self.model_card = model_card
         self.optimizer = None
-        self.override_optimizer = False
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
         self.metric = None
         self.loss = None
-        self.override_loss = False
         self.loss_val = 0.0
         self.callbacks = CallbackList()
         self.mean_loss_metric = None
@@ -228,6 +228,7 @@ class Trainer:
         if self.distributed:
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
             if sync_bn:
+                # 使用SyncBatchNorm后训练会更耗时
                 self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
         return epochs_trained, last_loss_val
 
@@ -361,6 +362,7 @@ class Trainer:
                 str(self.loss): self.loss_val
             }
         }
+        self.model_card = ModelCard()
         self.model_card.training_summary = training_summary
 
         self._cleanup_distributed(rank)
@@ -400,28 +402,10 @@ class Trainer:
     def add_callback(self, callback):
         self.callbacks.add_callback(callback)
 
-    def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str=None):
-        """
-        set custom optimizer, `optimizer_name` is the optimizer str in training config
-        """
-        self.override_optimizer = True
-        self.configs.optimizer = CUSTOM if optimizer_name is None else optimizer_name
-        self.optimizer = optimizer
-
-    def set_loss(self, loss, loss_name=None):
-        """
-        set custom loss, `loss_name` is the loss str in training config
-        """
-        self.override_loss = True
-        self.configs.loss = CUSTOM if loss_name is None else loss_name
-        self.loss = loss
-
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
         """
-        if isinstance(self.train_dataset, TorchDataSet):
-            self.train_dataset = self.train_dataset.dataset
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
         if isinstance(self.train_dataset, IterableDataset):
@@ -448,13 +432,9 @@ class Trainer:
         self.metric = get_metric_by_name(self.configs.metric).to(self.configs.device)
 
     def _create_loss(self):
-        if self.override_loss is True:
-            return
         self.loss = _construct_loss_from_config(torch.nn.modules.loss, self.configs.loss)
 
     def _create_optimizer(self):
-        if self.override_optimizer is True:
-            return
         self.optimizer = _construct_optimizer_from_config(optim, self.configs.optimizer, model=self.model)
 
     def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
