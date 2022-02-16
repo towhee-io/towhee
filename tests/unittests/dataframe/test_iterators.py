@@ -6,7 +6,7 @@ import queue
 
 from string import ascii_lowercase
 
-from towhee.dataframe.dataframe_v2 import DataFrame
+from towhee.dataframe.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator, BatchIterator, WindowIterator
 from towhee.types._frame import _Frame
 
@@ -36,7 +36,7 @@ class TestIterators(unittest.TestCase):
 
     def test_map_iters(self):
         data, columns = self.gen_data(0, 10)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
         df.seal()
         it = MapIterator(df)
@@ -59,11 +59,11 @@ class TestIterators(unittest.TestCase):
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j')]])
 
         # Assert cleared df
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
     def test_blocking_map_iters(self):
         data, columns = self.gen_data(0, 10)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
         q = queue.Queue()
         it = MapIterator(df, block=True)
@@ -90,7 +90,7 @@ class TestIterators(unittest.TestCase):
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j'), (10, 'f'),
             (11, 'g')]])
 
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
         time.sleep(.1)
         df.put((12, 'h'))
         df.put((13, 'i'))
@@ -103,7 +103,7 @@ class TestIterators(unittest.TestCase):
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j'), (10, 'f'),
             (11, 'g')]])
 
-        self.assertEqual(df.physical_size, 2)
+        self.assertEqual(len(df), 2)
         time.sleep(.1)
         df.seal()
         time.sleep(.1)
@@ -115,7 +115,7 @@ class TestIterators(unittest.TestCase):
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h')], [(8, 'i'), (9, 'j'), (10, 'f'),
             (11, 'g')], [(12, 'h'), (13, 'i')]])
 
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
         x.join()
         x2.join()
 
@@ -124,7 +124,7 @@ class TestIterators(unittest.TestCase):
 
     def test_window_iters(self):
         data, columns = self.gen_data(0, 10)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
         df.seal()
 
@@ -183,12 +183,12 @@ class TestIterators(unittest.TestCase):
             [(9, 'j')]])
 
         # Assert cleared df
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
     def test_step_window_timestamp_iters(self):
-        data, cols = self.gen_data(0, 12)
+        data, columns = self.gen_data(0, 12)
 
-        df = DataFrame(cols, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
         df.seal()
 
@@ -209,11 +209,11 @@ class TestIterators(unittest.TestCase):
         res = self.remove_frame(res)
         self.assertEqual(res, [[(0, 'a'), (1, 'b')], [(5, 'f'), (6, 'g')], [(10, 'k'), (11, 'l')]])
 
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
     def test_blocking_window_iters(self):
         data, columns = self.gen_data(0, 20)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data[:11])
         q = queue.Queue()
         it = WindowIterator(df, window_size = 2, block=True)
@@ -241,7 +241,7 @@ class TestIterators(unittest.TestCase):
             [(2, 'c'), (3, 'd'), (4, 'e'), (5, 'f'), (6, 'g')],
             [(4, 'e'), (5, 'f'), (6, 'g'), (7, 'h'), (8, 'i')]])
 
-        self.assertEqual(df.physical_size, 5)
+        self.assertEqual(len(df), 5)
 
         df.put(data[11:])
 
@@ -268,7 +268,7 @@ class TestIterators(unittest.TestCase):
             [(12, 'm'), (13, 'n'), (14, 'o'), (15, 'p'), (16, 'q')],
             [(14, 'o'), (15, 'p'), (16, 'q'), (17, 'r'), (18, 's')]])
 
-        self.assertEqual(df.physical_size, 4)
+        self.assertEqual(len(df), 4)
 
         df.seal()
 
@@ -298,13 +298,13 @@ class TestIterators(unittest.TestCase):
             [(16, 'q'), (17, 'r'), (18, 's'), (19, 't')],
             [(18, 's'), (19, 't')]])
 
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
         x.join()
         x2.join()
 
     def test_kill__iters(self):
         data, columns = self.gen_data(0, 10)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
 
         q = queue.Queue()
@@ -371,7 +371,7 @@ class TestIterators(unittest.TestCase):
                 q.put(x)
 
         data, columns = self.gen_data(0, 10)
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.put(data)
 
         q = queue.Queue()

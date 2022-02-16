@@ -114,7 +114,7 @@ class MapIterator(DataFrameIterator):
             df.remove_iter(self._id)
             self._offset = 0
             self._done = True
-            return []
+            raise StopIteration
 
         elif code == Responses.APPROVED_DONE:
             self._done = True
@@ -171,7 +171,8 @@ class WindowIterator(DataFrameIterator):
         if use_timestamp:
             start *= 1000
             window_size *= 1000
-            step *= 1000
+            if step is not None:
+                step *= 1000
 
         self._window_size = window_size
         self._current_window = (start, (start + window_size))
@@ -209,7 +210,8 @@ class WindowIterator(DataFrameIterator):
         if code in (Responses.EMPTY_SEALED, Responses.FUTURE_WINDOW_SEALED):
             self._done = True
             df.remove_iter(self._id)
-            return []
+            raise StopIteration
+        
 
         elif code == Responses.EMPTY:
             df.notify_window_block(self._id, self._event, 'start', (self._comparator, self._current_window[0]))

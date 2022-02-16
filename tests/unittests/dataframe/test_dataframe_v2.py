@@ -17,7 +17,7 @@ import unittest
 import queue
 
 from towhee.types._frame import _Frame, FRAME
-from towhee.dataframe.dataframe_v2 import DataFrame, Responses
+from towhee.dataframe.dataframe import DataFrame, Responses
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
@@ -51,7 +51,7 @@ class TestDataframe(unittest.TestCase):
     def test_constructors(self):
 
         columns = self.get_columns()
-        df = DataFrame(columns, name = 'my_df')
+        df = DataFrame('my_df', columns)
         df.seal()
         self.assertEqual(df.name, 'my_df')
         self.assertEqual(df.sealed, True)
@@ -62,7 +62,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put tuple with no frame col in both data and cols.
         columns = self.get_columns(frames=False)
         data = self.get_tuples(frames = False)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -73,7 +73,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put tuple with frame col in both data and cols.
         columns = self.get_columns(frames=True)
         data = self.get_tuples(frames = True)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -84,7 +84,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put tuple with no frame col in cols and with frame cols in data.
         columns = self.get_columns(frames=False)
         data = self.get_tuples(frames = True)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -95,7 +95,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing single tuple put and df accesses.
         data = (0, 'a')
         columns = self.get_columns(frames=False)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         t = DfWriter(df, 10, data)
         t.start()
         t.join()
@@ -119,7 +119,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put dict with no frame col in both data and cols.
         columns = self.get_columns(frames=False)
         data = self.get_dict(frames = False)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -130,7 +130,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put dict with frame col in both data and cols.
         columns = self.get_columns(frames=True)
         data = self.get_dict(frames = True)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -141,7 +141,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing put dict with no frame col in cols and with frame cols in data.
         columns = self.get_columns(frames=False)
         data = self.get_tuples(frames = True)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         df.put(data)
         count = 0
         for x in df:
@@ -152,7 +152,7 @@ class TestDataframe(unittest.TestCase):
         #  Testing single dict put and df accesses.
         data = {'digit': 0, 'letter': 'a'}
         columns = self.get_columns(frames=False)
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         t = DfWriter(df, 10, data)
         t.start()
         t.join()
@@ -177,7 +177,7 @@ class TestDataframe(unittest.TestCase):
 
     def test_multithread(self):
         columns = self.get_columns()
-        df = DataFrame(columns, name = 'test')
+        df = DataFrame('test', columns)
         data_size = 10
         data = (0, 'a')
         t = DfWriter(df, data_size, data=data)

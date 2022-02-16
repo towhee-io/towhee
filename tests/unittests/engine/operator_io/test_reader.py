@@ -257,7 +257,7 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
 
     def test_multithread_less(self):
@@ -268,7 +268,7 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
     def test_multithread_greater(self):
         
@@ -279,7 +279,7 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
-        self.assertEqual(df.physical_size, 0)
+        self.assertEqual(len(df), 0)
 
     def test_empty(self):
         df = DataFrame('test', [('test', 'int')])

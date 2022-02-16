@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from pprint import pprint
 import unittest
 import time
 import queue
@@ -28,17 +29,18 @@ class TestDataframe(unittest.TestCase):
     """
 
     def test_put(self):
-        df = DataFrame('test')
-        t = DfWriter(df, 10)
+        df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
+        data = ('a', 1)
+        t = DfWriter(df, 10, data = data)
         t.start()
         t.join()
         self.assertEqual(df.name, 'test')
         self.assertEqual(df.size, 10)
         datas = df.get(0, 4)
-        self.assertEqual(len(datas), 4)
+        self.assertEqual(len(datas[1]), 4)
 
         datas = df.get(8, 4)
-        self.assertEqual(datas, None)
+        self.assertEqual(datas[1], None)
 
         self.assertFalse(df.sealed)
         df.seal()

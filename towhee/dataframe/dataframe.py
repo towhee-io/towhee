@@ -94,7 +94,7 @@ class DataFrame:
             ret += formater.format(*columns) + '\n'
 
             if self._min_offset != float('inf'):
-                for x in range(self._min_offset, self._min_offset + self.physical_size):
+                for x in range(self._min_offset, self._min_offset + self.__len__()):
                     values = []
                     for i in range(len(self._data_as_list)):
                         val = self._data_as_list[i][x]
@@ -106,19 +106,14 @@ class DataFrame:
             return ret
 
     def __len__(self):
-        return self._len
+        with self._data_lock:
+            if self._data_as_list is None:
+                return 0
+            return len(self._data_as_list[0])
 
     @property
     def size(self):
         return self._len
-
-    @property
-    def physical_size(self):
-        """The number of elements left in the Dataframe."""
-        with self._data_lock:
-            if self._data_as_list is None:
-                return 0
-            return self._data_as_list[0].physical_size
 
     @property
     def name(self) -> str:
@@ -218,7 +213,7 @@ class DataFrame:
 
         with self._data_lock:
             #  If the df is empty, we dont want to do anything but wait for a next value if unsealed.
-            if self.physical_size == 0:
+            if self.__len__() == 0:
                 if self.sealed:
                     return Responses.EMPTY_SEALED, None, None
                 else:
@@ -395,7 +390,7 @@ class DataFrame:
         """Appending a dict to the dataframe."""
 
         if item.get(FRAME, None) is None:
-            item[FRAME] = FRAME, _Frame(self._len)
+            item[FRAME] = _Frame(self._len)
         else:
             item[FRAME].row_id = self._len
 

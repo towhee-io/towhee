@@ -84,7 +84,7 @@ class Array:
         """
         Number of elements in the `Array`.
         """
-        return len(self._data) + self._offset
+        return len(self._data)
 
     @property
     def size(self) -> int:
@@ -99,13 +99,6 @@ class Array:
         Name of the Array'.
         """
         return self._name
-
-    @property
-    def physical_size(self) -> int:
-        """
-        Number of elements still existing in the `Array`
-        """
-        return len(self._data)
 
     @property
     def data(self) -> List:
@@ -160,7 +153,7 @@ class Array:
         """
         if offset == -1:
             self.clear()
-        elif offset > self.__len__():
+        elif offset > self.size:
             raise IndexError('GCing out of bounds.')
         else:
             release_offset = offset - self._offset
