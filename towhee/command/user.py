@@ -73,13 +73,6 @@ class UserConfig:
             print('You are already logged in, please log out first.')
 
     def whoami(self) -> str:
-        """
-        Check who am i with https://towhee.io.
-
-        Returns:
-            (`str`)
-                authorized username.
-        """
         if self._token:
             res = self.hub.get_user(self._token).json()
             username = res['username']
@@ -101,9 +94,9 @@ class UserConfig:
         else:
             print('Not logged it.')
 
-    def write_to_credential_store(self, username: str, password: str):
+    def write_to_credential_store(self, username: str, password: str) -> None:
         """
-        Log out with https://towhee.io account.
+        Write a token to store credentials.
 
         Args:
             username (`str`):
@@ -125,9 +118,9 @@ class UserConfig:
             )
             process.stdin.flush()
 
-    def erase_from_credential_store(self, username=None):
+    def erase_from_credential_store(self, username=None) -> None:
         """
-        Erases the credential store relative to towhee.io. If no `username` is specified, will erase the first entry.
+        Erases the credential store relative to https://towhee.io. If no `username` is specified, will erase the first entry.
 
         Args:
             username (`str`):
@@ -148,6 +141,3 @@ class UserConfig:
 
             process.stdin.write(standard_input.encode('utf-8'))
             process.stdin.flush()
-
-
-
