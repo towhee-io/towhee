@@ -30,10 +30,28 @@ class HubUtils:
         root (`str`):
             The root url where the repo located.
     """
-    def __init__(self, author: str, repo: str, root: str = 'https://towhee.io'):
+    def __init__(self, author: str = None, repo: str = None, root: str = 'https://towhee.io'):
         self._author = author
         self._repo = repo
         self._root = root
+
+    @property
+    def author(self):
+        return self._author
+
+    @property
+    def repo(self):
+        return self._repo
+
+    @property
+    def root(self):
+        return self._root
+
+    def set_author(self, author: str):
+        self._author = author
+
+    def set_repo(self, repo: str):
+        self._repo = repo
 
     def get_info(self) -> requests.Response:
         """
@@ -192,8 +210,8 @@ class HubUtils:
         """
         url = f'{self._root}/api/v1/users/{self._author}/tokens/{token_id}'
         try:
-            r = requests.delete(url, auth=HTTPBasicAuth(self._author, password))
-            r.raise_for_status()
+            response = requests.delete(url, auth=HTTPBasicAuth(self._author, password))
+            response.raise_for_status()
         except HTTPError as e:
             raise e
 
@@ -233,6 +251,103 @@ class HubUtils:
             raise e
         finally:
             self.delete_token(str(token['id']), password)
+
+    def create_repo(self, token: str, repo_class: int) -> None:
+        """
+        Create a repo under current account with token.
+
+        Args:
+            token (`str`):
+                Authenticated user's token.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+
+        data = {
+            'auto_init': True,
+            'default_branch': 'main',
+            'description': repo_class,
+            'name': self._repo,
+            'private': False,
+            'template': False,
+            'trust_model': 'default',
+            'type': repo_class
+        }
+        url = self._root + '/api/v1/user/repos'
+        try:
+            r = requests.post(url, data=data, headers={'Authorization': 'token ' + str(token)})
+            r.raise_for_status()
+        except HTTPError as e:
+            raise e
+
+    def get_user(self, token: str) -> requests.Response:
+        """
+        Get the user info with token.
+
+        Args:
+            token (`str`):
+                Authenticated user's token.
+
+        Returns:
+            (`Response`)
+                Return the user(id, username etc.).
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = self._root + '/api/v1/user'
+        try:
+            response = requests.get(url, params={'token': token})
+            response.raise_for_status()
+            return response
+        except HTTPError as e:
+            raise e
+
+    def login(self, password, token):
+        """
+        Login with Authenticated user.
+
+        Args:
+            password (`str`):
+                Authenticated user's password.
+            token (`str`):
+                Authenticated user's token.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = self._root + '/user/login'
+        data = {
+            'user_name': self._author,
+            'password': password,
+            '_csrf': token
+        }
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+        except HTTPError as e:
+            raise e
+
+    def logout(self, token):
+        """
+        Logout with token.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        url = self._root + '/user/logout'
+        data = {'_csrf': token}
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+        except HTTPError as e:
+            raise e
+        pass
 
     @staticmethod
     def convert_dict(dicts: dict) -> dict:

@@ -43,7 +43,7 @@ class DevelopRepo:
         requirements = self.read_requirements()
         if self._args.action == 'install':
             sys.argv = ['setup.py', 'install']
-        if self._args.action == 'develop':
+        elif self._args.action == 'develop':
             sys.argv = ['setup.py', 'develop']
             symlink_path = path / 'towheeoperator'
             symlink = symlink_path / f'{self._args.namespace}_{repo_name}'
