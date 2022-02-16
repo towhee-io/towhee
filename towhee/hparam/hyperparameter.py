@@ -162,6 +162,45 @@ class _Accessor(dict):
     __nonzero__ = __bool__
 
 
+class _CallHolder(dict):
+    """
+    Helper for tracking function calls.
+
+    Examples:
+    >>> ch = _CallHolder()
+    >>> ch.my.foo(a=1,b=2)
+    ('my.foo', (), {'a': 1, 'b': 2})
+
+    >>> ch.myspace2.gee(c=1,d=2)
+    ('myspace2.gee', (), {'c': 1, 'd': 2})
+    """
+
+    @staticmethod
+    def default_callback(path, *arg, **kws):
+        return (path, arg, kws)
+
+    def __init__(self, callback: Callable=None, path=None):
+        super().__init__()
+        self._callback = callback if callback is not None else _CallHolder.default_callback
+        self._path = path
+
+    def __getattr__(self, name: str) -> Any:
+        if name in ['_path', '_callback']:
+            return self[name]
+
+        if self._path:
+            name = '{}.{}'.format(self._path, name)
+        return _CallHolder(self._callback, name)
+
+    def __setattr__(self, name: str, value: Any):
+        if name in ['_path', '_callback']:
+            return self.__setitem__(name, value)
+        return
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self._callback(self._path, *args, **kwds)
+
+
 class HyperParameter(dict):
     """
     HyperParameter is an extended dict with features for better parameter management.
@@ -200,7 +239,7 @@ class HyperParameter(dict):
     """
 
     def __init__(self, **kws):
-        super(HyperParameter, self).__init__() # pylint: disable=super-with-arguments
+        super(HyperParameter, self).__init__()  # pylint: disable=super-with-arguments
         self.update(kws)
 
     def update(self, kws):
@@ -328,6 +367,20 @@ class HyperParameter(dict):
         """
 
         return _Accessor(self, None)
+
+    def callholder(self, callback: Callable = None):
+        """
+        Return a call holder.
+
+        Examples:
+        >>> ch = param_scope().callholder()
+        >>> ch.my.foo(a=1,b=2)
+        ('my.foo', (), {'a': 1, 'b': 2})
+
+        >>> ch.myspace2.gee(c=1,d=2)
+        ('myspace2.gee', (), {'c': 1, 'd': 2})
+        """
+        return _CallHolder(callback)
 
     @staticmethod
     def loads(s):
@@ -484,11 +537,11 @@ def safe_numeric(value):
     if isinstance(value, str):
         try:
             return int(value)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             pass
         try:
             return float(value)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             pass
     return value
 
@@ -504,6 +557,7 @@ if __name__ == '__main__':
         """
         tests for HyperParameter
         """
+
         def test_parameter_create(self):
             param1 = HyperParameter(a=1, b=2)
             self.assertEqual(param1.a, 1)
@@ -543,6 +597,7 @@ if __name__ == '__main__':
         """
         tests for Accesscor
         """
+
         def test_holder_as_bool(self):
             param1 = HyperParameter()
             self.assertFalse(param1.a.b)
@@ -557,6 +612,7 @@ if __name__ == '__main__':
         """
         tests for param_scope
         """
+
         def test_scope_create(self):
             with param_scope(a=1, b=2) as hp:
                 self.assertEqual(hp.a, 1)
