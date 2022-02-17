@@ -90,26 +90,26 @@ class ModelCard:
             if self.training_config.lr_scheduler_type is not None:
                 model_card += f"\nThe scheduler type is {self.training_config.lr_scheduler_type}."
             if self.training_config.warmup_ratio is not None:
-                model_card += f"\nThe warmup_ratio is {self.training_config.warmup_steps}."
+                model_card += f"\nThe warmup_ratio is {self.training_config.warmup_ratio}."
             if self.training_config.warmup_steps is not None:
                 model_card += f"\nThe warmup_steps is {self.training_config.warmup_steps}."
             if self.training_config.lr is not None:
                 model_card += f"\nLearining reate is {self.training_config.lr}."
             else:
                 model_card += "\nLearning rate is needed.\n"
-            if self.training_config.weight_decay is not None:
-                model_card += f"\nWeight decay is {self.training_config.weight_decay}."
-            if self.training_config.adam_beta1 is not None:
-                model_card += f"\nBeta1 for AdamW optimizer is {self.training_config.adam_beta1}."
-            if self.training_config.adam_beta2 is not None:
-                model_card += f"\nBeta2 for AdamW optimizer is {self.training_config.adam_beta2}."
-            if self.training_config.adam_epsilon is not None:
-                model_card += f"\nEpsilon for AdamW optimizer is {self.training_config.adam_epsilon}."
+            # if self.training_config.weight_decay is not None:
+            #     model_card += f"\nWeight decay is {self.training_config.weight_decay}."
+            # if self.training_config.adam_beta1 is not None:
+            #     model_card += f"\nBeta1 for AdamW optimizer is {self.training_config.adam_beta1}."
+            # if self.training_config.adam_beta2 is not None:
+            #     model_card += f"\nBeta2 for AdamW optimizer is {self.training_config.adam_beta2}."
+            # if self.training_config.adam_epsilon is not None:
+            #     model_card += f"\nEpsilon for AdamW optimizer is {self.training_config.adam_epsilon}."
             if self.training_config.metric is not None:
-                model_card += f"\nMetric is  {self.training_config.metric}."
-
-            if self.training_config.max_norm_grad is not None:
-                model_card += f"\nMax gradient norm is {self.training_config.max_norm_grad}."
+                model_card += f"\nMetric is {self.training_config.metric}."
+            #
+            # if self.training_config.max_norm_grad is not None:
+            #     model_card += f"\nMax gradient norm is {self.training_config.max_norm_grad}."
             if self.training_config.batch_size is not None:
                 model_card += f"\nBatch size is {self.training_config.batch_size}."
             if self.training_config.seed is not None:
