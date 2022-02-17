@@ -223,11 +223,14 @@ def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], mode
     return instance
 
 
-def get_tensorboard_available():
+def get_summary_writer_constructor():
     try:
-        summary_writer_constructor = importlib.util.find_spec("torch.utils.tensorboard.SummaryWriter")
+        tensorboard_module = importlib.import_module("torch.utils.tensorboard")
+        summary_writer_constructor = tensorboard_module.SummaryWriter
+        trainer_log.info("Use tensorboard. And please observe the logs in  http://localhost:6007/")
         return summary_writer_constructor
     except ImportError:
+        trainer_log.info("can not import tensorboard.")
         return None
 
 class Trainer:
@@ -633,10 +636,9 @@ class Trainer:
         self._create_loss()
         self._create_metric()
         self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
-        summary_writer_constructor = get_tensorboard_available()
+        summary_writer_constructor = get_summary_writer_constructor()
         if summary_writer_constructor is not None:
             self.callbacks.add_callback(TensorBoardCallBack(summary_writer_constructor))
-        # self.callbacks.add_callback(PrintCallBack(total_epoch_num=self.configs.epoch_num))
         if self.configs.print_steps is None:
             self.callbacks.add_callback(ProgressBarCallBack(total_epoch_num=self.configs.epoch_num,
                                                             train_dataloader=self.get_train_dataloader()))
