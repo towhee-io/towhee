@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from typing import Any, List, Union
 
 import yaml
+from pathlib import Path
 from towhee.hparam.hyperparameter import param_scope
-
 from towhee.pipelines.alias_resolvers import get_resolver
 from towhee.pipelines.base import PipelineBase
 from towhee import Inject, pipeline
@@ -46,10 +45,7 @@ class ImageEmbeddingPipeline(PipelineBase):
             Supported ensemble types:
                 `linear`,
     """
-
-    def __init__(self,
-                 model: Union[Any, List[Any]] = None,
-                 ensemble: str = None):
+    def __init__(self, model: Union[Any, List[Any]] = None, ensemble: str = None):
         with param_scope() as hp:
             resolver = get_resolver(hp().towhee.alias_resolver('local'))
 
@@ -61,30 +57,26 @@ class ImageEmbeddingPipeline(PipelineBase):
         num_branch = len(models)
 
         models = [resolver.resolve(model) if isinstance(model, str) else model for model in models]
-        operators = dict(
-            zip([
-                'embedding_model_1',
-                'embedding_model_2',
-                'embedding_model_3',
-            ], models))
+        operators = dict(zip([
+            'embedding_model_1',
+            'embedding_model_2',
+            'embedding_model_3',
+        ], models))
         if ensemble is not None:
             operators['ensemble_model'] = resolver.resolve(ensemble) if isinstance(ensemble, str) else ensemble
 
-        injections = {
-            name: {'function': model.function, 'init_args': model.init_args}
-            for name, model in operators.items()
-        }
-        self._pipeline = Inject(**injections).pipeline(
-            'builtin/image_embedding_template_{}'.format(num_branch))
+        injections = {name: {'function': model.function, 'init_args': model.init_args} for name, model in operators.items()}
+        self._pipeline = Inject(**injections).pipeline('builtin/image_embedding_template_{}'.format(num_branch))
 
     def __call__(self, *arg, **kws):
         return self._pipeline(*arg, **kws)
 
-    def save(self, name: str, path: str = '.'):
-        operator_path = path + '/' + name
-        if os.path.exists(operator_path):
+    def save(self, name: str, path: Union[str, Path] = Path.cwd()):
+        path = Path(path)
+        operator_path = path / name
+        if operator_path.exists():
             raise FileExistsError(operator_path)
-        os.mkdir(operator_path)
+        operator_path.mkdir(parents=True)
         with open('{}/{}.yaml'.format(operator_path, name), 'w', encoding='utf-8') as f:
             info = yaml.safe_load(self._pipeline.pipeline.graph_repr.ir)
             info['name'] = name
@@ -95,10 +87,7 @@ class ImageEmbeddingPipeline(PipelineBase):
         pass
 
 
-def image_embedding_pipeline(model: Union[str, List[str]] = None,
-                             ensemble: str = None,
-                             name: str = None,
-                             version: str = None):
+def image_embedding_pipeline(model: Union[str, List[str]] = None, ensemble: str = None, name: str = None, version: str = None):
     pipe = None
     if name is not None:
         pipe = pipeline(name, tag=version)
