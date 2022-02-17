@@ -29,7 +29,6 @@ class TestTrainConfigSaving(unittest.TestCase):
         ta = TrainingConfig()
         ta.load_from_yaml(conf0)
         ta.save_to_yaml(conf)
-        ta.load_from_yaml(conf)
         self.assertEqual(ta.epoch_num, 2)
 
 

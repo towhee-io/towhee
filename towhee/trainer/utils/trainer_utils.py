@@ -53,6 +53,10 @@ CHECKPOINT_NAME = "checkpoint.pt"
 
 
 # _re_checkpoint = re.compile(r"^" + CHECKPOINT_NAME + r"\-(\d+)$")
+class EvalStrategyType(Enum):
+    EPOCH = "epoch"
+    STEP = "step"
+    NO = "no"
 
 class SchedulerType(Enum):
     LINEAR = "linear"

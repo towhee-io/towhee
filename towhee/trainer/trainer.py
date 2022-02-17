@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import collections
+import importlib
 import math
 import os
 import sys
@@ -20,9 +21,10 @@ import torch
 import tempfile
 import torch.distributed as dist
 
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Tuple, Optional
 from pathlib import Path
 # from torch.utils.tensorboard import SummaryWriter
+import torchmetrics
 from tqdm import tqdm
 from torch import nn
 from torch import optim
@@ -30,14 +32,15 @@ from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, IterableDataset
 from torch.multiprocessing import Process
-from towhee.trainer.metrics import get_metric_by_name
+# from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
+from towhee.trainer.utils.trainer_utils import EvalStrategyType
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
 from towhee.trainer.dataset import TowheeDataSet, TorchDataSet
 from towhee.trainer.optimization.optimization import get_scheduler
-from towhee.trainer.callback import CallbackList
+from towhee.trainer.callback import CallbackList, Callback
 
 # DEFAULT_CALLBACKS = [DefaultFlowCallback]
 # DEFAULT_PRO = ProgressCallback
@@ -71,6 +74,113 @@ def reduce_value(value, average=True):
         if average:
             value /= world_size
         return value
+
+
+def get_rank():
+    if not is_dist_avail_and_initialized():
+        return 0
+    return dist.get_rank()
+
+
+def is_main_process():
+    return get_rank() == 0
+
+
+
+
+
+class TensorBoardCallBack(Callback):
+    """
+    if tensorboard is available, you can see the tensorboard in localhost:6006
+    """
+    def __init__(self, summary_writer_constructor, log_dir=None, comment=""):
+        super().__init__()
+        self.tb_writer = summary_writer_constructor(log_dir, comment=comment)
+
+    def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        global_step = logs["global_step"]
+        step_loss = logs["step_loss"]
+        epoch_loss = logs["epoch_loss"]
+        epoch_metric = logs["epoch_metric"]
+        lr = logs["lr"]
+        if is_main_process():
+            self.tb_writer.add_scalar("lr", lr, global_step)
+            self.tb_writer.add_scalar("epoch_loss", epoch_loss, global_step)
+            self.tb_writer.add_scalar("step_loss", step_loss, global_step)
+            self.tb_writer.add_scalar("epoch_metric", epoch_metric, global_step)
+
+    def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        eval_global_step = logs["eval_global_step"]
+        eval_step_loss = logs["eval_step_loss"]
+        eval_epoch_loss = logs["eval_epoch_loss"]
+        eval_epoch_metric = logs["eval_epoch_metric"]
+        if is_main_process():
+            self.tb_writer.add_scalar("eval_step_loss", eval_step_loss, eval_global_step)
+            self.tb_writer.add_scalar("eval_epoch_loss", eval_epoch_loss, eval_global_step)
+            self.tb_writer.add_scalar("eval_epoch_metric", eval_epoch_metric, eval_global_step)
+
+
+class PrintCallBack(Callback):
+    """
+    print logs on the screen
+    """
+    def __init__(self, total_epoch_num, step_frequency=16):
+        super().__init__()
+        self.step_frequency = step_frequency
+        self.total_epoch_num = total_epoch_num
+
+    def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        global_step = logs["global_step"]
+        if global_step % self.step_frequency == 0:
+            print("epoch={}/{}, global_step={}, epoch_loss={}, epoch_metric={}"
+                  .format(logs["epoch"] + 1, self.total_epoch_num,
+                          global_step,
+                          logs["epoch_loss"],
+                          logs["epoch_metric"]))
+
+    def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        eval_global_step = logs["eval_global_step"]
+        if eval_global_step % self.step_frequency == 0:
+            print("epoch={}/{}, eval_global_step={}, eval_epoch_loss={}, eval_epoch_metric={}"
+                  .format(logs["epoch"] + 1, self.total_epoch_num,
+                          eval_global_step,
+                          logs["eval_epoch_loss"],
+                          logs["eval_epoch_metric"]))
+
+
+class ProgressBarCallBack(Callback):
+    """
+    use tqdm as the progress bar backend
+    """
+    def __init__(self, total_epoch_num, train_dataloader):
+        super().__init__()
+        self.total_epoch_num = total_epoch_num
+        self.train_dataloader: tqdm = train_dataloader
+        self.descrpition = ""
+
+    def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        if is_main_process():
+            self.train_dataloader.update(1)
+            self.descrpition = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"] + 1,
+                                                                         int(self.total_epoch_num),
+                                                                         round(logs["epoch_loss"], 3),
+                                                                         round(logs["epoch_metric"], 3))
+            self.train_dataloader.set_description(self.descrpition)
+
+    def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
+        if is_main_process():
+            self.train_dataloader = tqdm(self.train_dataloader,
+                                         total=len(self.train_dataloader),
+                                         unit="step")  # , file=sys.stdout)
+
+    def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        if is_main_process():
+            self.descrpition = "[epoch {}/{}] loss={}, metric={}, eval_loss={}, eval_metric={}".format(
+                logs["epoch"] + 1,
+                int(self.total_epoch_num),
+                round(logs["epoch_loss"], 3),
+                round(logs["epoch_metric"], 3), round(logs["eval_epoch_loss"], 3), round(logs["eval_epoch_metric"], 3))
+            self.train_dataloader.set_description(self.descrpition)
 
 
 def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
@@ -113,6 +223,13 @@ def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], mode
     return instance
 
 
+def get_tensorboard_available():
+    try:
+        summary_writer_constructor = importlib.util.find_spec("torch.utils.tensorboard.SummaryWriter")
+        return summary_writer_constructor
+    except ImportError:
+        return None
+
 class Trainer:
     """
     train an operator
@@ -152,7 +269,7 @@ class Trainer:
         self.override_loss = False
         self.loss_val = 0.0
         self.callbacks = CallbackList()
-        self.mean_loss_metric = None
+        self.loss_metric = None
         self.epoch = 0
 
         os.makedirs(self.configs.output_dir, exist_ok=True)
@@ -170,12 +287,12 @@ class Trainer:
     def train(self, resume_checkpoint_path=None):
         if self.configs.device_str == "cuda":
             self.distributed = True
-            self.spawn_train_process(resume_checkpoint_path)
+            self._spawn_train_process(resume_checkpoint_path)
         else:
             self.distributed = False
             self.run_train(resume_checkpoint_path)
 
-    def spawn_train_process(self, resume_checkpoint_path):
+    def _spawn_train_process(self, resume_checkpoint_path):
         # world_size = torch.cuda.device_count()
         # mp.spawn(self.run_train,
         #          args=(world_size, resume_checkpoint_path),
@@ -231,6 +348,12 @@ class Trainer:
                 self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
         return epochs_trained, last_loss_val
 
+    def _create_logs(self):
+        logs = {"global_step": 0, "epoch": self.epoch + 1}
+        if self.configs.eval_strategy != EvalStrategyType.NO:
+            logs["eval_global_step"] = 0
+        return logs
+
     def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
         """
         Main training entry point.
@@ -270,7 +393,6 @@ class Trainer:
 
         model = self.model
 
-        # Train!
         num_examples = (
             self.num_examples(train_dataloader) if train_dataset_is_sized else total_train_batch_size * args.max_steps
         )
@@ -282,74 +404,49 @@ class Trainer:
         trainer_log.info("  Total optimization steps = %d", max_steps)
         trainer_log.info("****************************")
 
-        # model.zero_grad()
-
-        # tb_writer = None
         if rank == 0 or rank is None:
             trainer_log.warning(args)
-        #     print("Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/")
-        # tb_writer = SummaryWriter()
-        logs = {}
-        self.callbacks.on_train_begin(logs)
-        global_step = 0
-        self.mean_loss_metric = get_metric_by_name("MeanMetric")
 
         total_loss_val = last_loss_val * epochs_trained
         self.epoch = epochs_trained - 1
-        for epoch in range(epochs_trained, num_train_epochs):
+        logs = self._create_logs()
+        self.callbacks.on_train_begin(logs)
+        for _ in range(epochs_trained, num_train_epochs):
             model.train()
-            loss_sum = 0.0
+            # batch_loss_sum = 0.0
             self.callbacks.on_epoch_begin(epochs_trained, logs)
+            self.loss_metric.reset()
+            self.metric.reset()
             # steps_in_epoch = (
             #     len(epoch_iterator) if train_dataset_is_sized else args.max_steps
             # )
-            if rank == 0 or rank is None:
-                train_dataloader = tqdm(train_dataloader, unit="step")  # , file=sys.stdout)
+            # if rank == 0 or rank is None:
+            #     train_dataloader = tqdm(train_dataloader, unit="step")  # , file=sys.stdout)
             # for step, inputs in enumerate(train_dataloader):
-            for i, inputs in enumerate(train_dataloader):
+            for _, inputs in enumerate(train_dataloader):
                 self.callbacks.on_train_batch_begin(inputs, logs)
                 inputs = [input_.to(self.configs.device) for input_ in inputs]
-                labels = inputs[1]
-                outputs = model(inputs[0])
-                loss, step_metric = self.compute_loss(labels, outputs)
-                loss = reduce_value(loss, average=True)
-                loss.backward()
-                loss = loss.detach()
-                loss_sum += loss.item()
-                mean_loss = loss_sum / (i + 1)  # update mean losses
-                if step_metric is None:
-                    show_metric = None
-                else:
-                    show_metric = round(step_metric.item(), 3)
-                if rank == 0 or rank is None:
-                    train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch + 1,
-                                                                                      int(self.configs.epoch_num),
-                                                                                      round(mean_loss, 3),
-                                                                                      show_metric)
-                # Optimizer step
-                optimizer_was_run = True
-                self.optimizer.step()
-                if optimizer_was_run:
-                    self.lr_scheduler.step()
-                self.optimizer.zero_grad()
-                # lr = self.lr_scheduler.get_last_lr()[-1]
-                # if rank == 0 or rank is None:
-                #     tb_writer.add_scalar("loss", loss, global_step)
-                #     tb_writer.add_scalar("learning_rate", lr, global_step)
-                global_step += 1
-
+                step_logs = self.train_step(model, inputs)  # , train_dataloader)
+                logs["lr"] = self.lr_scheduler.get_lr()[0]
+                logs["global_step"] += 1
+                logs.update(step_logs)
                 # self.state.global_step += 1
                 # self.state.epoch = epoch + (step + 1) / steps_in_epoch
+                if self.configs.eval_strategy == EvalStrategyType.STEP:
+                    eval_logs = self.evaluate(model, logs)
+                    logs.update(eval_logs)
                 self.callbacks.on_train_batch_end(tuple(inputs), logs)
-
             # self._maybe_log_save_evaluate(loss_sum, tr_corrects, num_examples)
-
-            total_loss_val += mean_loss
+            # total_loss_val += epoch_loss
+            if self.configs.eval_strategy == EvalStrategyType.EPOCH:
+                eval_logs = self.evaluate(model, logs)
+                logs.update(eval_logs)
             self.epoch += 1
+            logs["epoch"] = self.epoch + 1
+            self.loss_val = round(total_loss_val / (self.epoch + 1), 3)
             self.callbacks.on_epoch_end(epochs_trained, logs)
             # if self.control.should_training_stop:
             #     break
-
         trainer_log.info("\nTraining completed.\n")
         self.loss_val = round(total_loss_val / (self.epoch + 1), 3)
         training_summary = {
@@ -365,12 +462,87 @@ class Trainer:
         self.model_card.training_summary = training_summary
 
         self._cleanup_distributed(rank)
-        if rank == 0 or rank is None:  # todo
+        if is_main_process():
             self.save(
                 path=os.path.join(args.output_dir, "epoch_" + str(num_train_epochs)),
                 overwrite=args.overwrite_output_dir
             )
         self.callbacks.on_train_end(logs)
+
+    def evaluate_step(self, model, inputs):
+        labels = inputs[1]
+        outputs = model(inputs[0])
+        step_loss = self.compute_loss(labels, outputs)
+        step_loss = reduce_value(step_loss, average=True)
+        step_loss = step_loss.detach()
+
+        loss_metric, epoch_metric = self._update_metrics(labels, outputs, step_loss)
+
+        step_logs = {"eval_step_loss": step_loss.item(), "eval_epoch_loss": loss_metric,
+                     "eval_epoch_metric": epoch_metric}
+        return step_logs
+
+    def _update_metrics(self, labels, outputs, step_loss):
+        self.loss_metric.update(step_loss.to(self.configs.device))
+        loss_metric = self.loss_metric.compute().to("cpu").item()
+        epoch_metric = None
+        if self.metric is not None:
+            self.metric.update(outputs.to(self.configs.device), labels.to(self.configs.device))
+            epoch_metric = self.metric.compute().to("cpu").item()
+        return loss_metric, epoch_metric
+
+    @torch.no_grad()
+    def evaluate(self, model, logs):
+        model.eval()
+        self.callbacks.on_eval_begin(logs)
+        self.metric.reset()
+        eval_dataloader = self.get_eval_dataloader()
+        if eval_dataloader is None:
+            trainer_log.warning("eval_dataloader is None!")
+            return logs
+        for _, inputs in enumerate(eval_dataloader):
+            self.callbacks.on_eval_batch_begin(inputs, logs)
+            inputs = [input_.to(self.configs.device) for input_ in inputs]
+            step_logs = self.evaluate_step(model, inputs)
+            logs.update(step_logs)
+            self.callbacks.on_eval_batch_end(tuple(inputs), logs)
+            logs["eval_global_step"] += 1
+        self.callbacks.on_eval_end(logs)
+        return logs
+
+    @torch.no_grad()
+    def predict(self, input_):
+        self.model.eval()
+        return self.model(input_)
+
+    def train_step(self, model, inputs):
+        labels = inputs[1]
+        outputs = model(inputs[0])
+        step_loss = self.compute_loss(labels, outputs)
+        step_loss = reduce_value(step_loss, average=True)
+        step_loss.backward()
+        step_loss = step_loss.detach()
+
+        loss_metric, epoch_metric = self._update_metrics(labels, outputs, step_loss)
+        # batch_loss_sum += loss.item()
+        # epoch_loss = batch_loss_sum / (i + 1)  # update mean losses
+        # if epoch_metric is None:
+        #     show_metric = None
+        # else:
+        #     show_metric = round(epoch_metric.item(), 3)
+        # if is_main_process:
+        #     train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch + 1,
+        #                                                                       int(self.configs.epoch_num),
+        #                                                                       round(epoch_loss, 3),
+        #                                                                       show_metric)
+        # Optimizer step
+        optimizer_was_run = True
+        self.optimizer.step()
+        if optimizer_was_run:
+            self.lr_scheduler.step()
+        self.optimizer.zero_grad()
+        step_logs = {"step_loss": step_loss.item(), "epoch_loss": loss_metric, "epoch_metric": epoch_metric}
+        return step_logs
 
     def _cleanup_distributed(self, rank):
         if self.distributed:
@@ -387,13 +559,10 @@ class Trainer:
         loss = self.loss(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         # return (loss, outputs) if return_outputs else loss
-        step_metric = None
-        if self.metric is not None:
-            self.metric.update(outputs, labels)
-            step_metric = self.metric.compute()
+
         # self.mean_loss_metric.update(loss)
         # self.mean_loss_metric.compute()
-        return loss, step_metric
+        return loss  # , step_metric
 
     def push_model_to_hub(self):
         pass
@@ -401,7 +570,7 @@ class Trainer:
     def add_callback(self, callback):
         self.callbacks.add_callback(callback)
 
-    def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str=None):
+    def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str = None):
         """
         set custom optimizer, `optimizer_name` is the optimizer str in training config
         """
@@ -421,10 +590,10 @@ class Trainer:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
         """
-        if isinstance(self.train_dataset, TorchDataSet):
-            self.train_dataset = self.train_dataset.dataset
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
+        if isinstance(self.train_dataset, TorchDataSet):
+            self.train_dataset = self.train_dataset.dataset
         if isinstance(self.train_dataset, IterableDataset):
             return DataLoader(
                 self.train_dataset,
@@ -436,6 +605,26 @@ class Trainer:
             shuffle=True
         )
 
+    def get_eval_dataloader(self) -> Optional[DataLoader]:
+        """
+        Returns the eval :class:`~torch.utils.data.DataLoader`.
+        """
+        if self.eval_dataset is None:
+            trainer_log.warning("Trainer: eval requires a train_dataset.")
+            return None
+        if isinstance(self.eval_dataset, TorchDataSet):
+            self.eval_dataset = self.eval_dataset.dataset
+        if isinstance(self.eval_dataset, IterableDataset):
+            return DataLoader(
+                self.eval_dataset,
+                batch_size=self.configs.eval_batch_size,
+            )
+        return DataLoader(
+            self.eval_dataset,
+            batch_size=self.configs.eval_batch_size,
+            shuffle=True
+        )
+
     def _setup_before_train(self, num_training_steps: int):
         """
         Setup the optimizer and the learning rate scheduler.
@@ -444,9 +633,22 @@ class Trainer:
         self._create_loss()
         self._create_metric()
         self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
+        summary_writer_constructor = get_tensorboard_available()
+        if summary_writer_constructor is not None:
+            self.callbacks.add_callback(TensorBoardCallBack(summary_writer_constructor))
+        # self.callbacks.add_callback(PrintCallBack(total_epoch_num=self.configs.epoch_num))
+        if self.configs.print_steps is None:
+            self.callbacks.add_callback(ProgressBarCallBack(total_epoch_num=self.configs.epoch_num,
+                                                            train_dataloader=self.get_train_dataloader()))
+        else:
+            self.callbacks.add_callback(PrintCallBack(total_epoch_num=self.configs.epoch_num,
+                                                      step_frequency=self.configs.print_steps))
 
     def _create_metric(self):
-        self.metric = get_metric_by_name(self.configs.metric).to(self.configs.device)
+        self.metric = torchmetrics.Accuracy().to(self.configs.device)
+        # self.metric = getattr(torchmetrics, self.configs.metric).to(
+        #     self.configs.device)  # todo #get_metric_by_name(self.configs.metric).to(self.configs.device)
+        self.loss_metric = torchmetrics.MeanMetric().to(self.configs.device)  # get_metric_by_name("MeanMetric") #todo
 
     def _create_loss(self):
         if self.override_loss is True:
