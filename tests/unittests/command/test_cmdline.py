@@ -12,33 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import unittest
-# import argparse
-# import os
-# from pathlib import Path
+import unittest
+import argparse
+import os
+from pathlib import Path
 
-# from towhee.command.develop import DevelopRepo
-# from towhee.command.execute import ExecutePipeline
+from towhee.command.develop import SetupCommand, UninstallCommand
+from towhee.command.execute import ExecuteCommand
 
-# public_path = Path(__file__).parent.parent.resolve()
+public_path = Path(__file__).parent.parent.resolve()
 
-# class TestCmdline(unittest.TestCase):
-#     """
-#     Unittests for towhee cmdline.
-#     """
-#     def test_develop(self):
-#         repo = 'add_operator'
-#         repo_path = public_path / 'mock_operators' / repo
-#         os.chdir(str(repo_path))
-#         args_d = argparse.Namespace(action='develop', namespace='test', path=str(repo_path))
-#         args_i = argparse.Namespace(action='install', namespace='test', path=str(repo_path))
 
-#         DevelopRepo(args_d)()
-#         DevelopRepo(args_i)()
-#         self.assertTrue((repo_path / 'towheeoperator/test_add_operator').is_symlink())
+class TestCmdline(unittest.TestCase):
+    """
+    Unittests for towhee cmdline.
+    """
+    def test_develop(self):
+        repo = 'add_operator'
+        repo_path = public_path / 'mock_operators' / repo
+        os.chdir(str(repo_path))
+        args_dev = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=True)
+        args_ins = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=False)
+        args_unins = argparse.Namespace(action='uninstall', namespace='test', path=str(repo_path))
 
-#     def test_run(self):
-#         img_path = 'https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true'
-#         args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
-#         ExecutePipeline(args_1)()
-#         self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())
+        SetupCommand(args_ins)()
+        UninstallCommand(args_unins)()
+        SetupCommand(args_dev)()
+        UninstallCommand(args_unins)()
+
+    def test_run(self):
+        img_path = 'https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true'
+        args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
+        ExecuteCommand(args_1)()
+        self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())

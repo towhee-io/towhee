@@ -22,7 +22,7 @@ from towhee.utils.hub_utils import HubUtils
 from towhee.utils.hub_file_utils import HubFileUtils
 
 
-class UserConfig:
+class UserCommand:
     """
     Implementation for subcmd `towhee login`, `towhee whoami` and `towhee logout`.
     """
@@ -42,13 +42,10 @@ class UserConfig:
                 print(f'Username: {username}')
         elif self._args.action == 'logout':
             self.logout()
-        pass
 
     @staticmethod
     def install(subparsers):
-        subparsers.add_parser('login', help='Log in using the same credentials as on towhee.io')
-        subparsers.add_parser('whoami', help='Find out which towhee.io account you are logged in as.')
-        subparsers.add_parser('logout', help='Log out')
+        subparsers.add_parser('login', help='user command: login using the same credentials as on towhee.io')
 
     def login(self) -> None:
         """
@@ -141,3 +138,27 @@ class UserConfig:
 
             process.stdin.write(standard_input.encode('utf-8'))
             process.stdin.flush()
+
+
+class LogoutCommand:
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        UserCommand(self._args)()
+
+    @staticmethod
+    def install(subparsers):
+        subparsers.add_parser('logout', help='user command: logout')
+
+
+class WhoCommand:
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        UserCommand(self._args)()
+
+    @staticmethod
+    def install(subparsers):
+        subparsers.add_parser('whoami', help='user command: find out which towhee.io account you are logged in')

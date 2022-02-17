@@ -58,6 +58,23 @@ class OperatorManager(RepoManager):
         else:
             self.hub_utils.create(password, self._class)
 
+    def create_with_token(self, token: str) -> None:
+        """
+        Create a repo under current account.
+
+        Args:
+            token (`str`):
+                Current author's token.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        if self.exists():
+            engine_log.info('%s/%s repo already exists.', self._author, self._repo)
+        else:
+            self.hub_utils.create_repo(token, self._class)
+
     def init_nnoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path], framework: str = 'pytorch') -> None:
         """
         Initialize the files under file_dest by moving and updating the text under file_temp.
