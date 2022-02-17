@@ -34,7 +34,7 @@ from torch.utils.data.dataset import Dataset, IterableDataset
 from torch.multiprocessing import Process
 # from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
-from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
+from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed
 from towhee.trainer.utils.trainer_utils import EvalStrategyType
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
@@ -86,13 +86,11 @@ def is_main_process():
     return get_rank() == 0
 
 
-
-
-
 class TensorBoardCallBack(Callback):
     """
     if tensorboard is available, you can see the tensorboard in localhost:6006
     """
+
     def __init__(self, summary_writer_constructor, log_dir=None, comment=""):
         super().__init__()
         self.tb_writer = summary_writer_constructor(log_dir, comment=comment)
@@ -124,6 +122,7 @@ class PrintCallBack(Callback):
     """
     print logs on the screen
     """
+
     def __init__(self, total_epoch_num, step_frequency=16):
         super().__init__()
         self.step_frequency = step_frequency
@@ -152,25 +151,28 @@ class ProgressBarCallBack(Callback):
     """
     use tqdm as the progress bar backend
     """
+
     def __init__(self, total_epoch_num, train_dataloader):
         super().__init__()
         self.total_epoch_num = total_epoch_num
-        self.train_dataloader: tqdm = train_dataloader
+        self.raw_train_dataloader = train_dataloader
+        self.now_tqdm_train_dataloader: tqdm = train_dataloader
         self.descrpition = ""
 
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
         if is_main_process():
-            self.train_dataloader.update(1)
+            self.now_tqdm_train_dataloader.update(1)
             self.descrpition = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"] + 1,
                                                                          int(self.total_epoch_num),
                                                                          round(logs["epoch_loss"], 3),
                                                                          round(logs["epoch_metric"], 3))
-            self.train_dataloader.set_description(self.descrpition)
+            self.now_tqdm_train_dataloader.set_description(self.descrpition)
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
         if is_main_process():
-            self.train_dataloader = tqdm(self.train_dataloader,
-                                         total=len(self.train_dataloader),
+            self.now_tqdm_train_dataloader = None
+            self.now_tqdm_train_dataloader = tqdm(self.raw_train_dataloader,
+                                         total=len(self.raw_train_dataloader),
                                          unit="step")  # , file=sys.stdout)
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
@@ -180,7 +182,7 @@ class ProgressBarCallBack(Callback):
                 int(self.total_epoch_num),
                 round(logs["epoch_loss"], 3),
                 round(logs["epoch_metric"], 3), round(logs["eval_epoch_loss"], 3), round(logs["eval_epoch_metric"], 3))
-            self.train_dataloader.set_description(self.descrpition)
+            self.now_tqdm_train_dataloader.set_description(self.descrpition)
 
 
 def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
@@ -232,6 +234,7 @@ def get_summary_writer_constructor():
     except ImportError:
         trainer_log.info("can not import tensorboard.")
         return None
+
 
 class Trainer:
     """
@@ -362,6 +365,7 @@ class Trainer:
         Main training entry point.
         """
         args = self.configs
+        set_seed(self.configs.seed)
         self._init_distributed(rank, world_size)
 
         print("device=", self.configs.device)
@@ -637,8 +641,11 @@ class Trainer:
         self._create_metric()
         self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
         summary_writer_constructor = get_summary_writer_constructor()
-        if summary_writer_constructor is not None:
-            self.callbacks.add_callback(TensorBoardCallBack(summary_writer_constructor))
+        if summary_writer_constructor is not None and self.configs.use_tensorboard:
+            self.callbacks.add_callback(
+                TensorBoardCallBack(summary_writer_constructor,
+                                    log_dir=self.configs.tensorboard_log_dir,
+                                    comment=self.configs.tensorboard_comment))
         if self.configs.print_steps is None:
             self.callbacks.add_callback(ProgressBarCallBack(total_epoch_num=self.configs.epoch_num,
                                                             train_dataloader=self.get_train_dataloader()))
@@ -725,7 +732,7 @@ class Trainer:
         Path(path).mkdir(exist_ok=True)
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-        print("save checkpoint_path:", checkpoint_path)
+        trainer_log.info("save checkpoint_path: %s", checkpoint_path)
         optimizer_state_dict = None
         if isinstance(self.optimizer, Optimizer):  # if created
             optimizer_state_dict = self.optimizer.state_dict()

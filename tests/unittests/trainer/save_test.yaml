@@ -20,6 +20,9 @@ logging:
   saving_steps: 500
   saving_strategy: steps
   saving_total_limit: null
+  tensorboard_comment: ''
+  tensorboard_log_dir: null
+  use_tensorboard: true
 metrics:
   metric: Accuracy
 train:
@@ -28,8 +31,7 @@ train:
   dataloader_num_workers: 0
   epoch_num: 2
   eval_steps: null
-  eval_strategy: !!python/object/apply:towhee.trainer.utils.trainer_utils.EvalStrategyType
-  - epoch
+  eval_strategy: epoch
   load_best_model_at_end: false
   max_steps: -1
   output_dir: ./output_dir
