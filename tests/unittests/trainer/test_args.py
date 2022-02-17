@@ -25,7 +25,6 @@ class TrainerArgsTest(unittest.TestCase):
             overwrite_output_dir=True,
             epoch_num=5,
             batch_size=4,
-            prediction_loss_only=True,
         )
 
     def test_train_batch_size(self) -> None:
