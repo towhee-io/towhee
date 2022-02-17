@@ -13,8 +13,6 @@ learning:
   warmup_steps: 0
 logging:
   logging_dir: null
-  logging_nan_inf_filter: true
-  logging_steps: 500
   logging_strategy: steps
   print_steps: null
   save_strategy: steps

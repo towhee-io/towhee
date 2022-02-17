@@ -149,9 +149,6 @@ class TrainingConfig:
         default="steps",
         metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
     )
-    logging_steps: int = field(default=500, metadata={HELP: "Log every X updates steps.", CATEGORY: "logging"})
-    logging_nan_inf_filter: str = field(default=True, metadata={HELP: "Filter nan and inf losses for logging.",
-                                                                CATEGORY: "logging"})
     save_strategy: str = field(
         default="steps",
         metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
