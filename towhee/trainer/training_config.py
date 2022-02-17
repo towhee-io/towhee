@@ -15,6 +15,7 @@
 import json
 import os
 from dataclasses import asdict, dataclass, field, fields
+from enum import Enum
 
 import torch
 
@@ -29,6 +30,12 @@ HELP = "help"
 CATEGORY = "category"
 OTHER_CATEGORY = "other"
 
+def _get_attr_str(obj, attr_name):
+    fld = getattr(obj, attr_name)
+    if isinstance(fld, Enum):
+        return fld.value
+    else:
+        return fld
 
 def dump_default_yaml(yaml_path):
     """
@@ -149,6 +156,18 @@ class TrainingConfig:
         default="steps",
         metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
     )
+    use_tensorboard: bool = field(
+        default=True,
+        metadata={HELP: "If True, it will run tensorboard on backend.", CATEGORY: "logging"},
+    )
+    tensorboard_log_dir: Optional[str] = field(
+        default=None,
+        metadata={HELP: "The argument `log_dir` when initializing tensorboard summaryWriter.", CATEGORY: "logging"},
+    )
+    tensorboard_comment: str = field(
+        default="",
+        metadata={HELP: "The argument `comment` when initializing tensorboard summaryWriter.", CATEGORY: "logging"},
+    )
     save_strategy: str = field(
         default="steps",
         metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
@@ -256,9 +275,9 @@ class TrainingConfig:
             field_name = config_field.name
             if CATEGORY in metadata_dict:
                 category = metadata_dict[CATEGORY]
-                config_dict[category][field_name] = getattr(self, field_name)
+                config_dict[category][field_name] = _get_attr_str(self, field_name)
             else:
-                config_dict[OTHER_CATEGORY][field_name] = getattr(self, field_name)
+                config_dict[OTHER_CATEGORY][field_name] = _get_attr_str(self, field_name)
                 trainer_log.warning("metadata in self.%s has no CATEGORY", config_field.name)
         # print(config_dict)
         with open(path2yaml, "w", encoding="utf-8") as file:
