@@ -32,7 +32,7 @@ from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, IterableDataset
 from torch.multiprocessing import Process
-# from towhee.trainer.metrics import get_metric_by_name
+from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed
 from towhee.trainer.utils.trainer_utils import EvalStrategyType
@@ -654,7 +654,8 @@ class Trainer:
                                                       step_frequency=self.configs.print_steps))
 
     def _create_metric(self):
-        self.metric = torchmetrics.Accuracy().to(self.configs.device)
+        self.metric = get_metric_by_name(self.configs.metric)
+        self.metric.to(self.configs.device)
         # self.metric = getattr(torchmetrics, self.configs.metric).to(
         #     self.configs.device)  # todo #get_metric_by_name(self.configs.metric).to(self.configs.device)
         self.loss_metric = torchmetrics.MeanMetric().to(self.configs.device)  # get_metric_by_name("MeanMetric") #todo
