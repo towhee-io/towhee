@@ -31,6 +31,7 @@ def read(reader: DataFrameReader, q: Queue):
             item = reader.read()
             if item:
                 q.put(item)
+                print(item)
                 continue
         except StopIteration:
             break
@@ -274,16 +275,16 @@ class TestWindowReader(unittest.TestCase):
         df = DataFrame('test', [('test', 'int')])
         df.seal()
         reader1 = TimeWindowReader(df, {'test': 0}, 3, 2)
-        res = reader1.read()
-        self.assertEqual(len(res), 0)
+        with self.assertRaises(StopIteration):
+            reader1.read()
 
         reader2 = TimeWindowReader(df, {'test': 0}, 3, 3)
-        res = reader2.read()
-        self.assertEqual(len(res), 0)
+        with self.assertRaises(StopIteration):
+            reader2.read()
 
         reader3 = TimeWindowReader(df, {'test': 0}, 3, 4)
-        res = reader3.read()
-        self.assertEqual(len(res), 0)
+        with self.assertRaises(StopIteration):
+            reader3.read()
 
     def test_normal(self):
         df = DataFrame('test', [('test', 'int')])

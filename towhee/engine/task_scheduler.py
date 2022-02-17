@@ -14,7 +14,6 @@
 
 from abc import ABC, abstractmethod
 from typing import List
-import time
 import random
 import weakref
 import threading
@@ -34,8 +33,8 @@ class TaskScheduler(ABC):
     def __init__(self, task_execs: List[ThreadPoolTaskExecutor]):
         self._task_execs = task_execs
         self._graph_ctx_refs = []
-        self._lock = threading.Lock()
         self._need_stop = False
+        self._event = threading.Event()
 
     @abstractmethod
     def stop(self) -> None:
@@ -54,7 +53,7 @@ class TaskScheduler(ABC):
         while not self._need_stop:
             self.schedule_step()
             # TODO(fzliu): compute runtime for bottleneck operator
-            time.sleep(sleep_ms / 1000)
+            self._event.wait(sleep_ms / 1000)
 
     @abstractmethod
     def schedule_step(self):
@@ -69,6 +68,10 @@ class BasicScheduler(TaskScheduler):
     schedule_step does nothing.
     """
 
+    def __init__(self, task_execs: List[ThreadPoolTaskExecutor]):
+        super().__init__(task_execs)
+        self._lock = threading.Lock()
+
     def register(self, graph_ctx):
         for op in graph_ctx.op_ctxs.values():
             executor = self._find_optimal_exec()
@@ -78,22 +81,45 @@ class BasicScheduler(TaskScheduler):
             self._graph_ctx_refs.append(weakref.ref(graph_ctx))
 
     def stop(self):
-        for g_ctx_ref in self._graph_ctx_refs:
-            g_ctx = g_ctx_ref()
-            if g_ctx is not None:
-                g_ctx.stop()
+        with self._lock:
+            for g_ctx_ref in self._graph_ctx_refs:
+                g_ctx = g_ctx_ref()
+                if g_ctx is not None:
+                    g_ctx.stop()
+        self._event.set()
 
     def join(self):
+        with self._lock:
+            for g_ctx_ref in self._graph_ctx_refs:
+                g_ctx = g_ctx_ref()
+                if g_ctx is not None:
+                    g_ctx.join()
+
+    def _remove_finished_graph(self):
+        start_index = 0
+        with self._lock:
+            for g_ctx_ref in self._graph_ctx_refs:
+                if g_ctx_ref() is not None:
+                    break
+                start_index += 1
+            if start_index != 0:
+                self._graph_ctx_refs = self._graph_ctx_refs[start_index:]
+
+    def _df_gc(self):
         for g_ctx_ref in self._graph_ctx_refs:
             g_ctx = g_ctx_ref()
             if g_ctx is not None:
-                g_ctx.join()
+                g_ctx.gc()
 
     def schedule_step(self):
         """
-        Do nothing
+        Scheduler:
+            1. Remove the graph which is finished.
+            2. Call df gc.
+
         """
-        pass
+        self._remove_finished_graph()
+        self._df_gc()
 
     def _find_optimal_exec(self):
         """

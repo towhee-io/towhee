@@ -231,7 +231,10 @@ class TimeWindowReader(DataFrameReader):
                     if self._window is not None:
                         ret = self._format_to_namedtuple(self._window.data)
                         self._window = self._window.next_window
-                        return ret
+                        if len(ret) == 0:
+                            continue
+                        else:
+                            return ret
 
                 if self._close:
                     raise StopIteration
