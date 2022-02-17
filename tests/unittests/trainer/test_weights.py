@@ -46,7 +46,6 @@ class TestWeights(unittest.TestCase):
         overwrite_output_dir=True,
         epoch_num=2,
         batch_size=8,
-        prediction_loss_only=True,
     )
     model_card = ModelCard(model_overview='efficientnet test modelcard',
                            datasets='use efficientnet test data')

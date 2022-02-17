@@ -149,6 +149,8 @@ class NNOperator(Operator):
             self.create_trainer(training_config=None)
         self.trainer.save(path, overwrite)
 
+    def change_before_train(self, **kwargs):
+        pass
     # def set_optimizer
 
 

@@ -5,28 +5,20 @@ device:
   n_gpu: -1
   sync_bn: true
 learning:
-  adam_beta1: 0.9
-  adam_beta2: 0.999
-  adam_epsilon: 1.0e-08
-  disable_tqdm: null
   loss: CrossEntropyLoss
   lr: 5.0e-05
   lr_scheduler_type: linear
-  max_norm_grad: 1.0
   optimizer: Adam
-  use_adafactor: false
   warmup_ratio: 0.0
   warmup_steps: 0
-  weight_decay: 0.0
 logging:
   logging_dir: null
-  logging_first_step: false
   logging_nan_inf_filter: true
   logging_steps: 500
   logging_strategy: steps
+  print_steps: null
   save_strategy: steps
   save_total_limit: null
-  saving_on_each_node: false
   saving_steps: 500
   saving_strategy: steps
   saving_total_limit: null
@@ -36,16 +28,14 @@ train:
   batch_size: 8
   dataloader_drop_last: false
   dataloader_num_workers: 0
-  do_eval: false
-  do_predict: false
-  do_train: false
   epoch_num: 2
   eval_steps: null
-  eval_strategy: 'no'
+  eval_strategy: !!python/object/apply:towhee.trainer.utils.trainer_utils.EvalStrategyType
+  - epoch
   load_best_model_at_end: false
   max_steps: -1
   output_dir: ./output_dir
   overwrite_output_dir: false
-  prediction_loss_only: false
   resume_from_checkpoint: null
   seed: 42
+  val_batch_size: -1

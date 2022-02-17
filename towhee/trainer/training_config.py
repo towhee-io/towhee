@@ -23,6 +23,7 @@ import yaml
 
 from towhee.trainer.callback import Callback
 from towhee.utils.log import trainer_log
+from towhee.trainer.utils.trainer_utils import EvalStrategyType
 
 HELP = "help"
 CATEGORY = "category"
@@ -58,23 +59,21 @@ class TrainingConfig:
             CATEGORY: "train"
         },
     )
-    do_train: bool = field(default=False, metadata={HELP: "Whether to run training.", CATEGORY: "train"})
-    do_eval: bool = field(default=False, metadata={HELP: "Whether to run eval on the dev set.", CATEGORY: "train"})
-    do_predict: bool = field(default=False,
-                             metadata={HELP: "Whether to run predictions on the test set.", CATEGORY: "train"})
     eval_strategy: str = field(
-        default="no",
-        metadata={HELP: "The evaluation strategy to use.", CATEGORY: "train"},
-    )
-    prediction_loss_only: bool = field(
-        default=False,
-        metadata={HELP: "When performing evaluation and predictions, only returns the loss.", CATEGORY: "train"},
+        default=EvalStrategyType.EPOCH,
+        metadata={HELP: "The evaluation strategy. It can be `step`, `epoch` or `no`,", CATEGORY: "train"},
     )
     batch_size: Optional[int] = field(
         default=8,
         metadata={
-            HELP: "Deprecated, the use of `--per_device_train_batch_size` is preferred. "
-                  "Batch size per GPU/TPU core/CPU for training.",
+            HELP: "batch size for training.",
+            CATEGORY: "train"
+        }
+    )
+    val_batch_size: Optional[int] = field(
+        default=-1,
+        metadata={
+            HELP: "batch size for eval.",
             CATEGORY: "train"
         }
     )
@@ -107,19 +106,14 @@ class TrainingConfig:
         metadata={HELP: "The path to a folder with a valid checkpoint for your model.", CATEGORY: "train"},
     )
     lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
-    weight_decay: float = field(default=0.0,
-                                metadata={HELP: "Weight decay for AdamW if we apply some.", CATEGORY: "learning"})
-    adam_beta1: float = field(default=0.9, metadata={HELP: "Beta1 for AdamW optimizer", CATEGORY: "learning"})
-    adam_beta2: float = field(default=0.999, metadata={HELP: "Beta2 for AdamW optimizer", CATEGORY: "learning"})
-    adam_epsilon: float = field(default=1e-8, metadata={HELP: "Epsilon for AdamW optimizer.", CATEGORY: "learning"})
-    max_norm_grad: float = field(default=1.0, metadata={HELP: "Max gradient norm.", CATEGORY: "learning"})
-    use_adafactor: bool = field(default=False, metadata={HELP: "Wif Adafactor is used.", CATEGORY: "learning"})
     metric: Optional[str] = field(
         default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"}
     )
 
-    disable_tqdm: Optional[bool] = field(
-        default=None, metadata={HELP: "Whether or not to disable the tqdm progress bars.", CATEGORY: "learning"}
+    print_steps: Optional[int] = field(
+        default=None, metadata={
+            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`",
+            CATEGORY: "logging"}
     )
     load_best_model_at_end: Optional[bool] = field(
         default=False,
@@ -155,7 +149,6 @@ class TrainingConfig:
         default="steps",
         metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
     )
-    logging_first_step: bool = field(default=False, metadata={HELP: "Log the first global_step", CATEGORY: "logging"})
     logging_steps: int = field(default=500, metadata={HELP: "Log every X updates steps.", CATEGORY: "logging"})
     logging_nan_inf_filter: str = field(default=True, metadata={HELP: "Filter nan and inf losses for logging.",
                                                                 CATEGORY: "logging"})
@@ -163,7 +156,8 @@ class TrainingConfig:
         default="steps",
         metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
     )
-    saving_steps: int = field(default=500, metadata={HELP: "Save checkpoint every X updates steps.", CATEGORY: "logging"})
+    saving_steps: int = field(default=500,
+                              metadata={HELP: "Save checkpoint every X updates steps.", CATEGORY: "logging"})
     save_total_limit: Optional[int] = field(
         default=None,
         metadata={
@@ -185,14 +179,6 @@ class TrainingConfig:
                 "Limit the total amount of checkpoints. "
                 "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
             ),
-            CATEGORY: "logging"
-        },
-    )
-    saving_on_each_node: bool = field(
-        default=False,
-        metadata={
-            HELP: "When doing multi-node distributed training, whether to save models "
-                  "and checkpoints on each node, or only on the main one",
             CATEGORY: "logging"
         },
     )
@@ -230,6 +216,14 @@ class TrainingConfig:
         assert self.batch_size > 0
         train_batch_size = self.batch_size  # * max(1, self.n_gpu)
         return train_batch_size
+
+    @property
+    def eval_batch_size(self) -> int:
+        assert self.batch_size > 0
+        if self.val_batch_size == -1:
+            return self.batch_size  # * max(1, self.n_gpu)
+        else:
+            return self.val_batch_size
 
     def to_dict(self):
         return asdict(self)
