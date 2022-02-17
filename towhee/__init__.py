@@ -148,6 +148,25 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
 class Build:
     """
     Build a pipeline with template variables.
+
+    A pipeline template is a yaml file contains `template variables`,
+    which will be replaced by `variable values` when createing pipeline instance.
+
+    Examples:
+    ```yaml
+    name: template_name
+    variables:                           <<-- define variables and default values
+        template_variable_1: default_value_1
+        template_variable_2: default_value_2
+    ....
+
+    operator:
+        function: {template_variable_1}  <<-- refer to the variable by name
+    ```
+
+    You can specialize template variable values with the following code:
+
+    >>> pipe = Build(template_variable_1='new_value').pipeline('pipeline_name')
     """
     def __init__(self, **kws) -> None:
         self._kws = kws
@@ -161,6 +180,25 @@ class Build:
 class Inject:
     """
     Build a pipeline by operator injection.
+
+    Injecting is another pipeline templating mechanism that allows the use to modify
+    the pipeline directly without declaring template variables.
+
+    Examples:
+    ```yaml
+    operators:
+    - name: operator_1
+      function: namespace/operator_1         <<-- injection point
+      ...
+    - name: operator_2
+      function: namespace/operator_2
+    ```
+
+    You can modify the pipeline directly by:
+
+    >>> pipe = Inject(operator_1 = dict(function='my_namespace/my_op')).pipeline('pipeline_name')
+
+    and the value at the injection point is replace by the `Inject` API.
     """
     def __init__(self, **kws) -> None:
         self._injections = {}
@@ -205,10 +243,24 @@ class _OperatorLazyWrapper:
 
 
 ops = param_scope().callholder(_OperatorLazyWrapper.callback)
+"""
+Entry point for creating operator instances, for example:
 
+>>> op_instance = ops.my_namespace.my_operator_name(init_arg1=xxx, init_arg2=xxx)
+
+An instance of `my_namespace`/`my_operator_name` is created.
+"""
 
 def _pipeline_callback(name, *arg, **kws):
     name = name.replace('.', '/').replace('_', '-')
     return Build(**kws).pipeline(name, *arg)
 
 pipes = param_scope().callholder(_pipeline_callback)
+"""
+Entry point for creating pipeline instances, for example:
+
+>>> pipe_instance = pipes.my_namespace.my_pipeline_name(template_variable_1=xxx, template_variable_2=xxx)
+
+An instance of `my_namespace`/`my_pipeline_name` is created, and template variables in the pipeline,
+`template_variable_1` and  `template_variable_2` are replaced with given values.
+"""
