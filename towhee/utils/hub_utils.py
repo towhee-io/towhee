@@ -234,6 +234,40 @@ class HubUtils:
         finally:
             self.delete_token(str(token['id']), password)
 
+    def add_tag(self, password, tag, tag_num):
+        """
+        Create a repo under current account.
+
+        Args:
+            password (`str`):
+                Current author's password.
+            tag (`str`):
+                The tag name to attach.
+            tag_num (`int`):
+                Which enum # for tag.
+
+        Raises:
+            (`HTTPError`)
+                Raise error in request.
+        """
+        token_name = random.randint(0, 10000)
+        r = self.create_token(token_name, password)
+        token = r.json()
+        data = {
+            'name': tag,
+            'pretty_name': tag,
+            'type': tag_num
+        }
+        url = self._root + '/api/v1/repos/' + self._author + '/' + self._repo + '/repotag'
+
+        try:
+            r = requests.post(url, data=data, headers={'Authorization': 'token ' + str(token['sha1'])})
+            r.raise_for_status()
+        except HTTPError as e:
+            raise e
+        finally:
+            self.delete_token(str(token['id']), password)
+
     @staticmethod
     def convert_dict(dicts: dict) -> dict:
         """
