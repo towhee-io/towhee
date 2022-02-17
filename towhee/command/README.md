@@ -9,7 +9,7 @@ $ pip3 inatsll towhee
 $ towhee <command> -<option> param
 ```
 
-Of course, you can also run `towhee `  with source code:
+Of course, you can also run `towhee ` with source code:
 
 ```bash
 $ git clone https://github.com/towhee-io/towhee.git
@@ -20,51 +20,111 @@ $ towhee <command> -<option> param
 
 ## Usage
 
-- [`develop`](#develop-operator)
-- [`install`](#install-operator)
-- [`run`](#run-pipeline)
+- user config
+  - [`login`](#login)
+  - [`logout`](#logout)
+  - [`whoami`](#whoami)
+- create repo
+  - [`create operator`](#create-operator)
+  - [`create pipeline`](#create-pipeline)
+- setup operator
+  - [`install operator`](#install-operator)
+  - [`uninstall operator`](#uninstall-operator)
+- execute
+  - [`run`](#run-pipeline)
 
-### `develop operator`
 
+### User Config
+#### `login`
 ```bash
-$ towhee develop --help
-usage: towhee develop [-h] [-n NAMESPACE] path
+$ towhee login -h
+usage: towhee login [-h]
 
-develop operator with setup.py develop
+optional arguments:
+  -h, --help  show this help message and exit
+```
+#### `logout`
+```bash
+$ towhee logout -h
+usage: towhee logout [-h]
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+#### `whoami`
+```bash
+$ towhee whoami -h
+usage: towhee whoami [-h]
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+### Create Repo
+#### `create-operator`
+```bash
+$  towhee create-op -h
+usage: towhee create-op [-h] [-t {pyop,nnop}] [-f FRAMEWORK] [-d DIR] [--local] [--plain] uri
 
 positional arguments:
-  path                  path to the operator repo, cwd is '.'
+  uri                   Repo uri, such as author/repo-name or repo-name(author defaults to login account).
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t {pyop,nnop}, --type {pyop,nnop}
+                        optional, operator repo type in ['pyop', 'nnop'] for init file, defaults to 'nnop'
+  -f FRAMEWORK, --framework FRAMEWORK
+                        optional, framework of nnoperator, defaults to 'pytorch'
+  -d DIR, --dir DIR     optional, directory to the Repo file, defaults to '.'
+  --local               optional, create and init repo in local
+  --plain               optional, just create repo with init file
+```
+#### `create pipeline`
+```bash
+$ towhee create-pipeline -h
+usage: towhee create-pipeline [-h] [-d DIR] [--local] [--plain] uri
+
+positional arguments:
+  uri                Repo uri, such as author/repo-name or repo-name(author defaults to login account)
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -d DIR, --dir DIR  optional, directory to the Repo file, defaults to '.'
+  --local            optional, create and init repo in local
+  --plain            optional, just create repo with init file
+```
+
+### Setup operator
+#### `install operator`
+```bash
+$ towhee install -h        
+towhee install -h
+usage: towhee install [-h] [-n NAMESPACE] [-p PATH] [--develop]
 
 optional arguments:
   -h, --help            show this help message and exit
   -n NAMESPACE, --namespace NAMESPACE
-                        repo author/namespace
+                        optional, repo author or namespace, defaults to 'towhee'
+  -p PATH, --path PATH  optional, path to the operator repo, defaults to cwd which is '.'
+  --develop             optional, install operator with setup.py develop
 ```
-
-### `install operator`
-
+#### `uninstall operator`
 ```bash
-$ towhee install --help
-usage: towhee install [-h] [-n NAMESPACE] path
-
-install operator with setup.py install
-
-positional arguments:
-  path                  path to the operator repo, cwd is '.'
+$ towhee uninstall -h
+usage: towhee uninstall [-h] [-n NAMESPACE] [-p PATH]
 
 optional arguments:
   -h, --help            show this help message and exit
   -n NAMESPACE, --namespace NAMESPACE
-                        repo author/namespace
+                        optional, repo author or namespace, defaults to 'towhee'
+  -p PATH, --path PATH  optional, path to the operator repo, defaults to cwd which is '.'
 ```
 
-### `run pipeline`
-
+### Execute
+#### `run pipeline`
 ```bash
-$ towhee run --help
-usage: towhee run [-h] [-i INPUT] [-o OUTPUT] pipeline
-
-run towhee pipeline
+$ towhee run -h      
+usage: towhee run [-h] -i INPUT [-o OUTPUT] pipeline
 
 positional arguments:
   pipeline              pipeline repo or path to yaml
@@ -74,42 +134,152 @@ optional arguments:
   -i INPUT, --input INPUT
                         input the parameter for pipeline defaults to None
   -o OUTPUT, --output OUTPUT
-                        path to the file that will be used to write results], defaults to None which will print the result
+                        optional, path to the file that will be used to write results], defaults to None which will print the result
 ```
+
 
 ## Examples
 
-### 1. Develop your Operator
+### 1. User Config
 
-When you are developing the code, you can run `towhee develop` to setup your operator for testing.
+- **Login**
+
+Please create an account at https://towhee.io/ before logging in. Then you need to enter username and password.
 
 ```bash
-$ towhee develop <path/to/your/operator>
-# Or
-$ towhee develop .
+$ towhee login
+Username: <enter-user-name>
+Password:
 ```
+- **Whoami**
+
+Check your logged in towhee.io account.
+
+```bash
+$ towhee whoami
+Username: <certified-user-name>
+```
+
+- **Logout**
+
+ Logout your towhee.io account.
+
+```bash
+$ towhee logout
+```
+
+### 2. Create Operator
+
+- **Create Operator in Towhee hub**
+
+Create your own operator named <repo-name> in the [Towhee hub](https://towhee.io/operators) using the logged in account. It will also initialize the file structure for your operator to the current working directory, which will clone the repository and initialize it according to the default "nnop" operator type template.
+
+> The operator types are divided into “pyop” and “nnop”, “pyop” is the operator of the python function, and nnop is the operator of the neural network.
+
+```bash
+$ towhee create-op <repo-name>
+```
+
+Create operator and initialize it to a specific directory using the 'pyop' operator type template.
+
+```bash
+$ towhee create-op -t pyop -d <path/to/your/dir> <repo-name>
+```
+Create operator and initialize it with the 'nnop' operator type template, also specify the framework.
+
+```bash
+$ towhee create-op -t nnop -f <my-framework> <repo-name>
+```
+Only create operator in hub without initializing the files.
+
+```bash
+$ towhee create-op <repo-name> --plain
+```
+
+- **Create Operator in local**
+
+When you add `--local` to the command, it will not create the operator in the hub, but just initializes the file structure in local.
+
+```bash
+$ towhee create-op <repo-name> --local
+```
+
+### 3. Create Pipeline
+
+- **Create Pipeline in Towhee hub**
+
+Create your own pipeline named <repo-name> in the [Towhee hub](https://towhee.io/pipelines) using the logged in account. And it will also initialize your pipeline to defaults current working directory, which will clone the repo and initialize it according to default pipeline template.
+
+```bash
+$ towhee create-pipeline <repo-name>
+```
+
+Create pipeline and initialize it with pipeline template to the specific directory.
+
+```bash
+$ towhee create-pipeline -d <path/to/your/dir> <repo-name>
+```
+
+Only create pipeline in hub without initializing the files.
+
+```bash
+$ towhee create-pipeline <repo-name> --plain
+```
+
+- **Create Pipeline in local**
+
+When you add `--local` to the command, it will not create the pipeline in the hub, but just initializes the file structure in local.
+
+```bash
+$ towhee create-pipeline <repo-name> --local
+```
+
+### 4. Setup your Operator
+
+- **Setup develop**
+
+When you are developing the code, you can run setup under your operator folder.
 
 > It will generate symbolic link to the python package of towheeoperator.
 
-### 2. Install your Operator
+```bash
+$ towhee install --develop
+```
 
-When you have finished the code, you can run `towhee install` to setup python package..
+Setup the operator under your repository path with a specific namespace.
 
 ```bash
-$ towhee install <path/to/your/operator>
-# Or
-$ towhee install .
+$ towhee install -n <namespace> -p <path/to/your/op> --develop
 ```
+
+- **Setup install**
+
+When you have finished the code, you can run it to setup python package under your operator folder.
 
 > It will setup towheeoperator.[repo] python package.
 
-### 3. Run Pipeline
+```bash
+$ towhee install
+```
 
-You can run the pipeline in hub or your specific yaml file.
+Install the operator under your repository path with a specific namespace.
+
+```bash
+$ towhee install -n <namespace> -p <path/to/your/op>
+```
+
+### 5. Run Pipeline
+
+You can run the pipeline with your specific yaml file.
 
   ```bash
   $ towhee run <path/to/your/yaml/file>
-  # OR
-  $ towhee run towhee/image-embedding-resnet50
+  
   ```
+
+Also you can run pipeline in hub.
+
+```bash
+$ towhee run towhee/image-embedding-resnet50
+```
 

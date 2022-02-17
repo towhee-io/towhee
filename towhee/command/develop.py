@@ -14,14 +14,19 @@
 
 import sys
 import os
-from pathlib import Path
 import argparse
+import subprocess
+from pathlib import Path
 from setuptools import setup
 
 from typing import List
 
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument('-n', '--namespace', default='towhee', help='optional, repo author or namespace, defaults to \'towhee\'')
+parser.add_argument('-p', '--path', required=False, default='.', help='optional, path to the operator repo, defaults to cwd which is \'.\'')
 
-class DevelopRepo:
+
+class SetupCommand:
     """
     Implementation for subcmd `towhee develop` and `towhee install`.
     Setup repo to `towheeoperator.{self._args.namespace}_{self._args.repo_name}' package with pypi methods.
@@ -29,29 +34,35 @@ class DevelopRepo:
 
     def __init__(self, args) -> None:
         self._args = args
+        self._path = Path.home() / '.towhee' / 'towheeoperator'
 
     def __call__(self) -> None:
         path = Path(self._args.path).resolve()
-        os.chdir(str(path))
         repo_name = path.stem.replace('-', '_')
         package_name = f'towheeoperator.{self._args.namespace}_{repo_name}'
+
         packages = [package_name]
         for p in path.iterdir():
-            if p.is_dir() and not p.name.startswith('.') and not p.name.endswith('.egg-info') and p.name not in ['towheeoperator', 'build', 'dist']:
+            if p.is_dir() and not p.name.startswith('.') and not p.name.endswith('.egg-info') and p.name not in ['__pycache__', 'build', 'dist']:
                 packages.append(f'{package_name}.{p.name}')
 
         requirements = self.read_requirements()
         if self._args.action == 'install':
-            sys.argv = ['setup.py', 'install']
-        elif self._args.action == 'develop':
-            sys.argv = ['setup.py', 'develop']
-            symlink_path = path / 'towheeoperator'
-            symlink = symlink_path / f'{self._args.namespace}_{repo_name}'
-            if not symlink_path.exists():
-                symlink_path.mkdir()
+            if not self._args.develop:
+                os.chdir(str(path))
+                sys.argv = ['setup.py', 'install']
+            else:
+                pypi_path = self._path / repo_name
+                symlink_path = pypi_path / 'towheeoperator'
+                if not symlink_path.exists():
+                    symlink_path.mkdir(parents=True)
 
-            if not symlink.is_symlink():
+                symlink = symlink_path / f'{self._args.namespace}_{repo_name}'
+                symlink.unlink(missing_ok=True)
+                packages = [package_name]
                 symlink.symlink_to(path)
+                os.chdir(str(pypi_path))
+                sys.argv = ['setup.py', 'develop']
 
         setup(name=package_name,
               packages=packages,
@@ -78,8 +89,22 @@ class DevelopRepo:
 
     @staticmethod
     def install(subparsers):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-n', '--namespace', default='towhee', help='repo author/namespace')
-        parser.add_argument('path', default='.', help='path to the operator repo, cwd is \'.\'')
-        subparsers.add_parser('develop', parents=[parser], add_help=False, description='develop operator with setup.py develop')
-        subparsers.add_parser('install', parents=[parser], add_help=False, description='install operator with setup.py install')
+        install = subparsers.add_parser('install', parents=[parser], help='setup command: install operator with setup.py')
+        install.add_argument('--develop', action='store_true', help='optional, install operator with setup.py develop')
+
+
+class UninstallCommand:
+    """
+    Implementation for subcmd `towhee uninstall`.
+    """
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        path = Path(self._args.path).resolve()
+        repo_name = path.stem.replace('-', '_')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', f'towheeoperator.{self._args.namespace}_{repo_name}'])
+
+    @staticmethod
+    def install(subparsers):
+        subparsers.add_parser('uninstall', parents=[parser], help='setup command: uninstall operator with pip uninstall')

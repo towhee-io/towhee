@@ -19,7 +19,7 @@ from typing import Union, Any
 from towhee import pipeline
 
 
-class ExecutePipeline:
+class ExecuteCommand:
     """
     Implementation for subcmd `towhee run`
     """
@@ -37,10 +37,10 @@ class ExecutePipeline:
 
     @staticmethod
     def install(subparsers):
-        parser_execute = subparsers.add_parser('run', description='run towhee pipeline')
+        parser_execute = subparsers.add_parser('run', help='execute command: run towhee pipeline')
 
-        parser_execute.add_argument('-i', '--input', default=None, help='input the parameter for pipeline defaults to None')
-        parser_execute.add_argument('-o', '--output', default=None, help='path to the file that will be used to write results], '
+        parser_execute.add_argument('-i', '--input', required=True, help='input the parameter for pipeline defaults to None')
+        parser_execute.add_argument('-o', '--output', default=None, help='optional, path to the file that will be used to write results], '
                                                                          'defaults to None which will print the result')
         parser_execute.add_argument('pipeline', type=str, help='pipeline repo or path to yaml')
 

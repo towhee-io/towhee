@@ -15,22 +15,25 @@
 import sys
 import argparse
 
-from towhee.command.develop import DevelopRepo
-from towhee.command.execute import ExecutePipeline
-from towhee.command.user import UserConfig
+from towhee.command.develop import SetupCommand, UninstallCommand
+from towhee.command.execute import ExecuteCommand
+from towhee.command.user import UserCommand, WhoCommand, LogoutCommand
+from towhee.command.repo import RepoCommand, PipeCommand
 
 
 def main_body(args):
     parser = argparse.ArgumentParser('towhee', 'towhee')
-    subparsers = parser.add_subparsers(dest='action', help='towhee command line tool.')
+    subparsers = parser.add_subparsers(dest='action', description='towhee command line tool.')
 
     actions = {
-        'install': DevelopRepo,
-        'develop': DevelopRepo,
-        'run': ExecutePipeline,
-        'login': UserConfig,
-        'logout': UserConfig,
-        'whoami': UserConfig
+        'install': SetupCommand,
+        'uninstall': UninstallCommand,
+        'run': ExecuteCommand,
+        'login': UserCommand,
+        'logout': LogoutCommand,
+        'whoami': WhoCommand,
+        'create-op': RepoCommand,
+        'create-pipeline': PipeCommand
     }
 
     for _, impl in actions.items():
