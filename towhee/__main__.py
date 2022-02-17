@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .cmdline import main
+
+from towhee.command import main
+
+if __name__ == '__main__':
+    main()
