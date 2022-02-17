@@ -29,9 +29,9 @@ class TestPipeline(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        new_cache = (CACHE_PATH/'test_cache')
-        pipeline_cache = (CACHE_PATH/'test_util')
-        operator_cache = (CACHE_PATH/'mock_operators')
+        new_cache = (CACHE_PATH / 'test_cache')
+        pipeline_cache = (CACHE_PATH / 'test_util')
+        operator_cache = (CACHE_PATH / 'mock_operators')
         fmc = FileManagerConfig()
         fmc.update_default_cache(new_cache)
         pipelines = list(pipeline_cache.rglob('*.yaml'))
