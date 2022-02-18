@@ -15,6 +15,7 @@
 from typing import Any, Dict, List
 
 from towhee.operator.base import SharedType
+from towhee.hparam import param_scope
 
 
 class OperatorRegistry:
@@ -61,7 +62,7 @@ class OperatorRegistry:
             [type]: [description]
         """
         # TODO: need to convert the class name to URI @shiyu22
-        name = name.replace('-', '_')
+        name = name.replace('_', '-')
 
         def wrapper(cls):
             metainfo = dict(
@@ -78,7 +79,8 @@ class OperatorRegistry:
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):
                 old_cls = cls
-                class WrapperClass: # TODO: generate the class name from function name @jie.hou
+
+                class WrapperClass:  # TODO: generate the class name from function name @jie.hou
 
                     def __init__(self, *arg, **kws) -> None:
                         pass
@@ -92,7 +94,12 @@ class OperatorRegistry:
                 old_call = cls.__call__
 
                 def wrapper_call(self, *args, **kws):
-                    return output_schema(old_call(self, *args, **kws))
+                    with param_scope() as hp:
+                        need_schema = hp().towhee.need_schema(False)
+                    if need_schema:
+                        return output_schema(old_call(self, *args, **kws))
+                    else:
+                        return old_call(self, *args, **kws)
 
                 cls.__call__ = wrapper_call
                 cls.__abstractmethods__ = set()
