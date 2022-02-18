@@ -63,7 +63,8 @@ class ImageEmbeddingPipeline(PipelineBase):
             'embedding_model_3',
         ], models))
         if ensemble is not None:
-            operators['ensemble_model'] = resolver.resolve(ensemble) if isinstance(ensemble, str) else ensemble
+            operators['ensemble_model'] = resolver.resolve(
+                ensemble) if isinstance(ensemble, str) else ensemble
 
         injections = {name: {'function': model.function, 'init_args': model.init_args} for name, model in operators.items()}
         self._pipeline = Inject(**injections).pipeline('builtin/image_embedding_template_{}'.format(num_branch))
@@ -87,7 +88,55 @@ class ImageEmbeddingPipeline(PipelineBase):
         pass
 
 
-def image_embedding_pipeline(model: Union[str, List[str]] = None, ensemble: str = None, name: str = None, version: str = None):
+def image_embedding_pipeline(model: Union[str, List[str]] = None,
+                             ensemble: str = None,
+                             name: str = None,
+                             version: str = None):
+    """Create a pipeline for image embedding tasks.
+
+    An image embedding pipeline converts input images into feature vectors (embedding),
+    which can be adapted to various vision tasks,
+    such as image retrieval, image classifications, etc.
+
+    There are two ways to instantiate an image embedding pipeline:
+
+    1 - If `model` is passed to `image_embedding_pipeline`,
+    a new pipeline will be generated for evaluation and benchmarking.
+
+    ```python
+    >>> pipe = image_embedding_pipeline(model='resnet101')
+    >>> embedding = pipe('uri_to_image')
+    ```
+
+    The pipeline can be saved to file if the evaluation results seems good,
+    and if you want to reuse this pipeline:
+    ```python
+    >>> pipe.save(name='my_image_embedding_pipeline', path='my_pipelines')
+    ```
+
+    You can also publish this pipeline to towhee hub to share it with the community.
+    ```shell
+    $ cd ${WORK_DIR}/my_pipelines/my_image_embedding_pipeline
+    $ towhee publish # see towhee publish user guide from the terminal
+    $ git commit && git push
+    ```
+
+    2 - Load a saved/shared pipeline from towhee hub:
+    ```python
+    >>> pipe = image_embedding_pipeline(name='your_name/my_image_embedding_pipeline')
+    ```
+
+    Args:
+        model (Union[str, List[str]], optional): Backbone models for extracting image embedding.
+            If there are more than one models, the model outputs will be fused with the `ensemble` model.
+            Defaults to None.
+        ensemble (str, optional): Ensemble model used to fuse backbone model outputs. Defaults to None.
+        name (str, optional): Pipeline name. Defaults to None.
+        version (str, optional): Version of the pipeline. Defaults to None.
+
+    Returns:
+        Pipeline: An image embedding pipeline.
+    """
     pipe = None
     if name is not None:
         pipe = pipeline(name, tag=version)
