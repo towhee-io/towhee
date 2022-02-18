@@ -4,9 +4,13 @@
 
 **(Recommended)** Once you have [installed Towhee](https://docs.towhee.io/get-started/install), you can use `towhee` with the following command:
 
+> You can use `python -m towhee` instead of `towhee` to trobleshot.
+
 ```bash
 $ pip3 inatsll towhee
 $ towhee <command> -<option> param
+# OR
+$ python -m towhee <command> -<option> param
 ```
 
 Of course, you can also run `towhee ` with source code:
@@ -15,6 +19,8 @@ Of course, you can also run `towhee ` with source code:
 $ git clone https://github.com/towhee-io/towhee.git
 $ python3 setup.py install
 $ towhee <command> -<option> param
+# OR
+$ python -m towhee <command> -<option> param
 ```
 
 
