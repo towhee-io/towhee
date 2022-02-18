@@ -277,7 +277,7 @@ class Trainer:
         self.callbacks = CallbackList()
         self.loss_metric = None
         self.metric_value = 0.0
-        self.epoch = 0
+        self.epoch = -1
 
         os.makedirs(self.configs.output_dir, exist_ok=True)
         if training_config.max_steps > 0:
@@ -335,19 +335,13 @@ class Trainer:
             dist.barrier()
 
     def _load_before_train(self, resume_checkpoint_path, rank):
-        epochs_trained = 0
-        last_loss_value = 0.0
-        last_metric_value = 0.0
         sync_bn = self.configs.sync_bn
         if resume_checkpoint_path is not None:
             # weights_dict = torch.load(weights_path, map_location=device)
             # load_weights_dict = {k: v for k, v in weights_dict.items()
             #                      if model.state_dict()[k].numel() == v.numel()}
             # model.load_state_dict(load_weights_dict, strict=False)
-            last_epoch, last_loss, last_metric = self.load(resume_checkpoint_path)
-            epochs_trained = last_epoch + 1
-            _, last_loss_value = last_loss
-            _, last_metric_value = last_metric
+            self.load(resume_checkpoint_path)
         else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
             if self.distributed:
                 checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
@@ -359,7 +353,6 @@ class Trainer:
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
             if sync_bn:
                 self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
-        return epochs_trained, last_loss_value, last_metric_value
 
     def _create_logs(self):
         logs = {"global_step": 0, "epoch": self.epoch + 1}
@@ -380,7 +373,7 @@ class Trainer:
         print("world_size=", world_size)
 
         self.model = self.model.to(self.configs.device)
-        epochs_trained, last_loss_value, last_metric_value = self._load_before_train(resume_checkpoint_path, rank)
+        self._load_before_train(resume_checkpoint_path, rank)
         # Keeping track whether we can can len() on the dataset or not
         train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
 
@@ -421,15 +414,13 @@ class Trainer:
         if rank == 0 or rank is None:
             trainer_log.warning(args)
 
-        total_metric_value = last_metric_value * epochs_trained
-        total_loss_value = last_loss_value * epochs_trained
-        self.epoch = epochs_trained - 1
         logs = self._create_logs()
         self.callbacks.on_train_begin(logs)
-        for _ in range(epochs_trained, num_train_epochs):
+        start_epoch = self.epoch + 1
+        for _ in range(start_epoch, num_train_epochs):
             model.train()
             # batch_loss_sum = 0.0
-            self.callbacks.on_epoch_begin(epochs_trained, logs)
+            self.callbacks.on_epoch_begin(self.epoch + 1, logs)
             self.loss_metric.reset()
             self.metric.reset()
             # steps_in_epoch = (
@@ -452,32 +443,27 @@ class Trainer:
                     logs.update(eval_logs)
                 self.callbacks.on_train_batch_end(tuple(inputs), logs)
             # self._maybe_log_save_evaluate(loss_sum, tr_corrects, num_examples)
-            total_loss_value += logs["epoch_loss"]
-            total_metric_value += logs["epoch_metric"]
+
             if self.configs.eval_strategy == EvalStrategyType.EPOCH:
                 eval_logs = self.evaluate(model, logs)
                 logs.update(eval_logs)
             self.epoch += 1
             logs["epoch"] = self.epoch + 1
-            self.callbacks.on_epoch_end(epochs_trained, logs)
+            self.callbacks.on_epoch_end(self.epoch + 1, logs)
+            self.loss_value = logs["epoch_loss"]
+            self.metric_value = logs["epoch_metric"]
             # if self.control.should_training_stop:
             #     break
         trainer_log.info("\nTraining completed.\n")
-        self.loss_value = round(total_loss_value / (self.epoch + 1), 3)
-        self.metric_value = round(total_metric_value / (self.epoch + 1), 3)
         training_summary = {
             "device": str(self.configs.device),
             "finetuned_from": resume_checkpoint_path,
-            "start_epoch": epochs_trained,
-            "num_train_epochs": self.epoch + 1 - epochs_trained,
-            "loss": {
-                "loss type": str(self.loss),
-                "loss value": self.loss_value
-            },
-            "metric": {
-                "metric type": str(self.metric), #todo
-                "metric value": self.metric_value
-            }
+            "start_epoch": start_epoch,
+            "num_train_epochs": self.epoch - start_epoch + 1,
+            "loss type": self.configs.loss,
+            "loss value": round(self.loss_value, 3),
+            "metric type": self.configs.metric,
+            "metric value": round(self.metric_value, 3)
         }
 
         self.model_card.training_summary = training_summary
@@ -727,21 +713,22 @@ class Trainer:
         self.model.load_state_dict(checkpoint["model_state_dict"])
         if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if self.lr_scheduler and checkpoint["lr_scheduler_state_dict"]:
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler_state_dict"])
         if "epoch" not in checkpoint:
             return 0
-        epoch = checkpoint["epoch"]
-        print("epoch = ", epoch)  # todo
-        loss = checkpoint["loss"]
-        print("loss = ", loss)  # todo
-        metric = checkpoint["metric"]
-        print("metric = ", metric)
+        self.epoch = checkpoint["epoch"]
+        # print("epoch = ", epoch)
+        self.loss_value = checkpoint["loss_value"]
+        # print("loss = ", loss)  # todo
+        self.metric_value = checkpoint["metric_value"]
+        # print("metric = ", metric)
         # if Path(modelcard_path).exists():
         #     self.model_card = ModelCard.load_from_file(modelcard_path)
         #     print(f"Model card is loaded from {modelcard_path}")
             # print("model_card = ", self.model_card.to_dict())
         # else:
         #     trainer_log.warning("model card file not exist.")
-        return epoch, loss, metric
 
     def save(self, path, overwrite=True):
         if not overwrite:
@@ -752,14 +739,18 @@ class Trainer:
         modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
         trainer_log.info("save checkpoint_path: %s", checkpoint_path)
         optimizer_state_dict = None
+        lr_scheduler_state_dict = None
         if isinstance(self.optimizer, Optimizer):  # if created
             optimizer_state_dict = self.optimizer.state_dict()
+        if self.lr_scheduler is not None:
+            lr_scheduler_state_dict = self.lr_scheduler.state_dict()
         torch.save({
             "epoch": self.epoch,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": optimizer_state_dict,
-            "loss": (self.loss, self.loss_value),
-            "metric": (self.metric, self.metric_value)
+            "lr_scheduler_state_dict": lr_scheduler_state_dict,
+            "loss_value": self.loss_value,
+            "metric_value": self.metric_value
         }, checkpoint_path)
         if isinstance(self.model_card, ModelCard):
             self.model_card.save_model_card(modelcard_path)
