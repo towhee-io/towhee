@@ -14,12 +14,12 @@
 
 from typing import Any, List, Union
 
-import yaml
 from pathlib import Path
 from towhee.hparam.hyperparameter import param_scope
 from towhee.pipelines.alias_resolvers import get_resolver
 from towhee.pipelines.base import PipelineBase
 from towhee import Inject, pipeline
+from towhee.utils.yaml_utils import load_yaml, dump_yaml
 
 
 class ImageEmbeddingPipeline(PipelineBase):
@@ -63,8 +63,7 @@ class ImageEmbeddingPipeline(PipelineBase):
             'embedding_model_3',
         ], models))
         if ensemble is not None:
-            operators['ensemble_model'] = resolver.resolve(
-                ensemble) if isinstance(ensemble, str) else ensemble
+            operators['ensemble_model'] = resolver.resolve(ensemble) if isinstance(ensemble, str) else ensemble
 
         injections = {name: {'function': model.function, 'init_args': model.init_args} for name, model in operators.items()}
         self._pipeline = Inject(**injections).pipeline('builtin/image_embedding_template_{}'.format(num_branch))
@@ -79,19 +78,16 @@ class ImageEmbeddingPipeline(PipelineBase):
             raise FileExistsError(operator_path)
         operator_path.mkdir(parents=True)
         with open('{}/{}.yaml'.format(operator_path, name), 'w', encoding='utf-8') as f:
-            info = yaml.safe_load(self._pipeline.pipeline.graph_repr.ir)
+            info = load_yaml(self._pipeline.pipeline.graph_repr.ir)
             info['name'] = name
-            f.write(yaml.safe_dump(info))
+            dump_yaml(data = info, stream = f)
 
     def push_to_hub(self, version: str = 'main'):
         # TODO: push to hub with new hub tool
         pass
 
 
-def image_embedding_pipeline(model: Union[str, List[str]] = None,
-                             ensemble: str = None,
-                             name: str = None,
-                             version: str = None):
+def image_embedding_pipeline(model: Union[str, List[str]] = None, ensemble: str = None, name: str = None, version: str = None):
     """Create a pipeline for image embedding tasks.
 
     An image embedding pipeline converts input images into feature vectors (embedding),

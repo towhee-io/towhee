@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import unittest
+import os
 from pathlib import Path
 from shutil import rmtree
 from requests.exceptions import HTTPError
 
 from towhee.utils.git_utils import GitUtils
 from towhee.hub.operator_manager import OperatorManager
-
 
 public_path = Path(__file__).parent.parent.resolve()
 
@@ -49,8 +49,9 @@ class TestOperatorManager(unittest.TestCase):
         if not (public_path / 'test_cache' / nn_repo).exists():
             (public_path / 'test_cache' / nn_repo).mkdir()
 
-        nn_manager.init_nnoperator(file_temp=public_path / 'test_cache' / temp_repo, file_dest=public_path / 'test_cache' / nn_repo,
-                                   framework='test-fw')
+        nn_manager.init_nnoperator(
+            file_temp=public_path / 'test_cache' / temp_repo, file_dest=public_path / 'test_cache' / nn_repo, framework='test-fw'
+        )
         self.assertTrue((public_path / 'test_cache' / nn_repo / 'nn_operator.py').is_file())
         self.assertTrue((public_path / 'test_cache' / nn_repo / 'nn_operator.yaml').is_file())
         self.assertTrue((public_path / 'test_cache' / nn_repo / 'test-fw').is_dir())
@@ -75,13 +76,16 @@ class TestOperatorManager(unittest.TestCase):
 
     def test_generate_yaml(self):
         repo = 'pytorch-cnn-operator'
-        file = 'pytorch_cnn_operator'
-        yaml = 'pytorch_cnn_operator.yaml'
+        file_name = 'pytorch_cnn_operator'
+        yaml_path = public_path / 'mock_operators' / file_name / 'pytorch_cnn_operator.yaml'
         manager = OperatorManager('towhee', repo)
-        manager.generate_yaml(public_path / 'mock_operators' / file)
+        if yaml_path.exists():
+            os.remove(yaml_path)
+        manager.generate_yaml(public_path / 'mock_operators' / file_name)
 
-        self.assertTrue(manager.check(public_path / 'mock_operators' / file))
-        (public_path / 'mock_operators' / file / yaml).unlink()
+        self.assertTrue(yaml_path.exists())
+        self.assertTrue(manager.check(public_path / 'mock_operators' / file_name))
+        os.remove(yaml_path)
 
 
 if __name__ == '__main__':

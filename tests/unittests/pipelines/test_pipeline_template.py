@@ -14,9 +14,8 @@
 
 import unittest
 
-import yaml
-
 from towhee import Build, Inject
+from towhee.utils.yaml_utils import load_yaml, dump_yaml
 
 render_result = """
 name: test_pipeline
@@ -44,6 +43,7 @@ dataframes:
     vtype: numpy.ndarray
 """.strip()
 
+
 class TestTemplateBuild(unittest.TestCase):
     """
     tests for template build
@@ -52,16 +52,14 @@ class TestTemplateBuild(unittest.TestCase):
         pipe = Build(test_op='towhee/test_op').pipeline('builtin/template_test')
         self.assertEqual(repr(pipe), render_result)
 
+
 class TestTemplateInject(unittest.TestCase):
     """
     tests for template inject
     """
     def test_template_inject(self):
         pipe = Inject(embedding_model=dict(function='towhee/test_op')).pipeline('builtin/template_test')
-        self.assertEqual(
-            yaml.safe_dump(yaml.safe_load(repr(pipe))),
-            yaml.safe_dump(yaml.safe_load(render_result))
-        )
+        self.assertEqual(dump_yaml(load_yaml(repr(pipe))), dump_yaml(load_yaml(render_result)))
 
 
 if __name__ == '__main__':

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import yaml
 import requests
 import os
 import logging
@@ -19,6 +18,7 @@ import json
 from typing import Dict, Set, Any
 
 from towhee.hparam import param_scope, HyperParameter
+from towhee.utils.yaml_utils import dump_yaml, load_yaml
 
 
 class BaseRepr:
@@ -64,7 +64,7 @@ class BaseRepr:
     @staticmethod
     def render_template(string: str):
         string = string.read() if hasattr(string, 'read') else string
-        retval = yaml.safe_load(string)
+        retval = load_yaml(string)
         retval = param_scope(**retval)
         variables = retval().variables({})
         with param_scope(**variables) as hp:
@@ -80,13 +80,14 @@ class BaseRepr:
                 op = HyperParameter(**op)
                 op.update(patch)
             return op
+
         with param_scope() as hp:
             if hp().injections(None) is not None:
                 info['operators'] = [inject(op, hp().injections()) for op in info['operators']]
                 if 'ir' in info:
                     del info['ir']
                 info = json.loads(json.dumps(info))
-                info['ir'] = yaml.safe_dump(info)
+                info['ir'] = dump_yaml(info)
         return info
 
     @staticmethod
@@ -104,7 +105,7 @@ class BaseRepr:
                 information.
         """
         rendered = BaseRepr.render_template(string)
-        info = yaml.safe_load(rendered)
+        info = load_yaml(rendered)
         info['ir'] = rendered
         info = BaseRepr.inject_template(info)
         return info

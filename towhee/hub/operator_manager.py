@@ -15,12 +15,12 @@
 import os
 import sys
 from typing import Union
-import yaml
 from pathlib import Path
 from importlib import import_module
 
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
+from towhee.utils.yaml_utils import load_yaml, dump_yaml
 
 
 class OperatorManager(RepoManager):
@@ -35,7 +35,6 @@ class OperatorManager(RepoManager):
         root (`str`):
             The root url where the repo located.
     """
-
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         super().__init__(author, repo, root)
         # 2 represents operators when creating a repo in Towhee's hub
@@ -177,7 +176,7 @@ class OperatorManager(RepoManager):
             }
         }
         with open(yaml_file, 'a', encoding='utf-8') as outfile:
-            yaml.dump(data, outfile, default_flow_style=False, sort_keys=False)
+            dump_yaml(data, outfile)
 
     def check(self, local_dir: Union[str, Path] = Path().cwd()) -> bool:
         """
@@ -198,7 +197,7 @@ class OperatorManager(RepoManager):
                 return False
         return self.check_yaml(local_dir)
 
-    def check_yaml(self, local_dir : Union[str, Path] = Path().cwd()) -> bool:
+    def check_yaml(self, local_dir: Union[str, Path] = Path().cwd()) -> bool:
         """
         Check if the yaml file matches the format.
 
@@ -211,9 +210,9 @@ class OperatorManager(RepoManager):
                 Check if passed.
         """
         try:
-            yaml_file = Path(local_dir ) / (self._repo.replace('-', '_') + '.yaml')
-            with open(yaml_file, 'r', encoding='utf-8') as f:
-                dicts = yaml.load(f.read(), Loader=yaml.FullLoader)
+            yaml_file = Path(local_dir) / (self._repo.replace('-', '_') + '.yaml')
+            with open(yaml_file, 'r', encoding='utf-8') as input_file:
+                dicts = load_yaml(input_file)
                 if 'init' in dicts.keys() and dicts['call']['input'] is not None and dicts['call']['output'] is not None:
                     return True
         except KeyError:
