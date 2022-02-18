@@ -24,7 +24,7 @@ import torch.distributed as dist
 from typing import Union, Dict, Any, Tuple, Optional
 from pathlib import Path
 # from torch.utils.tensorboard import SummaryWriter
-import torchmetrics
+#import torchmetrics
 from tqdm import tqdm
 from torch import nn
 from torch import optim
@@ -658,7 +658,8 @@ class Trainer:
         self.metric.to(self.configs.device)
         # self.metric = getattr(torchmetrics, self.configs.metric).to(
         #     self.configs.device)  # todo #get_metric_by_name(self.configs.metric).to(self.configs.device)
-        self.loss_metric = torchmetrics.MeanMetric().to(self.configs.device)  # get_metric_by_name("MeanMetric") #todo
+        self.loss_metric = get_metric_by_name("MeanMetric")
+        self.loss_metric.to(self.configs.device)
 
     def _create_loss(self):
         if self.override_loss is True:
