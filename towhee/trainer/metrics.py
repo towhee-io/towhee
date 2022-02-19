@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List
+from typing import List, Any
 
 import torchmetrics as tm
 
@@ -41,7 +41,7 @@ class Metrics:
     def __init__(self, metric_name: str):
         pass
 
-    def update(self, pred, target) -> None:
+    def update(self, *_: Any, **__: Any) -> None:
         pass
 
     def compute(self) -> float:
@@ -153,8 +153,8 @@ class TMMetrics(Metrics):
         assert metric_name in TMMetrics._metrics_list
         self._metric = TMMetrics._metrics_list[metric_name]()
 
-    def update(self, pred, target) -> None:
-        self._metric.update(pred,target)
+    def update(self, *_: Any, **__: Any) -> None:
+        self._metric.update(*_,**__)
 
     def compute(self) -> str:
         return self._metric.compute()
