@@ -19,12 +19,10 @@ from enum import Enum
 
 import torch
 
-from typing import List, Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union
 import yaml
 
-from towhee.trainer.callback import Callback
 from towhee.utils.log import trainer_log
-from towhee.trainer.utils.trainer_utils import EvalStrategyType
 
 HELP = "help"
 CATEGORY = "category"
@@ -37,6 +35,7 @@ def _get_attr_str(obj, attr_name):
     else:
         return fld
 
+
 def dump_default_yaml(yaml_path):
     """
     dump a default yaml, which can be overridden by the custom operator.
@@ -44,6 +43,27 @@ def dump_default_yaml(yaml_path):
     training_config = TrainingConfig()
     training_config.save_to_yaml(path2yaml=yaml_path)
     trainer_log.info("dump default yaml to %s", yaml_path)
+
+
+def _early_stopping_factory():
+    return {
+        "monitor": "eval_epoch_metric",
+        "patience": 4,
+        "mode": "max"
+    }
+
+
+def _tensorboard_factory():
+    return {
+        "log_dir": None,  # if None, the tensorboard will make a dir `./runs` as the log_dir
+        "comment": ""
+    }
+
+
+def _model_checkpoint_factory():
+    return {
+        "every_n_epoch": 1
+    }
 
 
 @dataclass
@@ -57,7 +77,7 @@ class TrainingConfig:
                   CATEGORY: "train"},
     )
     overwrite_output_dir: bool = field(
-        default=False,
+        default=True,
         metadata={
             HELP: (
                 "Overwrite the content of the output directory."
@@ -67,9 +87,10 @@ class TrainingConfig:
         },
     )
     eval_strategy: str = field(
-        default=EvalStrategyType.EPOCH,
-        metadata={HELP: "The evaluation strategy. It can be `step`, `epoch` or `no`,", CATEGORY: "train"},
+        default="epoch",
+        metadata={HELP: "The evaluation strategy. It can be `steps`, `epoch` or `no`,", CATEGORY: "train"},
     )
+    eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
     batch_size: Optional[int] = field(
         default=8,
         metadata={
@@ -98,8 +119,6 @@ class TrainingConfig:
         default=False,
         metadata={HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"}
     )
-
-    eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
     dataloader_num_workers: int = field(
         default=0,
         metadata={
@@ -127,8 +146,14 @@ class TrainingConfig:
         metadata={HELP: "Whether or not to load the best model found during training at the end of training.",
                   CATEGORY: "train"},
     )
-    call_back_list: Optional[List[Callback]] = field(
-        default=None, metadata={HELP: ".", CATEGORY: "callback"}
+    early_stopping: Union[dict, str] = field(
+        default_factory=_early_stopping_factory, metadata={HELP: ".", CATEGORY: "callback"}
+    )
+    model_checkpoint: Union[dict, str] = field(
+        default_factory=_model_checkpoint_factory, metadata={HELP: ".", CATEGORY: "callback"}
+    )
+    tensorboard: Union[dict, str] = field(
+        default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"}
     )
     loss: Union[str, Dict[str, Any]] = field(
         default="CrossEntropyLoss", metadata={HELP: "pytorch loss in torch.nn package", CATEGORY: "learning"}
@@ -155,48 +180,6 @@ class TrainingConfig:
     logging_strategy: str = field(
         default="steps",
         metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
-    )
-    use_tensorboard: bool = field(
-        default=True,
-        metadata={HELP: "If True, it will run tensorboard on backend.", CATEGORY: "logging"},
-    )
-    tensorboard_log_dir: Optional[str] = field(
-        default=None,
-        metadata={HELP: "The argument `log_dir` when initializing tensorboard summaryWriter.", CATEGORY: "logging"},
-    )
-    tensorboard_comment: str = field(
-        default="",
-        metadata={HELP: "The argument `comment` when initializing tensorboard summaryWriter.", CATEGORY: "logging"},
-    )
-    save_strategy: str = field(
-        default="steps",
-        metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
-    )
-    saving_steps: int = field(default=500,
-                              metadata={HELP: "Save checkpoint every X updates steps.", CATEGORY: "logging"})
-    save_total_limit: Optional[int] = field(
-        default=None,
-        metadata={
-            HELP: (
-                "Limit the total amount of checkpoints. "
-                "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
-            ),
-            CATEGORY: "logging"
-        },
-    )
-    saving_strategy: str = field(
-        default="steps",
-        metadata={HELP: "The checkpoint save strategy to use.", CATEGORY: "logging"},
-    )
-    saving_total_limit: Optional[int] = field(
-        default=None,
-        metadata={
-            HELP: (
-                "Limit the total amount of checkpoints. "
-                "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
-            ),
-            CATEGORY: "logging"
-        },
     )
     device_str: str = field(
         default=None,

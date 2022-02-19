@@ -1,5 +1,13 @@
 callback:
-  call_back_list: null
+  early_stopping:
+    mode: max
+    monitor: eval_epoch_metric
+    patience: 4
+  model_checkpoint:
+    every_n_epoch: 1
+  tensorboard:
+    comment: ''
+    log_dir: null
 device:
   device_str: null
   n_gpu: -1
@@ -15,14 +23,6 @@ logging:
   logging_dir: null
   logging_strategy: steps
   print_steps: null
-  save_strategy: steps
-  save_total_limit: null
-  saving_steps: 500
-  saving_strategy: steps
-  saving_total_limit: null
-  tensorboard_comment: ''
-  tensorboard_log_dir: null
-  use_tensorboard: true
 metrics:
   metric: Accuracy
 train:
@@ -35,7 +35,7 @@ train:
   load_best_model_at_end: false
   max_steps: -1
   output_dir: ./output_dir
-  overwrite_output_dir: false
+  overwrite_output_dir: true
   resume_from_checkpoint: null
   seed: 42
   val_batch_size: -1

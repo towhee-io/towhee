@@ -119,15 +119,39 @@ class NNOperator(Operator):
         self.setup_trainer(training_config, train_dataset, eval_dataset, model_card)
         self.trainer.train(resume_checkpoint_path)
 
-    def create_trainer(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None):
-        self.trainer = Trainer(self.get_model(), training_config, train_dataset, eval_dataset, model_card)
+    def create_trainer(self,
+                       training_config=None,
+                       train_dataset=None,
+                       eval_dataset=None,
+                       model_card=None,
+                       train_dataloader=None,
+                       eval_dataloader=None
+                       ):
+        self.trainer = Trainer(self.get_model(),
+                               training_config,
+                               train_dataset,
+                               eval_dataset,
+                               model_card,
+                               train_dataloader,
+                               eval_dataloader)
 
-    def setup_trainer(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None) -> Trainer:
+    def setup_trainer(self, training_config=None,
+                      train_dataset=None,
+                      eval_dataset=None,
+                      model_card=None,
+                      train_dataloader=None,
+                      eval_dataloader=None
+                      ) -> Trainer:
         """
         set up the trainer instance in operator before training.
         """
         if self.trainer is None:
-            self.create_trainer(training_config, train_dataset, eval_dataset, model_card)
+            self.create_trainer(training_config,
+                                train_dataset,
+                                eval_dataset,
+                                model_card,
+                                train_dataloader,
+                                eval_dataloader)
         else:
             if training_config is not None:
                 self.trainer.configs = training_config
@@ -137,6 +161,10 @@ class NNOperator(Operator):
                 self.trainer.eval_dataset = eval_dataset
             if model_card is not None:
                 self.trainer.model_card = model_card
+            if train_dataloader is not None:
+                self.trainer.train_dataloader = train_dataloader
+            if eval_dataloader is not None:
+                self.trainer.eval_dataloader = eval_dataloader
         return self.trainer
 
     def load(self, path: str = None):
