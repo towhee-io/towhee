@@ -294,9 +294,10 @@ class EarlyStopping(Callback):
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0:
-            trainer_log.warning(
-                "monitoring %s not be better then %s on epoch %s for waiting for %s epochs. Early stop on epoch %s.",
-                self.monitor, self.best, self.best_epoch, self.wait, self.stopped_epoch)
+            if is_main_process():
+                trainer_log.warning(
+                    "monitoring %s not be better then %s on epoch %s for waiting for %s epochs. Early stop on epoch %s.",
+                    self.monitor, self.best, self.best_epoch, self.wait, self.stopped_epoch)
 
     def get_monitor_value(self, logs):
         logs = logs or {}

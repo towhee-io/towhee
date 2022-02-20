@@ -154,11 +154,3 @@ class ModelCard:
     def load_from_file(file_path):
         pass
 
-# if __name__ == '__main__':  # todo: delete
-#     # mc = ModelCard(model_details="abc", factors=1234, type='aaabbb')
-#     mc = ModelCard.load_from_file('./aaa.txt')
-#     print(mc)
-#     print(mc.to_dict())
-#     # print(mc.to_json_string())
-#     # mc.save_model_card('./aaa.txt')
-#     print(1)
