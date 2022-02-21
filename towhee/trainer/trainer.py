@@ -102,6 +102,57 @@ class Trainer:
             train_dataloader: Optional[DataLoader] = None,
             eval_dataloader: Optional[DataLoader] = None
     ):
+        """
+        Constructs a Trainer
+
+        :param model: the model of trainer
+        :type model: nn.Module
+
+        :param training_config: the schema of collection
+        :type training_config: class towhee.trainer.training_config.TrainingConfig
+
+        :param train_dataset: the dataset of trainer
+        :type train_dataset: Union[torch.utils.data.dataset.Dataset, towhee.trainer.training_config.TrainingConfig]
+
+        :param model_card: the model_card of trainer
+        :type model_card: towhee.trainer.modelcard.ModelCard
+
+        :param train_dataloader: the train_dataloader of trainer
+        :type train_dataloader:  torch.utils.data.dataloader.DataLoader
+
+        :param eval_dataloader: the eval_dataloader of trainer
+        :type eval_dataloader:  torch.utils.data.dataloader.DataLoader
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+        """
         if training_config is None:
             output_dir = "tmp_trainer"
             trainer_log.info("No `TrainingArguments` passed, using `output_dir.")
@@ -152,6 +203,44 @@ class Trainer:
         self.model_card.training_config = self.configs
 
     def train(self, resume_checkpoint_path=None):
+        """
+        Run training
+
+        :param resume_checkpoint_path: the path to checkpoint
+        :type resume_checkpoint_path: str
+
+        :example:
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> trainer.train()
+        """
         if self.configs.device_str == "cuda":
             self.distributed = True
             self._spawn_train_process(resume_checkpoint_path)
@@ -386,7 +475,44 @@ class Trainer:
         return logs
 
     @torch.no_grad()
-    def predict(self, input_):
+    def predict(self, input_: Any):
+        """
+        Do prediction
+
+        :param input_: the input for model for prediction
+        :type input_: Any
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> trainer.predict('000bec180eb18c7604dcecc8fe0dba07.jpg')
+        """
         self.model.eval()
         return self.model(input_)
 
@@ -447,7 +573,47 @@ class Trainer:
 
     def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str = None):
         """
-        set custom optimizer, `optimizer_name` is the optimizer str in training config
+        Set custom optimizer, `optimizer_name` is the optimizer str in training config
+
+        :param optimizer: the optimizer used for trainer
+        :type optimizer: optim.Optimizer
+
+        :param optimizer_name: the optimizer used for trainer
+        :type optimizer_name: str
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from torch.optim import AdamW
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
+            >>> optimizer_name = 'my_optimizer'
+            >>> trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
         """
         self.override_optimizer = True
         self.configs.optimizer = CUSTOM if optimizer_name is None else optimizer_name
@@ -456,6 +622,46 @@ class Trainer:
     def set_loss(self, loss, loss_name=None):
         """
         set custom loss, `loss_name` is the loss str in training config
+
+        :param loss: loss used for trainer
+        :type loss: torch.nn.modules.loss._Loss
+
+        :param loss_name: `loss_name` is the loss str in training config
+        :type loss_name: str
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from torch.optim import AdamW
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> my_loss = nn.BCELoss()
+            >>> loss_name = 'my_loss'
+            >>> trainer.set_loss(my_loss, loss_name=loss_name)
         """
         self.override_loss = True
         self.configs.loss = CUSTOM if loss_name is None else loss_name
@@ -624,6 +830,46 @@ class Trainer:
         return len(dataloader.dataset)
 
     def load(self, path):
+        """
+        Load checkpoints.
+
+        :param path: the path to the saved checkpoints
+        :type path: str
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> trainer.train()
+            >>> test_path = Path(__file__).parent.joinpath('test_modelcard')
+            >>> trainer.save(test_path)
+            >>> trainer.load(test_path)
+        """
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
         # modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
         print(f"Loading from previous checkpoint: {checkpoint_path}")
@@ -648,7 +894,49 @@ class Trainer:
         # else:
         #     trainer_log.warning("model card file not exist.")
 
-    def save(self, path, overwrite=True):
+    def save(self, path: str, overwrite: bool = True):
+        """
+        Save results of training
+
+        :param path: the path to save checkpoints and modelcard
+        :type path: str
+
+        :param overwrite: if the checkpoints and modelcard in the path should be overwriten
+        :type overwrite: str
+
+        :example:
+            >>> from pathlib import Path
+            >>> import torchvision
+            >>> from towhee.data.dataset.image_datasets import PyTorchImageDataset
+            >>> from towhee.operator import NNOperator
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from towhee.trainer.trainer import Trainer
+            >>> cache_path = Path(__file__).parent.parent.resolve()
+            >>> image_path = cache_path.joinpath('data/dataset/kaggle_dataset_small/train')
+            >>> label_file =cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_labels.csv')
+            >>> data_transforms = {
+            ...     'train': transforms.Compose([
+            ...     transforms.RandomResizedCrop(224),
+            ...     transforms.RandomHorizontalFlip(),
+            ...     transforms.ToTensor(),
+            ...     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ...     ])
+            ... }
+            >>> training_args = TrainingConfig(
+            ...     output_dir='./ResNet50',
+            ...     overwrite_output_dir=True,
+            ...     epoch_num=1,
+            ...     batch_size=4,
+            ...     dataloader_num_workers=0
+            ... )
+            >>> train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
+            >>> training_args.epoch_num = 2
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> trainer = Trainer(model=model, training_config=training_args, train_dataset=train_data)
+            >>> trainer.train()
+            >>> test_path = Path(__file__).parent.joinpath('test_modelcard')
+            >>> trainer.save(test_path)
+        """
         if not overwrite:
             if Path(path).exists():
                 raise FileExistsError("File already exists: ", str(Path(path).resolve()))
