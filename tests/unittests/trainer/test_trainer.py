@@ -60,6 +60,7 @@ class TrainerTest(unittest.TestCase):
             overwrite_output_dir=True,
             epoch_num=1,
             batch_size=4,
+            dataloader_num_workers=0
         )
         self.op = MockOperator()
         self.op.train(training_config=self.training_args, train_dataset=self.train_data)
