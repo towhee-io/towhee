@@ -25,8 +25,62 @@ MODEL_CARD_NAME = "README.md"
 @dataclass
 class ModelCard:
     """
+    Constructs a ModelCard
     Recommended attributes from https://arxiv.org/abs/1810.03993 (see papers)
     https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/actionrecognitionnet
+
+    :param model_name: the name of model
+    :type model_name: str
+
+    :param model_architecture: the description of model architecture
+    :type model_architecture: str
+
+    :param model_overview: the overview of model
+    :type model_overview: str
+
+    :param model_card: the model_card of trainer
+    :type model_card: towhee.trainer.modelcard.ModelCard
+
+    :param language: the language of model
+    :type language: str
+
+    :param license: the license of model
+    :type license:  str
+
+    :param tags: the tags of modelcard description
+    :type tags:  Union[str, List[str]]
+
+    :param tasks: the tasks of modelcard description
+    :type tasks:  Union[str, List[str]]
+
+    :param datasets: the datasets information
+    :type datasets:  Union[str, List[str]]
+
+    :param datasets_tags: the dataset tags
+    :type datasets_tags:  Union[str, List[str]]
+
+    :param dataset_args: the dataset arguments
+    :type dataset_args:  Union[str, List[str]]
+
+    :param eval_results: the evaluation results of trained model
+    :type eval_results:  Dict[str, float]
+
+    :param eval_lines: lines of description of evaluation
+    :type eval_lines:  List[str]
+
+    :param training_summary: training summary
+    :type training_summary:  Dict[str, Any]
+
+    :param training_config: training configuration
+    :type training_config:  towhee.trainer.training_config.TrainingConfig
+
+    :param source: source of modelcard
+    :type source:  str
+
+    :example:
+        >>> from towhee.trainer.modelcard import ModelCard
+        >>> model_name = "resnet50"
+        >>> md = ModelCard(model_name)
     """
     model_name: Optional[str] = None
     model_architecture: Optional[str] = None
@@ -55,10 +109,19 @@ class ModelCard:
 
     def save_model_card(self, save_directory_or_file):
         """
-        Save a model card as a json file,
-        save_directory_or_file can be directory or file path,
+        Save modelcard
+
+        :param save_directory_or_file: the path to save modelcard. It can be directory or file path,
         if it's a directory, default name is 'modelcard.json,
-        if there exist a same named file, it will be overwritten
+        if there exist a same named file, it will be overwritten.
+        :type save_directory_or_file: str
+
+        :example:
+            >>> from towhee.trainer.modelcard import ModelCard
+            >>> model_name = "resnet50"
+            >>> md = ModelCard(model_name)
+            >>> test_path = Path(__file__).parent.joinpath('test_modelcard')
+            >>> md.save_model_card(test_path)
         """
         model_card = f"# {self.model_name}\n\n"
         model_card += f"## model overview\n{self.model_overview}\n\n"
