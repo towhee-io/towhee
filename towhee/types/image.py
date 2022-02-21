@@ -35,13 +35,14 @@ class Image:
             The image in the form of ndarray.
     """
 
-    def __init__(self, image: bytes, width: int, height: int, channel: int, mode: str, array: np.ndarray = None):
+    def __init__(self, image: bytes, width: int, height: int, channel: int, mode: str, array: np.ndarray = None, key_frame: bool = False):
         self._image = image
         self._width = width
         self._height = height
         self._channel = channel
         self._mode = mode
         self._array = array
+        self._key_frame = key_frame
 
     @property
     def image(self) -> bytes:
@@ -62,6 +63,10 @@ class Image:
     @property
     def mode(self) -> str:
         return self._mode
+
+    @property
+    def key_frame(self):
+        return self._key_frame
 
     @property
     def array(self) -> np.ndarray:
