@@ -69,7 +69,108 @@ def _model_checkpoint_factory():
 @dataclass
 class TrainingConfig:
     """
-    the training config, it can be defined in a yaml file
+    Training configuration, it can be defined in a yaml file
+
+    :param output_dir: the output directory
+    :type output_dir: str
+
+    :param overwrite_output_dir: whether overwrite output directory or not
+    :type overwrite_output_dir: bool
+
+    :param eval_strategy: the evaluation strategy
+    :type eval_strategy: str
+
+    :param eval_steps: run an evaluation every X steps
+    :type eval_steps: int
+
+    :param batch_size: the train_dataloader of trainer
+    :type batch_size:  int
+
+    :param val_batch_size: batch size for evaluation
+    :type val_batch_size:  int
+
+    :param seed: random seed that will be set at the beginning of training
+    :type seed:  int
+
+    :param epoch_num: total number of training epochs to perform
+    :type epoch_num: float
+
+    :param max_steps: If > 0: set total number of training steps to perform. Override num_train_epochs
+    :type max_steps: int
+
+    :param dataloader_pin_memory: Whether or not to pin memory for DataLoader
+    :type dataloader_pin_memory: bool
+
+    :param dataloader_drop_last: Drop the last incomplete batch if it is not divisible by the batch size
+    :type dataloader_drop_last: bool
+
+    :param dataloader_num_workers: Number of subprocesses to use for data loading
+    :type dataloader_num_workers: int
+
+    :param resume_from_checkpoint: The path to a folder with a valid checkpoint for your model
+    :type resume_from_checkpoint: str
+
+    :param lr: the initial learning rate for AdamW
+    :type lr: float
+
+    :param metric: the metric to use to compare two different models
+    :type metric: str
+
+    :param print_steps: if None, use the tqdm progress bar, otherwise it will
+    print the logs on the screen every `print_steps`
+    :type print_steps: int
+
+    :param load_best_model_at_end: Whether or not to load the best model found during training at the end of training
+    :type load_best_model_at_end: bool
+
+    :param early_stopping: early stopping
+    :type early_stopping: Union[dict, str]
+
+    :param model_checkpoint: model checkpoint
+    :type model_checkpoint: Union[dict, str]
+
+    :param tensorboard: tensorboard
+    :type tensorboard: Union[dict, str]
+
+    :param loss: pytorch loss in torch.nn package
+    :type loss: Union[str, Dict[str, Any]]
+
+    :param optimizer: pytorch optimizer Class name in torch.optim package
+    :type optimizer: Union[str, Dict[str, Any]]
+
+    :param lr_scheduler_type: the scheduler type to be used
+    :type lr_scheduler_type: str
+
+    :param warmup_ratio: linear warmup over warmup_ratio fraction of total steps
+    :type warmup_ratio: float
+
+    :param warmup_steps: linear warmup over warmup_step
+    :type warmup_steps: int
+
+    :param logging_dir: the tensorboard log directory
+    :type logging_dir: str
+
+    :param logging_strategy: the logging strategy to be used
+    :type logging_strategy: str
+
+    :param device_str: the cpu or cuda device to be used
+    :type device_str: str
+
+    :param n_gpu: should be specified when device_str is
+    :type n_gpu: int
+
+    :param sync_bn: will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better
+    :type sync_bn: bool
+
+    :example:
+        >>> from towhee.trainer.training_config import TrainingConfig
+        >>> training_args = TrainingConfig(
+        ...     output_dir='./ResNet50',
+        ...     overwrite_output_dir=True,
+        ...     epoch_num=1,
+        ...     batch_size=4,
+        ...     dataloader_num_workers=0
+        ... )
     """
     output_dir: str = field(
         default="./output_dir",
@@ -244,6 +345,18 @@ class TrainingConfig:
         return device
 
     def load_from_yaml(self, path2yaml: str = None):
+        """
+        Load training configuration from yaml
+
+        :param path2yaml: the path to yaml
+        :type path2yaml: str
+
+        :example:
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> conf = Path(__file__).parent / 'config.yaml'
+            >>> ta = TrainingConfig()
+            >>> ta.load_from_yaml(conf)
+        """
         with open(path2yaml, "r", encoding="utf-8") as f:
             config_dict = yaml.safe_load(f)
             for file_category in config_dict:
@@ -254,6 +367,18 @@ class TrainingConfig:
                 self._set_attr_from_dict(category_dict)
 
     def save_to_yaml(self, path2yaml: str = None):
+        """
+        Save training configuration to yaml
+
+        :param path2yaml: the path to yaml
+        :type path2yaml: str
+
+        :example:
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> conf = Path(__file__).parent / 'config.yaml'
+            >>> ta = TrainingConfig()
+            >>> ta.save_to_yaml(conf)
+        """
         config_dict = {}
         for config_category in self.config_category_set:
             config_dict[config_category] = {}
