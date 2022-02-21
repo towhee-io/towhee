@@ -17,32 +17,30 @@ import math
 import os
 import sys
 import torch
-import tempfile
 import torch.distributed as dist
 
 from typing import Union, Dict, Any, Optional
 from pathlib import Path
-# from torch.utils.tensorboard import SummaryWriter
-# import torchmetrics
-# from tqdm import tqdm
 from torch import nn
 from torch import optim
 from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.multiprocessing import Process
-from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpoint, EarlyStopping, TrainerControl
+from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
+
+from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpoint, \
+    EarlyStopping, TrainerControl
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
-from towhee.trainer.dataset import TowheeDataSet, TorchDataSet
 from towhee.trainer.optimization.optimization import get_scheduler
 from towhee.trainer.callback import CallbackList, _get_summary_writer_constructor
 
 WEIGHTS_NAME = "pytorch_model.bin"
-TEMP_INIT_WEIGHTS = "initial_weights.pt"
+TEMP_INIT_WEIGHTS = "./temp_init_weights.pt"
 NAME = "name_"
 CUSTOM = "custom_"
 no_option_list = ["no", "null", "None", None, False]
@@ -84,9 +82,9 @@ def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], mode
             if arg_name != NAME:
                 kwargs[arg_name] = config[arg_name]
         if model is not None:
-            instance = construct_name(model.parameters(), **kwargs)
+            trainable_params = [p for p in model.parameters() if p.requires_grad]
+            instance = construct_name(trainable_params, **kwargs)
     return instance
-
 
 
 class Trainer:
@@ -134,6 +132,7 @@ class Trainer:
         self.metric_value = 0.0
         self.epoch = -1
         self.train_dataloader = train_dataloader
+        self.train_sampler = None
         self.eval_dataloader = eval_dataloader
         self.distributed = False
 
@@ -168,6 +167,8 @@ class Trainer:
         #          join=True)
         process_list = []
         world_size = self.configs.n_gpu
+        if world_size < 1:
+            trainer_log.warning("when `device_str` is `cuda`, `n_gpu` must be a positive int number.")
         for rank in range(world_size):
             process = Process(target=self.run_train, args=(resume_checkpoint_path, rank, world_size))
             process.start()
@@ -201,7 +202,8 @@ class Trainer:
             self.load(resume_checkpoint_path)
         else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
             if self.distributed:
-                checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
+                # checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
+                checkpoint_path = TEMP_INIT_WEIGHTS
                 if rank == 0:
                     torch.save(self.model.state_dict(), checkpoint_path)
                 dist.barrier()
@@ -259,7 +261,8 @@ class Trainer:
         model = self.model
 
         num_examples = (
-            self.num_examples(train_dataloader) if train_dataset_is_sized else total_train_batch_size * self.configs.max_steps
+            self.num_examples(
+                train_dataloader) if train_dataset_is_sized else total_train_batch_size * self.configs.max_steps
         )
 
         trainer_log.info("***** Running training *****")
@@ -279,6 +282,8 @@ class Trainer:
             model.train()
             self._reset_controller()
             self.optimizer.zero_grad()
+            if self.distributed:
+                self.train_sampler.set_epoch(self.epoch)
             # batch_loss_sum = 0.0
             self.callbacks.on_epoch_begin(self.epoch + 1, logs)
             self.loss_metric.reset()
@@ -354,11 +359,11 @@ class Trainer:
 
     def _update_metrics(self, labels, outputs, step_loss):
         self.loss_metric.update(step_loss.to(self.configs.device))
-        loss_metric = self.loss_metric.compute().to("cpu").item()
+        loss_metric = self.loss_metric.compute().item()
         epoch_metric = None
         if self.metric is not None:
             self.metric.update(outputs.to(self.configs.device), labels.to(self.configs.device))
-            epoch_metric = self.metric.compute().to("cpu").item()
+            epoch_metric = self.metric.compute().item()
         return loss_metric, epoch_metric
 
     @torch.no_grad()
@@ -456,6 +461,16 @@ class Trainer:
         self.configs.loss = CUSTOM if loss_name is None else loss_name
         self.loss = loss
 
+    def _get_num_workers(self):
+        if self.configs.dataloader_num_workers == -1:
+            num_workers = min([os.cpu_count(), self.configs.batch_size if self.configs.batch_size > 1 else 0, 8])
+        else:
+            num_workers = self.configs.dataloader_num_workers
+        if is_main_process():
+            trainer_log.info("num_workers=%s", num_workers)
+        return num_workers
+
+
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
@@ -466,17 +481,30 @@ class Trainer:
             raise ValueError("Trainer: training requires a train_dataset.")
         if isinstance(self.train_dataset, TorchDataSet):
             self.train_dataset = self.train_dataset.dataset
+        num_workers = self._get_num_workers()
         # if isinstance(self.train_dataset, IterableDataset):
         #     return DataLoader(
         #         self.train_dataset,
         #         batch_size=self.configs.train_batch_size,
         #     )
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.configs.train_batch_size,
-            shuffle=True,
-            pin_memory=True
-        )
+        if not self.distributed:
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.configs.train_batch_size,
+                shuffle=True,
+                num_workers=num_workers, #self.configs.dataloader_num_workers,
+                pin_memory=self.configs.dataloader_pin_memory,
+                drop_last=self.configs.dataloader_drop_last
+            )
+        else:
+            self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
+            train_batch_sampler = torch.utils.data.BatchSampler(
+                self.train_sampler, self.configs.batch_size, drop_last=True)
+            return torch.utils.data.DataLoader(self.train_dataset,
+                                               batch_sampler=train_batch_sampler,
+                                               num_workers=num_workers, #self.configs.dataloader_num_workers,
+                                               pin_memory=self.configs.dataloader_pin_memory,
+                                               )
 
     def get_eval_dataloader(self) -> Optional[DataLoader]:
         """
@@ -494,11 +522,24 @@ class Trainer:
         #         self.eval_dataset,
         #         batch_size=self.configs.eval_batch_size,
         #     )
-        return DataLoader(
-            self.eval_dataset,
-            batch_size=self.configs.eval_batch_size,
-            shuffle=True
-        )
+        num_workers = self._get_num_workers()
+        if not self.distributed:
+            return DataLoader(
+                self.eval_dataset,
+                batch_size=self.configs.eval_batch_size,
+                num_workers=num_workers,#self.configs.dataloader_num_workers,
+                pin_memory=self.configs.dataloader_pin_memory,
+                drop_last=self.configs.dataloader_drop_last
+            )
+        else:
+            eval_sampler = torch.utils.data.distributed.DistributedSampler(self.eval_dataset)
+            eval_batch_sampler = torch.utils.data.BatchSampler(
+                eval_sampler, self.configs.batch_size, drop_last=True)
+            return torch.utils.data.DataLoader(self.eval_dataset,
+                                               batch_sampler=eval_batch_sampler,
+                                               num_workers=num_workers, #self.configs.dataloader_num_workers,
+                                               pin_memory=self.configs.dataloader_pin_memory,
+                                               )
 
     def _setup_before_train(self, num_training_steps: int):
         """
@@ -534,8 +575,6 @@ class Trainer:
     def _create_metric(self):
         self.metric = get_metric_by_name(self.configs.metric)
         self.metric.to(self.configs.device)
-        # self.metric = getattr(torchmetrics, self.configs.metric).to(
-        #     self.configs.device)  # todo #get_metric_by_name(self.configs.metric).to(self.configs.device)
         self.loss_metric = get_metric_by_name("MeanMetric")
         self.loss_metric.to(self.configs.device)
 
@@ -605,7 +644,7 @@ class Trainer:
         # if Path(modelcard_path).exists():
         #     self.model_card = ModelCard.load_from_file(modelcard_path)
         #     print(f"Model card is loaded from {modelcard_path}")
-            # print("model_card = ", self.model_card.to_dict())
+        # print("model_card = ", self.model_card.to_dict())
         # else:
         #     trainer_log.warning("model card file not exist.")
 

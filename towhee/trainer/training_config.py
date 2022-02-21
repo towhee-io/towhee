@@ -115,15 +115,20 @@ class TrainingConfig:
         metadata={HELP: "If > 0: set total number of training steps to perform. Override num_train_epochs.",
                   CATEGORY: "train"},
     )
+    dataloader_pin_memory: bool = field(
+        default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"}
+    )
     dataloader_drop_last: bool = field(
-        default=False,
+        default=True,
         metadata={HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"}
     )
     dataloader_num_workers: int = field(
-        default=0,
+        default=-1,
         metadata={
-            HELP: "Number of subprocesses to use for data loading (PyTorch only). 0 means "
-                  "that the data will be loaded in the main process.",
+            HELP: "Number of subprocesses to use for data loading."
+                  "default -1 means using all the cpu kernels,"
+                  "it will greatly improve the speed when distributed training."
+                  "0 means that the data will be loaded in the main process.",
             CATEGORY: "train"
         },
     )
@@ -197,8 +202,8 @@ class TrainingConfig:
         HELP: "should be specified when device_str is `cuda`",
         CATEGORY: "device"
     })
-    sync_bn: bool = field(default=True, metadata={
-        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training a little slower",
+    sync_bn: bool = field(default=False, metadata={
+        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
         CATEGORY: "device"
     })
 
