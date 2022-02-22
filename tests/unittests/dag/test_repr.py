@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import yaml
 import copy
 from unittest import mock
 from collections import namedtuple
 
 from towhee.dag.base_repr import BaseRepr
 from towhee.dag.graph_repr import GraphRepr
-
+from towhee.utils.yaml_utils import load_yaml
 from tests.unittests.test_util import GRAPH_TEST_YAML, GRAPH_TEST_ISO_DF_YAML, GRAPH_TEST_ISO_OP_YAML, GRAPH_TEST_LOOP_YAML
 
 
@@ -71,7 +70,7 @@ class TestRepr(unittest.TestCase):
 
         # A proper graph does not contain isolation and loopa
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f.read())
+            data = load_yaml(f)
         graph = GraphRepr.from_dict(data)
         non_iso_df = graph.get_isolated_df()
         self.assertFalse(bool(non_iso_df))
@@ -81,26 +80,26 @@ class TestRepr(unittest.TestCase):
         self.assertFalse(bool(none_loop))
         # If the graph contains isolated dataframes
         with open(GRAPH_TEST_ISO_DF_YAML, 'r', encoding='utf-8') as f:
-            iso_data = yaml.safe_load(f.read())
+            iso_data = load_yaml(f)
         iso_df_graph = GraphRepr.from_dict(iso_data)
         iso_df = iso_df_graph.get_isolated_df()
         self.assertTrue(bool(iso_df))
         # If the graph contains isolated operators
         with open(GRAPH_TEST_ISO_OP_YAML, 'r', encoding='utf-8') as f:
-            iso_data = yaml.safe_load(f.read())
+            iso_data = load_yaml(f)
         iso_op_graph = GraphRepr.from_dict(iso_data)
         iso_op = iso_op_graph.get_isolated_op()
         self.assertTrue(bool(iso_op))
         # If the graph contains loops
         with open(GRAPH_TEST_LOOP_YAML, 'r', encoding='utf-8') as f:
-            iso_data = yaml.safe_load(f.read())
+            iso_data = load_yaml(f)
         loop_graph = GraphRepr.from_dict(iso_data)
         loop = loop_graph.get_loop()
         self.assertTrue(bool(loop))
 
     def test_error_yaml(self):
         with open(GRAPH_TEST_YAML, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f.read())
+            data = load_yaml(f)
         err1 = copy.deepcopy(data)
         del err1['dataframes']
         with self.assertRaises(ValueError):
