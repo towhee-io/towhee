@@ -316,11 +316,11 @@ class DataFrame:
             else:
                 return self.ret(Responses.UNKOWN_ERROR, None, None, iter_id)
 
-    def ret(self, code, ret, offset, need_code):
-        if need_code:
+    def ret(self, code, ret, offset, provide_code):
+        if  provide_code != False:
             return code, ret, offset
         else:
-            return ret, offset
+            return ret
 
 
     def put(self, item) -> None:
@@ -339,9 +339,11 @@ class DataFrame:
                 item = [item]
             for x in item:
                 if isinstance(x, dict):
-                    self._put_dict(x)
+                    if self._put_dict(x) == -1:
+                        return
                 elif isinstance(x, tuple):
-                    self._put_tuple(x)
+                    if self._put_tuple(x) == -1:
+                        return
                 else:
                     raise ValueError('Input data is of wrong format.')
 
@@ -381,14 +383,17 @@ class DataFrame:
         """Appending a tuple to the dataframe."""
 
         item = list(item)
-
         if not isinstance(item[-1], _Frame):
             item.append(_Frame(row_id=self._len))
         else:
+            if item[-1].empty:
+                return -1
             item[-1].row_id = self._len
 
-        for i, x in enumerate(item):
-            assert equivalents.get(self.class_type(x), self.class_type(x)) == self._schema.col_type(i)
+        # TODO: Figure out the situation on type checking
+        # for i, x in enumerate(item):
+            # print(equivalents.get(self.class_type(x), self.class_type(x)) , self._schema.col_type(i), flush=True)
+            # assert equivalents.get(self.class_type(x), self.class_type(x)) == self._schema.col_type(i)
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
@@ -397,15 +402,17 @@ class DataFrame:
 
     def _put_dict(self, item: dict):
         """Appending a dict to the dataframe."""
-
         if item.get(FRAME, None) is None:
             item[FRAME] = _Frame(self._len)
         else:
+            if item[FRAME].empty:
+                return -1
             item[FRAME].row_id = self._len
 
         # I believe its faster to loop through and check than list comp
-        for key, val in item.items():
-            assert equivalents.get(self.class_type(val), self.class_type(val)) == self._schema.col_type(self._schema.col_index(key))
+        # TODO: Add type checking
+        # for key, val in item.items():
+            # assert equivalents.get(self.class_type(val), self.class_type(val)) == self._schema.col_type(self._schema.col_index(key))
 
         for key, val in item.items():
             self._data_as_list[self._schema.col_index(key)].put(val)
@@ -608,7 +615,7 @@ class DataFrame:
                     del id_event[index]
                     self.gc_blocked()
                     return
-    
+
     def class_type(self, o):
         module = o.__class__.__module__
         if module is None or module == str.__class__.__module__:

@@ -48,3 +48,6 @@ class TestSingleton(unittest.TestCase):
 
         while not q.empty():
             self.assertEqual(q.get(), Singleton())
+
+if __name__ == '__main__':
+    unittest.main()

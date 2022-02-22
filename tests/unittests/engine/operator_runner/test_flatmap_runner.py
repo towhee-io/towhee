@@ -113,16 +113,15 @@ class TestFlatmapRunner(unittest.TestCase):
             self.assertEqual(item[0][-1].parent_path, expect[index])
             index += 1
 
-    # Need better test, df catches error.
-    # def test_flatmap_runner_with_error(self):
-    #     input_df, _, runner = self._create_test_obj()
-    #     runner.set_op(RepeatOperator(3))
-    #     t = threading.Thread(target=run, args=(runner, ))
-    #     t.start()
-    #     input_df.put((Variable('str', 'errdata'), ))
-    #     runner.join()
-    #     self.assertTrue('Input is not int type' in runner.msg)
-    #     self.assertEqual(runner.status, RunnerStatus.FAILED)
+    def test_flatmap_runner_with_error(self):
+        input_df, _, runner = self._create_test_obj()
+        runner.set_op(RepeatOperator(3))
+        t = threading.Thread(target=run, args=(runner, ))
+        t.start()
+        input_df.put((Variable('str', 'errdata'), ))
+        runner.join()
+        self.assertTrue('Input is not int type' in runner.msg)
+        self.assertEqual(runner.status, RunnerStatus.FAILED)
 
 
 if __name__ == '__main__':

@@ -149,23 +149,22 @@ class TestGraphCtx(unittest.TestCase):
         for data in it:
             self.assertEqual(data[0][0], 5)
 
-    # Needs a better test, DF catches this error.
-    # def test_graph_ctx_failed(self):
-    #     graph_ctx = self._crate_graph()
+    def test_graph_ctx_failed(self):
+        graph_ctx = self._crate_graph()
 
-    #     for op in graph_ctx.op_ctxs.values():
-    #         op.start(self._task_exec)
+        for op in graph_ctx.op_ctxs.values():
+            op.start(self._task_exec)
 
-    #     # Error input data
-    #     graph_ctx(('x', ))
+        # Error input data
+        graph_ctx(('x', ))
 
-    #     graph_ctx.join()
+        graph_ctx.join()
 
-    #     for name, op in graph_ctx.op_ctxs.items():
-    #         if name not in ['_start_op', '_end_op']:
-    #             self.assertEqual(op.status, OpStatus.FAILED)
+        for name, op in graph_ctx.op_ctxs.items():
+            if name not in ['_start_op', '_end_op']:
+                self.assertEqual(op.status, OpStatus.FAILED)
 
-    #     self.assertEqual(graph_ctx.outputs.size, 0)
+        self.assertEqual(graph_ctx.outputs.size, 0)
 
 if __name__ == '__main__':
     unittest.main()

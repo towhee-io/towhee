@@ -26,8 +26,6 @@ class TestDataframe(unittest.TestCase):
     """
 
     def get_columns(self, frames = False):
-        if frames:
-            return [('digit', 'int'), ('letter', 'str'), (FRAME, '_Frame')]
         return [('digit', 'int'), ('letter', 'str')]
 
     def get_tuples(self, frames = False):
@@ -102,20 +100,16 @@ class TestDataframe(unittest.TestCase):
         self.assertEqual(df.name, 'test')
         self.assertEqual(len(df), 10)
         datas = df.get(0, 4)
-        self.assertEqual(datas[0], Responses.APPROVED_CONTINUE)
-        self.assertEqual(len(datas[1]), 4)
+        self.assertEqual(len(datas), 4)
         datas = df.get(8, 4)
-        self.assertEqual(datas[0], Responses.INDEX_OOB_UNSEALED)
-        self.assertEqual(datas[1], None)
+        self.assertEqual(datas, None)
         self.assertFalse(df.sealed)
         df.seal()
         self.assertTrue(df.sealed)
         datas = df.get(8, 4)
-        self.assertEqual(datas[0], Responses.APPROVED_DONE)
-        self.assertEqual(len(datas[1]), 2)
+        self.assertEqual(len(datas), 2)
 
     def test_put_dict(self):
-
         #  Testing put dict with no frame col in both data and cols.
         columns = self.get_columns(frames=False)
         data = self.get_dict(frames = False)
@@ -159,12 +153,11 @@ class TestDataframe(unittest.TestCase):
         self.assertEqual(df.name, 'test')
         self.assertEqual(len(df), 10)
         datas = df.get(0, 4)
-        self.assertEqual(datas[0], Responses.APPROVED_CONTINUE)
-        self.assertEqual(len(datas[1]), 4)
+        self.assertEqual(datas[0][0], 0)
+        self.assertEqual(len(datas), 4)
 
         datas = df.get(8, 4)
-        self.assertEqual(datas[0], Responses.INDEX_OOB_UNSEALED)
-        self.assertEqual(datas[1], None)
+        self.assertEqual(datas, None)
 
 
         self.assertFalse(df.sealed)
@@ -172,8 +165,7 @@ class TestDataframe(unittest.TestCase):
         self.assertTrue(df.sealed)
 
         datas = df.get(8, 4)
-        self.assertEqual(datas[0], Responses.APPROVED_DONE)
-        self.assertEqual(len(datas[1]), 2)
+        self.assertEqual(len(datas), 2)
 
     def test_multithread(self):
         columns = self.get_columns()
@@ -189,14 +181,14 @@ class TestDataframe(unittest.TestCase):
             index = 0
             while True:
                 items = df.get(index, 2)
-                if items[1]:
-                    for item in items[1]:
+                if items:
+                    for item in items:
                         q.put(item)
                         index += 1
                 if df.sealed:
                     items = df.get(index, 100)
-                    if items[1]:
-                        for item in items[1]:
+                    if items:
+                        for item in items:
                             q.put(item)
                     break
 

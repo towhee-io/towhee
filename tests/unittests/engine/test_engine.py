@@ -128,7 +128,7 @@ class TestEngine(unittest.TestCase):
         result = self._pipeline(df_in)
         ret = result.get(0, 1)
         print(ret)
-        self.assertEqual(ret[0][0][0], 3)
+        self.assertEqual(ret[0][0], 3)
 
         df_in = DataFrame(
             'inputs', [('num', 'int')])
@@ -137,7 +137,7 @@ class TestEngine(unittest.TestCase):
 
         result = self._pipeline(df_in)
         ret = result.get(0, 1)
-        self.assertEqual(ret[0][0][0], 5)
+        self.assertEqual(ret[0][0], 5)
 
     def test_simple_pipeline(self):
         with open(SIMPLE_PIPELINE_YAML, 'r', encoding='utf-8') as f:
@@ -151,7 +151,7 @@ class TestEngine(unittest.TestCase):
         df_in.seal()
         result = p(df_in)
         ret = result.get(0, 1)
-        self.assertEqual(ret[0][0][0], 6)
+        self.assertEqual(ret[0][0], 6)
 
         df_in = DataFrame(
             'inputs', [('num', 'int')])
@@ -159,7 +159,7 @@ class TestEngine(unittest.TestCase):
         df_in.seal()
         result = p(df_in)
         ret = result.get(0, 1)
-        self.assertEqual(ret[0][0][0], 7)
+        self.assertEqual(ret[0][0], 7)
 
 
 if __name__ == '__main__':

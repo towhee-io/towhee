@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-from pprint import pprint
 import unittest
 import time
 import queue
@@ -37,10 +36,10 @@ class TestDataframe(unittest.TestCase):
         self.assertEqual(df.name, 'test')
         self.assertEqual(df.size, 10)
         datas = df.get(0, 4)
-        self.assertEqual(len(datas[1]), 4)
+        self.assertEqual(len(datas), 4)
 
         datas = df.get(8, 4)
-        self.assertEqual(datas[1], None)
+        self.assertEqual(datas, None)
 
         self.assertFalse(df.sealed)
         df.seal()
@@ -62,14 +61,14 @@ class TestDataframe(unittest.TestCase):
             index = 0
             while True:
                 items = df.get(index, 2)
-                if items[1]:
-                    for item in items[1]:
+                if items:
+                    for item in items:
                         q.put(item)
                         index += 1
                 if df.sealed:
                     items = df.get(index, 100)
-                    if items[1]:
-                        for item in items[1]:
+                    if items:
+                        for item in items:
                             q.put(item)
                     break
 
@@ -93,15 +92,15 @@ class TestDataframe(unittest.TestCase):
             index = 0
             while True:
                 items = df.get(index, 2)
-                if items[1]:
-                    for item in items[1]:
+                if items:
+                    for item in items:
                         q.put(item)
                         index += 1
                     continue
                 if df.sealed:
                     items = df.get(index, 100)
-                    if items[1]:
-                        for item in items[1]:
+                    if items:
+                        for item in items:
                             q.put(item)
                     break
 
@@ -121,7 +120,7 @@ class TestDataframe(unittest.TestCase):
             index = 0
             while True:
                 item = df.get(index, 2)
-                assert item[1] is None
+                assert item is None
                 break
 
         runner = MultiThreadRunner(target=read, args=(df, ), thread_num=10)

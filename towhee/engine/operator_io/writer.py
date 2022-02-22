@@ -41,7 +41,6 @@ class DataFrameWriter(ABC):
     def close(self):
         self._output_df.seal()
 
-
 class DictDataFrameWriter(DataFrameWriter):
     """
     Df writer

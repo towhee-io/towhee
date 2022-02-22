@@ -70,16 +70,16 @@ class TestRunner(unittest.TestCase):
                 self.assertEqual(item[0][0], 1)
             count += 1
 
-    # def test_window_runner_with_error(self):
-    #     df_in, _, runner = self._create_test_obj()
-    #     runner.set_op(SumOperator())
-    #     t = threading.Thread(target=run, args=(runner, ))
-    #     t.start()
-    #     self.assertEqual(runner.status, RunnerStatus.RUNNING)
-    #     df_in.put_dict({'num': 'error_data'})
-    #     df_in.seal()
-    #     runner.join()
-    #     self.assertEqual(runner.status, RunnerStatus.FAILED)
+    def test_window_runner_with_error(self):
+        df_in, _, runner = self._create_test_obj()
+        runner.set_op(SumOperator())
+        t = threading.Thread(target=run, args=(runner, ))
+        t.start()
+        self.assertEqual(runner.status, RunnerStatus.RUNNING)
+        df_in.put({'num': 'error_data'})
+        df_in.seal()
+        runner.join()
+        self.assertEqual(runner.status, RunnerStatus.FAILED)
 
 
 if __name__ == '__main__':

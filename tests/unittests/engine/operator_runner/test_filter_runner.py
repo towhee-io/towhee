@@ -60,9 +60,10 @@ class TestFilterRunner(unittest.TestCase):
         out_df.seal()
         res = 1
         it = MapIterator(out_df, block=True)
+        print(out_df._data_as_list)
         for item in it:
             print(item)
-            self.assertEqual(item[0].value, res)
+            self.assertEqual(item[0][0], res)
             res += 1
 
         self.assertEqual(runner.status, RunnerStatus.FINISHED)

@@ -63,16 +63,15 @@ class TestMapRunner(unittest.TestCase):
             res += 1
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
 
-    # Need better test, already caught at df level.
-    # def test_map_runner_with_error(self):
-    #     input_df, _, runner = self._create_test_obj()
+    def test_map_runner_with_error(self):
+        input_df, _, runner = self._create_test_obj()
 
-    #     runner.set_op(add_operator.AddOperator(3))
-    #     t = threading.Thread(target=run, args=(runner, ))
-    #     t.start()
-    #     input_df.put({'num': 'error_data'})
-    #     runner.join()
-    #     self.assertEqual(runner.status, RunnerStatus.FAILED)
+        runner.set_op(add_operator.AddOperator(3))
+        t = threading.Thread(target=run, args=(runner, ))
+        t.start()
+        input_df.put({'num': 'error_data'})
+        runner.join()
+        self.assertEqual(runner.status, RunnerStatus.FAILED)
 
 if __name__ == '__main__':
     unittest.main()

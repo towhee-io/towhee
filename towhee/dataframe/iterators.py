@@ -51,9 +51,10 @@ class DataFrameIterator:
         return self._id
 
     def notify(self):
-        df = self._df_ref()
-        df.remove_iter(self._id)
-        self.done = True
+        if self._done is not True:
+            df = self._df_ref()
+            df.remove_iter(self._id)
+            self._done = True
 
 class MapIterator(DataFrameIterator):
     """

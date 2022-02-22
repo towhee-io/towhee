@@ -112,15 +112,14 @@ class TestGeneratorRunner(unittest.TestCase):
             self.assertEqual(item[0][-1].parent_path, expect[index])
             index += 1
 
-    # Need better test, DF catches this one. 
-    # def test_generator_runner_with_error(self):
-    #     input_df, _, runner = self._create_test_obj()
-    #     runner.set_op(generator_operator.GeneratorOperator())
-    #     t = threading.Thread(target=run, args=(runner, ))
-    #     t.start()
-    #     input_df.put_dict({'num': 'error_data'})
-    #     runner.join()
-    #     self.assertEqual(runner.status, RunnerStatus.FAILED)
+    def test_generator_runner_with_error(self):
+        input_df, _, runner = self._create_test_obj()
+        runner.set_op(generator_operator.GeneratorOperator())
+        t = threading.Thread(target=run, args=(runner, ))
+        t.start()
+        input_df.put_dict({'num': 'error_data'})
+        runner.join()
+        self.assertEqual(runner.status, RunnerStatus.FAILED)
 
 
 if __name__ == '__main__':
