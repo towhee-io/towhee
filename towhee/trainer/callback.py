@@ -26,8 +26,8 @@ __all__ = [
     "Callback",
     "CallbackList",
     "TrainerControl",
-    "EarlyStopping",
-    "ModelCheckpoint",
+    "EarlyStoppingCallback",
+    "ModelCheckpointCallback",
     "TensorBoardCallBack",
     "PrintCallBack",
     "ProgressBarCallBack"
@@ -63,11 +63,11 @@ class TrainerControl:
     """
 
     def __init__(self,
-                 should_training_stop=False,
-                 should_epoch_stop=False,
-                 should_save=False,
-                 should_evaluate=False,
-                 should_log=False):
+                 should_training_stop: bool = False,
+                 should_epoch_stop: bool = False,
+                 should_save:bool = False,
+                 should_evaluate = False,
+                 should_log = False):
         self.should_training_stop = should_training_stop
         self.should_epoch_stop = should_epoch_stop
         self.should_save = should_save
@@ -228,25 +228,23 @@ class CallbackList:
             cb.on_eval_end(logs)
 
 
-class EarlyStopping(Callback):
+class EarlyStoppingCallback(Callback):
     """
     EarlyStopping
     """
 
     def __init__(self,
-                 trainercontrol,
-                 monitor,
-                 min_delta=0,
-                 patience=0,
-                 mode="max",
-                 baseline=None
+                 trainercontrol: TrainerControl,
+                 monitor: str,
+                 min_delta: float = 0,
+                 patience: int = 0,
+                 mode: str = "max",
+                 baseline = None
                  ):
-        # super(EarlyStopping, self).__init__()
-        super(EarlyStopping).__init__()
+        super(EarlyStoppingCallback).__init__()
         self.trainercontrol = trainercontrol
         self.monitor = monitor
         self.patience = patience
-        # self.verbose = verbose
         self.baseline = baseline
         self.min_delta = abs(min_delta)
         self.wait = 0
@@ -265,14 +263,14 @@ class EarlyStopping(Callback):
         else:
             self.min_delta *= -1
 
-    def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs: Dict = None):
         self.wait = 0
         self.stopped_epoch = 0
         self.best = np.Inf if self.monitor_op == np.less else -np.Inf
         self.best_weights = None
         self.best_epoch = 0
 
-    def on_epoch_end(self, epochs, logs=None):
+    def on_epoch_end(self, epochs: int, logs: Dict = None):
         current = self.get_monitor_value(logs)
         if current is None:
             return
@@ -292,34 +290,34 @@ class EarlyStopping(Callback):
             self.stopped_epoch = epochs
             self.trainercontrol.should_training_stop = True
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs: Dict = None):
         if self.stopped_epoch > 0:
             if is_main_process():
                 trainer_log.warning(
                     "monitoring %s not be better then %s on epoch %s for waiting for %s epochs. Early stop on epoch %s.",
                     self.monitor, self.best, self.best_epoch, self.wait, self.stopped_epoch)
 
-    def get_monitor_value(self, logs):
+    def get_monitor_value(self, logs: Dict):
         logs = logs or {}
         monitor_value = logs.get(self.monitor)
 
         return monitor_value
 
-    def _is_improvement(self, monitor_value, reference_value):
+    def _is_improvement(self, monitor_value: float, reference_value: float):
         return self.monitor_op(monitor_value - self.min_delta, reference_value)
 
 
-class ModelCheckpoint(Callback):
+class ModelCheckpointCallback(Callback):
     """
     ModelCheckpoint
     """
 
     def __init__(self,
-                 trainercontrol,
-                 filepath="./",
-                 every_n_epoch=-1,
-                 every_n_iteration=-1):
-        super(ModelCheckpoint).__init__()
+                 trainercontrol: TrainerControl,
+                 filepath: str = "./",
+                 every_n_epoch: int = -1,
+                 every_n_iteration: int = -1):
+        super(ModelCheckpointCallback).__init__()
         self.trainercontrol = trainercontrol
         if every_n_epoch != -1:
             assert every_n_iteration == -1
@@ -330,19 +328,28 @@ class ModelCheckpoint(Callback):
 
         self.save_path_prefix = filepath
         self.n_iteration = 0
+        assert(self.every_n_epoch != 0 and self.every_n_epoch > -2)
+        assert(self.every_n_iteration != 0 and self.every_n_iteration > -2)
 
-    def on_epoch_end(self, epochs, logs=None):
+    def on_epoch_end(self, epochs: int, logs: Dict = None):
+        if self.every_n_epoch == -1:
+            return
+        if self.trainercontrol.should_save is True:
+            self.trainercontrol.should_save = False
         if self.every_n_epoch >= 1 and epochs % self.every_n_epoch == 0:
             self._save_model()
 
-    def on_batch_end(self, batch, logs=None):
+    def on_batch_end(self, batch: Tuple, logs: Dict = None):
+        if self.every_n_iteration  == -1:
+            return
+        if self.trainercontrol.should_save is True:
+            self.trainercontrol.should_save = False
         if self.every_n_iteration >= 1 and self.n_iteration % self.every_n_iteration == 0:
             self._save_model()
         self.n_iteration += 1
 
     def _save_model(self):
         self.trainercontrol.should_save = True
-
 
 class TensorBoardCallBack(Callback):
     """
