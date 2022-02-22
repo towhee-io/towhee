@@ -110,11 +110,6 @@ class TrainingConfig:
 
     epoch_num: float = field(default=2,
                              metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
-    max_steps: int = field(
-        default=-1,
-        metadata={HELP: "If > 0: set total number of training steps to perform. Override num_train_epochs.",
-                  CATEGORY: "train"},
-    )
     dataloader_pin_memory: bool = field(
         default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"}
     )
