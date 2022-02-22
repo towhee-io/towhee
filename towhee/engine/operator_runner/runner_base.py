@@ -21,7 +21,7 @@ import traceback
 from towhee.types._frame import FRAME, _Frame
 from towhee.engine.status import Status
 from towhee.utils.log import engine_log
-
+from towhee.hparam import param_scope
 
 class RunnerStatus(Enum):
     IDLE = auto()
@@ -170,7 +170,9 @@ class RunnerBase(ABC):
 
     def _call_op(self, inputs) -> Status:
         try:
-            outputs = self._op(**inputs)
+            with param_scope() as hp:
+                hp().towhee.need_schema = True
+                outputs = self._op(**inputs)
             return Status.ok_status(outputs)
         except Exception as e:  # pylint: disable=broad-except
             err = '{}, {}'.format(str(e), traceback.format_exc())
