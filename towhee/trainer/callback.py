@@ -48,18 +48,6 @@ class TrainerControl:
     `TrainerControl` defines a set of current control status which trainer
     can get and take the corresponding action. It can be used by customized
     `Callback` to interfere the trainer.
-
-    Args:
-        should_training_stop: (`bool`)
-            whether or not training should be interrupted.
-        should_epoch_stop: (`bool`)
-            whether or not current training epoch should be interrupted.
-        should_save: (`bool`)
-            whether or not trainer should save current model.
-        should_evaluate: (`bool`)
-            whether or not trainer should evaluate current model.
-        should_log: (`bool`)
-            whether or not trainer should report the log.
     """
 
     def __init__(self,
@@ -68,6 +56,28 @@ class TrainerControl:
                  should_save=False,
                  should_evaluate=False,
                  should_log=False):
+        """
+        Constructs a TrainerControl
+
+        :param should_training_stop: whether or not training should be interrupted
+        :type should_training_stop: bool
+
+        :param should_epoch_stop: whether or not current training epoch should be interrupted
+        :type should_epoch_stop: bool
+
+        :param should_save: whether or not trainer should save current model
+        :type should_save: bool
+
+        :param should_evaluate: whether or not trainer should evaluate current model
+        :type should_evaluate: bool
+
+        :param should_log: whether or not trainer should report the log
+        :type should_log: bool
+
+        :example:
+            >>> from towhee.trainer.callback import TrainerControl
+            >>> tc = TrainerControl(should_log=True)
+        """
         self.should_training_stop = should_training_stop
         self.should_epoch_stop = should_epoch_stop
         self.should_save = should_save
@@ -84,17 +94,74 @@ class Callback:
     """
 
     def __init__(self):
+        """
+        Constructs a Callback
+
+        :param model: the model to be used
+        :type model: nn.Module
+
+        :param optimizer: the optimizer to be used
+        :type optimizer: Optimizer
+
+        :param trainercontrol: trainer control
+        :type trainercontrol: TrainerControl
+
+        :example:
+            >>> from towhee.trainer.callback import Callback
+            >>> import torchvision
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> cb = Callback(model=model)
+        """
         self.model = None
         self.optimizer = None
         self.trainercontrol = None
 
     def set_model(self, model: nn.Module) -> None:
+        """
+        Set model
+
+        :param model: the model used to set the callback
+        :type model: nn.Module
+
+        :example:
+            >>> from towhee.trainer.callback import Callback
+            >>> import torchvision
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> cb = Callback()
+            >>> cb.set_model(model=model)
+        """
         self.model = model
 
     def set_optimizer(self, optimizer: Optimizer) -> None:
+        """
+        Set optimizer
+
+        :param optimizer: the optimizer used to set the callback
+        :type optimizer: Optimizer
+
+        :example:
+            >>> from towhee.trainer.callback import Callback
+            >>> from torch.optim import AdamW
+            >>> cb = Callback()
+            >>> my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
+            >>> cb.set_optimizer(optimizer=my_optimizer)
+        """
         self.optimizer = optimizer
 
     def set_trainercontrol(self, trainercontrol: TrainerControl) -> None:
+        """
+        Set trainercontrol
+
+        :param trainercontrol: the trainercontrol used to set the callback
+        :type trainercontrol: TrainerControl
+
+        :example:
+            >>> from towhee.trainer.callback import Callback
+            >>> from towhee.trainer.callback import TrainerControl
+            >>> tc = TrainerControl(should_log=True)
+            >>> cb = Callback()
+            >>> cb.set_trainercontrol(trainercontrol=tc)
+        """
         self.trainercontrol = trainercontrol
 
     def on_batch_begin(self, batch: Tuple, logs: Dict) -> None:
@@ -142,6 +209,17 @@ class CallbackList:
     """
 
     def __init__(self, callbacks: List[Callback] = None):
+        """
+        Constructs a CallbackList
+
+        :param callbacks: a list of Callbacks
+        :type callbacks: List[Callback]
+
+        :example:
+            >>> from towhee.trainer.callback import CallbackList
+            >>> cb = Callback()
+            >>> CallbackList([cb, cb])
+        """
         self.callbacks = []
         if callbacks is not None:
             self.callbacks.extend(callbacks)
@@ -159,17 +237,42 @@ class CallbackList:
         return "towhee.trainer.CallbackList([{}])".format(callback_desc)
 
     def set_model(self, model: nn.Module):
-        self.model = model
+        """
+        set the model of callbacks
+
+        :param model: the model of Callbacks
+        :type model: nn.Module
+
+        :example:
+            >>> from towhee.trainer.callback import CallbackList
+            >>> cb = Callback()
+            >>> cbs = CallbackList([cb, cb])
+            >>> import torchvision
+            >>> model = torchvision.models.resnet50(pretrained=True)
+            >>> cbs.set_model(model)
+        """
         for cb in self.callbacks:
             cb.set_model(model)
 
     def set_optimizer(self, optimizer: Optimizer):
-        self.optimizer = optimizer
+        """
+        set the model of callbacks
+
+        :param optimizer: the optimizer of Callbacks
+        :type optimizer: Optimizer
+
+        :example:
+            >>> from towhee.trainer.callback import CallbackList
+            >>> from torch.optim import AdamW
+            >>> my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
+            >>> cb = Callback()
+            >>> cbs = CallbackList([cb, cb])
+            >>> cbs.set_optimizer(my_optimizer)
+        """
         for cb in self.callbacks:
             cb.set_optimizer(optimizer)
 
     def set_trainercontrol(self, trainercontrol: TrainerControl):
-        self.trainercontrol = TrainerControl
         for cb in self.callbacks:
             cb.set_trainercontrol(trainercontrol)
 
@@ -239,7 +342,9 @@ class EarlyStopping(Callback):
                  min_delta=0,
                  patience=0,
                  mode="max",
-                 baseline=None
+                 baseline=None,
+                 best=np.Inf,
+                 best_epoch=0
                  ):
         # super(EarlyStopping, self).__init__()
         super(EarlyStopping).__init__()
@@ -252,6 +357,8 @@ class EarlyStopping(Callback):
         self.wait = 0
         self.stopped_epoch = 0
         self.best_weights = None
+        self.best = best
+        self.best_epoch = best_epoch
 
         assert mode in ["max", "min"]
 
