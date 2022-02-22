@@ -15,13 +15,26 @@
 
 import unittest
 from typing import Dict, Tuple
+from tqdm import tqdm
+from towhee.trainer.callback import Callback, CallbackList, TensorBoardCallBack, PrintCallBack, ProgressBarCallBack
 
-from towhee.trainer.callback import Callback, CallbackList
 
 class TestCallback(unittest.TestCase):
     """
     TestCallback
     """
+    logs = {
+        'global_step': 1,
+        'step_loss': 1,
+        'epoch_loss': 1,
+        'epoch_metric': 1,
+        'eval_global_step': 1,
+        'eval_step_loss': 1,
+        'eval_epoch_loss': 1,
+        'eval_epoch_metric': 1,
+        'lr': 1,
+        'epoch': 1
+    }
     class CustomCallback(Callback):
         """
         CustomCallback
@@ -201,6 +214,33 @@ class TestCallback(unittest.TestCase):
         _assert_eval_attrs('on_eval_begin', 1 * num_callbacks)
         _assert_eval_attrs('on_eval_end', 1 * num_callbacks)
 
+    def test_tensorboard(self):
+        class MockSW:
+            def __init__(self, log_dir, comment=''):
+                self.log_dir = log_dir
+                self.comment = comment
+                self.sw_list = []
+            def __call__(self, *args, **kwargs):
+                return self
+            def add_scalar(self, *args):
+                self.sw_list.append(args)
+
+        mock_sw = MockSW(log_dir='runs')
+
+        tensorboard_callback = TensorBoardCallBack(summary_writer_constructor=mock_sw)
+        tensorboard_callback.on_train_batch_end(batch=(1,), logs=self.logs)
+        tensorboard_callback.on_eval_batch_end(batch=(1,), logs=self.logs)
+
+    def test_print(self):
+        print_callback = PrintCallBack(total_epoch_num=10, step_frequency=1)
+        print_callback.on_train_batch_end(batch=(1,), logs=self.logs)
+        print_callback.on_eval_batch_end(batch=(1,), logs=self.logs)
+
+    def test_progressbar(self):
+        progressbar_callback = ProgressBarCallBack(total_epoch_num=10, train_dataloader=tqdm(range(2)))
+        progressbar_callback.on_train_batch_end(batch=(1,), logs=self.logs)
+        progressbar_callback.on_epoch_begin(epochs=1, logs=self.logs)
+        progressbar_callback.on_eval_batch_end(batch=(1,), logs=self.logs)
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

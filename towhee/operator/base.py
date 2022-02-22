@@ -112,11 +112,17 @@ class NNOperator(Operator):
         """
         raise NotImplementedError()
 
-    def train(self, training_config=None, train_dataset=None, eval_dataset=None, model_card=None, resume_checkpoint_path=None):
+    def train(self,
+              training_config=None,
+              train_dataset=None,
+              eval_dataset=None,
+              model_card=None,
+              resume_checkpoint_path=None,
+              **kwargs):
         """
         For training model
         """
-        self.setup_trainer(training_config, train_dataset, eval_dataset, model_card)
+        self.setup_trainer(training_config, train_dataset, eval_dataset, model_card, **kwargs)
         self.trainer.train(resume_checkpoint_path)
 
     def create_trainer(self,
