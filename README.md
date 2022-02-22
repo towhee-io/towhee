@@ -13,15 +13,13 @@
 
 ## What is Towhee?
 
-Towhee is a flexible, application-oriented framework for running machine learning (ML) pipelines. It aims to make greatly simply your application's ML requirements, allowing everyone - from beginner developers to large organizations - to deploy complex pipelines with just a few lines of code.
+Towhee is a flexible, application-oriented framework for generating embedding vectors via a pipeline of ML models and other operations. It aims to make democratize `x2vec`, allowing everyone - from beginner developers to large organizations - to generate dense embeddings with just a few lines of code.
 
-Towhee has pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://towhee.io).
-
-Our initial focus will be on generating *embeddings*, i.e. dense vectors which can be used to represent the contents of images, video, text, and other human-generated data.
+To accomplish this, we provide pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://towhee.io). Although our initial focus is on generating embeddings, Towhee can also be used to create and share generic machine learning pipelines such as this [image animation pipeline](https://towhee.io/towhee/anime-transfer).
 
 ## Key features
 
-- __Easy ML for everyone__: Run a machine learning pipeline with less than five lines of code.
+- __Easy embedding for everyone__: Run a local embedding pipeline with as little as three lines of code.
 
 - __Rich operators and pipelines__: No more reinventing the wheel! Collaborate and share pipelines with the open source community.
 
