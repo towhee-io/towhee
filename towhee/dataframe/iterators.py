@@ -65,7 +65,7 @@ class MapIterator(DataFrameIterator):
         block (`bool`):
             Whether to block when data not present.
     """
-    def __init__(self, df: DataFrame, block = False):
+    def __init__(self, df: DataFrame, block = True):
         super().__init__(df, block = block)
         self._batch_size = 1
         self._step = 1

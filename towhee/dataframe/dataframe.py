@@ -20,11 +20,12 @@ from typing import List, Tuple, Any
 from towhee.dataframe.array.array import Array
 from towhee.dataframe._schema import _Schema
 from towhee.types._frame import _Frame, FRAME
+from towhee.types import equivalents
 
 
 class DataFrame:
     """
-    A `DataFrame` is a collection of immutable, potentially heterogeneous blogs of data.
+    A `DataFrame` is a collection of immutable, potentixally heterogeneous blogs of data.
 
     Args:
         columns (`list[Tuple[str, Any]]`)
@@ -66,7 +67,8 @@ class DataFrame:
         """Set the columns in the schema."""
         for name, col_type in columns:
             self._schema.add_col(name=name, col_type = col_type)
-        self._schema.add_col(FRAME, '_Frame')
+        frame = _Frame()
+        self._schema.add_col(FRAME, self.class_type(frame))
         self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
 
     def __getitem__(self, key):
@@ -386,7 +388,7 @@ class DataFrame:
             item[-1].row_id = self._len
 
         for i, x in enumerate(item):
-            assert str(x.__class__.__name__) == self._schema.col_type(i)
+            assert equivalents.get(self.class_type(x), self.class_type(x)) == self._schema.col_type(i)
 
         for i, x in enumerate(item):
             self._data_as_list[i].put(x)
@@ -403,7 +405,7 @@ class DataFrame:
 
         # I believe its faster to loop through and check than list comp
         for key, val in item.items():
-            assert str(val.__class__.__name__) == self._schema.col_type(self._schema.col_index(key))
+            assert equivalents.get(self.class_type(val), self.class_type(val)) == self._schema.col_type(self._schema.col_index(key))
 
         for key, val in item.items():
             self._data_as_list[self._schema.col_index(key)].put(val)
@@ -606,6 +608,12 @@ class DataFrame:
                     del id_event[index]
                     self.gc_blocked()
                     return
+    
+    def class_type(self, o):
+        module = o.__class__.__module__
+        if module is None or module == str.__class__.__module__:
+            return o.__class__.__name__
+        return module + '.' + o.__class__.__name__
 
 
 class Responses(Enum):
