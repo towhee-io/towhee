@@ -68,6 +68,12 @@ class TestFreezer(unittest.TestCase):
                 res.append(x)
         self.assertEqual(res, ['unfreezed' for _ in range(len(res))])
 
+    def test_freezer_slice(self):
+        self.freezer.set_slice(1)
+        res = self.freezer.show_freezed_layers()
+        self.assertEqual(res, ['conv1'])
+
+
 
 if __name__ == '__main__':
     unittest.main()
