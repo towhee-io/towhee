@@ -16,7 +16,7 @@
 import unittest
 from typing import Dict, Tuple
 from tqdm import tqdm
-from towhee.trainer.callback import Callback, CallbackList, TensorBoardCallBack, PrintCallBack, ProgressBarCallBack
+from towhee.trainer.callback import  TrainerControl, Callback, CallbackList, EarlyStoppingCallback, ModelCheckpointCallback, TensorBoardCallBack, PrintCallBack, ProgressBarCallBack
 
 
 class TestCallback(unittest.TestCase):
@@ -213,6 +213,40 @@ class TestCallback(unittest.TestCase):
         _assert_eval_attrs('on_eval_batch_end', eval_epoch_nums * eval_batch_nums * num_callbacks)
         _assert_eval_attrs('on_eval_begin', 1 * num_callbacks)
         _assert_eval_attrs('on_eval_end', 1 * num_callbacks)
+
+    def test_earlystopping(self):
+        trainer_control = TrainerControl()
+        earlystopping_callback = EarlyStoppingCallback(trainer_control, 'loss', patience = 3, mode = "min")
+
+        loss_value = [5.0, 4.0, 3.0, 2.5, 2.1, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+        def loss_emulator(): 
+            for value in loss_value:
+                yield value
+       
+        train_log = {}
+        earlystopping_callback.on_train_begin(train_log)
+        for epoch, loss_value in enumerate(loss_emulator()):
+            train_log["loss"] = loss_value
+            earlystopping_callback.on_epoch_end(epoch, train_log)
+        earlystopping_callback.on_train_end(train_log)
+        assert(earlystopping_callback.trainercontrol.should_training_stop == True)
+
+    def test_modelcheckpoint(self):
+        trainer_control = TrainerControl()
+        modelcheckpoint_callback = ModelCheckpointCallback(trainer_control, every_n_epoch = 5)
+        epoch_status = []
+        for epoch in range(11):
+            modelcheckpoint_callback.on_epoch_end(epoch)
+            epoch_status.append(modelcheckpoint_callback.trainercontrol.should_save)
+        assert(epoch_status == [True, False, False, False, False, True, False, False, False, False, True])
+
+        modelcheckpoint_callback = ModelCheckpointCallback(trainer_control, every_n_iteration = 5)
+        iteration_status = []
+        for iteration in range(11):
+            batch_data = (None, None)
+            modelcheckpoint_callback.on_batch_end(batch_data)
+            iteration_status.append(modelcheckpoint_callback.trainercontrol.should_save)
+        assert(iteration_status == [True, False, False, False, False, True, False, False, False, False, True])
 
     def test_tensorboard(self):
         class MockSW:

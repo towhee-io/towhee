@@ -29,8 +29,8 @@ from torch.utils.data.dataset import Dataset
 from torch.multiprocessing import Process
 from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
 
-from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpoint, \
-    EarlyStopping, TrainerControl
+from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpointCallback, \
+    EarlyStoppingCallback, TrainerControl
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process
@@ -561,10 +561,10 @@ class Trainer:
                                                       step_frequency=self.configs.print_steps))
         # early stop
         if self.configs.early_stopping not in no_option_list:
-            self.callbacks.add_callback(EarlyStopping(self.trainercontrol, **self.configs.early_stopping))
+            self.callbacks.add_callback(EarlyStoppingCallback(self.trainercontrol, **self.configs.early_stopping))
         # save checkpoint
         if self.configs.model_checkpoint not in no_option_list:
-            self.callbacks.add_callback(ModelCheckpoint(self.trainercontrol, **self.configs.model_checkpoint))
+            self.callbacks.add_callback(ModelCheckpointCallback(self.trainercontrol, **self.configs.model_checkpoint))
         # tensorboard
         summary_writer_constructor = _get_summary_writer_constructor()
         if summary_writer_constructor is not None and self.configs.tensorboard not in no_option_list:
