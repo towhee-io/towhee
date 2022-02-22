@@ -24,4 +24,4 @@ class DispatcherMixin:
             return call_mapping[path](*arg, **kws)
         else:
             loader = OperatorLoader()
-            return loader.load_operator(path, kws, None)
+            return loader.load_operator(path.replace('.', '/').replace('_', '-'), kws, tag='main')
