@@ -16,7 +16,7 @@
 import unittest
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
-from towhee.dataframe import DataFrame, Variable
+from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
 from towhee.dag import OperatorRepr
 from towhee.hub.file_manager import FileManagerConfig, FileManager
@@ -76,38 +76,38 @@ class TestOperatorContext(unittest.TestCase):
         self.assertEqual(op_ctx.status, OpStatus.RUNNING)
         return df_in, df_out, op_ctx
 
-    # def test_op_ctx(self):
-    #     df_in, df_out, op_ctx = self._create_op_ctx()
+    def test_op_ctx(self):
+        df_in, df_out, op_ctx = self._create_op_ctx()
 
-    #     data = (1, )
-    #     data_size = 20
-    #     t = DfWriter(df_in, data_size, data=data)
-    #     t.set_sealed_when_stop()
-    #     t.start()
-    #     t.join()
+        data = (1, )
+        data_size = 20
+        t = DfWriter(df_in, data_size, data=data)
+        t.set_sealed_when_stop()
+        t.start()
+        t.join()
 
-    #     op_ctx.join()
-    #     self.assertEqual(op_ctx.status, OpStatus.FINISHED)
-    #     df_out.seal()
-    #     map_iter = MapIterator(df_out)
-    #     for item in map_iter:
-    #         self.assertEqual(item[0][0], 6)
+        op_ctx.join()
+        self.assertEqual(op_ctx.status, OpStatus.FINISHED)
+        df_out.seal()
+        map_iter = MapIterator(df_out)
+        for item in map_iter:
+            self.assertEqual(item[0][0], 6)
 
-    # def test_op_ctx_failed(self):
-    #     df_in, df_out, op_ctx = self._create_op_ctx()
+    def test_op_ctx_failed(self):
+        df_in, df_out, op_ctx = self._create_op_ctx()
 
-    #     # Set errer data
-    #     data = (Variable('str', 'test'), )
-    #     data_size = 20
-    #     t = DfWriter(df_in, data_size, data=data)
-    #     t.set_sealed_when_stop()
-    #     t.start()
-    #     t.join()
-    #     op_ctx.join()
-    #     self.assertEqual(op_ctx.status, OpStatus.FAILED)
-    #     df_out.seal()
+        # Set errer data
+        data = ('test', )
+        data_size = 20
+        t = DfWriter(df_in, data_size, data=data)
+        t.set_sealed_when_stop()
+        t.start()
+        t.join()
+        op_ctx.join()
+        self.assertEqual(op_ctx.status, OpStatus.FAILED)
+        df_out.seal()
 
-    #     self.assertEqual(df_out.size, 0)
+        self.assertEqual(df_out.size, 0)
 
     def test_op_ctx_stop(self):
         df_in, _, op_ctx = self._create_op_ctx()

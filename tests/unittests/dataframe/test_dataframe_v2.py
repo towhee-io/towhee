@@ -17,7 +17,7 @@ import unittest
 import queue
 
 from towhee.types._frame import _Frame, FRAME
-from towhee.dataframe.dataframe import DataFrame, Responses
+from towhee.dataframe.dataframe import DataFrame
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
@@ -25,7 +25,7 @@ class TestDataframe(unittest.TestCase):
     """Basic test case for `DataFrame`.
     """
 
-    def get_columns(self, frames = False):
+    def get_columns(self):
         return [('digit', 'int'), ('letter', 'str')]
 
     def get_tuples(self, frames = False):
@@ -58,7 +58,7 @@ class TestDataframe(unittest.TestCase):
     def test_put_tuple(self):
 
         #  Testing put tuple with no frame col in both data and cols.
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         data = self.get_tuples(frames = False)
         df = DataFrame('test', columns)
         df.put(data)
@@ -69,7 +69,7 @@ class TestDataframe(unittest.TestCase):
             count += 1
 
         #  Testing put tuple with frame col in both data and cols.
-        columns = self.get_columns(frames=True)
+        columns = self.get_column()
         data = self.get_tuples(frames = True)
         df = DataFrame('test', columns)
         df.put(data)
@@ -80,7 +80,7 @@ class TestDataframe(unittest.TestCase):
             count += 1
 
         #  Testing put tuple with no frame col in cols and with frame cols in data.
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         data = self.get_tuples(frames = True)
         df = DataFrame('test', columns)
         df.put(data)
@@ -92,7 +92,7 @@ class TestDataframe(unittest.TestCase):
 
         #  Testing single tuple put and df accesses.
         data = (0, 'a')
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         df = DataFrame('test', columns)
         t = DfWriter(df, 10, data)
         t.start()
@@ -111,7 +111,7 @@ class TestDataframe(unittest.TestCase):
 
     def test_put_dict(self):
         #  Testing put dict with no frame col in both data and cols.
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         data = self.get_dict(frames = False)
         df = DataFrame('test', columns)
         df.put(data)
@@ -122,7 +122,7 @@ class TestDataframe(unittest.TestCase):
             count += 1
 
         #  Testing put dict with frame col in both data and cols.
-        columns = self.get_columns(frames=True)
+        columns = self.get_columns()
         data = self.get_dict(frames = True)
         df = DataFrame('test', columns)
         df.put(data)
@@ -133,7 +133,7 @@ class TestDataframe(unittest.TestCase):
             count += 1
 
         #  Testing put dict with no frame col in cols and with frame cols in data.
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         data = self.get_tuples(frames = True)
         df = DataFrame('test', columns)
         df.put(data)
@@ -145,7 +145,7 @@ class TestDataframe(unittest.TestCase):
 
         #  Testing single dict put and df accesses.
         data = {'digit': 0, 'letter': 'a'}
-        columns = self.get_columns(frames=False)
+        columns = self.get_columns()
         df = DataFrame('test', columns)
         t = DfWriter(df, 10, data)
         t.start()

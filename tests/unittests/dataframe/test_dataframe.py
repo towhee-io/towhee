@@ -17,7 +17,7 @@ import unittest
 import time
 import queue
 
-from towhee.dataframe import DataFrame, DataFrameIterator
+from towhee.dataframe import DataFrame
 
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
@@ -113,8 +113,6 @@ class TestDataframe(unittest.TestCase):
 
     def test_notify(self):
         df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
-        data = ('a', 1)
-        data_size = 10
 
         def read(df: DataFrame):
             index = 0

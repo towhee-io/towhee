@@ -20,7 +20,7 @@ from typing import List, Tuple, Any
 from towhee.dataframe.array.array import Array
 from towhee.dataframe._schema import _Schema
 from towhee.types._frame import _Frame, FRAME
-from towhee.types import equivalents
+# from towhee.types import equivalents
 
 
 class DataFrame:
@@ -317,7 +317,7 @@ class DataFrame:
                 return self.ret(Responses.UNKOWN_ERROR, None, None, iter_id)
 
     def ret(self, code, ret, offset, provide_code):
-        if  provide_code != False:
+        if  provide_code is not False:
             return code, ret, offset
         else:
             return ret

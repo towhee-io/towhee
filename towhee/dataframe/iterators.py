@@ -206,7 +206,6 @@ class WindowIterator(DataFrameIterator):
             self._done = True
             df.remove_iter(self._id)
             raise StopIteration
-        
 
         elif code == Responses.EMPTY:
             df.notify_window_block(self._id, self._event, 'start', (self._comparator, self._current_window[0]))
