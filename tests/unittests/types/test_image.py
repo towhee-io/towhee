@@ -36,6 +36,7 @@ class TestImage(unittest.TestCase):
     """
     Test Image class.
     """
+
     def test_base(self):
         towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
 
@@ -49,6 +50,8 @@ class TestImage(unittest.TestCase):
         self.assertEqual(array_size[0], img_height)
         self.assertEqual(array_size[1], img_width)
         self.assertEqual(array_size[2], img_channel)
+
+        self.assertFalse(towhee_img.key_frame)
 
         cp_array = towhee_img.array
         cp_array[0][0][0] = 78
