@@ -482,9 +482,14 @@ class DataFrame:
             iter_id (`int`):
                 The iterator's id.
         """
-        with self._iterator_lock:
-            if iter_id in self._iterators:
-                del self._iterators[iter_id]
+        self.unblock_iter(iter_id)
+        try:
+            with self._iterator_lock:
+                if iter_id in self._iterators:
+                    del self._iterators[iter_id]
+        except KeyError:
+            pass
+        
         self.gc_data()
 
     def ack(self, iter_id, offset):

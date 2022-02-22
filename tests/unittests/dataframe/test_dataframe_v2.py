@@ -69,7 +69,7 @@ class TestDataframe(unittest.TestCase):
             count += 1
 
         #  Testing put tuple with frame col in both data and cols.
-        columns = self.get_column()
+        columns = self.get_columns()
         data = self.get_tuples(frames = True)
         df = DataFrame('test', columns)
         df.put(data)

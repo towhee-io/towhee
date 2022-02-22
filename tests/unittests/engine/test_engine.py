@@ -127,7 +127,6 @@ class TestEngine(unittest.TestCase):
 
         result = self._pipeline(df_in)
         ret = result.get(0, 1)
-        print(ret)
         self.assertEqual(ret[0][0], 3)
 
         df_in = DataFrame(

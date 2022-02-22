@@ -117,7 +117,7 @@ class TestGeneratorRunner(unittest.TestCase):
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        input_df.put_dict({'num': 'error_data'})
+        input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
 
