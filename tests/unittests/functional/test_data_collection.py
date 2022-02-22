@@ -21,6 +21,8 @@ from towhee.functional import DataCollection
 from towhee.hparam.hyperparameter import param_scope
 
 import towhee.functional.data_collection
+import towhee.functional.option
+
 
 @register(name='myop/add-1', version='0.1')
 def add_1(x):
@@ -77,9 +79,21 @@ class TestDataCollection(unittest.TestCase):
         )
         self.assertListEqual(list(result), [2, 4, 6, 8, 10])
 
+    def test_example_for_multple_line_statement(self):
+        dc = DataCollection(range(5))
+        result = dc \
+            .myop.add(val=1) \
+            .myop.mul(val=2) \
+            .to_list()
+        self.assertListEqual(result, [2, 4, 6, 8, 10])
 
-TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
+
+TestDataCollectionExamples = doctest.DocTestSuite(
+    towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)
+
+TestOptionExamples = doctest.DocTestSuite(towhee.functional.option)
+unittest.TextTestRunner().run(TestOptionExamples)
 
 if __name__ == '__main__':
     unittest.main()

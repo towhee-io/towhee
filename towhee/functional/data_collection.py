@@ -21,6 +21,7 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins.data_source import DataSourceMixin
 from towhee.functional.mixins.dispatcher import DispatcherMixin
 
+
 def _private_wrapper(func):
 
     def wrapper(self, *arg, **kws):
@@ -377,17 +378,14 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin):
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
 
-        def inner(iterable):
-            buff = []
-            for ele in iterable:
-                buff.append(ele)
-                if len(buff) == size:
-                    yield DataCollection.cached(buff)
-                    buff = []
-            if not drop_tail and len(buff) > 0:
+        buff = []
+        for ele in self._iterable:
+            buff.append(ele)
+            if len(buff) == size:
                 yield DataCollection.cached(buff)
-
-        return inner(self)
+                buff = []
+        if not drop_tail and len(buff) > 0:
+            yield DataCollection.cached(buff)
 
     @_private_wrapper
     def rolling(self, size, drop_head=True, drop_tail=True):
@@ -407,19 +405,16 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin):
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
 
-        def inner(iterable):
-            buff = []
-            for ele in iterable:
-                buff.append(ele)
-                if not drop_head or len(buff) == size:
-                    yield DataCollection.cached(buff.copy())
-                if len(buff) == size:
-                    buff = buff[1:]
-            while not drop_tail and len(buff) > 0:
-                yield DataCollection.cached(buff)
+        buff = []
+        for ele in self._iterable:
+            buff.append(ele)
+            if not drop_head or len(buff) == size:
+                yield DataCollection.cached(buff.copy())
+            if len(buff) == size:
                 buff = buff[1:]
-
-        return inner(self)
+        while not drop_tail and len(buff) > 0:
+            yield DataCollection.cached(buff)
+            buff = buff[1:]
 
     @_private_wrapper
     def flaten(self):
@@ -432,15 +427,12 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin):
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
 
-        def inner(iterable):
-            for ele in iterable:
-                if isinstance(ele, Iterable):
-                    for nested_ele in iter(ele):
-                        yield nested_ele
-                else:
-                    yield ele
-
-        return inner(self)
+        for ele in self._iterable:
+            if isinstance(ele, Iterable):
+                for nested_ele in iter(ele):
+                    yield nested_ele
+            else:
+                yield ele
 
     def shuffle(self, in_place=False):
         """
@@ -478,20 +470,16 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin):
                 sample(self._iterable, len(self._iterable)))
 
     def __getattr__(self, name):
-        # with param_scope() as hp:
-        #     dispatcher = hp().dispatcher({})
-        # op = dispatcher[name]
-
-        # def wrapper(*arg, **kws):
-        #     op_instance = op(*arg, **kws)
-        #     return self.map(op_instance)
-
-        # return wrapper
+        """
+        Call dispatcher for data collection
+        """
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
+
             def wrapper(path, *arg, **kws):
                 op = self.resolve(dispatcher, path, *arg, **kws)
                 return self.map(op)
+
             callholder = hp.callholder(wrapper)
         return getattr(callholder, name)
 
@@ -549,8 +537,26 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin):
     def __or__(self, unary_op):
         return self.map(unary_op)
 
+    @_private_wrapper
+    def __add__(self, other):
+        """
+        concat two data collection.
+
+        Examples:
+        >>> (DataCollection.range(5) + DataCollection.range(5)).to_list()
+        [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+        >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
+        [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+        """
+
+        for x in self:
+            yield x
+        for x in other:
+            yield x
+
     def to_list(self):
-        return self._iterable if isinstance(self._iterable, list) else list(self)
+        return self._iterable if isinstance(self._iterable,
+                                            list) else list(self)
 
 
 if __name__ == '__main__':  # pylint: disable=inconsistent-quotes
