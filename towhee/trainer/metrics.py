@@ -56,10 +56,6 @@ class Metrics:
 class TMMetrics(Metrics):
     """
     `TMMetrics` use torchmetric as the implementation of metrics.
-
-    Args:
-        metric_name: (`str`):
-            to indicate which metric is used to evalute.
     """
     @classmethod
     def get_tm_avaliable_metrics(cls):
@@ -149,6 +145,17 @@ class TMMetrics(Metrics):
         return list(cls._metrics_list.keys())
 
     def __init__(self, metric_name: str):
+        """
+        Constructs a TMMetrics
+
+        :param metric_name: the model name
+        :type metric_name: str
+
+        :example:
+            >>> from towhee.trainer.metrics import TMMetrics
+            >>> model_name = 'Accuracy'
+            >>> tmm = TMMetrics(model_name)
+        """
         super().__init__(metric_name)
         assert metric_name in TMMetrics._metrics_list
         self._metric = TMMetrics._metrics_list[metric_name]()
@@ -179,19 +186,27 @@ def _generate_meta_info() -> None:
 def show_avaliable_metrics() -> List:
     """
     Get the list of current avaliable metrics.
+
+    :example:
+        >>> from towhee.trainer import metrics
+        >>> metrics.show_avaliable_metrics()
     """
     global _metrics_meta
     return _metrics_meta
 
 def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics') -> Metrics:
     """
-    Get the `Metrics` class by metric names, and metric_impl should be the specific implementation class.
+    Get the `Metrics` class by metric names, and metric_impl should be the specific implementation class
 
-    Args:
-        metric_name: (`str`):
-            the metric name used to evaluate. (e.g. Accuracy)
-        metric_impl: (`str`)
-            the metric implementation class name. (e.g. TMMetrics)
+    :param metric_name: the metric name used to evaluate. (e.g. Accuracy)
+    :type metric_name: str
+    
+    :param metric_impl: the metric implementation class name. (e.g. TMMetrics)
+    :type metric_impl: str
+
+    :example:
+        >>> from towhee.trainer import metrics
+        >>> metric = metrics.get_metric_by_name('Accuracy')
     """
     global _metrics_impls
     return _metrics_impls[metric_impl](metric_name)
