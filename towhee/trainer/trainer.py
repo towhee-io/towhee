@@ -32,7 +32,7 @@ from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, Pr
     EarlyStoppingCallback, TrainerControl
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
-from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process
+from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process, send_to_device
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
 from towhee.trainer.optimization.optimization import get_scheduler
@@ -213,6 +213,9 @@ class Trainer:
             logs["eval_global_step"] = 0
         return logs
 
+    def prepare_inputs(self, inputs):
+        return send_to_device(inputs, self.configs.device)
+
     def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
         """
         Main training entry point.
@@ -273,7 +276,7 @@ class Trainer:
             self.metric.reset()
             for step, inputs in enumerate(train_dataloader):
                 self.callbacks.on_train_batch_begin(inputs, logs)
-                inputs = [input_.to(self.configs.device) for input_ in inputs]
+                inputs = self.prepare_inputs(inputs)
                 step_logs = self.train_step(model, inputs)  # , train_dataloader)
                 logs["lr"] = self.lr_scheduler.get_lr()[0]
                 logs["global_step"] += 1
