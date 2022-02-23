@@ -298,8 +298,9 @@ class Trainer:
             self.lr_value = logs["lr"]
             self._create_training_summary(
                 finetuned_from=resume_checkpoint_path,
-                train_last_epoch=train_last_epoch if train_last_epoch != 0 else None,
+                resumed_from_epoch=train_last_epoch if train_last_epoch != 0 else None,
                 num_train_epochs=self.epoch - train_last_epoch,
+                current_epoch=self.epoch,
                 end_lr=self.lr_value,
                 loss={"type": self.configs.loss, "value": round(self.loss_value, 3)},
                 metric={"type": self.configs.metric, "value": round(self.metric_value, 3)}
@@ -315,6 +316,11 @@ class Trainer:
 
         self._cleanup_distributed(rank)
         self.callbacks.on_train_end(logs)
+
+        self.save(
+            path=os.path.join(self.configs.output_dir, "final_epoch"),
+            overwrite=self.configs.overwrite_output_dir
+        )
 
     def _create_training_summary(self, **kwargs):
         training_summary = dict(kwargs)
@@ -647,32 +653,33 @@ class Trainer:
         #     trainer_log.warning("model card file not exist.")
 
     def save(self, path, overwrite=True):
-        if not overwrite:
-            if Path(path).exists():
-                raise FileExistsError("File already exists: ", str(Path(path).resolve()))
-        Path(path).mkdir(exist_ok=True)
-        checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
-        modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-        trainer_log.info("save checkpoint_path: %s", checkpoint_path)
-        optimizer_state_dict = None
-        lr_scheduler_state_dict = None
-        if isinstance(self.optimizer, Optimizer):  # if created
-            optimizer_state_dict = self.optimizer.state_dict()
-        if self.lr_scheduler is not None:
-            lr_scheduler_state_dict = self.lr_scheduler.state_dict()
-        torch.save({
-            "epoch": self.epoch,
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": optimizer_state_dict,
-            "lr_scheduler_state_dict": lr_scheduler_state_dict,
-            "loss_value": self.loss_value,
-            "metric_value": self.metric_value,
-            "end_lr": self.lr_value
-        }, checkpoint_path)
-        if isinstance(self.model_card, ModelCard):
-            self.model_card.save_model_card(modelcard_path)
-        else:
-            trainer_log.warning("model card is None.")
+        if is_main_process():
+            if not overwrite:
+                if Path(path).exists():
+                    raise FileExistsError("File already exists: ", str(Path(path).resolve()))
+            Path(path).mkdir(exist_ok=True)
+            checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+            modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
+            trainer_log.info("save checkpoint_path: %s", checkpoint_path)
+            optimizer_state_dict = None
+            lr_scheduler_state_dict = None
+            if isinstance(self.optimizer, Optimizer):  # if created
+                optimizer_state_dict = self.optimizer.state_dict()
+            if self.lr_scheduler is not None:
+                lr_scheduler_state_dict = self.lr_scheduler.state_dict()
+            torch.save({
+                "epoch": self.epoch,
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": optimizer_state_dict,
+                "lr_scheduler_state_dict": lr_scheduler_state_dict,
+                "loss_value": self.loss_value,
+                "metric_value": self.metric_value,
+                "end_lr": self.lr_value
+            }, checkpoint_path)
+            if isinstance(self.model_card, ModelCard):
+                self.model_card.save_model_card(modelcard_path)
+            else:
+                trainer_log.warning("model card is None.")
 
     def _reset_controller(self):
         self.trainercontrol.should_save = False
