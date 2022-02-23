@@ -12,10 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import collections
+
 import math
 import os
-import sys
 import torch
 import torch.distributed as dist
 
@@ -123,6 +122,7 @@ class Trainer:
         self.override_optimizer = False
         self.lr_scheduler_type = self.configs.lr_scheduler_type
         self.lr_scheduler = None
+        self.lr_value = self.configs.lr
         self.metric = None
         self.loss = None
         self.override_loss = False
@@ -130,19 +130,13 @@ class Trainer:
         self.callbacks = CallbackList()
         self.loss_metric = None
         self.metric_value = 0.0
-        self.epoch = -1
+        self.epoch = 0
         self.train_dataloader = train_dataloader
         self.train_sampler = None
         self.eval_dataloader = eval_dataloader
         self.distributed = False
 
         os.makedirs(self.configs.output_dir, exist_ok=True)
-        if training_config.max_steps > 0:
-            trainer_log.info("max_steps is given.")
-        if train_dataset is not None and not isinstance(train_dataset,
-                                                        collections.abc.Sized) and training_config.max_steps <= 0:
-            raise ValueError("train_dataset does not implement __len__, max_steps has to be specified")
-
         if not isinstance(self.model_card, ModelCard):
             self.model_card = ModelCard()
 
@@ -214,7 +208,7 @@ class Trainer:
                 self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
 
     def _create_logs(self):
-        logs = {"global_step": 0, "epoch": self.epoch + 1}
+        logs = {"global_step": 0, "epoch": self.epoch}
         if self.configs.eval_strategy not in no_option_list:
             logs["eval_global_step"] = 0
         return logs
@@ -232,44 +226,32 @@ class Trainer:
         print("world_size=", world_size)
 
         self.model = self.model.to(self.configs.device)
+        model = self.model
         self.trainercontrol = TrainerControl()
         self._load_before_train(resume_checkpoint_path, rank)
         # Keeping track whether we can can len() on the dataset or not
-        train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
+        # train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
 
         train_dataloader = self.get_train_dataloader()
 
         total_train_batch_size = self.configs.train_batch_size
-        if train_dataset_is_sized:
-            num_update_steps_per_epoch = len(train_dataloader)
-            num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
-            if self.configs.max_steps > 0:
-                max_steps = self.configs.max_steps
-                num_train_epochs = self.configs.max_steps // num_update_steps_per_epoch + int(
-                    self.configs.max_steps % num_update_steps_per_epoch > 0
-                )
-            else:
-                max_steps = math.ceil(self.configs.epoch_num * num_update_steps_per_epoch)
-                num_train_epochs = math.ceil(self.configs.epoch_num)
-        else:
-            max_steps = self.configs.max_steps
-            # Setting a very large number of epochs so we go as many times as necessary over the iterator.
-            num_train_epochs = sys.maxsize
+        # if train_dataset_is_sized:
+        num_update_steps_per_epoch = len(train_dataloader)
+        num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
 
-        self._setup_before_train(num_training_steps=max_steps)
+        train_last_epoch = self.epoch
+        num_train_epochs = math.ceil(self.configs.epoch_num - train_last_epoch)
+        num_train_steps = math.ceil(num_train_epochs * num_update_steps_per_epoch)
 
-        model = self.model
-
-        num_examples = (
-            self.num_examples(
-                train_dataloader) if train_dataset_is_sized else total_train_batch_size * self.configs.max_steps
+        self._setup_before_train(
+            num_training_steps=num_train_steps,
+            init_lr=self.lr_value,
+            last_epoch=-1
         )
 
         trainer_log.info("***** Running training *****")
-        trainer_log.info("  Num examples = %d", num_examples)
         trainer_log.info("  Num Epochs = %d", num_train_epochs)
         trainer_log.info("  Total train batch size  = %d", total_train_batch_size)
-        trainer_log.info("  Total optimization steps = %d", max_steps)
         trainer_log.info("****************************")
 
         if is_main_process():
@@ -277,15 +259,16 @@ class Trainer:
 
         logs = self._create_logs()
         self.callbacks.on_train_begin(logs)
-        start_epoch = self.epoch + 1
-        for _ in range(start_epoch, num_train_epochs):
+
+        for epoch in range(train_last_epoch+1, self.configs.epoch_num+1):
+            self.epoch = logs["epoch"] = epoch
             model.train()
             self._reset_controller()
             self.optimizer.zero_grad()
             if self.distributed:
                 self.train_sampler.set_epoch(self.epoch)
             # batch_loss_sum = 0.0
-            self.callbacks.on_epoch_begin(self.epoch + 1, logs)
+            self.callbacks.on_epoch_begin(self.epoch, logs)
             self.loss_metric.reset()
             self.metric.reset()
             for step, inputs in enumerate(train_dataloader):
@@ -298,39 +281,34 @@ class Trainer:
                 self.callbacks.on_train_batch_end(tuple(inputs), logs)
                 self._may_evaluate(model, logs, step)
             self._may_evaluate(model, logs)
-            self.epoch += 1
-            logs["epoch"] = self.epoch + 1
-            self.callbacks.on_epoch_end(self.epoch + 1, logs)
+            self.callbacks.on_epoch_end(self.epoch, logs)
             self.loss_value = logs["epoch_loss"]
             self.metric_value = logs["epoch_metric"]
+            self.lr_value = logs["lr"]
+            self._create_training_summary(
+                finetuned_from=resume_checkpoint_path,
+                train_last_epoch=train_last_epoch if train_last_epoch != 0 else None,
+                num_train_epochs=self.epoch - train_last_epoch,
+                end_lr=self.lr_value,
+                loss={"type": self.configs.loss, "value": round(self.loss_value, 3)},
+                metric={"type": self.configs.metric, "value": round(self.metric_value, 3)}
+            )
             if self.trainercontrol.should_training_stop:
                 break
             if self.trainercontrol.should_save:
                 self.save(
-                    path=os.path.join(self.configs.output_dir, "epoch_" + str(self.epoch + 1)),
+                    path=os.path.join(self.configs.output_dir, "epoch_" + str(self.epoch)),
                     overwrite=self.configs.overwrite_output_dir
                 )
         trainer_log.info("\nTraining completed.\n")
-        training_summary = {
-            "device": str(self.configs.device),
-            "finetuned_from": resume_checkpoint_path,
-            "start_epoch": start_epoch,
-            "num_train_epochs": self.epoch - start_epoch + 1,
-            "loss type": self.configs.loss,
-            "loss value": round(self.loss_value, 3),
-            "metric type": self.configs.metric,
-            "metric value": round(self.metric_value, 3)
-        }
 
-        self.model_card.training_summary = training_summary
 
         self._cleanup_distributed(rank)
-        if is_main_process():
-            self.save(
-                path=os.path.join(self.configs.output_dir, "epoch_" + str(num_train_epochs)),
-                overwrite=self.configs.overwrite_output_dir
-            )
         self.callbacks.on_train_end(logs)
+
+    def _create_training_summary(self, **kwargs):
+        training_summary = dict(kwargs)
+        self.model_card.training_summary = training_summary
 
     def _may_evaluate(self, model, logs, step=-1):
         if step != -1:  # step end
@@ -541,14 +519,14 @@ class Trainer:
                                                pin_memory=self.configs.dataloader_pin_memory,
                                                )
 
-    def _setup_before_train(self, num_training_steps: int):
+    def _setup_before_train(self, num_training_steps: int, init_lr: float, last_epoch: int):
         """
         Setup the optimizer and the learning rate scheduler.
         """
-        self._create_optimizer()
+        self._create_optimizer(init_lr=init_lr)
         self._create_loss()
         self._create_metric()
-        self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
+        self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer, last_epoch=last_epoch)
         self._create_callbacks()
 
     def _create_callbacks(self):
@@ -583,12 +561,19 @@ class Trainer:
             return
         self.loss = _construct_loss_from_config(torch.nn.modules.loss, self.configs.loss)
 
-    def _create_optimizer(self):
+    def _create_optimizer(self, init_lr: int):
         if self.override_optimizer is True:
             return
-        self.optimizer = _construct_optimizer_from_config(optim, self.configs.optimizer, model=self.model)
+        self.optimizer = _construct_optimizer_from_config(
+            optim,
+            self.configs.optimizer,
+            model=self.model,
+        )
+        for param in self.optimizer.param_groups:
+            param.setdefault("initial_lr", init_lr)
+        self.optimizer.lr = init_lr
 
-    def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
+    def _create_scheduler(self, num_training_steps: int, last_epoch: int, optimizer: torch.optim.Optimizer = None):
         """
         Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
         passed as an argument.
@@ -602,6 +587,7 @@ class Trainer:
                 optimizer=self.optimizer if optimizer is None else optimizer,
                 num_warmup_steps=self.get_warmup_steps(num_training_steps),
                 num_training_steps=num_training_steps,
+                last_epoch=last_epoch
             )
         return self.lr_scheduler
 
@@ -633,6 +619,9 @@ class Trainer:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if self.lr_scheduler and checkpoint["lr_scheduler_state_dict"]:
             self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler_state_dict"])
+        if "end_lr" not in checkpoint:
+            return 0
+        self.lr_value = checkpoint["end_lr"]
         if "epoch" not in checkpoint:
             return 0
         self.epoch = checkpoint["epoch"]
@@ -668,7 +657,8 @@ class Trainer:
             "optimizer_state_dict": optimizer_state_dict,
             "lr_scheduler_state_dict": lr_scheduler_state_dict,
             "loss_value": self.loss_value,
-            "metric_value": self.metric_value
+            "metric_value": self.metric_value,
+            "end_lr": self.lr_value
         }, checkpoint_path)
         if isinstance(self.model_card, ModelCard):
             self.model_card.save_model_card(modelcard_path)

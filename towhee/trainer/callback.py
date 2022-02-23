@@ -397,7 +397,7 @@ class PrintCallBack(Callback):
         global_step = logs["global_step"]
         if global_step % self.step_frequency == 0:
             print("epoch={}/{}, global_step={}, epoch_loss={}, epoch_metric={}"
-                  .format(logs["epoch"] + 1, self.total_epoch_num,
+                  .format(logs["epoch"], self.total_epoch_num,
                           global_step,
                           logs["epoch_loss"],
                           logs["epoch_metric"]))
@@ -406,7 +406,7 @@ class PrintCallBack(Callback):
         eval_global_step = logs["eval_global_step"]
         if eval_global_step % self.step_frequency == 0:
             print("epoch={}/{}, eval_global_step={}, eval_epoch_loss={}, eval_epoch_metric={}"
-                  .format(logs["epoch"] + 1, self.total_epoch_num,
+                  .format(logs["epoch"], self.total_epoch_num,
                           eval_global_step,
                           logs["eval_epoch_loss"],
                           logs["eval_epoch_metric"]))
@@ -427,7 +427,7 @@ class ProgressBarCallBack(Callback):
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
         if is_main_process():
             self.now_tqdm_train_dataloader.update(1)
-            self.descrpition = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"] + 1,
+            self.descrpition = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"],
                                                                          int(self.total_epoch_num),
                                                                          round(logs["epoch_loss"], 3),
                                                                          round(logs["epoch_metric"], 3))
@@ -442,8 +442,8 @@ class ProgressBarCallBack(Callback):
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
         if is_main_process():
-            self.descrpition = "[epoch {}/{}] loss={}, metric={}, eval_loss={}, eval_metric={}".format(
-                logs["epoch"] + 1,
+            self.description = "[epoch {}/{}] loss={}, metric={}, eval_loss={}, eval_metric={}".format(
+                logs["epoch"],
                 int(self.total_epoch_num),
                 round(logs["epoch_loss"], 3),
                 round(logs["epoch_metric"], 3), round(logs["eval_epoch_loss"], 3), round(logs["eval_epoch_metric"], 3))
