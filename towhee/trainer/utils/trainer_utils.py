@@ -17,7 +17,8 @@ Utilities for the Trainer.
 """
 
 import random
-from typing import NamedTuple
+from typing import NamedTuple, Any, Generator, Callable
+from collections.abc import Mapping
 from enum import Enum
 import numpy as np
 import torch
@@ -97,3 +98,90 @@ def get_rank():
 
 def is_main_process():
     return get_rank() == 0
+
+def honor_type(obj, generator: Generator):
+    """
+    Cast a generator to the same type as obj (list, tuple or namedtuple)
+    """
+    # There is no direct check whether an object if of type namedtuple sadly, this is a workaround.
+    if isinstance(obj, tuple) and hasattr(obj, "_fields"):
+        # Can instantiate a namedtuple from a generator directly, contrary to a tuple/list.
+        return type(obj)(*list(generator))
+    return type(obj)(generator)
+
+def is_torch_tensor(tensor: Any):
+    return isinstance(tensor, torch.Tensor)
+
+def recursively_apply(func: Callable, data: Any, *args, test_type: Callable=is_torch_tensor, error_on_other_type: bool=False, **kwargs):
+    """
+    Recursively apply a function on a data structure that is a nested list/tuple/dictionary of a given base type.
+
+    Args:
+        func (:obj:`callable`):
+            The function to recursively apply.
+        data (nested list/tuple/dictionary of :obj:`main_type`):
+            The data on which to apply :obj:`func`
+        *args:
+            Positional arguments that will be passed to :obj:`func` when applied on the unpacked data.
+        main_type (:obj:`type`, `optional`, defaults to :obj:`torch.Tensor`):
+            The base type of the objects to which apply :obj:`func`.
+        error_on_other_type (:obj:`bool`, `optional`, defaults to :obj:`False`):
+            Whether to return an error or not if after unpacking :obj:`data`, we get on an object that is not of type
+            :obj:`main_type`. If :obj:`False`, the function will leave objects of types different than :obj:`main_type`
+            unchanged.
+        **kwargs:
+            Keyword arguments that will be passed to :obj:`func` when applied on the unpacked data.
+
+    Returns:
+        The same data structure as :obj:`data` with :obj:`func` applied to every object of type :obj:`main_type`.
+    """
+    if isinstance(data, (tuple, list)):
+        return honor_type(
+            data,
+            (
+                recursively_apply(
+                    func, o, *args, test_type=test_type, error_on_other_type=error_on_other_type, **kwargs
+                )
+                for o in data
+            ),
+        )
+    elif isinstance(data, Mapping):
+        return type(data)(
+            {
+                k: recursively_apply(
+                    func, v, *args, test_type=test_type, error_on_other_type=error_on_other_type, **kwargs
+                )
+                for k, v in data.items()
+            }
+        )
+    elif test_type(data):
+        return func(data, *args, **kwargs)
+    elif error_on_other_type:
+        raise TypeError(
+            f"Can't apply {func.__name__} on object of type {type(data)}, only of nested list/tuple/dicts of objects "
+            f"that satisfy {test_type.__name__}."
+        )
+    return data
+
+
+def send_to_device(tensor: Any, device: torch.device):
+    """
+    Recursively sends the elements in a nested list/tuple/dictionary of tensors to a given device.
+    Borrowed from huggingface/accelerate.
+    Args:
+        tensor (nested list/tuple/dictionary of :obj:`torch.Tensor`):
+            The data to send to a given device.
+        device (:obj:`torch.device`):
+            The device to send the data to
+
+    Returns:
+        The same data structure as :obj:`tensor` with all tensors sent to the proper device.
+    """
+
+    def _send_to_device(t, device):
+        return t.to(device)
+
+    def _has_to_method(t):
+        return hasattr(t, "to")
+
+    return recursively_apply(_send_to_device, tensor, device, test_type=_has_to_method)
