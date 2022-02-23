@@ -69,6 +69,8 @@ class Engine(threading.Thread):
     def __init__(self):
         super().__init__()
 
+        self._engine_lock = threading.Lock()
+
         self._config = EngineConfig()
         self._pipelines = []
         self.setDaemon(True)
@@ -76,6 +78,19 @@ class Engine(threading.Thread):
         # Setup executors and scheduler.
         self._setup_execs()
         self._setup_sched()
+        self._started_once = False
+
+    @property
+    def lock(self) -> threading.Lock:
+        return self._engine_lock
+
+    @property
+    def started_once(self) -> bool:
+        return self._started_once
+
+    def start(self):
+        self._started_once = True
+        super().start()
 
     def stop(self) -> None:
         self._sched.stop()
@@ -129,15 +144,14 @@ class Engine(threading.Thread):
             raise SchedulerTypeError(f'Invalid scheduler type - {sched_type}')
 
 
-_engine_lock = threading.Lock()
-
-
 def start_engine():
     engine = Engine()
     if engine.is_alive():
         return
 
-    with _engine_lock:
+    with engine.lock:
         if engine.is_alive():
             return
+        if engine.started_once:
+            raise Exception('The engine died and cant be restarted')
         engine.start()

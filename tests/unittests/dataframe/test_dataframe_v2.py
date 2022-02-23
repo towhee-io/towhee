@@ -14,61 +14,191 @@
 
 
 import unittest
+import queue
 
-from towhee.dataframe.array import Array
-from towhee.dataframe.dataframe_v2 import DataFrame
+from towhee.types._frame import _Frame, FRAME
+from towhee.dataframe.dataframe import DataFrame
+from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
 class TestDataframe(unittest.TestCase):
+    """Basic test case for `DataFrame`.
     """
-    Test dataframe basic function
-    """
+
+    def get_columns(self):
+        return [('digit', 'int'), ('letter', 'str')]
+
+    def get_tuples(self, frames = False):
+        if frames:
+            return [(0, 'a', _Frame(row_id = 4, timestamp=4)), (1, 'b', _Frame(5, timestamp=5)), (2, 'c', _Frame(6, timestamp=6))]
+        return [(0, 'a'), (1, 'b'), (2, 'c')]
+
+    def get_dict(self, frames = False):
+        if frames:
+            ret = []
+            ret.append({'digit': 0, 'letter': 'a', FRAME: _Frame(row_id = 4, timestamp=4)})
+            ret.append({'digit': 1, 'letter': 'b', FRAME: _Frame(row_id = 5, timestamp=5)})
+            ret.append({'digit': 2, 'letter': 'c', FRAME: _Frame(row_id = 6, timestamp=6)})
+            return ret
+        ret = []
+        ret.append({'digit': 0, 'letter': 'a'})
+        ret.append({'digit': 1, 'letter': 'b'})
+        ret.append({'digit': 2, 'letter': 'c'})
+        return ret
 
     def test_constructors(self):
 
-        def get_columns():
-            return ['digit', 'letter']
-
-        def get_tuples():
-            return [(0, 'a'), (1, 'b'), (2, 'c')]
-
-        def get_arrays():
-            return [Array([0, 1, 2]), Array(['a', 'b', 'c'])]
-
-        def get_dict():
-            return {'digit': Array([0, 1, 2]), 'letter': Array(['a', 'b', 'c'])}
-
-        def check_data(df):
-            for i in range(3):
-                self.assertEqual(df['digit'][i], i)
-                self.assertEqual(df['letter'][i], chr(ord('a') + i))
-                self.assertEqual(df[i][0], i)
-                self.assertEqual(df[i][1], chr(ord('a') + i))
-            for i, row in enumerate(df.iter()):
-                self.assertEqual(row[0], i)
-                self.assertEqual(row[1], chr(ord('a') + i))
-
-        # empty df
-        df = DataFrame('my_df')
+        columns = self.get_columns()
+        df = DataFrame('my_df', columns)
         df.seal()
         self.assertEqual(df.name, 'my_df')
+        self.assertEqual(df.sealed, True)
+        self.assertEqual(len(df), 0)
 
-        # from list[tuple]
-        data = get_tuples()
-        columns = get_columns()
-        df = DataFrame('my_df', data, columns)
-        df.seal()
-        check_data(df)
+    def test_put_tuple(self):
 
-        # from list[towhee.Array]
-        data = get_arrays()
-        columns = get_columns()
-        df = DataFrame('my_df', data, columns)
-        df.seal()
-        check_data(df)
+        #  Testing put tuple with no frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_tuples(frames = False)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
 
-        # from dict[str, towhee.Array]
-        data = get_dict()
-        df = DataFrame('my_df', data)
+        #  Testing put tuple with frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_tuples(frames = True)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
+        #  Testing put tuple with no frame col in cols and with frame cols in data.
+        columns = self.get_columns()
+        data = self.get_tuples(frames = True)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
+        #  Testing single tuple put and df accesses.
+        data = (0, 'a')
+        columns = self.get_columns()
+        df = DataFrame('test', columns)
+        t = DfWriter(df, 10, data)
+        t.start()
+        t.join()
+        self.assertEqual(df.name, 'test')
+        self.assertEqual(len(df), 10)
+        datas = df.get(0, 4)
+        self.assertEqual(len(datas), 4)
+        datas = df.get(8, 4)
+        self.assertEqual(datas, None)
+        self.assertFalse(df.sealed)
         df.seal()
-        check_data(df)
+        self.assertTrue(df.sealed)
+        datas = df.get(8, 4)
+        self.assertEqual(len(datas), 2)
+
+    def test_put_dict(self):
+        #  Testing put dict with no frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_dict(frames = False)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
+        #  Testing put dict with frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_dict(frames = True)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
+        #  Testing put dict with no frame col in cols and with frame cols in data.
+        columns = self.get_columns()
+        data = self.get_tuples(frames = True)
+        df = DataFrame('test', columns)
+        df.put(data)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
+        #  Testing single dict put and df accesses.
+        data = {'digit': 0, 'letter': 'a'}
+        columns = self.get_columns()
+        df = DataFrame('test', columns)
+        t = DfWriter(df, 10, data)
+        t.start()
+        t.join()
+        self.assertEqual(df.name, 'test')
+        self.assertEqual(len(df), 10)
+        datas = df.get(0, 4)
+        self.assertEqual(datas[0][0], 0)
+        self.assertEqual(len(datas), 4)
+
+        datas = df.get(8, 4)
+        self.assertEqual(datas, None)
+
+
+        self.assertFalse(df.sealed)
+        df.seal()
+        self.assertTrue(df.sealed)
+
+        datas = df.get(8, 4)
+        self.assertEqual(len(datas), 2)
+
+    def test_multithread(self):
+        columns = self.get_columns()
+        df = DataFrame('test', columns)
+        data_size = 10
+        data = (0, 'a')
+        t = DfWriter(df, data_size, data=data)
+        t.set_sealed_when_stop()
+        t.start()
+        q = queue.Queue()
+
+        def read(df: DataFrame, q: queue.Queue):
+            index = 0
+            while True:
+                items = df.get(index, 2)
+                if items:
+                    for item in items:
+                        q.put(item)
+                        index += 1
+                if df.sealed:
+                    items = df.get(index, 100)
+                    if items:
+                        for item in items:
+                            q.put(item)
+                    break
+
+        runner = MultiThreadRunner(target=read, args=(df, q), thread_num=10)
+
+        runner.start()
+        runner.join()
+
+        self.assertEqual(q.qsize(), data_size * 10)
+
+
+if __name__ == '__main__':
+    unittest.main()

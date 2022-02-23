@@ -15,7 +15,7 @@
 import threading
 from typing import Tuple
 
-from towhee.dataframe import DataFrame, Variable
+from towhee.dataframe import DataFrame
 from towhee.dag import GraphRepr
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
@@ -43,7 +43,7 @@ class GraphContext:
         self._lock = threading.Lock()
         self._build_components()
 
-    def __call__(self, inputs: Tuple[Variable]):
+    def __call__(self, inputs: Tuple):
         self.inputs.put(inputs)
         self.inputs.seal()
 
@@ -92,7 +92,7 @@ class GraphContext:
 
     def gc(self):
         for _, df in self._dataframes.items():
-            df.gc()
+            df.gc_data()
 
     def join(self):
         for op in self._op_ctxs.values():

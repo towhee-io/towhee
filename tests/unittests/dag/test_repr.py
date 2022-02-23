@@ -127,3 +127,6 @@ class TestRepr(unittest.TestCase):
             res_2 = BaseRepr.load_str(f)
 
         self.assertEqual(res_1, res_2)
+
+if __name__ == '__main__':
+    unittest.main()

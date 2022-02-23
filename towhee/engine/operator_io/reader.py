@@ -17,7 +17,8 @@ import threading
 from collections import namedtuple
 from typing import Dict, Tuple, Union, List
 
-from towhee.dataframe import DataFrame, Variable, DataFrameIterator
+from towhee.dataframe.dataframe import DataFrame
+from towhee.dataframe.iterators import DataFrameIterator, MapIterator, BatchIterator, WindowIterator
 
 
 class ReaderBase(ABC):
@@ -58,13 +59,13 @@ class DataFrameReader(ReaderBase):
     def close(self):
         raise NotImplementedError
 
-    def _to_op_inputs(self, cols: Tuple[Variable]) -> Dict[str, any]:
+    def _to_op_inputs(self, cols: Tuple) -> Dict[str, any]:
         """
         Read from cols, combine op inputs
         """
         ret = {}
         for key, index in self._op_inputs_index.items():
-            ret[key] = cols[index].value
+            ret[key] = cols[index]
         return ret
 
 
@@ -78,7 +79,7 @@ class BlockMapReaderWithOriginData(DataFrameReader):
         input_df: DataFrame,
         op_inputs_index: Dict[str, int]
     ):
-        super().__init__(input_df.map_iter(True), op_inputs_index)
+        super().__init__(MapIterator(input_df, True), op_inputs_index)
         self._lock = threading.Lock()
         self._close = False
 
@@ -91,6 +92,8 @@ class BlockMapReaderWithOriginData(DataFrameReader):
 
         with self._lock:
             data = next(self._iter)
+            # map and batch iterators both return list of tuples
+            data = data[0]
             if self._close:
                 raise StopIteration
 
@@ -111,7 +114,7 @@ class BatchFrameReader(DataFrameReader):
     def __init__(self, input_df: DataFrame, op_inputs_index: Dict[str, int],
                  batch_size: int, step: int):
         assert batch_size >= 1 and step >= 1
-        super().__init__(input_df.batch_iter(batch_size, step, True), op_inputs_index)
+        super().__init__(BatchIterator(input_df, batch_size, step, True), op_inputs_index)
         self._close = False
         self._lock = threading.Lock()
 
@@ -138,57 +141,6 @@ class BatchFrameReader(DataFrameReader):
         self._iter.notify()
 
 
-class _TimeWindow:
-    '''
-    TimeWindow
-
-    The unit of timestamp is milliseconds, the unit of window(range, step) is seconds.
-    '''
-
-    def __init__(self, time_range_sec: int, time_step_sec: int, start_time_sec: int = 0):
-        self._start_time_m = start_time_sec * 1000
-        self._end_time_m = self._start_time_m + time_range_sec * 1000
-        self._next_start_time_m = (start_time_sec + time_step_sec) * 1000
-        self._time_range_sec = time_range_sec
-        self._time_step_sec = time_step_sec
-        self._window = []
-        self._next_window = None
-
-    def __call__(self, row_data) -> bool:
-        frame = row_data[-1].value
-        if frame.timestamp < self._start_time_m:
-            return False
-
-        if frame.timestamp < self._end_time_m:
-            self._window.append(row_data)
-            if frame.timestamp >= self._next_start_time_m:
-                if self._next_window is None:
-                    self._next_window = _TimeWindow(self._time_range_sec, self._time_step_sec, self._next_start_time_m // 1000)
-                self._next_window(row_data)
-            return False
-
-        if len(self._window) == 0:
-            self._start_time_m = frame.timestamp // 1000 // self._time_step_sec * self._time_step_sec * 1000
-            self._end_time_m = self._start_time_m + self._time_range_sec * 1000
-            self._next_start_time_m = (self._start_time_m // 1000 + self._time_step_sec) * 1000
-            if frame.timestamp >= self._start_time_m and frame.timestamp < self._end_time_m:
-                self(row_data)
-            return False
-
-        if self._next_window is None:
-            self._next_window = _TimeWindow(self._time_range_sec, self._time_step_sec, self._next_start_time_m // 1000)
-        self._next_window(row_data)
-        return True
-
-    @property
-    def data(self):
-        return self._window
-
-    @property
-    def next_window(self):
-        return self._next_window
-
-
 class TimeWindowReader(DataFrameReader):
     """
     Time window reader
@@ -201,8 +153,11 @@ class TimeWindowReader(DataFrameReader):
         time_range_sec: int,
         time_step_sec: int
     ):
-        super().__init__(input_df.map_iter(True), op_inputs_index)
-        self._window = _TimeWindow(time_range_sec, time_step_sec)
+        super().__init__(WindowIterator(input_df, start = 0,
+                                                window_size = time_range_sec,
+                                                step = time_step_sec,
+                                                use_timestamp = True,
+                                                block = True), op_inputs_index)
         self._lock = threading.Lock()
         self._close = False
 
@@ -213,40 +168,23 @@ class TimeWindowReader(DataFrameReader):
             ret.append(namedtuple('input', data_dict.keys())(**data_dict))
         return ret
 
-    def read(self) -> Tuple[Dict[str, any], Tuple]:
-        """
-        Read data from dataframe, get cols by operator_repr info
-        """
+    def read(self) -> List[Dict[str, any]]:
+        if self._close:
+            raise StopIteration
+
         with self._lock:
-            if self._close or self._window is None:
+            data = next(self._iter)
+            if self._close:
                 raise StopIteration
 
-            while True:
-                if self._window is None:
-                    raise StopIteration
-
-                try:
-                    data = next(self._iter)
-                except StopIteration:
-                    if self._window is not None:
-                        ret = self._format_to_namedtuple(self._window.data)
-                        self._window = self._window.next_window
-                        if len(ret) == 0:
-                            continue
-                        else:
-                            return ret
-
-                if self._close:
-                    raise StopIteration
-
-                if data is None:
-                    continue
-
-                is_end = self._window(data)
-                if is_end and len(self._window.data) != 0:
-                    ret = self._format_to_namedtuple(self._window.data)
-                    self._window = self._window.next_window
-                    return ret
+            if not data:
+                return []
+            else:
+                res = []
+                for row in data:
+                    data_dict = self._to_op_inputs(row)
+                    res.append(namedtuple('input', data_dict.keys())(**data_dict))
+                return res
 
     def close(self):
         self._close = True

@@ -22,7 +22,6 @@ FRAME = 'frame'
 class _Frame:
     """
     Row info of dataframe.
-
     row_id (`int`):
         Row id of dataframe, an auto-increment data.
     parent_path (`str`):
@@ -44,7 +43,6 @@ class _Frame:
                  │           │               │           │       f2-3-4  │4  2-3 None│
                  │           │               │           │               │           │
                  └───────────┘               └───────────┘               └───────────┘
-
                                  ┌───────────┐           ┌───────────┐
                                  │           │           │           │
                 ───────────────► │  FlatMap  ├──────────►│  FlatMap  ├────────────────►

@@ -21,6 +21,7 @@ from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.dataframe import DataFrame
+from towhee.dataframe.iterators import MapIterator
 from towhee.hub.file_manager import FileManagerConfig, FileManager
 from tests.unittests import CACHE_PATH
 
@@ -65,9 +66,9 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         input_df, out_df, runner = self._create_test_obj()
         self._task_exec.push_task(runner)
 
-        input_df.put_dict({'num': 1})
-        input_df.put_dict({'num': 2})
-        input_df.put_dict({'num': 3})
+        input_df.put({'num': 1})
+        input_df.put({'num': 2})
+        input_df.put({'num': 3})
         input_df.seal()
 
         time.sleep(0.1)
@@ -77,9 +78,9 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         out_df.seal()
 
         res = 2
-        it = out_df.map_iter(True)
+        it = MapIterator(out_df)
         for item in it:
-            self.assertEqual(item[0].value, res)
+            self.assertEqual(item[0][0], res)
             res += 1
 
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
@@ -87,7 +88,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
     def test_pool_with_map_runner_error(self):
         input_df, out_df, runner = self._create_test_obj()
         self._task_exec.push_task(runner)
-        input_df.put_dict({'num': 'error'})
+        input_df.put({'num': 'error'})
         input_df.seal()
         time.sleep(0.1)
         runner.set_stop()
@@ -95,3 +96,6 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         self._task_exec.stop()
         self.assertEqual(out_df.size, 0)
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
+if __name__ == '__main__':
+    unittest.main()

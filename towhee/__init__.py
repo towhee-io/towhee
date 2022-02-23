@@ -15,7 +15,6 @@ import os
 from typing import List, Tuple, Union
 
 from towhee.dataframe import DataFrame
-from towhee.dataframe import Variable
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
 from towhee.pipeline_format import OutputFormat
@@ -61,14 +60,16 @@ class _PipelineWrapper:
         if not args:
             raise RuntimeError('Input data is empty')
 
+        cols = []
         vargs = []
-        for arg in args:
+        for i, arg in enumerate(args):
             vtype = type(arg).__name__
-            vargs.append(Variable(vtype, arg))
+            cols.append(('Col_' + str(i), str(vtype)))
+            vargs.append(arg)
         vargs = tuple(vargs)
 
         # Process the data through the pipeline.
-        in_df = DataFrame('_in_df')
+        in_df = DataFrame('_in_df', cols)
         in_df.put(vargs)
         out_df = self._pipeline(in_df)
         format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)

@@ -31,5 +31,5 @@ class FilterRunner(RunnerBase):
         if output:
             self._writer.write(self._row_data)
         else:
-            self._frame_var.value.empty = True
-            self._writer.write((self._frame_var, ))
+            self._frame.empty = True
+            self._writer.write((self._frame, ))

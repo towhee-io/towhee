@@ -181,9 +181,9 @@ class RunnerBase(ABC):
     def _get_inputs(self) -> Tuple[bool, Dict[str, any]]:
         try:
             data, self._row_data = self._reader.read()
-            assert isinstance(self._row_data[-1].value, _Frame)
-            self._frame_var = self._row_data[-1]
-            self._frame_var.value.prev_id = self._frame_var.value.row_id
+            assert isinstance(self._row_data[-1], _Frame)
+            self._frame= self._row_data[-1]
+            self._frame.prev_id = self._frame.row_id
             return False, data
         except StopIteration:
             return True, None
@@ -193,7 +193,7 @@ class RunnerBase(ABC):
             output = output._asdict()
 
         if isinstance(output, dict):
-            output.update({FRAME: self._frame_var.value})
+            output.update({FRAME: self._frame})
 
         self._writer.write(output)
 
