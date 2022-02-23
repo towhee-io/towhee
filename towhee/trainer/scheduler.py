@@ -35,11 +35,15 @@ def check_scheduler(scheduler_type: str) -> bool:
     """
     Check if the scheduler type is supported.
 
-    Args:
-        scheduler_type:
-            the type of the scheduler.
-    Return:
-        if the scheduler type is supported.
+    :param scheduler_type: the type of the scheduler
+    :type scheduler_type: str
+
+    :return bool:
+        if the scheduler type is supported
+
+    :example:
+        >>> from towhee.trainer.scheduler import check_scheduler
+        >>> check_scheduler('cosine')
     """
     if scheduler_list.count(scheduler_type) == 0:
         return False
@@ -51,14 +55,22 @@ def configure_constant_scheduler(optimizer: Optimizer, last_epoch: int = -1):
     """
     Return a scheduler with a constant learning rate, using the learning rate set in optimizer.
 
-    Args:
-        optimizer:
-            The optimizer for which to schedule the learning rate.
-        last_epoch:
-            The last epoch when resuming training.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A constant scheduler.
+    :param last_epoch: the last epoch when resuming training
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a constant scheduler
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_constant_scheduler(optimizer)
     """
     return LambdaLR(optimizer, lambda _: 1, last_epoch=last_epoch)
 
@@ -68,16 +80,27 @@ def configure_constant_scheduler_with_warmup(optimizer: Optimizer, num_warmup_st
     Return a schedule with a constant learning rate preceded by a warmup period during which the learning rate
     increases linearly between 0 and the initial lr set in the optimizer.
 
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        num_warmup_steps:
-            Warmup steps.
-        last_epoch:
-            The last epoch when training is resumed.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A constant scheduler with warmup.
+    :param num_warmup_steps: warmup steps
+    :type num_warmup_steps: int
+
+    :param last_epoch: the last epoch when training is resumed
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a constant scheduler with warmup
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler_with_warmup
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> mdl = nn.Linear(50, 50)
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_constant_scheduler_with_warmup(optimizer, num_warmup_steps, num_training_steps)
     """
 
     def lr_lambda(current_step: int):
@@ -93,18 +116,30 @@ def configure_linear_scheduler_with_warmup(optimizer, num_warmup_steps, num_trai
     Return a scheduler with a learning rate that decreases linearly from the initial lr set in the optimizer to 0, after
     a warmup period during which it increases linearly from 0 to the initial lr set in the optimizer.
 
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        num_warmup_steps:
-            Warmup steps.
-        num_training_steps:
-            Training steps.
-        last_epoch:
-            The last epoch when training is resumed.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A linear scheduler with warmup.
+    :param num_warmup_steps: warmup steps
+    :type num_warmup_steps: int
+
+    :param num_training_steps: training steps
+    :type num_training_steps: int
+
+    :param last_epoch: the last epoch when training is resumed
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a linear scheduler with warmup
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler_with_warmup
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_linear_scheduler_with_warmup(optimizer, num_warmup_steps, num_training_steps)
     """
 
     def lr_lambda(current_step: int):
@@ -125,20 +160,34 @@ def configure_cosine_scheduler_with_warmup(
     initial lr set in the optimizer to 0, after a warmup period during which it increases linearly between 0 and the
     initial lr set in the optimizer.
 
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        num_warmup_steps:
-            The steps for the warmup phase.
-        num_training_steps:
-            The number of training steps.
-        num_cycles:
-            The number of periods in te cosine scheduler.
-        last_epoch:
-            The last epoch when training is resumed.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A cosine scheduler with warmup.
+    :param num_warmup_steps: warmup steps
+    :type num_warmup_steps: int
+
+    :param num_training_steps: training steps
+    :type num_training_steps: int
+
+    :param num_cycles: the number of periods in te cosine scheduler
+    :type num_cycles: int
+
+    :param last_epoch: the last epoch when training is resumed
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a cosine scheduler with warmup
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler_with_warmup
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> num_cycles = 2
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_cosine_scheduler_with_warmup(optimizer, num_warmup_steps, num_training_steps, num_cycles)
     """
 
     def lr_lambda(current_step):
@@ -158,20 +207,35 @@ def configure_cosine_with_hard_restarts_scheduler_with_warmup(
     initial lr set in the optimizer to 0, with several hard restarts, after a warmup period during which it increases
     linearly between 0 and the initial lr set in the optimizer.
 
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        num_warmup_steps:
-            The steps for the warmup phase.
-        num_training_steps:
-            The number of training steps.
-        num_cycles:
-            The number of hard restarts to be used.
-        last_epoch:
-            The index of the last epoch when training is resumed.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A cosine with hard restarts scheduler with warmup.
+    :param num_warmup_steps: warmup steps
+    :type num_warmup_steps: int
+
+    :param num_training_steps: training steps
+    :type num_training_steps: int
+
+    :param num_cycles: the number of periods in te cosine scheduler
+    :type num_cycles: int
+
+    :param last_epoch: the last epoch when training is resumed
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a cosine with hard restarts scheduler with warmup
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_cosine_with_hard_restarts_scheduler_with_warmup
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> num_cycles = 2
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_cosine_with_hard_restarts_scheduler_with_warmup(optimizer, num_warmup_steps,
+        num_training_steps, num_cycles)
     """
 
     def lr_lambda(current_step):
@@ -189,28 +253,44 @@ def configure_polynomial_decay_scheduler_with_warmup(
     optimizer, num_warmup_steps, num_training_steps, lr_end=1e-7, power=1.0, last_epoch=-1
 ):
     """
-    Return a scheduler with a learning rate that decreases as a polynomial decay from the initial lr set in the
-    optimizer to end lr defined by `lr_end`, after a warmup period during which it increases linearly from 0 to the
-    initial lr set in the optimizer.
+    Return a scheduler with a learning rate that decreases following the values of the cosine function between the
+    initial lr set in the optimizer to 0, with several hard restarts, after a warmup period during which it increases
+    linearly between 0 and the initial lr set in the optimizer.
 
-    Args:
-        optimizer:
-            The optimizer to be scheduled.
-        num_warmup_steps:
-            The steps for the warmup phase.
-        num_training_steps (:obj:`int`):
-            The number of training steps
-        lr_end:
-            The end LR.
-        power:
-            Power factor.
-        last_epoch:
-            The index of the last epoch when training is resumed.
+    :param optimizer: the optimizer for which to schedule the learning rate
+    :type optimizer: Optimizer
 
-    Return:
-        A polynomial decay scheduler with warmup.
+    :param num_warmup_steps: warmup steps
+    :type num_warmup_steps: int
+
+    :param num_training_steps: training steps
+    :type num_training_steps: int
+
+    :param lr_end: the end LR
+    :type lr_end: float
+
+    :param power: power factor
+    :type power: float
+
+    :param last_epoch: the last epoch when training is resumed
+    :type last_epoch: int
+
+    :return LambdaLR:
+        a polynomial decay scheduler with warmup
+
+    :example:
+        >>> from towhee.trainer.scheduler import configure_cosine_with_hard_restarts_scheduler_with_warmup
+        >>> from torch import nn
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> power = 2.0
+        >>> lr_end = 1e-7
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> configure_cosine_with_hard_restarts_scheduler_with_warmup(optimizer, num_warmup_steps,
+        num_training_steps, lr_end, power)
     """
-
     lr_init = optimizer.defaults['lr']
     assert lr_init > lr_end, f'lr_end ({lr_end}) must be be smaller than initial lr ({lr_init})'
 
