@@ -86,6 +86,12 @@ def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], mode
     return instance
 
 
+def freeze_bn(model):
+    classname = model.__class__.__name__
+    if classname.find("BatchNorm") != -1:
+        model.eval()
+
+
 class Trainer:
     """
     train an operator
@@ -263,9 +269,11 @@ class Trainer:
         logs = self._create_logs()
         self.callbacks.on_train_begin(logs)
 
-        for epoch in range(train_last_epoch+1, self.configs.epoch_num+1):
+        for epoch in range(train_last_epoch + 1, self.configs.epoch_num + 1):
             self.epoch = logs["epoch"] = epoch
             model.train()
+            if self.configs.freeze_bn:
+                model.apply(freeze_bn)
             self._reset_controller()
             self.optimizer.zero_grad()
             if self.distributed:
@@ -304,7 +312,6 @@ class Trainer:
                     overwrite=self.configs.overwrite_output_dir
                 )
         trainer_log.info("\nTraining completed.\n")
-
 
         self._cleanup_distributed(rank)
         self.callbacks.on_train_end(logs)
@@ -451,7 +458,6 @@ class Trainer:
             trainer_log.info("num_workers=%s", num_workers)
         return num_workers
 
-
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
@@ -473,7 +479,7 @@ class Trainer:
                 self.train_dataset,
                 batch_size=self.configs.train_batch_size,
                 shuffle=True,
-                num_workers=num_workers, #self.configs.dataloader_num_workers,
+                num_workers=num_workers,  # self.configs.dataloader_num_workers,
                 pin_memory=self.configs.dataloader_pin_memory,
                 drop_last=self.configs.dataloader_drop_last
             )
@@ -483,7 +489,7 @@ class Trainer:
                 self.train_sampler, self.configs.batch_size, drop_last=True)
             return torch.utils.data.DataLoader(self.train_dataset,
                                                batch_sampler=train_batch_sampler,
-                                               num_workers=num_workers, #self.configs.dataloader_num_workers,
+                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
                                                pin_memory=self.configs.dataloader_pin_memory,
                                                )
 
@@ -508,7 +514,7 @@ class Trainer:
             return DataLoader(
                 self.eval_dataset,
                 batch_size=self.configs.eval_batch_size,
-                num_workers=num_workers,#self.configs.dataloader_num_workers,
+                num_workers=num_workers,  # self.configs.dataloader_num_workers,
                 pin_memory=self.configs.dataloader_pin_memory,
                 drop_last=self.configs.dataloader_drop_last
             )
@@ -518,7 +524,7 @@ class Trainer:
                 eval_sampler, self.configs.batch_size, drop_last=True)
             return torch.utils.data.DataLoader(self.eval_dataset,
                                                batch_sampler=eval_batch_sampler,
-                                               num_workers=num_workers, #self.configs.dataloader_num_workers,
+                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
                                                pin_memory=self.configs.dataloader_pin_memory,
                                                )
 
