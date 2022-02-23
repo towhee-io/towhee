@@ -201,6 +201,10 @@ class TrainingConfig:
         HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
         CATEGORY: "device"
     })
+    freeze_bn: bool = field(default=False, metadata={
+        HELP: "will completely freeze all BatchNorm layers during training.",
+        CATEGORY: "train"
+    })
 
     def __post_init__(self):
         if self.output_dir is not None:
