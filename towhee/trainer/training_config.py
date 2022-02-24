@@ -88,7 +88,7 @@ class TrainingConfig:
     )
     eval_strategy: str = field(
         default="epoch",
-        metadata={HELP: "The evaluation strategy. It can be `steps`, `epoch` or `no`,", CATEGORY: "train"},
+        metadata={HELP: "The evaluation strategy. It can be `steps`, `epoch`, `eval_epoch` or `no`,", CATEGORY: "train"},
     )
     eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
     batch_size: Optional[int] = field(
