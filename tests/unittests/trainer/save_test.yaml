@@ -33,8 +33,8 @@ train:
   epoch_num: 2
   eval_steps: null
   eval_strategy: epoch
+  freeze_bn: false
   load_best_model_at_end: false
-  max_steps: -1
   output_dir: ./output_dir
   overwrite_output_dir: true
   resume_from_checkpoint: null

@@ -14,6 +14,7 @@
 from typing import List, Any
 
 import torchmetrics as tm
+from torchmetrics.detection.map import MeanAveragePrecision
 
 __all__ = [
     'Metrics',
@@ -145,6 +146,7 @@ class TMMetrics(Metrics):
         cls._metrics_list['WordInfoLost'] = tm.WordInfoLost
         cls._metrics_list['WordInfoPreserved'] = tm.WordInfoPreserved
         cls._metrics_list['MinMaxMetric'] = tm.MinMaxMetric
+        cls._metrics_list['MeanAveragePrecision'] = MeanAveragePrecision
 
         return list(cls._metrics_list.keys())
 

@@ -108,7 +108,7 @@ class TrainingConfig:
     seed: int = field(default=42,
                       metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
 
-    epoch_num: float = field(default=2,
+    epoch_num: int = field(default=2,
                              metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
     dataloader_pin_memory: bool = field(
         default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"}
