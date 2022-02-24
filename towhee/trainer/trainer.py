@@ -590,7 +590,7 @@ class Trainer:
         Args:
             num_training_steps (int): The number of training steps to do.
         """
-        if self.lr_scheduler is None:
+        if isinstance(self.configs.lr_scheduler_type, str):
             self.lr_scheduler = get_scheduler(
                 self.configs.lr_scheduler_type,
                 optimizer=self.optimizer if optimizer is None else optimizer,
@@ -598,6 +598,10 @@ class Trainer:
                 num_training_steps=num_training_steps,
                 last_epoch=last_epoch
             )
+        else:
+            self.configs.lr_scheduler_type['optimizer'] = optimizer
+            self.lr_scheduler = _construct_scheduler_from_config(torch.optim.lr_scheduler,
+                                                                 self.configs.lr_scheduler_type)
         return self.lr_scheduler
 
     def get_warmup_steps(self, num_training_steps: int):
