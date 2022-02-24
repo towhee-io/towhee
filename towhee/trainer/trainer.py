@@ -290,9 +290,7 @@ class Trainer:
 
         for epoch in range(train_last_epoch + 1, self.configs.epoch_num + 1):
             self.epoch = logs["epoch"] = epoch
-            model.train()
-            if self.configs.freeze_bn:
-                model.apply(freeze_bn)
+            self.set_train_mode(model)
             self._reset_controller()
             self.optimizer.zero_grad()
             if self.distributed:
@@ -340,6 +338,11 @@ class Trainer:
             path=os.path.join(self.configs.output_dir, "final_epoch"),
             overwrite=self.configs.overwrite_output_dir
         )
+
+    def set_train_mode(self, model):
+        model.train()
+        if self.configs.freeze_bn:
+            model.apply(freeze_bn)
 
     def _create_training_summary(self, **kwargs):
         training_summary = dict(kwargs)
@@ -441,7 +444,7 @@ class Trainer:
         """
         Subclass and override for custom behavior.
         """
-        model.train()
+        self.set_train_mode(model)
         labels = inputs[1]
         outputs = model(inputs[0])
         loss = self.loss(outputs, labels)
