@@ -359,24 +359,25 @@ class Trainer:
 
     @torch.no_grad()
     def evaluate_step(self, model, inputs):
-        labels = inputs[1]
-        outputs = model(inputs[0])
-        step_loss = self.compute_loss(labels, outputs)
+        inputs = self.prepare_inputs(inputs)
+        step_loss = self.compute_loss(model, inputs)
         step_loss = reduce_value(step_loss, average=True)
         step_loss = step_loss.detach()
 
-        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss)
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss, training=False)
 
         step_logs = {"eval_step_loss": step_loss.item(), "eval_epoch_loss": loss_metric,
                      "eval_epoch_metric": epoch_metric}
         return step_logs
 
     @torch.no_grad()
-    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor):
+    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor, training=True):
         self.loss_metric.update(step_loss.to(self.configs.device))
         loss_metric = self.loss_metric.compute().item()
-
-        epoch_metric = self.compute_metric(model, inputs)
+        if self.configs.eval_strategy == "eval_epoch" and training:
+            epoch_metric = 0
+        else:
+            epoch_metric = self.compute_metric(model, inputs)
         return loss_metric, epoch_metric
 
     @torch.no_grad()
@@ -421,7 +422,7 @@ class Trainer:
         step_loss.backward()
         step_loss = step_loss.detach()
 
-        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss)
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss, training=True)
 
         self.optimizer.step()
         self.lr_scheduler.step()
