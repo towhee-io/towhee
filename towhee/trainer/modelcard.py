@@ -63,7 +63,7 @@ class ModelCard:
         model_card = f"# {self.model_name}\n\n"
         model_card += f"## model overview\n{self.model_overview}\n\n"
         model_card += f"### model architecture\n{self.model_architecture}\n\n"
-        model_card += "## dataset\n"
+        model_card += "## Dataset\n"
         if self.datasets is None:
             model_card += "Dataset unknown.\n"
         else:
@@ -94,7 +94,7 @@ class ModelCard:
             if self.training_config.warmup_steps is not None:
                 model_card += f"\nThe warmup_steps is {self.training_config.warmup_steps}."
             if self.training_config.lr is not None:
-                model_card += f"\nLearining reate is {self.training_config.lr}."
+                model_card += f"\nLearning rate is {self.training_config.lr}."
             else:
                 model_card += "\nLearning rate is needed.\n"
             # if self.training_config.weight_decay is not None:
@@ -122,7 +122,7 @@ class ModelCard:
             model_card += "\nTraining configurations is needed.\n"
 
 
-        model_card += "\n## Training summary\n"
+        model_card += "\n\n## Training summary\n"
         if self.training_summary is not None:
             model_card += "\n".join([f"- {name}: {value}" for name, value in self.training_summary.items()])
             model_card += "\n"
