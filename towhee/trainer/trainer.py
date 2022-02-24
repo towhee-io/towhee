@@ -338,6 +338,7 @@ class Trainer:
                 eval_logs = self.evaluate(model, logs)
                 logs.update(eval_logs)
 
+    @torch.no_grad()
     def evaluate_step(self, model, inputs):
         labels = inputs[1]
         outputs = model(inputs[0])
@@ -345,20 +346,31 @@ class Trainer:
         step_loss = reduce_value(step_loss, average=True)
         step_loss = step_loss.detach()
 
-        loss_metric, epoch_metric = self._update_metrics(labels, outputs, step_loss)
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss)
 
         step_logs = {"eval_step_loss": step_loss.item(), "eval_epoch_loss": loss_metric,
                      "eval_epoch_metric": epoch_metric}
         return step_logs
 
-    def _update_metrics(self, labels, outputs, step_loss):
+    @torch.no_grad()
+    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor):
         self.loss_metric.update(step_loss.to(self.configs.device))
         loss_metric = self.loss_metric.compute().item()
-        epoch_metric = None
-        if self.metric is not None:
-            self.metric.update(outputs.to(self.configs.device), labels.to(self.configs.device))
-            epoch_metric = self.metric.compute().item()
+
+        epoch_metric = self.compute_metric(model, inputs)
         return loss_metric, epoch_metric
+
+    @torch.no_grad()
+    def compute_metric(self, model: nn.Module, inputs: Any):
+        model.eval()
+        epoch_metric = None
+        labels = inputs[1]
+        outputs = model(inputs[0])
+        if self.metric is not None:
+            self.metric.update(send_to_device(outputs, self.configs.device),
+                               send_to_device(labels, self.configs.device))
+            epoch_metric = self.metric.compute().item()
+        return epoch_metric
 
     @torch.no_grad()
     def evaluate(self, model, logs):
@@ -385,30 +397,15 @@ class Trainer:
         return self.model(input_)
 
     def train_step(self, model, inputs):
-        labels = inputs[1]
-        outputs = model(inputs[0])
-        step_loss = self.compute_loss(labels, outputs)
+        step_loss = self.compute_loss(model, inputs)
         step_loss = reduce_value(step_loss, average=True)
         step_loss.backward()
         step_loss = step_loss.detach()
 
-        loss_metric, epoch_metric = self._update_metrics(labels, outputs, step_loss)
-        # batch_loss_sum += loss.item()
-        # epoch_loss = batch_loss_sum / (i + 1)  # update mean losses
-        # if epoch_metric is None:
-        #     show_metric = None
-        # else:
-        #     show_metric = round(epoch_metric.item(), 3)
-        # if is_main_process:
-        #     train_dataloader.desc = "[epoch {}/{}] loss={}, metric={}".format(epoch + 1,
-        #                                                                       int(self.configs.epoch_num),
-        #                                                                       round(epoch_loss, 3),
-        #                                                                       show_metric)
-        # Optimizer step
-        optimizer_was_run = True
+        loss_metric, epoch_metric = self.update_metrics(model, inputs, step_loss)
+
         self.optimizer.step()
-        if optimizer_was_run:
-            self.lr_scheduler.step()
+        self.lr_scheduler.step()
         self.optimizer.zero_grad()
         step_logs = {"step_loss": step_loss.item(), "epoch_loss": loss_metric, "epoch_metric": epoch_metric}
         return step_logs
@@ -420,18 +417,15 @@ class Trainer:
                     os.remove(TEMP_INIT_WEIGHTS)
             dist.destroy_process_group()
 
-    def compute_loss(self, labels, outputs):
+    def compute_loss(self, model: nn.Module, inputs: Any):
         """
         Subclass and override for custom behavior.
         """
-        #     criterion = nn.CrossEntropyLoss()
+        model.train()
+        labels = inputs[1]
+        outputs = model(inputs[0])
         loss = self.loss(outputs, labels)
-        # corrects = torch.sum(preds == labels.data)
-        # return (loss, outputs) if return_outputs else loss
-
-        # self.mean_loss_metric.update(loss)
-        # self.mean_loss_metric.compute()
-        return loss  # , step_metric
+        return loss
 
     def push_model_to_hub(self):
         pass
@@ -576,7 +570,7 @@ class Trainer:
             return
         self.loss = _construct_loss_from_config(torch.nn.modules.loss, self.configs.loss)
 
-    def _create_optimizer(self, init_lr: int):
+    def _create_optimizer(self, init_lr: float):
         if self.override_optimizer is True:
             return
         self.optimizer = _construct_optimizer_from_config(
@@ -616,13 +610,6 @@ class Trainer:
         )
         return warmup_steps
 
-    def num_examples(self, dataloader: DataLoader) -> int:
-        """
-        Helper to get number of samples in a :class:`~torch.utils.data.DataLoader` by accessing its dataset.
-
-        Will raise an exception if the underlying dataset does not implement method :obj:`__len__`
-        """
-        return len(dataloader.dataset)
 
     def load(self, path):
         checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
@@ -640,17 +627,9 @@ class Trainer:
         if "epoch" not in checkpoint:
             return 0
         self.epoch = checkpoint["epoch"]
-        # print("epoch = ", epoch)
         self.loss_value = checkpoint["loss_value"]
-        # print("loss = ", loss)  # todo
         self.metric_value = checkpoint["metric_value"]
-        # print("metric = ", metric)
-        # if Path(modelcard_path).exists():
-        #     self.model_card = ModelCard.load_from_file(modelcard_path)
-        #     print(f"Model card is loaded from {modelcard_path}")
-        # print("model_card = ", self.model_card.to_dict())
-        # else:
-        #     trainer_log.warning("model card file not exist.")
+
 
     def save(self, path, overwrite=True):
         if is_main_process():
