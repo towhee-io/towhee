@@ -60,41 +60,42 @@ class ModelCard:
         if it's a directory, default name is 'modelcard.json,
         if there exist a same named file, it will be overwritten
         """
-        model_card = f"# {self.model_name}\n\n"
-        model_card += f"## Model overview\n{self.model_overview}\n\n"
-        model_card += f"### Model architecture\n{self.model_architecture}\n\n"
-        model_card += "## Dataset\n"
+        model_card = f"# {self.model_name}"
+        model_card += f"\n\n## Model overview\n{self.model_overview}\n"
+        model_card += f"\n\n### Model architecture\n{self.model_architecture}\n"
+
+        model_card += "\n\n## Dataset"
         if self.datasets is None:
-            model_card += "Dataset unknown.\n"
+            model_card += "\nDataset unknown.\n"
         else:
             if isinstance(self.datasets, str):
-                model_card += f"Using the {self.datasets} as dataset."
+                model_card += f"\nUsing the {self.datasets} as dataset.\n"
             elif isinstance(self.dataset, (tuple, list)) and len(self.datasets) == 1:
-                model_card += f"Using the {self.datasets} as dataset."
+                model_card += f"\nUsing the {self.datasets} as dataset.\n"
             else:
                 model_card += (
-                        ", ".join(
+                        "\n, ".join(
                             [f"Using the {dataset}" for dataset in self.datasets[:-1]])
-                        + f" and the {self.datasets[-1]} dataset."
+                        + f" and the {self.datasets[-1]} dataset.\n"
                 )
-        model_card += "\n## Training configurations\n"
+
+        model_card += "\n\n## Training configurations\n"
         if self.training_config is not None:
             if self.training_config.optimizer is not None:
-                model_card += f"\nOptimizer is  {self.training_config.optimizer}."
                 if isinstance(self.training_config.optimizer, str):
-                    model_card += f"\nOptimizer is  {self.training_config.optimizer}."
+                    model_card += f"\nOptimizer is  {self.training_config.optimizer}.\n"
                 else:
                     model_card += "\n".join([f"- {name}: "
                                              f"{value}" for name, value in self.training_config.optimizer.items()])
-                model_card += "\n"
+                    model_card += "\n"
             if self.training_config.lr_scheduler_type is not None:
-                model_card += f"\nThe scheduler type is {self.training_config.lr_scheduler_type}."
+                model_card += f"\nThe scheduler type is {self.training_config.lr_scheduler_type}.\n"
             if self.training_config.warmup_ratio is not None:
-                model_card += f"\nThe warmup_ratio is {self.training_config.warmup_ratio}."
+                model_card += f"\nThe warmup_ratio is {self.training_config.warmup_ratio}.\n"
             if self.training_config.warmup_steps is not None:
-                model_card += f"\nThe warmup_steps is {self.training_config.warmup_steps}."
+                model_card += f"\nThe warmup_steps is {self.training_config.warmup_steps}.\n"
             if self.training_config.lr is not None:
-                model_card += f"\nLearning rate is {self.training_config.lr}."
+                model_card += f"\nLearning rate is {self.training_config.lr}.\n"
             else:
                 model_card += "\nLearning rate is needed.\n"
             # if self.training_config.weight_decay is not None:
@@ -106,24 +107,24 @@ class ModelCard:
             # if self.training_config.adam_epsilon is not None:
             #     model_card += f"\nEpsilon for AdamW optimizer is {self.training_config.adam_epsilon}."
             if self.training_config.metric is not None:
-                model_card += f"\nMetric is {self.training_config.metric}."
+                model_card += f"\nMetric is {self.training_config.metric}.\n"
             #
             # if self.training_config.max_norm_grad is not None:
             #     model_card += f"\nMax gradient norm is {self.training_config.max_norm_grad}."
             if self.training_config.batch_size is not None:
-                model_card += f"\nBatch size is {self.training_config.batch_size}."
+                model_card += f"\nBatch size is {self.training_config.batch_size}.\n"
             if self.training_config.seed is not None:
-                model_card += f"\nRandom seed is {self.training_config.seed}."
+                model_card += f"\nRandom seed is {self.training_config.seed}.\n"
             if self.training_config.epoch_num is not None:
-                model_card += f"\nTraining epochs is {self.training_config.epoch_num}."
+                model_card += f"\nTraining epochs is {self.training_config.epoch_num}.\n"
             if self.training_config.n_gpu is not None:
-                model_card += f"\nNumber of GPUs is {self.training_config.n_gpu}."
+                model_card += f"\nNumber of GPUs is {self.training_config.n_gpu}.\n"
         else:
             model_card += "\nTraining configurations is needed.\n"
 
-
         model_card += "\n\n## Training summary\n"
         if self.training_summary is not None:
+            model_card += "\n"
             model_card += "\n".join([f"- {name}: {value}" for name, value in self.training_summary.items()])
             model_card += "\n"
         else:

@@ -165,7 +165,7 @@ class Trainer:
         if not isinstance(self.model_card, ModelCard):
             self.model_card = ModelCard()
 
-        if self.model_card.model_name is not None:
+        if self.model_card.model_name is None:
             self.model_card.model_name = type(self.model).__name__
         self.model_card.model_architecture = str(self.model)
         self.model_card.training_config = self.configs

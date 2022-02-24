@@ -116,13 +116,12 @@ class NNOperator(Operator):
               training_config=None,
               train_dataset=None,
               eval_dataset=None,
-              model_card=None,
               resume_checkpoint_path=None,
               **kwargs):
         """
         For training model
         """
-        self.setup_trainer(training_config, train_dataset, eval_dataset, model_card, **kwargs)
+        self.setup_trainer(training_config, train_dataset, eval_dataset, **kwargs)
         self.trainer.train(resume_checkpoint_path)
 
     def create_trainer(self,
@@ -144,7 +143,6 @@ class NNOperator(Operator):
     def setup_trainer(self, training_config=None,
                       train_dataset=None,
                       eval_dataset=None,
-                      model_card=None,
                       train_dataloader=None,
                       eval_dataloader=None
                       ) -> Trainer:
@@ -155,7 +153,7 @@ class NNOperator(Operator):
             self.create_trainer(training_config,
                                 train_dataset,
                                 eval_dataset,
-                                model_card,
+                                self.model_card,
                                 train_dataloader,
                                 eval_dataloader)
         else:
@@ -165,8 +163,6 @@ class NNOperator(Operator):
                 self.trainer.train_dataset = train_dataset
             if eval_dataset is not None:
                 self.trainer.eval_dataset = eval_dataset
-            if model_card is not None:
-                self.trainer.model_card = model_card
             if train_dataloader is not None:
                 self.trainer.train_dataloader = train_dataloader
             if eval_dataloader is not None:
