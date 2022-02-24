@@ -356,7 +356,7 @@ class Trainer:
                 eval_logs = self.evaluate(model, logs)
                 logs.update(eval_logs)
         else:  # epoch end
-            if self.configs.eval_strategy == "epoch":
+            if self.configs.eval_strategy in ["epoch", "eval_epoch"]:
                 eval_logs = self.evaluate(model, logs)
                 logs.update(eval_logs)
 
@@ -375,7 +375,7 @@ class Trainer:
 
     @torch.no_grad()
     def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor, training=True):
-        self.loss_metric.update(step_loss.to(self.configs.device))
+        self.loss_metric.update(send_to_device(step_loss, self.configs.device))
         loss_metric = self.loss_metric.compute().item()
         if self.configs.eval_strategy == "eval_epoch" and training:
             epoch_metric = 0
@@ -406,7 +406,7 @@ class Trainer:
             return logs
         for _, inputs in enumerate(eval_dataloader):
             self.callbacks.on_eval_batch_begin(inputs, logs)
-            inputs = [input_.to(self.configs.device) for input_ in inputs]
+            inputs = send_to_device(inputs, self.configs.device)
             step_logs = self.evaluate_step(model, inputs)
             logs.update(step_logs)
             self.callbacks.on_eval_batch_end(tuple(inputs), logs)
