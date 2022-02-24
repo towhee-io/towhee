@@ -61,8 +61,8 @@ class ModelCard:
         if there exist a same named file, it will be overwritten
         """
         model_card = f"# {self.model_name}\n\n"
-        model_card += f"## model overview\n{self.model_overview}\n\n"
-        model_card += f"### model architecture\n{self.model_architecture}\n\n"
+        model_card += f"## Model overview\n{self.model_overview}\n\n"
+        model_card += f"### Model architecture\n{self.model_architecture}\n\n"
         model_card += "## Dataset\n"
         if self.datasets is None:
             model_card += "Dataset unknown.\n"
