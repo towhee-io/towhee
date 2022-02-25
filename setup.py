@@ -14,6 +14,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 import unittest
+import subprocess
 from pathlib import Path
 from typing import List
 
@@ -34,6 +35,12 @@ def parse_requirements(file_name: str) -> List[str]:
         return [require.strip() for require in f if require.strip() and not require.startswith("#")]
 
 
+class PostInstallCommand(install):
+    def run(self):
+        install.run(self)
+        subprocess.check_call(['pip', 'uninstall', '-y', 'ruamel.yaml.clib'])
+
+
 setup(
     name="towhee",
     version="0.4.0",
@@ -45,13 +52,13 @@ setup(
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
     install_requires=parse_requirements('requirements.txt'),
+    cmdclass={'install': PostInstallCommand},
     tests_require=parse_requirements('test_requirements.txt'),
+    extras_require={':python_version<"3.7"': ['importlib-resources']},
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",
     entry_points={
-        'console_scripts': [
-            'towhee=towhee.command.cmdline:main'
-        ],
+        'console_scripts': ['towhee=towhee.command.cmdline:main'],
     }
 )
