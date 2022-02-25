@@ -14,6 +14,7 @@
 
 from typing import Iterable, Iterator
 from random import random, sample, shuffle
+import concurrent.futures
 
 from towhee.hparam import param_scope
 from towhee.functional.option import Option, Some, Empty
@@ -33,7 +34,8 @@ def _private_wrapper(func):
     return wrapper
 
 
-class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
+class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
+                     ParallelMixin):
     """
     DataCollection is a quick assambler for chained data processing operators.
 
@@ -114,6 +116,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
     """
 
     def __init__(self, iterable) -> None:
+        super().__init__()
         self._iterable = iterable
 
     def __iter__(self):
@@ -214,7 +217,19 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
 
     @property
     def factory(self):
-        return DataCollection.stream if self.is_stream else DataCollection.cached
+        """
+        Factory method for data collection.
+
+        This factory method has been wrapped into a `param_scope()` which contains parent infomations.
+        """
+        creator = DataCollection.stream if self.is_stream else DataCollection.cached
+
+        def wrapper(*arg, **kws):
+            with param_scope() as hp:
+                hp().data_collection.parent = self
+                return creator(*arg, **kws)
+
+        return wrapper
 
     @_private_wrapper
     def exception_safe(self):
@@ -307,6 +322,10 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
         """
 
         # return map(unary_op, self._iterable)
+        if hasattr(self, '_executor') and isinstance(
+                self._executor, concurrent.futures.ThreadPoolExecutor):
+            return self.pmap(unary_op, executor=self._executor)
+
         def inner(x):
             if isinstance(x, Option):
                 return x.map(unary_op)
@@ -462,7 +481,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
         """
         if self.is_stream:
             raise TypeError(
-                "shuffle is not supported for streamed data collection.")
+                'shuffle is not supported for streamed data collection.')
         if in_place:
             shuffle(self._iterable)
             return self
@@ -498,7 +517,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
         """
         if self.is_stream:
             raise TypeError(
-                "indexing is not supported for streamed data collection.")
+                'indexing is not supported for streamed data collection.')
         return self._iterable[index]
 
     def __setitem__(self, index, value):
@@ -518,7 +537,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin):
         """
         if self.is_stream:
             raise TypeError(
-                "indexing is not supported for streamed data collection.")
+                'indexing is not supported for streamed data collection.')
         self._iterable[index] = value
 
     def __rshift__(self, unary_op):

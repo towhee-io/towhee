@@ -79,7 +79,7 @@ class TestDataCollection(unittest.TestCase):
         )
         self.assertListEqual(list(result), [2, 4, 6, 8, 10])
 
-    def test_example_for_multple_line_statement(self):
+    def test_example_for_multiple_line_statement(self):
         dc = DataCollection(range(5))
         result = dc \
             .myop.add(val=1) \

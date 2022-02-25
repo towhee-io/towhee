@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import threading
 from typing import List, Tuple, Union
 
 from towhee.dataframe import DataFrame
@@ -220,10 +221,12 @@ class _OperatorLazyWrapper:
         self._tag = tag
         self._kws = kws
         self._op = None
+        self._lock = threading.Lock()
 
     def __call__(self, *arg, **kws):
-        if self._op is None:
-            self._op = op(self._name, self._tag, **self._kws)
+        with self._lock:
+            if self._op is None:
+                self._op = op(self._name, self._tag, **self._kws)
         return self._op(*arg, **kws)
 
     @property
