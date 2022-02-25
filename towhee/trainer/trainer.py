@@ -271,7 +271,7 @@ class Trainer:
         num_train_epochs = math.ceil(self.configs.epoch_num - train_last_epoch)
         num_train_steps = math.ceil(num_train_epochs * num_update_steps_per_epoch)
 
-        self._setup_before_train(num_training_steps=num_train_steps, init_lr=self.lr_value)
+        self.setup_before_train(num_training_steps=num_train_steps, init_lr=self.lr_value)
 
         trainer_log.info("***** Running training *****")
         trainer_log.info("  Num Epochs = %d", num_train_epochs)
@@ -547,7 +547,7 @@ class Trainer:
                                                pin_memory=self.configs.dataloader_pin_memory,
                                                )
 
-    def _setup_before_train(self, num_training_steps: int, init_lr: float):
+    def setup_before_train(self, num_training_steps: int, init_lr: float):
         """
         Setup the optimizer and the learning rate scheduler.
         """

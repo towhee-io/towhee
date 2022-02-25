@@ -216,20 +216,20 @@ class TestCallback(unittest.TestCase):
 
     def test_earlystopping(self):
         trainer_control = TrainerControl()
-        earlystopping_callback = EarlyStoppingCallback(trainer_control, 'loss', patience = 3, mode = "min")
+        earlystopping_callback = EarlyStoppingCallback(trainer_control, 'loss', patience = 3, mode = 'min')
 
         loss_value = [5.0, 4.0, 3.0, 2.5, 2.1, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-        def loss_emulator(): 
+        def loss_emulator():
             for value in loss_value:
                 yield value
-       
+
         train_log = {}
         earlystopping_callback.on_train_begin(train_log)
         for epoch, loss_value in enumerate(loss_emulator()):
-            train_log["loss"] = loss_value
+            train_log['loss'] = loss_value
             earlystopping_callback.on_epoch_end(epoch, train_log)
         earlystopping_callback.on_train_end(train_log)
-        assert(earlystopping_callback.trainercontrol.should_training_stop == True)
+        assert earlystopping_callback.trainercontrol.should_training_stop is True
 
     def test_modelcheckpoint(self):
         trainer_control = TrainerControl()
@@ -242,7 +242,7 @@ class TestCallback(unittest.TestCase):
 
         modelcheckpoint_callback = ModelCheckpointCallback(trainer_control, every_n_iteration = 5)
         iteration_status = []
-        for iteration in range(11):
+        for _ in range(11):
             batch_data = (None, None)
             modelcheckpoint_callback.on_batch_end(batch_data)
             iteration_status.append(modelcheckpoint_callback.trainercontrol.should_save)

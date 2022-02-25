@@ -27,7 +27,7 @@ class TestFreezer(unittest.TestCase):
     def test_freezer_status(self):
         res1 = self.freezer.status(-1)
         res2 = self.freezer.status('fc')
-        self.assertEquals(res1, res2, ['unfreezed' for _ in range(len(res1))])
+        self.assertEqual(res1, res2, ['unfreezed' for _ in range(len(res1))])
 
     def test_freezer_by_name(self):
         self.freezer.by_names(['conv1', 'fc'])

@@ -14,12 +14,12 @@
 # limitations under the License.
 
 import unittest
-from pathlib import Path
 import torchvision
+from pathlib import Path
+from torch import optim
 
+from towhee.trainer.callback import TrainerControl
 from towhee.trainer.training_config import TrainingConfig
-from torch import nn, optim
-from torch.optim.adamw import AdamW
 from towhee.trainer.trainer import Trainer
 
 
@@ -30,12 +30,17 @@ class TestLRScheduler(unittest.TestCase):
     def test_lr_scheduler(self) -> None:
         conf = Path(__file__).parent / 'config2.yaml'
         ta = TrainingConfig()
+        ta.print_steps = 2
         ta.load_from_yaml(conf)
         model = torchvision.models.resnet50(pretrained=True)
         tr = Trainer(model=model, training_config=ta)
+        tr.train_dataloader = [1]
+        tr.trainercontrol = TrainerControl()
+        ta.tensorboard = None
         num_training_steps = 10
         optimizer = optim.AdamW(model.parameters(), lr=0.001)
-        tr._create_scheduler(num_training_steps, optimizer)
+        tr.optimizer = optimizer
+        tr.setup_before_train(num_training_steps, 0.001)
         self.assertEqual(tr.lr_scheduler.__class__.__name__, 'StepLR')
 
 
