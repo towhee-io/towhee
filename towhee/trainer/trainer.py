@@ -271,11 +271,7 @@ class Trainer:
         num_train_epochs = math.ceil(self.configs.epoch_num - train_last_epoch)
         num_train_steps = math.ceil(num_train_epochs * num_update_steps_per_epoch)
 
-        self._setup_before_train(
-            num_training_steps=num_train_steps,
-            init_lr=self.lr_value,
-            last_epoch=-1
-        )
+        self._setup_before_train(num_training_steps=num_train_steps, init_lr=self.lr_value)
 
         trainer_log.info("***** Running training *****")
         trainer_log.info("  Num Epochs = %d", num_train_epochs)
@@ -551,14 +547,14 @@ class Trainer:
                                                pin_memory=self.configs.dataloader_pin_memory,
                                                )
 
-    def _setup_before_train(self, num_training_steps: int, init_lr: float, last_epoch: int):
+    def _setup_before_train(self, num_training_steps: int, init_lr: float):
         """
         Setup the optimizer and the learning rate scheduler.
         """
         self._create_optimizer(init_lr=init_lr)
         self._create_loss()
         self._create_metric()
-        self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer, last_epoch=last_epoch)
+        self._create_scheduler(num_training_steps=num_training_steps, optimizer=self.optimizer)
         self._create_callbacks()
 
     def _create_callbacks(self):
@@ -605,7 +601,7 @@ class Trainer:
             param.setdefault("initial_lr", init_lr)
         self.optimizer.lr = init_lr
 
-    def _create_scheduler(self, num_training_steps: int, last_epoch: int, optimizer: torch.optim.Optimizer = None):
+    def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
         """
         Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
         passed as an argument.
@@ -619,7 +615,6 @@ class Trainer:
                 optimizer=self.optimizer if optimizer is None else optimizer,
                 num_warmup_steps=self.get_warmup_steps(num_training_steps),
                 num_training_steps=num_training_steps,
-                last_epoch=last_epoch
             )
         else:
             self.configs.lr_scheduler_type["optimizer"] = optimizer

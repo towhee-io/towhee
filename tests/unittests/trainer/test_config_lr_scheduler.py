@@ -27,7 +27,7 @@ class TestLRScheduler(unittest.TestCase):
     """
     Test lr scheduler
     """
-    def test_lr_shceduler(self) -> None:
+    def test_lr_scheduler(self) -> None:
         conf = Path(__file__).parent / 'config2.yaml'
         ta = TrainingConfig()
         ta.load_from_yaml(conf)
@@ -35,9 +35,8 @@ class TestLRScheduler(unittest.TestCase):
         tr = Trainer(model=model, training_config=ta)
         print(tr.lr_scheduler_type)
         num_training_steps = 10
-        last_epoch = -1
         optimizer = optim.AdamW(model.parameters(), lr=0.001)
-        tr._create_scheduler(num_training_steps, last_epoch, optimizer)
+        tr._create_scheduler(num_training_steps, optimizer)
         self.assertEqual(tr.lr_scheduler.__class__.__name__, 'StepLR')
 
 
