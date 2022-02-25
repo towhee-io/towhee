@@ -17,7 +17,10 @@ import os
 from pathlib import Path
 from typing import Union, List
 from shutil import copy2, copytree, rmtree
-import importlib.resources
+try:
+    import importlib.resources as importlib_resources
+except ModuleNotFoundError:
+    import importlib_resources
 
 from towhee.utils.singleton import singleton
 from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
@@ -282,7 +285,7 @@ class FileManager():
                     copytree(str(old_path), str(new_path))
 
     def get_builtin_pipeline(self, file_name: str) -> str:
-        with importlib.resources.path('towhee.hub.builtin.pipelines', '{}.yaml'.format(file_name)) as path:
+        with importlib_resources.path('towhee.hub.builtin.pipelines', '{}.yaml'.format(file_name)) as path:
             return path
 
     def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True):

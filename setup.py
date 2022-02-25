@@ -46,12 +46,11 @@ setup(
     test_suite="setup.test_suite",
     install_requires=parse_requirements('requirements.txt'),
     tests_require=parse_requirements('test_requirements.txt'),
+    extras_require={':python_version<"3.7"': ['importlib-resources']},
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",
     entry_points={
-        'console_scripts': [
-            'towhee=towhee.command.cmdline:main'
-        ],
+        'console_scripts': ['towhee=towhee.command.cmdline:main'],
     }
 )
