@@ -33,7 +33,6 @@ class TestLRScheduler(unittest.TestCase):
         ta.load_from_yaml(conf)
         model = torchvision.models.resnet50(pretrained=True)
         tr = Trainer(model=model, training_config=ta)
-        print(tr.lr_scheduler_type)
         num_training_steps = 10
         optimizer = optim.AdamW(model.parameters(), lr=0.001)
         tr._create_scheduler(num_training_steps, optimizer)
