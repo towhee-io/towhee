@@ -12,34 +12,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Utilities for the Trainer.
-"""
 
-import random
-import re
-from typing import NamedTuple
+import unittest
+from pathlib import Path
 
-import numpy as np
-import torch
+from towhee.trainer.training_config import TrainingConfig
 
 
-def set_seed(seed: int):
+class TestTrainConfigSaving(unittest.TestCase):
     """
-    Helper function for reproducible behavior to set the seed in ``random``, ``numpy``, ``torch``.
-
-    Args:
-        seed (:obj:`int`): The seed to set.
+    Test TrainingConfig init
     """
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    def test_trainconfigsaving_init(self) -> None:
+        conf = Path(__file__).parent / 'save_test.yaml'
+        conf0 = Path(__file__).parent / 'config.yaml'
+        ta = TrainingConfig()
+        ta.load_from_yaml(conf0)
+        ta.save_to_yaml(conf)
+        self.assertEqual(ta.epoch_num, 2)
 
 
-class TrainOutput(NamedTuple):
-    global_step: int
-    training_loss: float
-
-
-PREFIX_CHECKPOINT_DIR = "checkpoint"
-_re_checkpoint = re.compile(r"^" + PREFIX_CHECKPOINT_DIR + r"\-(\d+)$")
+if __name__ == '__main__':
+    unittest.main(verbosity=1)

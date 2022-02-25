@@ -15,22 +15,26 @@
 
 import unittest
 
-from towhee.cnn_trainer.training_args import TrainingArguments
+import torch
 
+from towhee.trainer import metrics
 
-class TrainerArgsTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.training_args = TrainingArguments(
-            output_dir='./ResNet50',
-            overwrite_output_dir=True,
-            num_train_epochs=5,
-            per_gpu_train_batch_size=4,
-            prediction_loss_only=True,
-        )
+class TestMetrics(unittest.TestCase):
+    """
+    TestMetrics
+    """
+    def test_Metrics(self) -> None:
+        metrics.show_avaliable_metrics()
+        metric = metrics.get_metric_by_name('Accuracy')
 
-    def test_train_batch_size(self) -> None:
-        self.assertEqual(4, self.training_args.train_batch_size)
-
+        preds = torch.randn(10, 5).softmax(dim=-1)
+        target = torch.randint(5, (10,))
+        metric.reset()
+        metric.update(preds, target)
+        metric.compute()
+        self.assertEqual(True, True)
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)
+
+

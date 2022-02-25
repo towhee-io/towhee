@@ -1,0 +1,61 @@
+train:
+  args:
+    output_dir: None #str, the predictions and checkpoints will be writen
+    overwrite_output_dir: False #bool, overwrite the output_dir
+    do_train: False #bool, do training or not
+    do_eval: False #bool, do evaluation or not
+    do_predict: False #bool, do prediction or not
+    eval_strategy: 'no'
+      #evaluation strategy:
+      #  'no': no evaluation during training
+      #  'steps': do evaluation and logging every steps
+      #  'epoch': do evaluation and logging every epoch
+    prediction_loss_only: False #bool, only return the loss during evaluation and prediction
+    per_gpu_train_batch_size: 8 #int, batch size for each device(GPU,CPU or TPU)
+    per_gpu_eval_batch_size: 1 #Optional, int, batch size for each device(GPU,CPU or TPU)
+    gradient_accumulation_num: 1 #int, number of gradient accumulation before backward pass
+    epoch_num: 3.0 #float, training epochs
+    max_steps: -1 #Optional, int, overides num_train_epochs if max_steps > 0
+    no_cuda: False #bool, cuda is not used
+    seed: 42 #int, random seed at the beginning of training
+    dataloader_drop_last: False #bool, drop the last incomplete batch
+    eval_steps: None #Optional, int, evaluation is done every eval_steps
+    dataloader_num_workers: 0 #Optional, int, number of subprocess for pytorch data loading
+    past_index: -1 #Optional, int, the past index of past state for next step if > 0
+    label_names: None #Optional, List[str], list of keys in dictionary of inputs that correspond to labels
+    load_best_model_at_end: False #Optional, str, if load the best model when training ends
+    greater_is_better: None #Optional, bool, if the model metric should be max
+    ignore_data_skip: False #Optional, bool, if ignore the the data that was used before when training is resumed
+    group_by_length: 'length' #Optional, str, if group the samples by the same length during batching
+    length_column_name: 'length' #Optional, str, column name of the precomputed length used for grouping
+    resume_from_checkpoint: None #Optional, str, path to a checkpoint
+learning:
+  args:
+    optimizer:  optim.Adam #optional, pytorch optimizer
+    use_adafactor: False #Optional, bool, if Adafactor is used
+    lr_scheduler_type: 'linear' #Optional, str, learning type
+    warmup_ratio: 0.0 #Optional, float, warmup ratio
+    warmup_steps: 0 #Optional, float, warmup steps
+    lr: 5e-5 #Optional, float, learning rate
+    weight_decay: 0 #Optional, float, weight decay
+    adam_beta1: 0.9 #Optional, float, beta1 of AdamW
+    adam_beta2: 0.999 #Optional, float, beta2 of AdamW
+    adam_epsilon: 1e-8 #Optional, float, epsilon of AdamW
+    max_norm_grad: 1.0 #Optional, float, max norm of gradient
+callback:
+  args:
+    call_back_list: None #Optional, List[Callback], a list of callbacks
+metrics:
+  args:
+    metric: None #Optional, str, the metric for model comparison
+logging:
+  args:
+    logging_dir: Node #Optional, str, tensorboard log dir
+    logging_strategy: 'steps' #Optional, str, logging strategy
+    logging_steps: 500 #int, log per logging steps
+    saving_strategy: 'steps' #str, checkpoint saving strategy
+    saving_steps: 500 #Optional, int, checkpoint saving steps
+    saving_total_limit: None #Optional, int, checkpoint saving limit, otherwise unlimited
+    save_on_each_node: False #Optional, bool, if each node saves model and checkpoints
+    disable_tqdm: None #Optional, bool, if disable the tqdm progress bars
+    report_to: None #Optional,List[str], the list of integrations to report results and logs

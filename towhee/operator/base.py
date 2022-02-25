@@ -24,6 +24,9 @@ from enum import Enum
 
 # Shareable:
 #    Stateless operator
+from towhee.trainer.trainer import Trainer
+# from towhee.trainer.modelcard import ModelCard
+
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
 
@@ -90,6 +93,10 @@ class NNOperator(Operator):
     def __init__(self, framework: str = 'pytorch'):
         super().__init__()
         self._framework = framework
+        self.operator_name = type(self).__name__
+        self.model = None
+        self.model_card = None
+        self.trainer = None #Trainer(self.get_model())
 
     @property
     def framework(self):
@@ -99,11 +106,82 @@ class NNOperator(Operator):
     def framework(self, framework: str):
         self._framework = framework
 
-    def train(self):
+    def get_model(self):
+        """
+        get the framework naive model
+        """
+        raise NotImplementedError()
+
+    def train(self,
+              training_config=None,
+              train_dataset=None,
+              eval_dataset=None,
+              resume_checkpoint_path=None,
+              **kwargs):
         """
         For training model
         """
-        raise NotImplementedError
+        self.setup_trainer(training_config, train_dataset, eval_dataset, **kwargs)
+        self.trainer.train(resume_checkpoint_path)
+
+    def create_trainer(self,
+                       training_config=None,
+                       train_dataset=None,
+                       eval_dataset=None,
+                       model_card=None,
+                       train_dataloader=None,
+                       eval_dataloader=None
+                       ):
+        self.trainer = Trainer(self.get_model(),
+                               training_config,
+                               train_dataset,
+                               eval_dataset,
+                               model_card,
+                               train_dataloader,
+                               eval_dataloader)
+
+    def setup_trainer(self, training_config=None,
+                      train_dataset=None,
+                      eval_dataset=None,
+                      train_dataloader=None,
+                      eval_dataloader=None
+                      ) -> Trainer:
+        """
+        set up the trainer instance in operator before training.
+        """
+        if self.trainer is None:
+            self.create_trainer(training_config,
+                                train_dataset,
+                                eval_dataset,
+                                self.model_card,
+                                train_dataloader,
+                                eval_dataloader)
+        else:
+            if training_config is not None:
+                self.trainer.configs = training_config
+            if train_dataset is not None:
+                self.trainer.train_dataset = train_dataset
+            if eval_dataset is not None:
+                self.trainer.eval_dataset = eval_dataset
+            if train_dataloader is not None:
+                self.trainer.train_dataloader = train_dataloader
+            if eval_dataloader is not None:
+                self.trainer.eval_dataloader = eval_dataloader
+        return self.trainer
+
+    def load(self, path: str = None):
+        if self.trainer is None:
+            self.create_trainer(training_config=None)
+        self.trainer.load(path)
+
+    def save(self, path: str, overwrite: bool = True):
+        if self.trainer is None:
+            self.create_trainer(training_config=None)
+        self.trainer.save(path, overwrite)
+
+    def change_before_train(self, **kwargs):
+        pass
+    # def set_optimizer
 
 
 class PyOperator(Operator):

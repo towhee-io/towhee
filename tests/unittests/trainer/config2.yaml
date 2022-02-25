@@ -1,0 +1,47 @@
+callback:
+  early_stopping:
+    mode: max
+    monitor: eval_epoch_metric
+    patience: 4
+  model_checkpoint:
+    every_n_epoch: 1
+  tensorboard:
+    comment: ''
+    log_dir: null
+device:
+  device_str: null
+  n_gpu: -1
+  sync_bn: false
+learning:
+  loss: CrossEntropyLoss
+  lr: 5.0e-05
+  lr_scheduler_type: #'linear' #Optional, str, learning type
+    name_: StepLR
+    step_size: 3
+    gamma: 0.5
+  optimizer:
+    name_: AdamW #optional, pytorch optimizer
+    lr: 0.001
+  warmup_ratio: 0.0
+  warmup_steps: 0
+logging:
+  logging_dir: null
+  logging_strategy: steps
+  print_steps: null
+metrics:
+  metric: Accuracy
+train:
+  batch_size: 8
+  dataloader_drop_last: true
+  dataloader_num_workers: -1
+  dataloader_pin_memory: true
+  epoch_num: 2
+  eval_steps: null
+  eval_strategy: epoch
+  load_best_model_at_end: false
+  max_steps: -1
+  output_dir: ./output_dir
+  overwrite_output_dir: true
+  resume_from_checkpoint: null
+  seed: 42
+  val_batch_size: -1

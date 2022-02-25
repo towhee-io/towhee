@@ -14,25 +14,21 @@
 # limitations under the License.
 
 import unittest
-import cv2
 
-from pathlib import Path
-from towhee.data.random_erase import RandomErasing
-
-cache_path = Path(__file__).parent.parent.resolve()
-test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
+from towhee.trainer.training_config import TrainingConfig
 
 
-class RandomEraseTest(unittest.TestCase):
-    def test_random_erase(self):
-        img = cv2.imread(str(test_image))
-        RE = RandomErasing(p=1)  # pylint: disable=invalid-name
-        # for i in range(20):
-        #     img1 = RE(img.copy())
-        #     cv2.imshow("test", img1)
-        #     cv2.waitKey(1000)
-        img1 = RE(img.copy())
-        self.assertEqual(img.shape, img1.shape)
+class TrainerArgsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.training_args = TrainingConfig(
+            output_dir='./ResNet50',
+            overwrite_output_dir=True,
+            epoch_num=5,
+            batch_size=4,
+        )
+
+    def test_train_batch_size(self) -> None:
+        self.assertEqual(4, self.training_args.train_batch_size)
 
 
 if __name__ == '__main__':

@@ -19,3 +19,4 @@ FORMAT = '%(asctime)s - %(thread)d - %(filename)s-%(module)s:%(lineno)s - %(leve
 logging.basicConfig(format=FORMAT)
 
 engine_log = logging.getLogger('towhee.engine')
+trainer_log = logging.getLogger('towhee.trainer')
