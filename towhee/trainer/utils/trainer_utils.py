@@ -51,7 +51,8 @@ class TrainOutput(NamedTuple):
     training_loss: float
 
 
-CHECKPOINT_NAME = "checkpoint.pt"
+STATE_CHECKPOINT_NAME = "state.pt"
+MODEL_NAME = "model.pth"
 
 
 # _re_checkpoint = re.compile(r"^" + CHECKPOINT_NAME + r"\-(\d+)$")

@@ -14,6 +14,8 @@
 import os
 import threading
 from typing import List, Tuple, Union
+from torchvision import datasets
+from towhee.data.dataset.dataset import TorchDataSet
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe import Variable
@@ -144,6 +146,20 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
         op_obj = loader.load_operator(operator_src, kwargs, tag)
 
     return op_obj
+
+
+def dataset(name, *args, **kwargs) -> TorchDataSet:
+    """
+    mapping to a dataset by name, and pass into the custom params
+    """
+    dataset_construct_map = {
+        'mnist': datasets.MNIST,
+        'cifar10': datasets.cifar.CIFAR10,
+        'fake': datasets.FakeData
+        # 'imdb': IMDB  # ,()
+    }
+    torch_dataset = dataset_construct_map[name](*args, **kwargs)
+    return TorchDataSet(torch_dataset)
 
 
 class Build:

@@ -32,7 +32,7 @@ from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, Pr
     EarlyStoppingCallback, TrainerControl
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
-from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME, set_seed, reduce_value, is_main_process, send_to_device
+from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME, MODEL_NAME, set_seed, reduce_value, is_main_process, send_to_device
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
 from towhee.trainer.optimization.optimization import get_scheduler
@@ -634,23 +634,25 @@ class Trainer:
 
 
     def load(self, path):
-        checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+        state_path = Path(path).joinpath(STATE_CHECKPOINT_NAME)
+        model_path = Path(path).joinpath(MODEL_NAME)
         # modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-        print(f"Loading from previous checkpoint: {checkpoint_path}")
-        checkpoint = torch.load(checkpoint_path, map_location=self.configs.device)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        if isinstance(self.optimizer, Optimizer) and checkpoint["optimizer_state_dict"]:
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        if self.lr_scheduler and checkpoint["lr_scheduler_state_dict"]:
-            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler_state_dict"])
-        if "end_lr" not in checkpoint:
+        trainer_log.info("Loading from previous checkpoint: %s", model_path)
+        state_checkpoint = torch.load(state_path, map_location=self.configs.device)
+        model_checkpoint = torch.load(model_path, map_location=self.configs.device)
+        self.model.load_state_dict(model_checkpoint)
+        if isinstance(self.optimizer, Optimizer) and state_checkpoint["optimizer_state_dict"]:
+            self.optimizer.load_state_dict(state_checkpoint["optimizer_state_dict"])
+        if self.lr_scheduler and state_checkpoint["lr_scheduler_state_dict"]:
+            self.lr_scheduler.load_state_dict(state_checkpoint["lr_scheduler_state_dict"])
+        if "end_lr" not in state_checkpoint:
             return 0
-        self.lr_value = checkpoint["end_lr"]
-        if "epoch" not in checkpoint:
+        self.lr_value = state_checkpoint["end_lr"]
+        if "epoch" not in state_checkpoint:
             return 0
-        self.epoch = checkpoint["epoch"]
-        self.loss_value = checkpoint["loss_value"]
-        self.metric_value = checkpoint["metric_value"]
+        self.epoch = state_checkpoint["epoch"]
+        self.loss_value = state_checkpoint["loss_value"]
+        self.metric_value = state_checkpoint["metric_value"]
 
 
     def save(self, path, overwrite=True):
@@ -659,9 +661,10 @@ class Trainer:
                 if Path(path).exists():
                     raise FileExistsError("File already exists: ", str(Path(path).resolve()))
             Path(path).mkdir(exist_ok=True)
-            checkpoint_path = Path(path).joinpath(CHECKPOINT_NAME)
+            state_path = Path(path).joinpath(STATE_CHECKPOINT_NAME)
+            model_path = Path(path).joinpath(MODEL_NAME)
             modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
-            trainer_log.info("save checkpoint_path: %s", checkpoint_path)
+            trainer_log.info("save model_path: %s", model_path)
             optimizer_state_dict = None
             lr_scheduler_state_dict = None
             if isinstance(self.optimizer, Optimizer):  # if created
@@ -670,13 +673,13 @@ class Trainer:
                 lr_scheduler_state_dict = self.lr_scheduler.state_dict()
             torch.save({
                 "epoch": self.epoch,
-                "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": optimizer_state_dict,
                 "lr_scheduler_state_dict": lr_scheduler_state_dict,
                 "loss_value": self.loss_value,
                 "metric_value": self.metric_value,
                 "end_lr": self.lr_value
-            }, checkpoint_path)
+            }, state_path)
+            torch.save(self.model.state_dict(), model_path)
             if isinstance(self.model_card, ModelCard):
                 self.model_card.save_model_card(modelcard_path)
             else:
