@@ -422,16 +422,16 @@ class ProgressBarCallBack(Callback):
         self.total_epoch_num = total_epoch_num
         self.raw_train_dataloader = train_dataloader
         self.now_tqdm_train_dataloader: tqdm = train_dataloader
-        self.descrpition = ""
+        self.description = ""
 
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
         if is_main_process():
             self.now_tqdm_train_dataloader.update(1)
-            self.descrpition = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"],
+            self.description = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"],
                                                                          int(self.total_epoch_num),
                                                                          round(logs["epoch_loss"], 3),
                                                                          round(logs["epoch_metric"], 3))
-            self.now_tqdm_train_dataloader.set_description(self.descrpition)
+            self.now_tqdm_train_dataloader.set_description(self.description)
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
         if is_main_process():
@@ -447,4 +447,4 @@ class ProgressBarCallBack(Callback):
                 int(self.total_epoch_num),
                 round(logs["epoch_loss"], 3),
                 round(logs["epoch_metric"], 3), round(logs["eval_epoch_loss"], 3), round(logs["eval_epoch_metric"], 3))
-            self.now_tqdm_train_dataloader.set_description(self.descrpition)
+            self.now_tqdm_train_dataloader.set_description(self.description)
