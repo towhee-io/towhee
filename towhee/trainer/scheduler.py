@@ -40,6 +40,11 @@ def check_scheduler(scheduler_type: str) -> bool:
             the type of the scheduler.
     Return:
         if the scheduler type is supported.
+
+    Example:
+        >>> from towhee.trainer.scheduler import check_scheduler
+        >>> check_scheduler('constant')
+        True
     """
     if scheduler_list.count(scheduler_type) == 0:
         return False
@@ -58,7 +63,24 @@ def configure_constant_scheduler(optimizer: Optimizer, last_epoch: int = -1):
             The last epoch when resuming training.
 
     Return:
-        A constant scheduler.
+        A constant scheduler
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 2
+        >>> scheduler = configure_constant_scheduler(optimizer)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [10.0, 10.0]
     """
     return LambdaLR(optimizer, lambda _: 1, last_epoch=last_epoch)
 
@@ -78,6 +100,24 @@ def configure_constant_scheduler_with_warmup(optimizer: Optimizer, num_warmup_st
 
     Return:
         A constant scheduler with warmup.
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_constant_scheduler_with_warmup
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 10
+        >>> num_warmup_steps = 4
+        >>> scheduler = configure_constant_scheduler_with_warmup(optimizer, num_warmup_steps)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [0.0, 2.5, 5.0, 7.5, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
     """
 
     def lr_lambda(current_step: int):
@@ -105,6 +145,25 @@ def configure_linear_scheduler_with_warmup(optimizer, num_warmup_steps, num_trai
 
     Return:
         A linear scheduler with warmup.
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_linear_scheduler_with_warmup
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 10
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> scheduler = configure_constant_scheduler_with_warmup(optimizer, num_warmup_steps, num_training_steps)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [0.0, 2.5, 5.0, 7.5, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
     """
 
     def lr_lambda(current_step: int):
@@ -139,6 +198,25 @@ def configure_cosine_scheduler_with_warmup(
 
     Return:
         A cosine scheduler with warmup.
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_cosine_scheduler_with_warmup
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 10
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> scheduler = configure_cosine_scheduler_with_warmup(optimizer, num_warmup_steps, num_training_steps)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [0.0, 5.0, 10.0, 9.61, 8.53, 6.91, 5.0, 3.08, 1.46, 0.38]
     """
 
     def lr_lambda(current_step):
@@ -172,6 +250,27 @@ def configure_cosine_with_hard_restarts_scheduler_with_warmup(
 
     Return:
         A cosine with hard restarts scheduler with warmup.
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_cosine_with_hard_restarts_scheduler_with_warmup
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 10
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> num_cycles = 2
+        >>> scheduler = configure_cosine_with_hard_restarts_scheduler_with_warmup(optimizer,
+        num_warmup_steps, num_training_steps, num_cycles)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [0.0, 5.0, 10.0, 8.53, 5.0, 1.46, 10.0, 8.53, 5.0, 1.46]
     """
 
     def lr_lambda(current_step):
@@ -209,6 +308,28 @@ def configure_polynomial_decay_scheduler_with_warmup(
 
     Return:
         A polynomial decay scheduler with warmup.
+
+    Example:
+        >>> from towhee.trainer.scheduler import configure_polynomial_decay_scheduler_with_warmup
+        >>> from towhee.trainer.optimization.adamw import AdamW
+        >>> from torch import nn
+        >>> def unwrap_scheduler(scheduler, num_steps=10):
+        >>>     lr_sch = []
+        >>>     for _ in range(num_steps):
+        >>>         lr_sch.append(scheduler.get_lr()[0])
+        >>>         scheduler.step()
+        >>>     return lr_sch
+        >>> mdl = nn.Linear(50, 50)
+        >>> optimizer = AdamW(mdl.parameters(), lr=10.0)
+        >>> num_steps = 10
+        >>> num_warmup_steps = 4
+        >>> num_training_steps = 10
+        >>> power = 2.0
+        >>> lr_end = 1e-7
+        >>> scheduler = configure_polynomial_decay_scheduler_with_warmup(optimizer,
+        num_warmup_steps, num_training_steps, num_cycles)
+        >>> lr_sch_1 = unwrap_scheduler(scheduler, num_steps)
+        [0.0, 5.0, 10.0, 7.656, 5.625, 3.906, 2.5, 1.406, 0.625, 0.156]
     """
 
     lr_init = optimizer.defaults['lr']
