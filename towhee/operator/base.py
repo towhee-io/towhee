@@ -24,8 +24,6 @@ from enum import Enum
 
 # Shareable:
 #    Stateless operator
-from towhee.trainer.trainer import Trainer
-# from towhee.trainer.modelcard import ModelCard
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
@@ -132,6 +130,7 @@ class NNOperator(Operator):
                        train_dataloader=None,
                        eval_dataloader=None
                        ):
+        from towhee.trainer.trainer import Trainer # pylint: disable=import-outside-toplevel
         self.trainer = Trainer(self.get_model(),
                                training_config,
                                train_dataset,
@@ -145,7 +144,7 @@ class NNOperator(Operator):
                       eval_dataset=None,
                       train_dataloader=None,
                       eval_dataloader=None
-                      ) -> Trainer:
+                      ) -> 'Trainer':
         """
         set up the trainer instance in operator before training.
         """
