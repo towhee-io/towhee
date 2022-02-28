@@ -127,10 +127,6 @@ class TrainingConfig:
             CATEGORY: "train"
         },
     )
-    resume_from_checkpoint: Optional[str] = field(
-        default=None,
-        metadata={HELP: "The path to a folder with a valid checkpoint for your model.", CATEGORY: "train"},
-    )
     lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
     metric: Optional[str] = field(
         default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"}
@@ -176,11 +172,6 @@ class TrainingConfig:
                                CATEGORY: "learning"}
     )
     warmup_steps: int = field(default=0, metadata={HELP: "Linear warmup over warmup_steps.", CATEGORY: "learning"})
-    logging_dir: Optional[str] = field(default=None, metadata={HELP: "Tensorboard log dir.", CATEGORY: "logging"})
-    logging_strategy: str = field(
-        default="steps",
-        metadata={HELP: "The logging strategy to use.", CATEGORY: "logging"},
-    )
     device_str: str = field(
         default=None,
         metadata={
@@ -266,7 +257,6 @@ class TrainingConfig:
             else:
                 config_dict[OTHER_CATEGORY][field_name] = _get_attr_str(self, field_name)
                 trainer_log.warning("metadata in self.%s has no CATEGORY", config_field.name)
-        # print(config_dict)
         with open(path2yaml, "w", encoding="utf-8") as file:
             yaml.dump(config_dict, file)
 

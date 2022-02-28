@@ -179,13 +179,13 @@ class CallbackList:
     def pop_callback(self, callback: Callback):
         self.callbacks.remove(callback)
 
-    def on_batch_begin(self, epochs: int, batch: Tuple, logs: Dict) -> None:
+    def on_batch_begin(self, batch: Tuple, logs: Dict) -> None:
         for cb in self.callbacks:
-            cb.on_batch_begin(epochs, batch, logs)
+            cb.on_batch_begin(batch, logs)
 
-    def on_batch_end(self, epochs: int, batch: Tuple, logs: Dict) -> None:
+    def on_batch_end(self, batch: Tuple, logs: Dict) -> None:
         for cb in self.callbacks:
-            cb.on_batch_end(epochs, batch, logs)
+            cb.on_batch_end(batch, logs)
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
         for cb in self.callbacks:
@@ -219,11 +219,11 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_eval_batch_end(batch, logs)
 
-    def on_eval_begin(self, logs: Dict) -> Dict:
+    def on_eval_begin(self, logs: Dict):
         for cb in self.callbacks:
             cb.on_eval_begin(logs)
 
-    def on_eval_end(self, logs: Dict) -> Dict:
+    def on_eval_end(self, logs: Dict):
         for cb in self.callbacks:
             cb.on_eval_end(logs)
 
@@ -340,7 +340,7 @@ class ModelCheckpointCallback(Callback):
             self._save_model()
 
     def on_batch_end(self, batch: Tuple, logs: Dict = None):
-        if self.every_n_iteration  == -1:
+        if self.every_n_iteration == -1:
             return
         if self.trainercontrol.should_save is True:
             self.trainercontrol.should_save = False
@@ -394,22 +394,24 @@ class PrintCallBack(Callback):
         self.total_epoch_num = total_epoch_num
 
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
-        global_step = logs["global_step"]
-        if global_step % self.step_frequency == 0:
-            print("epoch={}/{}, global_step={}, epoch_loss={}, epoch_metric={}"
-                  .format(logs["epoch"], self.total_epoch_num,
-                          global_step,
-                          logs["epoch_loss"],
-                          logs["epoch_metric"]))
+        if is_main_process():
+            global_step = logs["global_step"]
+            if global_step % self.step_frequency == 0:
+                print("epoch={}/{}, global_step={}, epoch_loss={}, epoch_metric={}"
+                      .format(logs["epoch"], self.total_epoch_num,
+                              global_step,
+                              logs["epoch_loss"],
+                              logs["epoch_metric"]))
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
-        eval_global_step = logs["eval_global_step"]
-        if eval_global_step % self.step_frequency == 0:
-            print("epoch={}/{}, eval_global_step={}, eval_epoch_loss={}, eval_epoch_metric={}"
-                  .format(logs["epoch"], self.total_epoch_num,
-                          eval_global_step,
-                          logs["eval_epoch_loss"],
-                          logs["eval_epoch_metric"]))
+        if is_main_process():
+            eval_global_step = logs["eval_global_step"]
+            if eval_global_step % self.step_frequency == 0:
+                print("epoch={}/{}, eval_global_step={}, eval_epoch_loss={}, eval_epoch_metric={}"
+                      .format(logs["epoch"], self.total_epoch_num,
+                              eval_global_step,
+                              logs["eval_epoch_loss"],
+                              logs["eval_epoch_metric"]))
 
 
 class ProgressBarCallBack(Callback):
