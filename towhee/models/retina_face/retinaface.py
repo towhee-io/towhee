@@ -102,6 +102,7 @@ class RetinaFace(nn.Module):
         return landmarkhead
 
     def forward(self,inputs: torch.FloatTensor):
+
         out = self.body(inputs)
 
         # FPN
@@ -130,8 +131,9 @@ class RetinaFace(nn.Module):
 
         # pylint: disable=unsubscriptable-object
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
-        device = torch.device('cpu')
-        img = img - torch.FloatTensor(self.cfg['mean'])
+        device = img.get_device()
+        mean = torch.FloatTensor(self.cfg['mean']).to(device)
+        img = img - mean
         img = img.permute(2, 0, 1)
         img = img.unsqueeze(0)
         img = img.to(device)
@@ -145,14 +147,12 @@ class RetinaFace(nn.Module):
         prior_data = priors.data
         boxes = decode(loc.data.squeeze(0), prior_data, self.cfg['variance'])
         boxes = boxes * scale
-        boxes = boxes.cpu()
+        boxes = boxes.to(device)
         scores = conf.squeeze(0).data[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, self.cfg['variance'])
 
         scale_replicate = torch.Tensor([img.shape[3], img.shape[2]] * 5)
         scale_replicate = scale_replicate.to(device)
-
-        dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         dets = torch.hstack((boxes, scores.unsqueeze(-1)))
         keep = torchvision.ops.nms(dets[:,:4], dets[:,4], self.cfg['nms_threshold'])
         dets = dets[keep, :]
