@@ -17,7 +17,7 @@ import torch
 import torchvision
 from pathlib import Path
 
-from towhee.trainer.utils.trainer_utils import CHECKPOINT_NAME
+from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME
 
 from towhee.trainer.training_config import TrainingConfig
 
@@ -52,7 +52,7 @@ class TestWeights(unittest.TestCase):
 
     def test_with_trainer(self):
         self.op.save('./test_save')
-        filepath = Path('./test_save').joinpath(CHECKPOINT_NAME)
+        filepath = Path('./test_save').joinpath(STATE_CHECKPOINT_NAME)
         self.assertTrue(Path(filepath).is_file())
 
         with self.assertRaises(FileExistsError):
