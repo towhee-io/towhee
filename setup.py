@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import unittest
+from typing import List
+from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.install import install
-import unittest
-from pathlib import Path
-from typing import List
 
 
 def test_suite():
@@ -34,6 +35,7 @@ def parse_requirements(file_name: str) -> List[str]:
         return [require.strip() for require in f if require.strip() and not require.startswith("#")]
 
 
+
 setup(
     name="towhee",
     version="0.4.0",
@@ -45,8 +47,8 @@ setup(
     url="https://github.com/towhee-io/towhee",
     test_suite="setup.test_suite",
     install_requires=parse_requirements('requirements.txt'),
+    extras_require={':python_version<"3.7"':'importlib-resources'},
     tests_require=parse_requirements('test_requirements.txt'),
-    extras_require={':python_version<"3.7"': ['importlib-resources']},
     packages=find_packages(),
     package_data={'towhee.tests.test_util': ['*.yaml']},
     license="http://www.apache.org/licenses/LICENSE-2.0",
