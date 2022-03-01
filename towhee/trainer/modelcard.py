@@ -31,21 +31,36 @@ class ModelCard:
     https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/actionrecognitionnet
 
     Args:
-        model_name: Optional[str] = None
-        model_architecture: Optional[str] = None
-        model_overview: Optional[str] = None
-        language: Optional[Union[str, List[str]]] = None
-        license: Optional[str] = None
-        tags: Optional[Union[str, List[str]]] = None
-        tasks: Optional[Union[str, List[str]]] = None
-        datasets: Optional[Union[str, List[str]]] = None
-        datasets_tags: Optional[Union[str, List[str]]] = None
-        dataset_args: Optional[Union[str, List[str]]] = None
-        eval_results: Optional[Dict[str, float]] = None
-        eval_lines: Optional[List[str]] = None
-        training_summary: Optional[Dict[str, Any]] = None
-        training_config: Optional[TrainingConfig] = None
-        source: Optional[str] = "trainer"
+        model_name (`str`):
+            Model name.
+        model_architecture (`str`):
+            Model architecture.
+        model_overview (`str`):
+            Model overview.
+        language (`Union[str, List[str]`):
+            Language.
+        license (`str`):
+            Model licenses.
+        tags (`Union[str, List[str]]`):
+            Tags for modelcard creattion.
+        tasks (`Union[str, List[str]]`):
+            Tasks of modelcard.
+        datasets (`Union[str, List[str]]`):
+            Datasets information.
+        datasets_tags (`Union[str, List[str]]`):
+            Datasets tags.
+        dataset_args (`Union[str, List[str]]`):
+            Dataset arguments for modelcard generation.
+        eval_results (`Dict[str, float]`):
+            Results of evaluation.
+        eval_lines (`List[str]`):
+            Lines for evaluation discription.
+        training_summary (`Dict[str, Any]`):
+            Training summary.
+        training_config (`TrainingConfig`):
+            Training configuration.
+        source (`str`):
+            Source of modelcard.
     Return:
         ModelCard
 
@@ -88,8 +103,6 @@ class ModelCard:
         Args:
             save_directory_or_file (`str`):
                 file path or directory to write and save model card.
-        Return:
-            a model card written with its attributes
 
         Example:
             >>> from towhee.trainer.modelcard import ModelCard
