@@ -17,6 +17,7 @@ filters:
       - junjiejiangjjj
       - fzliu
       - oneseer
+      - filip-halt
 
   "tests":
     reviewers:
