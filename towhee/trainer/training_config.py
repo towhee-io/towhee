@@ -234,6 +234,21 @@ class TrainingConfig:
         return device
 
     def load_from_yaml(self, path2yaml: str = None):
+        """
+        Load training configuration from yaml.
+        Args:
+            path2yaml:
+                The path to yaml.
+        Example:
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from pathlib import Path
+            >>> conf = Path(__file__).parent / 'config.yaml'
+            >>> ta = TrainingConfig()
+            >>> ta.save_to_yaml(conf)
+            >>> ta.load_from_yaml(conf)
+            >>> ta.epoch_num
+            2
+        """
         with open(path2yaml, "r", encoding="utf-8") as f:
             config_dict = yaml.safe_load(f)
             for file_category in config_dict:
@@ -244,6 +259,21 @@ class TrainingConfig:
                 self._set_attr_from_dict(category_dict)
 
     def save_to_yaml(self, path2yaml: str = None):
+        """
+        Save training configuration to yaml.
+        Args:
+            path2yaml:
+                The path to yaml.
+        Example:
+            >>> from towhee.trainer.training_config import TrainingConfig
+            >>> from pathlib import Path
+            >>> conf = Path(__file__).parent / 'config.yaml'
+            >>> ta = TrainingConfig()
+            >>> ta.save_to_yaml(conf)
+            >>> ta.load_from_yaml(conf)
+            >>> ta.epoch_num
+            2
+        """
         config_dict = {}
         for config_category in self.config_category_set:
             config_dict[config_category] = {}
