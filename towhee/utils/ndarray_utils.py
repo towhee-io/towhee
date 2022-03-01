@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
+import zipfile
+import glob
+from pathlib import Path
 from typing import Union
 from pathlib import PosixPath
 import numpy as np
 
 from towhee.types import Image
 from towhee.utils.log import engine_log
+
 try:
     import cv2
 except ModuleNotFoundError as e:
@@ -42,6 +47,38 @@ def from_src(src: Union[str, PosixPath]) -> Image:
     img = from_ndarray(rgb_img, 'RGB')
 
     return img
+
+
+def from_zip(zip_src: Union[str, PosixPath], pattern: str = '*.JPEG') -> Image:
+    """
+    Load the image.zip from url/path as towhee's Image object.
+
+    Args:
+        zip_src (`Union[str, path]`):
+            The path leads to the image.
+        pattern (`str`):
+            The image pattern to extract.
+
+    Returns:
+        (`towhee.types.Image`)
+            The image wrapepd as towhee's Image.
+    """
+    path = str(Path(zip_src).resolve())
+    with open(path, 'rb') as f:
+        data = f.read()
+    bio = io.BytesIO(data)
+    zio = zipfile.ZipFile(bio)
+    path_list = glob.fnmatch.filter([x.filename for x in zio.filelist], pattern)
+    img_list = []
+    for path in path_list:
+        with zio.open(path) as f:
+            data = f.read()
+            ndarray_img = cv2.imdecode(np.frombuffer(data, np.uint8), 1)
+            rgb_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
+            img = from_ndarray(rgb_img, 'RGB')
+            img_list.append(img)
+
+    return img_list
 
 
 def from_ndarray(ndarray_img: np.ndarray, mode: str) -> Image:
