@@ -1,3 +1,6 @@
+from typing import Union
+
+
 class LayerFreezer:
     """
     Utilities to freeze/unfreeze layers.
@@ -21,12 +24,12 @@ class LayerFreezer:
         self.layer_names = list(dict(self.model.named_children()).keys())
         self.layer_count = len(self.layer_names)
 
-    def status(self, layer: str or int):
+    def status(self, layer: Union[str, int]):
         """
         Check if a layer is frozen or not by its name or index
 
         Args:
-            layer:
+            layer (`Union[str, int]`):
                 the name or index of layer.
         Return:
             A list of status ('frozen' or 'unfrozen') to indicate if modules in the layer are frozen or not.
@@ -93,9 +96,9 @@ class LayerFreezer:
         Freeze/unfreeze layers by names
 
         Args:
-            names:
+            names (`list`):
                 a list of layer names
-            freeze:
+            freeze (`bool`):
                 if or not freeze layers (default: True)
         Return:
             None.
@@ -124,9 +127,9 @@ class LayerFreezer:
         Freeze/unfreeze layers by indexes
 
         Args:
-            idx:
+            idx (`list`):
                 a list of layer indexes
-            freeze:
+            freeze (`bool`):
                 if or not freeze layers (default: True)
         Return:
             None.
@@ -149,7 +152,7 @@ class LayerFreezer:
         Freeze/unfreeze all layers.
 
         Args:
-            freeze:
+            freeze (`bool`):
                 if or not freeze layers (default: True)
         Return:
             None.
@@ -173,9 +176,9 @@ class LayerFreezer:
         Freeze/unfreeze layers by list slice.
 
         Args:
-            slice_num:
+            slice_num (`int`):
                 number to slice the list of layers
-            freeze:
+            freeze (`bool`):
                 if or not freeze layers (default: True)
         Return:
             None.
