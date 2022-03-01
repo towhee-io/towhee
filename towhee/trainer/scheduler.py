@@ -36,7 +36,7 @@ def check_scheduler(scheduler_type: str) -> bool:
     Check if the scheduler type is supported.
 
     Args:
-        scheduler_type:
+        scheduler_type (`str`):
             the type of the scheduler.
     Return:
         if the scheduler type is supported.
@@ -57,9 +57,9 @@ def configure_constant_scheduler(optimizer: Optimizer, last_epoch: int = -1):
     Return a scheduler with a constant learning rate, using the learning rate set in optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer for which to schedule the learning rate.
-        last_epoch:
+        last_epoch (`int`):
             The last epoch when resuming training.
 
     Return:
@@ -91,11 +91,11 @@ def configure_constant_scheduler_with_warmup(optimizer: Optimizer, num_warmup_st
     increases linearly between 0 and the initial lr set in the optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer to be scheduled.
-        num_warmup_steps:
+        num_warmup_steps (`int`):
             Warmup steps.
-        last_epoch:
+        last_epoch (`int`):
             The last epoch when training is resumed.
 
     Return:
@@ -134,13 +134,13 @@ def configure_linear_scheduler_with_warmup(optimizer, num_warmup_steps, num_trai
     a warmup period during which it increases linearly from 0 to the initial lr set in the optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer to be scheduled.
-        num_warmup_steps:
+        num_warmup_steps (`int`):
             Warmup steps.
-        num_training_steps:
+        num_training_steps (`int`):
             Training steps.
-        last_epoch:
+        last_epoch (`int`):
             The last epoch when training is resumed.
 
     Return:
@@ -185,15 +185,15 @@ def configure_cosine_scheduler_with_warmup(
     initial lr set in the optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer to be scheduled.
-        num_warmup_steps:
+        num_warmup_steps (`int`):
             The steps for the warmup phase.
-        num_training_steps:
+        num_training_steps (`int`):
             The number of training steps.
-        num_cycles:
+        num_cycles (`int`):
             The number of periods in te cosine scheduler.
-        last_epoch:
+        last_epoch (`int`):
             The last epoch when training is resumed.
 
     Return:
@@ -237,15 +237,15 @@ def configure_cosine_with_hard_restarts_scheduler_with_warmup(
     linearly between 0 and the initial lr set in the optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer to be scheduled.
-        num_warmup_steps:
+        num_warmup_steps (`int`):
             The steps for the warmup phase.
-        num_training_steps:
+        num_training_steps (`int`):
             The number of training steps.
-        num_cycles:
+        num_cycles (`int`):
             The number of hard restarts to be used.
-        last_epoch:
+        last_epoch (`int`):
             The index of the last epoch when training is resumed.
 
     Return:
@@ -293,17 +293,17 @@ def configure_polynomial_decay_scheduler_with_warmup(
     initial lr set in the optimizer.
 
     Args:
-        optimizer:
+        optimizer (`Optimizer`):
             The optimizer to be scheduled.
-        num_warmup_steps:
+        num_warmup_steps (`int`):
             The steps for the warmup phase.
-        num_training_steps (:obj:`int`):
+        num_training_steps (`int`):
             The number of training steps
-        lr_end:
+        lr_end (`float`):
             The end LR.
-        power:
+        power (`float`):
             Power factor.
-        last_epoch:
+        last_epoch (`int`):
             The index of the last epoch when training is resumed.
 
     Return:
