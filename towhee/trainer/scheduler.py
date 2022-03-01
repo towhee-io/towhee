@@ -38,7 +38,7 @@ def check_scheduler(scheduler_type: str) -> bool:
     Args:
         scheduler_type (`str`):
             the type of the scheduler.
-    Return:
+    Return (`bool`):
         if the scheduler type is supported.
 
     Example:
@@ -62,7 +62,7 @@ def configure_constant_scheduler(optimizer: Optimizer, last_epoch: int = -1):
         last_epoch (`int`):
             The last epoch when resuming training.
 
-    Return:
+    Return (`LambdaLR`):
         A constant scheduler
 
     Example:
@@ -98,7 +98,7 @@ def configure_constant_scheduler_with_warmup(optimizer: Optimizer, num_warmup_st
         last_epoch (`int`):
             The last epoch when training is resumed.
 
-    Return:
+    Return (`LambdaLR`):
         A constant scheduler with warmup.
 
     Example:
@@ -143,7 +143,7 @@ def configure_linear_scheduler_with_warmup(optimizer, num_warmup_steps, num_trai
         last_epoch (`int`):
             The last epoch when training is resumed.
 
-    Return:
+    Return (`LambdaLR`):
         A linear scheduler with warmup.
 
     Example:
@@ -196,7 +196,7 @@ def configure_cosine_scheduler_with_warmup(
         last_epoch (`int`):
             The last epoch when training is resumed.
 
-    Return:
+    Return (`LambdaLR`):
         A cosine scheduler with warmup.
 
     Example:
@@ -248,7 +248,7 @@ def configure_cosine_with_hard_restarts_scheduler_with_warmup(
         last_epoch (`int`):
             The index of the last epoch when training is resumed.
 
-    Return:
+    Return (`LambdaLR`):
         A cosine with hard restarts scheduler with warmup.
 
     Example:
@@ -306,7 +306,7 @@ def configure_polynomial_decay_scheduler_with_warmup(
         last_epoch (`int`):
             The index of the last epoch when training is resumed.
 
-    Return:
+    Return (`LambdaLR`):
         A polynomial decay scheduler with warmup.
 
     Example:
