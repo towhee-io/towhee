@@ -20,8 +20,6 @@ learning:
   warmup_ratio: 0.0
   warmup_steps: 0
 logging:
-  logging_dir: null
-  logging_strategy: steps
   print_steps: null
 metrics:
   metric: Accuracy
@@ -37,6 +35,5 @@ train:
   load_best_model_at_end: false
   output_dir: ./output_dir
   overwrite_output_dir: true
-  resume_from_checkpoint: null
   seed: 42
   val_batch_size: -1

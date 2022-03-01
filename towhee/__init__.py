@@ -14,9 +14,6 @@
 import os
 import threading
 from typing import List, Tuple, Union
-from torchvision import datasets
-from towhee.data.dataset.dataset import TorchDataSet
-
 from towhee.dataframe import DataFrame
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
@@ -26,7 +23,8 @@ from towhee.engine import register, resolve
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hparam import param_scope, auto_param
 
-__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param', 'Build', 'Inject']
+__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param', 'Build', 'Inject',
+           'dataset']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
@@ -149,10 +147,27 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
     return op_obj
 
 
-def dataset(name, *args, **kwargs) -> TorchDataSet:
+def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     """
-    mapping to a dataset by name, and pass into the custom params
+    Get a dataset by name, and pass into the custom params.
+    Args:
+        name:
+            Name of a dataset.
+        *args:
+            Arguments of the dataset construct method.
+        **kwargs:
+            Keyword arguments of the dataset construct method.
+
+    Returns:
+        The corresponding `TorchDataSet`
+
+    Examples:
+        >>> from towhee import dataset
+        >>> type(dataset('fake', size=10))
+        <class 'towhee.data.dataset.dataset.TorchDataSet'>
     """
+    from torchvision import datasets  # pylint: disable=import-outside-toplevel
+    from towhee.data.dataset.dataset import TorchDataSet  # pylint: disable=import-outside-toplevel
     dataset_construct_map = {
         'mnist': datasets.MNIST,
         'cifar10': datasets.cifar.CIFAR10,
