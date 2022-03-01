@@ -181,6 +181,9 @@ def _generate_meta_info() -> None:
 def show_avaliable_metrics() -> List:
     """
     Get the list of current avaliable metrics.
+
+    Return (`List`):
+        A list of available metrics.
     """
     global _metrics_meta
     return _metrics_meta
@@ -194,6 +197,9 @@ def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics') -> Metr
             the metric name used to evaluate. (e.g. Accuracy)
         metric_impl: (`str`)
             the metric implementation class name. (e.g. TMMetrics)
+
+    Return (`Metrics`):
+        A linear scheduler with warmup.
     """
     global _metrics_impls
     return _metrics_impls[metric_impl](metric_name)
