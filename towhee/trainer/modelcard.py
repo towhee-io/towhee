@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import os
 from dataclasses import dataclass
 from typing import Union, Dict, Any, Optional, List
@@ -25,8 +27,34 @@ MODEL_CARD_NAME = "README.md"
 @dataclass
 class ModelCard:
     """
-    Recommended attributes from https://arxiv.org/abs/1810.03993 (see papers)
+    Utilities to generate and save model card. Recommended attributes from https://arxiv.org/abs/1810.03993 (see papers)
     https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/actionrecognitionnet
+
+    Args:
+        model_name: Optional[str] = None
+        model_architecture: Optional[str] = None
+        model_overview: Optional[str] = None
+        language: Optional[Union[str, List[str]]] = None
+        license: Optional[str] = None
+        tags: Optional[Union[str, List[str]]] = None
+        tasks: Optional[Union[str, List[str]]] = None
+        datasets: Optional[Union[str, List[str]]] = None
+        datasets_tags: Optional[Union[str, List[str]]] = None
+        dataset_args: Optional[Union[str, List[str]]] = None
+        eval_results: Optional[Dict[str, float]] = None
+        eval_lines: Optional[List[str]] = None
+        training_summary: Optional[Dict[str, Any]] = None
+        training_config: Optional[TrainingConfig] = None
+        source: Optional[str] = "trainer"
+    Return:
+        ModelCard
+
+    Example:
+        >>> from towhee.trainer.modelcard import ModelCard
+        >>> model_card = ModelCard(model_name='test')
+        >>> # Print out model name stored in model card
+        >>> model_card.model_name
+        'test'
     """
     model_name: Optional[str] = None
     model_architecture: Optional[str] = None
@@ -55,10 +83,19 @@ class ModelCard:
 
     def save_model_card(self, save_directory_or_file):
         """
-        Save a model card as a json file,
-        save_directory_or_file can be directory or file path,
-        if it's a directory, default name is 'modelcard.json,
-        if there exist a same named file, it will be overwritten
+        Write model card to the given filepath or directory
+
+        Args:
+            save_directory_or_file:
+                file path or directory to write and save model card.
+        Return:
+            a model card written with its attributes
+
+        Example:
+            >>> from towhee.trainer.modelcard import ModelCard
+            >>> model_card = ModelCard(model_name='test', tasks='classification: num_class=10')
+            >>> model_card.save_model_card('/path/to/test/directory/')
+            Model card is saved as 'README.md' under '/path/to/test/directory/'
         """
         model_card = f"# {self.model_name}"
         model_card += f"\n\n## Model overview\n{self.model_overview}\n"
