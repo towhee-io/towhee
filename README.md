@@ -57,7 +57,7 @@ Your image embedding is now stored in `embedding`. It's that simple.
 If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
 
 ```python
->>> embedding_pipeline = pipeline('towhee/image-embedding-convnext_base')
+>>> embedding_pipeline = pipeline('towhee/image-embedding-convnext-base')
 ```
 
 For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
