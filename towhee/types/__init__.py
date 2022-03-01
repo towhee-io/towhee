@@ -17,3 +17,7 @@ from towhee.types.image import Image
 __all__ = [
     'Image',
 ]
+
+equivalents = {
+    'towhee.types.image.Image': 'towhee.types.Image',
+}

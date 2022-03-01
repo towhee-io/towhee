@@ -32,7 +32,7 @@ class GeneratorRunner(RunnerBase):
             raise OpIOTypeError("Op {}'s output is not a generator".format(self.op_name))
 
         for data in output:
-            frame = deepcopy(self._frame_var.value)
+            frame = deepcopy(self._frame)
             if frame.parent_path == '':
                 frame.parent_path = str(frame.prev_id)
             else:

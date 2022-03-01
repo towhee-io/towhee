@@ -18,7 +18,7 @@ from towhee.dag.variable_repr import VariableRepr
 from towhee.dag.dataframe_repr import DataFrameRepr
 import unittest
 
-from towhee.dataframe import Variable
+from towhee.dataframe.iterators import MapIterator
 from towhee.engine.graph_context import GraphContext
 from towhee.engine.operator_context import OpStatus
 from towhee.dag import OperatorRepr
@@ -138,16 +138,16 @@ class TestGraphCtx(unittest.TestCase):
         for op in graph_ctx.op_ctxs.values():
             op.start(self._task_exec)
 
-        graph_ctx((Variable('int', 3), ))
+        graph_ctx((3, ))
 
         graph_ctx.join()
 
         for op in graph_ctx.op_ctxs.values():
             self.assertEqual(op.status, OpStatus.FINISHED)
 
-        it = graph_ctx.outputs.map_iter(True)
+        it = MapIterator(graph_ctx.outputs, True)
         for data in it:
-            self.assertEqual(data[0].value, 5)
+            self.assertEqual(data[0][0], 5)
 
     def test_graph_ctx_failed(self):
         graph_ctx = self._crate_graph()
@@ -156,7 +156,7 @@ class TestGraphCtx(unittest.TestCase):
             op.start(self._task_exec)
 
         # Error input data
-        graph_ctx((Variable('string', 'x'), ))
+        graph_ctx(('x', ))
 
         graph_ctx.join()
 
@@ -165,3 +165,6 @@ class TestGraphCtx(unittest.TestCase):
                 self.assertEqual(op.status, OpStatus.FAILED)
 
         self.assertEqual(graph_ctx.outputs.size, 0)
+
+if __name__ == '__main__':
+    unittest.main()

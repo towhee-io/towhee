@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.dataframe.dataframe import DataFrame, DataFrameIterator
-from towhee.dataframe.variable import Variable
+from towhee.dataframe.dataframe import DataFrame
+from towhee.dataframe.iterators import DataFrameIterator
 
 
 __all__ = [
     'DataFrame',
-    'Variable',
     'DataFrameIterator'
 ]

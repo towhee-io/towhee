@@ -16,6 +16,7 @@ import unittest
 import threading
 
 from towhee.dataframe import DataFrame
+from towhee.dataframe.iterators import MapIterator
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.generator_runner import GeneratorRunner
@@ -45,15 +46,15 @@ class TestGeneratorRunner(unittest.TestCase):
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        input_df.put_dict({'num': 10})
+        input_df.put({'num': 10})
         input_df.seal()
         t.join()
         runner.join()
         out_df.seal()
-        it = out_df.map_iter(True)
+        it = MapIterator(out_df, True)
         res = 0
         for item in it:
-            self.assertEqual(item[0].value, res)
+            self.assertEqual(item[0][0], res)
             res += 1
         self.assertEqual(out_df.size, 10)
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
@@ -63,8 +64,8 @@ class TestGeneratorRunner(unittest.TestCase):
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        input_df.put_dict({'num': 10})
-        input_df.put_dict({'num': 5})
+        input_df.put({'num': 10})
+        input_df.put({'num': 5})
         input_df.seal()
         t.join()
         runner.join()
@@ -88,9 +89,9 @@ class TestGeneratorRunner(unittest.TestCase):
         t2 = threading.Thread(target=run, args=(runner_2, ))
         t2.start()
 
-        input_df_1.put_dict({'num': 1})
-        input_df_1.put_dict({'num': 2})
-        input_df_1.put_dict({'num': 3})
+        input_df_1.put({'num': 1})
+        input_df_1.put({'num': 2})
+        input_df_1.put({'num': 3})
         input_df_1.seal()
         t1.join()
         runner_1.join()
@@ -104,11 +105,11 @@ class TestGeneratorRunner(unittest.TestCase):
         self.assertEqual(runner_1.status, RunnerStatus.FINISHED)
         self.assertEqual(runner_2.status, RunnerStatus.FINISHED)
         self.assertEqual(out_df_2.size, 4)
-        it = out_df_2.map_iter(True)
+        it = MapIterator(out_df_2, True)
         expect = ['1-2', '2-4', '2-5', '2-5']
         index = 0
         for item in it:
-            self.assertEqual(item[-1].value.parent_path, expect[index])
+            self.assertEqual(item[0][-1].parent_path, expect[index])
             index += 1
 
     def test_generator_runner_with_error(self):
@@ -116,6 +117,10 @@ class TestGeneratorRunner(unittest.TestCase):
         runner.set_op(generator_operator.GeneratorOperator())
         t = threading.Thread(target=run, args=(runner, ))
         t.start()
-        input_df.put_dict({'num': 'error_data'})
+        input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
+
+if __name__ == '__main__':
+    unittest.main()
