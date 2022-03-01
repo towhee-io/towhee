@@ -1,6 +1,6 @@
 class LayerFreezer:
     """
-    Freeze/unfreeze layers by names or index.
+    Utilities to freeze/unfreeze layers.
 
     Args:
         model:
@@ -14,18 +14,6 @@ class LayerFreezer:
         >>> my_model = VitModel('vit_base_patch16_224')
         >>> my_freezer = LayerFreezer(my_model)
         A LayerFreezer `my_freezer` is created for the model `my_model`.
-
-    Args:
-        model: model with weights
-    Example usage:
-        freezer = LayerFreezer(model) # Setup freezer with model
-        freezer.status('classifier') # Check status of the "classifier" layer
-        freezer.status(-1) # Check status of the last layer
-        freezer.show_freezed_layers() # Show names of freezed layers
-        freezer.set_all() # Freeze all layers
-        freezer.set_slice(3) # Freeze first 3 layers
-        freezer.by_name(['norm', 'classifier']) # Freeze "norm" layer and "classifier" layer
-        freezer.by_idx([-1, -2]) # Freeze last two layers
     """
 
     def __init__(self, model):
@@ -48,9 +36,9 @@ class LayerFreezer:
             >>> from towhee.models.vit.vit import VitModel
             >>> my_model = VitModel('vit_base_patch16_224')
             >>> my_freezer = LayerFreezer(my_model)
-            # Check if modules in the last layer are frozen
+            >>> # Check if modules in the last layer are frozen
             >>> my_freezer.status(-1)
-            # Check if modules in the layer "head" are frozen
+            >>> # Check if modules in the layer "head" are frozen
             >>> my_freezer.status("head")
             ['unfrozen', 'unfrozen']
         """
@@ -171,9 +159,9 @@ class LayerFreezer:
             >>> from towhee.models.vit.vit import VitModel
             >>> my_model = VitModel('vit_base_patch16_224')
             >>> my_freezer = LayerFreezer(my_model)
-            # Freeze all layers
+            >>> # Freeze all layers
             >>> my_freezer.set_all()
-            # Unfreeze all layers
+            >>> # Unfreeze all layers
             >>> my_freezer.set_all(freeze=False)
         """
         for layer in self.model.children():
@@ -197,7 +185,7 @@ class LayerFreezer:
             >>> from towhee.models.vit.vit import VitModel
             >>> my_model = VitModel('vit_base_patch16_224')
             >>> my_freezer = LayerFreezer(my_model)
-            # Freeze all except the last layer
+            >>> # Freeze all except the last layer
             >>> my_freezer.set_slice(-1)
         """
         myslice = slice(slice_num)
