@@ -70,6 +70,60 @@ def _model_checkpoint_factory():
 class TrainingConfig:
     """
     the training config, it can be defined in a yaml file
+
+    Args:
+        output_dir (`str`):
+            The output directory where the model predictions and checkpoints will be written.
+        overwrite_output_dir (`bool`):
+            Overwrite the content of the output directory.
+        eval_strategy (`str`):
+            The evaluation strategy.
+        eval_steps (`int`):
+            Run an evaluation every X steps.
+        batch_size (`int`):
+            Batch size for training.
+        val_batch_size (`int`):
+            Batch size for evaluation.
+        seed (`int`):
+            Random seed that will be set at the beginning of training.
+        epoch_num (`int`):
+            Total number of training epochs to perform.
+        dataloader_pin_memory (`bool`):
+            Drop the last incomplete batch if it is not divisible by the batch size.
+        dataloader_drop_last (`bool`):
+            Drop the last incomplete batch if it is not divisible by the batch size.
+        dataloader_num_workers (`int`):
+            Number of subprocesses to use for data loading.
+        lr (`float`):
+            The initial learning rate for AdamW.
+        metric (`str`):
+            The metric to use to compare two different models.
+        print_steps (`int`):
+            If None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`.
+        load_best_model_at_end (`bool`):
+            Whether or not to load the best model found during training at the end of training.
+        early_stopping (`Union[dict, str]`):
+            Early stopping.
+        model_checkpoint (`Union[dict, str]`):
+            Model checkpoint.
+        tensorboard (`Union[dict, str]`):
+            Tensorboard.
+        loss (`Union[str, Dict[str, Any]]`):
+            Pytorch loss in torch.nn package.
+        optimizer (`Union[str, Dict[str, Any]]`):
+            Pytorch optimizer Class name in torch.optim package.
+        lr_scheduler_type (`str`):
+            The scheduler type to use.
+        warmup_ratio (`float`):
+            Linear warmup over warmup_ratio fraction of total steps.
+        device_str (`str`):
+            Device string.
+        n_gpu (`int`):
+            Device should be specified when device_str is `cuda`.
+        sync_bn (`bool`):
+            It will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.
+        freeze_bn (`bool`):
+            It will completely freeze all BatchNorm layers during training.
     """
     output_dir: str = field(
         default="./output_dir",
@@ -94,14 +148,14 @@ class TrainingConfig:
     batch_size: Optional[int] = field(
         default=8,
         metadata={
-            HELP: "batch size for training.",
+            HELP: "Batch size for training.",
             CATEGORY: "train"
         }
     )
     val_batch_size: Optional[int] = field(
         default=-1,
         metadata={
-            HELP: "batch size for eval.",
+            HELP: "Batch size for evaluation.",
             CATEGORY: "train"
         }
     )
@@ -152,10 +206,10 @@ class TrainingConfig:
         default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"}
     )
     loss: Union[str, Dict[str, Any]] = field(
-        default="CrossEntropyLoss", metadata={HELP: "pytorch loss in torch.nn package", CATEGORY: "learning"}
+        default="CrossEntropyLoss", metadata={HELP: "Pytorch loss in torch.nn package", CATEGORY: "learning"}
     )
     optimizer: Union[str, Dict[str, Any]] = field(
-        default="Adam", metadata={HELP: "pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"}
+        default="Adam", metadata={HELP: "Pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"}
     )
     lr_scheduler_type: str = field(
         default="linear",
@@ -237,7 +291,7 @@ class TrainingConfig:
         """
         Load training configuration from yaml.
         Args:
-            path2yaml:
+            path2yaml (`str`):
                 The path to yaml.
         Example:
             >>> from towhee.trainer.training_config import TrainingConfig
@@ -262,7 +316,7 @@ class TrainingConfig:
         """
         Save training configuration to yaml.
         Args:
-            path2yaml:
+            path2yaml (`str`):
                 The path to yaml.
         Example:
             >>> from towhee.trainer.training_config import TrainingConfig
