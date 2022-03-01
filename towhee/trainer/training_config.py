@@ -202,7 +202,7 @@ class TrainingConfig:
     model_checkpoint: Union[dict, str] = field(
         default_factory=_model_checkpoint_factory, metadata={HELP: ".", CATEGORY: "callback"}
     )
-    tensorboard: Union[dict, str] = field(
+    tensorboard: Optional[Union[dict, str]] = field(
         default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"}
     )
     loss: Union[str, Dict[str, Any]] = field(
