@@ -86,7 +86,7 @@ class ModelCard:
         Write model card to the given filepath or directory
 
         Args:
-            save_directory_or_file:
+            save_directory_or_file (`str`):
                 file path or directory to write and save model card.
         Return:
             a model card written with its attributes
