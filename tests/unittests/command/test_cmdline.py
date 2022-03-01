@@ -45,3 +45,6 @@ class TestCmdline(unittest.TestCase):
         args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
         ExecuteCommand(args_1)()
         self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())
+
+if __name__ == '__main__':
+    unittest.main()

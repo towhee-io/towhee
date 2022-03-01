@@ -173,7 +173,11 @@ class CallbackList:
         for cb in self.callbacks:
             cb.set_trainercontrol(trainercontrol)
 
-    def add_callback(self, callback: Callback):
+    def add_callback(self, callback: Callback, singleton: bool = True):
+        if singleton:
+            for old_callback in self.callbacks:
+                if old_callback.__class__.__name__ == callback.__class__.__name__:
+                    self.callbacks.remove(old_callback)
         self.callbacks.append(callback)
 
     def pop_callback(self, callback: Callback):

@@ -15,6 +15,7 @@
 from abc import ABC, abstractmethod
 
 from towhee.dataframe import DataFrame
+from towhee.dataframe.iterators import MapIterator
 from towhee.types._frame import _Frame
 
 
@@ -43,9 +44,9 @@ class ImageEmbeddingFormat(OutputFormat):
     """
 
     def __call__(self, out_df: DataFrame):
-        it = out_df.map_iter()
+        it = MapIterator(out_df)
         data = next(it)
-        return data[0].value
+        return data[0][0]
 
 
 class NormalFormat(OutputFormat):
@@ -55,12 +56,12 @@ class NormalFormat(OutputFormat):
 
     def __call__(self, out_df: DataFrame):
         res = []
-        it = out_df.map_iter()
+        it = MapIterator(out_df)
         for data in it:
-            # data is Tuple[Variable]
+            # data is Tuple
             data_value = []
-            for item in data:
-                if item is not None and not isinstance(item.value, _Frame):
-                    data_value.append(item.value)
+            for item in data[0]:
+                if item is not None and not isinstance(item, _Frame):
+                    data_value.append(item)
             res.append(tuple(data_value))
         return res

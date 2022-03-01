@@ -35,6 +35,7 @@ class TaskScheduler(ABC):
         self._graph_ctx_refs = []
         self._need_stop = False
         self._event = threading.Event()
+        self._df_threshold = 500
 
     @abstractmethod
     def stop(self) -> None:
@@ -44,7 +45,7 @@ class TaskScheduler(ABC):
     def join(self) -> None:
         raise NotImplementedError
 
-    def schedule_forever(self, sleep_ms: int = 1000):
+    def schedule_forever(self, sleep_ms):
         """Runs the a single schedule step in a loop.
 
         sleep_ms: (`int`)
@@ -52,7 +53,6 @@ class TaskScheduler(ABC):
         """
         while not self._need_stop:
             self.schedule_step()
-            # TODO(fzliu): compute runtime for bottleneck operator
             self._event.wait(sleep_ms / 1000)
 
     @abstractmethod
@@ -105,6 +105,18 @@ class BasicScheduler(TaskScheduler):
             if start_index != 0:
                 self._graph_ctx_refs = self._graph_ctx_refs[start_index:]
 
+    def _scheduler_ops(self):
+        for g_ctx_ref in self._graph_ctx_refs:
+            g_ctx = g_ctx_ref()
+            if g_ctx is not None:
+                for name, df in g_ctx.dataframes.items():
+                    if df.current_size > self._df_threshold:
+                        g_ctx.slow_down(name, df.current_size / 500)
+                    elif df.current_size == 0 and not df.sealed:
+                        g_ctx.speed_up(name)
+                    else:
+                        pass
+
     def _df_gc(self):
         for g_ctx_ref in self._graph_ctx_refs:
             g_ctx = g_ctx_ref()
@@ -120,6 +132,7 @@ class BasicScheduler(TaskScheduler):
         """
         self._remove_finished_graph()
         self._df_gc()
+        self._scheduler_ops()
 
     def _find_optimal_exec(self):
         """

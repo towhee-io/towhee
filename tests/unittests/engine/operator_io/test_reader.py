@@ -17,7 +17,7 @@ import unittest
 from queue import Queue
 from collections import namedtuple
 
-from towhee.dataframe import DataFrame, Variable
+from towhee.dataframe import DataFrame
 from towhee.types._frame import _Frame, FRAME
 from towhee.engine.operator_io.reader import DataFrameReader, BatchFrameReader, TimeWindowReader
 from towhee.engine.operator_io import create_reader
@@ -31,7 +31,6 @@ def read(reader: DataFrameReader, q: Queue):
             item = reader.read()
             if item:
                 q.put(item)
-                print(item)
                 continue
         except StopIteration:
             break
@@ -43,9 +42,9 @@ class TestReader(unittest.TestCase):
     """
 
     def _create_test_df(self, data_size):
-        df = DataFrame('test')
-        data = (Variable('int', 1), Variable(
-            'str', 'test'), Variable('float', 0.1))
+        cols = [('int', 'int'), ('str', 'str'), ('float', 'float')]
+        df = DataFrame('test', cols)
+        data = [(1, 'test', 0.1)]
         self.data_size = 100
         t = DfWriter(df, data_size, data=data)
         t.set_sealed_when_stop()
@@ -101,11 +100,11 @@ class TestWindowReader(unittest.TestCase):
     def _prepare_data(self, df):
         for i in range(5000, 11000, 40):
             f = _Frame(timestamp=i)
-            df.put_dict({'test': i, FRAME: f})
+            df.put({'test': i, FRAME:  f})
 
         for i in range(21000, 25000, 40):
             f = _Frame(timestamp=i)
-            df.put_dict({'test': i, FRAME: f})
+            df.put({'test': i, FRAME: f})
 
         df.seal()
 
@@ -229,6 +228,8 @@ class TestWindowReader(unittest.TestCase):
         with self.assertRaises(StopIteration):
             reader.read()
 
+        # self.assertEqual(df.physical_size, 0)
+
     def test_equal_slideingwindow(self):
         df = DataFrame('test', [('test', 'int')])
         self._prepare_data(df)
@@ -252,6 +253,9 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
+        df.gc()
+        self.assertEqual(len(df), 0)
+
 
     def test_multithread_less(self):
         df = DataFrame('test', [('test', 'int')])
@@ -261,6 +265,8 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
+        df.gc()
+        self.assertEqual(len(df), 0)
 
     def test_multithread_greater(self):
         df = DataFrame('test', [('test', 'int')])
@@ -270,6 +276,8 @@ class TestWindowReader(unittest.TestCase):
         read_runner.start()
         write_runner.join()
         read_runner.join()
+        df.gc()
+        self.assertEqual(len(df), 0)
 
     def test_empty(self):
         df = DataFrame('test', [('test', 'int')])
@@ -290,7 +298,7 @@ class TestWindowReader(unittest.TestCase):
         df = DataFrame('test', [('test', 'int')])
         for i in range(0, 1000, 40):
             f = _Frame(timestamp=i)
-            df.put_dict({'test': i, FRAME: f})
+            df.put({'test': i, FRAME: f})
         df.seal()
 
         reader1 = TimeWindowReader(df, {'test': 0}, 3, 2)
@@ -304,3 +312,6 @@ class TestWindowReader(unittest.TestCase):
         reader3 = TimeWindowReader(df, {'test': 0}, 3, 4)
         res = reader3.read()
         self.assertEqual(len(res), 25)
+
+if __name__ == '__main__':
+    unittest.main()

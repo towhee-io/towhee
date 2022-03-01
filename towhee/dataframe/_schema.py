@@ -19,7 +19,6 @@ from towhee.utils.log import engine_log
 class _Schema:
     """
     Schema of dataframe.
-
     Every dataframe has _Frame cols.
     """
 
@@ -47,7 +46,7 @@ class _Schema:
     def col_key(self, index: int) -> str:
         return self._cols[index][0]
 
-    def col_type(self, index: str):
+    def col_type(self, index: int):
         return self._cols[index][1]
 
     def seal(self):
@@ -56,3 +55,8 @@ class _Schema:
     @property
     def col_count(self):
         return len(self._cols)
+
+    @property
+    def cols(self):
+        return self._cols
+

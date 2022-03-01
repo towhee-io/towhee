@@ -17,8 +17,8 @@ import unittest
 import time
 import queue
 
-from towhee.dataframe import DataFrame, DataFrameIterator, Variable
-
+from towhee.dataframe import DataFrame
+from towhee.dataframe.iterators import MapIterator, BatchIterator
 from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadRunner
 
 
@@ -28,8 +28,9 @@ class TestDataframe(unittest.TestCase):
     """
 
     def test_put(self):
-        df = DataFrame('test')
-        t = DfWriter(df, 10)
+        df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
+        data = ('a', 1)
+        t = DfWriter(df, 10, data = data)
         t.start()
         t.join()
         self.assertEqual(df.name, 'test')
@@ -49,53 +50,54 @@ class TestDataframe(unittest.TestCase):
 
     def test_gc(self):
         df = DataFrame('test', [('test', 'int')])
-        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t = DfWriter(df, 10, (1, ), )
         t.start()
         t.join()
         df.seal()
         self.assertEqual(df.size, 10)
 
-        it = df.map_iter(True)
+        it = MapIterator(df)
         count = 10
         for _ in it:
-            df.gc()
             self.assertEqual(df.size, 10)
             count -= 1
+            df.gc()
             self.assertEqual(df.current_size, count)
 
     def test_gc_with_batch(self):
         df = DataFrame('test', [('test', 'int')])
-        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t = DfWriter(df, 10, (1, ))
         t.start()
         t.join()
         df.seal()
         self.assertEqual(df.size, 10)
 
-        batch_it = df.batch_iter(2, 3, True)
+        batch_it = BatchIterator(df, 2, 3)
         count = 10
         for _ in batch_it:
-            df.gc()
             count -= 3
+            df.gc()
             self.assertEqual(max([count, 0]), df.current_size)
 
     def test_multithread_gc(self):
         df = DataFrame('test', [('test', 'int')])
-        t = DfWriter(df, 10, (Variable('int', 1), ))
+        t = DfWriter(df, 10, (1, ))
         t.set_sealed_when_stop()
         t.start()
 
-        it = df.map_iter(True)
+        it = MapIterator(df)
         for _ in it:
             pass
         t.join()
-        df.gc()
         self.assertEqual(df.size, 10)
+        df.gc()
         self.assertEqual(df.current_size, 0)
 
     def test_multithread(self):
-        df = DataFrame('test')
+        df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
+        data = ('a', 1)
         data_size = 10
-        t = DfWriter(df, data_size)
+        t = DfWriter(df, data_size, data = data)
         t.set_sealed_when_stop()
         t.start()
         q = queue.Queue()
@@ -123,9 +125,10 @@ class TestDataframe(unittest.TestCase):
         self.assertEqual(q.qsize(), data_size * 10)
 
     def test_multithread_block_get(self):
-        df = DataFrame('test')
+        df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
+        data = ('a', 1)
         data_size = 10
-        t = DfWriter(df, data_size)
+        t = DfWriter(df, data_size, data = data)
         t.set_sealed_when_stop()
         t.start()
         q = queue.Queue()
@@ -133,7 +136,7 @@ class TestDataframe(unittest.TestCase):
         def read(df: DataFrame, q: queue.Queue):
             index = 0
             while True:
-                items = df.get(index, 2, True)
+                items = df.get(index, 2)
                 if items:
                     for item in items:
                         q.put(item)
@@ -154,12 +157,12 @@ class TestDataframe(unittest.TestCase):
         self.assertEqual(q.qsize(), data_size * 10)
 
     def test_notify(self):
-        df = DataFrame('test')
+        df = DataFrame('test', [('letter', 'str'), ('num', 'int')])
 
         def read(df: DataFrame):
             index = 0
             while True:
-                item = df.get(index, 2, True)
+                item = df.get(index, 2)
                 assert item is None
                 break
 
@@ -168,130 +171,8 @@ class TestDataframe(unittest.TestCase):
         time.sleep(0.02)
 
         # if not call notify_block_readers, reader thread will never return
-        df.notify_block_readers()
+        df.unblock_all()
         runner.join()
-
-
-class TestMapIterator(unittest.TestCase):
-    """
-    map iterator basic test
-    """
-
-    def test_map_iterator(self):
-        df = DataFrame('test')
-        it = df.map_iter()
-        data_size = 100
-        t = DfWriter(df, data_size)
-        t.start()
-        t.set_sealed_when_stop()
-        q = queue.Queue()
-
-        def read(it: DataFrameIterator, q: queue.Queue):
-            for item in it:
-                if item is not None:
-                    q.put(item)
-                time.sleep(0.01)
-
-        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
-        runner.start()
-        runner.join()
-        self.assertEqual(q.qsize(), 100)
-
-    def test_block_map_iterator(self):
-        df = DataFrame('test')
-        it = df.map_iter(True)
-        data_size = 100
-        t = DfWriter(df, data_size)
-        t.start()
-        t.set_sealed_when_stop()
-        q = queue.Queue()
-
-        def read(it: DataFrameIterator, q: queue.Queue):
-            for item in it:
-                if item is not None:
-                    q.put(item)
-                time.sleep(0.01)
-
-        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
-        runner.start()
-        runner.join()
-        self.assertEqual(q.qsize(), 100)
-
-    def test_notify(self):
-        df = DataFrame('test')
-        it = df.map_iter()
-
-        def read(it: DataFrameIterator):
-            for item in it:
-                assert item is None
-                break
-
-        runner = MultiThreadRunner(target=read, args=(it, ), thread_num=5)
-        runner.start()
-        time.sleep(0.5)
-        it.notify()
-        runner.join()
-
-
-class TestBatchIter(unittest.TestCase):
-    """
-    Batch iter test.
-    """
-
-    def test_batch_iterator(self):
-        df = DataFrame('test')
-        it = df.batch_iter(3, 4)
-        data_size = 100
-        t = DfWriter(df, data_size)
-        t.start()
-        t.set_sealed_when_stop()
-        q = queue.Queue()
-
-        def read(it: DataFrameIterator, q: queue.Queue):
-            for item in it:
-                if item is not None:
-                    q.put(item)
-                time.sleep(0.01)
-
-        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
-        runner.start()
-        runner.join()
-        self.assertEqual(q.qsize(), 25)
-        while not q.empty():
-            items = q.get()
-            count = 0
-            self.assertEqual(3, len(items))
-            for item in items:
-                item[0].value.row_id = count
-                # self.assertEqual(item, [(), (), ()])
-
-    def test_block_batch_iterator(self):
-        df = DataFrame('test')
-        it = df.batch_iter(4, 2, True)
-        data_size = 100
-        t = DfWriter(df, data_size)
-        t.start()
-        t.set_sealed_when_stop()
-        q = queue.Queue()
-
-        def read(it: DataFrameIterator, q: queue.Queue):
-            for item in it:
-                if item is not None:
-                    q.put(item)
-                time.sleep(0.01)
-
-        runner = MultiThreadRunner(target=read, args=(it, q), thread_num=1)
-        runner.start()
-        runner.join()
-        self.assertEqual(q.qsize(), 50)
-        num = 0
-        while not q.empty():
-            items = q.get()
-            if num < 49:
-                self.assertEqual(4, len(items))
-            else:
-                self.assertEqual(2, len(items))
-            num += 1
 
 
 if __name__ == '__main__':

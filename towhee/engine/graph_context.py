@@ -15,7 +15,7 @@
 import threading
 from typing import Tuple
 
-from towhee.dataframe import DataFrame, Variable
+from towhee.dataframe import DataFrame
 from towhee.dag import GraphRepr
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
@@ -43,7 +43,7 @@ class GraphContext:
         self._lock = threading.Lock()
         self._build_components()
 
-    def __call__(self, inputs: Tuple[Variable]):
+    def __call__(self, inputs: Tuple):
         self.inputs.put(inputs)
         self.inputs.seal()
 
@@ -86,13 +86,25 @@ class GraphContext:
     def dataframes(self):
         return self._dataframes
 
+    def slow_down(self, df_name: str, time_sec: int):
+        '''
+        Slow down the op whose df name it.
+        '''
+        self._df_op[df_name].slow_down(time_sec)
+
+    def speed_up(self, df_name: str):
+        '''
+        spped up the op whose df name it.
+        '''
+        self._df_op[df_name].speed_up()
+
     def stop(self):
         for op in self._op_ctxs:
             op.stop()
 
     def gc(self):
         for _, df in self._dataframes.items():
-            df.gc()
+            df.gc_data()
 
     def join(self):
         for op in self._op_ctxs.values():
@@ -112,8 +124,10 @@ class GraphContext:
 
         # Build operator contexts.
         self._op_ctxs = {}
+        self._df_op = {}
         for _, op_repr in self._repr.operators.items():
             op_ctx = OperatorContext(op_repr, self.dataframes)
+            self._df_op[op_repr.outputs[0]['df']] = op_ctx
             self._op_ctxs[op_ctx.name] = op_ctx
 
     def __del__(self):

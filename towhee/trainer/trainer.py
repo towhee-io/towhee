@@ -20,6 +20,7 @@ import torch.distributed as dist
 
 from typing import Union, Dict, Any, Optional
 from pathlib import Path
+from collections.abc import Iterable
 from torch import nn
 from torch import optim
 from torch.optim import Optimizer
@@ -29,10 +30,11 @@ from torch.multiprocessing import Process
 from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
 
 from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpointCallback, \
-    EarlyStoppingCallback, TrainerControl
+    EarlyStoppingCallback, TrainerControl, Callback
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
-from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME, MODEL_NAME, set_seed, reduce_value, is_main_process, send_to_device
+from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME, MODEL_NAME, set_seed, reduce_value, \
+    is_main_process, send_to_device
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
 from towhee.trainer.optimization.optimization import get_scheduler
@@ -113,7 +115,102 @@ def freeze_bn(model):
 
 class Trainer:
     """
-    train an operator
+    A `Trainer` is used to train a pytorch model.
+
+    Args:
+        model (`nn.Module`):
+            A pytorch model.
+        training_config (`TrainingConfig`):
+            A `TrainingConfig` instance can be loaded from a yaml file.
+        train_dataset (`Union[Dataset, TowheeDataSet]`):
+            It can be a kind of `torch.utils.data.dataset.Dataset` or `TowheeDataSet`
+        eval_dataset (`Union[Dataset, TowheeDataSet]`):
+            The same as `train_dataset`, and it is not strictly necessary if you do not want to eval.
+        model_card (`ModelCard`):
+            Model card may contain other information of a model, and it is not strictly necessary.
+        train_dataloader (`Union[DataLoader, Iterable]`):
+            When the `train_dataloader` is passed in, trainer will use it to load data
+            instead of constructing by input dataset.
+        eval_dataloader (`Union[DataLoader, Iterable]`):
+            The same as `train_dataloader`, and it is not strictly necessary also.
+
+    Examples:
+        >>> import torch
+        >>> import torchvision.models as models
+        >>> from towhee.trainer.trainer import Trainer
+        >>> from towhee.trainer.training_config import TrainingConfig
+        >>> from towhee import dataset
+        >>> from torchvision import transforms
+        >>> import warnings
+        >>> warnings.filterwarnings("ignore")
+        >>> model = models.resnet18()
+        >>> fake_transform = transforms.Compose([transforms.ToTensor()])
+        >>> train_data = dataset('fake', size=2, transform=fake_transform)
+        >>> val_data = dataset('fake', size=1, transform=fake_transform)
+        >>> training_config = TrainingConfig(output_dir="train_res",
+        ...                                  tensorboard=None,
+        ...                                  epoch_num=2,
+        ...                                  batch_size=1,
+        ...                                  dataloader_num_workers=0,
+        ...                                  print_steps=1)
+        >>> trainer = Trainer(model, training_config, train_dataset=train_data, eval_dataset=val_data)
+        >>> type(trainer)
+        <class 'towhee.trainer.trainer.Trainer'>
+        >>> trainer.train()  # Some values below are not necessarily reproducible
+        2022-03-01 19:01:54,314 - 8601085440 - trainer.py-trainer:324 - WARNING: TrainingConfig(...)
+        epoch=1/2, global_step=1, epoch_loss=7.107283592224121, epoch_metric=0.0
+        epoch=1/2, global_step=2, epoch_loss=6.959554195404053, epoch_metric=0.0
+        epoch=1/2, eval_global_step=0, eval_epoch_loss=6.694866180419922, eval_epoch_metric=0.0
+        epoch=2/2, global_step=3, epoch_loss=6.165490627288818, epoch_metric=0.0
+        epoch=2/2, global_step=4, epoch_loss=6.197325706481934, epoch_metric=0.0
+        epoch=2/2, eval_global_step=1, eval_epoch_loss=6.0876030921936035, eval_epoch_metric=0.0
+        >>> trainer.train(resume_checkpoint_path="train_res/epoch_1")
+        2022-03-01 19:01:57,004 - 8601085440 - trainer.py-trainer:324 - WARNING: TrainingConfig(...)
+        epoch=2/2, global_step=1, epoch_loss=6.165490627288818, epoch_metric=0.0
+        epoch=2/2, global_step=2, epoch_loss=6.277336120605469, epoch_metric=0.0
+        epoch=2/2, eval_global_step=0, eval_epoch_loss=6.097333908081055, eval_epoch_metric=0.0
+        >>> trainer.save(path="another_save_path")
+        >>> trainer.load(path="another_save_path")
+        >>> trainer.epoch
+        2
+        >>> model = models.resnet18()
+        >>> inputs = [torch.randn(1, 3, 224, 224), torch.Tensor([1]).type(torch.LongTensor)]
+        >>> model.eval()  # turn on eval mode
+        ResNet(
+        ...
+        )
+        >>> trainer.evaluate_step(model, inputs)
+        {'eval_step_loss': 7.10837459564209, 'eval_epoch_loss': 6.350093841552734, 'eval_epoch_metric': 0.0}
+        >>> trainer.update_metrics(model, inputs, torch.Tensor(1))
+        (5.2800750732421875, 0.0)
+        >>> trainer.compute_metric(model, inputs)
+        0.0
+        >>> trainer.evaluate(model, {"epoch": 1, "eval_global_step": 1})
+        epoch=1/2, eval_global_step=1, eval_epoch_loss=5.654547214508057, eval_epoch_metric=0.0
+        {'epoch': 1, 'eval_global_step': 2, 'eval_step_loss': 7.526906967163086, 'eval_epoch_loss': 5.654547214508057, 'eval_epoch_metric': 0.0}
+        >>> trainer.predict(inputs[0]).shape
+        torch.Size([1, 1000])
+        >>> model.train()  # turn on train mode
+        ResNet(
+        ...
+        )
+        >>> trainer.train_step(model, inputs)
+        {'step_loss': 7.10837459564209, 'epoch_loss': 5.862236976623535, 'epoch_metric': 0.0}
+        >>> trainer.compute_loss(model, inputs)
+        tensor(7.1084, grad_fn=<NllLossBackward>)
+        >>>
+        >>> from towhee.trainer.callback import Callback
+        >>> from typing import Dict
+        >>> class MyCallback(Callback):
+        ...     def on_eval_begin(self, logs: Dict) -> Dict:
+        ...         print("on_eval_begin...")
+        ...
+        >>> my_callback = MyCallback()
+        >>> trainer.add_callback(my_callback)
+        >>> trainer.evaluate(model, logs={"epoch": 1, "eval_global_step": 1})
+        on_eval_begin...
+        epoch=1/2, eval_global_step=1, eval_epoch_loss=6.070321083068848, eval_epoch_metric=0.0
+        {'epoch': 1, 'eval_global_step': 2, 'eval_step_loss': 7.526906967163086, 'eval_epoch_loss': 6.070321083068848, 'eval_epoch_metric': 0.0}
     """
 
     def __init__(
@@ -123,12 +220,13 @@ class Trainer:
             train_dataset: Union[Dataset, TowheeDataSet] = None,
             eval_dataset: Union[Dataset, TowheeDataSet] = None,
             model_card: ModelCard = None,
-            train_dataloader: Optional[DataLoader] = None,
-            eval_dataloader: Optional[DataLoader] = None
+            train_dataloader: Union[DataLoader, Iterable] = None,
+            eval_dataloader: Union[DataLoader, Iterable] = None
     ):
+
         if training_config is None:
             output_dir = "tmp_trainer"
-            trainer_log.info("No `TrainingArguments` passed, using `output_dir.")
+            trainer_log.warning("No `TrainingConfig` passed.")
             training_config = TrainingConfig(output_dir=output_dir)
         self.configs = training_config
 
@@ -170,7 +268,13 @@ class Trainer:
         self.model_card.model_architecture = str(self.model)
         self.model_card.training_config = self.configs
 
-    def train(self, resume_checkpoint_path=None):
+    def train(self, resume_checkpoint_path: Optional[str] = None):
+        """
+        Start to train.
+        Args:
+            resume_checkpoint_path (`int`):
+                The path to start resume training.
+        """
         if self.configs.device_str == "cuda":
             self.distributed = True
             self._spawn_train_process(resume_checkpoint_path)
@@ -178,7 +282,7 @@ class Trainer:
             self.distributed = False
             self.run_train(resume_checkpoint_path)
 
-    def _spawn_train_process(self, resume_checkpoint_path):
+    def _spawn_train_process(self, resume_checkpoint_path: Optional[str]):
         # world_size = torch.cuda.device_count()
         # mp.spawn(self.run_train,
         #          args=(world_size, resume_checkpoint_path),
@@ -195,23 +299,22 @@ class Trainer:
         for process in process_list:
             process.join()
 
-    def _init_distributed(self, rank, world_size):
+    def _init_distributed(self, rank: int, world_size: int):
         if self.distributed:
             if torch.cuda.is_available() is False:
                 raise EnvironmentError("not find GPU device for training.")
             os.environ["MASTER_ADDR"] = "localhost"
             os.environ["MASTER_PORT"] = "12355"
-            print("_init_distributed(), rank=", rank)
+            trainer_log.warning("_init_distributed(), rank=%s", rank)
             torch.cuda.set_device(rank)
             dist_backend = "nccl"
             dist_url = "env://"
-            print("| distributed init (rank {}): {}".format(
-                rank, dist_url), flush=True)
+            trainer_log.warning("| distributed init (rank %s): %s", rank, dist_url)
             dist.init_process_group(backend=dist_backend, init_method=dist_url,
                                     world_size=world_size, rank=rank)
             dist.barrier()
 
-    def _load_before_train(self, resume_checkpoint_path, rank):
+    def _load_before_train(self, resume_checkpoint_path: Optional[str], rank: Optional[int]):
         sync_bn = self.configs.sync_bn
         if resume_checkpoint_path is not None:
             # weights_dict = torch.load(weights_path, map_location=device)
@@ -238,20 +341,25 @@ class Trainer:
             logs["eval_global_step"] = 0
         return logs
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs: Any):
         return send_to_device(inputs, self.configs.device)
 
-    def run_train(self, resume_checkpoint_path=None, rank=None, world_size=None):
+    def run_train(self, resume_checkpoint_path: str = None, rank: int = None, world_size: int = None):
         """
         Main training entry point.
+        It is not recommended for users to use it unless over rewriting Trainer.
+        Instead, it is recommended to use `trainer.train()` to start training.
+
+        Args:
+            resume_checkpoint_path (`str`):
+                Last checkpoint path.
+            rank (`int`):
+                Process rank when using multi gpus.
+            world_size (`int`):
+                Total processes count.
         """
-        # args = self.configs
         set_seed(self.configs.seed)
         self._init_distributed(rank, world_size)
-
-        print("device=", self.configs.device)
-        print("rank=", rank)
-        print("world_size=", world_size)
 
         self.model = self.model.to(self.configs.device)
         model = self.model
@@ -335,7 +443,13 @@ class Trainer:
             overwrite=self.configs.overwrite_output_dir
         )
 
-    def set_train_mode(self, model):
+    def set_train_mode(self, model: nn.Module):
+        """
+        Convert the model to training mode.
+
+        Args:
+            model (`nn.Module`):
+        """
         model.train()
         if self.configs.freeze_bn:
             model.apply(freeze_bn)
@@ -344,7 +458,7 @@ class Trainer:
         training_summary = dict(kwargs)
         self.model_card.training_summary = training_summary
 
-    def _may_evaluate(self, model, logs, step=-1):
+    def _may_evaluate(self, model: nn.Module, logs: dict, step: int = -1):
         if step != -1:  # step end
             if self.configs.eval_strategy in ["step", "steps"]:
                 assert self.configs.eval_steps > 0, "self.configs.eval_steps must be a positive int number"
@@ -357,7 +471,20 @@ class Trainer:
                 logs.update(eval_logs)
 
     @torch.no_grad()
-    def evaluate_step(self, model, inputs):
+    def evaluate_step(self, model: nn.Module, inputs: Any) -> dict:
+        """
+        One batch step when evaluating.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            inputs (`Any`):
+                Input Tensor or any kind of collection made up by tensors.
+
+        Returns:
+            (`dict`)
+                Evaluate logs dict.
+        """
         inputs = self.prepare_inputs(inputs)
         step_loss = self.compute_loss(model, inputs)
         step_loss = reduce_value(step_loss, average=True)
@@ -370,7 +497,25 @@ class Trainer:
         return step_logs
 
     @torch.no_grad()
-    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor, training=True):
+    def update_metrics(self, model: nn.Module, inputs: Any, step_loss: torch.Tensor, training: bool = True) -> tuple:
+        """
+        Update the loss and metric in one epoch.
+        When restart a new epoch, the epoch_loss and epoch metric will be clear.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            inputs (`Any`):
+                Torch tensor or any kind of collection made up by tensors.
+            step_loss (`torch.Tensor`):
+                One batch step loss.
+            training (`bool`):
+                Whether it's training mode now.
+
+        Returns:
+            (`tuple`)
+                Epoch loss and epoch metric.
+        """
         self.loss_metric.update(send_to_device(step_loss, self.configs.device))
         loss_metric = self.loss_metric.compute().item()
         if self.configs.eval_strategy == "eval_epoch" and training:
@@ -380,7 +525,22 @@ class Trainer:
         return loss_metric, epoch_metric
 
     @torch.no_grad()
-    def compute_metric(self, model: nn.Module, inputs: Any):
+    def compute_metric(self, model: nn.Module, inputs: Any) -> float:
+        """
+        Compute the step metric.
+        It is recommended to subclass `Trainer` and override this method when deal with custom metric in custom task.
+        When it is overridden, another method `compute_loss()` often needs to be overridden.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            inputs (`Any`):
+                Input tensor collection.
+
+        Returns:
+            (`float`)
+                Epoch average metric.
+        """
         model.eval()
         epoch_metric = None
         labels = inputs[1]
@@ -392,7 +552,20 @@ class Trainer:
         return epoch_metric
 
     @torch.no_grad()
-    def evaluate(self, model, logs):
+    def evaluate(self, model: nn.Module, logs: dict) -> dict:
+        """
+        Evaluate the model.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            logs (`dict`):
+                Logs dict.
+
+        Returns:
+            (`dict`)
+                The new logs dict with evaluate values.
+        """
         model.eval()
         self.callbacks.on_eval_begin(logs)
         self.metric.reset()
@@ -411,11 +584,36 @@ class Trainer:
         return logs
 
     @torch.no_grad()
-    def predict(self, input_):
-        self.model.eval()
-        return self.model(input_)
+    def predict(self, inputs: Any) -> Any:
+        """
+        Do prediction. The eval mode model passes in the input value and get the outputs.
 
-    def train_step(self, model, inputs):
+        Args:
+            inputs (`Any`):
+                Inference inputs by the model.
+
+        Returns:
+            (`Any`)
+                Output result.
+        """
+        self.model.eval()
+        return self.model(inputs)
+
+    def train_step(self, model: nn.Module, inputs: Any) -> dict:
+        """
+        The training batch step.
+        It contains computing step loss, loss backpropagation, doing step optimization, computing metric.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            inputs (`Any`):
+                Pytorch tensor or tensor collection.
+
+        Returns:
+            (`dict`)
+                Step logs which contains the step loss and metric infos.
+        """
         step_loss = self.compute_loss(model, inputs)
         step_loss = reduce_value(step_loss, average=True)
         step_loss.backward()
@@ -429,7 +627,7 @@ class Trainer:
         step_logs = {"step_loss": step_loss.item(), "epoch_loss": loss_metric, "epoch_metric": epoch_metric}
         return step_logs
 
-    def _cleanup_distributed(self, rank):
+    def _cleanup_distributed(self, rank: int):
         if self.distributed:
             if rank == 0:
                 if os.path.exists(TEMP_INIT_WEIGHTS) is True:
@@ -438,7 +636,19 @@ class Trainer:
 
     def compute_loss(self, model: nn.Module, inputs: Any):
         """
-        Subclass and override for custom behavior.
+        Compute the step loss.
+        It is recommended to subclass `Trainer` and override this method when deal with custom loss in custom task.
+        When it is overridden, another method `compute_metric()` often needs to be overridden.
+
+        Args:
+            model (`nn.Module`):
+                Pytorch model.
+            inputs (`Any`):
+                Model inputs when training.
+
+        Returns:
+            (`Any`)
+                Loss values with `grad_fn`.
         """
         self.set_train_mode(model)
         labels = inputs[1]
@@ -447,22 +657,79 @@ class Trainer:
         return loss
 
     def push_model_to_hub(self):
+        # todo
         pass
 
-    def add_callback(self, callback):
-        self.callbacks.add_callback(callback)
+    def add_callback(self, callback: Callback, singleton: bool = True):
+        """
+        Users can add their custom callbacks into the trainer.
+
+        Args:
+            callback (`Callback`):
+                Custom callback.
+            singleton (`bool`):
+                Whether this kind of callback is singleton.
+                When singleton, the same class instance in `trainer.callbacks` will be replaced.
+        """
+        self.callbacks.add_callback(callback, singleton)
 
     def set_optimizer(self, optimizer: optim.Optimizer, optimizer_name: str = None):
         """
-        set custom optimizer, `optimizer_name` is the optimizer str in training config
+        Set custom optimizer
+
+        Args:
+            optimizer (`optim.Optimizer`):
+                User's custom optimizer instance.
+            optimizer_name (`str`):
+                The optimizer string in training config, if it is `None`, the string will be a default value.
+
+        Examples:
+            >>> from towhee.trainer.trainer import Trainer
+            >>> from typing import Optional, Callable
+            >>> from torch import optim
+            >>> import torchvision.models as models
+            >>> model = models.resnet18()
+            >>> trainer = Trainer(model)
+            2022-03-01 17:22:52,306 - 8614221312 - trainer.py-trainer:173 - WARNING: No `TrainingConfig` passed.
+            >>> class MyOptimizer(optim.Optimizer):
+            ...     def step(self, closure: Optional[Callable[[], float]]=...) -> Optional[float]:
+            ...         print('my step...')
+            ...
+            >>> my_optimizer = MyOptimizer(model.parameters(), defaults={})
+            >>> trainer.set_optimizer(my_optimizer)
+            >>> type(trainer.optimizer)
+            <class '__main__.MyOptimizer'>
         """
         self.override_optimizer = True
         self.configs.optimizer = CUSTOM if optimizer_name is None else optimizer_name
         self.optimizer = optimizer
 
-    def set_loss(self, loss, loss_name=None):
+    def set_loss(self, loss: Any, loss_name: str = None):
         """
-        set custom loss, `loss_name` is the loss str in training config
+        Set custom loss
+
+        Args:
+            loss (`Any`):
+                User's custom loss instance.
+            loss_name (`str`):
+                The loss string in training config, if it is `None`, the string will be a default value.
+
+        Examples:
+            >>> from towhee.trainer.trainer import Trainer
+            >>> import torchvision.models as models
+            >>> import torch
+            >>> model = models.resnet18()
+            >>> trainer = Trainer(model)
+            2022-03-01 17:34:36,873 - 8605304320 - trainer.py-trainer:173 - WARNING: No `TrainingConfig` passed.
+            >>> class MyTripletLossFunc(torch.nn.Module):
+            ...     def forward(self):
+            ...         print('forward...')
+            ...         return 0
+            ...
+            >>> my_loss = MyTripletLossFunc()
+            >>> trainer.set_loss(my_loss)
+            >>> type(trainer.loss)
+            <class '__main__.MyTripletLossFunc'>
         """
         self.override_loss = True
         self.configs.loss = CUSTOM if loss_name is None else loss_name
@@ -479,7 +746,11 @@ class Trainer:
 
     def get_train_dataloader(self) -> DataLoader:
         """
-        Returns the training :class:`~torch.utils.data.DataLoader`.
+        Get the training dataloader.
+
+        Returns:
+            ('Optional[DataLoader]')
+                The dataloader to fit data to train the model.
         """
         if self.train_dataloader is not None:
             return self.train_dataloader
@@ -514,7 +785,11 @@ class Trainer:
 
     def get_eval_dataloader(self) -> Optional[DataLoader]:
         """
-        Returns the eval :class:`~torch.utils.data.DataLoader`.
+        Get the eval dataloader.
+
+        Returns:
+            (`Optional[DataLoader]`)
+                The dataloader to fit data to eval the model.
         """
         if self.eval_dataloader is not None:
             return self.eval_dataloader
@@ -549,7 +824,13 @@ class Trainer:
 
     def setup_before_train(self, num_training_steps: int, init_lr: float):
         """
-        Setup the optimizer and the learning rate scheduler.
+        Setup some configs before training.
+
+        Args:
+            num_training_steps (`int`):
+                All training steps in all training loops.
+            init_lr (`float`):
+                Start learning rate.
         """
         self._create_optimizer(init_lr=init_lr)
         self._create_loss()
@@ -572,11 +853,12 @@ class Trainer:
         if self.configs.model_checkpoint not in no_option_list:
             self.callbacks.add_callback(ModelCheckpointCallback(self.trainercontrol, **self.configs.model_checkpoint))
         # tensorboard
-        summary_writer_constructor = _get_summary_writer_constructor()
-        if summary_writer_constructor is not None and self.configs.tensorboard not in no_option_list:
-            self.callbacks.add_callback(
-                TensorBoardCallBack(summary_writer_constructor,
-                                    **self.configs.tensorboard))
+        if self.configs.tensorboard not in no_option_list:
+            summary_writer_constructor = _get_summary_writer_constructor()
+            if summary_writer_constructor is not None:
+                self.callbacks.add_callback(
+                    TensorBoardCallBack(summary_writer_constructor,
+                                        **self.configs.tensorboard))
 
     def _create_metric(self):
         self.metric = get_metric_by_name(self.configs.metric)
@@ -602,13 +884,6 @@ class Trainer:
         self.optimizer.lr = init_lr
 
     def _create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
-        """
-        Setup the scheduler. The optimizer of the trainer must have been set up either before this method is called or
-        passed as an argument.
-
-        Args:
-            num_training_steps (int): The number of training steps to do.
-        """
         if isinstance(self.configs.lr_scheduler_type, str):
             self.lr_scheduler = get_scheduler(
                 self.configs.lr_scheduler_type,
@@ -622,9 +897,17 @@ class Trainer:
                                                                  self.configs.lr_scheduler_type)
         return self.lr_scheduler
 
-    def get_warmup_steps(self, num_training_steps: int):
+    def get_warmup_steps(self, num_training_steps: int) -> int:
         """
         Get number of steps used for a linear warmup.
+
+        Args:
+            num_training_steps (`int`):
+                All training steps when training.
+
+        Returns:
+            (`int`)
+                Warmup steps.
         """
         warmup_steps = (
             self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(
@@ -632,8 +915,14 @@ class Trainer:
         )
         return warmup_steps
 
+    def load(self, path: str):
+        """
+        Load a model from the path.
 
-    def load(self, path):
+        Args:
+            path (`str`):
+                The folder path containing the model's checkpoints.
+        """
         state_path = Path(path).joinpath(STATE_CHECKPOINT_NAME)
         model_path = Path(path).joinpath(MODEL_NAME)
         # modelcard_path = Path(path).joinpath(MODEL_CARD_NAME)
@@ -654,8 +943,20 @@ class Trainer:
         self.loss_value = state_checkpoint["loss_value"]
         self.metric_value = state_checkpoint["metric_value"]
 
-
     def save(self, path, overwrite=True):
+        """
+        Save the checkpoint information in a folder.
+
+        Args:
+            path (`str`):
+                The folder path containing the model's checkpoints.
+            overwrite (`bool`):
+                If True, it will overwrite the same name path when existing.
+
+        Raises:
+            (`FileExistsError`)
+                If `overwrite` is False, when there already exists a path, it will raise Error.
+        """
         if is_main_process():
             if not overwrite:
                 if Path(path).exists():

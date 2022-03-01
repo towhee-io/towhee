@@ -96,3 +96,6 @@ class TestConcatRunner(unittest.TestCase):
         for i in range(len(writer.res)):
             self.assertEqual(writer.res[i], res[i])
             self.assertEqual(runner.status, RunnerStatus.FINISHED)
+
+if __name__ == '__main__':
+    unittest.main()

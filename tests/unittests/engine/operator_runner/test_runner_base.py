@@ -36,3 +36,6 @@ class TestRunnerBase(unittest.TestCase):
         self.assertEqual(mock_runner.hub_op_id, 'mock_operators')
         self.assertEqual(mock_runner.op_args, {'num': 1})
         self.assertEqual(mock_runner.tag, 'main')
+
+if __name__ == '__main__':
+    unittest.main()

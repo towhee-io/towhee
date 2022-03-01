@@ -156,9 +156,9 @@ class TestCallback(unittest.TestCase):
         cb = TestCallback.CustomCallback()
         callbacklist.add_callback(cb)
         print(callbacklist)
-        self.assertEqual(len(callbacklist), 3)
-        callbacklist.pop_callback(cb)
         self.assertEqual(len(callbacklist), 2)
+        callbacklist.pop_callback(cb)
+        self.assertEqual(len(callbacklist), 1)
 
         train_log = self._init_log()
         eval_log = self._init_log()

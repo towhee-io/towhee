@@ -31,7 +31,7 @@ class FlatMapRunner(RunnerBase):
 
         for data in output:
 
-            frame = deepcopy(self._frame_var.value)
+            frame = deepcopy(self._frame)
             if frame.parent_path == '':
                 frame.parent_path = str(frame.prev_id)
             else:

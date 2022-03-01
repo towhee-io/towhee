@@ -41,7 +41,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-        data = ["a", "b", "c"]
+        data = ['a', 'b', 'c']
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -69,7 +69,7 @@ class TestArray(unittest.TestCase):
         array = Array(data=data)
         _basic_asserts(array, data)
 
-        data = "abc"
+        data = 'abc'
         array = Array(data=data)
         _basic_asserts(array, data)
 
@@ -110,7 +110,7 @@ class TestArray(unittest.TestCase):
         _basic_asserts(array, value, n)
 
         n = 8
-        value = "abc"
+        value = 'abc'
         array = full(size=n, fill_value=value)
         _basic_asserts(array, value, n)
 
@@ -121,26 +121,41 @@ class TestArray(unittest.TestCase):
 
     def test_gc(self):
         array = Array([0, 1, 2, 3])
-        self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
-
-        ref_a = array.add_reader()
-        ref_b = array.add_reader()
-        array.gc()
-        self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
-
-        array.update_reader_offset(ref_a, 2)
-        array.gc()
-        self.assertEqual(len(array), 4)
-        self.assertEqual(array.physical_size, 4)
-
-        array.update_reader_offset(ref_b, 2)
-        array.gc()
         self.assertEqual(array.size, 4)
-        self.assertEqual(array.physical_size, 2)
+        self.assertEqual(len(array), 4)
+
+        array.gc(0)
+        self.assertEqual(array.size, 4)
+        self.assertEqual(len(array), 4)
+
+        array.gc(2)
+        self.assertEqual(array.size, 4)
+        self.assertEqual(len(array), 2)
 
         self.assertEqual(array[2], 2)
         self.assertEqual(array[3], 3)
         self.assertRaises(IndexError, array.__getitem__, 0)
         self.assertRaises(IndexError, array.__getitem__, 1)
+
+    def test_slice(self):
+        array = Array([0, 1, 2, 3])
+        x = array[0:5]
+        self.assertEqual(x, [0, 1, 2, 3])
+        x = array[0:2]
+        self.assertEqual(x, [0, 1])
+        x = array[1:]
+        self.assertEqual(x, [1, 2, 3])
+        x = array[-1]
+        self.assertEqual(x, 3)
+
+    def test_properties(self):
+        array = Array([0, 1, 2, 3])
+        array.put(1)
+        x = len(array)
+        self.assertEqual(x, 5)
+        x = array.size
+        self.assertEqual(x, 5)
+
+
+if __name__ == '__main__':
+    unittest.main()

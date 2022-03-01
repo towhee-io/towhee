@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from glob import glob
+from towhee.utils.ndarray_utils import from_zip
 
 
 class DataSourceMixin:
@@ -23,3 +24,7 @@ class DataSourceMixin:
     @classmethod
     def glob(cls, pattern):
         return cls.stream(glob(pattern))
+
+    @classmethod
+    def from_zip(cls, zip_path, pattern):
+        return cls.stream(from_zip(zip_path, pattern))

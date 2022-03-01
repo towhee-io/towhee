@@ -45,6 +45,7 @@ class OperatorContext:
         dataframes: (`dict` of `DataFrame`)
             All the `DataFrames` in `GraphContext`
     """
+
     def __init__(self, op_repr: OperatorRepr, dataframes: Dict[str, DataFrame]):
         self._repr = op_repr
         self._readers = OperatorContext._create_reader(op_repr, dataframes)
@@ -69,6 +70,9 @@ class OperatorContext:
 
     @staticmethod
     def _create_writer(op_repr, dataframes):
+        '''
+        Normally one op one output dataframe.
+        '''
         outputs = list({dataframes[output['df']] for output in op_repr.outputs})
         iter_type = op_repr.iter_info['type']
         return create_writer(iter_type, outputs)
@@ -132,6 +136,20 @@ class OperatorContext:
 
         for runner in self._op_runners:
             executor.push_task(runner)
+
+    def slow_down(self, time_sec: int):
+        if self.status != OpStatus.RUNNING:
+            raise RuntimeError('Op ctx is already not running.')
+
+        for runner in self._op_runners:
+            runner.slow_down(time_sec)
+
+    def speed_up(self):
+        if self.status != OpStatus.RUNNING:
+            raise RuntimeError('Op ctx is already not running.')
+
+        for runner in self._op_runners:
+            runner.speed_up()
 
     def stop(self):
         if self.status != OpStatus.RUNNING:
