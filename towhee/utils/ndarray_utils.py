@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-import zipfile
+from zipfile import ZipFile
 import glob
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Union
-from pathlib import PosixPath
 import numpy as np
 
 from towhee.types import Image
@@ -49,7 +47,7 @@ def from_src(src: Union[str, PosixPath]) -> Image:
     return img
 
 
-def from_zip(zip_src: Union[str, PosixPath], pattern: str = '*.JPEG') -> Image:
+def from_zip(zip_src: Union[str, Path], pattern: str = '*.JPEG') -> Image:
     """
     Load the image.zip from url/path as towhee's Image object.
 
@@ -63,16 +61,13 @@ def from_zip(zip_src: Union[str, PosixPath], pattern: str = '*.JPEG') -> Image:
         (`towhee.types.Image`)
             The image wrapepd as towhee's Image.
     """
-    path = str(Path(zip_src).resolve())
-    with open(path, 'rb') as f:
-        data = f.read()
-    bio = io.BytesIO(data)
-    zio = zipfile.ZipFile(bio)
-    path_list = glob.fnmatch.filter([x.filename for x in zio.filelist], pattern)
-    img_list = []
-    for path in path_list:
-        with zio.open(path) as f:
-            data = f.read()
+    zip_path = str(Path(zip_src).resolve())
+    with ZipFile(zip_path, 'r') as zfile:
+        file_list = zfile.namelist()
+        path_list = glob.fnmatch.filter(file_list, pattern)
+        img_list = []
+        for path in path_list:
+            data = zfile.read(path)
             ndarray_img = cv2.imdecode(np.frombuffer(data, np.uint8), 1)
             rgb_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
             img = from_ndarray(rgb_img, 'RGB')

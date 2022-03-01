@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-import zipfile
-import glob
-from pathlib import Path
-from typing import Union
 from pathlib import PosixPath
+from typing import Union
 import numpy as np
 
 from towhee.utils.log import engine_log
@@ -46,36 +42,6 @@ def from_src(src: Union[str, PosixPath]) -> Image:
     img = from_pil(pil_img)
 
     return img
-
-
-def from_zip(zip_src: Union[str, PosixPath], pattern: str = '*.JPEG') -> Image:
-    """
-    Load the image.zip from url/path as towhee's Image object.
-
-    Args:
-        zip_src (`Union[str, path]`):
-            The path leads to the image.
-        pattern (`str`):
-            The image pattern to extract.
-
-    Returns:
-        (`towhee.types.Image`)
-            The image wrapepd as towhee's Image.
-    """
-    path = str(Path(zip_src).resolve())
-    with open(path, 'rb') as f:
-        data = f.read()
-    bio = io.BytesIO(data)
-    zio = zipfile.ZipFile(bio)
-    path_list = glob.fnmatch.filter([x.filename for x in zio.filelist], pattern)
-    img_list = []
-    for path in path_list:
-        with zio.open(path) as f:
-            pil_img = PILImage.open(f)
-            img = from_pil(pil_img)
-            img_list.append(img)
-
-    return img_list
 
 
 def from_pil(pil_img: PILImage.Image) -> Image:
