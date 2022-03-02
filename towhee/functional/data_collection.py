@@ -262,6 +262,19 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
         """
         return self.exception_safe()
 
+    def select(self, name: str = 'feature_vector'):
+        """
+        get the list from operator Output
+
+        Examples:
+        >>> from typing import NamedTuple
+        >>> Outputs = NamedTuple('Outputs', [('num', int)])
+        >>> dc = DataCollection([Outputs(1), Outputs(2), Outputs(3)])
+        >>> dc.select(name='num')
+        [1, 2, 3]
+        """
+        return [getattr(i, name) for i in self._iterable]
+
     @_private_wrapper
     def fill_empty(self, default=None):
         """
