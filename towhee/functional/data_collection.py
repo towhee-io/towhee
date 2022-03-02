@@ -22,6 +22,7 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins.data_source import DataSourceMixin
 from towhee.functional.mixins.dispatcher import DispatcherMixin
 from towhee.functional.mixins.parallel import ParallelMixin
+from towhee.functional.mixins.display import PlotMixin
 
 
 def _private_wrapper(func):
@@ -35,7 +36,7 @@ def _private_wrapper(func):
 
 
 class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
-                     ParallelMixin):
+                     ParallelMixin, PlotMixin):
     """
     DataCollection is a quick assambler for chained data processing operators.
 
