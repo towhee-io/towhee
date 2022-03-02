@@ -14,7 +14,6 @@
 
 from typing import Iterable, Iterator
 from random import random, sample, shuffle
-import concurrent.futures
 
 from towhee.hparam import param_scope
 from towhee.functional.option import Option, Some, Empty
@@ -22,6 +21,7 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins.data_source import DataSourceMixin
 from towhee.functional.mixins.dispatcher import DispatcherMixin
 from towhee.functional.mixins.parallel import ParallelMixin
+from towhee.functional.mixins.computer_vision import ComputerVisionMixin
 
 
 def _private_wrapper(func):
@@ -34,8 +34,8 @@ def _private_wrapper(func):
     return wrapper
 
 
-class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
-                     ParallelMixin):
+class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
+                     ComputerVisionMixin):
     """
     DataCollection is a quick assambler for chained data processing operators.
 
@@ -324,7 +324,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
             return inner(self._iterable)
 
     @_private_wrapper
-    def map(self, unary_op):
+    def map(self, *arg):
         """
         apply operator to data collection
 
@@ -335,10 +335,16 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
         """
 
         # return map(unary_op, self._iterable)
-        if hasattr(self, '_executor') and isinstance(
-                self._executor, concurrent.futures.ThreadPoolExecutor):
+        # mmap
+        if len(arg) > 1:
+            return self.mmap(*arg)
+        unary_op = arg[0]
+
+        # pmap
+        if self.get_executor() is not None:
             return self.pmap(unary_op, executor=self._executor)
 
+        #map
         def inner(x):
             if isinstance(x, Option):
                 return x.map(unary_op)
@@ -348,7 +354,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
         return map(inner, self._iterable)
 
     @_private_wrapper
-    def zip(self, other):
+    def zip(self, *others):
         """
         combine two data collections
         >>> dc1 = DataCollection([1,2,3,4])
@@ -357,7 +363,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin,
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
-        return zip(self, other)
+        return zip(self, *others)
 
     @_private_wrapper
     def filter(self, unary_op, drop_empty=False):

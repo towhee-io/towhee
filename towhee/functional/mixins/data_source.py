@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from glob import glob
-from towhee.utils.ndarray_utils import from_zip
 
 
 class DataSourceMixin:
@@ -22,9 +21,30 @@ class DataSourceMixin:
     """
 
     @classmethod
-    def glob(cls, pattern):
+    def from_glob(cls, pattern):
+        """
+        generate a file list with `pattern`
+        """
         return cls.stream(glob(pattern))
 
     @classmethod
     def from_zip(cls, zip_path, pattern):
+        from towhee.utils.ndarray_utils import from_zip # pylint: disable=import-outside-toplevel
         return cls.stream(from_zip(zip_path, pattern))
+
+    @classmethod
+    def from_camera(cls, device_id=0, limit=-1):
+        """
+        read images from a camera.
+        """
+        import cv2 # pylint: disable=import-outside-toplevel
+        cnt = limit
+        def inner():
+            nonlocal cnt
+            cap = cv2.VideoCapture(device_id)
+            while cnt != 0:
+                retval, im = cap.read()
+                if retval:
+                    yield im
+                    cnt -= 1
+        return cls.stream(inner())
