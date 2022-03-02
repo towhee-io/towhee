@@ -150,16 +150,18 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     """
     Get a dataset by name, and pass into the custom params.
+
     Args:
-        name:
+        name (`str`):
             Name of a dataset.
-        *args:
+        *args (`Any`):
             Arguments of the dataset construct method.
-        **kwargs:
+        **kwargs (`Any`):
             Keyword arguments of the dataset construct method.
 
     Returns:
-        The corresponding `TorchDataSet`
+        (`TorchDataSet`)
+            The corresponding `TorchDataSet`.
 
     Examples:
         >>> from towhee import dataset
