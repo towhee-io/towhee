@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib
-import numpy as np
+from typing import Dict, Tuple, List, Callable
 
-from typing import Dict, Tuple, List
-from towhee.utils.log import trainer_log
-from towhee.trainer.utils.trainer_utils import is_main_process
-from tqdm import tqdm
+import numpy as np
+import torch
 from torch import nn
 from torch.optim import Optimizer
+from tqdm import tqdm
 
+from towhee.utils.log import trainer_log
+from towhee.trainer.utils.trainer_utils import is_main_process
 __all__ = [
     "Callback",
     "CallbackList",
@@ -89,48 +90,167 @@ class Callback:
         self.trainercontrol = None
 
     def set_model(self, model: nn.Module) -> None:
+        """
+        Set the model to callback.
+
+        Args:
+            model (`torch.nn.Module`):
+                The model which callback can operate.
+        """
         self.model = model
 
     def set_optimizer(self, optimizer: Optimizer) -> None:
+        """
+        Set the optimizer to callback.
+
+        Args:
+            optimizer (`torch.optim.Optimizer`):
+                The optimizer which callback can operate.
+        """
         self.optimizer = optimizer
 
     def set_trainercontrol(self, trainercontrol: TrainerControl) -> None:
+        """
+        Set the trainercontrol to callback.
+
+        Args:
+            trainercontrol (`towhee.trainer.callback.TrainerControl`):
+                The trainercontrol which callback can operate.
+        """
         self.trainercontrol = trainercontrol
 
     def on_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         pass
 
     def on_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked after every batch calculation.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         pass
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
+        """
+        Hook function invoked before each epoch.
+
+        Args:
+            epochs (`int`):
+                Epoch index.
+            logs (`Dict`):
+                Kv store to save and load info.
+        """
         pass
 
     def on_epoch_end(self, epochs: int, logs: Dict) -> None:
+        """
+        Hook function invoked after each epoch.
+
+        Args:
+            epochs (`int`):
+                Epoch index.
+            logs (`Dict`):
+                Kv store to save and load info.
+        """
         pass
 
     def on_train_begin(self, logs: Dict) -> None:
+        """
+        Hook function invoked before train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         pass
 
     def on_train_end(self, logs: Dict) -> None:
+        """
+        Hook function invoked after train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         pass
 
     def on_train_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         self.on_batch_begin(batch, logs)
 
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation in train stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         self.on_batch_end(batch, logs)
 
     def on_eval_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation in evaluate stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         self.on_batch_begin(batch, logs)
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked after every batch calculation in evaluate stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         self.on_batch_end(batch, logs)
 
-    def on_eval_begin(self, logs: Dict) -> Dict:
+    def on_eval_begin(self, logs: Dict) -> None:
+        """
+        Hook function invoked before evaluate stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         pass
 
-    def on_eval_end(self, logs: Dict) -> Dict:
+    def on_eval_end(self, logs: Dict) -> None:
+        """
+        Hook function invoked after evaluate stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         pass
 
 
@@ -139,6 +259,13 @@ class CallbackList:
     `CallbackList` aggregate multiple `Callback` in the same object. Invoke the
     callbacks of `CallbackList` will invoke corresponding callback in each
     "Callback" in the FIFO sequential order.
+
+    Args:
+        callbacks (`List[towhee.trainer.callback.Callback]`)
+            A list of callbacks which methods will be called simultaneously.
+
+    Example:
+
     """
 
     def __init__(self, callbacks: List[Callback] = None):
@@ -159,21 +286,49 @@ class CallbackList:
         return "towhee.trainer.CallbackList([{}])".format(callback_desc)
 
     def set_model(self, model: nn.Module):
+        """
+        Set the model to callback.
+
+        Args:
+            model (`torch.nn.Module`):
+                The model which callback can operate.
+        """
         self.model = model
         for cb in self.callbacks:
             cb.set_model(model)
 
     def set_optimizer(self, optimizer: Optimizer):
+        """
+        Set the optimizer to callback.
+
+        Args:
+            optimizer (`torch.optim.Optimizer`):
+                The optimizer which callback can operate.
+        """
         self.optimizer = optimizer
         for cb in self.callbacks:
             cb.set_optimizer(optimizer)
 
     def set_trainercontrol(self, trainercontrol: TrainerControl):
+        """
+        Set the trainercontrol to callback.
+
+        Args:
+            trainercontrol (`towhee.trainer.callback.TrainerControl`):
+                The trainercontrol which callback can operate.
+        """
         self.trainercontrol = TrainerControl
         for cb in self.callbacks:
             cb.set_trainercontrol(trainercontrol)
 
     def add_callback(self, callback: Callback, singleton: bool = True):
+        """
+        Args:
+            callback (`towhee.trainer.callback.Callback`):
+                The callback need to be added.
+            singleton (`bool`):
+                If set true, only one instance of same `Callback` will remain in callbacklist.
+        """
         if singleton:
             for old_callback in self.callbacks:
                 if old_callback.__class__.__name__ == callback.__class__.__name__:
@@ -181,60 +336,192 @@ class CallbackList:
         self.callbacks.append(callback)
 
     def pop_callback(self, callback: Callback):
-        self.callbacks.remove(callback)
+        """
+        Args:
+            callback (`towhee.trainer.callback.Callback`)
+                The callback need to be removed from callback list.
+        """
+        if callback in self.callbacks:
+            self.callbacks.remove(callback)
 
     def on_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_batch_begin(batch, logs)
 
     def on_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked after every batch calculation.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_batch_end(batch, logs)
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
+        """
+        Hook function invoked before each epoch.
+
+        Args:
+            epochs (`int`):
+                Epoch index.
+            logs (`Dict`):
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_epoch_begin(epochs, logs)
 
     def on_epoch_end(self, epochs: int, logs: Dict) -> None:
+        """
+        Hook function invoked after each epoch.
+
+        Args:
+            epochs (`int`):
+                Epoch index.
+            logs (`Dict`):
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_epoch_end(epochs, logs)
 
     def on_train_begin(self, logs: Dict) -> None:
+        """
+        Hook function invoked before train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_train_begin(logs)
 
     def on_train_end(self, logs: Dict) -> None:
+        """
+        Hook function invoked after train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_train_end(logs)
 
     def on_train_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before train stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_train_batch_begin(batch, logs)
 
     def on_train_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation in train stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_train_batch_end(batch, logs)
 
     def on_eval_batch_begin(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked before every batch calculation in evaluate stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_eval_batch_begin(batch, logs)
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
+        """
+        Hook function invoked after every batch calculation in evaluate stage.
+
+        Args:
+            batch (`Tuple`):
+                The data batch to calculate.
+            logs (`Dict`)
+                Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_eval_batch_end(batch, logs)
 
-    def on_eval_begin(self, logs: Dict):
+    def on_eval_begin(self, logs: Dict) -> None:
+        """
+        Hook function invoked before evaluate stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_eval_begin(logs)
 
-    def on_eval_end(self, logs: Dict):
+    def on_eval_end(self, logs: Dict) -> None:
+        """
+        Hook function invoked after evaluate stage.
+
+        Args:
+            logs (`Dict`):
+               Kv store to save and load info.
+        """
         for cb in self.callbacks:
             cb.on_eval_end(logs)
 
 
 class EarlyStoppingCallback(Callback):
     """
-    EarlyStopping
+    EarlyStoppingCallback
+
+    Assuming the goal of a training is to minimize the loss. With this, the
+    metric to be monitored would be `'loss'`, and mode would be `'min'`.
+    Training loop will check at end of every epoch whether the loss is no
+    longer decreasing, considering the `min_delta` and `patience` if
+    applicable. Once it's found no longer decreasing. `trainercontrol.
+    should_training_stop` is marked True.
+
+    Args:
+        trainercontrol (`towhee.trainer.callback.TrainerControl`):
+            The trainercontrol which callback can operate.
+        monitor (`str`):
+            Quantity to be monitored.
+        min_delta (`float`):
+            Minimum change in the monitored quantity to qualify as an
+            improvement, i.e. an absolute change of less than min_delta,
+            will count as no improvement.
+        patience (`str`):
+            Number of epochs with no improvement after which training will
+             be stopped.
+        mode (`str`):
+            One of `{"min", "max"}`. In `min` mode, training will stop when
+            the quantity monitored has stopped decreasing; in `"max"`
+            mode it will stop when the quantity monitored has stopped increasing.
+        baseline (`float`):
+            Baseline value for the monitored quantity.
+            Training will stop if the model doesn't show improvement over the
+            baseline.
     """
 
     def __init__(self,
@@ -243,7 +530,7 @@ class EarlyStoppingCallback(Callback):
                  min_delta: float = 0,
                  patience: int = 0,
                  mode: str = "max",
-                 baseline = None
+                 baseline: float = None
                  ):
         super(EarlyStoppingCallback).__init__()
         self.trainercontrol = trainercontrol
@@ -278,15 +565,11 @@ class EarlyStoppingCallback(Callback):
         current = self.get_monitor_value(logs)
         if current is None:
             return
-        # if self.restore_best_weights and self.best_weights is None:
-        #    self.best_weights = self.model.get_weights()
 
         self.wait += 1
         if self._is_improvement(current, self.best):
             self.best = current
             self.best_epoch = epochs
-            # if self.restore_best_weights:
-            #     self.best_weights = self.model.get_weights()
             if self.baseline is None or self._is_improvement(current, self.baseline):
                 self.wait = 0
 
@@ -313,7 +596,20 @@ class EarlyStoppingCallback(Callback):
 
 class ModelCheckpointCallback(Callback):
     """
-    ModelCheckpoint
+    ModelCheckpointCallback is intended to save the model at some interval. It can
+    be set in epoch mode or iteration mode. Only one of `every_n_epoch` and
+    `every_n_iteration` can be set to a positive value and the `trainer.should_save`
+    will set to True when the condion meets.
+
+    Args:
+        trainercontrol (`TrainerControl`):
+            The trainercontrol which callback can operate.
+        filepath (`str`):
+            Filepath to save the model.
+        every_n_epoch (`int`):
+            Save the model after n epochs.
+        every_n_iteration (`int`):
+            Save the model after n iterations.
     """
 
     def __init__(self,
@@ -357,10 +653,20 @@ class ModelCheckpointCallback(Callback):
 
 class TensorBoardCallBack(Callback):
     """
-    if tensorboard is available, you can see the tensorboard in localhost:6006
+    TensorBoardCallBack is intended to record the essential value(e.g. epoch_loss)
+    to tensorboard after each iteration. If tensorboard is available, you can see
+    the tensorboard in localhost:6006.
+
+    Args:
+        summary_writer_constructor (`Callable`):
+            Function which construct tensorboard summary writer.
+        log_dir (`str`):
+            Save directory location.
+        comment (`str`):
+            Comment log_dir suffix appended to the default log_dir.
     """
 
-    def __init__(self, summary_writer_constructor, log_dir=None, comment=""):
+    def __init__(self, summary_writer_constructor: Callable, log_dir: str = None, comment:str = ""):
         super().__init__()
         self.tb_writer = summary_writer_constructor(log_dir, comment=comment)
 
@@ -389,10 +695,16 @@ class TensorBoardCallBack(Callback):
 
 class PrintCallBack(Callback):
     """
-    print logs on the screen
+    PrintCallBack is intended to print logs on the screen.
+
+    Args:
+        total_epoch_num (`int`):
+            Epoch numbers expected to run.
+        step_frequency (`int`):
+            Print information in every n steps.
     """
 
-    def __init__(self, total_epoch_num, step_frequency=16):
+    def __init__(self, total_epoch_num: int, step_frequency:int = 16):
         super().__init__()
         self.step_frequency = step_frequency
         self.total_epoch_num = total_epoch_num
@@ -420,10 +732,17 @@ class PrintCallBack(Callback):
 
 class ProgressBarCallBack(Callback):
     """
-    use tqdm as the progress bar backend
+    ProgressBarCallBack is intended to print a progress bar to visualize current
+    training progress. The tqdm is used as the progress bar backend.
+
+    Args:
+        total_epoch_num (`int`):
+            Epoch numbers expected to run.
+        train_dataloader (`torch.utils.data.DataLoader`):
+            training dataloader for tqdm to warp.
     """
 
-    def __init__(self, total_epoch_num, train_dataloader):
+    def __init__(self, total_epoch_num: int, train_dataloader: torch.utils.data.DataLoader):
         super().__init__()
         self.total_epoch_num = total_epoch_num
         self.raw_train_dataloader = train_dataloader
