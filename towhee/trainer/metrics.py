@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List, Any
+from typing import Any, Dict
 
 import torchmetrics as tm
 from torchmetrics.detection.map import MeanAveragePrecision
 
 __all__ = [
     'Metrics',
+    'TMMetrics',
     'show_avaliable_metrics',
     'get_metric_by_name'
 ]
@@ -31,8 +32,8 @@ class Metrics:
     current prediction's performance by comparing it with the labels.
 
     Args:
-        metric_name: (`str`):
-            to indicate which metric is used to evalute.
+        metric_name (`str`):
+            Indicate which metric is used to evalute.
     """
 
     @classmethod
@@ -43,24 +44,44 @@ class Metrics:
         pass
 
     def update(self, *_: Any, **__: Any) -> None:
-        pass
+        raise NotImplementedError
 
     def compute(self) -> float:
-        pass
+        raise NotImplementedError
 
     def reset(self) -> None:
-        pass
+        raise NotImplementedError
 
     def to(self, *args, **kwargs):
-        pass
+        raise NotImplementedError
 
 class TMMetrics(Metrics):
     """
     `TMMetrics` use torchmetric as the implementation of metrics.
 
     Args:
-        metric_name: (`str`):
-            to indicate which metric is used to evalute.
+        metric_name (`str`):
+            Indicate which metric is used to evalute.
+
+    Example:
+        >>> from towhee.trainer.metrics import show_avaliable_metrics, get_metric_by_name
+        >>> from towhee.trainer.metrics import TMMetrics
+        >>> import torch
+        >>> pred = torch.FloatTensor([1.0,1.0,1.0,0.0,0.0,0.0])
+        >>> gt = torch.IntTensor([1,1,1,1,1,1])
+        >>> metric =  TMMetrics('Accuracy')
+        >>> metric.update(pred, gt)
+        >>> pred = torch.FloatTensor([1.0,1.0,1.0,1.0,1.0,1.0])
+        >>> gt = torch.IntTensor([1,1,1,1,1,1])
+        >>> metric.update(pred, gt)
+        >>> metric.compute().item()
+        0.75
+        >>> metric.reset()
+        >>> pred = torch.FloatTensor([1.0,1.0,1.0,0.0,0.0,0.0])
+        >>> gt = torch.IntTensor([1,1,1,1,1,1])
+        >>> metric.update(pred, gt)
+        >>> metric.compute().item()
+        0.5
     """
     @classmethod
     def get_tm_avaliable_metrics(cls):
@@ -178,12 +199,22 @@ def _generate_meta_info() -> None:
     res['TMMetrics']['names'] = _metrics_impls['TMMetrics'].get_tm_avaliable_metrics()
     _metrics_meta = res
 
-def show_avaliable_metrics() -> List:
+def show_avaliable_metrics() -> Dict:
     """
-    Get the list of current avaliable metrics.
+    Get the dict of current avaliable metrics.
 
-    Return (`List`):
-        A list of available metrics.
+    Returns:
+        (`Dict`)
+            A Dict which key is the class name of metrics implementation(e.g. TMMetrics),
+            and the value is a dict has keys 'impl' and 'names'. 'impl' is the framework
+            to implement this metric class and 'names' is the list of names of metrics
+            which can be created to calculate the metric.
+
+    Example:
+        >>> from towhee.trainer.metrics import show_avaliable_metrics
+        >>> aval_metrics = show_avaliable_metrics()
+        >>> 'TMMetrics' in aval_metrics
+        True
     """
     global _metrics_meta
     return _metrics_meta
@@ -193,13 +224,21 @@ def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics') -> Metr
     Get the `Metrics` class by metric names, and metric_impl should be the specific implementation class.
 
     Args:
-        metric_name: (`str`):
-            the metric name used to evaluate. (e.g. Accuracy)
-        metric_impl: (`str`)
-            the metric implementation class name. (e.g. TMMetrics)
+        metric_name (`str`):
+            The metric name used to evaluate. (e.g. Accuracy)
+        metric_impl (`str`):
+            The metric implementation class name. (e.g. TMMetrics)
 
-    Return (`Metrics`):
-        A linear scheduler with warmup.
+    Returns:
+        (`towhee.trainer.metrics.Metrics`)
+            Metrics instance which name matches the queried name.
+
+    Example:
+        >>> from towhee.trainer.metrics import show_avaliable_metrics, get_metric_by_name
+        >>> from towhee.trainer.metrics import TMMetrics
+        >>> metric = get_metric_by_name('Accuracy', 'TMMetrics')
+        >>> isinstance(metric, TMMetrics)
+        True
     """
     global _metrics_impls
     return _metrics_impls[metric_impl](metric_name)
