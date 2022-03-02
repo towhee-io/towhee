@@ -41,6 +41,7 @@ class Operator(ABC):
                 Outputs = NamedTuple("Outputs", [("sum", int)])
                 return Outputs(self._factor + num)
     """
+
     @abstractmethod
     def __init__(self):
         """
@@ -88,13 +89,14 @@ class NNOperator(Operator):
         framework (`str`):
             The framework to apply.
     """
+
     def __init__(self, framework: str = 'pytorch'):
         super().__init__()
         self._framework = framework
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
-        self.trainer = None #Trainer(self.get_model())
+        self._trainer = None  # Trainer(self.get_model())
 
     @property
     def framework(self):
@@ -106,7 +108,8 @@ class NNOperator(Operator):
 
     def get_model(self):
         """
-        get the framework naive model
+        Get the framework naive model, if an operator need to be trained,
+        this method should be overwritten.
         """
         raise NotImplementedError()
 
@@ -117,76 +120,118 @@ class NNOperator(Operator):
               resume_checkpoint_path=None,
               **kwargs):
         """
-        For training model
+        Start to train an operator.
+
+        Args:
+            training_config (`TrainingConfig`):
+                The config of this trainer.
+            train_dataset (`Union[Dataset, TowheeDataSet]`):
+                Training dataset.
+            eval_dataset (`Union[Dataset, TowheeDataSet]`):
+                Evaluate dataset.
+            resume_checkpoint_path (`str`):
+                If resuming training, pass into the path.
+            **kwargs (`Any`):
+                Keyword Args.
         """
         self.setup_trainer(training_config, train_dataset, eval_dataset, **kwargs)
         self.trainer.train(resume_checkpoint_path)
 
-    def create_trainer(self,
-                       training_config=None,
-                       train_dataset=None,
-                       eval_dataset=None,
-                       model_card=None,
-                       train_dataloader=None,
-                       eval_dataloader=None
-                       ):
-        from towhee.trainer.trainer import Trainer # pylint: disable=import-outside-toplevel
-        self.trainer = Trainer(self.get_model(),
-                               training_config,
-                               train_dataset,
-                               eval_dataset,
-                               model_card,
-                               train_dataloader,
-                               eval_dataloader)
+    @property
+    def trainer(self) -> 'Trainer':
+        if self._trainer is None:
+            self.setup_trainer()
+        return self._trainer
+
+    @trainer.setter
+    def trainer(self, trainer):
+        self._trainer = trainer
 
     def setup_trainer(self, training_config=None,
                       train_dataset=None,
                       eval_dataset=None,
                       train_dataloader=None,
-                      eval_dataloader=None
-                      ) -> 'Trainer':
+                      eval_dataloader=None,
+                      model_card=None
+                      ):
         """
-        set up the trainer instance in operator before training.
+        Set up the trainer instance in operator before training and set trainer parameters.
+        Args:
+            training_config (`TrainingConfig`):
+                The config of this trainer.
+            train_dataset (`Union[Dataset, TowheeDataSet]`):
+                Training dataset.
+            eval_dataset (`Union[Dataset, TowheeDataSet]`):
+                Evaluate dataset.
+            train_dataloader (`Union[DataLoader, Iterable]`):
+                If specified, `Trainer` will use it to load training data.
+                Otherwise, `Trainer` will build dataloader from train_dataset.
+            eval_dataloader (`Union[DataLoader, Iterable]`):
+                If specified, `Trainer` will use it to load evaluate data.
+                Otherwise, `Trainer` will build dataloader from train_dataset.
+            model_card (`ModelCard`):
+                Model card contains the training informations.
+        Returns:
+
         """
-        if self.trainer is None:
-            self.create_trainer(training_config,
-                                train_dataset,
-                                eval_dataset,
-                                self.model_card,
-                                train_dataloader,
-                                eval_dataloader)
+        from towhee.trainer.trainer import Trainer  # pylint: disable=import-outside-toplevel
+        if self._trainer is None:
+            self._trainer = Trainer(self.get_model(),
+                                    training_config,
+                                    train_dataset,
+                                    eval_dataset,
+                                    train_dataloader,
+                                    eval_dataloader,
+                                    model_card)
         else:
             if training_config is not None:
-                self.trainer.configs = training_config
+                self._trainer.configs = training_config
             if train_dataset is not None:
-                self.trainer.train_dataset = train_dataset
+                self._trainer.train_dataset = train_dataset
             if eval_dataset is not None:
-                self.trainer.eval_dataset = eval_dataset
+                self._trainer.eval_dataset = eval_dataset
             if train_dataloader is not None:
-                self.trainer.train_dataloader = train_dataloader
+                self._trainer.train_dataloader = train_dataloader
             if eval_dataloader is not None:
-                self.trainer.eval_dataloader = eval_dataloader
-        return self.trainer
+                self._trainer.eval_dataloader = eval_dataloader
+            if model_card is not None:
+                self._trainer.model_card = model_card
 
     def load(self, path: str = None):
-        if self.trainer is None:
-            self.create_trainer(training_config=None)
+        """
+        Load the model checkpoint into an operator.
+
+        Args:
+            path (`str`):
+                The folder path containing the model's checkpoints.
+        """
         self.trainer.load(path)
 
     def save(self, path: str, overwrite: bool = True):
-        if self.trainer is None:
-            self.create_trainer(training_config=None)
+        """
+        Save the model checkpoint into the path.
+
+        Args:
+            path (`str`):
+                The folder path containing the model's checkpoints.
+            overwrite (`bool`):
+                If True, it will overwrite the same name path when existing.
+
+        Raises:
+            (`FileExistsError`)
+                If `overwrite` is False, when there already exists a path, it will raise Error.
+        """
         self.trainer.save(path, overwrite)
 
-    def change_before_train(self, **kwargs):
-        pass
-    # def set_optimizer
+    # def change_before_train(self, **kwargs):
+    #     pass
 
 
 class PyOperator(Operator):
     """
     Python function operator, no machine learning frameworks involved.
     """
+
     def __init__(self):
         super().__init__()
         pass

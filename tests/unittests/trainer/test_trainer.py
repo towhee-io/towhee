@@ -86,19 +86,17 @@ class TrainerTest(unittest.TestCase):
         self.assertEqual(True, os.path.exists(test_path.joinpath('README.md')))
 
     def test_set_loss(self) -> None:
-        trainer = self.op.setup_trainer()
         my_loss = nn.BCELoss()
         loss_name = 'my_loss'
-        trainer.set_loss(my_loss, loss_name=loss_name)
-        self.assertEqual(loss_name, trainer.configs.loss)
+        self.op.trainer.set_loss(my_loss, loss_name=loss_name)
+        self.assertEqual(loss_name, self.op.trainer.configs.loss)
 
 
     def test_set_optimizer(self) -> None:
-        trainer = self.op.setup_trainer()
         my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
         optimizer_name = 'my_optimizer'
-        trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
-        self.assertEqual(optimizer_name, trainer.configs.optimizer)
+        self.op.trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
+        self.assertEqual(optimizer_name, self.op.trainer.configs.optimizer)
 
 
 if __name__ == '__main__':

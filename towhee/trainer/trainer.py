@@ -126,13 +126,13 @@ class Trainer:
             It can be a kind of `torch.utils.data.dataset.Dataset` or `TowheeDataSet`
         eval_dataset (`Union[Dataset, TowheeDataSet]`):
             The same as `train_dataset`, and it is not strictly necessary if you do not want to eval.
-        model_card (`ModelCard`):
-            Model card may contain other information of a model, and it is not strictly necessary.
         train_dataloader (`Union[DataLoader, Iterable]`):
             When the `train_dataloader` is passed in, trainer will use it to load data
             instead of constructing by input dataset.
         eval_dataloader (`Union[DataLoader, Iterable]`):
             The same as `train_dataloader`, and it is not strictly necessary also.
+        model_card (`ModelCard`):
+            Model card may contain other information of a model, and it is not strictly necessary.
 
     Examples:
         >>> import torch
@@ -219,9 +219,9 @@ class Trainer:
             training_config: TrainingConfig = None,
             train_dataset: Union[Dataset, TowheeDataSet] = None,
             eval_dataset: Union[Dataset, TowheeDataSet] = None,
-            model_card: ModelCard = None,
             train_dataloader: Union[DataLoader, Iterable] = None,
-            eval_dataloader: Union[DataLoader, Iterable] = None
+            eval_dataloader: Union[DataLoader, Iterable] = None,
+            model_card: ModelCard = None
     ):
 
         if training_config is None:
