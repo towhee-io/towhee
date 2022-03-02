@@ -132,6 +132,8 @@ class RetinaFace(nn.Module):
         # pylint: disable=unsubscriptable-object
         scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         device = img.get_device()
+        if device == -1:
+            device = torch.device('cpu')
         mean = torch.FloatTensor(self.cfg['mean']).to(device)
         img = img - mean
         img = img.permute(2, 0, 1)
