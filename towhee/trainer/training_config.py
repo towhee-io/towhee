@@ -172,12 +172,12 @@ class TrainingConfig:
         metadata={HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"}
     )
     dataloader_num_workers: int = field(
-        default=-1,
+        default=0,
         metadata={
             HELP: "Number of subprocesses to use for data loading."
-                  "default -1 means using all the cpu kernels,"
-                  "it will greatly improve the speed when distributed training."
-                  "0 means that the data will be loaded in the main process.",
+                  "default 0 means that the data will be loaded in the main process."
+                  "-1 means using all the cpu kernels,"
+                  "it will greatly improve the speed when distributed training.",
             CATEGORY: "train"
         },
     )
