@@ -186,7 +186,7 @@ class RunnerBase(ABC):
         try:
             data, self._row_data = self._reader.read()
             assert isinstance(self._row_data[-1], _Frame)
-            self._frame= self._row_data[-1]
+            self._frame = self._row_data[-1]
             self._frame.prev_id = self._frame.row_id
             return False, data
         except StopIteration:

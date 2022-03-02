@@ -138,18 +138,14 @@ class OperatorContext:
             executor.push_task(runner)
 
     def slow_down(self, time_sec: int):
-        if self.status != OpStatus.RUNNING:
-            raise RuntimeError('Op ctx is already not running.')
-
-        for runner in self._op_runners:
-            runner.slow_down(time_sec)
+        if self.status == OpStatus.RUNNING:
+            for runner in self._op_runners:
+                runner.slow_down(time_sec)
 
     def speed_up(self):
-        if self.status != OpStatus.RUNNING:
-            raise RuntimeError('Op ctx is already not running.')
-
-        for runner in self._op_runners:
-            runner.speed_up()
+        if self.status == OpStatus.RUNNING:
+            for runner in self._op_runners:
+                runner.speed_up()
 
     def stop(self):
         if self.status != OpStatus.RUNNING:

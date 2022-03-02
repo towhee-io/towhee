@@ -35,7 +35,6 @@ class TaskScheduler(ABC):
         self._graph_ctx_refs = []
         self._need_stop = False
         self._event = threading.Event()
-        self._df_threshold = 500
 
     @abstractmethod
     def stop(self) -> None:
@@ -68,9 +67,10 @@ class BasicScheduler(TaskScheduler):
     schedule_step does nothing.
     """
 
-    def __init__(self, task_execs: List[ThreadPoolTaskExecutor]):
+    def __init__(self, task_execs: List[ThreadPoolTaskExecutor], threshold: int):
         super().__init__(task_execs)
         self._lock = threading.Lock()
+        self._df_threshold = threshold
 
     def register(self, graph_ctx):
         for op in graph_ctx.op_ctxs.values():
@@ -106,12 +106,16 @@ class BasicScheduler(TaskScheduler):
                 self._graph_ctx_refs = self._graph_ctx_refs[start_index:]
 
     def _scheduler_ops(self):
+        # threshold <=0: disable scheduler
+        if self._df_threshold <= 0:
+            return
+
         for g_ctx_ref in self._graph_ctx_refs:
             g_ctx = g_ctx_ref()
             if g_ctx is not None:
                 for name, df in g_ctx.dataframes.items():
                     if df.current_size > self._df_threshold:
-                        g_ctx.slow_down(name, df.current_size / 500)
+                        g_ctx.slow_down(name, df.current_size / self._df_threshold)
                     elif df.current_size == 0 and not df.sealed:
                         g_ctx.speed_up(name)
                     else:
