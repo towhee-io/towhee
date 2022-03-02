@@ -25,6 +25,7 @@ const sidebars = {
         'get-started/install',
         'get-started/quick-start',
         'get-started/troubleshooting',
+        'get-started/Gsoc',
         //'get-started/pipeline-config',
       ],
     },
