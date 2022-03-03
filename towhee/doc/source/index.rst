@@ -7,9 +7,12 @@ Welcome to Towhee Trainer's documentation!
 ==========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
+   trainer/trainer
+   trainer/trainer.optimization
+   trainer/trainer.utils
 
 
 Indices and tables
@@ -17,4 +20,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

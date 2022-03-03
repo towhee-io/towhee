@@ -29,6 +29,43 @@ class ModelCard:
     """
     Utilities to generate and save model card. Recommended attributes from https://arxiv.org/abs/1810.03993 (see papers)
     https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/actionrecognitionnet
+
+    Args:
+        model_name (`Optional[str]`):
+            model name
+        model_architecture (`Optional[str]`):
+            model structure
+        model_overview (`Optional[str] = None`):
+        language (`Optional[Union[str, List[str]]]`):
+            language
+        tags (`Optional[Union[str, List[str]]]`):
+            tags
+        tasks (`Optional[Union[str, List[str]]]`):
+            model tasks (eg. classification, prediction, etc.)
+        datasets (`Optional[Union[str, List[str]]]`):
+            datasets used to train/test the model
+        datasets_tags (`Optional[Union[str, List[str]]]`):
+            tags of datasets
+        dataset_args (`Optional[Union[str, List[str]]]`):
+            arguments of dataset
+        eval_results (`Optional[Dict[str, float]]`):
+            evaluation results recorded
+        eval_lines (`Optional[List[str]]`):
+            evaluation baselines
+        training_summary (`Optional[Dict[str, Any]]`):
+            training summary include training information
+        training_config (`Optional[TrainingConfig]`):
+            training configurations
+        source (`Optional[str]`):
+            source of model card (default = "trainer")
+
+    Example:
+    >>> from towhee.trainer.modelcard import ModelCard
+    >>> model_card = ModelCard(model_name='test')
+    >>> # Print out model name stored in model card
+    >>> model_card.model_name
+    'test'
+
     """
     def __init__(
             self,
@@ -48,14 +85,6 @@ class ModelCard:
             training_config: Optional[TrainingConfig] = None,
             source: Optional[str] = "trainer"
             ):
-        """
-        Example:
-        >>> from towhee.trainer.modelcard import ModelCard
-        >>> model_card = ModelCard(model_name='test')
-        >>> # Print out model name stored in model card
-        >>> model_card.model_name
-        'test'
-        """
         self.model_name = model_name
         self.model_architecture = model_architecture
         self.model_overview = model_overview
