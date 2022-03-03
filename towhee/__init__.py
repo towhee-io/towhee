@@ -301,3 +301,14 @@ Entry point for creating pipeline instances, for example:
 An instance of `my_namespace`/`my_pipeline_name` is created, and template variables in the pipeline,
 `template_variable_1` and  `template_variable_2` are replaced with given values.
 """
+
+
+def plot(img1: Union[str, list], img2: list = None):
+    from towhee.utils.plot_utils import plot_img # pylint: disable=C
+    if not img2:
+        plot_img(img1)
+    else:
+        assert len(img1) == len(img2)
+        for i in range(len(img1)):
+            plot_img(img1[i])
+            plot_img(img2[i])

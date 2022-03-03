@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy
 from typing import Iterable, Iterator
 from random import random, sample, shuffle
 
@@ -276,6 +277,42 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         return [getattr(i, name) for i in self._iterable]
 
     @_private_wrapper
+    def normalize(self, name: str = 'feature_vector'):
+        """
+        normalize the output embedding
+
+        Examples:
+        >>> from typing import NamedTuple
+        >>> import numpy
+        >>> Outputs = NamedTuple('Outputs', [('feature_vector', numpy.array)])
+        >>> dc = DataCollection([Outputs(numpy.array([3, 4])), Outputs(numpy.array([6,8]))])
+        >>> dc.select(name='num')
+        [array([0.6, 0.8]), array([0.6, 0.8])]
+        """
+        buff = []
+        for ele in self.select(name):
+            vector = numpy.array(ele)
+            buff.append(vector / numpy.linalg.norm(vector))
+        return buff
+
+    @_private_wrapper
+    def select_from(self, dc):
+        """
+        select data from dc with list(self)
+        >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
+        >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
+        >>> dc3 = dc1.select_from(dc2)
+        >>> list(dc3)
+        [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
+        """
+        dc_list = dc.to_list()
+        ids = self.to_list()
+        res = []
+        for sel_id in ids:
+            res.append([dc_list[k] for k in sel_id])
+        return res
+
+    @_private_wrapper
     def fill_empty(self, default=None):
         """
         unbox `Option` values and fill `Empty` with default values
@@ -416,7 +453,6 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-
         buff = []
         for ele in self._iterable:
             buff.append(ele)

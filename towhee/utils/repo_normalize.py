@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from urllib.parse import urlparse, parse_qsl, urlsplit
 from typing import NamedTuple
 
@@ -104,6 +105,19 @@ class RepoNormalize:
         else:
             return False
         return self.check_repo(repo)
+
+    def url_valid(self) -> bool:
+        regex = re.compile(
+            r'^(?:http|ftp)s?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        if re.match(regex, self._uri) is not None:
+            return True
+        return False
 
     @staticmethod
     def mapping(path: str) -> str:
