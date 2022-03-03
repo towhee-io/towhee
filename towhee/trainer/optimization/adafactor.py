@@ -22,7 +22,8 @@ class Adafactor(Optimizer):
     """
     AdaFactor pytorch implementation as introduced in `Adafactor: Adaptive Learning Rates with Sublinear Memory Cost`
     https://arxiv.org/abs/1804.04235.
-    Arguments:
+
+    Args:
         params (Iterable[nn.parameter.Parameter]):
             Iterable of parameters to optimize or dictionaries defining parameter groups.
         lr (float, optional):
@@ -106,9 +107,9 @@ class Adafactor(Optimizer):
     def step(self, closure=None):
         """
         Performs a single optimization step
-        Arguments:
-            closure(callable, optional): A closure that reevaluates the model
-                and returns the loss.
+
+        Args:
+            closure(callable, optional): A closure that reevaluates the model and returns the loss.
         """
         loss = None
         if closure is not None:
