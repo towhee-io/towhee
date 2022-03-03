@@ -31,7 +31,7 @@ class DataFrameWriter(ABC):
         if output_data is not None:
             self._write(output_data)
         else:
-            engine_log.error('Ignore None data which try to write to dataframe %s',
+            engine_log.debug('Ignore None data which try to write to dataframe %s',
                              self._output_df.name)
 
     @abstractmethod

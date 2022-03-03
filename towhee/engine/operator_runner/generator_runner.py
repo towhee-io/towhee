@@ -45,3 +45,4 @@ class GeneratorRunner(RunnerBase):
                 del item['TIMESTAMP']
             item.update({FRAME: frame})
             self._writer.write(item)
+            self.sleep()

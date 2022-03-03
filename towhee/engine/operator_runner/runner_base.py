@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import time
 from typing import Dict, Tuple
 from abc import ABC
 from enum import Enum, auto
@@ -22,6 +22,7 @@ from towhee.types._frame import FRAME, _Frame
 from towhee.engine.status import Status
 from towhee.utils.log import engine_log
 from towhee.hparam import param_scope
+
 
 class RunnerStatus(Enum):
     IDLE = auto()
@@ -38,6 +39,7 @@ class _OpInfo:
     """
     Operator hub info.
     """
+
     def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, any], tag: str) -> None:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
@@ -67,6 +69,7 @@ class RunnerBase(ABC):
 
     The base class provides some function to control status.
     """
+
     def __init__(
         self,
         name: str,
@@ -85,6 +88,7 @@ class RunnerBase(ABC):
         self._op_info = _OpInfo(op_name, hub_op_id, op_args, tag)
 
         self._readers = readers
+        self._sleep_time = 0
 
         # only concat can have multiple readers
         if self._readers:
@@ -182,7 +186,7 @@ class RunnerBase(ABC):
         try:
             data, self._row_data = self._reader.read()
             assert isinstance(self._row_data[-1], _Frame)
-            self._frame= self._row_data[-1]
+            self._frame = self._row_data[-1]
             self._frame.prev_id = self._frame.row_id
             return False, data
         except StopIteration:
@@ -216,6 +220,16 @@ class RunnerBase(ABC):
             self._set_failed(st.msg)
             return True
 
+    def slow_down(self, time_sec: float):
+        self._sleep_time = time_sec
+
+    def speed_up(self):
+        self._sleep_time = 0
+
+    def sleep(self):
+        if self._sleep_time > 0:
+            time.sleep(self._sleep_time)
+
     def join(self):
         self._end_event.wait()
 
@@ -234,3 +248,4 @@ class RunnerBase(ABC):
             else:
                 self._set_finished()
                 break
+            self.sleep()

@@ -31,6 +31,7 @@ class EngineConfig:
         self._sched_type = 'basic'
         self._cache_path = None
         self._sched_interval_ms = 10 * 1000
+        self._sched_threshold = 500
 
     @property
     def sched_type(self):
@@ -55,6 +56,14 @@ class EngineConfig:
     @sched_interval_ms.setter
     def sched_interval_ms(self, sched_interval_ms: int):
         self._sched_interval_ms = sched_interval_ms
+
+    @property
+    def sched_threshold(self):
+        return self._sched_threshold
+
+    @sched_threshold.setter
+    def sched_threshold(self, threshold: int):
+        self._sched_threshold = threshold
 
     def __str__(self):
         return str(self.__dict__)
@@ -139,7 +148,7 @@ class Engine(threading.Thread):
         # Parse scheduler type from configuration.
         sched_type = self._config.sched_type
         if sched_type == 'basic':
-            self._task_sched = BasicScheduler(self._task_execs)
+            self._task_sched = BasicScheduler(self._task_execs, self._config.sched_threshold)
         else:
             raise SchedulerTypeError(f'Invalid scheduler type - {sched_type}')
 

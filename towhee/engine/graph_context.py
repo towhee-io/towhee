@@ -86,6 +86,18 @@ class GraphContext:
     def dataframes(self):
         return self._dataframes
 
+    def slow_down(self, df_name: str, time_sec: int):
+        '''
+        Slow down the op whose df name it.
+        '''
+        self._df_op[df_name].slow_down(time_sec)
+
+    def speed_up(self, df_name: str):
+        '''
+        spped up the op whose df name it.
+        '''
+        self._df_op[df_name].speed_up()
+
     def stop(self):
         for op in self._op_ctxs:
             op.stop()
@@ -112,8 +124,10 @@ class GraphContext:
 
         # Build operator contexts.
         self._op_ctxs = {}
+        self._df_op = {}
         for _, op_repr in self._repr.operators.items():
             op_ctx = OperatorContext(op_repr, self.dataframes)
+            self._df_op[op_repr.outputs[0]['df']] = op_ctx
             self._op_ctxs[op_ctx.name] = op_ctx
 
     def __del__(self):
