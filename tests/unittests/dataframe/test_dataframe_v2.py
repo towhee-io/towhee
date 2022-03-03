@@ -33,6 +33,12 @@ class TestDataframe(unittest.TestCase):
             return [(0, 'a', _Frame(row_id = 4, timestamp=4)), (1, 'b', _Frame(5, timestamp=5)), (2, 'c', _Frame(6, timestamp=6))]
         return [(0, 'a'), (1, 'b'), (2, 'c')]
 
+    def get_tuples_unordered(self, remainder = False):
+        if remainder is False:
+            return [(0, 'a', _Frame(row_id = 0, prev_id=0)), (5, 'b', _Frame(5, prev_id=5)), (1, 'c', _Frame(1, prev_id=1))]
+        else:
+            return [(3, 'a', _Frame(row_id = 3, prev_id=3)), (2, 'b', _Frame(2, prev_id=2)), (4, 'c', _Frame(4, prev_id=4))]
+
     def get_dict(self, frames = False):
         if frames:
             ret = []
@@ -44,6 +50,19 @@ class TestDataframe(unittest.TestCase):
         ret.append({'digit': 0, 'letter': 'a'})
         ret.append({'digit': 1, 'letter': 'b'})
         ret.append({'digit': 2, 'letter': 'c'})
+        return ret
+
+    def get_dict_unordered(self, remainder = False):
+        if remainder is False:
+            ret = []
+            ret.append({'digit': 0, 'letter': 'a', FRAME: _Frame(row_id = 0, prev_id=0)})
+            ret.append({'digit': 5, 'letter': 'b', FRAME: _Frame(row_id = 5, prev_id=5)})
+            ret.append({'digit': 1, 'letter': 'c', FRAME: _Frame(row_id = 1, prev_id=1)})
+            return ret
+        ret = []
+        ret.append({'digit': 3, 'letter': 'a', FRAME: _Frame(row_id = 3, prev_id=3)})
+        ret.append({'digit': 2, 'letter': 'b', FRAME: _Frame(row_id = 2, prev_id=2)})
+        ret.append({'digit': 4, 'letter': 'c', FRAME: _Frame(row_id = 4, prev_id=4)})
         return ret
 
     def test_constructors(self):
@@ -109,6 +128,22 @@ class TestDataframe(unittest.TestCase):
         datas = df.get(8, 4)
         self.assertEqual(len(datas), 2)
 
+    def test_put_tuple_ordered(self):
+        #  Testing put tuple with no frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_tuples_unordered()
+        df = DataFrame('test', columns)
+        df.put(data)
+        self.assertEqual(df.size, 2)
+        data = self.get_tuples_unordered(True)
+        df.put(data)
+        self.assertEqual(df.size, 6)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
+
     def test_put_dict(self):
         #  Testing put dict with no frame col in both data and cols.
         columns = self.get_columns()
@@ -166,6 +201,22 @@ class TestDataframe(unittest.TestCase):
 
         datas = df.get(8, 4)
         self.assertEqual(len(datas), 2)
+
+    def test_put_dict_ordered(self):
+        #  Testing put tuple with no frame col in both data and cols.
+        columns = self.get_columns()
+        data = self.get_dict_unordered()
+        df = DataFrame('test', columns)
+        df.put(data)
+        self.assertEqual(df.size, 2)
+        data = self.get_dict_unordered(True)
+        df.put(data)
+        self.assertEqual(df.size, 6)
+        count = 0
+        for x in df:
+            self.assertEqual(x[0], count)
+            self.assertEqual(x[2].row_id, count)
+            count += 1
 
     def test_multithread(self):
         columns = self.get_columns()

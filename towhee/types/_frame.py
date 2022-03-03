@@ -58,9 +58,9 @@ class _Frame:
         Operator input-data's row_id.
     """
 
-    def __init__(self, row_id: int = -1, parent_path: str = '',
+    def __init__(self, row_id: int = None, parent_path: str = '',
                  timestamp: int = Optional[None], empty: bool = False,
-                 prev_id=-1):
+                 prev_id=None):
         self._row_id = row_id
         self._timestamp = timestamp
         self._parent_path = parent_path
