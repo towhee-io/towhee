@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from zipfile import ZipFile
 import glob
 from pathlib import Path, PosixPath
 from typing import Union
 import numpy as np
+from io import BytesIO
+from zipfile import ZipFile
+from urllib.request import urlopen
 
 from towhee.types import Image
 from towhee.utils.log import engine_log
+from towhee.utils.repo_normalize import RepoNormalize
 
 try:
     import cv2
@@ -61,7 +64,11 @@ def from_zip(zip_src: Union[str, Path], pattern: str = '*.JPEG') -> Image:
         (`towhee.types.Image`)
             The image wrapepd as towhee's Image.
     """
-    zip_path = str(Path(zip_src).resolve())
+    if RepoNormalize(str(zip_src)).url_valid():
+        with urlopen(zip_src) as zip_file:
+            zip_path = BytesIO(zip_file.read())
+    else:
+        zip_path = str(Path(zip_src).resolve())
     with ZipFile(zip_path, 'r') as zfile:
         file_list = zfile.namelist()
         path_list = glob.fnmatch.filter(file_list, pattern)
