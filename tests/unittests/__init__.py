@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 
 from towhee.engine.engine import Engine, EngineConfig
+from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 
 UNITTESTS_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +27,17 @@ MODEL_RESOURCE = os.path.join(UNITTESTS_ROOT, 'models/resource')
 
 
 CACHE_PATH = Path(__file__).parent.resolve()
+
+new_cache = (CACHE_PATH/'test_cache')
+pipeline_cache = (CACHE_PATH/'test_util')
+operator_cache = (CACHE_PATH/'mock_operators')
+fmc = FileManagerConfig()
+fmc.update_default_cache(new_cache)
+pipelines = list(pipeline_cache.rglob('*.yaml'))
+operators = [f for f in operator_cache.iterdir() if f.is_dir()]
+fmc.cache_local_pipeline(pipelines)
+fmc.cache_local_operator(operators)
+FileManager(fmc)
 
 conf = EngineConfig()
 conf.cache_path = CACHE_PATH
