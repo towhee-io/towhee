@@ -513,7 +513,7 @@ class EarlyStoppingCallback(Callback):
             will count as no improvement.
         patience (`str`):
             Number of epochs with no improvement after which training will
-             be stopped.
+            be stopped.
         mode (`str`):
             One of `{"min", "max"}`. In `min` mode, training will stop when
             the quantity monitored has stopped decreasing; in `"max"`
