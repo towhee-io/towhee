@@ -32,6 +32,11 @@ def load_yaml(stream, typ: str = 'safe'):
     """
     yaml = YAML(typ=typ)
     data = yaml.load(stream=stream)
+    if not isinstance(data, dict):
+        raise ValueError(
+            'The loaded data should be a dict, please check your yaml source.\
+            (Such error is very likely caused by using dash instead of underline in yaml file name.)'
+        )
 
     return data
 
