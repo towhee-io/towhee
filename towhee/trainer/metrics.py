@@ -44,15 +44,27 @@ class Metrics:
         pass
 
     def update(self, *_: Any, **__: Any) -> None:
+        """
+        Update the metric internal status.
+        """
         raise NotImplementedError
 
     def compute(self) -> float:
+        """
+        Get the metric value.
+        """
         raise NotImplementedError
 
     def reset(self) -> None:
+        """
+        Reset the internal status of 'Metrics'.
+        """
         raise NotImplementedError
 
     def to(self, *args, **kwargs):
+        """
+        Make 'Metrics' calculation on specific device.
+        """
         raise NotImplementedError
 
 class TMMetrics(Metrics):
