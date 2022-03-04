@@ -339,7 +339,7 @@ class DataFrame:
         with  self._data_lock:
             if not isinstance(item, list):
                 item = [item]
-  
+
             start_len = self._len
 
             for x in item:
@@ -348,6 +348,7 @@ class DataFrame:
             # Clear cache after inserting
             self._put_cached()
 
+            frame = None
             if (self._len - start_len) > 0 and self.current_size > 0:
                 frame = self._data_as_list[-1][-1]
                 cur_len = self._len
