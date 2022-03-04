@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy
 from typing import Iterable, Iterator
 from random import random, sample, shuffle
 
@@ -275,25 +274,6 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         [1, 2, 3]
         """
         return [getattr(i, name) for i in self._iterable]
-
-    @_private_wrapper
-    def normalize(self, name: str = 'feature_vector'):
-        """
-        normalize the output embedding
-
-        Examples:
-        >>> from typing import NamedTuple
-        >>> import numpy
-        >>> Outputs = NamedTuple('Outputs', [('feature_vector', numpy.array)])
-        >>> dc = DataCollection([Outputs(numpy.array([3, 4])), Outputs(numpy.array([6,8]))])
-        >>> dc.select(name='num')
-        [array([0.6, 0.8]), array([0.6, 0.8])]
-        """
-        buff = []
-        for ele in self.select(name):
-            vector = numpy.array(ele)
-            buff.append(vector / numpy.linalg.norm(vector))
-        return buff
 
     @_private_wrapper
     def select_from(self, dc):
