@@ -38,7 +38,7 @@ def _get_attr_str(obj, attr_name):
 
 def dump_default_yaml(yaml_path):
     """
-    dump a default yaml, which can be overridden by the custom operator.
+    Dump a default yaml, which can be overridden by the custom operator.
     """
     training_config = TrainingConfig()
     training_config.save_to_yaml(path2yaml=yaml_path)
@@ -69,7 +69,7 @@ def _model_checkpoint_factory():
 @dataclass
 class TrainingConfig:
     """
-    the training config, it can be defined in a yaml file
+    The training config, it can be defined in a yaml file
 
     Args:
         output_dir (`str`):
@@ -290,9 +290,11 @@ class TrainingConfig:
     def load_from_yaml(self, path2yaml: str = None):
         """
         Load training configuration from yaml.
+
         Args:
             path2yaml (`str`):
                 The path to yaml.
+
         Example:
             >>> from towhee.trainer.training_config import TrainingConfig
             >>> from pathlib import Path
@@ -315,9 +317,11 @@ class TrainingConfig:
     def save_to_yaml(self, path2yaml: str = None):
         """
         Save training configuration to yaml.
+
         Args:
             path2yaml (`str`):
                 The path to yaml.
+
         Example:
             >>> from towhee.trainer.training_config import TrainingConfig
             >>> from pathlib import Path
