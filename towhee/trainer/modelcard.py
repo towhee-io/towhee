@@ -65,6 +65,10 @@ class ModelCard:
         >>> # Print out model name stored in model card
         >>> model_card.model_name
         'test'
+        >>> # Save model card to "path/to/my_dir" as README.md
+        >>> model_card.save_model_card('/path/to/my_dir')
+        >>> # Save model card as "/path/to/my_dir/model_card.md"
+        >>> model_card.save_model_card('/path/to/my_dir/model_card.md')
     """
     model_name: Optional[str] = None
     model_architecture: Optional[str] = None
@@ -98,14 +102,6 @@ class ModelCard:
         Args:
             save_directory_or_file (`str`):
                 file path or directory to write and save model card.
-        Return:
-            a model card written with its attributes
-
-        Example:
-            >>> from towhee.trainer.modelcard import ModelCard
-            >>> model_card = ModelCard(model_name='test', tasks='classification: num_class=10')
-            >>> model_card.save_model_card('/path/to/test/directory/')
-            Model card is saved as 'README.md' under '/path/to/test/directory/'
         """
         model_card = f"# {self.model_name}"
         model_card += f"\n\n## Model overview\n{self.model_overview}\n"

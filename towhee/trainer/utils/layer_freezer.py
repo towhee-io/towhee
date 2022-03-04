@@ -16,7 +16,24 @@ class LayerFreezer:
         >>> from towhee.models.vit.vit import VitModel
         >>> my_model = VitModel('vit_base_patch16_224')
         >>> my_freezer = LayerFreezer(my_model)
-        A LayerFreezer `my_freezer` is created for the model `my_model`.
+        >>> # Check if modules in the last layer are frozen
+        >>> my_freezer.status(-1)
+        >>> # Check if modules in the layer "head" are frozen
+        >>> my_freezer.status("head")
+        ['unfrozen', 'unfrozen']
+        >>> # Show all frozen layers
+        >>> my_freezer.show_frozen_layers()
+        ['patch_embed', 'head']
+        >>> # Freeze layers by a list of layer indexes
+        >>> my_freezer.by_idx([0, -1])
+        >>> # Freeze layers by a list of layer names
+        >>> my_freezer.by_names(['head'])
+        >>> # Freeze all layers
+        >>> my_freezer.set_all()
+        >>> # Unfreeze all layers
+        >>> my_freezer.set_all(freeze=False)
+        >>> # Freeze all except the last layer
+        >>> my_freezer.set_slice(-1)
     """
 
     def __init__(self, model):
@@ -33,17 +50,6 @@ class LayerFreezer:
                 the name or index of layer.
         Return:
             A list of status ('frozen' or 'unfrozen') to indicate if modules in the layer are frozen or not.
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> # Check if modules in the last layer are frozen
-            >>> my_freezer.status(-1)
-            >>> # Check if modules in the layer "head" are frozen
-            >>> my_freezer.status("head")
-            ['unfrozen', 'unfrozen']
         """
         if isinstance(layer, str):
             if layer not in self.layer_names:
@@ -70,15 +76,6 @@ class LayerFreezer:
             None.
         Return:
             A list of names of frozen layers
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> my_freezer.by_idx([0, -1])
-            >>> my_freezer.show_frozen_layers()
-            ['patch_embed', 'head']
         """
         outs = []
         for name, layer in self.model.named_children():
@@ -100,17 +97,6 @@ class LayerFreezer:
                 a list of layer names
             freeze (`bool`):
                 if or not freeze layers (default: True)
-        Return:
-            None.
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> my_freezer.by_names(['head'])
-            >>> my_freezer.status('head')
-            ['frozen', 'frozen']
         """
         if not set(names).issubset(set(self.layer_names)):
             invalid_names = set(names) - set(self.layer_names)
@@ -131,17 +117,6 @@ class LayerFreezer:
                 a list of layer indexes
             freeze (`bool`):
                 if or not freeze layers (default: True)
-        Return:
-            None.
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> my_freezer.by_names([-1])
-            >>> my_freezer.status(-1)
-            ['frozen', 'frozen']
         """
         for i in idx:
             for param in list(self.model.children())[i].parameters():
@@ -154,18 +129,6 @@ class LayerFreezer:
         Args:
             freeze (`bool`):
                 if or not freeze layers (default: True)
-        Return:
-            None.
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> # Freeze all layers
-            >>> my_freezer.set_all()
-            >>> # Unfreeze all layers
-            >>> my_freezer.set_all(freeze=False)
         """
         for layer in self.model.children():
             for param in layer.parameters():
@@ -180,16 +143,6 @@ class LayerFreezer:
                 number to slice the list of layers
             freeze (`bool`):
                 if or not freeze layers (default: True)
-        Return:
-            None.
-
-        Example:
-            >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-            >>> from towhee.models.vit.vit import VitModel
-            >>> my_model = VitModel('vit_base_patch16_224')
-            >>> my_freezer = LayerFreezer(my_model)
-            >>> # Freeze all except the last layer
-            >>> my_freezer.set_slice(-1)
         """
         myslice = slice(slice_num)
         slice_idx = list(range(self.layer_count))[myslice]
