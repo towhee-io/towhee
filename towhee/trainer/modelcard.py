@@ -60,46 +60,27 @@ class ModelCard:
             source of model card (default = "trainer")
 
     Example:
-    >>> from towhee.trainer.modelcard import ModelCard
-    >>> model_card = ModelCard(model_name='test')
-    >>> # Print out model name stored in model card
-    >>> model_card.model_name
-    'test'
-
+        >>> from towhee.trainer.modelcard import ModelCard
+        >>> model_card = ModelCard(model_name='test')
+        >>> # Print out model name stored in model card
+        >>> model_card.model_name
+        'test'
     """
-    def __init__(
-            self,
-            model_name: Optional[str] = None,
-            model_architecture: Optional[str] = None,
-            model_overview: Optional[str] = None,
-            language: Optional[Union[str, List[str]]] = None,
-            # license: Optional[str] = None,
-            tags: Optional[Union[str, List[str]]] = None,
-            tasks: Optional[Union[str, List[str]]] = None,
-            datasets: Optional[Union[str, List[str]]] = None,
-            datasets_tags: Optional[Union[str, List[str]]] = None,
-            dataset_args: Optional[Union[str, List[str]]] = None,
-            eval_results: Optional[Dict[str, float]] = None,
-            eval_lines: Optional[List[str]] = None,
-            training_summary: Optional[Dict[str, Any]] = None,
-            training_config: Optional[TrainingConfig] = None,
-            source: Optional[str] = "trainer"
-            ):
-        self.model_name = model_name
-        self.model_architecture = model_architecture
-        self.model_overview = model_overview
-        self.language = language
-        # self.license = license
-        self.tags = tags
-        self.tasks = tasks
-        self.datasets = datasets
-        self.datasets_tags = datasets_tags
-        self.dataset_args = dataset_args
-        self.eval_results = eval_results
-        self.eval_lines = eval_lines
-        self.training_summary = training_summary
-        self.training_config = training_config
-        self.source = source
+    model_name: Optional[str] = None
+    model_architecture: Optional[str] = None
+    model_overview: Optional[str] = None
+    language: Optional[Union[str, List[str]]] = None
+    # license: Optional[str] = None
+    tags: Optional[Union[str, List[str]]] = None
+    tasks: Optional[Union[str, List[str]]] = None
+    datasets: Optional[Union[str, List[str]]] = None
+    datasets_tags: Optional[Union[str, List[str]]] = None
+    dataset_args: Optional[Union[str, List[str]]] = None
+    eval_results: Optional[Dict[str, float]] = None
+    eval_lines: Optional[List[str]] = None
+    training_summary: Optional[Dict[str, Any]] = None
+    training_config: Optional[TrainingConfig] = None
+    source: Optional[str] = "trainer"
 
     def __post_init__(self):
         pass

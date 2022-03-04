@@ -34,7 +34,7 @@ trainer.modelcard module
 
 .. automodule:: trainer.modelcard
    :members:
-   :undoc-members:
+   :exclude-members: dataclass
    :show-inheritance:
 
 trainer.scheduler module
@@ -58,7 +58,7 @@ trainer.training\_config module
 
 .. automodule:: trainer.training_config
    :members:
-   :undoc-members:
+   :exclude-members: dataclass
    :show-inheritance:
 
 Module contents
