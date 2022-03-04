@@ -165,6 +165,36 @@ Operator dispatch contains a hub-based resolve that loads operators from [towhee
 
 This section will explain how to use `DataCollection` to complete your daily data science works.
 
+## Image Search
+
+Preparing code and data:
+
+```python
+import towhee
+from towhee.functional import DataCollection
+
+dataset = DataCollection.from_zip('https://towhee.io/towhee/image-dataset/media/branch/main/image_dataset.zip', '*/dataset/*.JPEG').unstream()
+query = DataCollection.from_zip('https://towhee.io/towhee/image-dataset/media/branch/main/image_dataset.zip', '*/query/*.JPEG').unstream()
+```
+
+Transform image dataset into feature vectors:
+
+```python
+dc_data = dataset.towhee.resnet_image_embedding(model_name='resnet50').select('feature_vector')
+```
+
+Search for similar images:
+
+```python
+result = (
+   query.towhee.resnet_image_embedding(model_name='resnet50')   # get the query embedding
+        .towhee.search_vectors(data=dc_data, cal='L2', topk=5)  # search in dataset
+        .map(lambda x: x.ids)                                   # get the ids(index) of similar results 
+        .select_from(dataset)                                   # get the result image
+)
+towhee.plot(query.to_list(), result.to_list())
+```
+
 ## training imagenet
 ```python
 >>> dataset = DataCollection.from_glob('path_train/*.jpg') \

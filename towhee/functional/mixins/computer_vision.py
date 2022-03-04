@@ -13,14 +13,38 @@
 # limitations under the License.
 
 
+def _normalize(x):
+    import numpy as np # pylint: disable=import-outside-toplevel
+    return x / np.linalg.norm(x)
+
+
 class ComputerVisionMixin:
     """
     Mixin for computer vision problems.
 
     Examples:
-    >>> from towhee.functional import DataCollection
-    >>> DataCollection.from_camera(1).imshow()
+    # >>> from towhee.functional import DataCollection
+    # >>> DataCollection.from_camera(1).imshow()
     """
+
+    def normalize(self, name=None):
+        """
+        normalize the output embedding
+
+        Examples:
+        >>> from typing import NamedTuple
+        >>> import numpy
+        >>> from towhee.functional import DataCollection
+        >>> Outputs = NamedTuple('Outputs', [('feature_vector', numpy.array)])
+        >>> dc = DataCollection([Outputs(numpy.array([3, 4])), Outputs(numpy.array([6,8]))])
+        >>> dc.normalize(name='feature_vector').to_list()
+        [array([0.6, 0.8]), array([0.6, 0.8])]
+        """
+        if name is not None:
+            retval = self.select(name).map(_normalize)
+        else:
+            retval = self.map(_normalize)
+        return self.factory(retval)
 
     def imshow(self, title="image"):
         import cv2  # pylint: disable=import-outside-toplevel
