@@ -10,8 +10,6 @@ callback:
     log_dir: null
 device:
   device_str: null
-  n_gpu: -1
-  sync_bn: false
 learning:
   loss: CrossEntropyLoss
   lr: 5.0e-05
@@ -26,7 +24,7 @@ metrics:
 train:
   batch_size: 8
   dataloader_drop_last: true
-  dataloader_num_workers: -1
+  dataloader_num_workers: 0
   dataloader_pin_memory: true
   epoch_num: 2
   eval_steps: null

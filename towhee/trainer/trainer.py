@@ -315,7 +315,7 @@ class Trainer:
             dist.barrier()
 
     def _load_before_train(self, resume_checkpoint_path: Optional[str], rank: Optional[int]):
-        sync_bn = self.configs.sync_bn
+        # sync_bn = self.configs.sync_bn
         if resume_checkpoint_path is not None:
             # weights_dict = torch.load(weights_path, map_location=device)
             # load_weights_dict = {k: v for k, v in weights_dict.items()
@@ -332,8 +332,8 @@ class Trainer:
                 self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.configs.device))
         if self.distributed:
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
-            if sync_bn:
-                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
+            # if sync_bn:
+            #     self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
 
     def _create_logs(self):
         logs = {"global_step": 0, "epoch": self.epoch}

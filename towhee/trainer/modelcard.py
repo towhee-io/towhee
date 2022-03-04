@@ -164,8 +164,8 @@ class ModelCard:
                 model_card += f"\nRandom seed is {self.training_config.seed}.\n"
             if self.training_config.epoch_num is not None:
                 model_card += f"\nTraining epochs is {self.training_config.epoch_num}.\n"
-            if self.training_config.n_gpu is not None:
-                model_card += f"\nNumber of GPUs is {self.training_config.n_gpu}.\n"
+            # if self.training_config.n_gpu is not None:
+            #     model_card += f"\nNumber of GPUs is {self.training_config.n_gpu}.\n"
         else:
             model_card += "\nTraining configurations is needed.\n"
 

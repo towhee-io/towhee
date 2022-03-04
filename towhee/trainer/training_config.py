@@ -232,20 +232,19 @@ class TrainingConfig:
             HELP: (
                 "None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
                 "`cpu` -> use cpu only;"
-                "`cuda` -> use some gpu devices, and the using gpu count should be specified in args `n_gpu`;"
                 "`cuda:2` -> use the No.2 gpu."
             ),
             CATEGORY: "device"
         }
     )
-    n_gpu: int = field(default=-1, metadata={
-        HELP: "should be specified when device_str is `cuda`",
-        CATEGORY: "device"
-    })
-    sync_bn: bool = field(default=False, metadata={
-        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
-        CATEGORY: "device"
-    })
+    # n_gpu: int = field(default=-1, metadata={
+    #     HELP: "should be specified when device_str is `cuda`",
+    #     CATEGORY: "device"
+    # })
+    # sync_bn: bool = field(default=False, metadata={
+    #     HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
+    #     CATEGORY: "device"
+    # })
     freeze_bn: bool = field(default=False, metadata={
         HELP: "will completely freeze all BatchNorm layers during training.",
         CATEGORY: "train"
