@@ -25,11 +25,6 @@ def test_suite():
     return test_suite
 
 
-def create_towhee_cache(dst: str):
-    if not Path(dst).is_dir():
-        Path(dst).mkdir(parents=True)
-
-
 def parse_requirements(file_name: str) -> List[str]:
     with open(file_name) as f:
         return [require.strip() for require in f if require.strip() and not require.startswith("#")]
