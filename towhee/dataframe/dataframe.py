@@ -43,6 +43,10 @@ class DataFrame:
         self._name = name
         self._sealed = False
 
+        self._insert_cache_lock = threading.RLock()
+        self._insert_cache = {}
+        self._next_id = 0
+
         self._iterator_lock = threading.RLock()
         self._it_id = 0
         self._iterators = {}
@@ -97,8 +101,6 @@ class DataFrame:
                     values = []
                     for i in range(len(self._data_as_list)):
                         val = self._data_as_list[i][x]
-                        if isinstance(val, _Frame):
-                            val = (val.row_id, val.prev_id, val.timestamp,)
                         values.append(str(val))
                     ret += formater.format(*values) + '\n'
 
@@ -334,33 +336,36 @@ class DataFrame:
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, (tuple, dict, list)), f'Dataframe input must be of type (tuple, dict, list), not {type(item)}'
         with  self._data_lock:
+            start_len = self._len
             if not isinstance(item, list):
                 item = [item]
             for x in item:
-                if isinstance(x, dict):
-                    if self._put_dict(x) == -1:
-                        return
-                elif isinstance(x, tuple):
-                    if self._put_tuple(x) == -1:
-                        return
-                else:
-                    raise ValueError('Input data is of wrong format.')
+                self._put(x)
 
-            frame = self._data_as_list[-1][-1]
-            cur_len = self._len
+             # Clear cache after inserting.
+            self._put_cached()
 
-        # Release blocked iterators if their criteria met.
+            frame = None
+            # Only check blocked iterators if new value added.
+            if (self._len - start_len) > 0 and self.current_size > 0:
+                frame = self._data_as_list[-1][-1]
+                cur_len = self._len
+
+        if frame is not None:
+            self._check_blocked(frame, cur_len)
+
+    def _check_blocked(self, frame, cur_len):
+        """Unblock iterators if their criteria has been met."""
         with self._block_lock:
             if len(self._map_blocked) > 0:
-                ret = []
+                rem = []
                 for i, id_events in self._map_blocked.items():
                     if i <= cur_len:
                         for _, event in id_events:
                             event.set()
-                        ret.append(i)
-                for key in ret:
+                        rem.append(i)
+                for key in rem:
                     del self._map_blocked[key]
-
             if len(self._window_start_blocked) > 0:
                 rem = []
                 for cutoff, id_events in self._window_start_blocked.items():
@@ -370,7 +375,6 @@ class DataFrame:
                         rem.append(cutoff)
                 for key in rem:
                     del self._window_start_blocked[key]
-
             if len(self._window_end_blocked) > 0:
                 rem = []
                 for cutoff, id_events in self._window_end_blocked.items():
@@ -381,16 +385,43 @@ class DataFrame:
                 for key in rem:
                     del self._window_end_blocked[key]
 
+    def _put(self, item):
+        """Method that decides which format the data is in and calls put."""
+        if isinstance(item, dict):
+            return self._put_dict(item)
+        elif isinstance(item, tuple):
+            return self._put_tuple(item)
+        else:
+            raise ValueError('Input data is of wrong format.')
+
+    def _put_cached(self):
+        """Empty cache values into the data list when the index is reached."""
+        if len(self._insert_cache) != 0:
+            with self._insert_cache_lock:
+                item = self._insert_cache.pop(self._next_id, None)
+                while item is not None:
+                    # If the row is a frame, skip it but increment next_id
+                    if item == -1:
+                        self._next_id += 1
+                    else:
+                        self._put(item)
+                    item = self._insert_cache.pop(self._next_id, None)
 
     def _put_tuple(self, item: tuple):
         """Appending a tuple to the dataframe."""
-
-        item = list(item)
         if not isinstance(item[-1], _Frame):
-            item.append(_Frame(row_id=self._len))
+            item = item + (_Frame(row_id=self._len), )
         else:
+            # If row is empty, append to the insert cache for skipping.
             if item[-1].empty:
-                return -1
+                with self._insert_cache_lock:
+                    self._insert_cache[item[-1].prev_id] = -1
+                    return -1
+            # if prev_id exists and its not equal to next_id, cache it
+            elif item[-1].prev_id != -1 and item[-1].prev_id != self._next_id:
+                with self._insert_cache_lock:
+                    self._insert_cache[item[-1].prev_id] = item
+                    return -2
             item[-1].row_id = self._len
 
         # TODO: Figure out the situation on type checking
@@ -402,14 +433,23 @@ class DataFrame:
             self._data_as_list[i].put(x)
 
         self._len += 1
+        self._next_id += 1
 
     def _put_dict(self, item: dict):
         """Appending a dict to the dataframe."""
         if item.get(FRAME, None) is None:
             item[FRAME] = _Frame(self._len)
         else:
+            # If row is empty, append to the insert cache for skipping.
             if item[FRAME].empty:
-                return -1
+                with self._insert_cache_lock:
+                    self._insert_cache[item[-1].prev_id] = -1
+                    return -1
+            # if prev_id exists and its not equal to next_id, cache it
+            elif item[FRAME].prev_id != -1 and item[FRAME].prev_id != self._next_id:
+                with self._insert_cache_lock:
+                    self._insert_cache[item[FRAME].prev_id] = item
+                    return -2
             item[FRAME].row_id = self._len
 
         # I believe its faster to loop through and check than list comp
@@ -421,6 +461,7 @@ class DataFrame:
             self._data_as_list[self._schema.col_index(key)].put(val)
 
         self._len += 1
+        self._next_id += 1
 
     def seal(self):
         """

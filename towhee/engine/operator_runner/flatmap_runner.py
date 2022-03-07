@@ -36,6 +36,7 @@ class FlatMapRunner(RunnerBase):
                 frame.parent_path = str(frame.prev_id)
             else:
                 frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
+            frame.prev_id = -1
 
             item = data._asdict()
             item.update({FRAME: frame})

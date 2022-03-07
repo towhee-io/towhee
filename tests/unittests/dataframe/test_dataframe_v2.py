@@ -33,6 +33,12 @@ class TestDataframe(unittest.TestCase):
             return [(0, 'a', _Frame(row_id = 4, timestamp=4)), (1, 'b', _Frame(5, timestamp=5)), (2, 'c', _Frame(6, timestamp=6))]
         return [(0, 'a'), (1, 'b'), (2, 'c')]
 
+    def get_unordered(self, ordered = False):
+        data = [(0, 'a', _Frame(prev_id=0)), (1, 'b', _Frame(prev_id=1)), (2, 'c', _Frame(prev_id=2))]
+        if ordered:
+            return data
+        return data[::-1]
+
     def get_dict(self, frames = False):
         if frames:
             ret = []
@@ -199,6 +205,27 @@ class TestDataframe(unittest.TestCase):
 
         self.assertEqual(q.qsize(), data_size * 10)
 
+    def test_unordered(self):
+        data = self.get_unordered(True)
+        columns = self.get_columns()
+        df = DataFrame('test', columns)
+        df.put(data)
+        df.seal()
+        self.assertEqual(df.size, 3)
+        df = DataFrame('test', columns)
+        data = self.get_unordered(False)
+        df.put(data)
+        df.seal()
+        self.assertEqual(df.size, 3)
+
+    def test_empty(self):
+        data = [(0, 'a', _Frame(empty=True, prev_id = 0)), (2, 'b', _Frame(empty = True, prev_id = 2)),
+            (1, 'c', _Frame(prev_id = 1)), (3, 'd', _Frame(prev_id = 3))]
+        columns = self.get_columns()
+        df = DataFrame('test', columns)
+        df.put(data)
+        df.seal()
+        self.assertEqual(df.size, 2)
 
 if __name__ == '__main__':
     unittest.main()
