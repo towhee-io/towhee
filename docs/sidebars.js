@@ -38,6 +38,11 @@ const sidebars = {
       ],
     },
     {
+      'Fine tuning': [
+          'fine-tuning/train-operators/quick-start-training'
+      ]
+    },
+    {
       'Supported pipelines': [
         'pipelines/image-embedding',
         'pipelines/audio-embedding',

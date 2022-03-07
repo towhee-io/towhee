@@ -1,4 +1,7 @@
-# Quick start to train an operator on a toy fake dataset.
+---
+id: quick-start-training
+title: Quick start to train an operator on a toy fake dataset.
+---
 
 ### Just start a jupyter-notebook and follow the steps below.
 
