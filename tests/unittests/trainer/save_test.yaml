@@ -1,37 +1,37 @@
-callback:
-  early_stopping:
-    mode: max
-    monitor: eval_epoch_metric
-    patience: 4
-  model_checkpoint:
-    every_n_epoch: 1
-  tensorboard:
-    comment: ''
-    log_dir: null
 device:
-  device_str: null
-learning:
-  loss: CrossEntropyLoss
-  lr: 5.0e-05
-  lr_scheduler_type: linear
-  optimizer: Adam
-  warmup_ratio: 0.0
-  warmup_steps: 0
-logging:
-  print_steps: null
-metrics:
-  metric: Accuracy
+    device_str:
 train:
-  batch_size: 8
-  dataloader_drop_last: true
-  dataloader_num_workers: 0
-  dataloader_pin_memory: true
-  epoch_num: 2
-  eval_steps: null
-  eval_strategy: epoch
-  freeze_bn: false
-  load_best_model_at_end: false
-  output_dir: ./output_dir
-  overwrite_output_dir: true
-  seed: 42
-  val_batch_size: -1
+    output_dir: ./output_dir
+    overwrite_output_dir: true
+    eval_strategy: epoch
+    eval_steps:
+    batch_size: 8
+    val_batch_size: -1
+    seed: 42
+    epoch_num: 2
+    dataloader_pin_memory: true
+    dataloader_drop_last: true
+    dataloader_num_workers: 0
+    load_best_model_at_end: false
+    freeze_bn: false
+learning:
+    lr: 5e-05
+    loss: CrossEntropyLoss
+    optimizer: Adam
+    lr_scheduler_type: linear
+    warmup_ratio: 0.0
+    warmup_steps: 0
+logging:
+    print_steps:
+metrics:
+    metric: Accuracy
+callback:
+    early_stopping:
+        monitor: eval_epoch_metric
+        patience: 4
+        mode: max
+    model_checkpoint:
+        every_n_epoch: 1
+    tensorboard:
+        log_dir:
+        comment: ''
