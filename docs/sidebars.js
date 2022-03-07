@@ -25,7 +25,7 @@ const sidebars = {
         'get-started/install',
         'get-started/quick-start',
         'get-started/troubleshooting',
-        'get-started/Gsoc',
+        'get-started/gsoc-2022',
         //'get-started/pipeline-config',
       ],
     },
@@ -33,7 +33,7 @@ const sidebars = {
       Tutorials: [
         'tutorials/image-deduplication',
         'tutorials/music-recognition-system',
-        'tutorials/music-recognition-system2',
+        'tutorials/image-deduplication2',
         'tutorials/reverse-image-search',
       ],
     },
@@ -52,17 +52,15 @@ const sidebars = {
           Framework: [
             'developer-guides/framework/architecture-overview',
             'developer-guides/framework/pipeline-overview',
-            'developer-guides/framework/dag-details',
+            'developer-guides/framework/DAG-details',
             'developer-guides/framework/engine-details',
-            'developer-guides/framework/layer-subframework',
+            // 'developer-guides/framework/layer-subframework',
             'developer-guides/framework/hub-integration-and-caching',
             'developer-guides/framework/image-ensemble-training',
           ],
         },
         {
-          Models: [
-            'developer-guides/models/layers-overview.md',
-          ],
+          Models: ['developer-guides/models/layers-overview'],
         },
       ],
       //'advanced/roadmap',
