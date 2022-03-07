@@ -1,5 +1,5 @@
 ---
-id: Pipeline-overview
+id: pipeline-overview
 title: Pipeline overview
 ---
 
