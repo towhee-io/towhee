@@ -38,11 +38,11 @@ const sidebars = {
       ],
     },
     {
-      'Fine tuning': [
-          'fine-tuning/train-operators/quick-start-training',
-          'fine-tuning/train-operators/train-mnist-dataset',
-          'fine-tuning/train-operators/read-configs-from-yaml',
-          'fine-tuning/train-operators/fine-tune-from-imagenet'
+      'Fine Tune': [
+          'fine-tune/train-operators/quick-start-training',
+          'fine-tune/train-operators/train-mnist',
+          'fine-tune/train-operators/train-bird',
+          'fine-tune/train-operators/training-configs',
       ]
     },
     {
