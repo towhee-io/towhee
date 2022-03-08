@@ -3,7 +3,8 @@ id: training-configs
 title: Training Configs
 ---
 
-You can always setup training configs with a yaml file.
+You can always set up training configs directly in python scripts or with a yaml file.
+Refer to TrainingConfig for more API details.
 
 ## 1. Write Configs
 
