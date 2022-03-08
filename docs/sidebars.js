@@ -39,7 +39,10 @@ const sidebars = {
     },
     {
       'Fine tuning': [
-          'fine-tuning/train-operators/quick-start-training'
+          'fine-tuning/train-operators/quick-start-training',
+          'fine-tuning/train-operators/train-mnist-dataset',
+          'fine-tuning/train-operators/read-configs-from-yaml',
+          'fine-tuning/train-operators/fine-tune-from-imagenet'
       ]
     },
     {
