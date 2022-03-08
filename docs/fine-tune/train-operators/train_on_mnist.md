@@ -1,6 +1,6 @@
 ---
 id: train-mnist
-title: Example: Fine-Tune with MNIST
+title: Fine-Tune with MNIST
 ---
 
 Follow steps below to get started with a jupyter notebook for how to train a Towhee operator.

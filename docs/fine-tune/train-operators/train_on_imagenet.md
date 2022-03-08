@@ -1,6 +1,6 @@
 ---
 id: train-bird
-title: Example: Train a Bird Classification Model
+title: Train a Bird Classification Model
 ---
 
 Follow steps below to get started with a jupyter notebook for how to train a Towhee operator.
