@@ -12,6 +12,7 @@ Download operator files together with the jupyter notebook.
 $ git clone https://towhee.io/towhee/resnet-image-embedding.git
 $ cd resnet-image-embedding/examples
 ```
+Then run Python scripts in following steps to train and test a Towhee operator.
 
 ## 2. Setup Operator
 Create operator and load model by name.
