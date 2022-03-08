@@ -272,7 +272,8 @@ class _OperatorLazyWrapper:
         return self._kws
 
     @staticmethod
-    def callback(name, *arg, **kws):
+    def callback(name, index, *arg, **kws):
+        _ = index
         if len(arg) == 0:
             return _OperatorLazyWrapper(name, **kws)
         else:
@@ -288,8 +289,9 @@ Entry point for creating operator instances, for example:
 An instance of `my_namespace`/`my_operator_name` is created.
 """
 
-def _pipeline_callback(name, *arg, **kws):
+def _pipeline_callback(name, index, *arg, **kws):
     name = name.replace('.', '/').replace('_', '-')
+    _ = index
     return Build(**kws).pipeline(name, *arg)
 
 pipes = param_scope().callholder(_pipeline_callback)

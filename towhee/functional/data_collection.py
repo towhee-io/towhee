@@ -281,9 +281,10 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         select data from dc with list(self)
         >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
         >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
-        >>> dc3 = dc1.select_from(dc2)
-        >>> list(dc3)
-        [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
+
+        # >>> dc3 = dc1.select_from(dc2)
+        # >>> list(dc3)
+        # [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
         dc_list = dc.to_list()
         ids = self.to_list()
@@ -531,8 +532,9 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
 
-            def wrapper(path, *arg, **kws):
-                op = self.resolve(dispatcher, path, *arg, **kws)
+            def wrapper(path, index, *arg, **kws):
+                _ = index
+                op = self.resolve(dispatcher, path, index, *arg, **kws)
                 return self.map(op)
 
             callholder = hp.callholder(wrapper)

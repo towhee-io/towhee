@@ -162,43 +162,47 @@ class _Accessor(dict):
     __nonzero__ = __bool__
 
 
-class _CallHolder(dict):
+class _CallHolder:
     """
     Helper for tracking function calls.
 
     Examples:
     >>> ch = _CallHolder()
     >>> ch.my.foo(a=1,b=2)
-    ('my.foo', (), {'a': 1, 'b': 2})
+    ('my.foo', None, (), {'a': 1, 'b': 2})
 
     >>> ch.myspace2.gee(c=1,d=2)
-    ('myspace2.gee', (), {'c': 1, 'd': 2})
+    ('myspace2.gee', None, (), {'c': 1, 'd': 2})
     """
 
     @staticmethod
-    def default_callback(path, *arg, **kws):
-        return (path, arg, kws)
+    def default_callback(path, index, *arg, **kws):
+        return (path, index, arg, kws)
 
-    def __init__(self, callback: Callable=None, path=None):
-        super().__init__()
+    def __init__(self, callback: Callable = None, path=None, index=None):
         self._callback = callback if callback is not None else _CallHolder.default_callback
         self._path = path
+        self._index = index
 
     def __getattr__(self, name: str) -> Any:
-        if name in ['_path', '_callback']:
-            return self[name]
+        if name in self.__dict__:
+            return self.__dict__[name]
+        if name in ['_path', '_callback', '_index']:
+            return self.__dict__[name]
 
         if self._path:
             name = '{}.{}'.format(self._path, name)
-        return _CallHolder(self._callback, name)
+        return _CallHolder(self._callback, name, self._index)
 
     def __setattr__(self, name: str, value: Any):
-        if name in ['_path', '_callback']:
-            return self.__setitem__(name, value)
-        return
+        if name in ['_path', '_callback', '_index']:
+            self.__dict__[name] = value
+
+    def __getitem__(self, index):
+        return _CallHolder(self._callback, self._path, index)
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self._callback(self._path, *args, **kwds)
+        return self._callback(self._path, self._index, *args, **kwds)
 
 
 class HyperParameter(dict):
@@ -375,10 +379,10 @@ class HyperParameter(dict):
         Examples:
         >>> ch = param_scope().callholder()
         >>> ch.my.foo(a=1,b=2)
-        ('my.foo', (), {'a': 1, 'b': 2})
+        ('my.foo', None, (), {'a': 1, 'b': 2})
 
         >>> ch.myspace2.gee(c=1,d=2)
-        ('myspace2.gee', (), {'c': 1, 'd': 2})
+        ('myspace2.gee', None, (), {'c': 1, 'd': 2})
         """
         return _CallHolder(callback)
 
