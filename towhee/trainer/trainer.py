@@ -259,7 +259,7 @@ class Trainer:
         self.eval_dataloader = eval_dataloader
         self.distributed = False
 
-        os.makedirs(self.configs.output_dir, exist_ok=True)
+        Path(self.configs.output_dir).mkdir(exist_ok=True)
         if not isinstance(self.model_card, ModelCard):
             self.model_card = ModelCard()
 
@@ -430,7 +430,7 @@ class Trainer:
                 break
             if self.trainercontrol.should_save:
                 self.save(
-                    path=os.path.join(self.configs.output_dir, "epoch_" + str(self.epoch)),
+                    path=Path(self.configs.output_dir).joinpath("epoch_" + str(self.epoch)),
                     overwrite=self.configs.overwrite_output_dir
                 )
         trainer_log.info("\nTraining completed.\n")
@@ -439,7 +439,7 @@ class Trainer:
         self.callbacks.on_train_end(logs)
 
         self.save(
-            path=os.path.join(self.configs.output_dir, "final_epoch"),
+            path=Path(self.configs.output_dir).joinpath("final_epoch"),
             overwrite=self.configs.overwrite_output_dir
         )
 
@@ -630,7 +630,7 @@ class Trainer:
     def _cleanup_distributed(self, rank: int):
         if self.distributed:
             if rank == 0:
-                if os.path.exists(TEMP_INIT_WEIGHTS) is True:
+                if Path(TEMP_INIT_WEIGHTS).exists() is True:
                     os.remove(TEMP_INIT_WEIGHTS)
             dist.destroy_process_group()
 
@@ -948,7 +948,7 @@ class Trainer:
         Save the checkpoint information in a folder.
 
         Args:
-            path (`str`):
+            path (`Any`):
                 The folder path containing the model's checkpoints.
             overwrite (`bool`):
                 If True, it will overwrite the same name path when existing.

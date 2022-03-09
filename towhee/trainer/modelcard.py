@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-import os
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Union, Dict, Any, Optional, List
 
@@ -173,9 +173,9 @@ class ModelCard:
         else:
             model_card += "\nTraining summary is needed.\n"
 
-        if os.path.isdir(save_directory_or_file):
+        if Path.is_dir(Path(save_directory_or_file)):
             # If we save using the predefined names, we can load using `from_pretrained`
-            output_model_card_file = os.path.join(save_directory_or_file, MODEL_CARD_NAME)
+            output_model_card_file = Path(save_directory_or_file).joinpath(MODEL_CARD_NAME)
         else:
             output_model_card_file = save_directory_or_file
 
