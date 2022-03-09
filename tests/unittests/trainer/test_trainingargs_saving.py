@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+import os
 from pathlib import Path
 
 from towhee.trainer.training_config import TrainingConfig
@@ -30,6 +31,7 @@ class TestTrainConfigSaving(unittest.TestCase):
         ta.load_from_yaml(conf0)
         ta.save_to_yaml(conf)
         self.assertEqual(ta.epoch_num, 2)
+        os.remove(conf)
 
 
 if __name__ == '__main__':
