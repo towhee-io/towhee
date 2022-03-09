@@ -18,15 +18,15 @@ from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
 
 import torch
-
 from typing import Optional, Dict, Any, Union
-import yaml
 
 from towhee.utils.log import trainer_log
+from towhee.utils.yaml_utils import dump_yaml, load_yaml
 
 HELP = "help"
 CATEGORY = "category"
 OTHER_CATEGORY = "other"
+
 
 def _get_attr_str(obj, attr_name):
     fld = getattr(obj, attr_name)
@@ -46,11 +46,7 @@ def dump_default_yaml(yaml_path):
 
 
 def _early_stopping_factory():
-    return {
-        "monitor": "eval_epoch_metric",
-        "patience": 4,
-        "mode": "max"
-    }
+    return {"monitor": "eval_epoch_metric", "patience": 4, "mode": "max"}
 
 
 def _tensorboard_factory():
@@ -61,9 +57,7 @@ def _tensorboard_factory():
 
 
 def _model_checkpoint_factory():
-    return {
-        "every_n_epoch": 1
-    }
+    return {"every_n_epoch": 1}
 
 
 @dataclass
@@ -127,114 +121,91 @@ class TrainingConfig:
     """
     output_dir: str = field(
         default="./output_dir",
-        metadata={HELP: "The output directory where the model predictions and checkpoints will be written.",
-                  CATEGORY: "train"},
+        metadata={
+            HELP: "The output directory where the model predictions and checkpoints will be written.", CATEGORY: "train"
+        },
     )
     overwrite_output_dir: bool = field(
         default=True,
         metadata={
-            HELP: (
-                "Overwrite the content of the output directory."
-                "Use this to continue training if output_dir points to a checkpoint directory."
-            ),
+            HELP: ("Overwrite the content of the output directory."
+                   "Use this to continue training if output_dir points to a checkpoint directory."),
             CATEGORY: "train"
         },
     )
     eval_strategy: str = field(
         default="epoch",
-        metadata={HELP: "The evaluation strategy. It can be `steps`, `epoch`, `eval_epoch` or `no`,", CATEGORY: "train"},
+        metadata={
+            HELP: "The evaluation strategy. It can be `steps`, `epoch`, `eval_epoch` or `no`,", CATEGORY: "train"
+        },
     )
     eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
-    batch_size: Optional[int] = field(
-        default=8,
-        metadata={
-            HELP: "Batch size for training.",
-            CATEGORY: "train"
-        }
-    )
-    val_batch_size: Optional[int] = field(
-        default=-1,
-        metadata={
-            HELP: "Batch size for evaluation.",
-            CATEGORY: "train"
-        }
-    )
-    seed: int = field(default=42,
-                      metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
+    batch_size: Optional[int] = field(default=8, metadata={HELP: "Batch size for training.", CATEGORY: "train"})
+    val_batch_size: Optional[int] = field(default=-1, metadata={HELP: "Batch size for evaluation.", CATEGORY: "train"})
+    seed: int = field(default=42, metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
 
-    epoch_num: int = field(default=2,
-                             metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
-    dataloader_pin_memory: bool = field(
-        default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"}
-    )
+    epoch_num: int = field(default=2, metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
+    dataloader_pin_memory: bool = field(default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"})
     dataloader_drop_last: bool = field(
-        default=True,
-        metadata={HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"}
+        default=True, metadata={
+            HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"
+        }
     )
     dataloader_num_workers: int = field(
         default=0,
         metadata={
-            HELP: "Number of subprocesses to use for data loading."
-                  "default 0 means that the data will be loaded in the main process."
-                  "-1 means using all the cpu kernels,"
-                  "it will greatly improve the speed when distributed training.",
-            CATEGORY: "train"
+            HELP:
+            "Number of subprocesses to use for data loading."
+            "default 0 means that the data will be loaded in the main process."
+            "-1 means using all the cpu kernels,"
+            "it will greatly improve the speed when distributed training.",
+            CATEGORY:
+            "train"
         },
     )
     lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
-    metric: Optional[str] = field(
-        default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"}
-    )
+    metric: Optional[str] = field(default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"})
 
     print_steps: Optional[int] = field(
-        default=None, metadata={
-            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`",
-            CATEGORY: "logging"}
+        default=None,
+        metadata={
+            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`", CATEGORY: "logging"
+        }
     )
     load_best_model_at_end: Optional[bool] = field(
         default=False,
-        metadata={HELP: "Whether or not to load the best model found during training at the end of training.",
-                  CATEGORY: "train"},
+        metadata={
+            HELP: "Whether or not to load the best model found during training at the end of training.", CATEGORY: "train"
+        },
     )
-    early_stopping: Union[dict, str] = field(
-        default_factory=_early_stopping_factory, metadata={HELP: ".", CATEGORY: "callback"}
-    )
-    model_checkpoint: Union[dict, str] = field(
-        default_factory=_model_checkpoint_factory, metadata={HELP: ".", CATEGORY: "callback"}
-    )
-    tensorboard: Optional[Union[dict, str]] = field(
-        default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"}
-    )
-    loss: Union[str, Dict[str, Any]] = field(
-        default="CrossEntropyLoss", metadata={HELP: "Pytorch loss in torch.nn package", CATEGORY: "learning"}
-    )
+    early_stopping: Union[dict, str] = field(default_factory=_early_stopping_factory, metadata={HELP: ".", CATEGORY: "callback"})
+    model_checkpoint: Union[dict, str] = field(default_factory=_model_checkpoint_factory, metadata={HELP: ".", CATEGORY: "callback"})
+    tensorboard: Optional[Union[dict, str]] = field(default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"})
+    loss: Union[str, Dict[str, Any]] = field(default="CrossEntropyLoss", metadata={HELP: "Pytorch loss in torch.nn package", CATEGORY: "learning"})
     optimizer: Union[str, Dict[str, Any]] = field(
-        default="Adam", metadata={HELP: "Pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"}
+        default="Adam", metadata={
+            HELP: "Pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"
+        }
     )
     lr_scheduler_type: str = field(
         default="linear",
         metadata={
-            HELP: (
-                "The scheduler type to use."
-                "eg. `linear`, `cosine`, `cosine_with_restarts`, `polynomial`, `constant`, `constant_with_warmup`"
-            ),
+            HELP: ("The scheduler type to use."
+                   "eg. `linear`, `cosine`, `cosine_with_restarts`, `polynomial`, `constant`, `constant_with_warmup`"),
             CATEGORY: "learning"
         },
     )
-    warmup_ratio: float = field(
-        default=0.0, metadata={HELP: "Linear warmup over warmup_ratio fraction of total steps.",
-                               CATEGORY: "learning"}
-    )
+    warmup_ratio: float = field(default=0.0, metadata={HELP: "Linear warmup over warmup_ratio fraction of total steps.", CATEGORY: "learning"})
     warmup_steps: int = field(default=0, metadata={HELP: "Linear warmup over warmup_steps.", CATEGORY: "learning"})
     device_str: str = field(
         default=None,
         metadata={
-            HELP: (
-                "None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
-                "`cpu` -> use cpu only;"
-                "`cuda:2` -> use the No.2 gpu."
-            ),
-            CATEGORY: "device"
+            HELP:
+            ("None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
+             "`cpu` -> use cpu only;"
+             "`cuda:2` -> use the No.2 gpu."),
+            CATEGORY:
+            "device"
         }
     )
     # n_gpu: int = field(default=-1, metadata={
@@ -245,10 +216,7 @@ class TrainingConfig:
     #     HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
     #     CATEGORY: "device"
     # })
-    freeze_bn: bool = field(default=False, metadata={
-        HELP: "will completely freeze all BatchNorm layers during training.",
-        CATEGORY: "train"
-    })
+    freeze_bn: bool = field(default=False, metadata={HELP: "will completely freeze all BatchNorm layers during training.", CATEGORY: "train"})
 
     def __post_init__(self):
         if self.output_dir is not None:
@@ -305,7 +273,7 @@ class TrainingConfig:
             2
         """
         with open(path2yaml, "r", encoding="utf-8") as f:
-            config_dict = yaml.safe_load(f)
+            config_dict = load_yaml(f)
             for file_category in config_dict:
                 if file_category not in self.config_category_set:
                     trainer_log.warning("category %s is not a attribute in TrainingConfig", file_category)
@@ -345,7 +313,7 @@ class TrainingConfig:
                 config_dict[OTHER_CATEGORY][field_name] = _get_attr_str(self, field_name)
                 trainer_log.warning("metadata in self.%s has no CATEGORY", config_field.name)
         with open(path2yaml, "w", encoding="utf-8") as file:
-            yaml.dump(config_dict, file)
+            dump_yaml(config_dict, file)
 
     def _set_attr_from_dict(self, train_config_dict):
         for key, value in train_config_dict.items():
