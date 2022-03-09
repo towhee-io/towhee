@@ -33,7 +33,6 @@ const sidebars = {
       Tutorials: [
         'tutorials/image-deduplication',
         'tutorials/music-recognition-system',
-        'tutorials/image-deduplication2',
         'tutorials/reverse-image-search',
       ],
     },
