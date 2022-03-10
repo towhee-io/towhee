@@ -61,6 +61,7 @@ const sidebars = {
             'developer-guides/framework/pipeline-overview',
             'developer-guides/framework/DAG-details',
             'developer-guides/framework/engine-details',
+            'developer-guides/framework/dataframe-details',
             // 'developer-guides/framework/layer-subframework',
             'developer-guides/framework/hub-integration-and-caching',
             'developer-guides/framework/image-ensemble-training',
