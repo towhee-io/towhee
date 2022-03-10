@@ -26,7 +26,8 @@ from torch import optim
 from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
-from torch.multiprocessing import Process
+import torch.multiprocessing as mp
+
 from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
 
 from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, PrintCallBack, ModelCheckpointCallback, \
@@ -34,7 +35,7 @@ from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, Pr
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME, MODEL_NAME, set_seed, reduce_value, \
-    is_main_process, send_to_device
+    is_main_process, send_to_device, unwrap_model
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
 from towhee.trainer.optimization.optimization import get_scheduler
@@ -255,7 +256,7 @@ class Trainer:
         self.metric_value = 0.0
         self.epoch = 0
         self.train_dataloader = train_dataloader
-        self.train_sampler = None
+        # self.train_sampler = None
         self.eval_dataloader = eval_dataloader
         self.distributed = False
 
@@ -280,24 +281,15 @@ class Trainer:
             self._spawn_train_process(resume_checkpoint_path)
         else:
             self.distributed = False
-            self.run_train(resume_checkpoint_path)
+            self.run_train(None, None, resume_checkpoint_path)
 
     def _spawn_train_process(self, resume_checkpoint_path: Optional[str]):
-        # world_size = torch.cuda.device_count()
-        # mp.spawn(self.run_train,
-        #          args=(world_size, resume_checkpoint_path),
-        #          nprocs=world_size,  # opt.world_size,
-        #          join=True)
-        process_list = []
-        world_size = self.configs.n_gpu
-        if world_size < 1:
-            trainer_log.warning("when `device_str` is `cuda`, `n_gpu` must be a positive int number.")
-        for rank in range(world_size):
-            process = Process(target=self.run_train, args=(resume_checkpoint_path, rank, world_size))
-            process.start()
-            process_list.append(process)
-        for process in process_list:
-            process.join()
+        world_size = torch.cuda.device_count()
+        mp.spawn(self.run_train,
+                 args=(world_size, resume_checkpoint_path),
+                 nprocs=world_size,  # opt.world_size,
+                 join=True)
+
 
     def _init_distributed(self, rank: int, world_size: int):
         if self.distributed:
@@ -315,7 +307,7 @@ class Trainer:
             dist.barrier()
 
     def _load_before_train(self, resume_checkpoint_path: Optional[str], rank: Optional[int]):
-        # sync_bn = self.configs.sync_bn
+        sync_bn = self.configs.sync_bn
         if resume_checkpoint_path is not None:
             # weights_dict = torch.load(weights_path, map_location=device)
             # load_weights_dict = {k: v for k, v in weights_dict.items()
@@ -332,8 +324,8 @@ class Trainer:
                 self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.configs.device))
         if self.distributed:
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
-            # if sync_bn:
-            #     self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
+            if sync_bn:
+                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
 
     def _create_logs(self):
         logs = {"global_step": 0, "epoch": self.epoch}
@@ -344,23 +336,22 @@ class Trainer:
     def prepare_inputs(self, inputs: Any):
         return send_to_device(inputs, self.configs.device)
 
-    def run_train(self, resume_checkpoint_path: str = None, rank: int = None, world_size: int = None):
+    def run_train(self, rank: int = None, world_size: int = None, resume_checkpoint_path: str = None):
         """
         Main training entry point.
         It is not recommended for users to use it unless over rewriting Trainer.
         Instead, it is recommended to use `trainer.train()` to start training.
 
         Args:
-            resume_checkpoint_path (`str`):
-                Last checkpoint path.
             rank (`int`):
                 Process rank when using multi gpus.
             world_size (`int`):
                 Total processes count.
+            resume_checkpoint_path (`str`):
+                Last checkpoint path.
         """
         set_seed(self.configs.seed)
         self._init_distributed(rank, world_size)
-
         self.model = self.model.to(self.configs.device)
         model = self.model
         self.trainercontrol = TrainerControl()
@@ -372,15 +363,14 @@ class Trainer:
 
         total_train_batch_size = self.configs.train_batch_size
         # if train_dataset_is_sized:
-        num_update_steps_per_epoch = len(train_dataloader)
+        # num_update_steps_per_epoch = len(train_dataloader)
+        num_update_steps_per_epoch = len(self.train_dataset)
         num_update_steps_per_epoch = max(num_update_steps_per_epoch, 1)
 
         train_last_epoch = self.epoch
         num_train_epochs = math.ceil(self.configs.epoch_num - train_last_epoch)
         num_train_steps = math.ceil(num_train_epochs * num_update_steps_per_epoch)
-
         self.setup_before_train(num_training_steps=num_train_steps, init_lr=self.lr_value)
-
         trainer_log.info("***** Running training *****")
         trainer_log.info("  Num Epochs = %d", num_train_epochs)
         trainer_log.info("  Total train batch size  = %d", total_train_batch_size)
@@ -391,14 +381,13 @@ class Trainer:
 
         logs = self._create_logs()
         self.callbacks.on_train_begin(logs)
-
         for epoch in range(train_last_epoch + 1, self.configs.epoch_num + 1):
             self.epoch = logs["epoch"] = epoch
             self.set_train_mode(model)
             self._reset_controller()
             self.optimizer.zero_grad()
-            if self.distributed:
-                self.train_sampler.set_epoch(self.epoch)
+            # if self.distributed: # todo
+                # self.train_sampler.set_epoch(self.epoch)
             # batch_loss_sum = 0.0
             self.callbacks.on_epoch_begin(self.epoch, logs)
             self.loss_metric.reset()
@@ -434,10 +423,8 @@ class Trainer:
                     overwrite=self.configs.overwrite_output_dir
                 )
         trainer_log.info("\nTraining completed.\n")
-
         self._cleanup_distributed(rank)
         self.callbacks.on_train_end(logs)
-
         self.save(
             path=Path(self.configs.output_dir).joinpath("final_epoch"),
             overwrite=self.configs.overwrite_output_dir
@@ -632,6 +619,8 @@ class Trainer:
             if rank == 0:
                 if Path(TEMP_INIT_WEIGHTS).exists() is True:
                     os.remove(TEMP_INIT_WEIGHTS)
+            # if is_main_process():
+            # self.model = unwrap_model(self.model)
             dist.destroy_process_group()
 
     def compute_loss(self, model: nn.Module, inputs: Any):
@@ -774,9 +763,10 @@ class Trainer:
                 drop_last=self.configs.dataloader_drop_last
             )
         else:
-            self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
+            # self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
+            train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
             train_batch_sampler = torch.utils.data.BatchSampler(
-                self.train_sampler, self.configs.batch_size, drop_last=True)
+                train_sampler, self.configs.batch_size, drop_last=True)
             return torch.utils.data.DataLoader(self.train_dataset,
                                                batch_sampler=train_batch_sampler,
                                                num_workers=num_workers,  # self.configs.dataloader_num_workers,
@@ -980,7 +970,7 @@ class Trainer:
                 "metric_value": self.metric_value,
                 "end_lr": self.lr_value
             }, state_path)
-            torch.save(self.model.state_dict(), model_path)
+            torch.save(unwrap_model(self.model).state_dict(), model_path)
             if isinstance(self.model_card, ModelCard):
                 self.model_card.save_model_card(modelcard_path)
             else:

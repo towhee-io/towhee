@@ -112,8 +112,6 @@ class TrainingConfig:
             Linear warmup over warmup_ratio fraction of total steps.
         device_str (`str`):
             Device string.
-        n_gpu (`int`):
-            Device should be specified when device_str is `cuda`.
         sync_bn (`bool`):
             It will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.
         freeze_bn (`bool`):
@@ -208,21 +206,15 @@ class TrainingConfig:
             "device"
         }
     )
-    # n_gpu: int = field(default=-1, metadata={
-    #     HELP: "should be specified when device_str is `cuda`",
-    #     CATEGORY: "device"
-    # })
-    # sync_bn: bool = field(default=False, metadata={
-    #     HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
-    #     CATEGORY: "device"
-    # })
+    sync_bn: bool = field(default=False, metadata={
+        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
+        CATEGORY: "device"
+    })
     freeze_bn: bool = field(default=False, metadata={HELP: "will completely freeze all BatchNorm layers during training.", CATEGORY: "train"})
 
     def __post_init__(self):
         if self.output_dir is not None:
             self.output_dir = os.path.expanduser(self.output_dir)
-        if self.device_str == "cuda" and self.n_gpu < 1:
-            raise ValueError("must specify the using gpu number when device_str is `cuda`")
         self.should_save = True
         self._get_config_categories()
 
