@@ -37,7 +37,7 @@ class GeneratorRunner(RunnerBase):
                 frame.parent_path = str(frame.prev_id)
             else:
                 frame.parent_path = '-'.join([frame.parent_path, str(frame.prev_id)])
-
+            frame.prev_id = -1
             item = data._asdict()
 
             if item.get('TIMESTAMP') is not None:

@@ -108,4 +108,4 @@ class _Frame:
         self._empty = empty
 
     def __str__(self) -> str:
-        return f'row_id={self.row_id}:parent_path={self.parent_path}:timestamp={self.timestamp}:empty={self.empty}'
+        return f'row_id={self.row_id}:parent_path={self.parent_path}:timestamp={self.timestamp}:empty={self.empty}:prev_id={self.prev_id}'
