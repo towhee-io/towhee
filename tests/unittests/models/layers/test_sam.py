@@ -30,4 +30,4 @@ class TestOperator(unittest.TestCase):
 
     def test_sam(self):
         optimizer = SAM(self.model.parameters(), self.base_optimizer, lr=0.1, momentum=0.9)
-        self.assertEqual(8, len(optimizer.base_optimizer.param_groups[0]))
+        self.assertEqual(9, len(optimizer.base_optimizer.param_groups[0]))
