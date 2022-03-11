@@ -9,6 +9,9 @@ class TowheeDataSet:
         self.framework = None
         self.dataset = None
 
+    def __len__(self):
+        raise NotImplementedError
+
 class TorchDataSet(TowheeDataSet):
     """
     pytorch dataset

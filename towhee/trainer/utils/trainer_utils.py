@@ -25,6 +25,7 @@ import torch
 import os
 from pathlib import Path
 import torch.distributed as dist
+from torch import nn
 
 
 def set_seed(seed: int):
@@ -186,3 +187,17 @@ def send_to_device(tensor: Any, device: torch.device):
         return hasattr(t, "to")
 
     return recursively_apply(_send_to_device, tensor, device, test_type=_has_to_method)
+
+
+def unwrap_model(model: nn.Module) -> nn.Module:
+    """
+    Unwraps a model from potential containers (as used in distributed training).
+
+    Args:
+        model (`torch.nn.Module`): The model to unwrap.
+    """
+    # since there could be multiple levels of wrapping, unwrap recursively
+    if hasattr(model, "module"):
+        return model.module
+    else:
+        return model
