@@ -24,14 +24,12 @@ import towhee.functional.data_collection
 import towhee.functional.option
 
 
-@register(name='myop/add-1', version='0.1')
+@register(name='myop/add-1')
 def add_1(x):
     return x + 1
 
 
-@register(name='myop/add',
-          version='0.1',
-          output_schema=namedtuple('output', [('result')]))
+@register(name='myop/add', output_schema=namedtuple('output', [('result')]))
 class MyAdd:
 
     def __init__(self, val):
@@ -41,7 +39,7 @@ class MyAdd:
         return x + self.val
 
 
-@register(name='myop/mul', version='0.1')
+@register(name='myop/mul')
 class MyMul:
 
     def __init__(self, val):
