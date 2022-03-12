@@ -16,15 +16,12 @@
 import unittest
 import torch
 
-from towhee.models.layers.patch_embed2d import PatchEmbed2D
+from towhee.models.layers.patch_embed3d import PatchEmbed3D
 
 
-class PatchEmbed2DTest(unittest.TestCase):
-    def test_patch_embed2d(self):
-        in_c = 3
-        img_height = img_width = 224
-        mod = PatchEmbed2D()
-        fake_input = torch.rand(1, in_c, img_height, img_width)
-        output = mod(fake_input)
-        gt_output_shape = torch.Size([1, 196, 768])
-        self.assertTrue(output.shape == gt_output_shape)
+class PatchEmbed3DTest(unittest.TestCase):
+    def test_patch_embed3d(self):
+        input_tensor = torch.rand(3, 3, 224, 224, 3)
+        pe3 = PatchEmbed3D()
+        output = pe3(input_tensor)  # shape: torch.Size([3, 96, 112, 56, 1])
+        self.assertTrue(output.shape == torch.Size([3, 96, 112, 56, 1]))
