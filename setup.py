@@ -27,26 +27,45 @@ def test_suite():
 
 def parse_requirements(file_name: str) -> List[str]:
     with open(file_name) as f:
-        return [require.strip() for require in f if require.strip() and not require.startswith("#")]
+        return [
+            require.strip() for require in f
+            if require.strip() and not require.startswith("#")
+        ]
 
 
-setup(
-    name="towhee",
-    version="0.5.1",
-    description="",
-    author="Towhee Team",
-    author_email="towhee-team@zilliz.com",
-    use_scm_version={"local_scheme": "no-local-version"},
-    setup_requires=['setuptools_scm'],
-    url="https://github.com/towhee-io/towhee",
-    test_suite="setup.test_suite",
-    install_requires=parse_requirements('requirements.txt'),
-    extras_require={':python_version<"3.7"': 'importlib-resources'},
-    tests_require=parse_requirements('test_requirements.txt'),
-    packages=find_packages(exclude=['*test*']),
-    package_data={'towhee.tests.test_util': ['*.yaml']},
-    license="http://www.apache.org/licenses/LICENSE-2.0",
-    entry_points={
-        'console_scripts': ['towhee=towhee.command.cmdline:main'],
+kws = {}
+try:
+    from sphinx.setup_command import BuildDoc # pylint: disable=import-outside-toplevel
+    cmdclass = {'build_sphinx': BuildDoc}
+    command_options = {
+        'build_sphinx': {
+            'project': ('setup.py', 'towhee'),
+            'version': ('setup.py', '0.5.1'),
+            'release': ('setup.py', '0.5.1'),
+            'source_dir': ('setup.py', 'towhee/doc/source')
+        }
     }
-)
+    kws = {'cmdclass': cmdclass, 'command_options': command_options}
+
+except: # pylint: disable=bare-except
+    pass
+
+setup(name="towhee",
+      version="0.5.1",
+      description="",
+      author="Towhee Team",
+      author_email="towhee-team@zilliz.com",
+      use_scm_version={"local_scheme": "no-local-version"},
+      setup_requires=['setuptools_scm'],
+      url="https://github.com/towhee-io/towhee",
+      test_suite="setup.test_suite",
+      install_requires=parse_requirements('requirements.txt'),
+      extras_require={':python_version<"3.7"': 'importlib-resources'},
+      tests_require=parse_requirements('test_requirements.txt'),
+      packages=find_packages(exclude=['*test*']),
+      package_data={'towhee.tests.test_util': ['*.yaml']},
+      license="http://www.apache.org/licenses/LICENSE-2.0",
+      entry_points={
+          'console_scripts': ['towhee=towhee.command.cmdline:main'],
+      },
+      **kws)
