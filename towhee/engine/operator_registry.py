@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import namedtuple
 from typing import Any, Dict, List
 
 from towhee.operator.base import SharedType
@@ -29,31 +30,84 @@ class OperatorRegistry:
 
     @staticmethod
     def resolve(name: str) -> Any:
+        with param_scope() as hp:
+            default_namespace = hp().towhee.default_namespace('anon')
+        if name in OperatorRegistry.REGISTRY:
+            return OperatorRegistry.REGISTRY[name]
+
+        name = '{}/{}'.format(default_namespace, name)
         if name in OperatorRegistry.REGISTRY:
             return OperatorRegistry.REGISTRY[name]
         return None
 
     @staticmethod
     def register(
-        version,
         name: str = None,
-        author: str = 'towhee_community',
-        description: str = None,
-        long_description: str = None,
-        imports: List[str] = None,  # TODO: parse imports from code @jie.hou
         input_schema=None,  # TODO: parse input_schema from code @jie.hou
         output_schema=None,
         shared_type=SharedType.Shareable,
     ):
-        """register a class as towhee operator
+        """register a class or callable as a towhee operator.
+
+        1. Basic operator registration and calling
+        The registration is as simple as just adding one line before a function
+        >>> from towhee import register
+        >>> @register
+        ... def foo(x, y):
+        ...     return x+y
+
+        or register a class as a stateful operator
+        >>> @register
+        ... class foo_cls():
+        ...     def __init__(self, x):
+        ...         self.x = x
+        ...     def __call__(self, y):
+        ...         return self.x + y
+
+        By default, function/class name is used as operator name.
+        After registration, we are able to call the operator by its name:
+        >>> from towhee import ops
+        >>> op = ops.foo()
+        >>> op(1, 2)
+        3
+
+        or calling a stateful operator
+        >>> op = ops.foo_cls(x=2)
+        >>> op(3)
+        5
+
+        2. Register with detail information
+        Operator name can also be provided during registration:
+        >>> @register(name='my_foo')
+        ... def foo(x, y):
+        ...     return x+y
+        >>> ops.my_foo()(1,2)
+        3
+
+        Each operator has its namespace. If not provided, default namespace 'anon' would be used.
+        You can also specific the fullname, including namespace when creating an operator.
+        >>> ops.anon.my_foo()(1,2)
+        3
+
+        or the default namespace, typically `anon` will be searched by the factory method. To register
+        the operator to a different namespace, you should add namespace as a prefix of `name`:
+        >>> @register(name='my_namespace/my_foo')
+        ... def foo(x, y):
+        ...     return x+y
+        >>> ops.my_namespace.my_foo()(1,2)
+        3
+
+        The operator can also has its outout schema
+        >>> @register(name='my_foo', output_schema='value')
+        ... def foo(x, y):
+        ...     return x+y
+        >>> from towhee.hparam import param_scope
+        >>> with param_scope('towhee.need_schema=1'):
+        ...     ops.my_foo()(1,2)
+        Output(value=3)
 
         Args:
-            version (str): operator version
-            name (str, optional): operator name, will use the class name if None.
-            author (str, optional): operator author. Defaults to 'towhee_community'.
-            description (str, optional): description of the operator, use the first line of the class's doc string if  None.
-            long_description (str, optional): long description to the operator, use class doc string if None.
-            imports (List[str], optional): python module dependency. Defaults to None.
+            name (str, optional): operator name, will use the class/function name if None.
             input_schema(NamedTuple, optional): input schema for the operator. Defaults to None.
             output_schema(NamedTuple, optional): output schema, will convert the operator output to NamedTuple if not None.
             shared_type ([type], optional): operator shared_type. Defaults to SharedType.Shareable.
@@ -61,20 +115,32 @@ class OperatorRegistry:
         Returns:
             [type]: [description]
         """
-        # TODO: need to convert the class name to URI @shiyu22
-        name = name.replace('_', '-')
+        if callable(name):
+            return OperatorRegistry.register()(name)
+
+        if output_schema is None:  # none output schema
+            output_schema = namedtuple('Output', 'col0')
+        if isinstance(output_schema, str):  # string schema 'col0 col1'
+            output_schema = output_schema.split()
+        if isinstance(output_schema, List):  # list schema ['col0', 'col1']
+            output_schema = namedtuple('Output', output_schema)
+
+        with param_scope() as hp:
+            default_namespace = hp().towhee.default_namespace('anon')
 
         def wrapper(cls):
-            metainfo = dict(
-                version=version,
-                author=author if author is not None else 'towhee_community',
-                description= \
-                    description if description is not None else OperatorRegistry.parse_description(cls),
-                long_description= \
-                    long_description if long_description is not None else cls.__doc__,
-                imports = imports if imports is not None else [],
-                input_schema = input_schema if input_schema is not None else input_schema,
-                shared_type=shared_type)
+            metainfo = dict(input_schema=input_schema,
+                            output_schema=output_schema,
+                            shared_type=shared_type)
+
+            # TODO: need to convert the class name to URI @shiyu22
+            nonlocal name
+            if name is None:
+                name = cls.__name__
+            if name is not None:
+                name = name.replace('_', '-')
+            if '/' not in name:
+                name = '{}/{}'.format(default_namespace, name)
 
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):
@@ -110,6 +176,8 @@ class OperatorRegistry:
 
         return wrapper
 
-    @staticmethod
-    def parse_description(op):
-        return '' if op.__doc__ is None else op.__doc__.split('\n')[0]
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod(verbose=False)
