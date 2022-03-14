@@ -1,0 +1,7 @@
+m2r2
+sphinx_copybutton
+sphinxcontrib.prettyspecialmethods
+sphinx_rtd_theme
+requests>=2.12.5
+tqdm>=4.59.0
+ruamel.yaml<=0.16.6

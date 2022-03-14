@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Iterator
+from typing import Any, Iterable, Iterator
+from typing import Callable
 from random import random, sample, shuffle
 
 from towhee.hparam import param_scope
 from towhee.functional.option import Option, Some, Empty
-
-from towhee.functional.mixins.data_source import DataSourceMixin
-from towhee.functional.mixins.dispatcher import DispatcherMixin
-from towhee.functional.mixins.parallel import ParallelMixin
-from towhee.functional.mixins.computer_vision import ComputerVisionMixin
+from towhee.functional.mixins import AllMixins
 
 
 def _private_wrapper(func):
@@ -34,88 +31,78 @@ def _private_wrapper(func):
     return wrapper
 
 
-class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
-                     ComputerVisionMixin):
+class DataCollection(Iterable, AllMixins):
     """
-    DataCollection is a quick assambler for chained data processing operators.
+    DataCollection is a pythonic computation and processing framework
+    for unstructured data in machine learning and data science.
+    It allows a data scientist or researcher to assemble a data processing pipeline,
+    do his model work (embedding, transforming, or classification)
+    and apply it to the business (search, recommendation, or shopping)
+    with a method-chaining style API.
 
     Examples:
-    1. create a data collection from iterable
-    >>> dc = DataCollection([1,2,3,4])
 
-    2. chaining single line lambda operators:
-    >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
-    [4, 6, 8, 10]
+    1. create a data collection from list or iterator:
 
-    3. chaining multiple line lambda operators
-    scale supports chaining complex functions which is very convenient for
-    data scientists to assemble a data processing pipeline.
+    >>> dc = DataCollection([0, 1, 2, 3, 4])
+    >>> dc = DataCollection(iter([0, 1, 2, 3, 4]))
 
-    ```scala
-    (1 to 100).map(x=>{
-        y = x+1
-        return 2 * y
-    }).filter(x=>{
-        y = x-1
-        y < 4
-    })
-    ```
-    Traditionally such pipeline is impossible in python,
-    for multi-line lambda closure is not supported in python.
-    DataCollection provides an alternative solution for
-    chaining multi-line operators.
+    2. chaining function invocations makes your code clean and fluent:
 
-    chaining an operator with decorator syntax
+    >>> (
+    ...    dc.map(lambda x: x+1)
+    ...      .map(lambda x: x*2)
+    ... ).to_list()
+    [2, 4, 6, 8, 10]
+
+    3. Multi-line closures are also supported via decorator syntax
+
     >>> dc = DataCollection([1,2,3,4])
     >>> @dc.map
-    ... def add_1(x):
+    ... def add1(x):
     ...     return x+1
-    >>> @add_1.map
-    ... def mul_2(x):
+    >>> @add1.map
+    ... def mul2(x):
     ...     return x *2
-    >>> list(mul_2)
+    >>> mul2.to_list()
     [4, 6, 8, 10]
 
     >>> dc = DataCollection([1,2,3,4])
     >>> @dc.filter
-    ... def ge_3(x):
+    ... def ge3(x):
     ...     return x>=3
-    >>> list(ge_3)
+    >>> ge3.to_list()
     [3, 4]
 
-    4. dispatch chained call
+    `DataCollection` is designed to behave as a python list or iterator. Consider you are running
+    the following code:
 
-    define operators
-    >>> class my_add:
-    ...     def __init__(self, val):
-    ...         self.val = val
-    ...     def __call__(self, x):
-    ...         return x+self.val
+    .. code-block:: python
+      :linenos:
 
-    >>> class my_mul:
-    ...     def __init__(self, val):
-    ...         self.val = val
-    ...     def __call__(self, x):
-    ...         return x*self.val
+      dc.map(stage1)
+        .map(stage2)
 
-    register the operators to data collection execution context
-    >>> with param_scope(dispatcher={'add': my_add, 'mul': my_mul}):
-    ...     dc = DataCollection([1,2,3,4])
-    ...     dc.add(1).mul(2).to_list() # call registered operator
-    [4, 6, 8, 10]
+    1. `iterator` and `stream mode`: When a `DataCollection` object is created from an iterator, it behaves as a python
+    iterator and performs `stream-wise` data processing:
 
-    There are two kinds of data collection, streamed and cached.
-    1. In a streamed data collection, the inputs are produced by upstream
-    generator one by one. And operators have to process the input in a streamed
-    manner. Streamed processing saves runtime memory, but some operations,
-    such as indexing and shuffle, are not available.
+        a. `DataCollection` takes one element from the input and applies `stage1` and `stage2` sequentially ;
+        b. Since DataCollection holds no data, indexing or shuffle is not supported;
 
-    2. In a cached data collection, the inputs have to be loaded into the memory
-    all at once, which requires huge memory if the data set is very large. But
-    cached data collection allows indexing and shuffle.
+    2. `list` and `unstream mode`: If a `DataCollection` object is created from a list, it will hold all the input values,
+    and perform stage-wise computations:
+
+        a. `stage2` will wait until all the calculations are done in `stage1`;
+        b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
+
     """
 
-    def __init__(self, iterable) -> None:
+    def __init__(self, iterable: Iterable) -> None:
+        """Initializes a new DataCollection instance.
+
+        Args:
+            iterable (Iterable): input data
+        """
         super().__init__()
         self._iterable = iterable
 
@@ -123,11 +110,12 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         return iter(self._iterable)
 
     def stream(arg):  # pylint: disable=no-self-argument
-        """
-        create a streamed data collection.
+        """Create a stream data collection.
 
         Examples:
+
         1. create a streamed data collection
+
         >>> dc = DataCollection.stream([0,1,2,3,4])
         >>> dc.is_stream
         True
@@ -153,24 +141,23 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
             iterable = iter(iterable)
         return DataCollection(iterable)
 
-    def unstream(self):
-        return self.cached()
-
-    def cached(arg):  # pylint: disable=no-self-argument
-        """
-        create a cached data collection.
+    def unstream(arg):  # pylint: disable=no-self-argument
+        """Create a unstream data collection.
 
         Examples:
-        1. create a cached data collection
-        >>> dc = DataCollection.cached(iter(range(5)))
+
+        1. create a unstream data collection
+
+        >>> dc = DataCollection.unstream(iter(range(5)))
         >>> dc.is_stream
         False
 
-        2. convert a streamed data collection to cached version
+        2. convert a streamed data collection to unstream version
+
         >>> dc = DataCollection(iter(range(5)))
         >>> dc.is_stream
         True
-        >>> dc = dc.cached()
+        >>> dc = dc.unstream()
         >>> dc.is_stream
         False
         """
@@ -179,7 +166,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
             self = arg
             if not self.is_stream:
                 return self
-            return DataCollection.cached(self._iterable)
+            return DataCollection.unstream(self._iterable)
 
         iterable = arg
         if isinstance(iterable, Iterator):
@@ -189,9 +176,10 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
     @property
     def is_stream(self):
         """
-        check whether the data collection is streamed.
+        check whether the data collection is stream or unstream.
 
         Examples:
+
         >>> dc = DataCollection([0,1,2,3,4])
         >>> dc.is_stream
         False
@@ -222,7 +210,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
 
         This factory method has been wrapped into a `param_scope()` which contains parent infomations.
         """
-        creator = DataCollection.stream if self.is_stream else DataCollection.cached
+        creator = DataCollection.stream if self.is_stream else DataCollection.unstream
 
         def wrapper(*arg, **kws):
             with param_scope() as hp:
@@ -237,13 +225,16 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         making the data collection exception-safe by warp elements with `Option`.
 
         Examples:
+
         1. exception breaks pipeline execution:
+
         >>> dc = DataCollection.range(5)
         >>> dc.map(lambda x: x / (0 if x == 3 else 2)).to_list()
         Traceback (most recent call last):
         ZeroDivisionError: division by zero
 
         2. exception-safe execution
+
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).to_list()
         [Some(0.0), Some(0.5), Some(1.0), Empty(), Some(2.0)]
 
@@ -262,61 +253,81 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         """
         return self.exception_safe()
 
+    @_private_wrapper
     def select(self, name: str = 'feature_vector'):
         """
         get the list from operator Output
 
         Examples:
+
         >>> from typing import NamedTuple
         >>> Outputs = NamedTuple('Outputs', [('num', int)])
         >>> dc = DataCollection([Outputs(1), Outputs(2), Outputs(3)])
-        >>> dc.select(name='num')
+        >>> dc.select(name='num').to_list()
         [1, 2, 3]
         """
-        return [getattr(i, name) for i in self._iterable]
+        return map(lambda x: getattr(x, name), self._iterable)
 
     @_private_wrapper
-    def select_from(self, dc):
+    def select_from(self, other):
         """
         select data from dc with list(self)
+
+        Examples:
+
         >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
         >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
 
-        # >>> dc3 = dc1.select_from(dc2)
-        # >>> list(dc3)
-        # [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
+        >>> dc3 = dc2.select_from(dc1)
+        >>> list(dc3)
+        [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
-        dc_list = dc.to_list()
-        ids = self.to_list()
-        res = []
-        for sel_id in ids:
-            res.append([dc_list[k] for k in sel_id])
-        return res
 
-    @_private_wrapper
-    def fill_empty(self, default=None):
+        def inner(x):
+            if isinstance(x, Iterable):
+                return [other[i] for i in x]
+            return other[x]
+
+        return map(inner, self._iterable)
+
+    def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
         unbox `Option` values and fill `Empty` with default values
 
+        Args:
+            default (Any): default value to replace empty values;
+
+        Returns:
+            DataCollection: data collection with empty values filled with `default`;
+
         Examples:
+
         >>> dc = DataCollection.range(5)
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
-        return map(lambda x: x.get()
-                   if isinstance(x, Some) else default, self._iterable)
+        result = map(lambda x: x.get()
+                     if isinstance(x, Some) else default, self._iterable)
+        return self.factory(result)
 
-    @_private_wrapper
-    def drop_empty(self, callback=None):
+    def drop_empty(self, callback: Callable = None) -> 'DataCollection':
         """
         unbox `Option` values and drop `Empty`
 
+        Args:
+            callback (Callable): handler for empty values;
+
+        Returns:
+            DataCollection: data collection that drops empty values;
+
         Examples:
+
         >>> dc = DataCollection.range(5)
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty().to_list()
         [0.0, 0.5, 1.0, 2.0]
 
         get inputs that case exceptions:
+
         >>> exception_inputs = []
         >>> result = dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty(lambda x: exception_inputs.append(x.get().value))
         >>> exception_inputs
@@ -331,7 +342,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
                     if isinstance(x, Some):
                         yield x.get()
 
-            return inner(self._iterable)
+            result = inner(self._iterable)
         else:
 
             def inner(data):
@@ -339,14 +350,22 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
                     if isinstance(x, Some):
                         yield x.get()
 
-            return inner(self._iterable)
+            result = inner(self._iterable)
+        return self.factory(result)
 
     @_private_wrapper
     def map(self, *arg):
         """
         apply operator to data collection
 
+        Args:
+            *arg (Callable): functions/operators to apply to data collection;
+
+        Returns:
+            DataCollection: data collections that contains computation results;
+
         Examples:
+
         >>> dc = DataCollection([1,2,3,4])
         >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
         [4, 6, 8, 10]
@@ -371,20 +390,37 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
 
         return map(inner, self._iterable)
 
-    @_private_wrapper
-    def zip(self, *others):
+    def zip(self, *others) -> 'DataCollection':
         """
         combine two data collections
+
+        Args:
+            *others (DataCollection): other data collections;
+
+        Returns:
+            DataCollection: data collection with zipped values;
+
+        Examples:
+
         >>> dc1 = DataCollection([1,2,3,4])
         >>> dc2 = DataCollection([1,2,3,4]).map(lambda x: x+1)
         >>> dc3 = dc1.zip(dc2)
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
-        return zip(self, *others)
+        return self.factory(zip(self, *others))
 
-    @_private_wrapper
-    def filter(self, unary_op, drop_empty=False):
+    def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
+        """filter data collection with `unary_op`
+
+        Args:
+            unary_op (Callable): callable to decide whether to filter the element;
+            drop_empty (bool, optional): drop empty values. Defaults to False.
+
+        Returns:
+            DataCollection: filtered data collection
+        """
+
         #return filter(unary_op, self)
         def inner(x):
             if isinstance(x, Option):
@@ -393,35 +429,52 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
                 return not drop_empty
             return unary_op(x)
 
-        return filter(inner, self._iterable)
+        return self.factory(filter(inner, self._iterable))
 
-    @_private_wrapper
-    def sample(self, ratio=1.0):
+    def sample(self, ratio=1.0) -> 'DataCollection':
         """
         sample the data collection
+
+        Args:
+            ratio (float): sample ratio;
+
+        Returns:
+            DataCollection: sampled data collection;
+
         Examples:
+
         >>> dc = DataCollection(range(10000))
         >>> result = dc.sample(0.1)
         >>> 900 < len(list(result)) < 1100
         True
         """
-        return filter(lambda _: random() < ratio, self)
+        return self.factory(filter(lambda _: random() < ratio, self))
 
     @staticmethod
     def range(*arg, **kws):
         """
         generate data collection with ranged numbers
+
         Examples:
+
         >>> DataCollection.range(5).to_list()
         [0, 1, 2, 3, 4]
         """
         return DataCollection(range(*arg, **kws))
 
-    @_private_wrapper
-    def batch(self, size, drop_tail=False):
+    def batch(self, size, drop_tail=False) -> 'DataCollection':
         """
         Create small batches from data collections
+
+        Args:
+            size (int): window size;
+            drop_tail (bool): drop tailing windows that not full;
+
+        Returns:
+            DataCollection: data collection of batched windows;
+
         Examples:
+
         >>> dc = DataCollection(range(10))
         >>> [list(batch) for batch in dc.batch(2)]
         [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
@@ -434,20 +487,33 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-        buff = []
-        for ele in self._iterable:
-            buff.append(ele)
-            if len(buff) == size:
-                yield DataCollection.cached(buff)
-                buff = []
-        if not drop_tail and len(buff) > 0:
-            yield DataCollection.cached(buff)
 
-    @_private_wrapper
-    def rolling(self, size, drop_head=True, drop_tail=True):
+        def inner():
+            buff = []
+            for ele in self._iterable:
+                buff.append(ele)
+                if len(buff) == size:
+                    yield DataCollection.unstream(buff)
+                    buff = []
+            if not drop_tail and len(buff) > 0:
+                yield DataCollection.unstream(buff)
+
+        return self.factory(inner())
+
+    def rolling(self, size: int, drop_head=True, drop_tail=True):
         """
         Create rolling windows from data collections.
+
+        Args:
+            size (int): window size;
+            drop_head (bool): drop headding windows that not full;
+            drop_tail (bool): drop tailing windows that not full;
+
+        Returns:
+            DataCollection: data collection of rolling windows;
+
         Examples:
+
         >>> dc = DataCollection(range(5))
         >>> [list(batch) for batch in dc.rolling(3)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
@@ -461,21 +527,28 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
 
-        buff = []
-        for ele in self._iterable:
-            buff.append(ele)
-            if not drop_head or len(buff) == size:
-                yield DataCollection.cached(buff.copy())
-            if len(buff) == size:
+        def inner():
+            buff = []
+            for ele in self._iterable:
+                buff.append(ele)
+                if not drop_head or len(buff) == size:
+                    yield DataCollection.unstream(buff.copy())
+                if len(buff) == size:
+                    buff = buff[1:]
+            while not drop_tail and len(buff) > 0:
+                yield DataCollection.unstream(buff)
                 buff = buff[1:]
-        while not drop_tail and len(buff) > 0:
-            yield DataCollection.cached(buff)
-            buff = buff[1:]
 
-    @_private_wrapper
-    def flaten(self):
+        return self.factory(inner())
+
+    def flaten(self) -> 'DataCollection':
         """
         flaten nested data collections
+
+        Returns:
+            DataCollection: flattened data collection;
+
+        Examples:
 
         >>> dc = DataCollection(range(10))
         >>> nested_dc = dc.batch(2)
@@ -483,33 +556,47 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
 
-        for ele in self._iterable:
-            if isinstance(ele, Iterable):
-                for nested_ele in iter(ele):
-                    yield nested_ele
-            else:
-                yield ele
+        def inner():
+            for ele in self._iterable:
+                if isinstance(ele, Iterable):
+                    for nested_ele in iter(ele):
+                        yield nested_ele
+                else:
+                    yield ele
 
-    def shuffle(self, in_place=False):
+        return self.factory(inner())
+
+    def shuffle(self, in_place=False) -> 'DataCollection':
         """
-        shuffle a cached data collection.
+        shuffle a unstream data collection.
+
+        Args:
+            in_place (bool): shuffle the data collection in place;
+
+        Returns:
+            DataCollection: shuffled data collection
 
         Examples:
+
         1. shuffle
+
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> shuffled = dc.shuffle()
         >>> tuple(dc) == tuple(range(5))
         True
+
         >>> tuple(shuffled) == tuple(range(5))
         False
 
         2. in place shuffle
+
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> _ = dc.shuffle(True)
         >>> tuple(dc) == tuple(range(5))
         False
 
         3. streamed data collection is not supported
+
         >>> dc = DataCollection.stream([0, 1, 2, 3, 4])
         >>> _ = dc.shuffle()
         Traceback (most recent call last):
@@ -522,12 +609,43 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
             shuffle(self._iterable)
             return self
         else:
-            return DataCollection.cached(
+            return DataCollection.unstream(
                 sample(self._iterable, len(self._iterable)))
 
     def __getattr__(self, name):
         """
-        Call dispatcher for data collection
+        Unknown method dispatcher.
+
+        When a unknown method is invoked on a `DataCollection` object,
+        the function call will be dispatched to a method resolver.
+        By registering function to the resolver, you are able to extend
+        `DataCollection`'s API at runtime without modifying its code.
+
+        Examples:
+
+        define two operators:
+
+        >>> class my_add:
+        ...     def __init__(self, val):
+        ...         self.val = val
+        ...     def __call__(self, x):
+        ...         return x+self.val
+
+        >>> class my_mul:
+        ...     def __init__(self, val):
+        ...         self.val = val
+        ...     def __call__(self, x):
+        ...         return x*self.val
+
+        register the operators to `DataCollection`'s execution context with `param_scope`
+
+        >>> with param_scope(dispatcher={
+        ...         'add': my_add, # register `my_add` as `dc.add`
+        ...         'mul': my_mul  # register `my_mul` as `dc.mul`
+        ... }):
+        ...     dc = DataCollection([1,2,3,4])
+        ...     dc.add(1).mul(2).to_list() # call registered operator
+        [4, 6, 8, 10]
         """
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
@@ -545,9 +663,11 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         indexing for data collection
 
         Examples:
+
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> dc[0]
         0
+
         >>> dc.stream()[1]
         Traceback (most recent call last):
         TypeError: indexing is not supported for streamed data collection.
@@ -562,12 +682,15 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         indexing for data collection
 
         Examples:
+
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> dc[0]
         0
+
         >>> dc[0] = 5
         >>> dc._iterable[0]
         5
+
         >>> dc.stream()[0]
         Traceback (most recent call last):
         TypeError: indexing is not supported for streamed data collection.
@@ -582,6 +705,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         chain the operators with `>>`
 
         Examples:
+
         >>> dc = DataCollection([1,2,3,4])
         >>> (dc
         ...     >> (lambda x: x+1)
@@ -600,8 +724,10 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
         concat two data collection.
 
         Examples:
+
         >>> (DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
         """
