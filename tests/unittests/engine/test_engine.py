@@ -111,7 +111,7 @@ class TestEngine(unittest.TestCase):
         df_in.seal()
 
         result = self._pipeline(df_in)
-        ret = result.get(0, 1)
+        ret = next(result)
         self.assertEqual(ret[0][0], 3)
 
         df_in = DataFrame(
@@ -120,7 +120,7 @@ class TestEngine(unittest.TestCase):
         df_in.seal()
 
         result = self._pipeline(df_in)
-        ret = result.get(0, 1)
+        ret = next(result)
         self.assertEqual(ret[0][0], 5)
 
     def test_simple_pipeline(self):
@@ -134,7 +134,7 @@ class TestEngine(unittest.TestCase):
         df_in.put((3, ))
         df_in.seal()
         result = p(df_in)
-        ret = result.get(0, 1)
+        ret = next(result)
         self.assertEqual(ret[0][0], 6)
 
         df_in = DataFrame(
@@ -142,7 +142,7 @@ class TestEngine(unittest.TestCase):
         df_in.put((4, ))
         df_in.seal()
         result = p(df_in)
-        ret = result.get(0, 1)
+        ret = next(result)
         self.assertEqual(ret[0][0], 7)
 
 
