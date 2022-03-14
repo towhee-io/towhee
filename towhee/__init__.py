@@ -263,6 +263,12 @@ class _OperatorLazyWrapper:
                 self._op = op(self._name, self._tag, **self._kws)
         return self._op(*arg, **kws)
 
+    def train(self, *arg, **kws):
+        with self._lock:
+            if self._op is None:
+                self._op = op(self._name, self._tag, **self._kws)
+        return self._op.train(*arg, **kws)
+
     @property
     def function(self):
         return self._name
