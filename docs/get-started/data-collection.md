@@ -16,17 +16,13 @@ Here is a short example for numerical computation with DataCollection:
 [2, 4, 6, 8. 10]
 ```
 
-1. Pythonic Method-Chaining Style API: DataCollection is designed to be as easy as a python list or iterator. You can assemble a data processing pipeline by chaining functions/operations calls after a DataCollection.
-
-
-2. Exception-Safe Execution: Handling exceptions in a multistage `pipeline` is usually painful for having to add a `try-catch` statement for each stage. DataCollection provides exception-safe execution, which allows the `pipeline` to continue executing on exception when processing large-scale datasets. The exceptions then proceed as data elements, not a workflow.
-
-
-3. Feature-Rich Operator Repository: The [towhee hub](https://towhee.io) has various pre-defined operators, which can be chained into DataCollection's data processing pipeline. Operators on the towhee hub cover the most popular deep learning models in computer vision, NLP, and voice processing.
+1. Pythonic Method-Chaining Style API: Designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
+2. Exception-Safe Execution: DataCollection provides exception-safe execution, which allows the function/operator invocation chain to continue executing on exception. Data scientists can put an exception receiver to the tail of the pipeline, processing and analyzing the exceptions as data, not error.
+2. Feature-Rich Operator Repository: There are various pre-defined operators On the [towhee hub](https://towhee.io), which cover the most popular deep learning models in computer vision, NLP, and voice processing. Using these operators in the data processing pipeline can significantly accelerate your work.
 
 # Quick Start
 
-We use a `prime number` example to go through core conceptions in `DataCollection`, and explain how the data and computation are organized. `prime numbers` are special numbers with exactly two factors, themselves and `1`. The following function detects whether a number is prime or not:
+We use a `prime number` example to go through core conceptions in `DataCollection` and explain how the data and computation are organized. `prime numbers` are special numbers with exactly two factors, themselves and `1`. The following function detects whether a number is prime or not:
 
 ```python
 >>> def is_prime(x):
@@ -44,14 +40,14 @@ We use a `prime number` example to go through core conceptions in `DataCollectio
 
 ```python
 >>> dc = DataCollection([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) # use construction method
->>> dc = DataCollection.list(range(10)) # use factory method
+>>> dc = DataCollection.unstream(range(10)) # use factory method
 ```
 
 When the inputs are very large (for example, 1M), storing all the input in the memory is not a good idea. We can create `DataCollection` from an iterator for saving runtime memory:
 
 ```python
 >>> dc = DataCollection(iter(range(1000000))) # use construction method
->>> dc = DataCollection.iter(range(1000000)) # use factory method
+>>> dc = DataCollection.stream(range(1000000)) # use factory method
 ```
 
 ## Functional Programming Interface
@@ -102,7 +98,7 @@ A data processing pipeline can be created by chaining `map()` and `filter()`:
 
 When the `DataCollection` is created from a list, it will hold all the input values, and computations are performed in a `stage-wise` manner:
 
-1. `stage 2` will wait until all the calculations are done in `stage 1;`
+1. `stage 2` will wait until all the calculations are done in `stage 1`;
 2. A new `DataCollection` will be created to hold all the outputs for each stage. You can perform list operations on result `DataCollection`;
 
 **NOTE**: `iterator-mode` and `stream-wise` computation
@@ -112,7 +108,7 @@ If the `DataCollection` is created from an iterator, it performs `stream-wise` c
 1. `DataCollection` takes one element from the input and  applies `stage 1` and `stage 2` sequentially ;
 2. Since `DataCollection` holds no data, indexing or shuffle is not supported;
 
-We strongly suggest using `iterator-mode` instead of `list-mode`, for both memory efficiency and development convenience. When using `list-mode`, if the operator on the last stage is not appropriately implemented and runs into some error, you will waste all the computation in previous stages.
+We strongly suggest using `iterator-mode` instead of `list-mode` for memory efficiency and development convenience. When using `list-mode`, if the operator on the last stage is not appropriately implemented and runs into some error, you will waste all the computation in previous stages.
 
 ---
 
@@ -132,9 +128,9 @@ When chaining many stages, `DataCollection` provides a more straightforward synt
 ['2', '3', '5', '7']
 ```
 
-`DataCollection.as_str` is not defined in `DataCollection`. DataCollection will resolve this unknown function by a lookup table managed with `param_scope`. By registering a new function via `param_scope().dispatcher`, we can extend `DataCollection` at run time without modifying the python code of `DataCollection`. 
+`DataCollection.as_str` is not defined in `DataCollection`. DataCollection will resolve such unknown functions by a lookup table managed with `param_scope`. By registering a new function via `param_scope().dispatcher`, we can extend `DataCollection` at run time without modifying the python code of `DataCollection`. 
 
-Operator dispatch is a fundamental mechanism that allows `DataCollection` to be used as a DSL language for domain-specific tasks. For example, an image processing pipeline can be defined as follows:
+Operator dispatch is a fundamental mechanism in `DataCollection`. It allows `DataCollection` to be used as a DSL language for domain-specific tasks. For example, an image processing pipeline can be defined as follows:
 
 ```python
 >>> dataset = DataCollection.from_glob('path_train/*.jpg') \
@@ -159,7 +155,55 @@ Operator dispatch contains a hub-based resolve that loads operators from [towhee
         .towhee.image_embedding(model_name='resnet101') # redirect function call to towhee operators
 ```
 
-`.towhee.image_embedding(model_name='resnet101')` will be mapped to `towhee/image-embedding` on [towhee hub](https://towhee.io).
+`.towhee.image_embedding(model_name='resnet101')` will be mapped to `towhee/image-embedding` on [towhee hub](https://towhee.io). 
+
+## Parallel Execution
+
+Dealing with large-scale datasets is usually time-consuming. `DataCollection` provides a simple API `set_parallel(num_worker)` to enable parallel execution, and accelerate you computation :
+
+```python
+dc.set_parallel(num_worker=5) \
+	.load_image() \
+	.towhee.resnet_model(model_name='resnet50')
+```
+
+## Exception-Handling
+
+Most data scientists have experienced that exception crashes your code when dealing with large-scale datasets, damaged input data, unstable networks, or out of storage. It would be even worse if it crashes after having processed over half of the data, and you have to fix your code and re-run all the data.
+
+`DataCollection` support exception-safe execution, which can be enabled by a single line of code:
+
+```python
+dc.exception_safe() \ # or dc.safe()
+	.load_image() \
+	.towhee.resnet_model(model_name='resnet50')
+```
+
+When `exception_safe` is enabled, `DataCollection` generates empty values on exceptions. The empty values will be skipped by the lagging functions/operators. And you are able to handle the empty values with a exception receiver at the tail of the chain:
+
+```python
+dc.safe() \
+	.load_image() \
+	.towhee.is_face_or_not() \
+	.fill_empty(False) # or `.drop_empty()`
+```
+
+There are two builtin exception receivers: 
+
+1. `fill_empty(default_value)` will replace empty values with the given default value;
+2. `drop_empty(callback=None)` will drop the empty values and send the empty values to a callback function;
+
+Here is an example callback function to receive exceptions from empty values:
+
+```python
+def callback(value):
+  reason = value.get()
+  error_input = reason.value
+  exception = reason.exception
+  ...
+```
+
+
 
 # Examples
 
@@ -195,7 +239,43 @@ result = (
 towhee.plot(query.to_list(), result.to_list())
 ```
 
+## Prepare LMDB files for Pytorch Training
+
+```python
+>>> DataCollection.from_glob('path_train/*.jpg') \
+			.set_parallel(num_worker=5) \
+			.load_image() \
+  		.random_resize_crop(224) \
+      .random_horizontal_flip() \
+      .to_tensor() \
+      .save('./train.lmdb')
+```
+
+## Named Entity Extraction
+
+```python
+>>> dc = DataCollection.read_text('path_data/data.json') \
+			.load_json() \
+  		.towhee.bert_ner['title', 'info.title_ner']() \
+    	.towhee.bert_ner['content', 'info.content_ner']() \
+      .dump_json() \
+      .save('./output.json')
+```
+
+## ImageNet Benchmark
+
+```python
+>>> imgs = DataCollection.read_text('image_list.txt')
+>>> labels = DataCollection.from_glob('image_label.txt')
+>>> predicts = imgs.set_parallel(num_worker=5) \
+						.load_image() \
+  					.towhee.resnet_model(model_name='resnet50')
+>>> labels.zip(predicts).metric.accuricy()
+80%
+```
+
 ## training imagenet
+
 ```python
 >>> dataset = DataCollection.from_glob('path_train/*.jpg') \
         .load_image() \
@@ -260,10 +340,3 @@ query image from milvus:
 ...     .search_from(uri='redis://host:port/user_profiles') \
 ...     .to_list()
 ```
-
-# Advanced Features
-
-## Parallel Execution
-
-## Exception-Safe Execution
-
