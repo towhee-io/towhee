@@ -13,11 +13,14 @@
 # limitations under the License.
 
 
-from typing import Optional, List
+from typing import Optional, List, Any
+
+from PIL import Image
 from torchvision import transforms
 from torchvision.io import read_image
 from pathlib import Path
 
+import numpy as np
 import matplotlib.pylab as plt
 import random
 import os
@@ -144,3 +147,43 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
         plt.title(root_path.name)
         plt.show()
     return count_dict
+
+
+def show_transform(image_path: str, transform: Any):
+    """
+    Show the result which `torchvision.tranforms` or any other callable function act on the image.
+    Only the Image transforms is supported. Such as `ToTensor` or `Normalize` is invalid.
+    Args:
+        image_path (`str`):
+            The original image path.
+        transform (`Any`):
+            torchvision.tranforms` or any other callable function.
+
+    """
+    plt.rcParams['savefig.bbox'] = 'tight'
+    orig_img = Image.open(image_path)
+    trans_img_list = [transform(orig_img) for _ in range(6)]
+    _plot_transform(orig_img, trans_img_list)
+
+
+def _plot_transform(orig_img, imgs, with_orig=True, row_title=None, **imshow_kwargs):
+    if not isinstance(imgs[0], list):
+        imgs = [imgs]
+    num_rows = len(imgs)
+    num_cols = len(imgs[0]) + with_orig
+    _, axs = plt.subplots(nrows=num_rows, ncols=num_cols, squeeze=False, figsize=(12, 12))
+    for row_idx, row in enumerate(imgs):
+        row = [orig_img] + row if with_orig else row
+        for col_idx, img in enumerate(row):
+            ax = axs[row_idx, col_idx]
+            ax.imshow(np.asarray(img), **imshow_kwargs)
+            ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+    if with_orig:
+        axs[0, 0].set(title='Original image')
+        axs[0, 0].title.set_size(8)
+    if row_title is not None:
+        for row_idx in range(num_rows):
+            axs[row_idx, 0].set(ylabel=row_title[row_idx])
+
+    plt.tight_layout()
+    plt.show()

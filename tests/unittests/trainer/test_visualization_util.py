@@ -15,7 +15,7 @@
 import unittest
 from pathlib import Path
 from PIL import Image
-from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic
+from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic, show_transform
 
 cur_dir = Path(__file__).parent
 
@@ -40,6 +40,10 @@ class TestVisualizationUtil(unittest.TestCase):
     def test_statistic(self):
         train_cls_count_dict = image_folder_statistic(self.root_dir, show_bar=True)
         self.assertEqual(len(train_cls_count_dict), 1)
+
+    def test_transform(self):
+        show_transform(str(self.img_path), lambda x: x)
+        self.assertEqual(len(list(self.class1_path.iterdir())), 1)
 
     def tearDown(self) -> None:
         self.img_path.unlink()
