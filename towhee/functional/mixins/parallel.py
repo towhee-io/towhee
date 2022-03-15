@@ -292,12 +292,11 @@ class ParallelMixin:
         4
         """
         def inner():
-            while not queue.empty():
+            nonlocal flag
+            while flag or not queue.empty():
                 yield queue.get()
-            executor.shutdown()
 
-        async def map_task(it):
-            # await asyncio.sleep(it)
+        async def worker():
             def task_wrapper():
                 try:
                     if isinstance(it, Option):
@@ -308,19 +307,22 @@ class ParallelMixin:
                     engine_log.warning(f'{e}, please check {it} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
                     return Empty()
 
-            return await loop.run_in_executor(executor, task_wrapper)
-
-        async def main_pmap():
             for it in self:
-                fut = await asyncio.ensure_future(map_task(it), loop=loop)
+                fut = await loop.run_in_executor(executor, task_wrapper)
                 queue.put(fut)
+            nonlocal flag
+            flag = False
 
         if executor is None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
-        loop = asyncio.new_event_loop()
         queue = Queue()
+        loop = asyncio.new_event_loop()
+        flag = True
 
-        loop.run_until_complete(main_pmap())
+        def worker_wrapper():
+            loop.run_until_complete(worker())
+
+        executor.submit(worker_wrapper)
         return self.factory(inner())
 
 
