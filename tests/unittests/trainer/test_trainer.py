@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2020-present the HuggingFace Inc. team and 2021 Zilliz.
+# Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ label_file = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/train_
 class MockOperator(NNOperator):
     def __init__(self):
         super().__init__()
-        self.model = torchvision.models.resnet50(pretrained=True)
+        self.model = torchvision.models.resnet18(pretrained=True)
 
     def __call__(self, *args, **kwargs):
         return 1
@@ -42,41 +42,31 @@ class MockOperator(NNOperator):
         return self.model
 
 
-# op = MockOperator()
 class TrainerTest(unittest.TestCase):
     def setUp(self) -> None:
         data_transforms = {
             'train':
-            transforms.Compose(
-                [
-                    transforms.RandomResizedCrop(224),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                ]
-            )
+                transforms.Compose(
+                    [
+                        transforms.RandomResizedCrop(224),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.ToTensor(),
+                        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                    ]
+                )
         }
-        self.train_data = PyTorchImageDataset(image_path, label_file, data_transforms['train'])
-        self.model = torchvision.models.resnet50(pretrained=True)
+        self.train_data = PyTorchImageDataset(str(image_path), str(label_file), data_transforms['train'])
+        self.model = torchvision.models.resnet18(pretrained=True)
         num_ftrs = self.model.fc.in_features
         self.model.fc = nn.Linear(num_ftrs, self.train_data.num_classes)
-        self.training_args = TrainingConfig(
-            output_dir='./ResNet50', overwrite_output_dir=True, epoch_num=1, batch_size=4, dataloader_num_workers=0, tensorboard='null'
+        self.training_cfg = TrainingConfig(
+            output_dir='./ResNetOutput', overwrite_output_dir=True, epoch_num=1, batch_size=4, dataloader_num_workers=0,
+            tensorboard='null'
         )
         self.op = MockOperator()
-        self.op.train(training_config=self.training_args, train_dataset=self.train_data)
-        self.training_args.epoch_num = 2
-        self.op.train(
-            training_config=self.training_args, train_dataset=self.train_data, resume_checkpoint_path=self.training_args.output_dir + '/epoch_1'
-        )
-        # self.trainer = Trainer(
-        #     operator=op,
-        #     training_config=self.training_args,
-        #     train_dataset=self.train_data
-        # )
 
     def test_overfit_on_small_batches(self) -> None:
-        self.op.train(training_config=self.training_args, train_dataset=self.train_data)
+        self.op.train(training_config=self.training_cfg, train_dataset=self.train_data)
         self.assertEqual(1, 1)
         test_path = Path(__file__).parent.joinpath('test_modelcard')
         if test_path.is_dir():
@@ -97,6 +87,14 @@ class TrainerTest(unittest.TestCase):
         optimizer_name = 'my_optimizer'
         self.op.trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
         self.assertEqual(optimizer_name, self.op.trainer.configs.optimizer)
+
+    def test_resume_train(self) -> None:
+        self.training_cfg.epoch_num = 2
+        self.op.train(
+            training_config=self.training_cfg,
+            train_dataset=self.train_data,
+            resume_checkpoint_path=self.training_cfg.output_dir + '/epoch_1'
+        )
 
 
 if __name__ == '__main__':
