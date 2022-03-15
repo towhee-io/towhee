@@ -185,8 +185,7 @@ class ParallelMixin:
             executor.shutdown()
 
         async def map_task(it):
-            await asyncio.sleep(it)
-
+            # await asyncio.sleep(it)
             def task_wrapper():
                 try:
                     if isinstance(it, Option):
@@ -251,7 +250,7 @@ class ParallelMixin:
         async def worker():
             buff = []
             for x in self:
-                await asyncio.sleep(x)
+                # await asyncio.sleep(x)
                 if len(buff) == num_worker:
                     queue.put(await buff.pop(0))
                 buff.append(loop.run_in_executor(executor, make_task(x)))
@@ -294,16 +293,11 @@ class ParallelMixin:
         """
         def inner():
             while not queue.empty():
-                print('inner', queue.get())
-                # yield queue.get()
+                yield queue.get()
             executor.shutdown()
 
-        # def callback(fut):
-        #     print('call', fut.result())
-        #     queue.put(fut.result())
-
         async def map_task(it):
-            await asyncio.sleep(it)
+            # await asyncio.sleep(it)
             def task_wrapper():
                 try:
                     if isinstance(it, Option):
@@ -317,11 +311,9 @@ class ParallelMixin:
             return await loop.run_in_executor(executor, task_wrapper)
 
         async def main_pmap():
-            # tasks = []
             for it in self:
                 fut = await asyncio.ensure_future(map_task(it), loop=loop)
                 queue.put(fut)
-                # fut.add_done_callback(callback)
 
         if executor is None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
