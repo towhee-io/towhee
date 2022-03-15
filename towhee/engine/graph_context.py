@@ -17,6 +17,7 @@ from typing import Tuple
 
 from towhee.dataframe import DataFrame
 from towhee.dag import GraphRepr
+from towhee.dataframe.iterators import MapIterator
 
 from towhee.engine.operator_context import OperatorContext, OpStatus
 from towhee.utils.log import engine_log
@@ -69,7 +70,7 @@ class GraphContext:
 
     def result(self) -> any:
         if self.outputs.size != 0:
-            return self.outputs
+            return self._out_iter
         else:
             # graph run failed, raise an exception
             for op in self._op_ctxs.values():
@@ -104,7 +105,7 @@ class GraphContext:
 
     def gc(self):
         for _, df in self._dataframes.items():
-            df.gc_data()
+            df.gc()
 
     def join(self):
         for op in self._op_ctxs.values():
@@ -129,6 +130,7 @@ class GraphContext:
             op_ctx = OperatorContext(op_repr, self.dataframes)
             self._df_op[op_repr.outputs[0]['df']] = op_ctx
             self._op_ctxs[op_ctx.name] = op_ctx
+        self._out_iter = MapIterator(self.outputs)
 
     def __del__(self):
         engine_log.info('Graph % s end', self._idx)

@@ -291,13 +291,13 @@ class DataFrame:
             if iter_id is not False and self._iterators.get(iter_id) is None:
                 return self._ret(Responses.KILLED, None, None, iter_id)
 
-        with self._data_lock:
-            # Up to iterators to decide what to do if the value they want is GCed.
-            if offset < self._min_offset:
+            elif offset < self._min_offset:
+                # Up to iterators to decide what to do if the value they want is GCed.
                 return self._ret(Responses.INDEX_GC, None, None, iter_id)
 
+        with self._data_lock:
             # The batch of data is available and there is more available.
-            elif offset + count <= self._len:
+            if offset + count <= self._len:
                 return self._ret(Responses.APPROVED_CONTINUE, [self.__getitem__(x) for x in range(offset, offset + count)], None, iter_id)
 
             elif self._sealed:
@@ -492,9 +492,10 @@ class DataFrame:
 
     def gc_data(self):
         """Garbage collection function to trigger towhee.Array GC."""
-        with self._data_lock:
+        with self._iterator_lock:
             vals = [value for _, value in self._iterators.items()]
             self._min_offset = min(vals + [self._len])
+        with self._data_lock:
             for x in self._data_as_list:
                 x.gc(self._min_offset)
 
