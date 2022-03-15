@@ -63,3 +63,6 @@ class Entity:
         content = str(self.info)
         content += f' at {getattr(self, "id", id(self))}'
         return f'<{self.__class__.__name__} {content.strip()}>'
+
+    def register(self, index: str):
+        self._data.append(index)
