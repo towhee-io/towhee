@@ -396,7 +396,7 @@ class Trainer:
                 self.callbacks.on_train_batch_begin(inputs, logs)
                 inputs = self.prepare_inputs(inputs)
                 step_logs = self.train_step(model, inputs)  # , train_dataloader)
-                logs["lr"] = self.lr_scheduler.get_lr()[0]
+                logs["lr"] = self.lr_scheduler.get_last_lr()[0]
                 logs["global_step"] += 1
                 logs.update(step_logs)
                 self.callbacks.on_train_batch_end(tuple(inputs), logs)
