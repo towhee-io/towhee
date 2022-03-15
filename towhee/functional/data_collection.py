@@ -371,7 +371,7 @@ class DataCollection(Iterable, DataSourceMixin, DispatcherMixin, ParallelMixin,
                     return unary_op(x)
             except Exception as e:  # pylint: disable=broad-except
                 engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
-                return Empty()
+                return Empty(x, e)
 
         return map(inner, self._iterable)
 

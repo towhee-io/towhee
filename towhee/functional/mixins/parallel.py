@@ -185,6 +185,8 @@ class ParallelMixin:
             executor.shutdown()
 
         async def map_task(it):
+            await asyncio.sleep(it)
+
             def task_wrapper():
                 try:
                     if isinstance(it, Option):
@@ -211,6 +213,123 @@ class ParallelMixin:
 
         res = loop.run_until_complete(main_pmap())
         return res
+
+    def pmap1(self, unary_op, num_worker=None, executor=None):
+        """
+        apply `unary_op` with parallel execution
+        Examples:
+        >>> from towhee.functional import DataCollection
+        >>> import threading
+        >>> stage_1_thread_set = set()
+        >>> stage_2_thread_set = set()
+        >>> result = (
+        ...     DataCollection.range(1000).stream()
+        ...     .pmap(lambda x: stage_1_thread_set.add(threading.current_thread().ident), 5)
+        ...     .pmap(lambda x: stage_2_thread_set.add(threading.current_thread().ident), 4).to_list()
+        ... )
+        >>> len(stage_1_thread_set)
+        4
+        >>> len(stage_2_thread_set)
+        3
+        """
+        if executor is None:
+            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+        num_worker = executor._max_workers  # pylint: disable=protected-access
+        queue = Queue(maxsize=num_worker)
+        loop = asyncio.new_event_loop()
+        flag = True
+
+        def make_task(x):
+            def task_wrapper():
+                if isinstance(x, Option):
+                    return x.map(unary_op)
+                else:
+                    return unary_op(x)
+
+            return task_wrapper
+
+        async def worker():
+            buff = []
+            for x in self:
+                await asyncio.sleep(x)
+                if len(buff) == num_worker:
+                    queue.put(await buff.pop(0))
+                buff.append(loop.run_in_executor(executor, make_task(x)))
+            while len(buff) > 0:
+                queue.put(await buff.pop(0))
+            nonlocal flag
+            flag = False
+
+        def worker_wrapper():
+            loop.run_until_complete(worker())
+
+        executor.submit(worker_wrapper)
+
+        def inner():
+            nonlocal flag
+            while flag or not queue.empty():
+                yield queue.get()
+            # executor.shutdown()
+
+        return self.factory(inner())
+
+    def pmap2(self, unary_op, num_worker=None, executor=None):
+        """
+        apply `unary_op` with parallel execution
+
+        Examples:
+        >>> from towhee.functional import DataCollection
+        >>> import threading
+        >>> stage_1_thread_set = set()
+        >>> stage_2_thread_set = set()
+        >>> result = (
+        ...     DataCollection.range(1000).stream()
+        ...     .pmap(lambda x: stage_1_thread_set.add(threading.current_thread().ident), 5)
+        ...     .pmap(lambda x: stage_2_thread_set.add(threading.current_thread().ident), 4).to_list()
+        ... )
+        >>> len(stage_1_thread_set)
+        5
+        >>> len(stage_2_thread_set)
+        4
+        """
+        def inner():
+            while not queue.empty():
+                print('inner', queue.get())
+                # yield queue.get()
+            executor.shutdown()
+
+        # def callback(fut):
+        #     print('call', fut.result())
+        #     queue.put(fut.result())
+
+        async def map_task(it):
+            await asyncio.sleep(it)
+            def task_wrapper():
+                try:
+                    if isinstance(it, Option):
+                        return it.map(unary_op)
+                    else:
+                        return unary_op(it)
+                except Exception as e:  # pylint: disable=broad-except
+                    engine_log.warning(f'{e}, please check {it} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
+                    return Empty()
+
+            return await loop.run_in_executor(executor, task_wrapper)
+
+        async def main_pmap():
+            # tasks = []
+            for it in self:
+                fut = await asyncio.ensure_future(map_task(it), loop=loop)
+                queue.put(fut)
+                # fut.add_done_callback(callback)
+
+        if executor is None:
+            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+        loop = asyncio.new_event_loop()
+        queue = Queue()
+
+        loop.run_until_complete(main_pmap())
+        return self.factory(inner())
 
 
 if __name__ == '__main__':  # pylint: disable=inconsistent-quotes
