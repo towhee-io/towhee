@@ -84,8 +84,8 @@ class VideoTransforms:
                 UniformTemporalSubsample(self.tfms_params["num_frames"]),
                 Lambda(lambda x: x / 255.0),
                 NormalizeVideo(
-                    mean=[0.45, 0.45, 0.45],
-                    std=[0.225, 0.225, 0.225],
+                    mean=self.tfms_params["mean"],
+                    std=self.tfms_params["std"],
                     inplace=True
                 ),
                 ShortSideScale(size=self.tfms_params["side_size"]),
@@ -145,38 +145,50 @@ tfms_params = {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 8,
-        "sampling_rate": 8
+        "sampling_rate": 8,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     },
     "slowfast_r50": {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 32,
         "sampling_rate": 2,
-        "alpha": 4
+        "alpha": 4,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     },
     "slowfast_r101": {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 32,
         "sampling_rate": 8,
-        "alpha": 4
+        "alpha": 4,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     },
     "x3d_xs": {
         "side_size": 182,
         "crop_size": 182,
         "num_frames": 4,
         "sampling_rate": 12,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     },
     "x3d_s": {
         "side_size": 182,
         "crop_size": 182,
         "num_frames": 13,
         "sampling_rate": 6,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     },
     "x3d_m": {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 16,
         "sampling_rate": 5,
+        "mean": [0.45, 0.45, 0.45],
+        "std": [0.225, 0.225, 0.225],
     }
 }
