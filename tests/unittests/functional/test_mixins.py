@@ -11,16 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import doctest
+import unittest
 
-from .data_source import DataSourceMixin
-from .dispatcher import DispatcherMixin
-from .parallel import ParallelMixin
-from .computer_vision import ComputerVisionMixin
-from .tensor_like import TensorLikeMixin
+import towhee.functional.mixins.tensor_like
+import towhee.functional.mixins.computer_vision
 
+for mod in [
+    towhee.functional.mixins.tensor_like,
+    towhee.functional.mixins.computer_vision
+]:
+    TestDataCollectionMixins = doctest.DocTestSuite(mod)
+    unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
 
-class AllMixins(DataSourceMixin, DispatcherMixin, ParallelMixin,
-                ComputerVisionMixin, TensorLikeMixin):
-
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
-        super().__init__()
+if __name__ == '__main__':
+    unittest.main()
