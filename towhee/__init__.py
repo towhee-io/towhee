@@ -23,8 +23,7 @@ from towhee.engine import register, resolve
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hparam import param_scope, auto_param
 
-__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param', 'Build', 'Inject',
-           'dataset']
+__all__ = ['DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope', 'auto_param', 'Build', 'Inject', 'dataset']
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
@@ -171,9 +170,7 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     from torchvision import datasets  # pylint: disable=import-outside-toplevel
     from towhee.data.dataset.dataset import TorchDataSet  # pylint: disable=import-outside-toplevel
     dataset_construct_map = {
-        'mnist': datasets.MNIST,
-        'cifar10': datasets.cifar.CIFAR10,
-        'fake': datasets.FakeData
+        'mnist': datasets.MNIST, 'cifar10': datasets.cifar.CIFAR10, 'fake': datasets.FakeData
         # 'imdb': IMDB  # ,()
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
@@ -250,8 +247,9 @@ class _OperatorLazyWrapper:
     """
     operator wrapper for lazy initialization.
     """
-    def __init__(self, name: str, tag: str='main', **kws) -> None:
+    def __init__(self, name: str, index: Tuple[str], tag: str = 'main', **kws) -> None:
         self._name = name.replace('.', '/').replace('_', '-')
+        self._index = index
         self._tag = tag
         self._kws = kws
         self._op = None
@@ -261,7 +259,15 @@ class _OperatorLazyWrapper:
         with self._lock:
             if self._op is None:
                 self._op = op(self._name, self._tag, **self._kws)
-        return self._op(*arg, **kws)
+
+        if bool(self._index):
+            res = self._op(getattr(arg[0], self._index[0]), **kws)
+            setattr(arg[0], self._index[1], res)
+            arg[0].register(self._index[1])
+            return arg[0]
+        else:
+            res = self._op(*arg, **kws)
+            return res
 
     def train(self, *arg, **kws):
         with self._lock:
@@ -278,12 +284,11 @@ class _OperatorLazyWrapper:
         return self._kws
 
     @staticmethod
-    def callback(name, index, *arg, **kws):
-        _ = index
+    def callback(name: str, index: Tuple[str], *arg, **kws):
         if len(arg) == 0:
-            return _OperatorLazyWrapper(name, **kws)
+            return _OperatorLazyWrapper(name, index, **kws)
         else:
-            return _OperatorLazyWrapper(name, arg[0], **kws)
+            return _OperatorLazyWrapper(name, index, arg[0], **kws)
 
 
 ops = param_scope().callholder(_OperatorLazyWrapper.callback)
@@ -295,10 +300,12 @@ Entry point for creating operator instances, for example:
 An instance of `my_namespace`/`my_operator_name` is created.
 """
 
+
 def _pipeline_callback(name, index, *arg, **kws):
     name = name.replace('.', '/').replace('_', '-')
     _ = index
     return Build(**kws).pipeline(name, *arg)
+
 
 pipes = param_scope().callholder(_pipeline_callback)
 """
@@ -306,13 +313,13 @@ Entry point for creating pipeline instances, for example:
 
 >>> pipe_instance = pipes.my_namespace.my_pipeline_name(template_variable_1=xxx, template_variable_2=xxx)
 
-An instance of `my_namespace`/`my_pipeline_name` is created, and template variables in the pipeline,
+An instance of `my_namespace`/`my_pipeline_name` is created, and template variables in the pipeline,z
 `template_variable_1` and  `template_variable_2` are replaced with given values.
 """
 
 
 def plot(img1: Union[str, list], img2: list = None):
-    from towhee.utils.plot_utils import plot_img # pylint: disable=C
+    from towhee.utils.plot_utils import plot_img  # pylint: disable=C
     if not img2:
         plot_img(img1)
     else:

@@ -15,13 +15,13 @@
 import unittest
 
 from towhee import ops
+from towhee.functional.entity import Entity
 
 
 class TestPipelineOps(unittest.TestCase):
     """
     tests for template build
     """
-
     def test_ops(self):
         # pylint: disable=protected-access
         op1 = ops.my.op1(arg1=1, arg2=2)
@@ -34,9 +34,16 @@ class TestPipelineOps(unittest.TestCase):
         res = test_op(1)
         self.assertEqual(res, 2)
 
+        e = Entity({'in': 1})
+        test_op = ops.towhee.test_operator['in', 'out'](x=1)
+        res = test_op(e)
+        self.assertIsInstance(res, Entity)
+        self.assertEqual(res.out, 2)
+
     # def test_image_embedding_pipeline(self):
     #     pipe = image_embedding_pipeline(models = "xxx", ensemble = ops.my.ensemble_v1(agg='xxx', ....))
     #     pipe = image_embedding_pipeline(operators = [ops.my.embedding(model='xxx'), ops.my.embedding(model='xxx')])
+
 
 if __name__ == '__main__':
     unittest.main()
