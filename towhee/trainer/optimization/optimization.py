@@ -23,10 +23,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from towhee.trainer.utils.trainer_utils import SchedulerType
 
 
-optimizer_default_args_map = {
-    "adam": {}
-}
-
 def get_constant_schedule(optimizer: Optimizer, last_epoch: int = -1):
     """
     Create a schedule with a constant learning rate, using the learning rate set in optimizer.
@@ -98,7 +94,8 @@ def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_st
 
 
 def get_cosine_schedule_with_warmup(
-    optimizer: Optimizer, num_warmup_steps: int, num_training_steps: int, num_cycles: float = 0.5, last_epoch: int = -1
+        optimizer: Optimizer, num_warmup_steps: int, num_training_steps: int, num_cycles: float = 0.5,
+        last_epoch: int = -1
 ):
     """
     Create a schedule with a learning rate that decreases following the values of the cosine function between the
@@ -132,7 +129,7 @@ def get_cosine_schedule_with_warmup(
 
 
 def get_cosine_with_hard_restarts_schedule_with_warmup(
-    optimizer: Optimizer, num_warmup_steps: int, num_training_steps: int, num_cycles: int = 1, last_epoch: int = -1
+        optimizer: Optimizer, num_warmup_steps: int, num_training_steps: int, num_cycles: int = 1, last_epoch: int = -1
 ):
     """
     Create a schedule with a learning rate that decreases following the values of the cosine function between the
@@ -167,7 +164,7 @@ def get_cosine_with_hard_restarts_schedule_with_warmup(
 
 
 def get_polynomial_decay_schedule_with_warmup(
-    optimizer, num_warmup_steps, num_training_steps, lr_end=1e-7, power=1.0, last_epoch=-1
+        optimizer, num_warmup_steps, num_training_steps, lr_end=1e-7, power=1.0, last_epoch=-1
 ):
     """
     Create a schedule with a learning rate that decreases as a polynomial decay from the initial lr set in the
@@ -227,10 +224,10 @@ TYPE_TO_SCHEDULER_FUNCTION = {
 
 
 def get_scheduler(
-    name: Union[str, SchedulerType],
-    optimizer: Optimizer,
-    num_warmup_steps: Optional[int] = None,
-    num_training_steps: Optional[int] = None,
+        name: Union[str, SchedulerType],
+        optimizer: Optimizer,
+        num_warmup_steps: Optional[int] = None,
+        num_training_steps: Optional[int] = None,
 ):
     """
     Unified API to get any scheduler from its name.
@@ -270,4 +267,22 @@ def get_scheduler(
     )
 
 
+def get_warmup_steps(num_training_steps: int, warmup_steps: int, warmup_ratio: float) -> int:
+    """
+    Get number of steps used for a linear warmup.
 
+    Args:
+        num_training_steps (`int`):
+            All training steps when training.
+        warmup_steps (`int`):
+            Warmup steps. If > 0, `warmup_ratio` will not work.
+        warmup_ratio (`float`):
+            Ratio of num training steps to warmup.
+    Returns:
+        Warmup steps.
+    """
+    warmup_steps = (
+        warmup_steps if warmup_steps > 0 else math.ceil(
+            num_training_steps * warmup_ratio)
+    )
+    return warmup_steps

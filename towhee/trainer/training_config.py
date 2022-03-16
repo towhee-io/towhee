@@ -246,18 +246,21 @@ class TrainingConfig:
             device = torch.device(self.device_str)
         return device
 
-    def load_from_yaml(self, path2yaml: str = None):
+    def load_from_yaml(self, path2yaml: str = None) -> "TrainingConfig":
         """
         Load training configuration from yaml.
 
         Args:
             path2yaml (`str`):
                 The path to yaml.
+        Return:
+            (`TrainingConfig`).
+                TrainingConfig instance self.
 
         Example:
             >>> from towhee.trainer.training_config import TrainingConfig
             >>> from pathlib import Path
-            >>> conf = Path(__file__).parent / 'config.yaml'
+            >>> conf = Path(__file__).parent / "config.yaml"
             >>> ta = TrainingConfig()
             >>> ta.save_to_yaml(conf)
             >>> ta.load_from_yaml(conf)
@@ -272,6 +275,7 @@ class TrainingConfig:
             for category in self.config_category_set:
                 category_dict = config_dict.get(category, {})
                 self._set_attr_from_dict(category_dict)
+            return self
 
     def save_to_yaml(self, path2yaml: str = None):
         """
