@@ -17,7 +17,7 @@ Utilities for the Trainer.
 """
 
 import random
-from typing import NamedTuple, Any, Generator, Callable
+from typing import NamedTuple, Any, Generator, Callable, Dict, Union
 from collections.abc import Mapping
 from enum import Enum
 import numpy as np
@@ -26,6 +26,8 @@ import os
 from pathlib import Path
 import torch.distributed as dist
 from torch import nn
+
+NAME = "name_"
 
 
 def set_seed(seed: int):
@@ -101,6 +103,7 @@ def get_rank():
 def is_main_process():
     return get_rank() == 0
 
+
 def honor_type(obj, generator: Generator):
     """
     Cast a generator to the same type as obj (list, tuple or namedtuple)
@@ -111,10 +114,13 @@ def honor_type(obj, generator: Generator):
         return type(obj)(*list(generator))
     return type(obj)(generator)
 
+
 def is_torch_tensor(tensor: Any):
     return isinstance(tensor, torch.Tensor)
 
-def recursively_apply(func: Callable, data: Any, *args, test_type: Callable=is_torch_tensor, error_on_other_type: bool=False, **kwargs):
+
+def recursively_apply(func: Callable, data: Any, *args, test_type: Callable = is_torch_tensor,
+                      error_on_other_type: bool = False, **kwargs):
     """
     Recursively apply a function on a data structure that is a nested list/tuple/dictionary of a given base type.
 
@@ -201,3 +207,64 @@ def unwrap_model(model: nn.Module) -> nn.Module:
         return model.module
     else:
         return model
+
+
+def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        instance = construct_name()
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        instance = construct_name(**kwargs)
+    return instance
+
+
+def _construct_scheduler_from_config(optimizer: torch.optim.Optimizer, module: Any, config: Union[str, Dict]):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        instance = construct_name(optimizer)
+    elif isinstance(config, Dict):
+        scheduler_construct_name = config[NAME]
+        construct_name = getattr(module, scheduler_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        instance = construct_name(optimizer, **kwargs)
+    return instance
+
+
+def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], model=None):
+    """
+    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
+    """
+    instance = None
+    if isinstance(config, str):
+        construct_name = getattr(module, config)
+        if model is not None:
+            trainable_params = [p for p in model.parameters() if p.requires_grad]
+            instance = construct_name(trainable_params)
+    elif isinstance(config, Dict):
+        optimizer_construct_name = config[NAME]
+        construct_name = getattr(module, optimizer_construct_name)
+        kwargs = {}
+        for arg_name in config:
+            if arg_name != NAME:
+                kwargs[arg_name] = config[arg_name]
+        if model is not None:
+            trainable_params = [p for p in model.parameters() if p.requires_grad]
+            instance = construct_name(trainable_params, **kwargs)
+    return instance

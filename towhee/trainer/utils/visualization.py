@@ -14,12 +14,16 @@
 
 
 from typing import Optional, List, Any
-
 from PIL import Image
 from torchvision import transforms
 from torchvision.io import read_image
 from pathlib import Path
+from torch import nn
+from towhee.trainer.optimization.optimization import get_scheduler, get_warmup_steps
+from towhee.trainer.utils.trainer_utils import _construct_scheduler_from_config
+from towhee.trainer.training_config import TrainingConfig
 
+import torch
 import numpy as np
 import matplotlib.pylab as plt
 import random
@@ -187,3 +191,59 @@ def _plot_transform(orig_img, imgs, with_orig=True, row_title=None, **imshow_kwa
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_lrs_for_scheduler(optimizer: torch.optim.Optimizer, scheduler: '_LRScheduler', total_steps: int):
+    """
+    Plot the lr curve for a specified optimizer and scheduler instance.
+    Args:
+        optimizer (`Optimizer`):
+            The optimizer contains the training parameters of a model.
+        scheduler (`_LRScheduler`):
+            The lr scheduler for an optimizer.
+        total_steps (`int`):
+            Total training step number.
+
+    """
+    lrs = []
+    for _ in range(total_steps):
+        optimizer.step()
+        lrs.append(optimizer.param_groups[0]['lr'])
+        scheduler.step()
+    plt.plot(range(total_steps), lrs)
+    plt.show()
+
+
+def _create_scheduler_from_config(configs: TrainingConfig, num_training_steps: int,
+                                  optimizer: torch.optim.Optimizer = None):
+    if isinstance(configs.lr_scheduler_type, str):
+        lr_scheduler = get_scheduler(
+            configs.lr_scheduler_type,
+            optimizer=optimizer if optimizer is None else optimizer,
+            num_warmup_steps=get_warmup_steps(num_training_steps, configs.warmup_steps, configs.warmup_ratio),
+            num_training_steps=num_training_steps,
+        )
+    else:
+        lr_scheduler = _construct_scheduler_from_config(optimizer,
+                                                        torch.optim.lr_scheduler,
+                                                        configs.lr_scheduler_type)
+    return lr_scheduler
+
+
+def plot_lrs_for_config(configs: TrainingConfig, num_training_steps: int, start_lr: int = 100):
+    """
+    Plot the lr for a config.
+    It's useful to visualize how the lr scheduler control the lr by the yaml file configs.
+    Args:
+        configs (`TrainingConfig`):
+            The training config, which can be load from the yaml file.
+        num_training_steps (`int`):
+            Total training step number.
+        start_lr (`int`):
+            The start lr value.
+
+    """
+    model = nn.Linear(2, 1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=start_lr)
+    lr_scheduler = _create_scheduler_from_config(configs, num_training_steps, optimizer)
+    plot_lrs_for_scheduler(optimizer, lr_scheduler, num_training_steps)

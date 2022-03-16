@@ -13,9 +13,16 @@
 # limitations under the License.
 
 import unittest
+import torch
+
 from pathlib import Path
 from PIL import Image
-from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic, show_transform
+from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic, show_transform, \
+    plot_lrs_for_config, plot_lrs_for_scheduler
+from towhee.trainer.training_config import TrainingConfig
+from torch import nn
+from torch.optim.lr_scheduler import StepLR
+from unittest import mock
 
 cur_dir = Path(__file__).parent
 
@@ -49,6 +56,28 @@ class TestVisualizationUtil(unittest.TestCase):
         self.img_path.unlink()
         self.class1_path.rmdir()
         Path(self.root_dir).rmdir()
+
+
+class TestVisualizationLRScheduler(unittest.TestCase):
+    """
+    test lr scheduler plot.
+    """
+
+    def setUp(self) -> None:
+        model = nn.Linear(2, 1)
+        self.optimizer = torch.optim.SGD(model.parameters(), lr=100)
+
+    @mock.patch("towhee.trainer.utils.visualization.plt")
+    def test_step_lr(self, mock_plt):
+        lr_scheduler = StepLR(self.optimizer, step_size=2, gamma=0.1)
+        plot_lrs_for_scheduler(self.optimizer, lr_scheduler, total_steps=10)
+        assert mock_plt.show.called
+
+    @mock.patch("towhee.trainer.utils.visualization.plt")
+    def test_plot_lrs_for_config(self, mock_plt):
+        configs = TrainingConfig()
+        plot_lrs_for_config(configs, num_training_steps=20, start_lr=100)
+        assert mock_plt.show.called
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ import os
 import torch
 import torch.distributed as dist
 
-from typing import Union, Dict, Any, Optional
+from typing import Union, Any, Optional
 from pathlib import Path
 from collections.abc import Iterable
 from torch import nn
@@ -35,77 +35,17 @@ from towhee.trainer.callback import TensorBoardCallBack, ProgressBarCallBack, Pr
 from towhee.trainer.metrics import get_metric_by_name
 from towhee.trainer.modelcard import ModelCard, MODEL_CARD_NAME
 from towhee.trainer.utils.trainer_utils import STATE_CHECKPOINT_NAME, MODEL_NAME, set_seed, reduce_value, \
-    is_main_process, send_to_device, unwrap_model
+    is_main_process, send_to_device, unwrap_model, _construct_loss_from_config, _construct_optimizer_from_config, \
+    _construct_scheduler_from_config
 from towhee.trainer.training_config import TrainingConfig
 from towhee.utils.log import trainer_log
-from towhee.trainer.optimization.optimization import get_scheduler
+from towhee.trainer.optimization.optimization import get_scheduler, get_warmup_steps
 from towhee.trainer.callback import CallbackList, _get_summary_writer_constructor
 
 WEIGHTS_NAME = "pytorch_model.bin"
 TEMP_INIT_WEIGHTS = "./temp_init_weights.pt"
-NAME = "name_"
 CUSTOM = "custom_"
 no_option_list = ["no", "null", "None", None, False]
-
-
-def _construct_loss_from_config(module: Any, config: Union[str, Dict]):
-    """
-    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
-    """
-    instance = None
-    if isinstance(config, str):
-        construct_name = getattr(module, config)
-        instance = construct_name()
-    elif isinstance(config, Dict):
-        optimizer_construct_name = config[NAME]
-        construct_name = getattr(module, optimizer_construct_name)
-        kwargs = {}
-        for arg_name in config:
-            if arg_name != NAME:
-                kwargs[arg_name] = config[arg_name]
-        instance = construct_name(**kwargs)
-    return instance
-
-
-def _construct_scheduler_from_config(module: Any, config: Union[str, Dict]):
-    """
-    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
-    """
-    instance = None
-    if isinstance(config, str):
-        construct_name = getattr(module, config)
-        instance = construct_name()
-    elif isinstance(config, Dict):
-        scheduler_construct_name = config[NAME]
-        construct_name = getattr(module, scheduler_construct_name)
-        kwargs = {}
-        for arg_name in config:
-            if arg_name != NAME:
-                kwargs[arg_name] = config[arg_name]
-        instance = construct_name(**kwargs)
-    return instance
-
-
-def _construct_optimizer_from_config(module: Any, config: Union[str, Dict], model=None):
-    """
-    construct from the config, the config can be class name as a `str`, or a dict containing the construct parameters.
-    """
-    instance = None
-    if isinstance(config, str):
-        construct_name = getattr(module, config)
-        if model is not None:
-            instance = construct_name(model.parameters())
-    elif isinstance(config, Dict):
-        optimizer_construct_name = config[NAME]
-        construct_name = getattr(module, optimizer_construct_name)
-        kwargs = {}
-        for arg_name in config:
-            if arg_name != NAME:
-                kwargs[arg_name] = config[arg_name]
-        if model is not None:
-            trainable_params = [p for p in model.parameters() if p.requires_grad]
-            instance = construct_name(trainable_params, **kwargs)
-    return instance
 
 
 def freeze_bn(model):
@@ -289,7 +229,6 @@ class Trainer:
                  args=(world_size, resume_checkpoint_path),
                  nprocs=world_size,  # opt.world_size,
                  join=True)
-
 
     def _init_distributed(self, rank: int, world_size: int):
         if self.distributed:
@@ -878,32 +817,15 @@ class Trainer:
             self.lr_scheduler = get_scheduler(
                 self.configs.lr_scheduler_type,
                 optimizer=self.optimizer if optimizer is None else optimizer,
-                num_warmup_steps=self.get_warmup_steps(num_training_steps),
+                num_warmup_steps=get_warmup_steps(num_training_steps, self.configs.warmup_steps,
+                                                  self.configs.warmup_ratio),
                 num_training_steps=num_training_steps,
             )
         else:
-            self.configs.lr_scheduler_type["optimizer"] = optimizer
-            self.lr_scheduler = _construct_scheduler_from_config(torch.optim.lr_scheduler,
+            self.lr_scheduler = _construct_scheduler_from_config(optimizer,
+                                                                 torch.optim.lr_scheduler,
                                                                  self.configs.lr_scheduler_type)
         return self.lr_scheduler
-
-    def get_warmup_steps(self, num_training_steps: int) -> int:
-        """
-        Get number of steps used for a linear warmup.
-
-        Args:
-            num_training_steps (`int`):
-                All training steps when training.
-
-        Returns:
-            (`int`)
-                Warmup steps.
-        """
-        warmup_steps = (
-            self.configs.warmup_steps if self.configs.warmup_steps > 0 else math.ceil(
-                num_training_steps * self.configs.warmup_ratio)
-        )
-        return warmup_steps
 
     def load(self, path: str):
         """
