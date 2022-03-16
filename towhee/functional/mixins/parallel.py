@@ -15,9 +15,23 @@ import concurrent.futures
 from queue import Queue
 import asyncio
 
-from towhee.functional.option import Option
+from towhee.utils.log import engine_log
+from towhee.functional.option import Option, Empty
 from towhee.hparam.hyperparameter import param_scope
 
+
+def map_task(x, unary_op):
+    def map_wrapper():
+        try:
+            if isinstance(x, Option):
+                return x.map(unary_op)
+            else:
+                return unary_op(x)
+        except Exception as e:  # pylint: disable=broad-except
+            engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
+            return Empty(x, e)
+
+    return map_wrapper
 
 class ParallelMixin:
     """
@@ -100,41 +114,30 @@ class ParallelMixin:
         Examples:
         >>> from towhee.functional import DataCollection
         >>> import threading
-        >>> stage_1_thread_set = set()
-        >>> stage_2_thread_set = set()
+        >>> stage_1_thread_set = {threading.current_thread().ident}
+        >>> stage_2_thread_set = {threading.current_thread().ident}
         >>> result = (
         ...     DataCollection.range(1000).stream()
         ...     .pmap(lambda x: stage_1_thread_set.add(threading.current_thread().ident), 5)
         ...     .pmap(lambda x: stage_2_thread_set.add(threading.current_thread().ident), 4).to_list()
         ... )
         >>> len(stage_1_thread_set)
-        4
+        5
         >>> len(stage_2_thread_set)
-        3
+        4
         """
-        if executor is None:
-            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
-        num_worker = executor._max_workers  # pylint: disable=protected-access
-        queue = Queue(maxsize=num_worker)
-        loop = asyncio.new_event_loop()
-        flag = True
-
-        def make_task(x):
-
-            def task_wrapper():
-                if isinstance(x, Option):
-                    return x.map(unary_op)
-                else:
-                    return unary_op(x)
-
-            return task_wrapper
+        def inner():
+            nonlocal flag
+            while flag or not queue.empty():
+                yield queue.get()
+            # executor.shutdown()
 
         async def worker():
             buff = []
             for x in self:
                 if len(buff) == num_worker:
                     queue.put(await buff.pop(0))
-                buff.append(loop.run_in_executor(executor, make_task(x)))
+                buff.append(loop.run_in_executor(executor, map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
             nonlocal flag
@@ -143,13 +146,14 @@ class ParallelMixin:
         def worker_wrapper():
             loop.run_until_complete(worker())
 
-        executor.submit(worker_wrapper)
+        if executor is None:
+            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+        num_worker = executor._max_workers  # pylint: disable=protected-access
+        queue = Queue(maxsize=num_worker)
+        loop = asyncio.new_event_loop()
+        flag = True
 
-        def inner():
-            nonlocal flag
-            while flag or not queue.empty():
-                yield queue.get()
-            # executor.shutdown()
+        executor.submit(worker_wrapper)
 
         return self.factory(inner())
 
@@ -160,11 +164,11 @@ class ParallelMixin:
         Examples:
         1. using mmap
         >>> from towhee.functional import DataCollection
-        >>> dc = DataCollection.range(5).stream()
+        >>> dc = DataCollection([0,1,2,'3',4]).stream()
         >>> a, b = dc.mmap(lambda x: x+1, lambda x: x*2)
         >>> c = a.map(lambda x: x+1)
         >>> c.zip(b).to_list()
-        [(2, 0), (3, 2), (4, 4), (5, 6), (6, 8)]
+        [(2, 0), (3, 2), (4, 4), (Empty(), '33'), (6, 8)]
 
         2. using map instead of mmap
         >>> from towhee.functional import DataCollection
@@ -181,23 +185,11 @@ class ParallelMixin:
         >>> d.zip(b, c).map(lambda x: x[0]+x[1]+x[2]).to_list()
         [2, 5, 9, 12, 16]
         """
-        executor = self.get_executor()
-        if executor is None:
-            executor = concurrent.futures.ThreadPoolExecutor(len(arg))
-        num_worker = 1
-        queues = [Queue(maxsize=num_worker) for _ in arg]
-        loop = asyncio.new_event_loop()
-        flag = True
 
-        def make_task(x, unary_op):
-
-            def task_wrapper():
-                if isinstance(x, Option):
-                    return x.map(unary_op)
-                else:
-                    return unary_op(x)
-
-            return task_wrapper
+        def inner(queue):
+            nonlocal flag
+            while flag or not queue.empty():
+                yield queue.get()
 
         async def worker():
             buffs = [[] for _ in arg]
@@ -208,7 +200,7 @@ class ParallelMixin:
                     if len(buff) == num_worker:
                         queue.put(await buff.pop(0))
                     buff.append(
-                        loop.run_in_executor(executor, make_task(x, arg[i])))
+                        loop.run_in_executor(executor, map_task(x, arg[i])))
             while sum([len(buff) for buff in buffs]) > 0:
                 for i in range(len(arg)):
                     queue = queues[i]
@@ -220,12 +212,15 @@ class ParallelMixin:
         def worker_wrapper():
             loop.run_until_complete(worker())
 
-        executor.submit(worker_wrapper)
+        executor = self.get_executor()
+        if executor is None:
+            executor = concurrent.futures.ThreadPoolExecutor(len(arg))
+        num_worker = 1
+        queues = [Queue(maxsize=num_worker) for _ in arg]
+        loop = asyncio.new_event_loop()
+        flag = True
 
-        def inner(queue):
-            nonlocal flag
-            while flag or not queue.empty():
-                yield queue.get()
+        executor.submit(worker_wrapper)
 
         retval = [inner(queue) for queue in queues]
         return [self.factory(x) for x in retval]

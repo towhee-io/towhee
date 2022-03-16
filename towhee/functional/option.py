@@ -106,7 +106,7 @@ class Option(Generic[A]):
             try:
                 return Some(f(x))
             except Exception as e: # pylint: disable=broad-except
-                return Empty(_Reason(x, e))
+                return Empty(x, e)
 
         return self.flat_map(wrapper)
 
@@ -151,8 +151,8 @@ class Empty(Option[A]):
     """
     `Empty` value for `Option`
     """
-    def __init__(self, reason=_Reason(None, None)) -> None:
-        self._reason = reason
+    def __init__(self, x: Any = None, e: Exception = None) -> None:
+        self._reason = _Reason(x, e)
 
     def __repr__(self) -> str:
         return 'Empty()'
