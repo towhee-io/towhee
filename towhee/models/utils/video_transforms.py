@@ -21,10 +21,22 @@ import torch
 from torch import nn
 
 from torchvision.transforms import Compose, Lambda
-from torchvision.transforms._transforms_video import (
-    CenterCropVideo,
-    NormalizeVideo,
-)
+
+try:
+    from torchvideo.transforms import (
+        CenterCropVideo,
+        NormalizeVideo,
+        CollectFrames,
+        # PILVideoToTensor
+    )
+except ModuleNotFoundError:
+    os.system('pip install "git+https://github.com/willprice/torchvideo.git"')
+    from torchvideo.transforms import (
+        CenterCropVideo,
+        NormalizeVideo,
+        CollectFrames,
+        # PILVideoToTensor
+    )
 
 try:
     from pytorchvideo.data.encoded_video import EncodedVideo
@@ -37,6 +49,7 @@ from pytorchvideo.transforms import (
     UniformTemporalSubsample,
     # UniformCropVideo
 )
+
 
 class VideoTransforms:
     """
@@ -57,29 +70,32 @@ class VideoTransforms:
         A dictionary including tensors for both video and audio.
 
     Example:
-        >>> from towhee.models.utils.video_transform import VideoTransforms
-        >>> tfms = VideoTransforms("slow_r50")
-        >>> video_data = tfms(video_path="/path/to/video", start_sec=0, end_sec=30)
+        >>> from towhee.models.utils.video_transforms import VideoTransforms
+        >>> tfms = VideoTransforms("slowfast_r50")
+        >>> video_data = tfms(video_path="path/to/video", start_sec=0, end_sec=30)
     """
+
     def __init__(self, model_name: str):
         self.model_name = model_name
         self.tfms_params = tfms_params[model_name]
         self.tfms = ApplyTransformToKey(
             key="video",
             transform=Compose([
-                    UniformTemporalSubsample(self.tfms_params["num_frames"]),
-                    Lambda(lambda x: x/255.0),
-                    NormalizeVideo(
-                        mean = [0.45, 0.45, 0.45],
-                        std = [0.225, 0.225, 0.225]
-                        ),
-                    ShortSideScale(size=self.tfms_params["side_size"]),
-                    CenterCropVideo(
-                        crop_size=(self.tfms_params["crop_size"], self.tfms_params["crop_size"])
-                        ),
-                    PackPathway(alpha=self.tfms_params["alpha"]) if model_name.startswith("slowfast") else nn.Identity()
-                    ]),
-            )
+                UniformTemporalSubsample(self.tfms_params["num_frames"]),
+                Lambda(lambda x: x / 255.0),
+                NormalizeVideo(
+                    mean=[0.45, 0.45, 0.45],
+                    std=[0.225, 0.225, 0.225],
+                    inplace=True
+                ),
+                ShortSideScale(size=self.tfms_params["side_size"]),
+                CenterCropVideo(
+                    size=(self.tfms_params["crop_size"], self.tfms_params["crop_size"])
+                ),
+                CollectFrames(),
+                PackPathway(alpha=self.tfms_params["alpha"]) if model_name.startswith("slowfast") else nn.Identity()
+            ]),
+        )
 
     def __call__(self, video_path: str, start_sec=0, end_sec=30):
         video = EncodedVideo.from_path(video_path)
@@ -88,6 +104,8 @@ class VideoTransforms:
         if isinstance(video_data["video"], list) and str(self.tfms._transform.transforms[-1]) == "PackPathway()":
             video_data["video_slow"] = video_data["video"][0]
             video_data["video_fast"] = video_data["video"][1]
+        else:
+            video_data["video"] = torch.stack(video_data["video"])
         return video_data
 
 
@@ -96,17 +114,19 @@ class PackPathway(nn.Module):
     Transform for converting video frames as a list of tensors.
 
     Args:
-        frames (`torch.Tensor`):
-            video frames
+        alpha (`int`):
+            alpha value
 
     Returns:
         a list of tensors [slow_pathway, fast_pathway]
     """
+
     def __init__(self, alpha):
         super().__init__()
         self.alpha = alpha
 
     def forward(self, frames: torch.Tensor):
+        frames = torch.stack(frames)
         fast_pathway = frames
         # Perform temporal sampling from the fast pathway.
         slow_pathway = torch.index_select(
@@ -120,7 +140,7 @@ class PackPathway(nn.Module):
         return frame_list
 
 
-tfms_params  = {
+tfms_params = {
     "slow_r50": {
         "side_size": 256,
         "crop_size": 256,
