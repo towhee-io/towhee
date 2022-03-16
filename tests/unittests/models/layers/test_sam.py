@@ -30,4 +30,7 @@ class TestOperator(unittest.TestCase):
 
     def test_sam(self):
         optimizer = SAM(self.model.parameters(), self.base_optimizer, lr=0.1, momentum=0.9)
-        self.assertEqual(9, len(optimizer.base_optimizer.param_groups[0]))
+        param_num = len(optimizer.base_optimizer.param_groups[0])
+        if param_num == 9:
+            print(torch.__version__)
+        self.assertIn(param_num, (8, 9))
