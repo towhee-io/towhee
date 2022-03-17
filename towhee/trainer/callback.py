@@ -23,6 +23,8 @@ from tqdm import tqdm
 
 from towhee.utils.log import trainer_log
 from towhee.trainer.utils.trainer_utils import is_main_process
+from towhee.trainer.utils.file_utils import is_tensorboard_available
+
 __all__ = [
     "Callback",
     "CallbackList",
@@ -34,7 +36,11 @@ __all__ = [
     "ProgressBarCallBack"
 ]
 
+
 def _get_summary_writer_constructor():
+    if not is_tensorboard_available():
+        trainer_log.info("can not import tensorboard.")
+        return None
     try:
         tensorboard_module = importlib.import_module("torch.utils.tensorboard")
         summary_writer_constructor = tensorboard_module.SummaryWriter
@@ -43,6 +49,7 @@ def _get_summary_writer_constructor():
     except ImportError:
         trainer_log.info("can not import tensorboard.")
         return None
+
 
 class TrainerControl:
     """
@@ -66,9 +73,9 @@ class TrainerControl:
     def __init__(self,
                  should_training_stop: bool = False,
                  should_epoch_stop: bool = False,
-                 should_save:bool = False,
-                 should_evaluate = False,
-                 should_log = False):
+                 should_save: bool = False,
+                 should_evaluate=False,
+                 should_log=False):
         self.should_training_stop = should_training_stop
         self.should_epoch_stop = should_epoch_stop
         self.should_save = should_save
@@ -628,8 +635,8 @@ class ModelCheckpointCallback(Callback):
 
         self.save_path_prefix = filepath
         self.n_iteration = 0
-        assert(self.every_n_epoch != 0 and self.every_n_epoch > -2)
-        assert(self.every_n_iteration != 0 and self.every_n_iteration > -2)
+        assert (self.every_n_epoch != 0 and self.every_n_epoch > -2)
+        assert (self.every_n_iteration != 0 and self.every_n_iteration > -2)
 
     def on_epoch_end(self, epochs: int, logs: Dict = None):
         if self.every_n_epoch == -1:
@@ -651,6 +658,7 @@ class ModelCheckpointCallback(Callback):
     def _save_model(self):
         self.trainercontrol.should_save = True
 
+
 class TensorBoardCallBack(Callback):
     """
     TensorBoardCallBack is intended to record the essential value(e.g. epoch_loss)
@@ -666,7 +674,7 @@ class TensorBoardCallBack(Callback):
             Comment log_dir suffix appended to the default log_dir.
     """
 
-    def __init__(self, summary_writer_constructor: Callable, log_dir: str = None, comment:str = ""):
+    def __init__(self, summary_writer_constructor: Callable, log_dir: str = None, comment: str = ""):
         super().__init__()
         self.tb_writer = summary_writer_constructor(log_dir, comment=comment)
 
@@ -704,7 +712,7 @@ class PrintCallBack(Callback):
             Print information in every n steps.
     """
 
-    def __init__(self, total_epoch_num: int, step_frequency:int = 16):
+    def __init__(self, total_epoch_num: int, step_frequency: int = 16):
         super().__init__()
         self.step_frequency = step_frequency
         self.total_epoch_num = total_epoch_num

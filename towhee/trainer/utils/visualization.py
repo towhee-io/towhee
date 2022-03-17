@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Tuple
 from PIL import Image
 from torchvision import transforms
 from torchvision.io import read_image
@@ -22,15 +20,22 @@ from torch import nn
 from towhee.trainer.optimization.optimization import get_scheduler, get_warmup_steps
 from towhee.trainer.utils.trainer_utils import _construct_scheduler_from_config
 from towhee.trainer.training_config import TrainingConfig
+from towhee.trainer.utils.file_utils import is_captum_available, is_matplotlib_available
+from towhee.utils.log import trainer_log
 
 import torch
+import torch.nn.functional as F
 import numpy as np
-import matplotlib.pylab as plt
 import random
 import os
+import copy
 
 
 def _show_grid(row_grid_list, cls_list):
+    if not is_matplotlib_available():
+        trainer_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
+
     _, axs = plt.subplots(nrows=len(row_grid_list), ncols=len(row_grid_list[0]), squeeze=False, figsize=(13, 13))
     for row, (row_gird, _) in enumerate(zip(row_grid_list, cls_list)):
         for col, img in enumerate(row_gird):
@@ -133,6 +138,10 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
         (`dict`)
             Count statistic info, where key is category name, value is the count.
     """
+    if not is_matplotlib_available():
+        trainer_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
+
     root_path = Path(root)
     if classes:
         class_list = [root_path / cls for cls in classes]
@@ -164,6 +173,9 @@ def show_transform(image_path: str, transform: Any):
             torchvision.tranforms` or any other callable function.
 
     """
+    if not is_matplotlib_available():
+        trainer_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     plt.rcParams['savefig.bbox'] = 'tight'
     orig_img = Image.open(image_path)
     trans_img_list = [transform(orig_img) for _ in range(6)]
@@ -171,6 +183,9 @@ def show_transform(image_path: str, transform: Any):
 
 
 def _plot_transform(orig_img, imgs, with_orig=True, row_title=None, **imshow_kwargs):
+    if not is_matplotlib_available():
+        trainer_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     if not isinstance(imgs[0], list):
         imgs = [imgs]
     num_rows = len(imgs)
@@ -205,6 +220,9 @@ def plot_lrs_for_scheduler(optimizer: torch.optim.Optimizer, scheduler: '_LRSche
             Total training step number.
 
     """
+    if not is_matplotlib_available():
+        trainer_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     lrs = []
     for _ in range(total_steps):
         optimizer.step()
@@ -249,3 +267,126 @@ def plot_lrs_for_config(configs: TrainingConfig, num_training_steps: int, start_
     optimizer = torch.optim.SGD(model.parameters(), lr=start_lr)
     lr_scheduler = _create_scheduler_from_config(configs, num_training_steps, optimizer)
     plot_lrs_for_scheduler(optimizer, lr_scheduler, num_training_steps)
+
+
+def predict_image_classification(model: nn.Module, input_: torch.Tensor):
+    output = model(input_)
+    output = F.softmax(output, dim=1)
+    prediction_score, pred_label_idx = torch.topk(output, 1)
+    return prediction_score, pred_label_idx
+
+
+def interpret_image_classification(model: nn.Module, image: Any, eval_transform: transforms.Compose, method: str,
+                                   fig_size: Tuple = (10, 10), cmap: Any = 'OrRd', pred_label_idx: int = None,
+                                   titles: List = None, **kwargs: Any):
+    """
+    Use Captum to interpret the specified class of network output.
+    Captum should be installed.
+    Args:
+        model (`nn.Module`):
+            Pytorch module.
+        image (`Any`):
+            The image before do transform.
+            It can be produced by either pytorch `DataLoader` or read by `Image.open()` using PIL.
+        eval_transform (`transforms.Compose`):
+            Evaluation transform.
+        method (`method`):
+            It can be in ['Occlusion', 'IntegratedGradients', 'GradientShap', 'Saliency'].
+        fig_size (`Tuple`):
+            Figure plotting size.
+        cmap (`Any`):
+            Matplotlib colormap.
+        pred_label_idx (`int`):
+            If None, use the predicted class automatically.
+        titles (`List`):
+            Plotted titles of the two axs in the figure.
+        **kwargs (`Any`):
+            Keyword Args.
+    Returns:
+        (`tuple`)
+            Prediction score and label idx. If input label is specified, the prediction score is None.
+    """
+    if not is_captum_available():
+        trainer_log.warning('You should install Captum first. Please run `pip install captum`.')
+        return None
+    from captum.attr import visualization as viz  # pylint: disable=import-outside-toplevel
+    assert method in ['Occlusion', 'IntegratedGradients', 'GradientShap', 'Saliency']
+
+    def _viz_image_attr_multiple(attribution, trans_image: torch.Tensor, fig_size, cmap,
+                                 titles: List[str] = None, **kwargs):
+        _ = viz.visualize_image_attr_multiple(
+            np.transpose(attribution.squeeze().cpu().detach().numpy(), (1, 2, 0)),
+            np.transpose(trans_image.squeeze().cpu().detach().numpy(), (1, 2, 0)),
+            ['original_image', 'blended_heat_map'],
+            ['all', 'positive'],
+            show_colorbar=True,
+            outlier_perc=2,
+            fig_size=fig_size,
+            cmap=cmap,
+            titles=titles,
+            **kwargs
+        )
+
+    model.eval()
+
+    #  prepare image and input
+    input_ = eval_transform(image)
+    trans_without_norm = copy.deepcopy(eval_transform)
+    for trans in trans_without_norm.transforms:
+        if trans.__class__.__name__ == 'Normalize':
+            trans_without_norm.transforms.remove(trans)
+    trans_image = trans_without_norm(image)
+    if len(trans_image.shape) == 3:
+        trans_image = trans_image.unsqueeze(0)
+    if len(input_.shape) == 3:
+        input_ = input_.unsqueeze(0)
+
+    prediction_score = None
+    if pred_label_idx is None:
+        prediction_score, pred_label_idx = predict_image_classification(model, input_)
+
+    if titles is None:
+        titles = ['Origin Image', 'Method:' + method]
+
+    if method == 'Occlusion':
+        from captum.attr import Occlusion  # pylint: disable=import-outside-toplevel
+        occlusion = Occlusion(model)
+
+        attributions_occ = occlusion.attribute(input_,
+                                               strides=(3, 8, 8),
+                                               target=pred_label_idx,
+                                               sliding_window_shapes=(3, 15, 15),
+                                               baselines=0)
+        _viz_image_attr_multiple(attributions_occ, trans_image, fig_size, cmap, titles=titles, **kwargs)
+
+    if method == 'IntegratedGradients':
+        from captum.attr import NoiseTunnel  # pylint: disable=import-outside-toplevel
+        from captum.attr import IntegratedGradients  # pylint: disable=import-outside-toplevel
+        integrated_gradients = IntegratedGradients(model)
+        noise_tunnel = NoiseTunnel(integrated_gradients)
+
+        attributions_ig_nt = noise_tunnel.attribute(input_, nt_samples=10, nt_type='smoothgrad_sq',
+                                                    target=pred_label_idx)
+        _viz_image_attr_multiple(attributions_ig_nt, trans_image, fig_size, cmap, titles=titles, **kwargs)
+
+    if method == 'GradientShap':
+        from captum.attr import GradientShap, NoiseTunnel  # pylint: disable=import-outside-toplevel
+        gradient_shap = GradientShap(model)
+        rand_img_dist = torch.cat([input_ * 0, input_ * 1])
+        attributions_gs = gradient_shap.attribute(input_,
+                                                  n_samples=50,
+                                                  stdevs=0.0001,
+                                                  baselines=rand_img_dist,
+                                                  target=pred_label_idx)
+        _viz_image_attr_multiple(attributions_gs, trans_image, fig_size, cmap, titles=titles, **kwargs)
+
+    if method == 'Saliency':
+        from captum.attr import Saliency  # pylint: disable=import-outside-toplevel
+        saliency = Saliency(model)
+        grads = saliency.attribute(input_, target=pred_label_idx)
+        _viz_image_attr_multiple(grads, trans_image, fig_size, cmap, titles=titles, **kwargs)
+
+    if isinstance(pred_label_idx, torch.Tensor):
+        pred_label_idx = pred_label_idx.squeeze().item()
+    prediction_score = prediction_score.squeeze().detach().item()
+    return prediction_score, pred_label_idx
