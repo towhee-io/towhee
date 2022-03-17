@@ -40,6 +40,31 @@ class TestPipelineOps(unittest.TestCase):
         self.assertIsInstance(res, Entity)
         self.assertEqual(res.out, 2)
 
+    def test_mimo(self):
+        e = Entity({'in_1': 1, 'in_2': 2})
+        test_op = ops.towhee.test_operator[('in_2', 'in_1'), ('out_1', 'out_2')](x=1)
+        res = test_op(e)
+
+        self.assertIsInstance(res, Entity)
+        self.assertEqual(res.out_1, 2)
+        self.assertEqual(res.out_2, 2)
+
+        test_op = ops.towhee.test_operator['in_2', ('out_1', 'out_2')](x=1)
+        res = test_op(e)
+
+        self.assertIsInstance(res, Entity)
+        self.assertEqual(res.out_1, 2)
+        self.assertEqual(res.out_2, 2)
+
+        test_op = ops.towhee.test_operator[('in_1', 'in_2'), 'out_1'](x=1)
+        res = test_op(e)
+
+        self.assertIsInstance(res, Entity)
+        self.assertEqual(res.out_1, 3)
+
+        test_op = ops.towhee.test_operator[('in_1', 'in_2'), ('out_1', 'out_2', 'out_3')](x=1)
+        self.assertRaises(IndexError, test_op, x=1)
+
     # def test_image_embedding_pipeline(self):
     #     pipe = image_embedding_pipeline(models = "xxx", ensemble = ops.my.ensemble_v1(agg='xxx', ....))
     #     pipe = image_embedding_pipeline(operators = [ops.my.embedding(model='xxx'), ops.my.embedding(model='xxx')])

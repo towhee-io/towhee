@@ -261,9 +261,29 @@ class _OperatorLazyWrapper:
                 self._op = op(self._name, self._tag, **self._kws)
 
         if bool(self._index):
-            res = self._op(getattr(arg[0], self._index[0]), **kws)
-            setattr(arg[0], self._index[1], res)
-            arg[0].register(self._index[1])
+            # Multi inputs.
+            if isinstance(self._index[0], tuple):
+                args = []
+                for i in self._index[0]:
+                    args.append(getattr(arg[0], i))
+                res = self._op(*args, **kws)
+            # Single input.
+            else:
+                args = getattr(arg[0], self._index[0])
+                res = self._op(args, **kws)
+
+            # Multi outputs.
+            if isinstance(res, tuple):
+                if not isinstance(self._index[1], tuple) or len(self._index[1]) != len(res):
+                    raise IndexError(f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.')
+                for i in range(len(res)):
+                    setattr(arg[0], self._index[1][i], res[i])
+                    arg[0].register(self._index[1][i])
+            # Single output.
+            else:
+                setattr(arg[0], self._index[1], res)
+                arg[0].register(self._index[1])
+
             return arg[0]
         else:
             res = self._op(*arg, **kws)
