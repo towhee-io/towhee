@@ -821,7 +821,7 @@ class Trainer:
                                                   self.configs.warmup_ratio),
                 num_training_steps=num_training_steps,
             )
-        else:
+        elif isinstance(self.configs.lr_scheduler_type, dict):
             self.lr_scheduler = _construct_scheduler_from_config(optimizer,
                                                                  torch.optim.lr_scheduler,
                                                                  self.configs.lr_scheduler_type)
