@@ -21,16 +21,6 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
 
-def _private_wrapper(func):
-
-    def wrapper(self, *arg, **kws):
-        return self.factory(func(self, *arg, **kws))
-
-    if hasattr(func, '__doc__'):  # pylint: disable=inconsistent-quotes
-        wrapper.__doc__ = func.__doc__
-    return wrapper
-
-
 class DataCollection(Iterable, AllMixins):
     """
     DataCollection is a pythonic computation and processing framework
@@ -105,9 +95,16 @@ class DataCollection(Iterable, AllMixins):
         """
         super().__init__()
         self._iterable = iterable
+        
+        with param_scope() as hp:
+            self._chain = hp().data_collection.chain([])
 
     def __iter__(self):
         return iter(self._iterable)
+    
+    def get_chain(self):
+        return self._chain
+         
 
     def stream(arg):  # pylint: disable=no-self-argument
         """Create a stream data collection.
@@ -211,15 +208,14 @@ class DataCollection(Iterable, AllMixins):
         This factory method has been wrapped into a `param_scope()` which contains parent infomations.
         """
         creator = DataCollection.stream if self.is_stream else DataCollection.unstream
-
         def wrapper(*arg, **kws):
             with param_scope() as hp:
                 hp().data_collection.parent = self
+                hp().data_collection.chain = self._chain
                 return creator(*arg, **kws)
 
         return wrapper
 
-    @_private_wrapper
     def exception_safe(self):
         """
         making the data collection exception-safe by warp elements with `Option`.
@@ -244,8 +240,9 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        return map(lambda x: Some(x)
-                   if not isinstance(x, Option) else x, self._iterable)
+        self._chain.append('exception_safe')
+        result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
+        return self.factory(result)
 
     def safe(self):
         """
@@ -253,7 +250,6 @@ class DataCollection(Iterable, AllMixins):
         """
         return self.exception_safe()
 
-    @_private_wrapper
     def select(self, name: str = 'feature_vector'):
         """
         get the list from operator Output
@@ -266,9 +262,10 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.select(name='num').to_list()
         [1, 2, 3]
         """
-        return map(lambda x: getattr(x, name), self._iterable)
+        self._chain.append('select')
+        result = map(lambda x: getattr(x, name), self._iterable)
+        return self.factory(result)
 
-    @_private_wrapper
     def select_from(self, other):
         """
         select data from dc with list(self)
@@ -282,13 +279,15 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
+        self._chain.append('select_from')
 
         def inner(x):
             if isinstance(x, Iterable):
                 return [other[i] for i in x]
             return other[x]
 
-        return map(inner, self._iterable)
+        result = map(inner, self._iterable)
+        return self.factory(result)
 
     def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
@@ -306,6 +305,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
+        self._chain.append('fill_from')
         result = map(lambda x: x.get()
                      if isinstance(x, Some) else default, self._iterable)
         return self.factory(result)
@@ -333,6 +333,7 @@ class DataCollection(Iterable, AllMixins):
         >>> exception_inputs
         [3]
         """
+        self._chain.append('drop_empty')
         if callback is not None:
 
             def inner(data):
@@ -353,7 +354,6 @@ class DataCollection(Iterable, AllMixins):
             result = inner(self._iterable)
         return self.factory(result)
 
-    @_private_wrapper
     def map(self, *arg):
         """
         apply operator to data collection
@@ -387,8 +387,8 @@ class DataCollection(Iterable, AllMixins):
                 return x.map(unary_op)
             else:
                 return unary_op(x)
-
-        return map(inner, self._iterable)
+        self._chain.append('map')
+        return self.factory(map(inner, self._iterable))
 
     def zip(self, *others) -> 'DataCollection':
         """
@@ -408,6 +408,7 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
+        self._chain.append('zip')
         return self.factory(zip(self, *others))
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
@@ -420,7 +421,7 @@ class DataCollection(Iterable, AllMixins):
         Returns:
             DataCollection: filtered data collection
         """
-
+        self._chain.append('filter')
         #return filter(unary_op, self)
         def inner(x):
             if isinstance(x, Option):
@@ -448,6 +449,7 @@ class DataCollection(Iterable, AllMixins):
         >>> 900 < len(list(result)) < 1100
         True
         """
+        self._chain.append('sample')
         return self.factory(filter(lambda _: random() < ratio, self))
 
     @staticmethod
@@ -487,7 +489,7 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-
+        self._chain.append('batch')
         def inner():
             buff = []
             for ele in self._iterable:
@@ -526,7 +528,7 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
-
+        self._chain.append('rolling')
         def inner():
             buff = []
             for ele in self._iterable:
@@ -555,6 +557,7 @@ class DataCollection(Iterable, AllMixins):
         >>> nested_dc.flaten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
+        self._chain.append('flatten')
 
         def inner():
             for ele in self._iterable:
@@ -718,7 +721,6 @@ class DataCollection(Iterable, AllMixins):
     def __or__(self, unary_op):
         return self.map(unary_op)
 
-    @_private_wrapper
     def __add__(self, other):
         """
         concat two data collection.
@@ -731,11 +733,14 @@ class DataCollection(Iterable, AllMixins):
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
         """
+        self._chain.append('add')
+        def inner(original, added):
+            for x in original:
+                yield x
+            for x in added:
+                yield x
 
-        for x in self:
-            yield x
-        for x in other:
-            yield x
+        return self.factory(inner(self, other))
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable,

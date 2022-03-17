@@ -112,6 +112,7 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)
         3
         """
+        self._chain.append('pmap')
         if executor is None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
         num_worker = executor._max_workers  # pylint: disable=protected-access
@@ -181,6 +182,7 @@ class ParallelMixin:
         >>> d.zip(b, c).map(lambda x: x[0]+x[1]+x[2]).to_list()
         [2, 5, 9, 12, 16]
         """
+        self._chain.append('mmap')
         executor = self.get_executor()
         if executor is None:
             executor = concurrent.futures.ThreadPoolExecutor(len(arg))
