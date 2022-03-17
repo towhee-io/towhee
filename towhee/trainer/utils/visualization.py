@@ -216,6 +216,8 @@ def plot_lrs_for_scheduler(optimizer: torch.optim.Optimizer, scheduler: '_LRSche
 
 def _create_scheduler_from_config(configs: TrainingConfig, num_training_steps: int,
                                   optimizer: torch.optim.Optimizer = None):
+    assert isinstance(configs.lr_scheduler_type, (str, dict))
+    lr_scheduler = None
     if isinstance(configs.lr_scheduler_type, str):
         lr_scheduler = get_scheduler(
             configs.lr_scheduler_type,
@@ -223,7 +225,7 @@ def _create_scheduler_from_config(configs: TrainingConfig, num_training_steps: i
             num_warmup_steps=get_warmup_steps(num_training_steps, configs.warmup_steps, configs.warmup_ratio),
             num_training_steps=num_training_steps,
         )
-    else:
+    elif isinstance(configs.lr_scheduler_type, dict):
         lr_scheduler = _construct_scheduler_from_config(optimizer,
                                                         torch.optim.lr_scheduler,
                                                         configs.lr_scheduler_type)

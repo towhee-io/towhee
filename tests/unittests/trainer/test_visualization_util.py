@@ -44,9 +44,10 @@ class TestVisualizationUtil(unittest.TestCase):
         image_folder_sample_show(root=self.root_dir, rows=1, cols=1, img_size=20)
         self.assertEqual(len(list(self.class1_path.iterdir())), 1)
 
-    def test_statistic(self):
-        train_cls_count_dict = image_folder_statistic(self.root_dir, show_bar=True)
-        self.assertEqual(len(train_cls_count_dict), 1)
+    @mock.patch("towhee.trainer.utils.visualization.plt")
+    def test_statistic(self, mock_plt):
+        image_folder_statistic(self.root_dir, show_bar=True)
+        assert mock_plt.show.called
 
     def test_transform(self):
         show_transform(str(self.img_path), lambda x: x)
@@ -74,8 +75,19 @@ class TestVisualizationLRScheduler(unittest.TestCase):
         assert mock_plt.show.called
 
     @mock.patch("towhee.trainer.utils.visualization.plt")
-    def test_plot_lrs_for_config(self, mock_plt):
+    def test_plot_lrs_for_config_when_str(self, mock_plt):
         configs = TrainingConfig()
+        plot_lrs_for_config(configs, num_training_steps=20, start_lr=100)
+        assert mock_plt.show.called
+
+    @mock.patch("towhee.trainer.utils.visualization.plt")
+    def test_plot_lrs_for_config_when_dict(self, mock_plt):
+        configs = TrainingConfig()
+        configs.lr_scheduler_type = {
+            "name_": "StepLR",
+            "step_size": 2,
+            "gamma": 0.1
+        }
         plot_lrs_for_config(configs, num_training_steps=20, start_lr=100)
         assert mock_plt.show.called
 
