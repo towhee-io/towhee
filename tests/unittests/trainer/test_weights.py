@@ -30,10 +30,10 @@ class MockOperator(NNOperator):
         super().__init__(framework=framework)
         self.model_name = model_name
         self.model = torchvision.models.resnet50(pretrained=True)
+
     def __call__(self, x):
         return self.model(x)
-    def get_model(self):
-        return self.model
+
 
 class TestWeights(unittest.TestCase):
     """

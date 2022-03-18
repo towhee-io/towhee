@@ -96,7 +96,7 @@ class NNOperator(Operator):
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
-        self._trainer = None  # Trainer(self.get_model())
+        self._trainer = None
 
     @property
     def framework(self):
@@ -105,13 +105,6 @@ class NNOperator(Operator):
     @framework.setter
     def framework(self, framework: str):
         self._framework = framework
-
-    def get_model(self):
-        """
-        Get the framework naive model, if an operator need to be trained,
-        this method should be overwritten.
-        """
-        raise NotImplementedError()
 
     def train(self,
               training_config=None,
@@ -176,7 +169,7 @@ class NNOperator(Operator):
         """
         from towhee.trainer.trainer import Trainer  # pylint: disable=import-outside-toplevel
         if self._trainer is None:
-            self._trainer = Trainer(self.get_model(),
+            self._trainer = Trainer(self.model,
                                     training_config,
                                     train_dataset,
                                     eval_dataset,
@@ -222,9 +215,6 @@ class NNOperator(Operator):
                 If `overwrite` is False, when there already exists a path, it will raise Error.
         """
         self.trainer.save(path, overwrite)
-
-    # def change_before_train(self, **kwargs):
-    #     pass
 
 
 class PyOperator(Operator):
