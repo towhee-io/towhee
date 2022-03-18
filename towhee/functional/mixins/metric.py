@@ -12,20 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.utils import sklearn_utils
+
 class MetricMixin:
     """
-        Mixin for metric
+    Mixin for metric
     """
-    def with_accuracy(self):
-        pass
+    def with_accuracy(self, actual, predicted):
+        return sklearn_utils.accuracy_score(actual, predicted)
 
-    def with_recall(self):
-        pass
+    def with_recall(self, actual, predicted):
+        return sklearn_utils.recall_score(actual, predicted, average='micro')
 
-    def with_confusion_matrix(self):
-        pass
+    def with_confusion_matrix(self, actual, predicted):
+        return sklearn_utils.confusion_matrix(actual, predicted)
 
-    def metric_summary(self):
-        # return all metric
-        pass
+    def metric_summary(self, actual, predicted):
+        metrics = {
+            'accuracy': self.with_accuracy(actual, predicted),
+            'recall': self.with_recall(actual, predicted),
+            'confusion matrix': self.with_confusion_matrix(actual, predicted)
+        }
+        return  metrics
     
