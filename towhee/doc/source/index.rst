@@ -12,6 +12,8 @@ Welcome to Towhee's documentation!
 
    data_collection/index
 
+   builtin operators/index
+
    trainer/trainer
    trainer/trainer.optimization
    trainer/trainer.utils
