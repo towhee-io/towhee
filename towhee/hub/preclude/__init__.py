@@ -12,20 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-class ComputerVisionMixin:
-    """
-    Mixin for computer vision problems.
-    """
-
-    # pylint: disable=import-outside-toplevel
-    def image_imshow(self, title='image'):
-        import cv2
-        for im in self:
-            cv2.imshow(title, im)
-            cv2.waitKey(1)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
+import towhee.hub.builtin.operators.computer_vision
