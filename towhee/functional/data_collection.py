@@ -131,12 +131,16 @@ class DataCollection(Iterable, AllMixins):
             self = arg
             if self.is_stream:
                 return self
-            return DataCollection.stream(self._iterable)
+            self._chain.append('stream')
+            with param_scope() as hp:
+                hp().data_collection.chain = self._chain
+                return DataCollection.stream(self._iterable)
 
         iterable = arg
         if not isinstance(iterable, Iterator):
             iterable = iter(iterable)
-        return DataCollection(iterable)
+        dc = DataCollection(iterable)
+        return dc
 
     def unstream(arg):  # pylint: disable=no-self-argument
         """Create a unstream data collection.
@@ -163,12 +167,16 @@ class DataCollection(Iterable, AllMixins):
             self = arg
             if not self.is_stream:
                 return self
-            return DataCollection.unstream(self._iterable)
+            self._chain.append('unstream')
+            with param_scope() as hp:
+                hp().data_collection.chain = self._chain
+                return DataCollection.unstream(self._iterable)
 
         iterable = arg
         if isinstance(iterable, Iterator):
             iterable = list(iterable)
-        return DataCollection(iterable)
+        dc = DataCollection(iterable)
+        return dc
 
     @property
     def is_stream(self):
