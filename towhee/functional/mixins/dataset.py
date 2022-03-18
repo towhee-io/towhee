@@ -12,22 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 class DatasetMixin:
     """
         Mixin for dealing with dataset
     """
-    def from_glob(self):
-        # data_source.py already exists
-        pass
 
-    def from_zip(self):
-        # data_source.py already exists
-        pass
-
-    def from_camera(self):
-        # data_source.py already exists
-        pass
-
+    # pylint: disable=import-outside-toplevel
     def image_decode(self):
         pass
 
@@ -50,14 +41,6 @@ class DatasetMixin:
         pass
 
     def from_csv(self):
-        pass
-
-    def random_sample(self):
-        # core API already exists
-        pass
-
-    def filter_data(self):
-        # core API already exists
         pass
 
     def split_train_test(self):

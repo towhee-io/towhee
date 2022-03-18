@@ -75,10 +75,9 @@ class TensorLikeMixin:
             split = x.shape[axis]
             shape = x.shape
             shape = [shape[i] for i in range(len(shape)) if i != axis]
-            # if shape:
-            return list(map(lambda arr: arr.reshape(shape), np.split(x, split, axis=axis)))
-            # else:
-                # return np.split(x, split, axis=axis)
+            return list(
+                map(lambda arr: arr.reshape(shape),
+                    np.split(x, split, axis=axis)))
 
         return self.factory(map(inner, self._iterable))
 
@@ -141,10 +140,21 @@ class TensorLikeMixin:
         return self.factory(map(inner, self._iterable))
 
     def normalize(self, axis=0):
+        """
+        normalize input tensor
+
+        Examples:
+
+        >>> import numpy
+        >>> from towhee.functional import DataCollection
+        >>> dc = DataCollection([numpy.array([3, 4]), numpy.array([6,8])])
+        >>> dc.normalize().to_list()
+        [array([0.6, 0.8]), array([0.6, 0.8])]
+        """
         import numpy as np
 
         def inner(x):
-            return np.linalg.norm(x, axis=axis)
+            return x / np.linalg.norm(x, axis=axis)
 
         return self.factory(map(inner, self._iterable))
 
@@ -152,6 +162,28 @@ class TensorLikeMixin:
 
         def inner(x):
             return x.reshape(shape)
+
+        return self.factory(map(inner, self._iterable))
+
+    def random(self, shape=None):
+        """return a random tensor filled with random numbers from [0.0, 1.0).
+
+        Args:
+            shape ([int], optional): tensor shape. Defaults to None.
+
+        Returns:
+            ndarray: output tensor.
+
+        Examples:
+
+        >>> from towhee.functional import DataCollection
+        >>> DataCollection.range(5).random([1,2,3]).map(lambda x: x.shape).to_list()
+        [(1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3)]
+        """
+        import numpy as np
+
+        def inner(_):
+            return np.random.random(shape)
 
         return self.factory(map(inner, self._iterable))
 

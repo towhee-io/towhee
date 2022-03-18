@@ -35,9 +35,13 @@ class OperatorRegistry:
         if name in OperatorRegistry.REGISTRY:
             return OperatorRegistry.REGISTRY[name]
 
-        name = '{}/{}'.format(default_namespace, name)
-        if name in OperatorRegistry.REGISTRY:
-            return OperatorRegistry.REGISTRY[name]
+        name_with_ns = '{}/{}'.format(default_namespace, name)
+        if name_with_ns in OperatorRegistry.REGISTRY:
+            return OperatorRegistry.REGISTRY[name_with_ns]
+
+        name_with_ns = '{}/{}'.format('builtin', name)
+        if name_with_ns in OperatorRegistry.REGISTRY:
+            return OperatorRegistry.REGISTRY[name_with_ns]
         return None
 
     @staticmethod
@@ -156,6 +160,9 @@ class OperatorRegistry:
 
                 cls = WrapperClass
 
+            else:
+                old_cls = cls
+
             if output_schema is not None:
                 old_call = cls.__call__
 
@@ -172,6 +179,8 @@ class OperatorRegistry:
             cls.metainfo = metainfo
             cls.shared_type = property(lambda self: shared_type)
             OperatorRegistry.REGISTRY[name] = cls
+            if hasattr(old_cls, '__doc__'):  # pylint: disable=inconsistent-quotes
+                cls.__doc__ = old_cls.__doc__
             return cls
 
         return wrapper

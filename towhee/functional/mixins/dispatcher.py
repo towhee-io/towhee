@@ -22,7 +22,6 @@ class _OperatorWrapper:
     def __init__(self, op, index):
         self._op = op
         self._index = index
-        print(index)
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self._op(*args, **kwds)
@@ -54,20 +53,8 @@ class DispatcherMixin:
                                       tag='main')
             return _OperatorWrapper(op, index)
 
+
 if __name__ == '__main__':
     import doctest
 
     doctest.testmod(verbose=False)
-    # from towhee import register
-    # from towhee import ops
-    # from towhee.functional import DataCollection
-    # @register('0.1', name='add_1')
-    # def add_1(x):
-    #     return x+1
-
-    # dc = DataCollection.range(5).stream()
-    # # dc.map(ops.add_1[('a','b','c')]())
-    # print(ops.add_1)
-    # print(ops.add_1['a']())
-    # dc.add_1['a','b',('c', 'd')]()
-    # # import ipdb; ipdb.set_trace()
