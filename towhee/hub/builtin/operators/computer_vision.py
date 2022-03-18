@@ -30,7 +30,7 @@ def image_load(file_or_buff):
     >>> from towhee.functional import DataCollection
     >>> dc = (
     ...     DataCollection.range(5)
-    ...         .random([100, 100, 3])
+    ...         .random(shape=[100, 100, 3])
     ...         .image_dump()
     ... ).to_list()
 
@@ -85,7 +85,7 @@ class ImageResize:
     >>> from towhee.functional import DataCollection
     >>> dc = (
     ...     DataCollection.range(5)
-    ...         .random([100, 100, 3])
+    ...         .random(shape=[100, 100, 3])
     ...         .image_resize(dsize=[10, 10], interpolation='nearest')
     ... )
     >>> dc.select('shape').to_list()
@@ -131,7 +131,7 @@ class ImageConvertColor:
     >>> import numpy as np
     >>> (
     ...     DataCollection([np.ones([1,1, 3], dtype=np.uint8)])
-    ...         .image_convert_color('rgb2gray')
+    ...         .image_convert_color(code='rgb2gray')
     ...         .to_list()
     ... )
     [array([[1]], dtype=uint8)]
@@ -153,7 +153,7 @@ class ImageConvertColor:
         return cv2.cvtColor(x, self._code)
 
 
-@register
+@register(name='builtin/image_filter')
 class ImageFilter:
     """image filter.
     """
@@ -169,7 +169,7 @@ class ImageFilter:
         return cv2.filter2D(x, self._ddepth, self._kernel)
 
 
-@register
+@register(name='builtin/image_blur')
 class ImageBlur:
     """image blur.
 
@@ -183,14 +183,14 @@ class ImageBlur:
     >>> import numpy as np
     >>> (
     ...     DataCollection([np.ones([5,5], dtype=np.uint8)])
-    ...         .image_blur([3,3])
+    ...         .image_blur(ksize=[3,3])
     ...         .to_list()
     ... )
     [array([[1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1]], dtype=uint8)]
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1]], dtype=uint8)]
     """
 
     def __init__(self, ksize):

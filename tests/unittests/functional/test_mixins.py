@@ -14,13 +14,9 @@
 import doctest
 import unittest
 
-import towhee.functional.mixins.tensor_like
 import towhee.functional.mixins.computer_vision
 
-for mod in [
-    towhee.functional.mixins.tensor_like,
-    towhee.functional.mixins.computer_vision
-]:
+for mod in [towhee.functional.mixins.computer_vision]:
     TestDataCollectionMixins = doctest.DocTestSuite(mod)
     unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
 
