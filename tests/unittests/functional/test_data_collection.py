@@ -19,6 +19,7 @@ from towhee import ops
 from towhee import register
 from towhee.functional import DataCollection
 from towhee.hparam.hyperparameter import param_scope
+from towhee.functional.entity import Entity
 
 import towhee.functional.data_collection
 import towhee.functional.option
@@ -31,7 +32,6 @@ def add_1(x):
 
 @register(name='myop/add', output_schema=namedtuple('output', [('result')]))
 class MyAdd:
-
     def __init__(self, val):
         self.val = val
 
@@ -41,7 +41,6 @@ class MyAdd:
 
 @register(name='myop/mul')
 class MyMul:
-
     def __init__(self, val):
         self.val = val
 
@@ -56,7 +55,6 @@ class TestDataCollection(unittest.TestCase):
     """
     tests for data collection
     """
-
     def test_example_for_basic_api(self):
         dc = DataCollection(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
@@ -85,9 +83,28 @@ class TestDataCollection(unittest.TestCase):
             .to_list()
         self.assertListEqual(result, [2, 4, 6, 8, 10])
 
+    def test_fill_entity(self):
+        entities = [Entity(num=i) for i in range(5)]
+        dc = DataCollection(entities)
 
-TestDataCollectionExamples = doctest.DocTestSuite(
-    towhee.functional.data_collection)
+        self.assertTrue(hasattr(dc, '_iterable'))
+        for i in dc:
+            self.assertTrue(hasattr(i, 'num'))
+            self.assertTrue(hasattr(i, 'id'))
+            self.assertFalse(hasattr(i, 'usage'))
+
+        kvs = {'foo': 'bar'}
+        res = dc.fill_entity(usage='test').fill_entity(kvs)
+
+        self.assertTrue(hasattr(res, '_iterable'))
+        for i in res:
+            self.assertTrue(hasattr(i, 'num'))
+            self.assertTrue(hasattr(i, 'id'))
+            self.assertEqual(i.usage, 'test')
+            self.assertEqual(i.foo, 'bar')
+
+
+TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)
 
 TestOptionExamples = doctest.DocTestSuite(towhee.functional.option)
