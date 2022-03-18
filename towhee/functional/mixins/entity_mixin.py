@@ -13,6 +13,8 @@
 # limitations under the License.
 from typing import Dict, Any, Optional
 
+from towhee.functional.entity import Entity
+
 
 class EntityMixin:
     """
@@ -29,10 +31,11 @@ class EntityMixin:
         if default_kvs:
             kws.update(default_kvs)
 
-        for entity in self._iterable:
+        def fill(entity: Entity):
             for k, v in kws.items():
                 if not hasattr(entity, k):
                     setattr(entity, k, v)
                     entity.register(k)
+            return entity
 
-        return self.factory(self._iterable)
+        return self.factory(map(fill, self._iterable))
