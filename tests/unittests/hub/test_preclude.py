@@ -11,6 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import doctest
+import unittest
 
 import towhee.hub.builtin.operators.computer_vision
 import towhee.hub.builtin.operators.tensor_like
+
+for mod in [
+        towhee.hub.builtin.operators.computer_vision,
+        towhee.hub.builtin.operators.tensor_like
+]:
+    TestBuiltinOps = doctest.DocTestSuite(mod)
+    unittest.TextTestRunner(verbosity=4).run(TestBuiltinOps)
+
+if __name__ == '__main__':
+    unittest.main()
