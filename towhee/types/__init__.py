@@ -13,11 +13,14 @@
 # limitations under the License.
 
 from towhee.types.image import Image
+from towhee.types.audio_frame import AudioFrame
 
 __all__ = [
     'Image',
+    'AudioFrame',
 ]
 
 equivalents = {
     'towhee.types.image.Image': 'towhee.types.Image',
+    'towhee.types.audio_frame.AudioFrame': 'towhee.types.AudioFrame',
 }
