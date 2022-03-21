@@ -67,9 +67,9 @@ class ParallelMixin:
             parent = hp().data_collection.parent(None)
         if parent is not None and hasattr(parent, '_executor') and isinstance(
                 parent._executor, concurrent.futures.ThreadPoolExecutor):
-            self.set_parallel(executor=parent._executor)
+            self.set_parallel(executor=parent._executor, backend=parent._backend)
 
-    def set_parallel(self, num_worker=None, executor=None):
+    def set_parallel(self, num_worker=None, executor=None, backend = None):
         """
         set parallel execution
 
@@ -90,6 +90,10 @@ class ParallelMixin:
             self._executor = executor
         if num_worker is not None:
             self._executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+        if backend is not None:
+            self._backend = backend
+        else:
+            self._backend = 'thread'
 
         return self
 
@@ -97,6 +101,11 @@ class ParallelMixin:
         if hasattr(self, '_executor') and isinstance(
                 self._executor, concurrent.futures.ThreadPoolExecutor):
             return self._executor
+        return None
+
+    def get_backend(self):
+        if hasattr(self, '_backend'):
+            return self._backend
         return None
 
     def parallel(self, num_worker):
@@ -122,7 +131,12 @@ class ParallelMixin:
         return self.factory(inner())
 
     def pmap(self, unary_op, num_worker = None, executor = None, backend = None):
-        if backend is None or backend == 'thread':
+        if backend is None:
+            if self.get_backend() == 'ray':
+                return self.ray_pmap(unary_op, num_worker, executor)
+            else:
+                return self.thread_pmap(unary_op, num_worker, executor)
+        elif backend == 'thread':
             return self.thread_pmap(unary_op, num_worker, executor)
         elif backend == 'ray':
             return self.ray_pmap(unary_op, num_worker, executor)
@@ -146,6 +160,7 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)
         4
         """
+        print('using thread')
         def inner():
             nonlocal flag
             while flag or not queue.empty():
@@ -196,6 +211,7 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)
         4
         """
+        print('using ray')
         import ray
         ###### ACTOR: Currently much slower
 
