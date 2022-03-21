@@ -38,9 +38,6 @@ class MockOperator(NNOperator):
     def __call__(self, *args, **kwargs):
         return 1
 
-    def get_model(self):
-        return self.model
-
 
 class TrainerTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -83,7 +80,7 @@ class TrainerTest(unittest.TestCase):
         self.assertEqual(loss_name, self.op.trainer.configs.loss)
 
     def test_set_optimizer(self) -> None:
-        my_optimizer = AdamW(self.op.get_model().parameters(), lr=0.002)
+        my_optimizer = AdamW(self.model.parameters(), lr=0.002)
         optimizer_name = 'my_optimizer'
         self.op.trainer.set_optimizer(my_optimizer, optimizer_name=optimizer_name)
         self.assertEqual(optimizer_name, self.op.trainer.configs.optimizer)
