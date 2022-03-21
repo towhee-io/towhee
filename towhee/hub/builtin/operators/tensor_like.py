@@ -15,10 +15,11 @@
 from towhee.engine import register
 
 # pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
 
 
 @register(name='builtin/stack')
-class TensorStack:
+class stack:
     """stack the sequence of inputs along a new axis.
 
     Args:
@@ -52,7 +53,7 @@ class TensorStack:
 
 
 @register(name='builtin/unstack')
-class TensorUnstack:
+class unstack:
     """unstack an array along given axis.
 
     Args:
@@ -80,16 +81,16 @@ class TensorUnstack:
     def __call__(self, x):
         import numpy as np
 
-        split = x.shape[self._axis]
+        nsplit = x.shape[self._axis]
         shape = x.shape
         shape = [shape[i] for i in range(len(shape)) if i != self._axis]
         return list(
             map(lambda arr: arr.reshape(shape),
-                np.split(x, split, axis=self._axis)))
+                np.split(x, nsplit, axis=self._axis)))
 
 
 @register(name='builtin/concat')
-class TensorConcat:
+class concat:
     """concat the sequence of inputs along a axis (no new axis)
 
     Args:
@@ -121,7 +122,7 @@ class TensorConcat:
 
 
 @register(name='builtin/split')
-class TensorSplit:
+class split:
     """split the input array along a axis.
 
     Args:
@@ -149,12 +150,12 @@ class TensorSplit:
     def __call__(self, x):
         import numpy as np
 
-        split = x.shape[self._axis]
-        return np.split(x, split, axis=self._axis)
+        nsplit = x.shape[self._axis]
+        return np.split(x, nsplit, axis=self._axis)
 
 
 @register(name='builtin/normalize')
-class TensorNormalize:
+class normalize:
     """
     normalize input tensor
 
@@ -177,7 +178,7 @@ class TensorNormalize:
 
 
 @register(name='builtin/reshape')
-class TensorReshape:
+class reshape:
 
     def __init__(self, shape):
         self._shape = shape
@@ -188,7 +189,7 @@ class TensorReshape:
 
 
 @register(name='builtin/random')
-class TensorRandom:
+class random:
     """return a random tensor filled with random numbers from [0.0, 1.0).
 
     Args:

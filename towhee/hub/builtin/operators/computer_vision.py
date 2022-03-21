@@ -15,6 +15,7 @@
 from towhee.engine import register
 
 # pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
 
 
 @register(name='builtin/image_load')
@@ -50,7 +51,7 @@ def image_load(file_or_buff):
 
 
 @register(name='builtin/image_dump')
-class ImageDump:
+class image_dump:
     """dump image to a binary buffer.
     """
 
@@ -68,7 +69,7 @@ class ImageDump:
 
 
 @register(name='builtin/image_resize')
-class ImageResize:
+class image_resize:
     """resize an image.
 
     Args:
@@ -116,7 +117,7 @@ class ImageResize:
 
 
 @register(name='builtin/image_convert_color')
-class ImageConvertColor:
+class image_convert_color:
     """convert image color space.
 
     Args:
@@ -154,7 +155,7 @@ class ImageConvertColor:
 
 
 @register(name='builtin/image_filter')
-class ImageFilter:
+class image_filter:
     """image filter.
     """
 
@@ -170,7 +171,7 @@ class ImageFilter:
 
 
 @register(name='builtin/image_blur')
-class ImageBlur:
+class image_blur:
     """image blur.
 
     Args:

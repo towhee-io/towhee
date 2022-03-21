@@ -83,7 +83,7 @@ A data processing pipeline can be created by chaining `map()` and `filter()`:
 
 ```python
 >>> dc = (
-... 	DataCollection.iter(range(100))
+... 	DataCollection.range(100)
 ... 		.filter(is_prime) # stage 1, find prime
 ... 		.filter(lambda x: x%10 == 3) # stage 2, find prime that ends with `3`
 ... 		.map(str) # stage 3, convert to string
@@ -120,7 +120,7 @@ When chaining many stages, `DataCollection` provides a more straightforward synt
 >>> with param_scope() as hp:
 .. 		hp().dispatcher.as_str = str
 ... 	dc = (
-... 	DataCollection.iter(range(10))
+... 	DataCollection.range(10)
 ... 		.filter(is_prime)
 ... 		.as_str() # map(str)
 ... )
