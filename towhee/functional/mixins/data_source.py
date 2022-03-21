@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
+from pathlib import Path
+
+from towhee.functional.entity import Entity
+
 
 class DataSourceMixin:
     """
@@ -45,7 +50,6 @@ class DataSourceMixin:
         from towhee.utils.repo_normalize import RepoNormalize
         from io import BytesIO
         from zipfile import ZipFile
-        from pathlib import Path
         from glob import glob
 
         from urllib.request import urlopen
@@ -62,6 +66,7 @@ class DataSourceMixin:
                 for path in path_list:
                     with zfile.open(path, mode=mode) as f:
                         yield f
+
         return cls.stream(inner())
 
     @classmethod
@@ -82,3 +87,70 @@ class DataSourceMixin:
                     cnt -= 1
 
         return cls.stream(inner())
+
+    def image_decode(self):
+        pass
+
+    def image_encode(self):
+        pass
+
+    def audio_decode(self):
+        pass
+
+    def audio_encode(self):
+        pass
+
+    def video_decode(self):
+        pass
+
+    def video_encode(self):
+        pass
+
+    @classmethod
+    def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
+        import json
+
+        def inner():
+            with open(json_path, 'r', encoding=encoding) as f:
+                string = f.readline()
+                while string:
+                    data = json.loads(string)
+                    string = f.readline()
+                    yield Entity(data)
+
+        return cls.stream(inner())
+
+    @classmethod
+    def from_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
+        import csv
+
+        def inner():
+            with open(csv_path, 'r', encoding=encoding) as f:
+                data = csv.DictReader(f)
+                for line in data:
+                    yield Entity(line)
+
+        return cls.stream(inner())
+
+    def random_sample(self):
+        # core API already exists
+        pass
+
+    def filter_data(self):
+        # core API already exists
+        pass
+
+    def split_train_test(self):
+        pass
+
+    def save_json(self):
+        pass
+
+    def save_image(self):
+        pass
+
+    def save_csv(self):
+        pass
+
+    def get_info(self):
+        pass
