@@ -19,7 +19,29 @@ from towhee.functional.entity import Entity
 class EntityMixin:
     """
     Mixin to help deal with Entity.
+
+    Examples:
+
+    1. define an operator with `register` decorator
+
+    >>> from towhee import register
+    >>> from towhee.functional import DataCollection
+    >>> @register
+    ... def add_1(x):
+    ...     return x+1
+
+    2. apply the operator to named field of entity and save result to another named field
+
+    >>> (
+    ...     DataCollection([dict(a=1, b=2), dict(a=2, b=3)])
+    ...         .as_entity()
+    ...         .add_1['a', 'c']() # <-- use field `a` as input and filed `c` as output
+    ...         .as_str()
+    ...         .to_list()
+    ... )
+    ['{"a": 1, "b": 2, "c": 2}', '{"a": 2, "b": 3, "c": 3}']
     """
+
     def fill_entity(self, default_kvs: Optional[Dict[str, Any]] = None, **kws):
         """
         When DataCollection's iterable exists of Entities and some indexes missing, fill default value for those indexes.
@@ -39,3 +61,30 @@ class EntityMixin:
             return entity
 
         return self.factory(map(fill, self._iterable))
+
+    def as_entity(self):
+        """
+        Convert elements into Entities.
+
+        Examples:
+
+        >>> from towhee.functional import DataCollection
+        >>> (
+        ...     DataCollection([dict(a=1, b=2), dict(a=2, b=3)])
+        ...         .as_entity()
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
+        """
+
+        def inner(x):
+            return Entity(**x)
+
+        return self.factory(map(inner, self._iterable))
+
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod(verbose=False)

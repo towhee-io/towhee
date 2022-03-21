@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import json
 from typing import overload, Dict, Any, Optional, Tuple
 
 
@@ -21,6 +22,7 @@ class Entity:
 
     Users can create an Entity with free schema, which means there is no limit on attribute name and type.
     """
+
     @overload
     def __init__(self):
         """
@@ -63,6 +65,11 @@ class Entity:
         content = str(self.info)
         content += f' at {getattr(self, "id", id(self))}'
         return f'<{self.__class__.__name__} {content.strip()}>'
+
+    def __str__(self) -> str:
+        return json.dumps(
+            {k: getattr(self, k)
+             for k in self._data if k != 'id'})
 
     def register(self, index: str):
         self._data.append(index)
