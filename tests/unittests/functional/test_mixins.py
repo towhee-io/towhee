@@ -15,8 +15,12 @@ import doctest
 import unittest
 
 import towhee.functional.mixins.computer_vision
+import towhee.functional.mixins.entity_mixin
 
-for mod in [towhee.functional.mixins.computer_vision]:
+for mod in [
+        towhee.functional.mixins.computer_vision,
+        towhee.functional.mixins.entity_mixin
+]:
     TestDataCollectionMixins = doctest.DocTestSuite(mod)
     unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
 

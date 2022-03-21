@@ -12,19 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
-
-from towhee.engine.operator_loader import OperatorLoader
-
-
-class _OperatorWrapper:
-
-    def __init__(self, op, index):
-        self._op = op
-        self._index = index
-
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self._op(*args, **kwds)
+from towhee.engine.factory import ops
 
 
 class DispatcherMixin:
@@ -43,15 +31,11 @@ class DispatcherMixin:
     """
 
     def resolve(self, call_mapping, path, index, *arg, **kws):
-        _ = index
+        # pylint: disable=protected-access
         if path in call_mapping:
             return call_mapping[path](*arg, **kws)
         else:
-            loader = OperatorLoader()
-            op = loader.load_operator(path.replace('.', '/').replace('_', '-'),
-                                      kws,
-                                      tag='main')
-            return _OperatorWrapper(op, index)
+            return ops._callback(path, index, *arg, **kws)
 
 
 if __name__ == '__main__':

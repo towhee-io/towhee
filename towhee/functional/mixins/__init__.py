@@ -17,9 +17,10 @@ from .dispatcher import DispatcherMixin
 from .parallel import ParallelMixin
 from .computer_vision import ComputerVisionMixin
 from .entity_mixin import EntityMixin
+from .display import DisplayMixin
 
 
-class AllMixins(DataSourceMixin, DispatcherMixin, ParallelMixin,
+class AllMixins(DataSourceMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                 ComputerVisionMixin, EntityMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation

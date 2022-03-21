@@ -16,5 +16,9 @@ class DisplayMixin:
     """
         Mixin for display data
     """
+
+    def as_str(self):
+        return self.factory(map(str, self._iterable))
+
     def plot(self):
         pass
