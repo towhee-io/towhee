@@ -67,11 +67,9 @@ class ParallelMixin:
             parent = hp().data_collection.parent(None)
         if parent is not None and hasattr(parent, '_executor') and isinstance(
                 parent._executor, concurrent.futures.ThreadPoolExecutor):
-            self.set_parallel(executor=parent._executor, backend = parent._backend)
-        else:
-            self._backend = 'thread'
+            self.set_parallel(executor=parent._executor)
 
-    def set_parallel(self, num_worker=None, executor=None, backend = None):
+    def set_parallel(self, num_worker=None, executor=None):
         """
         set parallel execution
 
@@ -92,11 +90,6 @@ class ParallelMixin:
             self._executor = executor
         if num_worker is not None:
             self._executor = concurrent.futures.ThreadPoolExecutor(num_worker)
-
-        if backend is None:
-            pass
-        else:
-            self._backend = backend
 
         return self
 
@@ -127,11 +120,9 @@ class ParallelMixin:
             executor.shutdown()
 
         return self.factory(inner())
-    
+
     def pmap(self, unary_op, num_worker = None, executor = None, backend = None):
-        if backend is None:
-            backend = self._backend
-        if backend == 'thread':
+        if backend is None or backend == 'thread':
             return self.thread_pmap(unary_op, num_worker, executor)
         elif backend == 'ray':
             return self.ray_pmap(unary_op, num_worker, executor)
@@ -212,9 +203,9 @@ class ParallelMixin:
         # class RemoteActor:
         #     def remote_runner(self, val):
         #         return map_task(unary_op)(val)
-        
+
         # pool = ray.util.ActorPool([RemoteActor.remote() for _ in range(num_worker)])
-        
+
         # def inner():
         #     nonlocal flag
         #     while flag or not queue.empty():
@@ -253,7 +244,7 @@ class ParallelMixin:
             while flag or not queue.empty():
                 yield queue.get()
             # executor.shutdown()
-        
+
         @ray.remote
         def remote_runner(val):
             return map_task_ray(unary_op)(val)
