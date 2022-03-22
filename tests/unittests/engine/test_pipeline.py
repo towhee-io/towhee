@@ -115,6 +115,13 @@ class TestPipeline(unittest.TestCase):
         res = p(input_data)
         self.assertEqual([item[0] for item in res], [6, 6, 30, 30])
 
+    def test_multi_runners(self):
+        p = pipeline('local/test_multi_runner')
+        input_data = 1000
+        res = p(input_data)
+        for i in range(input_data):
+            self.assertEqual(res[i][0], i + 1)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -108,14 +108,14 @@ class OperatorContext:
             self._op_status = OpStatus.FINISHED
         return self._op_status
 
-    def start(self, executor: ThreadPoolTaskExecutor, count: int = 1) -> None:
+    def start(self, executor: ThreadPoolTaskExecutor) -> None:
         if self._op_status != OpStatus.NOT_RUNNING:
             raise RuntimeError('OperatorContext can only be started once')
 
         self._op_status = OpStatus.RUNNING
 
         try:
-            for i in range(count):
+            for i in range(self._repr.threads):
                 self._op_runners.append(
                     create_runner(
                         self._repr.iter_info['type'],
