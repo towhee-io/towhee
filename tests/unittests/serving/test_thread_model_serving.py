@@ -3,10 +3,12 @@ import time
 import weakref
 import threading
 import queue
+import torch
+from torch import nn
 
-from towhee.serving.thread_model_serving import TaskFuture, TaskFutureCache
+from towhee.serving.thread_model_serving import TaskFuture, TaskFutureCache, ThreadModelServing
 
-class ThreadModelServing(unittest.TestCase):
+class TestThreadModelServing(unittest.TestCase):
     """
     ThreadModelServing
     """
@@ -23,7 +25,7 @@ class ThreadModelServing(unittest.TestCase):
         except TimeoutError:
             pass
         time_end = time.time()
-        self.assertGreater(time_end - time_start, 1)
+        self.assertGreater(time_end - time_start, 0.9)
         self.assertEqual(fut.done(), None)
 
         fut.set_result(1, tasks[1])
@@ -55,6 +57,7 @@ class ThreadModelServing(unittest.TestCase):
             batch_data = []
 
             def process_batch(batch_data):
+                print('batch_data', batch_data)
                 return [2 * data[0] + data[1] for data in batch_data]
 
             def handle_output(batch_data) :
@@ -78,7 +81,7 @@ class ThreadModelServing(unittest.TestCase):
                     batch_data = []
 
         tproducer = threading.Thread(target=producer)
-        for i in range(1,5):
+        for i in range(0,5):
             tconsumer = threading.Thread(target=consumer, args=(i,))
             tconsumer.start()
 
@@ -88,7 +91,65 @@ class ThreadModelServing(unittest.TestCase):
 
         for fut in future_list:
             result = fut.result()
-            self.assertEqual(result, [ fut.task_id * 2 + i for i in range(fut.task_id)])
+            rvalue = [ fut.task_id * 2 + i for i in range(fut.task_id)]
+            if len(rvalue) == 1:
+                rvalue = rvalue[0]
+            self.assertEqual(result, rvalue)
+
+    def test_threadmodelserving_cpu(self):
+        model = nn.Identity()
+        tms = ThreadModelServing(model=model, batch_size=4, max_latency=1, device_ids=[-1,-1,-1,-1])
+
+        def func_tms_start():
+            tms.start()
+            time.sleep(4)
+            tms.stop()
+
+        tms_start = threading.Thread(target=func_tms_start, daemon = True)
+        tms_start.start()
+        batch_data = [torch.randn(3,3) for _ in range(10)]
+        fut = tms.recv(batch_data)
+
+        fut.result()
+
+        self.assertEqual(torch.stack(fut.result()).sum(), torch.stack(batch_data).sum())
+        tms.stop()
+
+    def test_threadmodelserving_multithread_cpu(self):
+        model = nn.Identity()
+        tms = ThreadModelServing(model=model, batch_size=4, max_latency=1, device_ids=[-1,-1,-1,-1])
+
+        def func_tms_start():
+            tms.start()
+            time.sleep(4)
+            tms.stop()
+
+        tms_start = threading.Thread(target=func_tms_start, daemon = True)
+        tms_start.start()
+
+        def sending_request(idx):
+            batch_sizes = [1,2,3,4]
+            bs = batch_sizes[idx]
+
+            batch_data = [torch.randn(3,3) for _ in range(bs)]
+            if len(batch_data) == 1:
+                batch_data = batch_data[0]
+            fut = tms.recv(batch_data)
+            if idx == 0:
+                self.assertEqual(fut.result().sum(), batch_data.sum())
+            else:
+                self.assertEqual(torch.stack(fut.result()).sum(), torch.stack(batch_data).sum())
+        tpools = []
+        for i in range(4):
+            t = threading.Thread(target=sending_request, args =(i,), daemon=True)
+            tpools.append(t)
+            t.start()
+
+        for t in tpools:
+            t.join()
+
+        tms.stop()
+
 
 
 if __name__ == '__main__':

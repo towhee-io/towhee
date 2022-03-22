@@ -2,43 +2,96 @@ from typing import List, Union
 import threading
 import copy
 import queue
+import weakref
+import time
 
-from towhee.serving.model_serving import ModelServing
 from towhee.serving.torch_model_worker import TorchModelWorker
 
-class ThreadModelServing(ModelServing):
+class ThreadModelServing:
     """
     ThreadModelServing
     """
     def __init__(self, model, batch_size: int, max_latency: int, device_ids: List[int]):
-        self.models = [TorchModelWorker(copy.deepcopy(model, id)) for id in range(device_ids)]
+        self.models = [TorchModelWorker(copy.deepcopy(model), idx) for idx in device_ids]
         self._max_latency = max_latency
         self._batch_size = batch_size
         self._input_queue = queue.Queue()
 
+        self.future_cache = TaskFutureCache()
+        self._lock = threading.Lock()
+        self._task_id = 0
+        self._need_stop = False
+
+    @property
+    def task_id(self):
+        with self._lock:
+            self._task_id += 1
+        return self._task_id
+
     def recv(self, data: Union['tensor', List['tensor']]) -> 'Future':
         if not isinstance(data, list):
             data = [data]
-        #TODO: workaround
-        return data
+        f = TaskFuture(self.task_id, len(data), weakref.ref(self.future_cache))
+
+        self.future_cache[f.task_id] = f
+
+        for idx, item in enumerate(data):
+            self._input_queue.put((f.task_id, idx, item))
+        return f
 
     def _response(self, outputs):
         pass
 
-    def _run_once(self):
-        inputs = self._input_queue.get(self._batch_size, self._max_latency)
-        if not inputs:
-            return
+    def _run_once(self, replica_id, batch_data: List):
+        batch_data_input = [item[2] for item in batch_data]
+        batch_data_output = self.models[replica_id](batch_data_input)
+        for i in range(len(batch_data_output)):
+            task_id, idx, _ = batch_data[i]
+            self.future_cache[task_id].set_result(idx, batch_data_output[i])
 
-        outputs = self._model.stack(inputs)
-        self._response(outputs)
+    def get_batch_data(self):
+        wait_time = self._max_latency
+        batch_cache = []
+        while True:
+            time_start = time.time()
+            try:
+                if len(batch_cache) == 0:
+                    data = self._input_queue.get()
+                else:
+                    data = self._input_queue.get(timeout=wait_time)
+            except queue.Empty:
+                return batch_cache
+            time_end = time.time()
+            wait_time = wait_time - (time_end - time_start)
 
-    def _loop(self):
-        while not self._need_stop and not self._input_queue.empty():
-            self._run_once()
+            if data is None:
+                #when return None, the Serving is stopped and send a None to notify other workers.
+                self._input_queue.put(None)
+                return None
+            batch_cache.append(data)
+            if len(batch_cache) == self._batch_size:
+                return batch_cache
+
+            if wait_time <= 0:
+                if len(batch_cache) > 0:
+                    return  batch_cache
+                else:
+                    wait_time = self._max_latency
+
+    def _loop(self, replica_id):
+        while not self._need_stop:
+            batch_data = self.get_batch_data()
+            self._run_once(replica_id, batch_data)
 
     def start(self):
-        self._loop()
+        num_workers = len(self.models)
+        workers = []
+        for replica_id in range(num_workers):
+            tworker = threading.Thread(target=self._loop, args=(replica_id,), daemon=True)
+            tworker.start()
+            workers.append(tworker)
+        for worker in workers:
+            worker.join()
 
     def stop(self):
         self._need_stop = True
@@ -82,6 +135,8 @@ class TaskFuture(object):
 
         self._outputs.sort(key=lambda i: i[0])
         self._batch_result = [i[1] for i in self._outputs]
+        if len(self._batch_result) == 1:
+            return self._batch_result[0]
         return self._batch_result
 
     def set_result(self, index, result):
