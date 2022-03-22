@@ -42,9 +42,27 @@ class to_image_color:
     Args:
         mode (`str`):
             The target color space type, for example, 'RGB'.
+
+    Returns (`numpy.ndarray`):
+        The coverted image.
+
     Raise:
         ValueError:
             ValueError occurs if the color conversion is not supported.
+
+    Examples:
+
+    >>> import numpy as np
+    >>> from towhee.operator import PyOperator
+    >>> from towhee.types import Image, arg, to_image_color
+    >>> class ExtractRed(PyOperator):
+    ...     def __init__(self) -> None:
+    ...         super().__init__()
+    ...     @arg(0, to_image_color('BGR'))
+    ...     def __call__(self, img):
+    ...         red_img = Image(np.zeros(img.shape), 'BGR')
+    ...         red_img[:,:,2] = img[:,:,2]
+    ...         return red_img
     """
 
     def __init__(self, mode: str):
