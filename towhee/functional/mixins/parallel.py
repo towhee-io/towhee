@@ -68,6 +68,7 @@ class ParallelMixin:
         if parent is not None and hasattr(parent, '_executor') and isinstance(
                 parent._executor, concurrent.futures.ThreadPoolExecutor):
             self.set_parallel(executor=parent._executor, backend=parent._backend)
+            print('init scope parent:', parent)
 
     def set_parallel(self, num_worker=None, executor=None, backend = None):
         """
@@ -160,7 +161,6 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)
         4
         """
-        print('using thread')
         def inner():
             nonlocal flag
             while flag or not queue.empty():
@@ -211,14 +211,13 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)
         4
         """
-        print('using ray')
         import ray
         ###### ACTOR: Currently much slower
 
         # @ray.remote
         # class RemoteActor:
         #     def remote_runner(self, val):
-        #         return map_task(unary_op)(val)
+        #         return map_task_ray(unary_op)(val)
 
         # pool = ray.util.ActorPool([RemoteActor.remote() for _ in range(num_worker)])
 
@@ -246,11 +245,14 @@ class ParallelMixin:
         # def worker_wrapper():
         #     loop.run_until_complete(worker())
 
+        # if executor is None:
+        #     executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+        # num_worker = executor._max_workers  # pylint: disable=protected-access
         # queue = Queue(maxsize=num_worker)
         # loop = asyncio.new_event_loop()
         # flag = True
-        # thread = Thread(target = worker_wrapper)
-        # thread.start()
+
+        # executor.submit(worker_wrapper)
 
 
         ###### TASK: Need a good way of transferring the model.
