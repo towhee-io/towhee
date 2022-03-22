@@ -38,3 +38,7 @@ class Image(np.ndarray):
         if obj is None:
             return
         self._mode = getattr(obj, '_mode', None)
+
+    @property
+    def mode(self):
+        return self._mode

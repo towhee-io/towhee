@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.types.image import Image
-from towhee.types.audio_frame import AudioFrame
-from towhee.types.arg import arg, to_image_color
+from towhee._types import Image
 
-__all__ = [
-    'Image',
-    'AudioFrame',
-    'arg',
-    'to_image_color',
-]
 
-equivalents = {
-    'towhee.types.image.Image': 'towhee.types.Image',
-    'towhee.types.audio_frame.AudioFrame': 'towhee.types.AudioFrame',
-    'towhee.types.arg.arg': 'towhee.types.arg',
-    'towhee.types.arg.to_image_color': 'towhee.types.to_image_color',
-}
+def to_image_color(img: Image, target_mode: str):
+    """
+    convert images from one color-space to another, like BGR ↔ Gray, BGR ↔ HSV, etc.
+    """
+    # pylint: disable=import-outside-toplevel
+    import cv2
+
+    flag_name = 'COLOR_' + img.mode.upper() + '2' + target_mode.upper()
+    flag = getattr(cv2, flag_name, None)
+
+    if flag is None:
+        raise ValueError('Can not convert image from %s to %s.' % (img.mode, target_mode))
+
+    return Image(cv2.cvtColor(img, flag), target_mode.upper())
