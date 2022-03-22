@@ -13,16 +13,18 @@
 # limitations under the License.
 import doctest
 import unittest
+from pathlib import Path
 from collections import namedtuple
 
+import towhee.functional.data_collection
+import towhee.functional.option
 from towhee import ops
 from towhee import register
 from towhee.functional import DataCollection
 from towhee.hparam.hyperparameter import param_scope
 from towhee.functional.entity import Entity
 
-import towhee.functional.data_collection
-import towhee.functional.option
+public_path = Path(__file__).parent.parent.resolve()
 
 
 @register(name='myop/add-1')
@@ -102,6 +104,22 @@ class TestDataCollection(unittest.TestCase):
             self.assertTrue(hasattr(i, 'id'))
             self.assertEqual(i.usage, 'test')
             self.assertEqual(i.foo, 'bar')
+
+    def test_from_json(self):
+        json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
+        res = DataCollection.from_json(json_path)
+
+        self.assertTrue(isinstance(res, DataCollection))
+        for i in res:
+            self.assertTrue(isinstance(i, Entity))
+
+    def test_from_csv(self):
+        csv_path = public_path / 'test_util' / 'test_mixins' / 'test.csv'
+        res = DataCollection.from_csv(csv_path)
+
+        self.assertTrue(isinstance(res, DataCollection))
+        for i in res:
+            self.assertTrue(isinstance(i, Entity))
 
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
