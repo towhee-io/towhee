@@ -22,6 +22,9 @@ def to_image_color(img: Image, target_mode: str):
     # pylint: disable=import-outside-toplevel
     import cv2
 
+    if img.mode == target_mode:
+        return img
+
     flag_name = 'COLOR_' + img.mode.upper() + '2' + target_mode.upper()
     flag = getattr(cv2, flag_name, None)
 
