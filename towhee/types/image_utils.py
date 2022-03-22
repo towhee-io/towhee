@@ -32,3 +32,38 @@ def to_image_color(img: Image, target_mode: str):
         raise ValueError('Can not convert image from %s to %s.' % (img.mode, target_mode))
 
     return Image(cv2.cvtColor(img, flag), target_mode.upper())
+
+
+def from_pil(pil_img):
+    '''
+    Convert a PIL.Image.Image into towhee.types.Image.
+
+    Args:
+        pil_img (`PIL.Image.Image`):
+            A PIL image.
+
+    Returns:
+        (`towhee.types.Image`)
+            The image wrapepd as towhee Image.
+    '''
+    # pylint: disable=import-outside-toplevel
+    import numpy as np
+
+    return Image(np.array(pil_img), pil_img.mode)
+
+
+def to_pil(img: Image):
+    """
+    Convert a towhee.types.Image into PIL.Image.Image.
+
+    Args:
+        img (`towhee.types.Image`):
+            A towhee image.
+
+    Returns (`PIL.Image.Image`):
+            A PIL image.
+    """
+    # pylint: disable=import-outside-toplevel
+    from PIL import Image as PILImage
+
+    return PILImage.fromarray(img, img.mode)
