@@ -51,11 +51,11 @@ class _OperatorLazyWrapper:
     """
 
     def __init__(self,
-                 name: str,
+                 _name: str,
                  index: Tuple[str],
                  tag: str = 'main',
                  **kws) -> None:
-        self._name = name.replace('.', '/').replace('_', '-')
+        self._name = _name.replace('.', '/').replace('_', '-')
         self._index = index
         self._tag = tag
         self._kws = kws
@@ -105,6 +105,22 @@ class _OperatorLazyWrapper:
                 self._op = op(self._name, self._tag, **self._kws)
         return self._op.train(*arg, **kws)
 
+    def fit(self, *arg):
+        self._op.fit(*arg)
+
+    @property
+    def is_stateful(self):
+        with self._lock:
+            if self._op is None:
+                self._op = op(self._name, self._tag, **self._kws)
+        return hasattr(self._op, 'fit')
+
+    def set_state(self, state):
+        with self._lock:
+            if self._op is None:
+                self._op = op(self._name, self._tag, **self._kws)
+        self._op.set_state(state)
+
     @property
     def function(self):
         return self._name
@@ -114,11 +130,11 @@ class _OperatorLazyWrapper:
         return self._kws
 
     @staticmethod
-    def callback(name: str, index: Tuple[str], *arg, **kws):
+    def callback(real_name: str, index: Tuple[str], *arg, **kws):
         if len(arg) == 0:
-            return _OperatorLazyWrapper(name, index, **kws)
+            return _OperatorLazyWrapper(real_name, index, **kws)
         else:
-            return _OperatorLazyWrapper(name, index, arg[0], **kws)
+            return _OperatorLazyWrapper(real_name, index, arg[0], **kws)
 
 
 ops = param_scope().callholder(_OperatorLazyWrapper.callback)

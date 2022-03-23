@@ -372,10 +372,15 @@ class DataCollection(Iterable, AllMixins):
         """
 
         # return map(unary_op, self._iterable)
+
         # mmap
         if len(arg) > 1:
             return self.mmap(*arg)
         unary_op = arg[0]
+
+        # smap map for stateful operator
+        if hasattr(unary_op, 'is_stateful') and unary_op.is_stateful:
+            return self.smap(unary_op)
 
         # pmap
         if self.get_executor() is not None:

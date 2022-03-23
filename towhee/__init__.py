@@ -21,10 +21,12 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.engine import register, resolve
 from towhee.engine.factory import op, ops
 from towhee.hparam import param_scope, auto_param
+from towhee.functional import DataCollection, State
 
 __all__ = [
     'DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope',
-    'auto_param', 'Build', 'Inject', 'dataset', 'op', 'ops'
+    'auto_param', 'Build', 'Inject', 'dataset', 'op', 'ops', 'DataCollection',
+    'State'
 ]
 
 DEFAULT_PIPELINES = {
