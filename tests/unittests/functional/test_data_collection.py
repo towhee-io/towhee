@@ -128,6 +128,30 @@ class TestDataCollection(unittest.TestCase):
             self.assertTrue(i.num == j)
             j += 1
 
+    def test_merge(self):
+        entities = [Entity(num=i, cnt=i, total=i, const=i) for i in range(5)]
+        dc = DataCollection(entities)
+
+        self.assertTrue(hasattr(dc, '_iterable'))
+        for i in dc:
+            self.assertTrue(hasattr(i, 'num'))
+            self.assertTrue(hasattr(i, 'cnt'))
+            self.assertTrue(hasattr(i, 'total'))
+            self.assertTrue(hasattr(i, 'const'))
+            self.assertEqual(i.num, i.cnt)
+            self.assertEqual(i.num, i.total)
+
+        dc.merge('num', 'total', drop_origin=False)
+        for i in dc:
+            self.assertEqual(i.num, i.cnt)
+            self.assertEqual(i.num * 2, i.total)
+
+        dc.merge(['num', 'cnt'], 'total')
+        for i in dc:
+            self.assertFalse(hasattr(i, 'num'))
+            self.assertFalse(hasattr(i, 'cnt'))
+            self.assertEqual(i.const * 4, i.total)
+
     def test_from_json(self):
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
         res = DataCollection.from_json(json_path)

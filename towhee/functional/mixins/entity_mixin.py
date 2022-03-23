@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, List
 
 from towhee.functional.entity import Entity
 
@@ -100,6 +100,40 @@ class EntityMixin:
             return entity
 
         return self.factory(map(inner, self._iterable))
+
+    def merge(self, src: Union[str, List[str]], tar: str, drop_origin: bool = True):
+        """
+        Merge several attr(s) into one.
+
+        Args:
+            src (`Union[str, List[str]]`):
+                The attr(s) to merge.
+            tar (`src`):
+                The result attr.
+        """
+        src = [src] if isinstance(src, str) else src
+
+        def drop(entity: Entity):
+            for attr in src:
+                delattr(entity, attr)
+
+            return entity
+
+        def union(entity: Entity):
+            res = 0
+            for attr in src:
+                try:
+                    temp = getattr(entity, attr)
+                    res += temp
+                except TypeError as error:
+                    raise TypeError(f'unsupported operand type(s) for +: \'{type(sum)}\' and \'{type(temp)}\' when dealing with {attr}.') from error
+
+            res += getattr(entity, tar) if hasattr(entity, tar) else 0
+            setattr(entity, tar, res)
+
+            return drop(entity) if drop_origin else entity
+
+        return self.factory(map(union, self._iterable))
 
 
 if __name__ == '__main__':
