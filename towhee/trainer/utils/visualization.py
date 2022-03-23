@@ -162,15 +162,17 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
     return count_dict
 
 
-def show_transform(image_path: str, transform: Any):
+def show_transform(image_path: str, transform: Any, sample_num: int = 6):
     """
-    Show the result which `torchvision.tranforms` or any other callable function act on the image.
+    Show the result which `torchvision.transforms` or any other callable function act on the image.
     Only the Image transforms is supported. Such as `ToTensor` or `Normalize` is invalid.
     Args:
         image_path (`str`):
             The original image path.
         transform (`Any`):
-            torchvision.tranforms` or any other callable function.
+            torchvision.transforms` or any other callable function.
+        sample_num (`int`):
+            Sample number.
 
     """
     if not is_matplotlib_available():
@@ -178,7 +180,7 @@ def show_transform(image_path: str, transform: Any):
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     plt.rcParams['savefig.bbox'] = 'tight'
     orig_img = Image.open(image_path)
-    trans_img_list = [transform(orig_img) for _ in range(6)]
+    trans_img_list = [transform(orig_img) for _ in range(sample_num)]
     _plot_transform(orig_img, trans_img_list)
 
 
@@ -270,9 +272,24 @@ def plot_lrs_for_config(configs: TrainingConfig, num_training_steps: int, start_
 
 
 def predict_image_classification(model: nn.Module, input_: torch.Tensor):
+    """
+    Predict using an image classification model.
+    Args:
+        model (`nn.Module`):
+            Pytorch model.
+        input_ (`Tensor`):
+            Input image tensor.
+    Returns:
+        (`tuple`)
+            Prediction score which max is 1, and label idx.
+
+    """
     output = model(input_)
     output = F.softmax(output, dim=1)
     prediction_score, pred_label_idx = torch.topk(output, 1)
+    if isinstance(pred_label_idx, torch.Tensor):
+        pred_label_idx = pred_label_idx.squeeze().item()
+    prediction_score = prediction_score.squeeze().detach().item()
     return prediction_score, pred_label_idx
 
 
@@ -386,7 +403,4 @@ def interpret_image_classification(model: nn.Module, image: Any, eval_transform:
         grads = saliency.attribute(input_, target=pred_label_idx)
         _viz_image_attr_multiple(grads, trans_image, fig_size, cmap, titles=titles, **kwargs)
 
-    if isinstance(pred_label_idx, torch.Tensor):
-        pred_label_idx = pred_label_idx.squeeze().item()
-    prediction_score = prediction_score.squeeze().detach().item()
     return prediction_score, pred_label_idx
