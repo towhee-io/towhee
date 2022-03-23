@@ -105,6 +105,29 @@ class TestDataCollection(unittest.TestCase):
             self.assertEqual(i.usage, 'test')
             self.assertEqual(i.foo, 'bar')
 
+        kvs = {'foo': None}
+        res = dc.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs)
+        self.assertTrue(hasattr(res, '_iterable'))
+        for i in res:
+            self.assertTrue(hasattr(i, 'num'))
+            self.assertTrue(hasattr(i, 'id'))
+            self.assertEqual(i.usage, 'test')
+            self.assertEqual(i.foo, 0)
+
+    def test_replace(self):
+        entities = [Entity(num=i) for i in range(5)]
+        dc = DataCollection(entities)
+        j = 0
+        for i in dc:
+            self.assertTrue(i.num == j)
+            j += 1
+
+        dc.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
+        j = 1
+        for i in dc:
+            self.assertTrue(i.num == j)
+            j += 1
+
     def test_from_json(self):
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
         res = DataCollection.from_json(json_path)

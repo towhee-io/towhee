@@ -42,22 +42,27 @@ class EntityMixin:
     ['{"a": 1, "b": 2, "c": 2}', '{"a": 2, "b": 3, "c": 3}']
     """
 
-    def fill_entity(self, default_kvs: Optional[Dict[str, Any]] = None, **kws):
+    # pylint: disable=invalid-name
+    def fill_entity(self, _DefaultKVs: Optional[Dict[str, Any]] = None, _ReplaceNoneValue: bool = False, **kws):
         """
         When DataCollection's iterable exists of Entities and some indexes missing, fill default value for those indexes.
 
         Args:
-            default_kvs (`Dict[str, Any]`):
+            _ReplaceNoneValue (`bool`):
+                Whether to replace None in Entity's value.
+            _DefaultKVs (`Dict[str, Any]`):
                 The key-value pairs stored in a dict.
         """
-        if default_kvs:
-            kws.update(default_kvs)
+        if _DefaultKVs:
+            kws.update(_DefaultKVs)
 
         def fill(entity: Entity):
             for k, v in kws.items():
                 if not hasattr(entity, k):
                     setattr(entity, k, v)
                     entity.register(k)
+                if _ReplaceNoneValue and v is None:
+                    setattr(entity, k, 0)
             return entity
 
         return self.factory(map(fill, self._iterable))
@@ -77,9 +82,22 @@ class EntityMixin:
         ... )
         ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
         """
-
         def inner(x):
             return Entity(**x)
+
+        return self.factory(map(inner, self._iterable))
+
+    def replace(self, **kws):
+        """
+        Replace specific attributes with given vlues.
+        """
+        def inner(entity: Entity):
+            for index, convert_dict in kws.items():
+                origin_value = getattr(entity, index)
+                if origin_value in convert_dict:
+                    setattr(entity, index, convert_dict[origin_value])
+
+            return entity
 
         return self.factory(map(inner, self._iterable))
 
