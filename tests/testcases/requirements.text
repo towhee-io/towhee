@@ -3,5 +3,5 @@
 #pip cache purge
 Pillow
 numpy
-towhee==0.4.1.dev64
+towhee==0.5.1.dev75
 
