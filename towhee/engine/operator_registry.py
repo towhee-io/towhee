@@ -15,7 +15,6 @@
 from collections import namedtuple
 from typing import Any, Dict, List
 
-from towhee.operator.base import SharedType
 from towhee.hparam import param_scope
 
 
@@ -46,21 +45,22 @@ class OperatorRegistry:
 
     @staticmethod
     def register(
-        name: str = None,
-        input_schema=None,  # TODO: parse input_schema from code @jie.hou
-        output_schema=None,
-        shared_type=SharedType.Shareable,
-    ):
+            name: str = None,
+            input_schema=None,  # TODO: parse input_schema from code @jie.hou
+            output_schema=None,
+            flag=None):
         """register a class or callable as a towhee operator.
 
         1. Basic operator registration and calling
         The registration is as simple as just adding one line before a function
+
         >>> from towhee import register
         >>> @register
         ... def foo(x, y):
         ...     return x+y
 
         or register a class as a stateful operator
+
         >>> @register
         ... class foo_cls():
         ...     def __init__(self, x):
@@ -70,18 +70,21 @@ class OperatorRegistry:
 
         By default, function/class name is used as operator name.
         After registration, we are able to call the operator by its name:
+
         >>> from towhee import ops
         >>> op = ops.foo()
         >>> op(1, 2)
         3
 
         or calling a stateful operator
+
         >>> op = ops.foo_cls(x=2)
         >>> op(3)
         5
 
         2. Register with detail information
         Operator name can also be provided during registration:
+
         >>> @register(name='my_foo')
         ... def foo(x, y):
         ...     return x+y
@@ -90,11 +93,13 @@ class OperatorRegistry:
 
         Each operator has its namespace. If not provided, default namespace 'anon' would be used.
         You can also specific the fullname, including namespace when creating an operator.
+
         >>> ops.anon.my_foo()(1,2)
         3
 
         or the default namespace, typically `anon` will be searched by the factory method. To register
         the operator to a different namespace, you should add namespace as a prefix of `name`:
+
         >>> @register(name='my_namespace/my_foo')
         ... def foo(x, y):
         ...     return x+y
@@ -102,6 +107,7 @@ class OperatorRegistry:
         3
 
         The operator can also has its outout schema
+
         >>> @register(name='my_foo', output_schema='value')
         ... def foo(x, y):
         ...     return x+y
@@ -110,11 +116,29 @@ class OperatorRegistry:
         ...     ops.my_foo()(1,2)
         Output(value=3)
 
+        Each operator type, for example: NNOperator and PyOperator, has their own default `flag`:
+
+        >>> from towhee.operator.base import Operator, NNOperator, PyOperator
+        >>> from towhee.operator.base import OperatorFlag
+        >>> @register
+        ... class foo(NNOperator):
+        ...     pass
+        >>> foo().flag
+        <OperatorFlag.REUSEABLE|STATELESS: 6>
+
+        The default flag can be override by `register(flag=someflag)`:
+
+        >>> @register(flag=OperatorFlag.EMPTYFLAG)
+        ... class foo(NNOperator):
+        ...     pass
+        >>> foo().flag
+        <OperatorFlag.EMPTYFLAG: 1>
+
         Args:
             name (str, optional): operator name, will use the class/function name if None.
             input_schema(NamedTuple, optional): input schema for the operator. Defaults to None.
             output_schema(NamedTuple, optional): output schema, will convert the operator output to NamedTuple if not None.
-            shared_type ([type], optional): operator shared_type. Defaults to SharedType.Shareable.
+            flag ([OperatorFlag], optional): operator flag. Defaults to OperatorFlag.EMPTYFLAG.
 
         Returns:
             [type]: [description]
@@ -135,7 +159,7 @@ class OperatorRegistry:
         def wrapper(cls):
             metainfo = dict(input_schema=input_schema,
                             output_schema=output_schema,
-                            shared_type=shared_type)
+                            flag=flag)
 
             # TODO: need to convert the class name to URI @shiyu22
             nonlocal name
@@ -177,7 +201,8 @@ class OperatorRegistry:
                 cls.__call__ = wrapper_call
                 cls.__abstractmethods__ = set()
             cls.metainfo = metainfo
-            cls.shared_type = property(lambda self: shared_type)
+            if flag is not None:
+                cls.flag = property(lambda _: flag)
             OperatorRegistry.REGISTRY[name] = cls
             if hasattr(old_cls, '__doc__'):  # pylint: disable=inconsistent-quotes
                 cls.__doc__ = old_cls.__doc__
