@@ -1,8 +1,8 @@
-DataCollection
---------------
+towhee 
+------
 
 .. automodule:: towhee
-   :members: DataCollection
+   :members: pipeline, ops
    :show-inheritance:
    :special-members:
    :member-order: bysource

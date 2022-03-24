@@ -1,5 +1,5 @@
-DataCollection API
-==================
+towhee.DataCollection
+=====================
 
 .. toctree::
    :maxdepth: 2

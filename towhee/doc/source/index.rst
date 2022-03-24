@@ -6,9 +6,15 @@
 Welcome to Towhee's documentation!
 ==========================================
 
+.. mdinclude:: ../../../README.md
+   :start-line: 6
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
+
+   towhee/towhee
+   towhee/towhee_operator
 
    data_collection/index
 
