@@ -53,6 +53,7 @@ class ParallelMixin:
     """
 
     def __init__(self) -> None:
+        super().__init__()
         with param_scope() as hp:
             parent = hp().data_collection.parent(None)
         if parent is not None and hasattr(parent, '_executor') and isinstance(

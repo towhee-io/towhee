@@ -11,18 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import doctest
+import unittest
 
-from .data_source import DataSourceMixin
-from .dispatcher import DispatcherMixin
-from .parallel import ParallelMixin
-from .computer_vision import ComputerVisionMixin
-from .entity_mixin import EntityMixin
-from .display import DisplayMixin
-from .state import StateMixin
+import towhee.functional.stateful_operator
 
+for mod in [towhee.functional.stateful_operator]:
+    TestCaseAutoGen = doctest.DocTestSuite(mod)
+    unittest.TextTestRunner(verbosity=4).run(TestCaseAutoGen)
 
-class AllMixins(DataSourceMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, EntityMixin, StateMixin):
-
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
-        super().__init__()
+if __name__ == '__main__':
+    unittest.main()
