@@ -13,3 +13,4 @@
 # limitations under the License.
 from .data_collection import DataCollection
 from .option import Option, Some, Empty
+from towhee.hparam import HyperParameter as State
