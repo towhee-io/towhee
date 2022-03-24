@@ -12,5 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .data_collection import DataCollection
+from .entity import Entity
 from .option import Option, Some, Empty
 from towhee.hparam import HyperParameter as State
