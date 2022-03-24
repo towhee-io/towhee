@@ -11,9 +11,12 @@ It allows a data scientist or researcher to assemble a data processing pipeline,
 Here is a short example for numerical computation with DataCollection:
 ```python
 >>> dc = DataCollection.range(5)
->>> dc.map(lambda x: x+1) \
-...   .map(lambda x: x*2*).to_list()
-[2, 4, 6, 8. 10]
+>>> (
+...     dc.map(lambda x: x+1)
+...       .map(lambda x: x*2)
+...       .to_list()
+... )
+[2, 4, 6, 8, 10]
 ```
 
 1. Pythonic Method-Chaining Style API: Designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
@@ -118,12 +121,13 @@ When chaining many stages, `DataCollection` provides a more straightforward synt
 
 ```python
 >>> with param_scope() as hp:
-.. 		hp().dispatcher.as_str = str
+...     hp().dispatcher.as_str = str
 ... 	dc = (
-... 	DataCollection.range(10)
+... 	   DataCollection.range(10)
 ... 		.filter(is_prime)
 ... 		.as_str() # map(str)
-... )
+...     )
+
 >>> dc.to_list()
 ['2', '3', '5', '7']
 ```
@@ -224,7 +228,7 @@ query = DataCollection.from_zip('https://towhee.io/towhee/image-dataset/media/br
 Transform image dataset into feature vectors:
 
 ```python
-dc_data = dataset.towhee.resnet_image_embedding(model_name='resnet50').select('feature_vector')
+dc_data = dataset.image_load().towhee.resnet_image_embedding(model_name='resnet50').select('feature_vector')
 ```
 
 Search for similar images:

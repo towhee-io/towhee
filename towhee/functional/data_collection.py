@@ -17,7 +17,6 @@ from typing import Callable
 from random import random, sample, shuffle
 
 from towhee.hparam import param_scope
-from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
@@ -384,14 +383,10 @@ class DataCollection(Iterable, AllMixins):
 
         #map
         def inner(x):
-            try:
-                if isinstance(x, Option):
-                    return x.map(unary_op)
-                else:
-                    return unary_op(x)
-            except Exception as e:  # pylint: disable=broad-except
-                engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
-                return Empty(x, e)
+            if isinstance(x, Option):
+                return x.map(unary_op)
+            else:
+                return unary_op(x)
 
         return map(inner, self._iterable)
 
@@ -644,6 +639,7 @@ class DataCollection(Iterable, AllMixins):
 
         register the operators to `DataCollection`'s execution context with `param_scope`
 
+        >>> from towhee import param_scope
         >>> with param_scope(dispatcher={
         ...         'add': my_add, # register `my_add` as `dc.add`
         ...         'mul': my_mul  # register `my_mul` as `dc.mul`

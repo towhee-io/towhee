@@ -33,7 +33,7 @@ class DataSourceMixin:
         return cls.stream(glob(pattern))
 
     @classmethod
-    def from_zip(cls, url, pattern, mode=None):
+    def from_zip(cls, url, pattern, mode='r'):
         """load files from url/path.
 
         Args:
@@ -50,7 +50,7 @@ class DataSourceMixin:
         from towhee.utils.repo_normalize import RepoNormalize
         from io import BytesIO
         from zipfile import ZipFile
-        from glob import glob
+        from glob import fnmatch
 
         from urllib.request import urlopen
 
@@ -62,10 +62,10 @@ class DataSourceMixin:
                 zip_path = str(Path(url).resolve())
             with ZipFile(zip_path, 'r') as zfile:
                 file_list = zfile.namelist()
-                path_list = glob.fnmatch.filter(file_list, pattern)
+                path_list = fnmatch.filter(file_list, pattern)
                 for path in path_list:
                     with zfile.open(path, mode=mode) as f:
-                        yield f
+                        yield f.read()
 
         return cls.stream(inner())
 

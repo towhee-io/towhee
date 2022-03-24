@@ -38,12 +38,15 @@ class ParallelMixin:
     Mixin for parallel execution.
 
     Examples:
-    >>> from towhee.functional import DataCollection
+
+    >>> from towhee import DataCollection
     >>> def add_1(x):
     ...     return x+1
+
     >>> result = DataCollection.range(1000).map(add_1).parallel(5).to_list()
     >>> len(result)
     1000
+
     >>> result = DataCollection.range(1000).pmap(add_1, 10).pmap(add_1, 10).to_list()
     >>> result[990:]
     [992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001]
@@ -61,7 +64,8 @@ class ParallelMixin:
         set parallel execution
 
         Examples:
-        >>> from towhee.functional import DataCollection
+
+        >>> from towhee import DataCollection
         >>> import threading
         >>> stage_1_thread_set = set()
         >>> stage_2_thread_set = set()
@@ -70,6 +74,7 @@ class ParallelMixin:
         ...     .map(lambda x: stage_1_thread_set.add(threading.current_thread().ident))
         ...     .map(lambda x: stage_2_thread_set.add(threading.current_thread().ident)).to_list()
         ... )
+
         >>> len(stage_2_thread_set)>1
         True
         """
@@ -112,7 +117,8 @@ class ParallelMixin:
         apply `unary_op` with parallel execution
 
         Examples:
-        >>> from towhee.functional import DataCollection
+
+        >>> from towhee import DataCollection
         >>> import threading
         >>> stage_1_thread_set = {threading.current_thread().ident}
         >>> stage_2_thread_set = {threading.current_thread().ident}
@@ -121,8 +127,10 @@ class ParallelMixin:
         ...     .pmap(lambda x: stage_1_thread_set.add(threading.current_thread().ident), 5)
         ...     .pmap(lambda x: stage_2_thread_set.add(threading.current_thread().ident), 4).to_list()
         ... )
+
         >>> len(stage_1_thread_set)
         5
+
         >>> len(stage_2_thread_set)
         4
         """
@@ -163,7 +171,8 @@ class ParallelMixin:
 
         Examples:
         1. using mmap
-        >>> from towhee.functional import DataCollection
+
+        >>> from towhee import DataCollection
         >>> dc = DataCollection([0,1,2,'3',4]).stream()
         >>> a, b = dc.mmap(lambda x: x+1, lambda x: x*2)
         >>> c = a.map(lambda x: x+1)
@@ -171,7 +180,8 @@ class ParallelMixin:
         [(2, 0), (3, 2), (4, 4), (Empty(), '33'), (6, 8)]
 
         2. using map instead of mmap
-        >>> from towhee.functional import DataCollection
+
+        >>> from towhee import DataCollection
         >>> dc = DataCollection.range(5).stream()
         >>> a, b, c = dc.map(lambda x: x+1, lambda x: x*2, lambda x: int(x/2))
         >>> d = a.map(lambda x: x+1)
@@ -179,6 +189,7 @@ class ParallelMixin:
         [(2, 0, 0), (3, 2, 0), (4, 4, 1), (5, 6, 1), (6, 8, 2)]
 
         3. dag execution
+
         >>> dc = DataCollection.range(5).stream()
         >>> a, b, c = dc.map(lambda x: x+1, lambda x: x*2, lambda x: int(x/2))
         >>> d = a.map(lambda x: x+1)
