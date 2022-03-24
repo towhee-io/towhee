@@ -21,12 +21,23 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.engine import register, resolve
 from towhee.engine.factory import op, ops
 from towhee.hparam import param_scope, auto_param
-from towhee.functional import DataCollection, State
+from towhee.functional import DataCollection, State, Entity
 
 __all__ = [
-    'DEFAULT_PIPELINES', 'pipeline', 'register', 'resolve', 'param_scope',
-    'auto_param', 'Build', 'Inject', 'dataset', 'op', 'ops', 'DataCollection',
-    'State'
+    'DEFAULT_PIPELINES',
+    'pipeline',
+    'register',
+    'resolve',
+    'param_scope',
+    'auto_param',
+    'Build',
+    'Inject',
+    'dataset',
+    'op',
+    'ops',
+    'DataCollection',
+    'State',
+    'Entity'
 ]
 
 DEFAULT_PIPELINES = {
@@ -49,7 +60,6 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
-
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -77,8 +87,7 @@ class _PipelineWrapper:
         in_df = DataFrame('_in_df', cols)
         in_df.put(vargs)
         out_df = self._pipeline(in_df)
-        format_handler = OutputFormat.get_format_handler(
-            self._pipeline.pipeline_type)
+        format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
         return format_handler(out_df)
 
     def __repr__(self) -> str:
@@ -150,9 +159,7 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     from torchvision import datasets  # pylint: disable=import-outside-toplevel
     from towhee.data.dataset.dataset import TorchDataSet  # pylint: disable=import-outside-toplevel
     dataset_construct_map = {
-        'mnist': datasets.MNIST,
-        'cifar10': datasets.cifar.CIFAR10,
-        'fake': datasets.FakeData
+        'mnist': datasets.MNIST, 'cifar10': datasets.cifar.CIFAR10, 'fake': datasets.FakeData
         # 'imdb': IMDB  # ,()
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
@@ -182,7 +189,6 @@ class Build:
 
     >>> pipe = Build(template_variable_1='new_value').pipeline('pipeline_name')
     """
-
     def __init__(self, **kws) -> None:
         self._kws = kws
 
@@ -215,7 +221,6 @@ class Inject:
 
     and the value at the injection point is replace by the `Inject` API.
     """
-
     def __init__(self, **kws) -> None:
         self._injections = {}
         for k, v in kws.items():
