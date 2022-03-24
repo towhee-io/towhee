@@ -144,6 +144,23 @@ class TestDataCollection(unittest.TestCase):
         for i in res:
             self.assertTrue(isinstance(i, Entity))
 
+    def test_runas_op(self):
+        def add(x):
+            return x + 1
+
+        entities = [Entity(a=i, b=i + 1) for i in range(5)]
+        dc = DataCollection(entities)
+
+        res = dc.runas_op['a', 'b'](func=lambda x: x - 1)
+        for i in res:
+            self.assertTrue(i.a == i.b + 1)
+
+        res = dc.runas_op['a', 'b'](func=add)
+        for i in res:
+            self.assertTrue(i.a == i.b - 1)
+
+        self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
+
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)
