@@ -17,6 +17,8 @@ from typing import Tuple
 
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hparam import param_scope
+# pylint: disable=unused-import
+from towhee.hub import preclude
 
 
 def op(operator_src: str, tag: str = 'main', **kwargs):
@@ -49,13 +51,8 @@ class _OperatorLazyWrapper:
     """
     operator wrapper for lazy initialization.
     """
-
-    def __init__(self,
-                 _name: str,
-                 index: Tuple[str],
-                 tag: str = 'main',
-                 **kws) -> None:
-        self._name = _name.replace('.', '/').replace('_', '-')
+    def __init__(self, name: str, index: Tuple[str], tag: str = 'main', **kws) -> None:
+        self._name = name.replace('.', '/').replace('_', '-')
         self._index = index
         self._tag = tag
         self._kws = kws
@@ -81,11 +78,8 @@ class _OperatorLazyWrapper:
 
             # Multi outputs.
             if isinstance(res, tuple):
-                if not isinstance(self._index[1],
-                                  tuple) or len(self._index[1]) != len(res):
-                    raise IndexError(
-                        f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.'
-                    )
+                if not isinstance(self._index[1], tuple) or len(self._index[1]) != len(res):
+                    raise IndexError(f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.')
                 for i in range(len(res)):
                     setattr(arg[0], self._index[1][i], res[i])
                     arg[0].register(self._index[1][i])
@@ -131,6 +125,8 @@ class _OperatorLazyWrapper:
 
     @staticmethod
     def callback(real_name: str, index: Tuple[str], *arg, **kws):
+        if arg and not kws:
+            raise ValueError('The init args should be passed in the form of kwargs(i.e. You should specify the keywords of your init arguments.)')
         if len(arg) == 0:
             return _OperatorLazyWrapper(real_name, index, **kws)
         else:

@@ -22,7 +22,6 @@ from towhee.functional.mixins import AllMixins
 
 
 def _private_wrapper(func):
-
     def wrapper(self, *arg, **kws):
         return self.factory(func(self, *arg, **kws))
 
@@ -96,7 +95,6 @@ class DataCollection(Iterable, AllMixins):
         b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
 
     """
-
     def __init__(self, iterable: Iterable) -> None:
         """Initializes a new DataCollection instance.
 
@@ -244,8 +242,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        return map(lambda x: Some(x)
-                   if not isinstance(x, Option) else x, self._iterable)
+        return map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
 
     def safe(self):
         """
@@ -282,7 +279,6 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
-
         def inner(x):
             if isinstance(x, Iterable):
                 return [other[i] for i in x]
@@ -306,8 +302,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
-        result = map(lambda x: x.get()
-                     if isinstance(x, Some) else default, self._iterable)
+        result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
         return self.factory(result)
 
     def drop_empty(self, callback: Callable = None) -> 'DataCollection':
@@ -492,7 +487,6 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-
         def inner():
             buff = []
             for ele in self._iterable:
@@ -531,7 +525,6 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
-
         def inner():
             buff = []
             for ele in self._iterable:
@@ -560,7 +553,6 @@ class DataCollection(Iterable, AllMixins):
         >>> nested_dc.flaten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
-
         def inner():
             for ele in self._iterable:
                 if isinstance(ele, Iterable):
@@ -608,14 +600,12 @@ class DataCollection(Iterable, AllMixins):
         TypeError: shuffle is not supported for streamed data collection.
         """
         if self.is_stream:
-            raise TypeError(
-                'shuffle is not supported for streamed data collection.')
+            raise TypeError('shuffle is not supported for streamed data collection.')
         if in_place:
             shuffle(self._iterable)
             return self
         else:
-            return DataCollection.unstream(
-                sample(self._iterable, len(self._iterable)))
+            return DataCollection.unstream(sample(self._iterable, len(self._iterable)))
 
     def __getattr__(self, name):
         """
@@ -679,8 +669,7 @@ class DataCollection(Iterable, AllMixins):
         TypeError: indexing is not supported for streamed data collection.
         """
         if self.is_stream:
-            raise TypeError(
-                'indexing is not supported for streamed data collection.')
+            raise TypeError('indexing is not supported for streamed data collection.')
         return self._iterable[index]
 
     def __setitem__(self, index, value):
@@ -702,8 +691,7 @@ class DataCollection(Iterable, AllMixins):
         TypeError: indexing is not supported for streamed data collection.
         """
         if self.is_stream:
-            raise TypeError(
-                'indexing is not supported for streamed data collection.')
+            raise TypeError('indexing is not supported for streamed data collection.')
         self._iterable[index] = value
 
     def __rshift__(self, unary_op):
@@ -744,8 +732,7 @@ class DataCollection(Iterable, AllMixins):
             yield x
 
     def to_list(self):
-        return self._iterable if isinstance(self._iterable,
-                                            list) else list(self)
+        return self._iterable if isinstance(self._iterable, list) else list(self)
 
 
 if __name__ == '__main__':  # pylint: disable=inconsistent-quotes
