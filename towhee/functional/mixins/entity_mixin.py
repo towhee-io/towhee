@@ -25,7 +25,7 @@ class EntityMixin:
     1. define an operator with `register` decorator
 
     >>> from towhee import register
-    >>> from towhee.functional import DataCollection
+    >>> from towhee import DataCollection
     >>> @register
     ... def add_1(x):
     ...     return x+1
@@ -73,7 +73,7 @@ class EntityMixin:
 
         Examples:
 
-        >>> from towhee.functional import DataCollection
+        >>> from towhee import DataCollection
         >>> (
         ...     DataCollection([dict(a=1, b=2), dict(a=2, b=3)])
         ...         .as_entity()

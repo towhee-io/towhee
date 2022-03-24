@@ -42,12 +42,15 @@ def image_load(file_or_buff):
     [(100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3)]
     """
     import cv2
+    import numpy as np
 
-    if hasattr(file_or_buff, 'read'):
-        return cv2.imdecode(file_or_buff.read(), 1)
     if isinstance(file_or_buff, str):
         return cv2.imread(file_or_buff)
-    return cv2.imdecode(file_or_buff, 1)
+    if hasattr(file_or_buff, 'read'):
+        buff = np.frombuffer(file_or_buff.read(), dtype=np.uint8)
+    else:
+        buff = np.frombuffer(file_or_buff, dtype=np.uint8)
+    return cv2.imdecode(buff, 1)
 
 
 @register(name='builtin/image_dump')

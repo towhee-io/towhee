@@ -21,7 +21,7 @@ class DispatcherMixin:
 
     >>> from towhee import register
     >>> from towhee import ops
-    >>> from towhee.functional import DataCollection
+    >>> from towhee import DataCollection
     >>> @register('0.1', name='add_1')
     ... def add_1(x):
     ...     return x+1
