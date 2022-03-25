@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import importlib
+import sys
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -94,17 +95,27 @@ class OperatorLoader:
         path = Path(path)
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
-        spec = importlib.util.spec_from_file_location(modname, path.resolve())
+        try:
+            # support for ver1 operator API
+            spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
-        # Create the module and then execute the module in its own namespace.
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+            # Create the module and then execute the module in its own namespace.
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
-        # Instantiate the operator object and return it to the caller for
-        # `load_operator`. By convention, the operator class is simply the CamelCase
-        # version of the snake_case operator.
-        op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-        op = getattr(module, op_cls)
+            # Instantiate the operator object and return it to the caller for
+            # `load_operator`. By convention, the operator class is simply the CamelCase
+            # version of the snake_case operator.
+            op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+            op = getattr(module, op_cls)
+        except Exception:  # pylint: disable=broad-except
+            # support for ver2 operator API
+            path = path.parent / '__init__.py'
+            spec = importlib.util.spec_from_file_location(modname, path.resolve())
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[modname] = module
+            spec.loader.exec_module(module)
+            op = getattr(module, fname)
         return self.instance_operator(op, args) if op is not None else None
 
     def load_operator_from_cache(
