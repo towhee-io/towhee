@@ -36,6 +36,7 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
+
     def __init__(self, cache_path: str = None):
         if cache_path is None:
             self._cache_path = LOCAL_OPERATOR_CACHE
@@ -79,7 +80,8 @@ class OperatorLoader:
                 else:
                     return None
 
-    def load_operator_from_path(self, path: Union[str, Path], args: Dict[str, Any]) -> Operator:
+    def load_operator_from_path(self, path: Union[str, Path],
+                                args: Dict[str, Any]) -> Operator:
         """
         Load operator form local path.
         Args:
@@ -109,8 +111,11 @@ class OperatorLoader:
 
     def load_operator_from_cache(
             self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
-        fm = FileManager()
-        path = fm.get_operator(operator=function, tag=tag)
+        try:
+            fm = FileManager()
+            path = fm.get_operator(operator=function, tag=tag)
+        except ValueError as e:
+            raise ValueError('operator {} not found!'.format(function)) from e
 
         if path is None:
             raise FileExistsError('Cannot find operator.')
@@ -137,7 +142,7 @@ class OperatorLoader:
                 self.load_operator_from_internal,
                 self.load_operator_from_registry,
                 self.load_operator_from_packages,
-                self.load_operator_from_cache
+                self.load_operator_from_cache,
         ]:
             op = factory(function, args, tag)
             if op is not None:

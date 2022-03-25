@@ -20,7 +20,7 @@ from towhee.utils.yaml_utils import load_yaml, dump_yaml
 render_result = """
 name: test_pipeline
 variables:
-    test_op: 'filip-halt/timm-image-embedding'
+    test_op: 'towhee/timm-image-embedding'
     model_name: 'efficientnet_b3'
 operators:
 - name: embedding_model

@@ -1,7 +1,7 @@
 name: image_embedding_efficientnet_b3
 type: image-embedding
 variables:
-    embedding_op: 'filip-halt/timm-image-embedding'
+    embedding_op: 'towhee/timm-image-embedding'
     embedding_model_1: 'efficientnet_b3'
     embedding_model_2: 'efficientnet_b3'
     embedding_model_3: 'efficientnet_b3'

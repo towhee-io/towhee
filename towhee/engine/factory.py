@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import threading
 from typing import Tuple
 
 from towhee.engine.operator_loader import OperatorLoader
@@ -56,14 +55,9 @@ class _OperatorLazyWrapper:
         self._index = index
         self._tag = tag
         self._kws = kws
-        self._op = None
-        self._lock = threading.Lock()
+        self._op = op(self._name, self._tag, **self._kws)
 
     def __call__(self, *arg, **kws):
-        with self._lock:
-            if self._op is None:
-                self._op = op(self._name, self._tag, **self._kws)
-
         if bool(self._index):
             # Multi inputs.
             if isinstance(self._index[0], tuple):
@@ -94,9 +88,6 @@ class _OperatorLazyWrapper:
             return res
 
     def train(self, *arg, **kws):
-        with self._lock:
-            if self._op is None:
-                self._op = op(self._name, self._tag, **self._kws)
         return self._op.train(*arg, **kws)
 
     def fit(self, *arg):
@@ -104,15 +95,9 @@ class _OperatorLazyWrapper:
 
     @property
     def is_stateful(self):
-        with self._lock:
-            if self._op is None:
-                self._op = op(self._name, self._tag, **self._kws)
         return hasattr(self._op, 'fit')
 
     def set_state(self, state):
-        with self._lock:
-            if self._op is None:
-                self._op = op(self._name, self._tag, **self._kws)
         self._op.set_state(state)
 
     @property
