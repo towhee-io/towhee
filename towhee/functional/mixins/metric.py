@@ -12,20 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+class Collector:
+    def __init__(self, **kwargs):
+        self.collector = kwargs
+
+    def __getattr__(self, name):
+        return self.collector[name]
+
+    def add(self, **kwargs):
+        self.collector.update(kwargs)
+
+
 class MetricMixin:
     """
-        Mixin for metric
+    Mixin for metric
     """
-    def with_accuracy(self):
-        pass
 
-    def with_recall(self):
-        pass
+    # pylint: disable=import-outside-toplevel
+    def __init__(self):
+        self.collector = Collector(score={})
 
-    def with_confusion_matrix(self):
-        pass
+    def with_metrics(self, metric_types: list = None):
+        self.collector.add(metric_types=metric_types)
+        return self
 
-    def metric_summary(self):
-        # return all metric
-        pass
-    
+    def report(self):
+        import pandas as pd
+        metrics_dict = self.collector.score
+        df = pd.DataFrame.from_dict(metrics_dict, orient='index', columns=self.collector.metric_types)
+        df.style.highlight_max(color='lightgreen', axis=0)
+        return metrics_dict

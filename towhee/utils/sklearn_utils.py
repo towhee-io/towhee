@@ -11,19 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from towhee.utils.log import engine_log
 
-from .data_source import DataSourceMixin
-from .dispatcher import DispatcherMixin
-from .parallel import ParallelMixin
-from .computer_vision import ComputerVisionMixin
-from .entity_mixin import EntityMixin
-from .display import DisplayMixin
-from .state import StateMixin
-from .metric import MetricMixin
-
-
-class AllMixins(DataSourceMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin):
-
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
-        super().__init__()
+try:
+    from sklearn.metrics import confusion_matrix, accuracy_score, recall_score # pylint: disable=unused-import
+except ModuleNotFoundError as e:
+    engine_log.error('sklearn not found, you can install via `pip install scikit-learn`.')
+    raise ModuleNotFoundError('sklearn not found, you can install via `pip install scikit-learn`.') from e
