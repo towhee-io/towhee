@@ -32,6 +32,7 @@ class RepoNormalize:
         self._netloc = 'towhee.io'
         self._author = 'towhee'
         self._ref = 'main'
+        self._has_ns = True
 
     def parse_uri(self) -> NamedTuple('ParseResult', [('full_uri', str), ('author', str), ('repo', str), ('ref', str), ('repo_type', str),
                                                       ('norm_repo', str), ('module_name', str), ('class_name', str), ('scheme', str), ('netloc', str),
@@ -52,8 +53,9 @@ class RepoNormalize:
         norm_repo, module_name, class_name = self.get_name(repo)
         ParseResult = NamedTuple('ParseResult', [('full_uri', str), ('author', str), ('repo', str), ('ref', str), ('repo_type', str),
                                                  ('norm_repo', str), ('module_name', str), ('class_name', str), ('scheme', str), ('netloc', str),
-                                                 ('query', dict)])
-        return ParseResult(full_uri, author, repo, ref, result.fragment, norm_repo, module_name, class_name, result.scheme, result.netloc, query)
+                                                 ('query', dict), ('has_ns', bool)])
+        return ParseResult(full_uri, author, repo, ref, result.fragment, norm_repo, module_name, class_name,
+                           result.scheme, result.netloc, query, self.has_ns)
 
     def get_full_uri(self) -> str:
         """
@@ -75,6 +77,7 @@ class RepoNormalize:
         if path.endswith(']'):
             path = self.mapping(path)
         if '/' not in path:
+            self._has_ns = False
             result = result._replace(path=f'/{self._author}/{path}')
         elif len(path.split('/')) == 2:
             result = result._replace(path=f'/{path}')
@@ -118,6 +121,10 @@ class RepoNormalize:
         if re.match(regex, self._uri) is not None:
             return True
         return False
+
+    @property
+    def has_ns(self):
+        return self._has_ns
 
     @staticmethod
     def mapping(path: str) -> str:
