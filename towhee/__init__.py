@@ -23,6 +23,9 @@ from towhee.engine.factory import op, ops
 from towhee.hparam import param_scope, auto_param
 from towhee.functional import DataCollection, State, Entity
 
+from towhee.dc import glob, glob_zip
+from towhee.dc import from_zip
+
 __all__ = [
     'DEFAULT_PIPELINES',
     'pipeline',
@@ -37,7 +40,11 @@ __all__ = [
     'ops',
     'DataCollection',
     'State',
-    'Entity'
+    'Entity',
+    #
+    'glob',
+    'glob_zip',
+    'from_zip'
 ]
 
 DEFAULT_PIPELINES = {
