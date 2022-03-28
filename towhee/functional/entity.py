@@ -22,7 +22,6 @@ class Entity:
 
     Users can create an Entity with free schema, which means there is no limit on attribute name and type.
     """
-
     @overload
     def __init__(self):
         """
@@ -67,9 +66,17 @@ class Entity:
         return f'<{self.__class__.__name__} {content.strip()}>'
 
     def __str__(self) -> str:
-        return json.dumps(
-            {k: getattr(self, k)
-             for k in self._data if k != 'id'})
+        return json.dumps({k: getattr(self, k) for k in self._data if k != 'id'})
+
+    def to_dict(self):
+        res = {}
+
+        def inner(name: str):
+            res[name] = getattr(self, name)
+
+        any(map(inner, self._data[1:]))
+
+        return res
 
     def register(self, index: str):
         self._data.append(index)

@@ -11,3 +11,4 @@ torchmetrics>=0.7.0
 ruamel.yaml<=0.16.6
 matplotlib>=3.0.0
 importlib_metadata
+tabulate
