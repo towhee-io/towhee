@@ -16,6 +16,12 @@ from collections import namedtuple
 from typing import Any, Dict, List
 
 from towhee.hparam import param_scope
+from towhee.engine.uri import URI
+
+
+def _get_default_namespace():
+    with param_scope() as hp:
+        return hp().towhee.default_namespace('anon')
 
 
 class OperatorRegistry:
@@ -29,18 +35,16 @@ class OperatorRegistry:
 
     @staticmethod
     def resolve(name: str) -> Any:
-        with param_scope() as hp:
-            default_namespace = hp().towhee.default_namespace('anon')
-        if name in OperatorRegistry.REGISTRY:
-            return OperatorRegistry.REGISTRY[name]
-
-        name_with_ns = '{}/{}'.format(default_namespace, name)
-        if name_with_ns in OperatorRegistry.REGISTRY:
-            return OperatorRegistry.REGISTRY[name_with_ns]
-
-        name_with_ns = '{}/{}'.format('builtin', name)
-        if name_with_ns in OperatorRegistry.REGISTRY:
-            return OperatorRegistry.REGISTRY[name_with_ns]
+        """
+        Resolve operator by name
+        """
+        for n in [
+                name,
+                '{}/{}'.format(_get_default_namespace(), name),
+                '{}/{}'.format('builtin', name),
+        ]:
+            if n in OperatorRegistry.REGISTRY:
+                return OperatorRegistry.REGISTRY[n]
         return None
 
     @staticmethod
@@ -49,17 +53,19 @@ class OperatorRegistry:
             input_schema=None,  # TODO: parse input_schema from code @jie.hou
             output_schema=None,
             flag=None):
-        """register a class or callable as a towhee operator.
+        """
+        Register a class, function, or callable as a towhee operator.
 
-        1. Basic operator registration and calling
-        The registration is as simple as just adding one line before a function
+        Examples:
+
+        1. register a function as operator
 
         >>> from towhee import register
         >>> @register
         ... def foo(x, y):
         ...     return x+y
 
-        or register a class as a stateful operator
+        2. register a class as operator
 
         >>> @register
         ... class foo_cls():
@@ -68,22 +74,19 @@ class OperatorRegistry:
         ...     def __call__(self, y):
         ...         return self.x + y
 
-        By default, function/class name is used as operator name.
-        After registration, we are able to call the operator by its name:
+        By default, function/class name is used as operator name,
+        which is used by the operator factory `towhee.ops` to invoke the operator.
 
         >>> from towhee import ops
         >>> op = ops.foo()
         >>> op(1, 2)
         3
 
-        or calling a stateful operator
-
         >>> op = ops.foo_cls(x=2)
         >>> op(3)
         5
 
-        2. Register with detail information
-        Operator name can also be provided during registration:
+        3. register operator with an alternative name:
 
         >>> @register(name='my_foo')
         ... def foo(x, y):
@@ -91,14 +94,17 @@ class OperatorRegistry:
         >>> ops.my_foo()(1,2)
         3
 
-        Each operator has its namespace. If not provided, default namespace 'anon' would be used.
-        You can also specific the fullname, including namespace when creating an operator.
+        Operator URI and Namespace: The URI (unique reference identifier) of an operator has two parts: namespace and name.
+        The namespace helps identify one operator and group the operators into various kinds.
+        We can specific the namespace when create an operator:
 
         >>> ops.anon.my_foo()(1,2)
         3
 
-        or the default namespace, typically `anon` will be searched by the factory method. To register
-        the operator to a different namespace, you should add namespace as a prefix of `name`:
+        `anon` is the default namespace to which an operator is registered if no namespace is specified.
+        And it's also the default searching namespace for the operator factory.
+
+        You can also specific the fullname, including namespace when register an operator:
 
         >>> @register(name='my_namespace/my_foo')
         ... def foo(x, y):
@@ -106,7 +112,7 @@ class OperatorRegistry:
         >>> ops.my_namespace.my_foo()(1,2)
         3
 
-        The operator can also has its outout schema
+        Output Schema:
 
         >>> @register(name='my_foo', output_schema='value')
         ... def foo(x, y):
@@ -116,7 +122,7 @@ class OperatorRegistry:
         ...     ops.my_foo()(1,2)
         Output(value=3)
 
-        Each operator type, for example: NNOperator and PyOperator, has their own default `flag`:
+        Flag: Each operator type, for example: NNOperator and PyOperator, has their own default `flag`:
 
         >>> from towhee.operator.base import Operator, NNOperator, PyOperator
         >>> from towhee.operator.base import OperatorFlag
@@ -144,7 +150,10 @@ class OperatorRegistry:
             [type]: [description]
         """
         if callable(name):
-            return OperatorRegistry.register()(name)
+            # the decorator is called directly without any arguments,
+            # relaunch the register
+            cls = name
+            return OperatorRegistry.register()(cls)
 
         if output_schema is None:  # none output schema
             output_schema = namedtuple('Output', 'col0')
@@ -153,39 +162,23 @@ class OperatorRegistry:
         if isinstance(output_schema, List):  # list schema ['col0', 'col1']
             output_schema = namedtuple('Output', output_schema)
 
-        with param_scope() as hp:
-            default_namespace = hp().towhee.default_namespace('anon')
-
         def wrapper(cls):
             metainfo = dict(input_schema=input_schema,
                             output_schema=output_schema,
                             flag=flag)
 
-            # TODO: need to convert the class name to URI @shiyu22
             nonlocal name
-            if name is None:
-                name = cls.__name__
-            if name is not None:
-                name = name.replace('_', '-')
-            if '/' not in name:
-                name = '{}/{}'.format(default_namespace, name)
+            name = URI(cls.__name__ if name is None else name).resolve_repo(
+                _get_default_namespace())
 
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):
-                old_cls = cls
-
-                class WrapperClass:  # TODO: generate the class name from function name @jie.hou
-
-                    def __init__(self, *arg, **kws) -> None:
-                        pass
-
-                    def __call__(self, *arg, **kws):
-                        return old_cls(*arg, **kws)
-
-                cls = WrapperClass
-
-            else:
-                old_cls = cls
+                func = cls
+                cls = type(
+                    cls.__name__, (object, ), {
+                        '__call__': lambda _, *arg, **kws: func(*arg, **kws),
+                        '__doc__': func.__doc__,
+                    })
 
             if output_schema is not None:
                 old_call = cls.__call__
@@ -204,8 +197,7 @@ class OperatorRegistry:
             if flag is not None:
                 cls.flag = property(lambda _: flag)
             OperatorRegistry.REGISTRY[name] = cls
-            if hasattr(old_cls, '__doc__'):  # pylint: disable=inconsistent-quotes
-                cls.__doc__ = old_cls.__doc__
+
             return cls
 
         return wrapper

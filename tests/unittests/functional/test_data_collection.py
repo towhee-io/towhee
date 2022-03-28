@@ -161,6 +161,29 @@ class TestDataCollection(unittest.TestCase):
 
         self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
 
+    def test_to_dict(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(5)]
+        dc = DataCollection(entities)
+
+        for i in dc:
+            self.assertTrue(isinstance(i.to_dict(), dict))
+
+    def test_head_tail(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(5)]
+        header = ['A', 'B']
+        dc = DataCollection(entities)
+
+        dc.head(1)
+        dc.tail(1)
+        dc.head(1, header=header)
+        dc.tail(1, header=header)
+
+        json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
+        res = DataCollection.from_json(json_path)
+
+        res.head(1)
+        self.assertRaises(AttributeError, res.tail)
+
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)
