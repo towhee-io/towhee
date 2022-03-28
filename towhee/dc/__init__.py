@@ -66,6 +66,12 @@ def unstream(iterable):
     return DataCollection.unstream(iterable)
 
 
+read_csv = DataCollection.from_csv
+
+read_json = DataCollection.from_json
+
+read_camera = DataCollection.from_camera
+
 from_zip = DataCollection.from_zip
 
 
