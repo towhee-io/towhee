@@ -13,7 +13,49 @@
 # limitations under the License.
 
 from towhee.functional import DataCollection, Entity
-from towhee.hparam import param_scope
+from towhee.hparam.hyperparameter import CallTracer
+
+
+class GlobImpl(CallTracer):
+    """
+    Return a DataCollection of paths matching a pathname pattern.
+    Examples:
+
+    1. create a simple data collection;
+
+    >>> import towhee
+    >>> towhee.glob('*.jpg').to_list()
+    ['a.jpg', 'b.jpg]
+
+    2. create a data collection of structural data.
+
+    >>> towhee.glob['path']('*.jpg').to_list()
+    [{'path': 'a.jpg'}, {'path': 'b.jpg'}]
+    """
+
+    def __init__(self, callback=None, path=None, index=None):
+        super().__init__(callback=callback, path=path, index=index)
+
+
+class GlobZipImpl(CallTracer):
+    """
+    Return a DataCollection of files matching a pathname pattern from a zip archive.
+    Examples:
+
+    1. create a simple data collection;
+
+    >>> import towhee
+    >>> towhee.glob_zip('somefile.zip', '*.jpg').to_list()
+    ['a.jpg', 'b.jpg]
+
+    2. create a data collection of structural data.
+
+    >>> towhee.glob_zip['path']('somefile.zip', '*.jpg').to_list()
+    [{'path': 'a.jpg'}, {'path': 'b.jpg'}]
+    """
+
+    def __init__(self, callback=None, path=None, index=None):
+        super().__init__(callback=callback, path=path, index=index)
 
 
 def stream(iterable):
@@ -24,8 +66,7 @@ def unstream(iterable):
     return DataCollection.unstream(iterable)
 
 
-def from_zip(*arg, **kws):
-    return DataCollection.from_zip(*arg, **kws)
+from_zip = DataCollection.from_zip
 
 
 def _glob_call_back(_, index, *arg, **kws):
@@ -36,4 +77,13 @@ def _glob_call_back(_, index, *arg, **kws):
         return DataCollection.from_glob(*arg, **kws)
 
 
-glob = param_scope().callholder(_glob_call_back)
+def _glob_zip_call_back(_, index, *arg, **kws):
+    if index is not None:
+        return from_zip(*arg, **kws).map(lambda x: Entity(**{index: x}))
+    else:
+        return from_zip(*arg, **kws)
+
+
+glob = GlobImpl(_glob_call_back)
+
+glob_zip = GlobZipImpl(_glob_zip_call_back)
