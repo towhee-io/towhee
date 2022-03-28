@@ -2,7 +2,7 @@ towhee
 ------
 
 .. automodule:: towhee
-   :members: pipeline, ops, from_zip, glob
+   :members: pipeline, ops, register, from_zip, glob
    :show-inheritance:
    :special-members:
    :member-order: bysource
