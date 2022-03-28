@@ -419,12 +419,14 @@ class FileManager():
             file_name = repo.replace('-', '_')
             # This path leads to 'author/repo/tag/file_name.yaml'
             operator_path = self._cache_name(repo, author, tag) / (file_name + '.py')
+            init_path = self._cache_name(repo, author, tag) / ('__init__.py')
 
             found_existing = False
             for path_iter in self._config.cache_paths:
                 # This path leads to 'cache/operators/author/repo/tag/file_name.py'
                 path = path_iter / 'operators' / operator_path
-                if path.is_file():
+                path2 = path_iter / 'operators' / init_path
+                if path.is_file() or path2.is_file():
                     file_path = path
                     found_existing = True
                     break

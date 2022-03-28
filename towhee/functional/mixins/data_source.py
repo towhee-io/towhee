@@ -88,11 +88,11 @@ class DataSourceMixin:
 
         return cls.stream(inner())
 
-    def image_decode(self):
-        pass
+    # def image_decode(self):
+    #     pass
 
-    def image_encode(self):
-        pass
+    # def image_encode(self):
+    #     pass
 
     def audio_decode(self):
         pass
