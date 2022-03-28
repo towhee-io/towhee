@@ -79,8 +79,24 @@ class MetricMixin:
         return self
 
     def report(self):
+        """
+        report the metric scores
+
+        Examples:
+
+        >>> from towhee import DataCollection
+        >>> from towhee import Entity
+        >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(5)]).unstream()
+        >>> dc.with_metrics(['accuracy', 'recall']).evaluate('a', 'c', 'lr').evaluate('a', 'b', 'rf').report()
+        {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 1.0, 'recall': 1.0}}
+        """
         import pandas as pd
         scores_dict = get_scores_dict(self.collector)
         df = pd.DataFrame.from_dict(scores_dict, orient='index', columns=self.collector.metrics)
         df.style.highlight_max(color='lightgreen', axis=0)
         return self.collector.scores
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=False)
