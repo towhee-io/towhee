@@ -13,14 +13,41 @@
 # limitations under the License.
 
 class Collector:
-    def __init__(self, **kwargs):
-        self.collector = kwargs
+    def __init__(self, metrics: list = None, labels: dict = {}, scores: dict = {}):
+        self.metrics = metrics
+        self.scores = scores
+        self.labels = labels
 
-    def __getattr__(self, name):
-        return self.collector[name]
+    @metrics.setter
+    def metrics(self, value: list):
+        self.metrics = value
 
-    def add(self, **kwargs):
-        self.collector.update(kwargs)
+    @property
+    def metrics(self):
+        return self.metrics
+
+    @property
+    def scores(self):
+        return self.scores
+
+    @property
+    def labels(self):
+        return self.labels
+
+    def add_scores(self, **kwargs):
+        self.scores.update(kwargs)
+
+    def add_labels(self, **kwargs):
+        self.labels.update(kwargs)
+
+
+def get_scores_dict(collector: Collector):
+    scores_dict = {}
+    for model in collector.scores:
+        score = []
+        for metric in collector.metrics:
+            scores_dict[model] = score.append(collector.scores[model][metric])
+    return scores_dict
 
 
 class MetricMixin:
@@ -30,15 +57,15 @@ class MetricMixin:
 
     # pylint: disable=import-outside-toplevel
     def __init__(self):
-        self.collector = Collector(score={})
+        self.collector = Collector()
 
     def with_metrics(self, metric_types: list = None):
-        self.collector.add(metric_types=metric_types)
+        self.collector.metrics = metric_types
         return self
 
     def report(self):
         import pandas as pd
-        metrics_dict = self.collector.score
-        df = pd.DataFrame.from_dict(metrics_dict, orient='index', columns=self.collector.metric_types)
+        scores_dict = get_scores_dict(self.collector)
+        df = pd.DataFrame.from_dict(scores_dict, orient='index', columns=self.collector.metrics)
         df.style.highlight_max(color='lightgreen', axis=0)
         return metrics_dict
