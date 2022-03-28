@@ -14,9 +14,9 @@
 import doctest
 import unittest
 
-import towhee.functional.stateful_operator
+import towhee.operator.stateful_operator
 
-for mod in [towhee.functional.stateful_operator]:
+for mod in [towhee.operator.stateful_operator]:
     TestCaseAutoGen = doctest.DocTestSuite(mod)
     unittest.TextTestRunner(verbosity=4).run(TestCaseAutoGen)
 
