@@ -205,6 +205,9 @@ class _CallHolder:
         return self._callback(self._path, self._index, *args, **kwds)
 
 
+CallTracer = _CallHolder
+
+
 class HyperParameter(dict):
     """
     HyperParameter is an extended dict with features for better parameter management.
