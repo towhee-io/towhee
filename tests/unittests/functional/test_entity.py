@@ -27,7 +27,6 @@ class TestEntity(unittest.TestCase):
         self.assertTrue(isinstance(e1, Entity))
         self.assertTrue(isinstance(e2, Entity))
         self.assertTrue(isinstance(e3, Entity))
-        self.assertTrue(isinstance(e1.id, str))
         self.assertEqual(e2.a, e3.a)
         self.assertEqual(e2.b, e3.b)
         self.assertEqual(e2.c, e3.c)

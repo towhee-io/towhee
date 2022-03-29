@@ -47,7 +47,7 @@ class DisplayMixin:
 
         cnt = 0
         for i in self._iterable:
-            header = i.info[1:] if not header else header
+            header = i.to_dict().keys() if not header else header
             to_display.append(i.to_dict().values())
             cnt += 1
             if cnt == num:
@@ -79,7 +79,7 @@ class DisplayMixin:
 
         maxsize = len(self._iterable)
         for i in self._iterable[maxsize - num:]:
-            header = i.info[1:] if not header else header
+            header = i.to_dict().keys() if not header else header
             to_display.append(i.to_dict().values())
 
         print(tabulate(to_display, headers=header, tablefmt=tablefmt, numalign=numalign, stralign=stralign))

@@ -60,7 +60,6 @@ class EntityMixin:
             for k, v in kws.items():
                 if not hasattr(entity, k):
                     setattr(entity, k, v)
-                    entity.register(k)
                 if _ReplaceNoneValue and v is None:
                     setattr(entity, k, 0)
             return entity
