@@ -91,6 +91,40 @@ class Discretizer(StatefulOperator):
         return self._state.model().transform(data)
 
 
+@register(name='builtin/one_hot_encoder')
+class OneHotEncoderOp(StatefulOperator):
+    """
+    Standardize numerical features by removing the mean and scaling to unit variance.
+
+    Examples:
+
+    >>> from towhee import DataCollection, Entity
+    >>> dc = (
+    ...     DataCollection(['a','b','c','a','b']).map(lambda x: Entity(a=x))
+    ...         .set_training()
+    ...         .one_hot_encoder['a', 'b'](name='one_hot_encoder')
+    ... )
+
+    >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
+    [0, 1, 2, 0, 1]
+    """
+
+    def __init__(self, name):
+        super().__init__(name)
+
+    def fit(self):
+        from sklearn.preprocessing import OneHotEncoder
+        import numpy as np
+        data = np.array(self._data[0]).reshape([-1, 1])
+        self._state.model = OneHotEncoder()
+        self._state.model().fit(data)
+
+    def predict(self, x):
+        import numpy as np
+        data = np.array([x]).reshape([-1, 1])
+        return self._state.model().transform(data)
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(verbose=False)
