@@ -395,22 +395,20 @@ class ParallelMixin:
                 else:
                     yield x
 
+        @ray.remote
+        def remote_runner(val, index):
+            return _map_task_ray(ops[index])(val)
+
         async def worker():
             buffs = [[] for _ in ops]
             for x in self:
                 for i in range(len(ops)):
-
-                    @ray.remote
-                    def remote_runner(val):
-                        #TODO: double check working correctly
-                        return _map_task_ray(ops[i])(val) #pylint: disable=cell-var-from-loop
-
                     queue = queues[i]
                     buff = buffs[i]
                     if len(buff) == num_worker:
                         queue.put(await buff.pop(0))
                     buff.append(
-                        asyncio.wrap_future(remote_runner.remote(x).future()))
+                        asyncio.wrap_future(remote_runner.remote(x, i).future()))
 
             while sum([len(buff) for buff in buffs]) > 0:
                 for i in range(len(ops)):
@@ -426,6 +424,7 @@ class ParallelMixin:
 
         def worker_wrapper():
             loop.run_until_complete(worker())
+            loop.close()
 
         t = threading.Thread(target=worker_wrapper)
         t.start()
