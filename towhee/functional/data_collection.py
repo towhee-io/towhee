@@ -21,15 +21,6 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
 
-def _private_wrapper(func):
-    def wrapper(self, *arg, **kws):
-        return self.factory(func(self, *arg, **kws))
-
-    if hasattr(func, '__doc__'):  # pylint: disable=inconsistent-quotes
-        wrapper.__doc__ = func.__doc__
-    return wrapper
-
-
 class DataCollection(Iterable, AllMixins):
     """
     DataCollection is a pythonic computation and processing framework
@@ -41,12 +32,12 @@ class DataCollection(Iterable, AllMixins):
 
     Examples:
 
-    1. create a data collection from list or iterator:
+    1. Create a data collection from list or iterator:
 
     >>> dc = DataCollection([0, 1, 2, 3, 4])
     >>> dc = DataCollection(iter([0, 1, 2, 3, 4]))
 
-    2. chaining function invocations makes your code clean and fluent:
+    2. Chaining function invocations makes your code clean and fluent:
 
     >>> (
     ...    dc.map(lambda x: x+1)
@@ -108,17 +99,19 @@ class DataCollection(Iterable, AllMixins):
         return iter(self._iterable)
 
     def stream(arg):  # pylint: disable=no-self-argument
-        """Create a stream data collection.
+        """
+        Create a stream data collection.
 
         Examples:
 
-        1. create a streamed data collection
+        1. Create a streamed data collection
 
         >>> dc = DataCollection.stream([0,1,2,3,4])
         >>> dc.is_stream
         True
 
-        2. convert a data collection to streamed version
+        2. Convert a data collection to streamed version
+
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> dc.is_stream
         False
@@ -140,17 +133,18 @@ class DataCollection(Iterable, AllMixins):
         return DataCollection(iterable)
 
     def unstream(arg):  # pylint: disable=no-self-argument
-        """Create a unstream data collection.
+        """
+        Create a unstream data collection.
 
         Examples:
 
-        1. create a unstream data collection
+        1. Create a unstream data collection
 
         >>> dc = DataCollection.unstream(iter(range(5)))
         >>> dc.is_stream
         False
 
-        2. convert a streamed data collection to unstream version
+        2. Convert a streamed data collection to unstream version
 
         >>> dc = DataCollection(iter(range(5)))
         >>> dc.is_stream
@@ -174,7 +168,7 @@ class DataCollection(Iterable, AllMixins):
     @property
     def is_stream(self):
         """
-        check whether the data collection is stream or unstream.
+        Check whether the data collection is stream or unstream.
 
         Examples:
 
@@ -217,21 +211,20 @@ class DataCollection(Iterable, AllMixins):
 
         return wrapper
 
-    @_private_wrapper
     def exception_safe(self):
         """
-        making the data collection exception-safe by warp elements with `Option`.
+        Making the data collection exception-safe by warp elements with `Option`.
 
         Examples:
 
-        1. exception breaks pipeline execution:
+        1. Exception breaks pipeline execution:
 
         >>> dc = DataCollection.range(5)
         >>> dc.map(lambda x: x / (0 if x == 3 else 2)).to_list()
         Traceback (most recent call last):
         ZeroDivisionError: division by zero
 
-        2. exception-safe execution
+        2. Exception-safe execution
 
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).to_list()
         [Some(0.0), Some(0.5), Some(1.0), Empty(), Some(2.0)]
@@ -242,18 +235,19 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        return map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
+        result = map(lambda x: Some(x)
+                   if not isinstance(x, Option) else x, self._iterable)
+        return self.factory(result)
 
     def safe(self):
         """
-        shortcut for `exception_safe`
+        Shortcut for `exception_safe`
         """
         return self.exception_safe()
 
-    @_private_wrapper
     def select(self, name: str = 'feature_vector'):
         """
-        get the list from operator Output
+        Get the list from operator Output.
 
         Examples:
 
@@ -263,12 +257,12 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.select(name='num').to_list()
         [1, 2, 3]
         """
-        return map(lambda x: getattr(x, name), self._iterable)
+        result = map(lambda x: getattr(x, name), self._iterable)
+        return self.factory(result)
 
-    @_private_wrapper
     def select_from(self, other):
         """
-        select data from dc with list(self)
+        Select data from dc with list(self).
 
         Examples:
 
@@ -284,11 +278,12 @@ class DataCollection(Iterable, AllMixins):
                 return [other[i] for i in x]
             return other[x]
 
-        return map(inner, self._iterable)
+        result = map(inner, self._iterable)
+        return self.factory(result)
 
     def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
-        unbox `Option` values and fill `Empty` with default values
+        Unbox `Option` values and fill `Empty` with default values.
 
         Args:
             default (Any): default value to replace empty values;
@@ -307,7 +302,7 @@ class DataCollection(Iterable, AllMixins):
 
     def drop_empty(self, callback: Callable = None) -> 'DataCollection':
         """
-        unbox `Option` values and drop `Empty`
+        Unbox `Option` values and drop `Empty`.
 
         Args:
             callback (Callable): handler for empty values;
@@ -321,7 +316,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty().to_list()
         [0.0, 0.5, 1.0, 2.0]
 
-        get inputs that case exceptions:
+        Get inputs that case exceptions:
 
         >>> exception_inputs = []
         >>> result = dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty(lambda x: exception_inputs.append(x.get().value))
@@ -348,10 +343,9 @@ class DataCollection(Iterable, AllMixins):
             result = inner(self._iterable)
         return self.factory(result)
 
-    @_private_wrapper
     def map(self, *arg):
         """
-        apply operator to data collection
+        Apply operator to data collection.
 
         Args:
             *arg (Callable): functions/operators to apply to data collection;
@@ -366,11 +360,10 @@ class DataCollection(Iterable, AllMixins):
         [4, 6, 8, 10]
         """
 
-        # return map(unary_op, self._iterable)
-
         # mmap
         if len(arg) > 1:
-            return self.mmap(*arg)
+            return self.mmap(list(arg))
+
         unary_op = arg[0]
 
         # smap map for stateful operator
@@ -379,7 +372,7 @@ class DataCollection(Iterable, AllMixins):
 
         # pmap
         if self.get_executor() is not None:
-            return self.pmap(unary_op, executor=self._executor)
+            return self.pmap(unary_op)
 
         #map
         def inner(x):
@@ -388,11 +381,12 @@ class DataCollection(Iterable, AllMixins):
             else:
                 return unary_op(x)
 
-        return map(inner, self._iterable)
+        result = map(inner, self._iterable)
+        return self.factory(result)
 
     def zip(self, *others) -> 'DataCollection':
         """
-        combine two data collections
+        Combine two data collections.
 
         Args:
             *others (DataCollection): other data collections;
@@ -411,11 +405,12 @@ class DataCollection(Iterable, AllMixins):
         return self.factory(zip(self, *others))
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
-        """filter data collection with `unary_op`
+        """
+        Filter data collection with `unary_op`.
 
         Args:
             unary_op (Callable): callable to decide whether to filter the element;
-            drop_empty (bool, optional): drop empty values. Defaults to False.
+            drop_empty (bool, optional): drop empty values. Defaults to False;
 
         Returns:
             DataCollection: filtered data collection
@@ -433,7 +428,7 @@ class DataCollection(Iterable, AllMixins):
 
     def sample(self, ratio=1.0) -> 'DataCollection':
         """
-        sample the data collection
+        Sample the data collection.
 
         Args:
             ratio (float): sample ratio;
@@ -453,7 +448,7 @@ class DataCollection(Iterable, AllMixins):
     @staticmethod
     def range(*arg, **kws):
         """
-        generate data collection with ranged numbers
+        Generate data collection with ranged numbers.
 
         Examples:
 
@@ -464,7 +459,7 @@ class DataCollection(Iterable, AllMixins):
 
     def batch(self, size, drop_tail=False) -> 'DataCollection':
         """
-        Create small batches from data collections
+        Create small batches from data collections.
 
         Args:
             size (int): window size;
@@ -541,7 +536,7 @@ class DataCollection(Iterable, AllMixins):
 
     def flaten(self) -> 'DataCollection':
         """
-        flaten nested data collections
+        Flaten nested data collections.
 
         Returns:
             DataCollection: flattened data collection;
@@ -565,17 +560,17 @@ class DataCollection(Iterable, AllMixins):
 
     def shuffle(self, in_place=False) -> 'DataCollection':
         """
-        shuffle a unstream data collection.
+        Shuffle an unstreamed data collection.
 
         Args:
             in_place (bool): shuffle the data collection in place;
 
         Returns:
-            DataCollection: shuffled data collection
+            DataCollection: shuffled data collection;
 
         Examples:
 
-        1. shuffle
+        1. Shuffle:
 
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> shuffled = dc.shuffle()
@@ -585,14 +580,14 @@ class DataCollection(Iterable, AllMixins):
         >>> tuple(shuffled) == tuple(range(5))
         False
 
-        2. in place shuffle
+        2. In place shuffle:
 
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> _ = dc.shuffle(True)
         >>> tuple(dc) == tuple(range(5))
         False
 
-        3. streamed data collection is not supported
+        3. streamed data collection is not supported:
 
         >>> dc = DataCollection.stream([0, 1, 2, 3, 4])
         >>> _ = dc.shuffle()
@@ -618,7 +613,7 @@ class DataCollection(Iterable, AllMixins):
 
         Examples:
 
-        define two operators:
+        1. Define two operators:
 
         >>> class my_add:
         ...     def __init__(self, val):
@@ -632,7 +627,7 @@ class DataCollection(Iterable, AllMixins):
         ...     def __call__(self, x):
         ...         return x*self.val
 
-        register the operators to `DataCollection`'s execution context with `param_scope`
+        2. Register the operators to `DataCollection`'s execution context with `param_scope`:
 
         >>> from towhee import param_scope
         >>> with param_scope(dispatcher={
@@ -656,7 +651,7 @@ class DataCollection(Iterable, AllMixins):
 
     def __getitem__(self, index):
         """
-        indexing for data collection
+        Indexing for data collection.
 
         Examples:
 
@@ -674,7 +669,7 @@ class DataCollection(Iterable, AllMixins):
 
     def __setitem__(self, index, value):
         """
-        indexing for data collection
+        Indexing for data collection.
 
         Examples:
 
@@ -696,7 +691,7 @@ class DataCollection(Iterable, AllMixins):
 
     def __rshift__(self, unary_op):
         """
-        chain the operators with `>>`
+        Chain the operators with `>>`.
 
         Examples:
 
@@ -712,10 +707,9 @@ class DataCollection(Iterable, AllMixins):
     def __or__(self, unary_op):
         return self.map(unary_op)
 
-    @_private_wrapper
     def __add__(self, other):
         """
-        concat two data collection.
+        Concat two data collections:
 
         Examples:
 
@@ -725,11 +719,13 @@ class DataCollection(Iterable, AllMixins):
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
         """
+        def inner():
+            for x in self:
+                yield x
+            for x in other:
+                yield x
 
-        for x in self:
-            yield x
-        for x in other:
-            yield x
+        return self.factory(inner())
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
