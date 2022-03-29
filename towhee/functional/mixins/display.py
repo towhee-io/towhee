@@ -14,12 +14,14 @@
 from typing import Iterable
 
 from tabulate import tabulate
+from towhee._types import Image
 
 
 class DisplayMixin:
     """
     Mixin for display data.
     """
+
     def as_str(self):
         return self.factory(map(str, self._iterable))
 
@@ -47,7 +49,7 @@ class DisplayMixin:
 
         cnt = 0
         for i in self._iterable:
-            header = i.to_dict().keys() if not header else header
+            header = i.info[1:] if not header else header
             to_display.append(i.to_dict().values())
             cnt += 1
             if cnt == num:
@@ -79,7 +81,102 @@ class DisplayMixin:
 
         maxsize = len(self._iterable)
         for i in self._iterable[maxsize - num:]:
-            header = i.to_dict().keys() if not header else header
+            header = i.info[1:] if not header else header
             to_display.append(i.to_dict().values())
 
         print(tabulate(to_display, headers=header, tablefmt=tablefmt, numalign=numalign, stralign=stralign))
+
+
+def to_printable_table(data, header, tablefmt='html'):
+    """
+    Convert two dimensional data structure into printable table
+
+    Args:
+        data (`List[List]`, or `List[Dict]`):
+            The data filled into table. If a list of dict is given, keys are used as column names.
+        header (`Iterable[str]`):
+            The name of columns defined by users.
+        tablefmt (`str`):
+            The format of the output, support html.
+    """
+    if tablefmt == 'html':
+        return to_html_table(data, header)
+
+    raise ValueError('unsupported table format %s' % tablefmt)
+
+
+def to_html_table(data, header):
+    """
+    Convert two dimensional data structure into html table
+
+    Args:
+        data (`List[List]`, or `List[Dict]`):
+            The data filled into table. If a list of dict is given, keys are used as column names.
+        header (`Iterable[str]`):
+            The name of columns defined by users.
+    """
+
+    tb_contents = []
+    for r in data:
+        tb_contents.append([_to_html_cell(x) for x in r])
+    return tabulate(tb_contents, headers=header, tablefmt='html')
+
+
+def _to_html_cell(data):
+    # pylint: disable=import-outside-toplevel
+    import numpy
+    if isinstance(data, str):
+        return _text_to_html_cell(data)
+    if isinstance(data, Image):
+        return _image_to_html_cell(data)
+    elif isinstance(data, numpy.ndarray):
+        return _ndarray_to_html_cell(data)
+    elif isinstance(data, (list, tuple)):
+        if all(isinstance(x, str) for x in data):
+            return _texts_to_html_cell(data)
+        elif all(isinstance(x, Image) for x in data):
+            return _images_to_html_cell(data)
+        elif all(isinstance(x, numpy.ndarray) for x in data):
+            return _ndarrays_to_html_cell(data)
+    return repr(data)
+
+
+def _ndarray_to_html_cell(array, maxlen=4):
+    head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
+    if len(array.flatten()) >= maxlen:
+        head_vals.append('...')
+    shape = 'shape=' + repr(array.shape)
+
+    return '[' + ', '.join(head_vals) + '] ' + shape
+
+
+def _ndarrays_to_html_cell(arrays, maxlen=4):
+    return '[' + ', '.join([_ndarray_to_html_cell(x, maxlen) for x in arrays]) + ']'
+
+
+def _image_to_html_cell(img, width=200, height=200):
+    # pylint: disable=import-outside-toplevel
+    import cv2
+    import base64
+
+    img_encode = cv2.imencode('.jpeg', img)[1]
+    src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode) + '" '
+    w = 'width = "' + str(width) + '" '
+    h = 'height = "' + str(height) + '" '
+
+    return '<img ' + src + w + h + '>'
+
+
+def _images_to_html_cell(imgs, width=200, height=200):
+    return ' '.join([_image_to_html_cell(x, width, height) for x in imgs])
+
+
+def _text_to_html_cell(text, maxlen=32):
+    if len(text) > maxlen:
+        return text[:maxlen] + '...'
+    else:
+        return text
+
+
+def _texts_to_html_cell(texts, maxlen=32):
+    return '[' + ', '.join([_text_to_html_cell(x, maxlen) for x in texts]) + ']'

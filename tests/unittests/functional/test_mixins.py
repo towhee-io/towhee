@@ -13,9 +13,11 @@
 # limitations under the License.
 import doctest
 import unittest
+import numpy as np
 
 import towhee.functional.mixins.computer_vision
 import towhee.functional.mixins.entity_mixin
+from towhee.functional.mixins.display import _ndarray_to_html_cell
 
 for mod in [
         towhee.functional.mixins.computer_vision,
@@ -26,3 +28,14 @@ for mod in [
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestDisplayMixin(unittest.TestCase):
+    """
+    Unit test for DisplayMixin.
+    """
+
+    def test_ndarray_repr(self):
+        arr = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
+        # pylint: disable=protected-access
+        self.assertEqual(_ndarray_to_html_cell(arr), '[1.1, 2.2, 3.3, 4.4, ...] shape=(3, 2)')
