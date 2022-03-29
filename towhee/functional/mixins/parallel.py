@@ -210,6 +210,7 @@ class ParallelMixin:
 
         def worker_wrapper():
             loop.run_until_complete(worker())
+            loop.close()
 
         t = threading.Thread(target=worker_wrapper)
         t.start()
