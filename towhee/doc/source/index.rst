@@ -13,12 +13,25 @@ Welcome to Towhee's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+User API
+========
+
+.. toctree::
+   :maxdepth: 3
+   :caption: User API:
+
    towhee/towhee
-   towhee/towhee_operator
-
    data_collection/index
-
    builtin operators/index
+
+Developer API
+=============
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Developer API:
+   
+   towhee/towhee_operator
 
    trainer/trainer
    trainer/trainer.optimization

@@ -18,32 +18,33 @@ from towhee.engine.engine import Engine, start_engine
 from towhee.engine.pipeline import Pipeline
 from towhee.pipeline_format import OutputFormat
 from towhee.hub.file_manager import FileManagerConfig, FileManager
-from towhee.engine import register, resolve
-from towhee.engine.factory import op, ops
-from towhee.hparam import param_scope, auto_param
+from towhee.engine import register
+from towhee.engine.factory import ops
+from towhee.hparam import param_scope
 from towhee.functional import DataCollection, State, Entity
 
 from towhee.dc import glob, glob_zip
+from towhee.dc import read_csv, read_json, read_camera
 from towhee.dc import from_zip
 
 __all__ = [
     'DEFAULT_PIPELINES',
     'pipeline',
+    'ops',
     'register',
-    'resolve',
     'param_scope',
-    'auto_param',
     'Build',
     'Inject',
     'dataset',
-    'op',
-    'ops',
     'DataCollection',
     'State',
     'Entity',
     #
     'glob',
     'glob_zip',
+    'read_csv',
+    'read_json',
+    'read_camera',
     'from_zip'
 ]
 

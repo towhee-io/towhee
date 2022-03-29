@@ -1,10 +1,13 @@
 towhee 
 ------
 
+.. autodata:: towhee.ops
+
 .. automodule:: towhee
-   :members: pipeline, ops, register, from_zip, glob
+   :members: from_zip, register, read_csv, read_json, read_camera
    :show-inheritance:
    :special-members:
+   :undoc-members:
    :member-order: bysource
 
 .. autodata:: towhee.glob

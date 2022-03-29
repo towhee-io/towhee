@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 from towhee.operator.base import Operator
-from towhee import op
+from towhee.engine.factory import op
 
 CACHE_PATH = Path(__file__).parent.parent.resolve()
 
