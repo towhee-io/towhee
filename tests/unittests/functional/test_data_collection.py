@@ -181,6 +181,18 @@ class TestDataCollection(unittest.TestCase):
         res.head(1)
         self.assertRaises(AttributeError, res.tail)
 
+    def test_dropna(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(10)]
+        entities.append(Entity(a=10, b=''))
+        dc = DataCollection(entities)
+
+        for i in dc:
+            self.assertTrue(i.b != '' if i.a != 10 else i.b == '')
+
+        res = dc.dropna()
+        for i in res:
+            self.assertTrue(i.b != '')
+
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)

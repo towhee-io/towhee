@@ -235,8 +235,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        result = map(lambda x: Some(x)
-                   if not isinstance(x, Option) else x, self._iterable)
+        result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
         return self.factory(result)
 
     def safe(self):
@@ -409,8 +408,10 @@ class DataCollection(Iterable, AllMixins):
         Filter data collection with `unary_op`.
 
         Args:
-            unary_op (Callable): callable to decide whether to filter the element;
-            drop_empty (bool, optional): drop empty values. Defaults to False;
+            unary_op (`Callable`):
+                Callable to decide whether to filter the element;
+            drop_empty (`bool`):
+                Drop empty values. Defaults to False.
 
         Returns:
             DataCollection: filtered data collection
