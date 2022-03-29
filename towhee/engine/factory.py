@@ -52,12 +52,8 @@ class _OperatorLazyWrapper:
     operator wrapper for lazy initialization.
     """
 
-    def __init__(self,
-                 name: str,
-                 index: Tuple[str],
-                 tag: str = 'main',
-                 **kws) -> None:
-        self._name = name.replace('.', '/').replace('_', '-')
+    def __init__(self, real_name: str, index: Tuple[str], tag: str = 'main', **kws) -> None:
+        self._name = real_name.replace('.', '/').replace('_', '-')
         self._index = index
         self._tag = tag
         self._kws = kws

@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from towhee.hparam import param_scope
-from towhee.operator import Operator
+# from towhee.operator import Operator
 
 
-class StatefulOperator(Operator):
+class StatefulOperator:
     """
     Stateful operator.
 
