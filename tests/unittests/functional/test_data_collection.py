@@ -92,7 +92,6 @@ class TestDataCollection(unittest.TestCase):
         self.assertTrue(hasattr(dc, '_iterable'))
         for i in dc:
             self.assertTrue(hasattr(i, 'num'))
-            self.assertTrue(hasattr(i, 'id'))
             self.assertFalse(hasattr(i, 'usage'))
 
         kvs = {'foo': 'bar'}
@@ -101,7 +100,6 @@ class TestDataCollection(unittest.TestCase):
         self.assertTrue(hasattr(res, '_iterable'))
         for i in res:
             self.assertTrue(hasattr(i, 'num'))
-            self.assertTrue(hasattr(i, 'id'))
             self.assertEqual(i.usage, 'test')
             self.assertEqual(i.foo, 'bar')
 
@@ -110,7 +108,6 @@ class TestDataCollection(unittest.TestCase):
         self.assertTrue(hasattr(res, '_iterable'))
         for i in res:
             self.assertTrue(hasattr(i, 'num'))
-            self.assertTrue(hasattr(i, 'id'))
             self.assertEqual(i.usage, 'test')
             self.assertEqual(i.foo, 0)
 

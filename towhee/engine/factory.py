@@ -86,11 +86,9 @@ class _OperatorLazyWrapper:
                     )
                 for i in range(len(res)):
                     setattr(arg[0], self._index[1][i], res[i])
-                    arg[0].register(self._index[1][i])
             # Single output.
             else:
                 setattr(arg[0], self._index[1], res)
-                arg[0].register(self._index[1])
 
             return arg[0]
         else:
