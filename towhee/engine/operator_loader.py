@@ -120,8 +120,11 @@ class OperatorLoader:
 
     def load_operator_from_cache(
             self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
-        fm = FileManager()
-        path = fm.get_operator(operator=function, tag=tag)
+        try:
+            fm = FileManager()
+            path = fm.get_operator(operator=function, tag=tag)
+        except ValueError as e:
+            raise ValueError('operator {} not found!'.format(function)) from e
 
         if path is None:
             raise FileExistsError('Cannot find operator.')

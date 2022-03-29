@@ -6,9 +6,8 @@ title: DataCollection Introduction
 # What is DataCollection
 
 DataCollection is a pythonic computation and processing framework for unstructured data in machine learning and data science. 
-It allows a data scientist or researcher to assemble a data processing pipeline, do his model work (embedding, transforming, or classification) and apply it to the business (search, recommendation, or shopping) with a method-chaining style API.
+It allows a data scientist or researcher to assemble a data processing pipeline, do his model work (embedding, transforming, or classification) and apply it to the business (search, recommendation, or shopping) with a method-chaining style API:
 
-Here is a short example for numerical computation with DataCollection:
 ```python
 >>> dc = DataCollection.range(5)
 >>> (
@@ -19,8 +18,8 @@ Here is a short example for numerical computation with DataCollection:
 [2, 4, 6, 8, 10]
 ```
 
-1. Pythonic Method-Chaining Style API: Designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
-2. Exception-Safe Execution: DataCollection provides exception-safe execution, which allows the function/operator invocation chain to continue executing on exception. Data scientists can put an exception receiver to the tail of the pipeline, processing and analyzing the exceptions as data, not error.
+1. Pythonic Method-Chaining Style API: Designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most popular data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
+2. Exception-Safe Execution: DataCollection provides exception-safe execution, which allows the function/operator invocation chain to continue executing on exception. Data scientists can put an exception receiver to the tail of the pipeline, processing and analyzing the exceptions as data, not errors.
 2. Feature-Rich Operator Repository: There are various pre-defined operators On the [towhee hub](https://towhee.io), which cover the most popular deep learning models in computer vision, NLP, and voice processing. Using these operators in the data processing pipeline can significantly accelerate your work.
 
 # Quick Start
@@ -111,7 +110,7 @@ If the `DataCollection` is created from an iterator, it performs `stream-wise` c
 1. `DataCollection` takes one element from the input and  applies `stage 1` and `stage 2` sequentially ;
 2. Since `DataCollection` holds no data, indexing or shuffle is not supported;
 
-We strongly suggest using `iterator-mode` instead of `list-mode` for memory efficiency and development convenience. When using `list-mode`, if the operator on the last stage is not appropriately implemented and runs into some error, you will waste all the computation in previous stages.
+We strongly suggest using `iterator-mode` instead of `list-mode` for memory efficiency and development convenience. When using `list-mode`, if the operator on the last stage is not appropriately implemented and runs into some error, you will waste all the computation in the previous stages.
 
 ---
 
@@ -120,6 +119,7 @@ We strongly suggest using `iterator-mode` instead of `list-mode` for memory effi
 When chaining many stages, `DataCollection` provides a more straightforward syntax by *operator dispatching*:
 
 ```python
+>>> from towhee import param_scope
 >>> with param_scope() as hp:
 ...     hp().dispatcher.as_str = str
 ... 	dc = (
@@ -336,7 +336,7 @@ query image from milvus:
 
 ## Face Detection and Recognition
 ```python
->>> DataCollection(['input_image.jph']) \
+>>> DataCollection(['input_image.jpg']) \
 ...     .load_image() \
 ...     .towhee.face_detection() \
 ...     .towhee.face_embedding() \
