@@ -65,10 +65,6 @@ class TestPipelineOps(unittest.TestCase):
         test_op = ops.towhee.test_operator[('in_1', 'in_2'), ('out_1', 'out_2', 'out_3')](x=1)
         self.assertRaises(IndexError, test_op, x=1)
 
-    # def test_image_embedding_pipeline(self):
-    #     pipe = image_embedding_pipeline(models = "xxx", ensemble = ops.my.ensemble_v1(agg='xxx', ....))
-    #     pipe = image_embedding_pipeline(operators = [ops.my.embedding(model='xxx'), ops.my.embedding(model='xxx')])
-
 
 if __name__ == '__main__':
     unittest.main()
