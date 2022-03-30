@@ -20,7 +20,7 @@ from towhee.functional.entity import Entity
 
 class DatasetMixin:
     """
-    Mixin for loading data from different data sources
+    Mixin for dealing with dataset
     """
 
     # pylint: disable=import-outside-toplevel
