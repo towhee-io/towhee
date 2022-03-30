@@ -193,6 +193,18 @@ class TestDataCollection(unittest.TestCase):
         for i in res:
             self.assertTrue(i.b != '')
 
+    def test_rename(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(100000)]
+        dc = DataCollection(entities)
+        for i in dc:
+            self.assertTrue(hasattr(i, 'a') and hasattr(i, 'b'))
+            self.assertFalse(hasattr(i, 'A') or hasattr(i, 'B'))
+
+        res = dc.rename(column={'a': 'A', 'b': 'B'})
+        for i in res:
+            self.assertFalse(hasattr(i, 'a') and hasattr(i, 'b'))
+            self.assertTrue(hasattr(i, 'A') or hasattr(i, 'B'))
+
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
 unittest.TextTestRunner().run(TestDataCollectionExamples)

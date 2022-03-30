@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Iterable, Iterator
-from typing import Callable
+from typing import Any, Iterable, Iterator, Callable
 from random import random, sample, shuffle
 
 from towhee.hparam import param_scope

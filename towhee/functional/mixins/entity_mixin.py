@@ -116,6 +116,20 @@ class EntityMixin:
             return True
 
         return self.factory(filter(inner, self._iterable))
+    def rename(self, column: Dict[str, str]):
+        """
+        Rename an column in DataCollection.
+
+        Args:
+            column (`Dict[str, str]`):
+                The columns to rename and their corresponding new name.
+        """
+        def inner(x):
+            for key in column:
+                x.__dict__[column[key]] = x.__dict__.pop(key)
+            return x
+
+        return self.factory(map(inner, self._iterable))
 
 
 if __name__ == '__main__':
