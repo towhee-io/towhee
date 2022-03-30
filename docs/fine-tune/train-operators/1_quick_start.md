@@ -1,5 +1,5 @@
 ---
-id: quick-start-training
+id: 1_quick_start
 title: Quick Start
 ---
 

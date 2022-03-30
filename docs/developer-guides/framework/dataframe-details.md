@@ -1,5 +1,5 @@
 ---
-id: Dataframe-details
+id: dataframe-details
 title: Architecture part III - Dataframe
 ---
 
