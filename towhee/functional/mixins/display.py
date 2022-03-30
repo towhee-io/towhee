@@ -63,7 +63,7 @@ def table_display(table, tablefmt='html'):
     # pylint: disable=import-outside-toplevel
     from IPython.display import display, HTML
     if tablefmt == 'html':
-        display(HTML('"""' + table + '"""'))
+        display(HTML(table))
     elif tablefmt == 'plain':
         display(table)
     else:

@@ -736,6 +736,11 @@ class DataCollection(Iterable, AllMixins):
         Args:
             n (`int`):
                 The number of lines to print. Default value is 5.
+
+        Examples:
+
+        >>> DataCollection.range(10).head(3).to_list()
+        [0, 1, 2]
         """
         def inner():
             for i, x in enumerate(self._iterable):
