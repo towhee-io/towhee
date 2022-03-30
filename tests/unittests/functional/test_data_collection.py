@@ -57,6 +57,7 @@ class TestDataCollection(unittest.TestCase):
     """
     tests for data collection
     """
+
     def test_example_for_basic_api(self):
         dc = DataCollection(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
@@ -165,21 +166,16 @@ class TestDataCollection(unittest.TestCase):
         for i in dc:
             self.assertTrue(isinstance(i.to_dict(), dict))
 
-    def test_head_tail(self):
+    def test_head(self):
         entities = [Entity(a=i, b=i + 1) for i in range(5)]
-        header = ['A', 'B']
         dc = DataCollection(entities)
 
         dc.head(1)
-        dc.tail(1)
-        dc.head(1, header=header)
-        dc.tail(1, header=header)
 
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
         res = DataCollection.from_json(json_path)
 
         res.head(1)
-        self.assertRaises(AttributeError, res.tail)
 
     def test_dropna(self):
         entities = [Entity(a=i, b=i + 1) for i in range(10)]

@@ -86,6 +86,7 @@ class DataCollection(Iterable, AllMixins):
         b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
 
     """
+
     def __init__(self, iterable: Iterable) -> None:
         """Initializes a new DataCollection instance.
 
@@ -373,7 +374,7 @@ class DataCollection(Iterable, AllMixins):
         if self.get_executor() is not None:
             return self.pmap(unary_op)
 
-        #map
+        # map
         def inner(x):
             if isinstance(x, Option):
                 return x.map(unary_op)
@@ -417,7 +418,7 @@ class DataCollection(Iterable, AllMixins):
             DataCollection: filtered data collection
         """
 
-        #return filter(unary_op, self)
+        # return filter(unary_op, self)
         def inner(x):
             if isinstance(x, Option):
                 if isinstance(x, Some):
@@ -726,6 +727,26 @@ class DataCollection(Iterable, AllMixins):
             for x in other:
                 yield x
 
+        return self.factory(inner())
+
+    def head(self, n: int = 5):
+        """
+        Get the first n lines of a DataCollection.
+
+        Args:
+            n (`int`):
+                The number of lines to print. Default value is 5.
+
+        Examples:
+
+        >>> DataCollection.range(10).head(3).to_list()
+        [0, 1, 2]
+        """
+        def inner():
+            for i, x in enumerate(self._iterable):
+                if i >= n:
+                    break
+                yield x
         return self.factory(inner())
 
     def to_list(self):

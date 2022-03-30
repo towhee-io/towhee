@@ -13,9 +13,16 @@
 # limitations under the License.
 import doctest
 import unittest
+import os
+import cv2
+import numpy as np
+from pathlib import Path
+from towhee._types.image import Image
 
 import towhee.functional.mixins.computer_vision
 import towhee.functional.mixins.entity_mixin
+from towhee.functional.mixins.display import _ndarray_brief_repr, to_printable_table
+from towhee import DataCollection
 
 for mod in [
         towhee.functional.mixins.computer_vision,
@@ -26,3 +33,52 @@ for mod in [
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestDisplayMixin(unittest.TestCase):
+    """
+    Unit test for DisplayMixin.
+    """
+
+    def test_ndarray_repr(self):
+        arr = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
+        # pylint: disable=protected-access
+        self.assertEqual(_ndarray_brief_repr(arr, 3), '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
+
+    def test_to_printable_table(self):
+        dc = DataCollection([[1.1, 2.2], [3.3, 4.4]])
+        # pylint: disable=protected-access
+        plain_tbl = to_printable_table(dc._iterable, tablefmt='plain')
+        self.assertEqual(plain_tbl, '1.1  2.2\n3.3  4.4')
+
+        html_tbl = to_printable_table(dc._iterable, tablefmt='html')
+        html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
+                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">1.1</td> '\
+                   '<td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">2.2</td></tr> '\
+                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">3.3</td> '\
+                   '<td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">4.4</td></tr></table>'
+        self.assertEqual(html_tbl, html_str)
+
+        dc = DataCollection([['hello'], ['world']])
+        plain_tbl = to_printable_table(dc._iterable, tablefmt='plain')
+        self.assertEqual(plain_tbl, 'hello\nworld')
+
+        html_tbl = to_printable_table(dc._iterable, tablefmt='html')
+        html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
+                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">hello</td></tr> '\
+                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3;">world</td></tr></table>'
+        self.assertEqual(html_tbl, html_str)
+
+    def test_show(self):
+        logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
+        img = cv2.imread(logo_path)
+        towhee_img = Image(img, 'BGR')
+        dc = DataCollection([[1, img, towhee_img], [2, img, towhee_img]])
+        dc.show(tablefmt='plain')
+        dc.show(tablefmt='html')
