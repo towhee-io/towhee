@@ -18,7 +18,7 @@ from tabulate import tabulate
 
 class DisplayMixin:
     """
-        Mixin for display data
+    Mixin for display data.
     """
     def as_str(self):
         return self.factory(map(str, self._iterable))

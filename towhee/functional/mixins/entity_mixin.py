@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Set, Union
 
 from towhee.functional.entity import Entity
 
@@ -99,6 +99,23 @@ class EntityMixin:
             return entity
 
         return self.factory(map(inner, self._iterable))
+
+    def dropna(self, na: Set[str] = {'', None}) -> Union[bool, 'DataCollection']:  # pylint: disable=dangerous-default-value
+        """
+        Drop entities that contain some specific values.
+
+        Args:
+            na (`Set[str]`):
+                Those entities contain values in na will be dropped.
+        """
+        def inner(entity: Entity):
+            for val in entity.__dict__.values():
+                if val in na:
+                    return False
+
+            return True
+
+        return self.factory(filter(inner, self._iterable))
 
 
 if __name__ == '__main__':
