@@ -34,6 +34,7 @@ class OperatorRepr(BaseRepr):
         iter_info (`Dict[str, Any]`):
             This operator's iterator info.
     """
+
     def __init__(
         self,
         name: str,
@@ -42,7 +43,8 @@ class OperatorRepr(BaseRepr):
         inputs: List[Dict[str, Any]],
         outputs: List[Dict[str, Any]],
         iter_info: Dict[str, Any],
-        tag: str = 'main'
+        tag: str = 'main',
+        extra=None
     ):
         super().__init__(name)
         self._function = function
@@ -51,6 +53,7 @@ class OperatorRepr(BaseRepr):
         self._outputs = outputs
         self._init_args = init_args
         self._iter_info = iter_info
+        self._extra = extra
 
     @property
     def function(self):
@@ -101,6 +104,10 @@ class OperatorRepr(BaseRepr):
         """
         return self._iter_info
 
+    @property
+    def extra(self):
+        return self._extra
+
     @staticmethod
     def from_dict(info: Dict[str, Any]) -> 'OperatorRepr':
         """
@@ -120,7 +127,8 @@ class OperatorRepr(BaseRepr):
         if 'tag' not in info:
             info['tag'] = 'main'
 
-        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'], info['outputs'], info['iter_info'], info['tag'])
+        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'],
+                            info['outputs'], info['iter_info'], info['tag'], info.get('extra'))
 
     @staticmethod
     def from_ir(function: str, init_args: Dict[str, Any]) -> 'OperatorRepr':

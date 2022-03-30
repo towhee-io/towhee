@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import unittest
-from towhee.engine.operator_runner.runner_base import RunnerBase, RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerBase, RunnerStatus, OpInfo
 
 
 class MockRunner(RunnerBase):
@@ -26,8 +26,10 @@ class TestRunnerBase(unittest.TestCase):
     """
     Runner base test
     """
+
     def test_runner_base(self):
-        mock_runner = MockRunner('mock', 0, 'add_operator', 'main', 'mock_operators', {'num': 1})
+        op_info = OpInfo('add_operator', 'mock_operators', {'num': 1}, 'main', None)
+        mock_runner = MockRunner(op_info, 'mock', 0)
         self.assertEqual(mock_runner.status, RunnerStatus.IDLE)
         self.assertTrue(mock_runner.is_idle())
         mock_runner.process()
@@ -36,6 +38,7 @@ class TestRunnerBase(unittest.TestCase):
         self.assertEqual(mock_runner.hub_op_id, 'mock_operators')
         self.assertEqual(mock_runner.op_args, {'num': 1})
         self.assertEqual(mock_runner.tag, 'main')
+
 
 if __name__ == '__main__':
     unittest.main()

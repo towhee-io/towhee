@@ -35,16 +35,17 @@ class RunnerStatus(Enum):
         return status in [RunnerStatus.FINISHED, RunnerStatus.FAILED]
 
 
-class _OpInfo:
+class OpInfo:
     """
     Operator hub info.
     """
 
-    def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, any], tag: str) -> None:
+    def __init__(self, op_name: str, hub_op_id: str, op_args: Dict[str, any], tag: str, extra: Dict[str, any] = None) -> None:
         self._op_name = op_name
         self._hub_op_id = hub_op_id
         self._tag = tag
         self._op_args = op_args
+        self._extra = extra
 
     @property
     def op_name(self):
@@ -62,6 +63,10 @@ class _OpInfo:
     def tag(self):
         return self._tag
 
+    @property
+    def extra(self):
+        return self._extra
+
 
 class RunnerBase(ABC):
     """
@@ -72,12 +77,9 @@ class RunnerBase(ABC):
 
     def __init__(
         self,
+        op_info: OpInfo,
         name: str,
         index: int,
-        op_name: str,
-        tag: str,
-        hub_op_id: str,
-        op_args: Dict[str, any],
         readers=None,
         writer=None,
     ) -> None:
@@ -85,7 +87,7 @@ class RunnerBase(ABC):
         self._index = index
         self._status = RunnerStatus.IDLE
         self._msg = None
-        self._op_info = _OpInfo(op_name, hub_op_id, op_args, tag)
+        self._op_info = op_info
 
         self._readers = readers
         self._sleep_time = 0
@@ -118,6 +120,10 @@ class RunnerBase(ABC):
     @property
     def op_args(self):
         return self._op_info.op_args
+
+    @property
+    def op_extra(self):
+        return self._op_info._extra
 
     @property
     def status(self) -> RunnerStatus:

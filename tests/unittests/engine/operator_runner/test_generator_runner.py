@@ -18,7 +18,7 @@ import threading
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
 from towhee.engine.operator_io import create_reader, create_writer
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.operator_runner.generator_runner import GeneratorRunner
 from tests.unittests.mock_operators.generator_operator import generator_operator
 
@@ -37,8 +37,8 @@ class TestGeneratorRunner(unittest.TestCase):
         out_df = DataFrame('output', [('sum', 'int')])
         writer = create_writer('generator', [out_df])
         reader = create_reader(input_df, 'generator', {'num': 0})
-        runner = GeneratorRunner('test', 0, 'generator_operator', 'main',
-                                 'mock_operators', {'num': 1}, [reader], writer)
+        op_info = OpInfo('generator_operator', 'mock_operators', {'num': 1}, 'main', None)
+        runner = GeneratorRunner(op_info, 'test', 0, [reader], writer)
         return input_df, out_df, runner
 
     def test_generator_runner(self):
@@ -78,8 +78,8 @@ class TestGeneratorRunner(unittest.TestCase):
         out_df_2 = DataFrame('output', [('sum', 'int')])
         writer = create_writer('generator', [out_df_2])
         reader = create_reader(out_df_1, 'generator', {'num': 0})
-        runner_2 = GeneratorRunner('test', 0, 'generator_operator', 'main',
-                                   'mock_operators', {'num': 1}, [reader], writer)
+        op_info = OpInfo('generator_operator', 'mock_operators', {'num': 1}, 'main', None)
+        runner_2 = GeneratorRunner(op_info, 'test', 0, [reader], writer)
 
         runner_1.set_op(generator_operator.GeneratorOperator())
         t1 = threading.Thread(target=run, args=(runner_1, ))

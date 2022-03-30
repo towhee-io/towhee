@@ -23,6 +23,7 @@ class _OperatorStorage:
     """
     Impl operator get and put by different shared_type.
     """
+
     def __init__(self):
         self._shared_type = None
         self._ops = []
@@ -52,6 +53,7 @@ class OperatorPool:
     """`OperatorPool` manages `Operator` creation, acquisition, release, and garbage
     collection. Each `TaskExecutor` has one `OperatorPool`.
     """
+
     def __init__(self, cache_path: str = None):
         self._op_loader = OperatorLoader(cache_path)
         self._all_ops = {}
@@ -74,7 +76,7 @@ class OperatorPool:
     def clear(self):
         self._all_ops = {}
 
-    def acquire_op(self, hub_op_id: str, op_args: Dict[str, any], tag: str) -> Operator:
+    def acquire_op(self, hub_op_id: str, op_args: Dict[str, any], tag: str, extra=None) -> Operator:
         """
         Instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
@@ -100,7 +102,7 @@ class OperatorPool:
 
             if not storage.op_available():
                 op = self._op_loader.load_operator(hub_op_id, op_args, tag)
-                op.key = op_key
+                op.after_init(op_key, extra)
                 storage.put(op, True)
             return storage.get()
 

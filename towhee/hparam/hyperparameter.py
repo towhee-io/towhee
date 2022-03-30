@@ -284,7 +284,7 @@ class HyperParameter(dict):
         _write_tracker.add(name)
         obj[path[-1]] = safe_numeric(value)
 
-    def get(self, name: str) -> Any:
+    def get(self, name: str, default: any = None) -> Any:
         """
         get a parameter by a string name
 
@@ -308,7 +308,7 @@ class HyperParameter(dict):
                 return None
             obj = obj[p]
         _read_tracker.add(name)
-        return obj[path[-1]] if path[-1] in obj else None
+        return obj[path[-1]] if path[-1] in obj else default
 
     def __setitem__(self, key, value):
         """

@@ -67,7 +67,7 @@ class DataFrame:
     def _initialize_storage(self, columns):
         """Set the columns in the schema."""
         for name, col_type in columns:
-            self._schema.add_col(name=name, col_type = col_type)
+            self._schema.add_col(name=name, col_type=col_type)
         frame = _Frame()
         self._schema.add_col(FRAME, self._class_type(frame))
         self._data_as_list = [Array(name=name) for name, _ in self._schema.cols]
@@ -268,7 +268,6 @@ class DataFrame:
             else:
                 return self._ret(Responses.APPROVED_CONTINUE, rets, next_offset, iter_id)
 
-
     def get(self, offset: int, count: int = 1, iter_id: int = False):
         """
         Get data from dataframe based on offset and how many values requested.
@@ -318,11 +317,10 @@ class DataFrame:
                 return self._ret(Responses.UNKOWN_ERROR, None, None, iter_id)
 
     def _ret(self, code, ret, offset, provide_code):
-        if  provide_code is not False:
+        if provide_code is not False:
             return code, ret, offset
         else:
             return ret
-
 
     def put(self, item) -> None:
         """
@@ -335,7 +333,7 @@ class DataFrame:
         """
         assert not self._sealed, f'DataFrame {self._name} is already sealed, can not put data'
         assert isinstance(item, (tuple, dict, list)), f'Dataframe input must be of type (tuple, dict, list), not {type(item)}'
-        with  self._data_lock:
+        with self._data_lock:
             start_len = self._len
             if not isinstance(item, list):
                 item = [item]

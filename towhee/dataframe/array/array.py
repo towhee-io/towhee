@@ -73,7 +73,7 @@ class Array:
                     stop = key.stop - self._offset
                 return self._data[key.start - self._offset:stop]
             else:
-                raise IndexError(f'element with index={key.start} has been released' )
+                raise IndexError(f'element with index={key.start} has been released')
         else:
             raise IndexError('only integers are invalid indices')
 
@@ -162,6 +162,7 @@ class Array:
         if release_offset > 0:
             del self._data[:release_offset]
             self._offset = offset
+
 
 if __name__ == '__main__':
     arr = Array()

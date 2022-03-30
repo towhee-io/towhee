@@ -16,6 +16,9 @@ from abc import abstractmethod
 from abc import ABC
 from enum import Enum
 
+
+from towhee.serving import auto_batch, create_serving
+
 # NotShareable:
 #    Stateful & reusable operator.
 
@@ -68,6 +71,9 @@ class Operator(ABC):
         """
         raise NotImplementedError
 
+    def after_init(self, key, extra=None):
+        self._key = key
+
     @property
     def key(self):
         return self._key
@@ -75,10 +81,6 @@ class Operator(ABC):
     @property
     def shared_type(self):
         return SharedType.NotShareable
-
-    @key.setter
-    def key(self, value):
-        self._key = value
 
 
 class NNOperator(Operator):
@@ -112,6 +114,15 @@ class NNOperator(Operator):
         this method should be overwritten.
         """
         raise NotImplementedError()
+
+    def after_init(self, key, extra):
+        super().after_init(key)
+        if extra is None:
+            extra = {}
+        batch_size = extra.get('batch_size', self.DEFAULT_BATCH_SIZE)
+        max_latency = extra.get('max_latency', self.DEFAULT_MAX_LATENCY)
+        device_ids = extra.get('device_ids', [-1])
+        self.model = create_serving(self.model, batch_size, max_latency, device_ids)
 
     def train(self,
               training_config=None,

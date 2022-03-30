@@ -17,7 +17,7 @@ from pathlib import Path
 
 from towhee.operator import Operator
 from towhee.engine.operator_pool import OperatorPool
-from towhee.engine.operator_runner.runner_base import _OpInfo
+from towhee.engine.operator_runner.runner_base import OpInfo
 
 
 class TestOperatorPool(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestOperatorPool(unittest.TestCase):
 
     def test_acquire_release(self):
         hub_op_id = 'local/add_operator'
-        op_info = _OpInfo('add_operator', hub_op_id, {'factor': 0}, 'main')
+        op_info = OpInfo('add_operator', hub_op_id, {'factor': 0}, 'main')
 
         op = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
 
@@ -49,7 +49,7 @@ class TestOperatorPool(unittest.TestCase):
         # Shareable operator only need one
         self._op_pool.clear()
         hub_op_id = 'local/add_operator'
-        op_info = _OpInfo('add_operator', hub_op_id, {'factor': 0}, 'main')
+        op_info = OpInfo('add_operator', hub_op_id, {'factor': 0}, 'main')
 
         op1 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
         op2 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
@@ -63,7 +63,7 @@ class TestOperatorPool(unittest.TestCase):
     def test_notshareable_pool(self):
         self._op_pool.clear()
         hub_op_id = 'local/generator_operator'
-        op_info = _OpInfo('generator_operator', hub_op_id, {}, 'main')
+        op_info = OpInfo('generator_operator', hub_op_id, {}, 'main')
 
         op1 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
         op2 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
@@ -86,7 +86,7 @@ class TestOperatorPool(unittest.TestCase):
     def test_notreusable(self):
         self._op_pool.clear()
         hub_op_id = 'local/flat_operator'
-        op_info = _OpInfo('flat_operator', hub_op_id, {}, 'main')
+        op_info = OpInfo('flat_operator', hub_op_id, {}, 'main')
 
         op1 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')
         op2 = self._op_pool.acquire_op(op_info.hub_op_id, op_info.op_args, 'main')

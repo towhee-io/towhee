@@ -115,6 +115,11 @@ class TestPipeline(unittest.TestCase):
         res = p(input_data)
         self.assertEqual([item[0] for item in res], [6, 6, 30, 30])
 
+    def test_batch_pipeline(self):
+        p = pipeline('local/batch_pipeline')
+        res = p(3, 4)
+        print(res)
+
 
 if __name__ == '__main__':
     unittest.main()

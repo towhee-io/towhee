@@ -17,7 +17,7 @@ from pathlib import Path
 import time
 
 from towhee.engine.operator_runner.map_runner import MapRunner
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.dataframe import DataFrame
@@ -45,7 +45,8 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         reader = create_reader(input_df, 'map', {'num': 0})
         writer = create_writer('map', [out_df])
         hub_op_id = 'local/add_operator'
-        runner = MapRunner('test', 0, 'add_operator', 'main', hub_op_id, {'factor': 1}, [reader], writer)
+        op_info = OpInfo('add_operator', hub_op_id, {'factor': 1}, 'main', None)
+        runner = MapRunner(op_info, 'test', 0, [reader], writer)
         return input_df, out_df, runner
 
     def test_pool_with_map_runner(self):
@@ -82,6 +83,7 @@ class TestThreadPoolTaskExecutor(unittest.TestCase):
         self._task_exec.stop()
         self.assertEqual(out_df.size, 0)
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
 
 if __name__ == '__main__':
     unittest.main()

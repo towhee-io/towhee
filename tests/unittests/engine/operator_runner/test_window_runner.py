@@ -18,7 +18,7 @@ import threading
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
 from towhee.engine.operator_io import create_reader, create_writer
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.operator_runner.window_runner import WindowRunner
 from tests.unittests.mock_operators.sum_operator.sum_operator import SumOperator
 
@@ -38,8 +38,8 @@ class TestRunner(unittest.TestCase):
         writer = create_writer('window', [out_df])
         params = {'batch_size': 5, 'step': 3}
         reader = create_reader(input_df, 'window', {'num': 0}, params)
-        runner = WindowRunner('window_test', 0, 'sum_operator', 'main',
-                              'mock_operators', {},
+        op_info = OpInfo('sum_operator', 'mock_operators', {}, 'main', None)
+        runner = WindowRunner(op_info, 'window_test', 0,
                               [reader], writer)
         return input_df, out_df, runner
 

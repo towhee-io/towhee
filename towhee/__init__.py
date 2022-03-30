@@ -45,6 +45,7 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
+
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -200,6 +201,7 @@ class Build:
 
     >>> pipe = Build(template_variable_1='new_value').pipeline('pipeline_name')
     """
+
     def __init__(self, **kws) -> None:
         self._kws = kws
 
@@ -232,6 +234,7 @@ class Inject:
 
     and the value at the injection point is replace by the `Inject` API.
     """
+
     def __init__(self, **kws) -> None:
         self._injections = {}
         for k, v in kws.items():
@@ -247,6 +250,7 @@ class _OperatorLazyWrapper:
     """
     operator wrapper for lazy initialization.
     """
+
     def __init__(self, name: str, index: Tuple[str], tag: str = 'main', **kws) -> None:
         self._name = name.replace('.', '/').replace('_', '-')
         self._index = index

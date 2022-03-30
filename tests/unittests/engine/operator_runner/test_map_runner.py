@@ -18,7 +18,7 @@ import threading
 
 from towhee.dataframe import DataFrame, iterators
 from towhee.engine.operator_io import create_reader, create_writer
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.operator_runner.map_runner import MapRunner
 from tests.unittests.mock_operators.add_operator import add_operator
 
@@ -37,7 +37,8 @@ class TestMapRunner(unittest.TestCase):
         out_df = DataFrame('output', [('sum', 'int')])
         writer = create_writer('map', [out_df])
         reader = create_reader(input_df, 'map', {'num': 0})
-        runner = MapRunner('test', 0, 'add_operator', 'main', 'mock_operators', {'num': 1},
+        op_info = OpInfo('add_operator', 'mock_operators', {'num': 1}, 'main', None)
+        runner = MapRunner(op_info, 'test', 0,
                            [reader], writer)
         return input_df, out_df, runner
 
@@ -72,6 +73,7 @@ class TestMapRunner(unittest.TestCase):
         input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
 
 if __name__ == '__main__':
     unittest.main()

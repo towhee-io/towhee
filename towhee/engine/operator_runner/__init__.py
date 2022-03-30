@@ -33,20 +33,23 @@ def create_runner(
     tag: str,
     hub_op_id: str,
     op_args: Dict[str, any],
+    extra: Dict[str, any],
     reader: DataFrameReader,
     writer: DataFrameWriter,
 ) -> runner_base.RunnerBase:
+
+    op_info = runner_base.OpInfo(op_name, hub_op_id, op_args, tag, extra)
     if runner_type.lower() == 'map':
-        return map_runner.MapRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return map_runner.MapRunner(op_info, name, index, reader, writer)
     elif runner_type.lower() == 'flatmap':
-        return flatmap_runner.FlatMapRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return flatmap_runner.FlatMapRunner(op_info, name, index, reader, writer)
     elif runner_type.lower() == 'filter':
-        return filter_runner.FilterRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return filter_runner.FilterRunner(op_info, name, index, reader, writer)
     elif runner_type.lower() == 'concat':
-        return concat_runner.ConcatRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return concat_runner.ConcatRunner(op_info, name, index, reader, writer)
     elif runner_type.lower() in ['window', 'time_window']:
-        return window_runner.WindowRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return window_runner.WindowRunner(op_info, name, index, reader, writer)
     elif runner_type.lower() == 'generator':
-        return generator_runner.GeneratorRunner(name, index, op_name, tag, hub_op_id, op_args, reader, writer)
+        return generator_runner.GeneratorRunner(op_info, name, index, reader, writer)
     else:
         raise AttributeError('No runner type named: {}'.format(runner_type))

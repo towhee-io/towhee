@@ -37,6 +37,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
             Local path for which operators are stored. Defaults to
             `$HOME/.towhee/operators`.
     """
+
     def __init__(self, name: str, cache_path: str = None):
         super().__init__()
         self._name = name
@@ -65,7 +66,7 @@ class ThreadPoolTaskExecutor(threading.Thread):
 
     def execute(self, runner: RunnerBase):
         try:
-            op = self._op_pool.acquire_op(runner.hub_op_id, runner.op_args, runner.tag)
+            op = self._op_pool.acquire_op(runner.hub_op_id, runner.op_args, runner.tag, runner.op_extra)
             runner.set_op(op)
             runner.process()
             if runner.is_end() and runner.op is not None:

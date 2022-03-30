@@ -15,6 +15,7 @@
 from typing import Dict
 from enum import Enum, auto
 from collections import defaultdict
+import copy
 
 from towhee.dag.operator_repr import OperatorRepr
 from towhee.engine.operator_runner.runner_base import RunnerStatus
@@ -22,6 +23,7 @@ from towhee.dataframe import DataFrame
 from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner import create_runner
 from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
+from towhee.hparam import param_scope
 
 
 class OpStatus(Enum):
@@ -115,20 +117,26 @@ class OperatorContext:
         self._op_status = OpStatus.RUNNING
 
         try:
-            for i in range(count):
-                self._op_runners.append(
-                    create_runner(
-                        self._repr.iter_info['type'],
-                        self._repr.name,
-                        i,
-                        self._repr.name,
-                        self._repr.tag,
-                        self._repr.function,
-                        self._repr.init_args,
-                        self._readers,
-                        self._writer,
+            with param_scope() as hp:
+                dy_extra = hp.get(self._repr.name, {})
+                in_yaml_extra = {} if self._repr.extra is None else self._repr.extra
+                dy_extra.update(in_yaml_extra)
+
+                for i in range(count):
+                    self._op_runners.append(
+                        create_runner(
+                            self._repr.iter_info['type'],
+                            self._repr.name,
+                            i,
+                            self._repr.name,
+                            self._repr.tag,
+                            self._repr.function,
+                            self._repr.init_args,
+                            dy_extra,
+                            self._readers,
+                            self._writer,
+                        )
                     )
-                )
         except AttributeError as e:
             self._err_msg = str(e)
             self._op_status = OpStatus.FAILED

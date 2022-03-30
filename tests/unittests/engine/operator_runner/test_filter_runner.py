@@ -18,7 +18,7 @@ import threading
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
 from towhee.engine.operator_io import create_reader, create_writer
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.operator_runner.filter_runner import FilterRunner
 from tests.unittests.mock_operators.zero_drop import zero_drop
 
@@ -37,8 +37,8 @@ class TestFilterRunner(unittest.TestCase):
         out_df = DataFrame('output', [('num', 'int')])
         writer = create_writer('filter', [out_df])
         reader = create_reader(input_df, 'filter', {'num': 0})
-        runner = FilterRunner('test', 0, 'zero_operator', 'main',
-                              'mock_operators', {},
+        op_info = OpInfo('zero_operator', 'mock_operators', {}, 'main', None)
+        runner = FilterRunner(op_info, 'test', 0,
                               [reader], writer)
         return input_df, out_df, runner
 
@@ -74,6 +74,7 @@ class TestFilterRunner(unittest.TestCase):
         input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+
 
 if __name__ == '__main__':
     unittest.main()

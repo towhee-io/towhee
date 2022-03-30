@@ -11,19 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-def auto_batch(batch_size, max_latency):
-
-    def decorate(cls):
-        cls.DEFAULT_BATCH_SIZE = batch_size
-        cls.DEFAULT_MAX_LATENCY = max_latency
-        return cls
-    return decorate
-
-
-def create_serving(model, batch_size, max_latency, device_ids):
-    from towhee.serving import thread_model_serving
-    serving = thread_model_serving.ThreadModelServing(model, batch_size, max_latency, device_ids)
-    serving.start()
-    return serving.proxy()

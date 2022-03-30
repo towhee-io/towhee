@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from typing import Dict
-from towhee.engine.operator_runner.runner_base import RunnerBase
+from towhee.engine.operator_runner.runner_base import RunnerBase, OpInfo
 
 
 class ConcatRunner(RunnerBase):
@@ -22,14 +22,12 @@ class ConcatRunner(RunnerBase):
 
     Concat can not run in multi-thread.
     """
+
     def __init__(
         self,
+        op_info: OpInfo,
         name: str,
         index: int,
-        op_name: str,
-        tag: str,
-        hub_op_id: str,
-        op_args: Dict[str, any],
         readers=None,
         writer=None,
     ) -> None:
@@ -37,7 +35,7 @@ class ConcatRunner(RunnerBase):
             self._set_failed('Concat operator\'s inputs are at leaset two, current is %s' % len(readers))
             return
 
-        super().__init__(name, index, op_name, tag, hub_op_id, op_args, readers, writer)
+        super().__init__(op_info, name, index, readers, writer)
 
     def process_step(self):
         self._op._readers = self._readers  # pylint: disable=protected-access

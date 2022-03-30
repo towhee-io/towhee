@@ -17,7 +17,7 @@ import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
-from towhee.engine.operator_runner.runner_base import RunnerStatus
+from towhee.engine.operator_runner.runner_base import RunnerStatus, OpInfo
 from towhee.engine.operator_runner.flatmap_runner import FlatMapRunner
 from towhee.engine.operator_io import create_reader, create_writer
 from tests.unittests.mock_operators.repeat_operator.repeat_operator import RepeatOperator
@@ -37,8 +37,8 @@ class TestFlatmapRunner(unittest.TestCase):
         out_df = DataFrame('output', [('num', 'int')])
         writer = create_writer('flatmap', [out_df])
         reader = create_reader(input_df, 'flatmap', {'num': 0})
-        runner = FlatMapRunner('test', 0, 'repeat_operator', 'main',
-                               'mock_operators', {'repeat': 3},
+        op_info = OpInfo('repeat_operator', 'mock_operators', {'repeat': 3}, 'main', None)
+        runner = FlatMapRunner(op_info, 'test', 0,
                                [reader], writer)
         return input_df, out_df, runner
 
@@ -70,8 +70,8 @@ class TestFlatmapRunner(unittest.TestCase):
         out_df_2 = DataFrame('output', [('num', 'int')])
         writer = create_writer('flatmap', [out_df_2])
         reader = create_reader(out_df_1, 'flatmap', {'num': 0})
-        runner_2 = FlatMapRunner('test', 0, 'repeat_operator', 'main',
-                                 'mock_operators', {'repeat': 4},
+        op_info = OpInfo('repeat_operator', 'mock_operators', {'repeat': 4}, 'main', None)
+        runner_2 = FlatMapRunner(op_info, 'test', 0,
                                  [reader], writer)
 
         runner_1.set_op(RepeatOperator(3))
