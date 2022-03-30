@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
+from towhee.hparam import param_scope
+
 
 class Collector:
     """
@@ -19,7 +23,10 @@ class Collector:
     """
 
     # pylint: disable=dangerous-default-value
-    def __init__(self, metrics: list = [], labels: dict = {}, scores: dict = {}):
+    def __init__(self,
+                 metrics: list = [],
+                 labels: dict = {},
+                 scores: dict = {}):
         self.metrics = metrics
         self.scores = scores
         self.labels = labels
@@ -44,21 +51,18 @@ def get_scores_dict(collector: Collector):
     return scores_dict
 
 
-class MetricMixin:
-    """
-    Mixin for metric
-    """
+def _evaluate_callback(self):
 
-    # pylint: disable=import-outside-toplevel
-    def __init__(self):
-        self.collector = Collector()
-
-    def with_metrics(self, metric_types: list = None):
-        self.collector.metrics = metric_types
-        return self
-
-    def evaluate(self, actual: str, predicted: str, name: str):
-        self.collector.add_labels({name: {'actual': actual, 'predicted': predicted}})
+    def wrapper(_: str, index: Tuple[str], *arg, **kws):
+        # pylint: disable=import-outside-toplevel
+        # pylint: disable=unused-argument
+        actual, predicted = index
+        name = arg
+        self.collector.add_labels(
+            {name: {
+                'actual': actual,
+                'predicted': predicted
+            }})
         score = {name: {}}
         actual_list = []
         predicted_list = []
@@ -71,11 +75,31 @@ class MetricMixin:
             if metric_type == 'accuracy':
                 re = sklearn_utils.accuracy_score(actual_list, predicted_list)
             elif metric_type == 'recall':
-                re = sklearn_utils.recall_score(actual_list, predicted_list, average='weighted')
+                re = sklearn_utils.recall_score(actual_list,
+                                                predicted_list,
+                                                average='weighted')
             elif metric_type == 'confusion_matrix':
-                re = sklearn_utils.confusion_matrix(actual_list, predicted_list)
+                re = sklearn_utils.confusion_matrix(actual_list,
+                                                    predicted_list)
             score[name].update({metric_type: re})
         self.collector.add_scores(score)
+        return self
+
+    return wrapper
+
+
+class MetricMixin:
+    """
+    Mixin for metric
+    """
+
+    # pylint: disable=import-outside-toplevel
+    def __init__(self):
+        self.collector = Collector()
+        self.evaluate = param_scope().callholder(_evaluate_callback(self))
+
+    def with_metrics(self, metric_types: list = None):
+        self.collector.metrics = metric_types
         return self
 
     def report(self):
@@ -92,7 +116,9 @@ class MetricMixin:
         """
         import pandas as pd
         scores_dict = get_scores_dict(self.collector)
-        df = pd.DataFrame.from_dict(scores_dict, orient='index', columns=self.collector.metrics)
+        df = pd.DataFrame.from_dict(scores_dict,
+                                    orient='index',
+                                    columns=self.collector.metrics)
         df.style.highlight_max(color='lightgreen', axis=0)
         return self.collector.scores
 

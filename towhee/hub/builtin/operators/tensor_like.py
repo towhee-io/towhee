@@ -18,6 +18,12 @@ from towhee.engine import register
 # pylint: disable=invalid-name
 
 
+@register(name='builtin/hstack')
+def hstack(*arg):
+    from scipy import sparse
+    return sparse.hstack(arg)
+
+
 @register(name='builtin/stack')
 class stack:
     """stack the sequence of inputs along a new axis.
