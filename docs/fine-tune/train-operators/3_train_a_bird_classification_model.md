@@ -1,5 +1,5 @@
 ---
-id: train-bird
+id: 3_train_a_bird_classification_model
 title: Train a Bird Classification Model
 ---
 
