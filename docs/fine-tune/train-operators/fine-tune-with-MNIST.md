@@ -1,5 +1,5 @@
 ---
-id: 2_fine_tune_with_MNIST
+id: fine-tune-with-MNIST
 title: Fine-Tune with MNIST
 ---
 

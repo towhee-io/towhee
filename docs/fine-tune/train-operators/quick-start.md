@@ -1,5 +1,5 @@
 ---
-id: 1_quick_start
+id: quick-start
 title: Quick Start
 ---
 
