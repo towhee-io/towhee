@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Iterable
 
-from tabulate import tabulate
 from towhee._types import Image
 
 
@@ -25,69 +23,54 @@ class DisplayMixin:
     def as_str(self):
         return self.factory(map(str, self._iterable))
 
-    def plot(self):
-        pass
-
-    def head(self, num: int = 5, header: Iterable[str] = None, numalign: str = 'center', stralign: str = 'center', tablefmt: str = 'plain'):
+    def show(self, limit=5, header=None, tablefmt='html'):
         """
-        Print the first n lines in a DataCollection.
+        Print the first n lines of a DataCollection.
 
         Args:
-            num (`int`):
+            limit (`int`):
                 The number of lines to print. Default value is 5.
-            header (`Iterable[str]`):
-                The name of columns defined by users.
-            numalign (`str`):
-                How the nums align, support center, right, left.
-            stralign (`str`):
-                How the strs align, support center, right, left.
+                Print all if limit is non-positive.
+            header (list of `str`):
+                The field names.
             tablefmt (`str`):
-                The format of the output, support plain, simple, github, grid, fancy_grid, pipe, orgtbl, jira, presto, psql, rst, mediawiki,
-                moinmoin, youtrack, html, latex, latex_raw, latex_booktabs, textile.
+                The format of the output, support html, plain.
         """
-        to_display = []
+        # pylint: disable=import-outside-toplevel
+        from towhee import Entity
 
-        cnt = 0
-        for i in self._iterable:
-            header = i.info[1:] if not header else header
-            to_display.append(i.to_dict().values())
-            cnt += 1
-            if cnt == num:
-                break
+        contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
-        print(tabulate(to_display, headers=header, tablefmt=tablefmt, numalign=numalign, stralign=stralign))
+        if all(isinstance(x, Entity) for x in contents):
+            header = tuple(contents[0].to_dict()) if not header else header
+            data = [list(x.to_dict().values()) for x in contents]
+        else:
+            data = [[x] for x in contents]
 
-    def tail(self, num: int = 5, header: Iterable[str] = None, numalign: str = 'center', stralign: str = 'center', tablefmt: str = 'plain'):
-        """
-        Print the last n lines in a DataCollection.
-
-        Args:
-            num (`int`):
-                The number of lines to print. Default value is 5.
-            header (`Iterable[str]`):
-                The name of columns defined by users.
-            numalign (`str`):
-                How the nums align, support center, right, left.
-            stralign (`str`):
-                How the strs align, support center, right, left.
-            tablefmt (`str`):
-                The format of the output, support plain, simple, github, grid, fancy_grid, pipe, orgtbl, jira, presto, psql, rst, mediawiki,
-                moinmoin, youtrack, html, latex, latex_raw, latex_booktabs, textile.
-        """
-        to_display = []
-
-        if self.is_stream:
-            raise AttributeError('The DataCollection is stream, tail function not supported.')
-
-        maxsize = len(self._iterable)
-        for i in self._iterable[maxsize - num:]:
-            header = i.info[1:] if not header else header
-            to_display.append(i.to_dict().values())
-
-        print(tabulate(to_display, headers=header, tablefmt=tablefmt, numalign=numalign, stralign=stralign))
+        table_display(to_printable_table(data, header, tablefmt))
 
 
-def to_printable_table(data, header, tablefmt='html'):
+def table_display(table, tablefmt='html'):
+    """
+    Display table
+
+    Args:
+        table (`str`):
+            Table in printable format, such as HTML.
+        tablefmt (`str`):
+            The format of the output, support html, plain.
+    """
+    # pylint: disable=import-outside-toplevel
+    from IPython.display import display, HTML
+    if tablefmt == 'html':
+        display(HTML('"""' + table + '"""'))
+    elif tablefmt == 'plain':
+        display(table)
+    else:
+        raise ValueError('unsupported table format %s' % tablefmt)
+
+
+def to_printable_table(data, header=None, tablefmt='html'):
     """
     Convert two dimensional data structure into printable table
 
@@ -97,12 +80,54 @@ def to_printable_table(data, header, tablefmt='html'):
         header (`Iterable[str]`):
             The name of columns defined by users.
         tablefmt (`str`):
-            The format of the output, support html.
+            The format of the output, support html, plain.
     """
+    header = [] if not header else header
+
     if tablefmt == 'html':
         return to_html_table(data, header)
+    elif tablefmt == 'plain':
+        return to_plain_table(data, header, tablefmt)
 
     raise ValueError('unsupported table format %s' % tablefmt)
+
+
+def to_plain_table(data, header, tablefmt):
+    """
+    Convert two dimensional data structure into plain table
+
+    Args:
+        data (`List[List]`, or `List[Dict]`):
+            The data filled into table. If a list of dict is given, keys are used as column names.
+        header (`Iterable[str]`):
+            The name of columns defined by users.
+        tablefmt (`str`):
+            The format of the output, support plain.
+    """
+    # pylint: disable=import-outside-toplevel
+    from tabulate import tabulate
+
+    tb_contents = [[_to_plain_cell(x) for x in r] for r in data]
+    return tabulate(tb_contents, headers=header, tablefmt=tablefmt)
+
+
+def _to_plain_cell(data):
+    # pylint: disable=import-outside-toplevel
+    import numpy
+    if isinstance(data, str):
+        return _text_brief_repr(data)
+    if isinstance(data, Image):
+        return _image_brief_repr(data)
+    elif isinstance(data, numpy.ndarray):
+        return _ndarray_brief_repr(data)
+    elif isinstance(data, (list, tuple)):
+        if all(isinstance(x, str) for x in data):
+            return _texts_brief_repr(data)
+        elif all(isinstance(x, Image) for x in data):
+            return _images_brief_repr(data)
+        elif all(isinstance(x, numpy.ndarray) for x in data):
+            return _ndarrays_brief_repr_(data)
+    return _brief_repr(data)
 
 
 def to_html_table(data, header):
@@ -115,33 +140,37 @@ def to_html_table(data, header):
         header (`Iterable[str]`):
             The name of columns defined by users.
     """
+    tb_style = 'style="border-collapse: collapse;"'
+    th_style = 'style="text-align: center; font-size: 130%; border: none;"'
+    td_style = 'style="text-align: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
-    tb_contents = []
+    trs = []
+    trs.append('<tr>' + ' '.join(['<th ' + th_style + '>' + x + '</th>' for x in header]) + '</tr>')
     for r in data:
-        tb_contents.append([_to_html_cell(x) for x in r])
-    return tabulate(tb_contents, headers=header, tablefmt='html')
+        trs.append('<tr>' + ' '.join(['<td ' + td_style + '>' + _to_html_cell(x) + '</td>' for x in r]) + '</tr>')
+    return '<table ' + tb_style + '>' + ' '.join(trs) + '</table>'
 
 
 def _to_html_cell(data):
     # pylint: disable=import-outside-toplevel
     import numpy
     if isinstance(data, str):
-        return _text_to_html_cell(data)
+        return _text_brief_repr(data)
     if isinstance(data, Image):
         return _image_to_html_cell(data)
     elif isinstance(data, numpy.ndarray):
-        return _ndarray_to_html_cell(data)
+        return _ndarray_brief_repr(data)
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
-            return _texts_to_html_cell(data)
+            return _texts_brief_repr(data)
         elif all(isinstance(x, Image) for x in data):
             return _images_to_html_cell(data)
         elif all(isinstance(x, numpy.ndarray) for x in data):
-            return _ndarrays_to_html_cell(data)
-    return repr(data)
+            return _ndarrays_brief_repr_(data)
+    return _brief_repr(data)
 
 
-def _ndarray_to_html_cell(array, maxlen=4):
+def _ndarray_brief_repr(array, maxlen=3):
     head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
     if len(array.flatten()) >= maxlen:
         head_vals.append('...')
@@ -150,33 +179,46 @@ def _ndarray_to_html_cell(array, maxlen=4):
     return '[' + ', '.join(head_vals) + '] ' + shape
 
 
-def _ndarrays_to_html_cell(arrays, maxlen=4):
-    return '[' + ', '.join([_ndarray_to_html_cell(x, maxlen) for x in arrays]) + ']'
+def _ndarrays_brief_repr_(arrays, maxlen=3):
+    return '[' + ', '.join([_ndarray_brief_repr(x, maxlen) for x in arrays]) + ']'
 
 
-def _image_to_html_cell(img, width=200, height=200):
+def _image_to_html_cell(img, width=128, height=128):
     # pylint: disable=import-outside-toplevel
     import cv2
     import base64
 
-    img_encode = cv2.imencode('.jpeg', img)[1]
-    src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode) + '" '
+    _, img_encode = cv2.imencode('.JPEG', img)
+    src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode).decode() + '" '
     w = 'width = "' + str(width) + '" '
     h = 'height = "' + str(height) + '" '
 
     return '<img ' + src + w + h + '>'
 
 
-def _images_to_html_cell(imgs, width=200, height=200):
+def _images_to_html_cell(imgs, width=128, height=128):
     return ' '.join([_image_to_html_cell(x, width, height) for x in imgs])
 
 
-def _text_to_html_cell(text, maxlen=32):
+def _images_brief_repr(imgs):
+    return '[' + ', '.join([_image_brief_repr(x) for x in imgs]) + ']'
+
+
+def _image_brief_repr(img):
+    return _ndarray_brief_repr(img) + ' mode=' + img.mode
+
+
+def _text_brief_repr(text, maxlen=32):
     if len(text) > maxlen:
         return text[:maxlen] + '...'
     else:
         return text
 
 
-def _texts_to_html_cell(texts, maxlen=32):
-    return '[' + ', '.join([_text_to_html_cell(x, maxlen) for x in texts]) + ']'
+def _texts_brief_repr(texts, maxlen=32):
+    return '[' + ', '.join([_text_brief_repr(x, maxlen) for x in texts]) + ']'
+
+
+def _brief_repr(data, maxlen=128):
+    s = repr(data)
+    return s[:maxlen] + '...' if len(s) > maxlen else s
