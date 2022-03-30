@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .data_source import DataSourceMixin
+from .dataset import DatasetMixin
 from .dispatcher import DispatcherMixin
 from .parallel import ParallelMixin
 from .computer_vision import ComputerVisionMixin
@@ -22,7 +22,7 @@ from .state import StateMixin
 from .metric import MetricMixin
 
 
-class AllMixins(DataSourceMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
+class AllMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                 ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
