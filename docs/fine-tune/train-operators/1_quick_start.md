@@ -3,7 +3,6 @@ id: quick-start-training
 title: Quick Start
 ---
 
-# Quick Start
 
 Follow steps below to get started with a jupyter notebook for how to train a Towhee operator. This example fine-tunes a pretrained model (eg. resnet-18) with a fake dataset.
 
