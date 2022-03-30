@@ -35,8 +35,7 @@ class StandardScalerOp(StatefulOperator):
     >>> [int(x.b*10) for x in dc.to_list()]
     [-15, -12, -8, -5, -1, 1, 5, 8, 12, 15]
     """
-
-    def __init__(self, name):
+    def __init__(self, name: str = None):
         super().__init__(name)
 
     def fit(self):
@@ -69,8 +68,7 @@ class Discretizer(StatefulOperator):
     >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
     [0, 0, 0, 1, 1, 1, 2, 2, 2, 2]
     """
-
-    def __init__(self, name, n_bins=10, encode='onehot', strategy='quantile'):
+    def __init__(self, name: str = None, n_bins=10, encode='onehot', strategy='quantile'):
         super().__init__(name)
         self._n_bins = n_bins
         self._encode = encode
@@ -108,8 +106,7 @@ class OneHotEncoderOp(StatefulOperator):
     >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
     [0, 1, 2, 0, 1]
     """
-
-    def __init__(self, name):
+    def __init__(self, name: str = None):
         super().__init__(name)
 
     def fit(self):

@@ -48,11 +48,18 @@ class StatefulOperator:
     >>> dc._state.mynorm._mu
     4.5
     """
-
     def __init__(self, name):
         super().__init__()
-        self._name = name
+        self._name = name if name else self._get_default_name()
         self._data = None
+
+    def _get_default_name(self):
+        with param_scope() as hp:
+            name = self.__class__.__name__.replace('_', '-')
+            inputs = (hp.index[0] if isinstance(hp.index[0], str) else '-'.join(hp.index[0])).replace('_', '-')
+            outputs = (hp.index[1] if isinstance(hp.index[1], str) else '-'.join(hp.index[1])).replace('_', '-')
+
+            return '_'.join([name, inputs, outputs])
 
     def set_state(self, state):
         self._state = getattr(state, self._name)
