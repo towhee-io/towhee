@@ -14,7 +14,8 @@
 from towhee.utils.log import engine_log
 
 try:
-    from sklearn.metrics import confusion_matrix, accuracy_score, recall_score # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from sklearn.metrics import confusion_matrix, accuracy_score, recall_score
     from sklearn.model_selection import train_test_split
 except ModuleNotFoundError as e:
     engine_log.error('sklearn not found, you can install via `pip install scikit-learn`.')
