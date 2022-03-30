@@ -31,7 +31,7 @@ class Entity:
     @overload
     def __init__(self, target: Dict[str, Any]):
         """
-        Create an Entity with the attibutes stored in a dict.
+        Create an Entity with the attributes stored in a dict.
         """
         ...
 
