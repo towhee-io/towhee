@@ -1,5 +1,5 @@
 ---
-id: 4_training_configs
+id: training-configs
 title: Training Configs
 ---
 
