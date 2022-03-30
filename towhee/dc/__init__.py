@@ -74,6 +74,9 @@ read_camera = DataCollection.from_camera
 
 from_zip = DataCollection.from_zip
 
+def from_df(df):
+    return DataCollection.stream(df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+
 
 def _glob_call_back(_, index, *arg, **kws):
     if index is not None:
