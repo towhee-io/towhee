@@ -3,7 +3,6 @@ id: train-bird
 title: Train a Bird Classification Model
 ---
 
-# Train a Bird Classification Model
 Follow steps below to get started with a jupyter notebook for how to train a Towhee operator. This example fine-tunes a pretrained ResNet model (eg. resnet-34 pretrained by ImageNet) with a bird dataset.
 # 1. Download Operator
 Download operator files together with the jupyter notebook.

@@ -38,10 +38,10 @@ const sidebars = {
     },
     {
       'Fine Tune': [
-          'fine-tune/train-operators/quick-start-training',
-          'fine-tune/train-operators/train-mnist',
-          'fine-tune/train-operators/train-bird',
-          'fine-tune/train-operators/training-configs',
+          'fine-tune/train-operators/1_quick_start',
+          'fine-tune/train-operators/2_fine_tune_with_MNIST',
+          'fine-tune/train-operators/3_train_a_bird_classification_model',
+          'fine-tune/train-operators/4_training_configs',
       ]
     },
     {
