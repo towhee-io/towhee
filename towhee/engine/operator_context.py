@@ -118,10 +118,9 @@ class OperatorContext:
 
         try:
             with param_scope() as hp:
-                dy_extra = hp.get(self._repr.name, {})
-                in_yaml_extra = {} if self._repr.extra is None else self._repr.extra
-                dy_extra.update(in_yaml_extra)
-
+                dy_extra = hp.get(self._repr.name, {}).get('extra', {})
+                extra = {} if self._repr.extra is None else copy.deepcopy(self._repr.extra)
+                extra.update(dy_extra)
                 for i in range(count):
                     self._op_runners.append(
                         create_runner(
@@ -132,7 +131,7 @@ class OperatorContext:
                             self._repr.tag,
                             self._repr.function,
                             self._repr.init_args,
-                            dy_extra,
+                            extra,
                             self._readers,
                             self._writer,
                         )

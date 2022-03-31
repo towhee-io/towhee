@@ -17,7 +17,7 @@ from abc import ABC
 from enum import Enum
 
 
-from towhee.serving import auto_batch, create_serving
+from towhee.serving import create_serving
 
 # NotShareable:
 #    Stateful & reusable operator.
@@ -78,6 +78,10 @@ class Operator(ABC):
     def key(self):
         return self._key
 
+    @key.setter
+    def key(self, key):
+        self._key = key
+
     @property
     def shared_type(self):
         return SharedType.NotShareable
@@ -119,9 +123,14 @@ class NNOperator(Operator):
         super().after_init(key)
         if extra is None:
             extra = {}
-        batch_size = extra.get('batch_size', self.DEFAULT_BATCH_SIZE)
-        max_latency = extra.get('max_latency', self.DEFAULT_MAX_LATENCY)
+        default_batch_size = self.DEFAULT_BATCH_SIZE if hasattr(self, 'DEFAULT_BATCH_SIZE') else 1
+        default_max_latency = self.DEFAULT_MAX_LATENCY if hasattr(self, 'DEFAULT_MAX_LATENCY') else 0.1
+        batch_size = extra.get('batch_size', default_batch_size)
+        max_latency = extra.get('max_latency', default_max_latency)
         device_ids = extra.get('device_ids', [-1])
+        if default_batch_size == 1 and len(device_ids) == 1 and device_ids[0] == -1:
+            return
+
         self.model = create_serving(self.model, batch_size, max_latency, device_ids)
 
     def train(self,

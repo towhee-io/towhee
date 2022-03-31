@@ -117,8 +117,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_batch_pipeline(self):
         p = pipeline('local/batch_pipeline')
-        res = p(3, 4)
-        print(res)
+        res = p(3, 45)
+
+        from towhee.hparam import param_scope
+        with param_scope(**{'batch_nn': {'extra': {'batch_size': 8}}}) as hp:
+            p2 = pipeline('local/batch_pipeline')
+            res = p2(3, 55)
 
 
 if __name__ == '__main__':
