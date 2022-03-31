@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-from typing import overload, Dict, Any, Optional
+from typing import overload
 
 
 class Entity:
@@ -28,19 +28,10 @@ class Entity:
         """
         ...
 
-    @overload
-    def __init__(self, target: Dict[str, Any]):
-        """
-        Create an Entity with the attributes stored in a dict.
-        """
-        ...
-
-    def __init__(self, target: Optional[Dict[str, Any]] = None, **kwargs):
+    def __init__(self, **kwargs):
         """
         Create an Entity with given attributes.
         """
-        if target:
-            kwargs.update(target)
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)

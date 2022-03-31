@@ -50,22 +50,30 @@ class StateMixin:
         return self
 
     def set_training(self, state=None):
-        self._state = state if state is not None else HyperParameter()
+        if state is not None:
+            self._state = state
+        if self.get_state() is None:
+            self._state = HyperParameter()
         self._state.__mode__ = 'training'
         return self
 
     def set_evaluating(self, state):
-        self._state = state if state is not None else HyperParameter()
+        if state is not None:
+            self._state = state
+        if self.get_state() is None:
+            self._state = HyperParameter()
         self._state.__mode__ = 'evaluating'
         return self
 
     def smap(self, op):
         op.set_state(self._state)
         if self._state().__mode__('evaluating') == 'training':
+            op.set_training(True)
             with param_scope() as hp:
                 hp().towhee.data_collection.training = True
                 for x in self._iterable:
                     op(x)
+            op.set_training(False)
             op.fit()
         return self.factory(map(op, self._iterable))
 

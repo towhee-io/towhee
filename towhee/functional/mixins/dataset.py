@@ -116,7 +116,7 @@ class DatasetMixin:
                 while string:
                     data = json.loads(string)
                     string = f.readline()
-                    yield Entity(data)
+                    yield Entity(**data)
 
         return cls.stream(inner())
 
@@ -128,7 +128,7 @@ class DatasetMixin:
             with open(csv_path, 'r', encoding=encoding) as f:
                 data = csv.DictReader(f)
                 for line in data:
-                    yield Entity(line)
+                    yield Entity(**line)
 
         return cls.stream(inner())
 

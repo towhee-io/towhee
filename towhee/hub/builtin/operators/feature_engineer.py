@@ -43,12 +43,12 @@ class StandardScalerOp(StatefulOperator):
         import numpy as np
         data = np.array(self._data[0]).reshape([-1, 1])
         self._state.model = StandardScaler()
-        self._state().model.fit(data)
+        self._state.model.fit(data)
 
     def predict(self, x):
         import numpy as np
         data = np.array([x]).reshape([-1, 1])
-        return self._state().model.transform(data)
+        return self._state.model.transform(data)
 
 
 @register(name='builtin/discretizer')
@@ -81,12 +81,12 @@ class Discretizer(StatefulOperator):
         self._state.model = KBinsDiscretizer(n_bins=self._n_bins,
                                              encode=self._encode,
                                              strategy=self._strategy)
-        self._state().model.fit(data)
+        self._state.model.fit(data)
 
     def predict(self, x):
         import numpy as np
         data = np.array([x]).reshape([-1, 1])
-        return self._state().model.transform(data)
+        return self._state.model.transform(data)
 
 
 @register(name='builtin/one_hot_encoder')
@@ -114,12 +114,12 @@ class OneHotEncoderOp(StatefulOperator):
         import numpy as np
         data = np.array(self._data[0]).reshape([-1, 1])
         self._state.model = OneHotEncoder()
-        self._state().model.fit(data)
+        self._state.model.fit(data)
 
     def predict(self, x):
         import numpy as np
         data = np.array([x]).reshape([-1, 1])
-        return self._state().model.transform(data)
+        return self._state.model.transform(data)
 
 
 if __name__ == '__main__':

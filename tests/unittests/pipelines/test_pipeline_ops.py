@@ -34,14 +34,14 @@ class TestPipelineOps(unittest.TestCase):
         res = test_op(1)
         self.assertEqual(res, 2)
 
-        e = Entity({'in': 1})
+        e = Entity(**{'in': 1})
         test_op = ops.towhee.test_operator['in', 'out'](x=1)
         res = test_op(e)
         self.assertIsInstance(res, Entity)
         self.assertEqual(res.out, 2)
 
     def test_mimo(self):
-        e = Entity({'in_1': 1, 'in_2': 2})
+        e = Entity(**{'in_1': 1, 'in_2': 2})
         test_op = ops.towhee.test_operator[('in_2', 'in_1'), ('out_1', 'out_2')](x=1)
         res = test_op(e)
 

@@ -52,6 +52,7 @@ class StatefulOperator:
         super().__init__()
         self._name = name if name else self._get_default_name()
         self._data = None
+        self._training = False
 
     def _get_default_name(self):
         with param_scope() as hp:
@@ -62,7 +63,12 @@ class StatefulOperator:
             return '_'.join([name, inputs, outputs])
 
     def set_state(self, state):
+        if not getattr(state, self._name):
+            getattr(state, self._name).model = 1
         self._state = getattr(state, self._name)
+
+    def set_training(self, flag):
+        self._training = flag
 
     def feed(self, *arg):
         if self._data is None:
@@ -79,9 +85,9 @@ class StatefulOperator:
         pass
 
     def __call__(self, *arg):
-        with param_scope() as hp:
-            training = hp().towhee.data_collection.training(False)
-        if training:
+        # with param_scope() as hp:
+        #     training = hp().towhee.data_collection.training(False)
+        if self._training:
             return self.feed(*arg)
         else:
             return self.predict(*arg)
