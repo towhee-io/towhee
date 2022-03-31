@@ -441,7 +441,8 @@ class DataCollection(Iterable, AllMixins):
 
         >>> dc = DataCollection(range(10000))
         >>> result = dc.sample(0.1)
-        >>> 900 < len(list(result)) < 1100
+        >>> ratio = len(result.to_list()) / 10000.
+        >>> 0.09 < ratio < 0.11
         True
         """
         return self.factory(filter(lambda _: random() < ratio, self))

@@ -8,14 +8,15 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT_ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.operator.base import Operator, NNOperator, PyOperator, OperatorFlag, SharedType
-from towhee.operator.stateful_operator import StatefulOperator
+import unittest
+import doctest
 
-__all__ = [
-    'Operator', 'NNOperator', 'PyOperator', 'StatefulOperator', 'OperatorFlag',
-    'SharedType'
-]
+suit = doctest.DocFileSuite('../../../docs/get-started/data-collection.md')
+unittest.TextTestRunner(verbosity=5).run(suit)
+
+if __name__ == '__main__':
+    unittest.main()
