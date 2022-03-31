@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from towhee.hparam import param_scope
-# from towhee.operator import Operator
+from towhee.operator import Operator
 
 
-class StatefulOperator:
+class StatefulOperator(Operator):
     """
     Stateful operator.
 
@@ -34,7 +34,7 @@ class StatefulOperator:
     ...         self._state._mu = np.mean(self._data[0])
     ...         self._state._std = np.std(self._data[0])
     ...     def predict(self, x):
-    ...         return (x-self._state._mu())/self._state._std()
+    ...         return (x-self._state._mu)/self._state._std
 
     >>> dc = (
     ...     DataCollection.range(10)
@@ -85,8 +85,6 @@ class StatefulOperator:
         pass
 
     def __call__(self, *arg):
-        # with param_scope() as hp:
-        #     training = hp().towhee.data_collection.training(False)
         if self._training:
             return self.feed(*arg)
         else:

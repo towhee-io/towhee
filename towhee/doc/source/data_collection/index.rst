@@ -8,4 +8,3 @@ towhee.DataCollection
    get_started
    data_collection
    mixins
-   option
