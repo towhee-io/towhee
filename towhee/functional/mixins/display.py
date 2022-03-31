@@ -12,13 +12,122 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy
+import pandas as pd
+from typing import Tuple
+
 from towhee._types import Image
+from towhee.hparam import param_scope
+from towhee.functional.entity import Entity
+
+
+def get_df_on_columns(self, index: Tuple[str]):
+    def inner(entity: Entity):
+        data = {}
+        for feature in index:
+            data[feature] = getattr(entity, feature)
+        return data
+
+    data = map(inner, self)
+    df = pd.DataFrame(data)
+    return df
+
+
+def calc_df(df, feature: str, target: str):
+    lst = []
+    df[feature] = df[feature].fillna('NULL')
+
+    if target:
+        for i in range(df[feature].nunique()):
+            val = list(df[feature].unique())[i]
+            lst.append([feature,                                                         # Variable
+                        val,                                                             # Value
+                        df[df[feature] == val].count()[feature],                         # All
+                        df[(df[feature] == val) & (df[target] == 0)].count()[feature],   # Good (think: Fraud == 0)
+                        df[(df[feature] == val) & (df[target] == 1)].count()[feature]])  # Bad (think: Fraud == 1)
+
+        data = pd.DataFrame(lst, columns=['Variable', 'Value', 'All', 'Good', 'Bad'])
+        data['Share'] = data['All'] / data['All'].sum()
+        data['Bad Rate'] = data['Bad'] / data['All']
+        data['Distribution Good'] = (data['All'] - data['Bad']) / (data['All'].sum() - data['Bad'].sum())
+        data['Distribution Bad'] = data['Bad'] / data['Bad'].sum()
+        data['WoE'] = numpy.log(data['Distribution Good'] / data['Distribution Bad'])
+
+        data = data.replace({'WoE': {numpy.inf: 0, -numpy.inf: 0}})
+        data['IV'] = data['WoE'] * (data['Distribution Good'] - data['Distribution Bad'])
+
+        data = data.sort_values(by=['Variable', 'Value'], ascending=[True, True])
+        data.index = range(len(data.index))
+
+        iv = data['IV'].sum()
+        print(f'Variable: {feature}\'s IV sum is: {iv}')
+        return data
+    else:
+        for i in range(df[feature].nunique()):
+            val = list(df[feature].unique())[i]
+            lst.append([feature,                                                         # Variable
+                        val,                                                             # Value
+                        df[df[feature] == val].count()[feature]])                         # All
+        data = pd.DataFrame(lst, columns=['Variable', 'Value', 'All'])
+        data['Share'] = data['All'] / data['All'].sum()
+        return data
+
+def _feature_summarize_callback(self):
+    def wrapper(_: str, index, *arg, **kws):
+        index = list(index)
+        if arg:
+            kws['target'], = arg
+
+        target = None
+        if 'target' in kws:
+            target = kws.pop('target')
+            index.append(target)
+
+        df = get_df_on_columns(self, index)
+        summarize = pd.DataFrame()
+        if target:
+            index.remove(target)
+        for feature in index:
+            data = calc_df(df, feature, target)
+            summarize = summarize.append(data)
+
+        # pylint: disable=import-outside-toplevel
+        from towhee.utils import ipython_utils
+        ipython_utils.display(summarize)
+
+    return wrapper
+
+
+def _plot_callback(self):
+    # pylint: disable=unused-argument
+    def wrapper(_: str, index, *arg, **kws):
+        df = get_df_on_columns(self, index)
+        if 'kind' not in kws:
+            kws.update(kind='hist')
+        df.plot(**kws)
+
+    return wrapper
 
 
 class DisplayMixin:
     """
     Mixin for display data.
+
+    Example:
+
+    >>> from towhee import DataCollection
+    >>> from towhee import Entity
+    >>> dc = DataCollection([Entity(a=a, b=b, c=c) for a, b, c in zip([2,1], [1,2], [0,1])])
+    >>> dc.feature_summarize['a'](target='c')
+    Variable: a's IV sum is: 0.0
+      Variable  Value  All  Good  Bad  Share  Bad Rate  Distribution Good  Distribution Bad  WoE   IV
+    0        a      1    1     0    1    0.5       1.0                0.0               1.0  0.0 -0.0
+    1        a      2    1     1    0    0.5       0.0                1.0               0.0  0.0  0.0
+    >>> dc.plot['a']()
     """
+    def __init__(self):
+        self.feature_summarize = param_scope().callholder(_feature_summarize_callback(self))
+        self.plot = param_scope().callholder(_plot_callback(self))
 
     def as_str(self):
         return self.factory(map(str, self._iterable))
@@ -36,8 +145,6 @@ class DisplayMixin:
             tablefmt (`str`):
                 The format of the output, support html, plain.
         """
-        # pylint: disable=import-outside-toplevel
-        from towhee import Entity
 
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
@@ -61,13 +168,19 @@ def table_display(table, tablefmt='html'):
             The format of the output, support html, plain.
     """
     # pylint: disable=import-outside-toplevel
-    from IPython.display import display, HTML
+    from towhee.utils import ipython_utils
+
     if tablefmt == 'html':
-        display(HTML(table))
+        ipython_utils.display(ipython_utils.HTML(table))
     elif tablefmt == 'plain':
-        display(table)
+        ipython_utils.display(table)
     else:
         raise ValueError('unsupported table format %s' % tablefmt)
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=False)
 
 
 def to_printable_table(data, header=None, tablefmt='html'):
@@ -112,8 +225,6 @@ def to_plain_table(data, header, tablefmt):
 
 
 def _to_plain_cell(data):
-    # pylint: disable=import-outside-toplevel
-    import numpy
     if isinstance(data, str):
         return _text_brief_repr(data)
     if isinstance(data, Image):
@@ -152,8 +263,6 @@ def to_html_table(data, header):
 
 
 def _to_html_cell(data):
-    # pylint: disable=import-outside-toplevel
-    import numpy
     if isinstance(data, str):
         return _text_brief_repr(data)
     if isinstance(data, Image):
