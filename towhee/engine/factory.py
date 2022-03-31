@@ -113,6 +113,9 @@ class _OperatorLazyWrapper:
                 self._create_op()
         self._op.set_state(state)
 
+    def set_training(self, flag):
+        self._op.set_training(flag)
+
     @property
     def function(self):
         return self._name

@@ -22,7 +22,7 @@ class TestEntity(unittest.TestCase):
     def test_init(self):
         d = {'a': 'A', 'b': 'B', 'c': 'C'}
         e1 = Entity()
-        e2 = Entity(d)
+        e2 = Entity(**d)
         e3 = Entity(a='A', b='B', c='C')
         self.assertTrue(isinstance(e1, Entity))
         self.assertTrue(isinstance(e2, Entity))
