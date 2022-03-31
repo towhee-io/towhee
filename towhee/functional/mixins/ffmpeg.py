@@ -10,6 +10,7 @@ class FFMPEGMixin():
         codec = long list available on ffmpeg site
         """
         import av
+        print('running')
 
         def inner():
             container = av.open(filepath)
@@ -19,7 +20,7 @@ class FFMPEGMixin():
                 image = frame.to_ndarray(format='rgb24')
                 yield image
             container.close()
-            
+
         return cls.stream(inner())
         
                 
