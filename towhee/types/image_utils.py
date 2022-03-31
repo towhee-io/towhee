@@ -20,7 +20,7 @@ def to_image_color(img: Image, target_mode: str):
     convert images from one color-space to another, like BGR ↔ Gray, BGR ↔ HSV, etc.
     """
     # pylint: disable=import-outside-toplevel
-    import cv2
+    from towhee.utils.cv2_utils import cv2
 
     if img.mode == target_mode:
         return img

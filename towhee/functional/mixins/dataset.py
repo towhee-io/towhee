@@ -74,7 +74,7 @@ class DatasetMixin:
         """
         read images from a camera.
         """
-        import cv2
+        from towhee.utils.cv2_utils import cv2
         cnt = limit
 
         def inner():

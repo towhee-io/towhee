@@ -12,20 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.utils.log import engine_log
 
-class ComputerVisionMixin:
-    """
-    Mixin for computer vision problems.
-    """
-
-    # pylint: disable=import-outside-toplevel
-    def image_imshow(self, title='image'):
-        from towhee.utils.cv2_utils import cv2
-        for im in self:
-            cv2.imshow(title, im)
-            cv2.waitKey(1)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
+try:
+    # pylint: disable=unused-import
+    import cv2
+except ModuleNotFoundError as e:
+    engine_log.error('cv2 not found, you can install via `pip install opencv-python`.')
+    raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from e

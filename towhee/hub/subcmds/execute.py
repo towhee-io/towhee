@@ -41,7 +41,7 @@ class ExecuteCommand:
                     output = pipe(0)[0][0]
 
                     if self._args.output == 'imshow':
-                        import cv2 # pylint: disable=import-outside-toplevel
+                        from towhee.utils.cv2_utils import cv2 # pylint: disable=import-outside-toplevel
                         cv2.imshow('imshow', output)
                         cv2.waitKey(1)
                     i += 1

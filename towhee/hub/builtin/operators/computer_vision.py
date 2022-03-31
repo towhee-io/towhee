@@ -41,7 +41,7 @@ def image_load(file_or_buff):
     ... ).to_list()
     [(100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3)]
     """
-    import cv2
+    from towhee.utils.cv2_utils import cv2
     import numpy as np
 
     if isinstance(file_or_buff, str):
@@ -62,7 +62,7 @@ class image_dump:
         self._ext = ext
 
     def __call__(self, x):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
 
         retval, im = cv2.imencode(self._ext, x)
         if retval >= 0:
@@ -97,7 +97,7 @@ class image_resize:
     """
 
     def __init__(self, dsize=None, fx=None, fy=None, interpolation=None):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
 
         self._dsize = dsize
         self._fx = fx
@@ -111,7 +111,7 @@ class image_resize:
         self._interpolation = interpolation
 
     def __call__(self, x):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
         return cv2.resize(x,
                           dsize=self._dsize,
                           fx=self._fx,
@@ -142,7 +142,7 @@ class image_convert_color:
     """
 
     def __init__(self, code):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
 
         if code is not None and isinstance(code, str):
             code = 'COLOR_{}'.format(code).upper()
@@ -153,7 +153,7 @@ class image_convert_color:
         self._code = code
 
     def __call__(self, x):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
         return cv2.cvtColor(x, self._code)
 
 
@@ -168,7 +168,7 @@ class image_filter:
 
     def __call__(self, x):
 
-        import cv2
+        from towhee.utils.cv2_utils import cv2
 
         return cv2.filter2D(x, self._ddepth, self._kernel)
 
@@ -201,7 +201,7 @@ class image_blur:
         self._ksize = ksize
 
     def __call__(self, x):
-        import cv2
+        from towhee.utils.cv2_utils import cv2
 
         return cv2.blur(x, self._ksize)
 

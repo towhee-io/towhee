@@ -131,7 +131,7 @@ class MetricMixin:
         matrix_dict, scores_dict = get_scores_dict(self.collector)
         if matrix_dict:
             self.collector.metrics.remove('confusion_matrix')
-            for model in matrix_dict.items():
+            for model in matrix_dict: # pylint: disable=consider-using-dict-items
                 cm = matrix_dict[model].astype('float') / matrix_dict[model].sum(axis=1)[:, np.newaxis] #normalize
                 disp = sklearn_utils.ConfusionMatrixDisplay(confusion_matrix=cm)
                 disp.plot()
