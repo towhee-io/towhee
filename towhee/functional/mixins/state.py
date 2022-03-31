@@ -57,7 +57,7 @@ class StateMixin:
         self._state.__mode__ = 'training'
         return self
 
-    def set_evaluating(self, state):
+    def set_evaluating(self, state=None):
         if state is not None:
             self._state = state
         if self.get_state() is None:
