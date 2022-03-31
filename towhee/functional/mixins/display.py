@@ -185,7 +185,7 @@ def _ndarrays_brief_repr_(arrays, maxlen=3):
 
 def _image_to_html_cell(img, width=128, height=128):
     # pylint: disable=import-outside-toplevel
-    import cv2
+    from towhee.utils.cv2_utils import cv2
     import base64
 
     _, img_encode = cv2.imencode('.JPEG', img)
