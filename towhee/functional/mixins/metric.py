@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+import pandas as pd
 from typing import Tuple
+from IPython.display import display
 
 from towhee.hparam import param_scope
 
@@ -43,12 +46,17 @@ class Collector:
 
 def get_scores_dict(collector: Collector):
     scores_dict = {}
+    matrix = {}
     for model in collector.scores:
         score_list = []
         for metric in collector.metrics:
-            score_list.append(collector.scores[model][metric])
+            if metric == 'confusion_matrix':
+                matrix[model] = collector.scores[model][metric]
+            else:
+                score_list.append(collector.scores[model][metric])
         scores_dict[model] = score_list
-    return scores_dict
+
+    return matrix, scores_dict
 
 
 def _evaluate_callback(self):
@@ -57,7 +65,11 @@ def _evaluate_callback(self):
         # pylint: disable=import-outside-toplevel
         # pylint: disable=unused-argument
         actual, predicted = index
-        name = arg
+        name = None
+        if 'name' in kws:
+            name = kws['name']
+        elif arg:
+            name, = arg
         self.collector.add_labels(
             {name: {
                 'actual': actual,
@@ -110,19 +122,29 @@ class MetricMixin:
 
         >>> from towhee import DataCollection
         >>> from towhee import Entity
-        >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(5)]).unstream()
-        >>> dc.with_metrics(['accuracy', 'recall']).evaluate('a', 'c', 'lr').evaluate('a', 'b', 'rf').report()
-        {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 1.0, 'recall': 1.0}}
+        >>> dc = DataCollection([Entity(a=a, b=b, c=c) for a, b, c in zip([0,1,1,0,0], [0,1,1,1,0], [0,1,1,0,0])])
+        >>> dc.with_metrics(['accuracy', 'recall']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report()
+        <pandas.io...>
+        {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 0.8, 'recall': 0.8}}
         """
-        import pandas as pd
-        scores_dict = get_scores_dict(self.collector)
-        df = pd.DataFrame.from_dict(scores_dict,
-                                    orient='index',
-                                    columns=self.collector.metrics)
-        df.style.highlight_max(color='lightgreen', axis=0)
+        from towhee.utils import sklearn_utils
+        matrix_dict, scores_dict = get_scores_dict(self.collector)
+        if matrix_dict:
+            self.collector.metrics.remove('confusion_matrix')
+            for model in matrix_dict.items():
+                cm = matrix_dict[model].astype('float') / matrix_dict[model].sum(axis=1)[:, np.newaxis] #normalize
+                disp = sklearn_utils.ConfusionMatrixDisplay(confusion_matrix=cm)
+                disp.plot()
+                disp.ax_.set_title(f'Confusion matrix for Model :{model}')
+        if scores_dict: # doctest:+ELLIPSIS
+            df = pd.DataFrame.from_dict(scores_dict,
+                                        orient='index',
+                                        columns=self.collector.metrics)
+            df = df.style.highlight_max(color='lightgreen', axis=0)
+            display(df)
         return self.collector.scores
 
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod(verbose=False)
+    doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
