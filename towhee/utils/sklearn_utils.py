@@ -17,6 +17,10 @@ try:
     # pylint: disable=unused-import
     from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
     from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn import svm
 except ModuleNotFoundError as e:
     engine_log.error('sklearn not found, you can install via `pip install scikit-learn`.')
     raise ModuleNotFoundError('sklearn not found, you can install via `pip install scikit-learn`.') from e
