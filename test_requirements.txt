@@ -13,3 +13,4 @@ matplotlib>=3.0.0
 importlib_metadata
 tabulate
 ipython
+scikit-learn

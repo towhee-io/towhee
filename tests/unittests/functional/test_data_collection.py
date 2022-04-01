@@ -57,7 +57,6 @@ class TestDataCollection(unittest.TestCase):
     """
     tests for data collection
     """
-
     def test_example_for_basic_api(self):
         dc = DataCollection(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
@@ -200,6 +199,48 @@ class TestDataCollection(unittest.TestCase):
         for i in res:
             self.assertFalse(hasattr(i, 'a') and hasattr(i, 'b'))
             self.assertTrue(hasattr(i, 'A') or hasattr(i, 'B'))
+
+    def test_classifier_procedure(self):
+        csv_path = public_path / 'test_util' / 'data.csv'
+        out = DataCollection.from_csv(csv_path=csv_path).unstream()
+
+        # pylint: disable=unnecessary-lambda
+        out = (
+            out.runas_op['a', 'a'](func=lambda x: int(x))
+                .runas_op['b', 'b'](func=lambda x: int(x))
+                .runas_op['c', 'c'](func=lambda x: int(x))
+                .runas_op['d', 'd'](func=lambda x: int(x))
+                .runas_op['e', 'e'](func=lambda x: int(x))
+                .runas_op['target', 'target'](func=lambda x: int(x))
+        )
+
+        out = out.hstack[('a', 'b', 'c', 'd', 'e'), 'fea']()
+
+        train, test = out.split_train_test()
+
+        train.set_training().logistic_regression[('fea', 'target'), 'lr_train_predict'](name='logistic')
+
+        test.set_evaluating(train.get_state()) \
+            .logistic_regression[('fea', 'target'), 'lr_evaluate_predict'](name = 'logistic') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'lr_evaluate_predict']('lr') \
+            .report()
+
+        train.set_training().decision_tree[('fea', 'target'), 'dt_train_predict'](name='decision_tree')
+
+        test.set_evaluating(train.get_state()) \
+            .decision_tree[('fea', 'target'), 'dt_evaluate_predict'](name = 'decision_tree') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'dt_evaluate_predict']('dt') \
+            .report()
+
+        train.set_training().svc[('fea', 'target'), 'svm_train_predict'](name='svm_classifier')
+
+        test.set_evaluating(train.get_state()) \
+            .svc[('fea', 'target'), 'svm_evaluate_predict'](name = 'svm_classifier') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'svm_evaluate_predict']('svm') \
+            .report()
 
 
 TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
