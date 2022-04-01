@@ -24,6 +24,13 @@ It allows a data scientist or researcher to assemble a data processing pipeline,
 2. Exception-Safe Execution: DataCollection provides exception-safe execution, which allows the function/operator invocation chain to continue executing on exception. Data scientists can put an exception receiver to the tail of the pipeline, processing and analyzing the exceptions as data, not errors.
 2. Feature-Rich Operator Repository: There are various pre-defined operators On the [towhee hub](https://towhee.io), which cover the most popular deep learning models in computer vision, NLP, and voice processing. Using these operators in the data processing pipeline can significantly accelerate your work.
 
+# Preparation
+
+Please install `pandas`, `scikit-learn`, `opencv-python`, `ipython`, `matplotlib` to get all the functions of DataCollwction.
+```bash
+$ pip install pandas scikit-learn scikit-learn opencv-python ipython matplotlib
+```
+
 # Quick Start
 
 We use a `prime number` example to go through core conceptions in `DataCollection` and explain how the data and computation are organized. `prime numbers` are special numbers with exactly two factors, themselves and `1`. The following function detects whether a number is prime or not:
