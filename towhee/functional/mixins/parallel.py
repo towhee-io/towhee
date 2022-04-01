@@ -140,6 +140,53 @@ class ParallelMixin:
         self._executor = None
         return self
 
+    def split(self, count):
+        """
+        Split a dataframe into multiple dataframes.
+
+        Args:
+            count (int): how many resulting DCs;
+
+        Returns:
+            [DataCollection, ...]: copies of DC;
+
+        Examples:
+
+        1. Split:
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection([0, 1, 2, 3, 4]).stream()
+        >>> a, b, c = dc.split(3)
+        >>> a.zip(b, c).to_list()
+        [(0, 0, 0), (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)]
+        """
+        queues = [Queue(maxsize=1) for _ in range(count)]
+        loop = asyncio.new_event_loop()
+
+        def inner(queue):
+            while True:
+                x = queue.get()
+                if isinstance(x, EOS):
+                    break
+                else:
+                    yield x
+
+        async def worker():
+            for x in self:
+                for queue in queues:
+                    queue.put(x)
+            for queue in queues:
+                poison = EOS()
+                queue.put(poison)
+
+        def worker_wrapper():
+            loop.run_until_complete(worker())
+            loop.close()
+
+        t = threading.Thread(target=worker_wrapper)
+        t.start()
+        retval = [inner(queue) for queue in queues]
+        return [self.factory(x) for x in retval]
+
     def pmap(self, unary_op, num_worker = None, backend = None):
         """
         Apply `unary_op` with parallel execution.
