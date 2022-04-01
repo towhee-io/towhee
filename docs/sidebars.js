@@ -26,6 +26,7 @@ const sidebars = {
         'get-started/quick-start',
         'get-started/troubleshooting',
         'get-started/gsoc-2022',
+        'get-started/data-collection'
         //'get-started/pipeline-config',
       ],
     },
