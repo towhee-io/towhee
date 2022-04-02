@@ -199,6 +199,35 @@ class EntityMixin:
 
         return self._factory(map(inner, self._iterable))
 
+    def select(self, *args):
+        """
+        Select the entity on the specified columns.
+
+        Examples:
+
+        1. Select the entity on one specified column:
+
+        >>> from towhee import Entity
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(2)])
+        >>> dc.select('a').to_list()
+        [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
+
+        2. Select multiple columns and unpack the entity:
+
+        >>> (
+        ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
+        ...         .select('a', 'b')
+        ...         .as_raw()
+        ...         .to_list()
+        ... )
+        [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+        """
+        def inner(entity: Entity):
+            data = {column: getattr(entity, column) for column in args}
+            return Entity(**data)
+
+        return self.factory(map(inner, self._iterable))
 
 if __name__ == '__main__':
     import doctest
