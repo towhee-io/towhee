@@ -64,7 +64,7 @@ class EntityMixin:
                     setattr(entity, k, 0)
             return entity
 
-        return self.factory(map(fill, self._iterable))
+        return self._factory(map(fill, self._iterable))
 
     def as_entity(self):
         """
@@ -84,7 +84,7 @@ class EntityMixin:
         def inner(x):
             return Entity(**x)
 
-        return self.factory(map(inner, self._iterable))
+        return self._factory(map(inner, self._iterable))
 
     def replace(self, **kws):
         """
@@ -98,7 +98,7 @@ class EntityMixin:
 
             return entity
 
-        return self.factory(map(inner, self._iterable))
+        return self._factory(map(inner, self._iterable))
 
     def dropna(self, na: Set[str] = {'', None}) -> Union[bool, 'DataCollection']:  # pylint: disable=dangerous-default-value
         """
@@ -115,7 +115,7 @@ class EntityMixin:
 
             return True
 
-        return self.factory(filter(inner, self._iterable))
+        return self._factory(filter(inner, self._iterable))
     def rename(self, column: Dict[str, str]):
         """
         Rename an column in DataCollection.
@@ -129,7 +129,7 @@ class EntityMixin:
                 x.__dict__[column[key]] = x.__dict__.pop(key)
             return x
 
-        return self.factory(map(inner, self._iterable))
+        return self._factory(map(inner, self._iterable))
 
 
 if __name__ == '__main__':
