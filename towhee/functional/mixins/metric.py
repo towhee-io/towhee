@@ -42,7 +42,7 @@ class Collector:
         self.labels.update(value)
 
 
-def encode_fig_img(mat, scale=100):
+def encode_fig_img(mat, size=300):
     # pylint: disable=import-outside-toplevel
     from towhee.utils.sklearn_utils import ConfusionMatrixDisplay
     from towhee.utils.matplotlib_utils import matplotlib as mpl
@@ -51,15 +51,15 @@ def encode_fig_img(mat, scale=100):
     mpl.use('Agg')  # Prevent showing stuff
     cm = mat.astype('float') / mat.sum(axis=1)[:, np.newaxis]  # normalize
     fig = ConfusionMatrixDisplay(cm)
-    fig.plot()
+    fig.plot(cmap='GnBu')
     buf = io.BytesIO()
     fig.figure_.savefig(buf, format='jpg')
     buf.seek(0)
     buf = buf.read()
     src = 'src="data:image/jpeg;base64,' + base64.b64encode(buf).decode() + '" '
-    w = 'width = "' + str(scale) + '%" '
-    h = 'height = "' + str(scale) + '%" '
-    return '<img ' + src + w + h + ' scale=0.1>'
+    w = 'width = "' + str(size) + 'px" '
+    h = 'height = "' + str(size) + 'px" '
+    return '<img ' + src + w + h + '>'
 
 
 def get_scores_dict(collector: Collector):
