@@ -196,7 +196,7 @@ class DataCollection(Iterable, AllMixins):
         return isinstance(self._iterable, Iterator)
 
     @property
-    def factory(self):
+    def _factory(self):
         """
         Factory method for data collection.
 
@@ -236,7 +236,7 @@ class DataCollection(Iterable, AllMixins):
         [Some(0.0), Some(0.5), Some(1.0)]
         """
         result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
-        return self.factory(result)
+        return self._factory(result)
 
     def safe(self):
         """
@@ -263,7 +263,7 @@ class DataCollection(Iterable, AllMixins):
             return other[x]
 
         result = map(inner, self._iterable)
-        return self.factory(result)
+        return self._factory(result)
 
     def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
@@ -282,7 +282,7 @@ class DataCollection(Iterable, AllMixins):
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
-        return self.factory(result)
+        return self._factory(result)
 
     def drop_empty(self, callback: Callable = None) -> 'DataCollection':
         """
@@ -325,7 +325,7 @@ class DataCollection(Iterable, AllMixins):
                         yield x.get()
 
             result = inner(self._iterable)
-        return self.factory(result)
+        return self._factory(result)
 
     def map(self, *arg):
         """
@@ -366,7 +366,7 @@ class DataCollection(Iterable, AllMixins):
                 return unary_op(x)
 
         result = map(inner, self._iterable)
-        return self.factory(result)
+        return self._factory(result)
 
     def zip(self, *others) -> 'DataCollection':
         """
@@ -386,7 +386,7 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
-        return self.factory(zip(self, *others))
+        return self._factory(zip(self, *others))
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
         """
@@ -410,7 +410,7 @@ class DataCollection(Iterable, AllMixins):
                 return not drop_empty
             return unary_op(x)
 
-        return self.factory(filter(inner, self._iterable))
+        return self._factory(filter(inner, self._iterable))
 
     def sample(self, ratio=1.0) -> 'DataCollection':
         """
@@ -430,7 +430,7 @@ class DataCollection(Iterable, AllMixins):
         >>> 0.09 < ratio < 0.11
         True
         """
-        return self.factory(filter(lambda _: random() < ratio, self))
+        return self._factory(filter(lambda _: random() < ratio, self))
 
     @staticmethod
     def range(*arg, **kws):
@@ -479,7 +479,7 @@ class DataCollection(Iterable, AllMixins):
             if not drop_tail and len(buff) > 0:
                 yield DataCollection.unstream(buff)
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def rolling(self, size: int, drop_head=True, drop_tail=True):
         """
@@ -519,7 +519,7 @@ class DataCollection(Iterable, AllMixins):
                 yield DataCollection.unstream(buff)
                 buff = buff[1:]
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def flaten(self) -> 'DataCollection':
         """
@@ -543,7 +543,7 @@ class DataCollection(Iterable, AllMixins):
                 else:
                     yield ele
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def shuffle(self, in_place=False) -> 'DataCollection':
         """
@@ -712,7 +712,7 @@ class DataCollection(Iterable, AllMixins):
             for x in other:
                 yield x
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def head(self, n: int = 5):
         """
@@ -732,7 +732,7 @@ class DataCollection(Iterable, AllMixins):
                 if i >= n:
                     break
                 yield x
-        return self.factory(inner())
+        return self._factory(inner())
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)

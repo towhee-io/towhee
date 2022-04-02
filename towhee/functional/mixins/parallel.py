@@ -185,7 +185,7 @@ class ParallelMixin:
         t = threading.Thread(target=worker_wrapper)
         t.start()
         retval = [inner(queue) for queue in queues]
-        return [self.factory(x) for x in retval]
+        return [self._factory(x) for x in retval]
 
     def pmap(self, unary_op, num_worker = None, backend = None):
         """
@@ -262,7 +262,7 @@ class ParallelMixin:
         t = threading.Thread(target=worker_wrapper)
         t.start()
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def _ray_pmap(self, unary_op, num_worker=None):
         import ray #pylint: disable=import-outside-toplevel
@@ -319,7 +319,7 @@ class ParallelMixin:
         t = threading.Thread(target=worker_wrapper)
         t.start()
 
-        return self.factory(inner())
+        return self._factory(inner())
 
     def mmap(self, ops: list, num_worker = None, backend = None):
         """
@@ -419,7 +419,7 @@ class ParallelMixin:
         t.start()
 
         retval = [inner(queue) for queue in queues]
-        return [self.factory(x) for x in retval]
+        return [self._factory(x) for x in retval]
 
     def _ray_mmap(self, ops, num_worker=None):
         import ray #pylint: disable=import-outside-toplevel
@@ -477,7 +477,7 @@ class ParallelMixin:
         t.start()
 
         retval = [inner(queue) for queue in queues]
-        return [self.factory(x) for x in retval]
+        return [self._factory(x) for x in retval]
 
 class EOS():
     '''

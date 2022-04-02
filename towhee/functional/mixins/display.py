@@ -136,7 +136,7 @@ class DisplayMixin:
         self.plot = param_scope().callholder(_plot_callback(self))
 
     def as_str(self):
-        return self.factory(map(str, self._iterable))
+        return self._factory(map(str, self._iterable))
 
     def show(self, limit=5, header=None, tablefmt='html'):
         """

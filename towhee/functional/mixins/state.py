@@ -25,11 +25,11 @@ class StateMixin:
     >>> from towhee.functional import DataCollection
     >>> from towhee.hparam import param_scope
     >>> dc = DataCollection.range(10).set_state(HyperParameter(a=1))
-    >>> dc._state
+    >>> dc.get_state()
     {'a': 1}
 
     >>> dc = dc.map(lambda x: x+1).map(lambda x: x*2)
-    >>> dc._state
+    >>> dc.get_state()
     {'a': 1}
     """
 
@@ -41,15 +41,39 @@ class StateMixin:
             self.set_state(parent.get_state())
 
     def get_state(self):
+        """
+        Get the state storage for `DataCollection`
+
+        Returns:
+            State: the state storage
+        """
         if hasattr(self, '_state') and isinstance(self._state, HyperParameter):
             return self._state
         return None
 
     def set_state(self, state):
+        """
+        Set the state storage for `DataCollection`
+
+        Args:
+            state (State): state storage
+
+        Returns:
+            DataCollection: data collection itself
+        """
         self._state = state
         return self
 
     def set_training(self, state=None):
+        """
+        Set training mode for stateful operators
+
+        Args:
+            state (State, optional): Update the state storage. Defaults to None.
+
+        Returns:
+            DataCollection: data collection itself
+        """
         if state is not None:
             self._state = state
         if self.get_state() is None:
@@ -58,6 +82,15 @@ class StateMixin:
         return self
 
     def set_evaluating(self, state=None):
+        """
+        Set evaluating mode for stateful operators
+
+        Args:
+            state (State, optional): Update the state storage. Defaults to None.
+
+        Returns:
+            DataCollection: data collection itself
+        """
         if state is not None:
             self._state = state
         if self.get_state() is None:
@@ -75,7 +108,7 @@ class StateMixin:
                     op(x)
             op.set_training(False)
             op.fit()
-        return self.factory(map(op, self._iterable))
+        return self._factory(map(op, self._iterable))
 
 
 if __name__ == '__main__':

@@ -16,10 +16,10 @@ from typing import Callable
 from towhee.engine import register
 
 # pylint: disable=import-outside-toplevel
-
+# pylint: disable=invalid-name
 
 @register(name='builtin/runas_op')
-class RunAsOp:
+class runas_op:
     """
     Convert a user-defined function as an operator and execute.
 
