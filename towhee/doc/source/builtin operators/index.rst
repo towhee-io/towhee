@@ -5,5 +5,9 @@ Built-in Operators
    :maxdepth: 2
    :caption: Contents:
 
+   runas op
    computer vision
    tensor like
+   feature engineer
+   sklearn
+   

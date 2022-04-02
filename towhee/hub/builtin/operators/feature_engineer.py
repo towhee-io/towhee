@@ -16,10 +16,11 @@ from towhee.engine import register
 from towhee.operator.stateful_operator import StatefulOperator
 # pylint: disable=import-outside-toplevel
 # pylint: disable=useless-super-delegation
+# pylint: disable=invalid-name
 
 
 @register(name='builtin/standard_scaler')
-class StandardScalerOp(StatefulOperator):
+class standard_scaler(StatefulOperator):
     """
     Standardize numerical features by removing the mean and scaling to unit variance.
 
@@ -52,7 +53,7 @@ class StandardScalerOp(StatefulOperator):
 
 
 @register(name='builtin/discretizer')
-class Discretizer(StatefulOperator):
+class discretizer(StatefulOperator):
     """
     Bin numerical features into intervals.
 
@@ -90,7 +91,7 @@ class Discretizer(StatefulOperator):
 
 
 @register(name='builtin/one_hot_encoder')
-class OneHotEncoderOp(StatefulOperator):
+class one_hot_encoder(StatefulOperator):
     """
     Standardize numerical features by removing the mean and scaling to unit variance.
 

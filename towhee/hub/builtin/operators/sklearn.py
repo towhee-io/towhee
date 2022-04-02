@@ -27,7 +27,7 @@ except ModuleNotFoundError as e:
 # pylint: disable=import-outside-toplevel
 # pylint: disable=invalid-name
 @register(name='builtin/logistic_regression')
-class LogisticRegressionOperator(StatefulOperator):
+class logistic_regression(StatefulOperator):
     """
     Logistic Regression model encapsulate as an Operator.
     """
@@ -47,7 +47,7 @@ class LogisticRegressionOperator(StatefulOperator):
 
 
 @register(name='builtin/random_forest')
-class RandomForestClassifierOperator(StatefulOperator):
+class random_forest(StatefulOperator):
     """
     Random Forest Classifier model encapsulate as an Operator.
     """
@@ -67,7 +67,7 @@ class RandomForestClassifierOperator(StatefulOperator):
 
 
 @register(name='builtin/decision_tree')
-class DecisionTreeClassifierOperator(StatefulOperator):
+class decision_tree(StatefulOperator):
     """
     Decision Tree Classifier model encapsulate as an Operator.
     """
@@ -87,7 +87,7 @@ class DecisionTreeClassifierOperator(StatefulOperator):
 
 
 @register(name='builtin/svc')
-class SVMClassifier(StatefulOperator):
+class svc(StatefulOperator):
     """
     SVM Classifier model encapsulate as an Operator.
     """
