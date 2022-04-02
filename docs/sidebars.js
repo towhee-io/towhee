@@ -43,6 +43,7 @@ const sidebars = {
           'fine-tune/train-operators/fine-tune-with-MNIST',
           'fine-tune/train-operators/train-a-bird-classification-model',
           'fine-tune/train-operators/training-configs',
+          'fine-tune/train-operators/train-cub-200-2011',
       ]
     },
     {
