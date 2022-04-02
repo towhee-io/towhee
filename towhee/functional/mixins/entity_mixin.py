@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, Any, Optional, Set, Union
+from typing import Dict, Any, Optional, Set, Union, List
 
 from towhee.functional.entity import Entity
 
@@ -66,11 +66,16 @@ class EntityMixin:
 
         return self._factory(map(fill, self._iterable))
 
-    def as_entity(self):
+    def as_entity(self, schema: Optional[List[str]]=None):
         """
         Convert elements into Entities.
 
+        Args:
+            schema (Optional[List[str]]):
+                schema contains field names.
+
         Examples:
+        1. convert dicts into entities:
 
         >>> from towhee import DataCollection
         >>> (
@@ -80,10 +85,73 @@ class EntityMixin:
         ...         .to_list()
         ... )
         ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
-        """
-        def inner(x):
-            return Entity(**x)
 
+        2. convert tuples into entities:
+
+        >>> from towhee import DataCollection
+        >>> (
+        ...     DataCollection([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
+
+        3. convert single value into entities:
+
+        >>> from towhee import DataCollection
+        >>> (
+        ...     DataCollection([1, 2])
+        ...         .as_entity(schema=['a'])
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ['{"a": 1}', '{"a": 2}']
+        """
+
+        if schema is None:
+            def inner(x):
+                return Entity(**x)
+        else:
+            def inner(x):
+                if len(schema) == 1:
+                    x = (x, )
+                data = dict(zip(schema, x))
+                return Entity(**data)
+        return self._factory(map(inner, self._iterable))
+
+    def as_raw(self):
+        """
+        Convert entitis into raw python values
+
+        Examples:
+
+        1. unpack multiple values from entities:
+
+        >>> from towhee import DataCollection
+        >>> (
+        ...     DataCollection([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .as_raw()
+        ...         .to_list()
+        ... )
+        [(1, 2), (2, 3)]
+
+        2. unpack single value from entities:
+
+        >>> (
+        ...     DataCollection([1, 2])
+        ...         .as_entity(schema=['a'])
+        ...         .as_raw()
+        ...         .to_list()
+        ... )
+        [1, 2]
+        """
+
+        def inner(x):
+            if len(x.__dict__) == 1:
+                return list(x.__dict__.values())[0]
+            return tuple(getattr(x, name) for name in x.__dict__)
         return self._factory(map(inner, self._iterable))
 
     def replace(self, **kws):
