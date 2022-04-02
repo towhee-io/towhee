@@ -20,13 +20,23 @@ from pathlib import Path
 from towhee._types.image import Image
 
 import towhee.functional.mixins.computer_vision
+import towhee.functional.mixins.dataset
+import towhee.functional.mixins.display
 import towhee.functional.mixins.entity_mixin
+import towhee.functional.mixins.metric
+import towhee.functional.mixins.parallel
+import towhee.functional.mixins.state
 from towhee.functional.mixins.display import _ndarray_brief_repr, to_printable_table
 from towhee import DataCollection
 
 for mod in [
         towhee.functional.mixins.computer_vision,
-        towhee.functional.mixins.entity_mixin
+        towhee.functional.mixins.dataset,
+        towhee.functional.mixins.display,
+        towhee.functional.mixins.entity_mixin,
+        towhee.functional.mixins.metric,
+        towhee.functional.mixins.parallel,
+        towhee.functional.mixins.state
 ]:
     TestDataCollectionMixins = doctest.DocTestSuite(mod)
     unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
