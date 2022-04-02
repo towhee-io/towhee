@@ -95,4 +95,5 @@ def _glob_zip_call_back(_, index, *arg, **kws):
 
 glob = GlobImpl(_glob_call_back)
 
+
 glob_zip = GlobZipImpl(_glob_zip_call_back)
