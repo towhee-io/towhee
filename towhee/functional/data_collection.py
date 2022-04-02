@@ -244,21 +244,6 @@ class DataCollection(Iterable, AllMixins):
         """
         return self.exception_safe()
 
-    def select(self, name: str = 'feature_vector'):
-        """
-        Get the list from operator Output.
-
-        Examples:
-
-        >>> from typing import NamedTuple
-        >>> Outputs = NamedTuple('Outputs', [('num', int)])
-        >>> dc = DataCollection([Outputs(1), Outputs(2), Outputs(3)])
-        >>> dc.select(name='num').to_list()
-        [1, 2, 3]
-        """
-        result = map(lambda x: getattr(x, name), self._iterable)
-        return self.factory(result)
-
     def select_from(self, other):
         """
         Select data from dc with list(self).
