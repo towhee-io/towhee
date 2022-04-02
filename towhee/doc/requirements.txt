@@ -6,3 +6,14 @@ requests>=2.12.5
 tqdm>=4.59.0
 ruamel.yaml<=0.16.6
 tabulate
+torch>=1.8.0
+torchvision>=0.9.0
+numpy>=1.19.5
+pandas>=1.1.5
+pillow>=8.3.1
+scipy>=1.5.3
+opencv-python>=4.5.3.56
+torchmetrics>=0.7.0
+matplotlib>=3.0.0
+importlib_metadata
+ipython
