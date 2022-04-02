@@ -1,5 +1,5 @@
 ---
-id: datacollection
+id: data-collection
 title: DataCollection Introduction
 ---
 
