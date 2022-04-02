@@ -227,7 +227,7 @@ class EntityMixin:
             data = {column: getattr(entity, column) for column in args}
             return Entity(**data)
 
-        return self.factory(map(inner, self._iterable))
+        return self._factory(map(inner, self._iterable))
 
 if __name__ == '__main__':
     import doctest
