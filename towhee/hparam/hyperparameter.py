@@ -246,7 +246,7 @@ class HyperParameter(dict):
     """
 
     def __init__(self, **kws):
-        super(HyperParameter, self).__init__()  # pylint: disable=super-with-arguments
+        super().__init__()
         self.update(kws)
 
     def update(self, kws):
@@ -483,7 +483,7 @@ def set_auto_param_callback(func: Callable[[Dict[str, Any]], None]):
     _callback = func
 
 
-def auto_param(func):
+def auto_param(name_or_func):
     """
     Convert keyword arguments into hyperparameters
 
@@ -511,38 +511,56 @@ def auto_param(func):
     >>> with param_scope('foo.b=3'):
     ...     obj = foo(2)
     2 3 c None
+
+    >>> @auto_param('my')
+    ... def foo(a, b=2, c='c', d=None):
+    ...     print(a, b, c, d)
+    >>> foo(1)
+    1 2 c None
+
+    >>> with param_scope('foo.b=3'):
+    ...     foo(2)
+    2 2 c None
+
+    >>> with param_scope('my.foo.b=3'):
+    ...     foo(2)
+    2 3 c None
     """
-    predef_kws = {}
-    predef_val = {}
 
-    namespace = func.__module__
-    if namespace == '__main__':
-        namespace = None
-    if namespace is not None:
-        namespace += '.{}'.format(func.__name__)
-    else:
-        namespace = func.__name__
+    if callable(name_or_func):
+        return auto_param(None)(name_or_func)
 
-    signature = inspect.signature(func)
-    for k, v in signature.parameters.items():
-        if v.default != v.empty:
-            name = '{}.{}'.format(namespace, k)
-            predef_kws[k] = name
-            _read_tracker.add(name)
-            predef_val[name] = v.default
+    def wrapper(func):
+        predef_kws = {}
+        predef_val = {}
 
-    def wrapper(*arg, **kws):
-        with param_scope() as hp:
-            local_params = {}
-            for k, v in predef_kws.items():
-                if hp.get(v) and k not in kws:
-                    kws[k] = hp.get(v)
-                    local_params[v] = hp.get(v)
-                else:
-                    local_params[v] = predef_val[v]
-            if _callback is not None:
-                _callback(local_params)
-            return func(*arg, **kws)
+        if name_or_func is None:
+            namespace = func.__name__
+        else:
+            namespace = name_or_func + '.' + func.__name__
+
+        signature = inspect.signature(func)
+        for k, v in signature.parameters.items():
+            if v.default != v.empty:
+                name = '{}.{}'.format(namespace, k)
+                predef_kws[k] = name
+                _read_tracker.add(name)
+                predef_val[name] = v.default
+
+        def inner(*arg, **kws):
+            with param_scope() as hp:
+                local_params = {}
+                for k, v in predef_kws.items():
+                    if hp.get(v) is not None and k not in kws:
+                        kws[k] = hp.get(v)
+                        local_params[v] = hp.get(v)
+                    else:
+                        local_params[v] = predef_val[v]
+                if _callback is not None:
+                    _callback(local_params)
+                return func(*arg, **kws)
+
+        return inner
 
     return wrapper
 
@@ -562,104 +580,4 @@ def safe_numeric(value):
 
 if __name__ == '__main__':
     import doctest
-
     doctest.testmod(verbose=False)
-
-    import unittest
-
-    class TestHyperParameter(unittest.TestCase):
-        """
-        tests for HyperParameter
-        """
-
-        def test_parameter_create(self):
-            param1 = HyperParameter(a=1, b=2)
-            self.assertEqual(param1.a, 1)
-            self.assertEqual(param1.b, 2)
-
-            param2 = HyperParameter(**{'a': 1, 'b': 2})
-            self.assertEqual(param2.a, 1)
-            self.assertEqual(param2.b, 2)
-
-        def test_parameter_update_with_holder(self):
-            param1 = HyperParameter()
-            param1.a = 1
-            param1.b = 2
-            param1.c.b.a = 3
-            self.assertDictEqual(param1, {
-                'a': 1,
-                'b': 2,
-                'c': {
-                    'b': {
-                        'a': 3
-                    }
-                }
-            })
-
-        def test_parameter_update(self):
-            param1 = HyperParameter()
-            param1.put('c.b.a', 1)
-            self.assertDictEqual(param1, {'c': {'b': {'a': 1}}})
-
-        def test_parameter_patch(self):
-            param1 = HyperParameter()
-            param1.update({'a': 1, 'b': 2})
-            self.assertEqual(param1.a, 1)
-            self.assertEqual(param1.b, 2)
-
-    class TestAccesscor(unittest.TestCase):
-        """
-        tests for Accesscor
-        """
-
-        def test_holder_as_bool(self):
-            param1 = HyperParameter()
-            self.assertFalse(param1.a.b)
-
-            param1.a.b = False
-            self.assertFalse(param1.a.b)
-
-            param1.a.b = True
-            self.assertTrue(param1.a.b)
-
-    class TestParamScope(unittest.TestCase):
-        """
-        tests for param_scope
-        """
-
-        def test_scope_create(self):
-            with param_scope(a=1, b=2) as hp:
-                self.assertEqual(hp.a, 1)
-                self.assertEqual(hp.b, 2)
-
-            with param_scope(**{'a': 1, 'b': 2}) as hp:
-                self.assertEqual(hp.a, 1)
-                self.assertEqual(hp.b, 2)
-
-        def test_nested_scope(self):
-            with param_scope(a=1, b=2) as hp1:
-                self.assertEqual(hp1.a, 1)
-
-                with param_scope(a=3) as hp2:
-                    self.assertEqual(hp2.a, 3)
-
-        def test_scope_with_function_call(self):
-
-            def read_a():
-                with param_scope() as hp:
-                    return hp.a
-
-            self.assertFalse(read_a())
-
-            with param_scope(a=1):
-                self.assertEqual(read_a(), 1)
-            with param_scope(a=2):
-                self.assertEqual(read_a(), 2)
-
-            with param_scope(a=1):
-                self.assertEqual(read_a(), 1)
-                with param_scope(a=2):
-                    self.assertEqual(read_a(), 2)
-                self.assertEqual(read_a(), 1)
-
-    unittest.main()
