@@ -23,6 +23,7 @@ from towhee.functional.entity import Entity
 def get_df_on_columns(self, index: Tuple[str]):
     # pylint: disable=import-outside-toplevel
     from towhee.utils.pandas_utils import pandas as pd
+
     def inner(entity: Entity):
         data = {}
         for feature in index:
@@ -75,9 +76,11 @@ def calc_df(df, feature: str, target: str):
         data['Share'] = data['All'] / data['All'].sum()
         return data
 
+
 def _feature_summarize_callback(self):
     # pylint: disable=import-outside-toplevel
     from towhee.utils.pandas_utils import pandas as pd
+
     def wrapper(_: str, index, *arg, **kws):
         index = list(index)
         if arg:
@@ -130,6 +133,7 @@ class DisplayMixin:
     1        a      2    1     1    0    0.5       0.0                1.0               0.0  0.0  0.0
     >>> dc.plot['a']()
     """
+
     def __init__(self):
         super().__init__()
         self.feature_summarize = param_scope().callholder(_feature_summarize_callback(self))
@@ -287,7 +291,7 @@ def _to_html_cell(data):
 
 def _ndarray_brief_repr(array, maxlen=3):
     head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
-    if len(array.flatten()) >= maxlen:
+    if len(array.flatten()) > maxlen:
         head_vals.append('...')
     shape = 'shape=' + repr(array.shape)
 
