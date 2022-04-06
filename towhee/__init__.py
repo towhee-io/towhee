@@ -21,6 +21,7 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 from towhee.engine import register
 from towhee.engine.factory import ops
 from towhee.hparam import param_scope
+from towhee.hparam import HyperParameter as Document
 from towhee.functional import DataCollection, State, Entity
 
 from towhee.dc import glob, glob_zip
@@ -36,6 +37,7 @@ __all__ = [
     'Build',
     'Inject',
     'dataset',
+    'Document',
     'DataCollection',
     'State',
     'Entity',
