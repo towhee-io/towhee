@@ -31,8 +31,8 @@ class TestCmdline(unittest.TestCase):
         repo = 'add_operator'
         repo_path = public_path / 'mock_operators' / repo
         os.chdir(str(repo_path))
-        args_dev = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=True)
-        args_ins = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=False)
+        args_dev = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=True, user=True)
+        args_ins = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=False, user=True)
         args_unins = argparse.Namespace(action='uninstall', namespace='test', path=str(repo_path))
 
         SetupCommand(args_ins)()
