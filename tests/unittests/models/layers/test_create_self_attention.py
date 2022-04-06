@@ -16,19 +16,16 @@
 import unittest
 import torch
 
-from towhee.models.perceiver.create_cross_attention import cross_attention_layer
+from towhee.models.perceiver.create_self_attention import create_self_attention
 
 
 class PerceiverCreateCrossAttentionTest(unittest.TestCase):
     def test_perceiver_create_cross_attention(self):
         num_q_channels = 10
-        num_kv_channels = 5
         num_heads = 5
         batch_size = 2
         dropout = 0.2
-        layer = cross_attention_layer(num_q_channels=num_q_channels, num_kv_channels=num_kv_channels,
-                                      num_heads=num_heads, dropout=dropout)
+        layer = create_self_attention(num_channels=num_q_channels, num_heads=num_heads, dropout=dropout)
         q_tensor = torch.rand(batch_size, num_q_channels, num_q_channels)
-        kv_tensor = torch.rand(batch_size, num_kv_channels, num_kv_channels)
-        out = layer(q_tensor, kv_tensor)  # torch.Size([2, 10, 10])
+        out = layer(q_tensor)  # torch.Size([2, 10, 10])
         self.assertTrue(out.shape == torch.Size([2, 10, 10]))
