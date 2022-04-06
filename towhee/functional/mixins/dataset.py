@@ -88,24 +88,6 @@ class DatasetMixin:
 
         return cls.stream(inner())
 
-    # def image_decode(self):
-    #     pass
-
-    # def image_encode(self):
-    #     pass
-
-    def audio_decode(self):
-        pass
-
-    def audio_encode(self):
-        pass
-
-    def video_decode(self):
-        pass
-
-    def video_encode(self):
-        pass
-
     @classmethod
     def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
         import json
