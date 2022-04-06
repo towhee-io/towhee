@@ -123,7 +123,7 @@ class _Accessor(dict):
         """
         _read_tracker.add(self._path)
         value = self._root.get(self._path)
-        return default if value is None else value
+        return default if not value else value
 
     def __getattr__(self, name: str) -> Any:
         if name in ['_path', '_root']:
@@ -284,7 +284,6 @@ class HyperParameter(dict):
             if p not in obj or (not isinstance(obj[p], dict)):
                 obj[p] = HyperParameter()
             obj = obj[p]
-        _write_tracker.add(name)
         obj[path[-1]] = safe_numeric(value)
 
     def get(self, name: str) -> Any:
@@ -308,10 +307,9 @@ class HyperParameter(dict):
         obj = self
         for p in path[:-1]:
             if p not in obj:
-                return None
+                return _Accessor(obj, p)
             obj = obj[p]
-        _read_tracker.add(name)
-        return obj[path[-1]] if path[-1] in obj else None
+        return obj[path[-1]] if path[-1] in obj else _Accessor(self, name)
 
     def __setitem__(self, key, value):
         """
@@ -335,13 +333,17 @@ class HyperParameter(dict):
         for nested parameters:
         >>> hp.b.c
         2
+
+        >>> getattr(hp, 'b.c')
+        2
         """
-        if name in self.keys():
-            return self[name]
-        else:
-            if name in self.__dict__.keys():
-                return self.__dict__[name]
-            return _Accessor(self, name)
+        return self.get(name)
+        # if name in self.keys():
+        #     return self[name]
+        # else:
+        #     if name in self.__dict__.keys():
+        #         return self.__dict__[name]
+        #     return _Accessor(self, name)
 
     def __setattr__(self, name, value):
         """
@@ -353,8 +355,13 @@ class HyperParameter(dict):
 
         >>> hp['e']
         4
+
+        >>> setattr(hp, 'A.B.C', 1)
+        >>> hp.A.B.C
+        1
         """
-        self[name] = value
+        self.put(name, value)
+        #self[name] = value
 
     def __call__(self) -> Any:
         """
@@ -528,7 +535,7 @@ def auto_param(func):
         with param_scope() as hp:
             local_params = {}
             for k, v in predef_kws.items():
-                if hp.get(v) is not None and k not in kws:
+                if hp.get(v) and k not in kws:
                     kws[k] = hp.get(v)
                     local_params[v] = hp.get(v)
                 else:

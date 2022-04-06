@@ -5,8 +5,8 @@ title: DataCollection Introduction
 
 # What is DataCollection
 
-DataCollection is a pythonic computation and processing framework for unstructured data in machine learning and data science. 
-It allows a data scientist or researcher to assemble a data processing pipeline, do his model work (embedding, transforming, or classification) and apply it to the business (search, recommendation, or shopping) with a method-chaining style API:
+DataCollection is a pythonic computation framework for unstructured data in machine learning and data science. 
+It provides a method-chaining style API that makes it easier for a data scientist or researcher to assemble a data processing pipeline, finish his research on algorithms and models (embedding, transformer, or cnn) and apply the model to real-world business (search, recommendation, or shopping):
 
 ```python
 >>> from towhee import DataCollection
@@ -26,14 +26,14 @@ It allows a data scientist or researcher to assemble a data processing pipeline,
 
 # Preparation
 
-Please install `pandas`, `scikit-learn`, `opencv-python`, `ipython`, `matplotlib` to get all the functions of DataCollwction.
+Please install `pandas`, `scikit-learn`, `opencv-python`, `ipython`, `matplotlib` to get all the functions of DataCollection.
 ```bash
 $ pip install pandas scikit-learn scikit-learn opencv-python ipython matplotlib
 ```
 
 # Quick Start
 
-We use a `prime number` example to go through core conceptions in `DataCollection` and explain how the data and computation are organized. `prime numbers` are special numbers with exactly two factors, themselves and `1`. The following function detects whether a number is prime or not:
+We use a `prime number` example to go through core conceptions in `DataCollection` and explain how the data and computation are organized. `prime numbers` are special numbers with exactly two factors, themselves and `1`. The following function detects if a number is prime:
 
 ```python
 >>> def is_prime(x):
@@ -119,13 +119,13 @@ A data processing pipeline can be created by chaining `map()` and `filter()`:
 When the `DataCollection` is created from a list, it will hold all the input values, and computations are performed in a `stage-wise` manner:
 
 1. `stage 2` will wait until all the calculations are done in `stage 1`;
-2. A new `DataCollection` will be created to hold all the outputs for each stage. You can perform list operations on the result `DataCollection`;
+2. A new `DataCollection` will hold all the outputs for each stage. You can perform list operations on the result `DataCollection`;
 
 **NOTE**: `iterator-mode` and `stream-wise` computation
 
 If the `DataCollection` is created from an iterator, it performs `stream-wise` computation and holds no data:
 
-1. `DataCollection` takes one element from the input and  applies `stage 1` and `stage 2` sequentially ;
+1. `DataCollection` takes one element from the input and applies `stage 1` and `stage 2` sequentially ;
 2. Since `DataCollection` holds no data, indexing or shuffle is not supported;
 
 We strongly suggest using `iterator-mode` instead of `list-mode` for memory efficiency and development convenience. When using `list-mode`, if the operator on the last stage is not appropriately implemented and runs into some error, you will waste all the computation in the previous stages.
@@ -153,7 +153,7 @@ When chaining many stages, `DataCollection` provides a more straightforward synt
 
 `DataCollection.as_str` is not defined in `DataCollection`. DataCollection will resolve such unknown functions by a lookup table managed with `param_scope`. By registering a new function via `param_scope().dispatcher`, we can extend `DataCollection` at run time without modifying the python code of `DataCollection`. 
 
-Operator dispatch is a fundamental mechanism in `DataCollection`. It allows `DataCollection` to be used as a DSL language for domain-specific tasks. For example, an image processing pipeline can be defined as follows:
+Operator dispatch is a fundamental mechanism in `DataCollection`. It allows `DataCollection` to be used as a DSL language for domain-specific tasks. For example, we can define an image processing pipeline as follows:
 
 ```python
 dataset = DataCollection.from_glob('path_train/*.jpg') \
@@ -166,7 +166,7 @@ dataset = DataCollection.from_glob('path_train/*.jpg') \
 
 This python code reads much more naturally for computer vision engineers and researchers. 
 
-Operator dispatch contains a hub-based resolve that loads operators from [towhee hub](https://towhee.io). This will greatly accelerate your daily work with the help from the towhee community:
+Operator dispatch contains a hub-based resolve that loads operators from [towhee hub](https://towhee.io). This will accelerate your daily work with the help of the towhee community:
 
 ```python
 dataset = DataCollection.from_glob('path_train/*.jpg') \
@@ -182,7 +182,7 @@ dataset = DataCollection.from_glob('path_train/*.jpg') \
 
 ## Parallel Execution
 
-Dealing with large-scale datasets is usually time-consuming. `DataCollection` provides a simple API `set_parallel(num_worker)` to enable parallel execution, and accelerate you computation :
+Dealing with large-scale datasets is usually time-consuming. `DataCollection` provides a simple API `set_parallel(num_worker)` to enable parallel execution, and speed up your computation :
 
 ```python
 dc.set_parallel(num_worker=5) \
@@ -194,7 +194,7 @@ dc.set_parallel(num_worker=5) \
 
 Most data scientists have experienced that exception crashes your code when dealing with large-scale datasets, damaged input data, unstable networks, or out of storage. It would be even worse if it crashes after having processed over half of the data, and you have to fix your code and re-run all the data.
 
-`DataCollection` support exception-safe execution, which can be enabled by a single line of code:
+`DataCollection` supports exception-safe execution, which can be enabled by a single line of code:
 
 ```python
 dc.exception_safe() \ # or dc.safe()
@@ -202,7 +202,7 @@ dc.exception_safe() \ # or dc.safe()
 	.towhee.resnet_model(model_name='resnet50')
 ```
 
-When `exception_safe` is enabled, `DataCollection` generates empty values on exceptions. The empty values will be skipped by the lagging functions/operators. And you are able to handle the empty values with a exception receiver at the tail of the chain:
+When `exception_safe` is enabled, `DataCollection` generates empty values on exceptions. The lagging functions/operators will skip the empty values. And you can handle the empty values with an exception receiver at the tail of the chain:
 
 ```python
 dc.safe() \
@@ -213,7 +213,7 @@ dc.safe() \
 
 There are two builtin exception receivers: 
 
-1. `fill_empty(default_value)` will replace empty values with the given default value;
+1. `fill_empty(default_value)` will replace empty values with the default value;
 2. `drop_empty(callback=None)` will drop the empty values and send the empty values to a callback function;
 
 Here is an example callback function to receive exceptions from empty values:
