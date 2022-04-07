@@ -217,7 +217,7 @@ class TestDataCollection(unittest.TestCase):
                 .runas_op['target', 'target'](func=lambda x: int(x))
         )
 
-        out = out.hstack[('a', 'b', 'c', 'd', 'e'), 'fea']()
+        out = out.tensor_hstack[('a', 'b', 'c', 'd', 'e'), 'fea']()
 
         train, test = out.split_train_test()
 

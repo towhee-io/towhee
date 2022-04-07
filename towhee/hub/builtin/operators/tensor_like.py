@@ -18,15 +18,16 @@ from towhee.engine import register
 # pylint: disable=invalid-name
 
 
-@register(name='builtin/hstack')
-def hstack(*arg):
+@register(name='builtin/tensor_hstack')
+def tensor_hstack(*arg):
     from scipy import sparse
     return sparse.hstack(arg)
 
 
 @register(name='builtin/stack')
 class stack:
-    """stack the sequence of inputs along a new axis.
+    """
+    Stack the sequence of inputs along a new axis.
 
     Args:
         axis (int, optional): the axis of the result array along which the inputs are
@@ -60,7 +61,8 @@ class stack:
 
 @register(name='builtin/unstack')
 class unstack:
-    """unstack an array along given axis.
+    """
+    Unstack an array along given axis.
 
     Args:
         axis (int, optional): the axis along which to unstack the array. Defaults to 0.
@@ -97,7 +99,8 @@ class unstack:
 
 @register(name='builtin/concat')
 class concat:
-    """concat the sequence of inputs along a axis (no new axis)
+    """
+    Concat the sequence of inputs along a axis (no new axis)
 
     Args:
         axis (int, optional): the axis alone which to concat inputs. Defaults to 0.
@@ -129,7 +132,8 @@ class concat:
 
 @register(name='builtin/split')
 class split:
-    """split the input array along a axis.
+    """
+    Split the input array along a axis.
 
     Args:
         axis (int, optional): the axis along which to split the array. Defaults to 0.
@@ -163,7 +167,7 @@ class split:
 @register(name='builtin/normalize')
 class normalize:
     """
-    normalize input tensor
+    Normalize input tensor.
 
     Examples:
 
@@ -196,7 +200,8 @@ class reshape:
 
 @register(name='builtin/random')
 class random:
-    """return a random tensor filled with random numbers from [0.0, 1.0).
+    """
+    Return a random tensor filled with random numbers from [0.0, 1.0).
 
     Args:
         shape ([int], optional): tensor shape. Defaults to None.
