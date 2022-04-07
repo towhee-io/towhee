@@ -411,56 +411,56 @@ class TestDataCollectionAPIsValid:
 
         return True
     
-    def test_data_collection_flaten(self):
+    def test_data_collection_flatten(self):
         """
-        target: test flaten() API for DataCollection 
-        method: create a data collection and flaten it
-        expected: return flaten successfully
+        target: test flatten() API for DataCollection 
+        method: create a data collection and flatten it
+        expected: return flatten successfully
         """
         data = 10
         dc = DataCollection.range(data)
         size = 3
         res = dc.batch(size)
-        result = res.flaten().to_list()
+        result = res.flatten().to_list()
         assert len(result) == data
 
         return True
 
-    def test_data_collection_flaten_large_size(self):
+    def test_data_collection_flatten_large_size(self):
         """
-        target: test flaten() API for DataCollection 
-        method: create a data collection and flaten it with large size
-        expected: return flaten successfully
+        target: test flatten() API for DataCollection 
+        method: create a data collection and flatten it with large size
+        expected: return flatten successfully
         """
         data = 10000000
         dc = DataCollection.range(data)
         size = 1000000
         res = dc.batch(size)
-        result = res.flaten().to_list()
+        result = res.flatten().to_list()
         assert len(result) == data
 
         return True
     
-    def test_data_collection_flaten_size_empty(self):
+    def test_data_collection_flatten_size_empty(self):
         """
-        target: test flaten() API for DataCollection 
-        method: create a data collection and flaten it with empty size
-        expected: return flaten successfully
+        target: test flatten() API for DataCollection 
+        method: create a data collection and flatten it with empty size
+        expected: return flatten successfully
         """
         data = 10
         dc = DataCollection.range(data)
         size = []
         res = dc.batch(size)
-        result = res.flaten().to_list()
+        result = res.flatten().to_list()
         assert len(result) == data
 
         return True
 
-    def test_data_collection_flaten_inter(self):
+    def test_data_collection_flatten_inter(self):
         """
-        target: test flaten() API for DataCollection
-        method: create an iter data collection and flaten it
-        expected: return flaten successfully
+        target: test flatten() API for DataCollection
+        method: create an iter data collection and flatten it
+        expected: return flatten successfully
         """
         data_size = 6
         data = iter(range(data_size))
