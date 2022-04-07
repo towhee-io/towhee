@@ -54,6 +54,15 @@ class TestVideoTransforms(unittest.TestCase):
         self.assertEqual(out_x3d_s['audio'].shape, (441344,))
         self.assertEqual(out_x3d_m['audio'].shape, (441344,))
 
+        tfms_mvit_base_16x4 = VideoTransforms('mvit_base_16x4')
+        tfms_mvit_base_32x3 = VideoTransforms('mvit_base_32x3')
+        out_mvit_base_16x4 = tfms_mvit_base_16x4('archery.mp4')
+        out_mvit_base_32x3 = tfms_mvit_base_32x3('archery.mp4')
+        self.assertEqual(out_mvit_base_16x4['video'].shape, (3, 16, 224, 224))
+        self.assertEqual(out_mvit_base_32x3['video'].shape, (3, 32, 224, 224))
+        self.assertEqual(out_mvit_base_16x4['audio'].shape, (441344,))
+        self.assertEqual(out_mvit_base_32x3['audio'].shape, (441344,))
+
     def tearDown(self) -> None:
         os.unlink('archery.mp4')
 
