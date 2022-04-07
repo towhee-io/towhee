@@ -95,6 +95,12 @@ class GitUtils:
             raise ValueError(f'{self._author}/{self._repo} repo does not exist.')
 
         url = f'{self._root}/{self._author}/{self._repo}.git'
+        try:
+            subprocess.check_call(['git', 'lfs'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            engine_log.error('You have not install git-lfs, please install it first https://git-lfs.github.com.')
+            raise Exception('You have not install git-lfs, please install it first https://git-lfs.github.com.') from e
+
         subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
 
         if install_reqs:
