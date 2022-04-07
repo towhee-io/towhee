@@ -16,7 +16,7 @@ import unittest
 
 import numpy as np
 
-from towhee.functional import DataCollection
+from towhee import DataCollection
 
 import towhee.functional.mixins.parallel
 
