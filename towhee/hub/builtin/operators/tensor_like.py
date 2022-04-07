@@ -24,8 +24,8 @@ def tensor_hstack(*arg):
     return sparse.hstack(arg)
 
 
-@register(name='builtin/stack')
-class stack:
+@register(name='builtin/tensor_stack')
+class tensor_stack:
     """
     Stack the sequence of inputs along a new axis.
 
@@ -44,7 +44,7 @@ class stack:
     ...     DataCollection.range(10)
     ...         .map(lambda x: np.array([x]))
     ...         .batch(2)
-    ...         .stack(axis=1)
+    ...         .tensor_stack(axis=1)
     ... )
     >>> dc.to_list()
     [array([[0, 1]]), array([[2, 3]]), array([[4, 5]]), array([[6, 7]]), array([[8, 9]])]
@@ -59,8 +59,8 @@ class stack:
         return np.stack(x, axis=self._axis)
 
 
-@register(name='builtin/unstack')
-class unstack:
+@register(name='builtin/tensor_unstack')
+class tensor_unstack:
     """
     Unstack an array along given axis.
 
@@ -77,7 +77,7 @@ class unstack:
     >>> dc = (
     ...     DataCollection.range(3)
     ...         .map(lambda x: np.array([x, x*2]))
-    ...         .unstack(axis=0)
+    ...         .tensor_unstack(axis=0)
     ... )
     >>> dc.to_list()
     [[array(0), array(0)], [array(1), array(2)], [array(2), array(4)]]
@@ -97,8 +97,8 @@ class unstack:
                 np.split(x, nsplit, axis=self._axis)))
 
 
-@register(name='builtin/concat')
-class concat:
+@register(name='builtin/tensor_concat')
+class tensor_concat:
     """
     Concat the sequence of inputs along a axis (no new axis)
 
@@ -116,7 +116,7 @@ class concat:
     ...     DataCollection.range(10)
     ...         .map(lambda x: np.array([x]))
     ...         .batch(2)
-    ...         .concat(axis=0)
+    ...         .tensor_concat(axis=0)
     ... )
     >>> dc.to_list()
     [array([0, 1]), array([2, 3]), array([4, 5]), array([6, 7]), array([8, 9])]
@@ -130,8 +130,8 @@ class concat:
         return np.concatenate(list(x), axis=self._axis)
 
 
-@register(name='builtin/split')
-class split:
+@register(name='builtin/tensor_split')
+class tensor_split:
     """
     Split the input array along a axis.
 
@@ -148,7 +148,7 @@ class split:
     >>> dc = (
     ...     DataCollection.range(3)
     ...         .map(lambda x: np.array([[x, x*2]]))
-    ...         .split(axis=1)
+    ...         .tensor_split(axis=1)
     ... )
     >>> dc.to_list()
     [[array([[0]]), array([[0]])], [array([[1]]), array([[2]])], [array([[2]]), array([[4]])]]
@@ -164,8 +164,8 @@ class split:
         return np.split(x, nsplit, axis=self._axis)
 
 
-@register(name='builtin/normalize')
-class normalize:
+@register(name='builtin/tensor_normalize')
+class tensor_normalize:
     """
     Normalize input tensor.
 
@@ -174,7 +174,7 @@ class normalize:
     >>> import numpy
     >>> from towhee.functional import DataCollection
     >>> dc = DataCollection([numpy.array([3, 4]), numpy.array([6,8])])
-    >>> dc.normalize().to_list()
+    >>> dc.tensor_normalize().to_list()
     [array([0.6, 0.8]), array([0.6, 0.8])]
     """
 
@@ -187,8 +187,8 @@ class normalize:
         return x / np.linalg.norm(x, axis=self._axis)
 
 
-@register(name='builtin/reshape')
-class reshape:
+@register(name='builtin/tensor_reshape')
+class tensor_reshape:
 
     def __init__(self, shape):
         self._shape = shape
@@ -198,8 +198,8 @@ class reshape:
         return x.reshape(self._shape)
 
 
-@register(name='builtin/random')
-class random:
+@register(name='builtin/tensor_random')
+class tensor_random:
     """
     Return a random tensor filled with random numbers from [0.0, 1.0).
 
@@ -212,7 +212,7 @@ class random:
     Examples:
 
     >>> from towhee.functional import DataCollection
-    >>> DataCollection.range(5).random(shape=[1,2,3]).map(lambda x: x.shape).to_list()
+    >>> DataCollection.range(5).tensor_random(shape=[1,2,3]).map(lambda x: x.shape).to_list()
     [(1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3)]
     """
 

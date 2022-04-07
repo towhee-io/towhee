@@ -488,6 +488,7 @@ def auto_param(name_or_func):
     Convert keyword arguments into hyperparameters
 
     Examples:
+
     >>> @auto_param
     ... def foo(a, b=2, c='c', d=None):
     ...     print(a, b, c, d)
@@ -551,7 +552,7 @@ def auto_param(name_or_func):
             with param_scope() as hp:
                 local_params = {}
                 for k, v in predef_kws.items():
-                    if hp.get(v) is not None and k not in kws:
+                    if getattr(hp(), v).get_or_else(None) is not None and k not in kws:
                         kws[k] = hp.get(v)
                         local_params[v] = hp.get(v)
                     else:

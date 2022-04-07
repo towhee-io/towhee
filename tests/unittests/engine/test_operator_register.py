@@ -17,8 +17,12 @@ import unittest
 
 import towhee.engine.operator_registry
 
-TestOperatorRegister = doctest.DocTestSuite(towhee.engine.operator_registry)
-unittest.TextTestRunner().run(TestOperatorRegister)
+
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.engine.operator_registry))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

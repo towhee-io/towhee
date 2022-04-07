@@ -17,12 +17,16 @@ import unittest
 import towhee.hub.builtin.operators.computer_vision
 import towhee.hub.builtin.operators.tensor_like
 
-for mod in [
-        towhee.hub.builtin.operators.computer_vision,
-        towhee.hub.builtin.operators.tensor_like
-]:
-    TestBuiltinOps = doctest.DocTestSuite(mod)
-    unittest.TextTestRunner(verbosity=4).run(TestBuiltinOps)
+
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    for mod in [
+            towhee.hub.builtin.operators.computer_vision,
+            towhee.hub.builtin.operators.tensor_like
+    ]:
+        tests.addTests(doctest.DocTestSuite(mod))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

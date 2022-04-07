@@ -246,11 +246,12 @@ class TestDataCollection(unittest.TestCase):
             .report()
 
 
-TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
-unittest.TextTestRunner().run(TestDataCollectionExamples)
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.functional.data_collection))
+    tests.addTests(doctest.DocTestSuite(towhee.functional.option))
+    return tests
 
-TestOptionExamples = doctest.DocTestSuite(towhee.functional.option)
-unittest.TextTestRunner().run(TestOptionExamples)
 
 if __name__ == '__main__':
     unittest.main()

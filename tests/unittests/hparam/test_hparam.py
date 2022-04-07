@@ -109,11 +109,11 @@ class TestParamScope(unittest.TestCase):
             self.assertEqual(read_a(), 1)
 
 
-for mod in [
-        towhee.hparam.hyperparameter,
-]:
-    TestDataCollectionMixins = doctest.DocTestSuite(mod)
-    unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.hparam.hyperparameter))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@ def image_load(file_or_buff):
     >>> from towhee.functional import DataCollection
     >>> dc = (
     ...     DataCollection.range(5)
-    ...         .random(shape=[100, 100, 3])
+    ...         .tensor_random(shape=[100, 100, 3])
     ...         .image_dump()
     ... ).to_list()
 
@@ -89,10 +89,10 @@ class image_resize:
     >>> from towhee.functional import DataCollection
     >>> dc = (
     ...     DataCollection.range(5)
-    ...         .random(shape=[100, 100, 3])
+    ...         .tensor_random(shape=[100, 100, 3])
     ...         .image_resize(dsize=[10, 10], interpolation='nearest')
     ... )
-    >>> dc.select('shape').to_list()
+    >>> dc.select('shape').as_raw().to_list()
     [(10, 10, 3), (10, 10, 3), (10, 10, 3), (10, 10, 3), (10, 10, 3)]
     """
 

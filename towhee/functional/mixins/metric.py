@@ -25,12 +25,12 @@ class Collector:
 
     # pylint: disable=dangerous-default-value
     def __init__(self,
-                 metrics: list = [],
-                 labels: dict = {},
-                 scores: dict = {}):
-        self.metrics = metrics
-        self.scores = scores
-        self.labels = labels
+                 metrics: list = None,
+                 labels: dict = None,
+                 scores: dict = None):
+        self.metrics = metrics if metrics is not None else []
+        self.scores = scores if scores is not None else {}
+        self.labels = labels if labels is not None else {}
 
     def add_metrics(self, value: str):
         self.metrics.append(value)
@@ -136,8 +136,8 @@ class MetricMixin:
 
         >>> from towhee import DataCollection
         >>> from towhee import Entity
-        >>> dc = DataCollection([Entity(a=a, b=b, c=c) for a, b, c in zip([0,1,1,0,0], [0,1,1,1,0], [0,1,1,0,0])])
-        >>> dc.with_metrics(['accuracy', 'recall']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report()
+        >>> dc1 = DataCollection([Entity(a=a, b=b, c=c) for a, b, c in zip([0,1,1,0,0], [0,1,1,1,0], [0,1,1,0,0])])
+        >>> dc1.with_metrics(['accuracy', 'recall']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report()
             accuracy  recall
         lr       1.0     1.0
         rf       0.8     0.8
