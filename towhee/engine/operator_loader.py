@@ -115,6 +115,8 @@ class OperatorLoader:
         return self.instance_operator(op, args) if op is not None else None
 
     def load_operator_from_cache(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        if '/' not in function:
+            function = 'towhee/'+function
         try:
             fm = FileManager()
             path = fm.get_operator(operator=function, tag=tag)
