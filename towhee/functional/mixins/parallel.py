@@ -30,22 +30,10 @@ def _map_task(x, unary_op):
                 return unary_op(x)
         except Exception as e:  # pylint: disable=broad-except
             engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
-            return Empty(x, e)
-
-    return map_wrapper
-
-def _map_task_ray(unary_op):
-    def map_wrapper(x):
-        try:
-            if isinstance(x, Option):
-                return x.map(unary_op)
-            else:
-                return unary_op(x)
-        except Exception as e:  # pylint: disable=broad-except
-            engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
             return Empty(_Reason(x, e))
 
     return map_wrapper
+
 
 class ParallelMixin:
     """
@@ -252,69 +240,11 @@ class ParallelMixin:
                 buff.append(loop.run_in_executor(executor, _map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
-            poison = EOS()
-            queue.put(poison)
+            queue.put(EOS())
 
         def worker_wrapper():
             loop.run_until_complete(worker())
             loop.close()
-
-        t = threading.Thread(target=worker_wrapper)
-        t.start()
-
-        return self._factory(inner())
-
-    def _ray_pmap(self, unary_op, num_worker=None):
-        import ray #pylint: disable=import-outside-toplevel
-        ###### ACTOR: Currently much slower, may have future use.
-
-        # @ray.remote
-        # class RemoteActor:
-        #     def remote_runner(self, val):
-        #         return _map_task_ray(unary_op)(val)
-
-        # pool = ray.util.ActorPool([RemoteActor.remote() for _ in range(num_worker)])
-
-        # pool.submit(lambda a, v: a.remote_runner.remote(v), x)
-        # if pool.has_next():
-        #    queue.put(pool.get_next())
-
-        ###### TASK: Need a good way of transferring the model.
-        if num_worker is not None:
-            pass
-        elif self.get_executor() is not None:
-            num_worker = self._num_worker
-        else:
-            num_worker = 2
-
-        queue = Queue(num_worker)
-        loop = asyncio.new_event_loop()
-
-        def inner():
-            while True:
-                x = queue.get()
-                if isinstance(x, EOS):
-                    break
-                else:
-                    yield x
-
-        @ray.remote
-        def remote_runner(val):
-            return _map_task_ray(unary_op)(val)
-
-        async def worker():
-            buff = []
-            for x in self:
-                if len(buff) == num_worker:
-                    queue.put(await buff.pop(0))
-                buff.append(asyncio.wrap_future(remote_runner.remote(x).future()))
-            while len(buff) > 0:
-                queue.put(await buff.pop(0))
-            poison = EOS()
-            queue.put(poison)
-
-        def worker_wrapper():
-            loop.run_until_complete(worker())
 
         t = threading.Thread(target=worker_wrapper)
         t.start()
@@ -361,123 +291,14 @@ class ParallelMixin:
         """
         if len(ops) == 1:
             return self._pmap(unary_op=ops[0], num_worker=num_worker, backend=backend)
-        if backend is None:
-            if self.get_backend() == 'ray':
-                return self._ray_mmap(ops=ops, num_worker=num_worker)
-            else:
-                return self._thread_mmap(ops=ops, num_worker=num_worker)
-        elif backend == 'thread':
-            return self._thread_mmap(ops=ops, num_worker=num_worker)
-        elif backend == 'ray':
-            return self._ray_mmap(ops=ops, num_worker=num_worker)
 
-    def _thread_mmap(self, ops, num_worker = None):
-        if num_worker is not None:
-            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
-        elif self.get_executor() is not None:
-            executor = self._executor
-            num_worker = self._num_worker
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(2)
-            num_worker = 2
+        next_vals = []
+        next_vals = self.split(len(ops))
 
-        queues = [Queue(maxsize= max(1, num_worker//len(ops) + 1)) for _ in ops]
-        loop = asyncio.new_event_loop()
-
-        def inner(queue):
-            while True:
-                x = queue.get()
-                if isinstance(x, EOS):
-                    break
-                else:
-                    yield x
-
-        async def worker():
-            buffs = [[] for _ in ops]
-            for x in self:
-                for i in range(len(ops)):
-                    queue = queues[i]
-                    buff = buffs[i]
-                    if len(buff) == num_worker: #TODO: Use different value for paralllel size.
-                        queue.put(await buff.pop(0))
-                    buff.append(
-                        loop.run_in_executor(executor, _map_task(x, ops[i])))
-            while sum([len(buff) for buff in buffs]) > 0:
-                for i in range(len(ops)):
-                    queue = queues[i]
-                    buff = buffs[i]
-                    queue.put(await buff.pop(0))
-            for i in range(len(ops)):
-                queue = queues[i]
-                poison = EOS()
-                queue.put(poison)
-
-        def worker_wrapper():
-            loop.run_until_complete(worker())
-
-        t = threading.Thread(target=worker_wrapper)
-        t.start()
-
-        retval = [inner(queue) for queue in queues]
-        return [self._factory(x) for x in retval]
-
-    def _ray_mmap(self, ops, num_worker=None):
-        import ray #pylint: disable=import-outside-toplevel
-
-        if num_worker is not None:
-            pass
-        elif self.get_executor() is not None:
-            num_worker = self._num_worker
-        else:
-            num_worker = 2
-
-        queues = [Queue(maxsize= max(1, num_worker//len(ops) + 1)) for _ in ops]
-        loop = asyncio.new_event_loop()
-
-        def inner(queue):
-            while True:
-                x = queue.get()
-                if isinstance(x, EOS):
-                    break
-                else:
-                    yield x
-
-        @ray.remote
-        def remote_runner(val, index):
-            return _map_task_ray(ops[index])(val)
-
-        async def worker():
-            buffs = [[] for _ in ops]
-            for x in self:
-                for i in range(len(ops)):
-                    queue = queues[i]
-                    buff = buffs[i]
-                    if len(buff) == num_worker:
-                        queue.put(await buff.pop(0))
-                    buff.append(
-                        asyncio.wrap_future(remote_runner.remote(x, i).future()))
-
-            while sum([len(buff) for buff in buffs]) > 0:
-                for i in range(len(ops)):
-                    queue = queues[i]
-                    buff = buffs[i]
-                    queue.put(await buff.pop(0))
-
-            for i in range(len(ops)):
-                queue = queues[i]
-                poison = EOS()
-                queue.put(poison)
-
-
-        def worker_wrapper():
-            loop.run_until_complete(worker())
-            loop.close()
-
-        t = threading.Thread(target=worker_wrapper)
-        t.start()
-
-        retval = [inner(queue) for queue in queues]
-        return [self._factory(x) for x in retval]
+        ret = []
+        for i, x in enumerate(ops):
+            ret.append(next_vals[i].pmap(x, num_worker=num_worker, backend=backend))
+        return ret
 
 class EOS():
     '''

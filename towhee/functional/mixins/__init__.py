@@ -20,10 +20,11 @@ from .entity_mixin import EntityMixin
 from .display import DisplayMixin
 from .state import StateMixin
 from .metric import MetricMixin
+from .ray import RayMixin
 
 
 class AllMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin):
+                ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin, RayMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
