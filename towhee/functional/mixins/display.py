@@ -19,6 +19,7 @@ from towhee._types import Image
 from towhee.hparam import param_scope
 from towhee.functional.entity import Entity
 
+# pylint: disable=dangerous-default-value
 
 def get_df_on_columns(self, index: Tuple[str]):
     # pylint: disable=import-outside-toplevel
@@ -142,7 +143,7 @@ class DisplayMixin:
     def as_str(self):
         return self._factory(map(str, self._iterable))
 
-    def show(self, limit=5, header=None, tablefmt='html'):
+    def show(self, limit=5, header=None, tablefmt='html', formatter = {}):
         """
         Print the first n lines of a DataCollection.
 
@@ -164,7 +165,7 @@ class DisplayMixin:
         else:
             data = [[x] for x in contents]
 
-        table_display(to_printable_table(data, header, tablefmt))
+        table_display(to_printable_table(data, header, tablefmt, formatter))
 
 
 def table_display(table, tablefmt='html'):
@@ -193,7 +194,7 @@ if __name__ == '__main__':
     doctest.testmod(verbose=False)
 
 
-def to_printable_table(data, header=None, tablefmt='html'):
+def to_printable_table(data, header=None, tablefmt='html', formatter = {}):
     """
     Convert two dimensional data structure into printable table
 
@@ -208,7 +209,7 @@ def to_printable_table(data, header=None, tablefmt='html'):
     header = [] if not header else header
 
     if tablefmt == 'html':
-        return to_html_table(data, header)
+        return to_html_table(data, header, formatter)
     elif tablefmt == 'plain':
         return to_plain_table(data, header, tablefmt)
 
@@ -251,7 +252,7 @@ def _to_plain_cell(data):
     return _brief_repr(data)
 
 
-def to_html_table(data, header):
+def to_html_table(data, header, formatter={}):
     """
     Convert two dimensional data structure into html table
 
@@ -265,10 +266,26 @@ def to_html_table(data, header):
     th_style = 'style="text-align: center; font-size: 130%; border: none;"'
     td_style = 'style="text-align: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
+    str_2_callback = {
+        'text': _text_brief_repr,
+        'image': _image_to_html_cell
+    }
+
     trs = []
     trs.append('<tr>' + ' '.join(['<th ' + th_style + '>' + x + '</th>' for x in header]) + '</tr>')
+
+    to_html_callback = {}
+    for i, field in enumerate(header):
+        cb = formatter.get(field, None)
+        if cb is None:
+            cb = _to_html_cell
+        elif isinstance(cb, str):
+            cb = str_2_callback.get(cb, _to_html_cell)
+        to_html_callback[i] = cb
     for r in data:
-        trs.append('<tr>' + ' '.join(['<td ' + td_style + '>' + _to_html_cell(x) + '</td>' for x in r]) + '</tr>')
+        trs.append(
+            '<tr>' + ' '.join(['<td ' + td_style + '>' + to_html_callback.get(i, _to_html_cell)(x) + '</td>' for i,x in enumerate(r)]) + '</tr>'
+        )
     return '<table ' + tb_style + '>' + ' '.join(trs) + '</table>'
 
 
