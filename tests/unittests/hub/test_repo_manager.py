@@ -99,6 +99,12 @@ class TestRepoManager(unittest.TestCase):
         self.assertIsInstance(files, list)
         self.assertTrue(bool(files))
 
+    def test_get_repo_type(self):
+        rm = RepoManager('towhee', 'ci-test')
+        res = rm.get_repo_type()
+
+        self.assertTrue(res, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

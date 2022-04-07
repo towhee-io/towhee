@@ -18,6 +18,33 @@ from towhee import ops
 from towhee.functional.entity import Entity
 
 
+render_result = """
+name: test_pipeline
+variables:
+    test_op: 'filip-halt/timm-image-embedding'
+    model_name: 'efficientnet_b3'
+operators:
+- name: embedding_model
+  function: 'towhee/test_op'
+  tag: main
+  init_args:
+    model_name: efficientnet_b3
+  inputs:
+  - df: image
+    name: image
+    col: 0
+  outputs:
+  - df: embedding
+  iter_info:
+    type: map
+dataframes:
+- name: embedding
+  columns:
+  - name: feature_vector
+    vtype: numpy.ndarray
+""".strip()
+
+
 class TestPipelineOps(unittest.TestCase):
     """
     tests for template build
@@ -64,6 +91,11 @@ class TestPipelineOps(unittest.TestCase):
 
         test_op = ops.towhee.test_operator[('in_1', 'in_2'), ('out_1', 'out_2', 'out_3')](x=1)
         self.assertRaises(IndexError, test_op, x=1)
+
+    def test_repo_pipe(self):
+        # pylint: disable=protected-access
+        pipe = ops.builtin.template_test(test_op='towhee/test_op')
+        self.assertEqual(repr(pipe), render_result)
 
 
 if __name__ == '__main__':
