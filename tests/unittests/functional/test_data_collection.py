@@ -18,11 +18,14 @@ from collections import namedtuple
 
 import towhee.functional.data_collection
 import towhee.functional.option
+
 from towhee import ops
 from towhee import register
-from towhee.functional import DataCollection
-from towhee.hparam.hyperparameter import param_scope
-from towhee.functional.entity import Entity
+from towhee import DataCollection
+from towhee import param_scope
+from towhee import Entity
+
+import towhee
 
 public_path = Path(__file__).parent.parent.resolve()
 
@@ -58,7 +61,7 @@ class TestDataCollection(unittest.TestCase):
     tests for data collection
     """
     def test_example_for_basic_api(self):
-        dc = DataCollection(range(10))
+        dc = towhee.dc(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
         self.assertListEqual(list(result), [1, 2])
 

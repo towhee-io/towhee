@@ -24,9 +24,10 @@ from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.functional import DataCollection, State, Entity
 
-from towhee.dc import glob, glob_zip
-from towhee.dc import read_csv, read_json, read_camera
-from towhee.dc import from_zip, from_df
+from towhee.functional import glob, glob_zip
+from towhee.functional import read_csv, read_json, read_camera
+from towhee.functional import from_zip, from_df
+from towhee.functional import dc
 
 __all__ = [
     'DEFAULT_PIPELINES',
@@ -48,7 +49,8 @@ __all__ = [
     'read_json',
     'read_camera',
     'from_zip',
-    'from_df'
+    'from_df',
+    'dc'
 ]
 
 DEFAULT_PIPELINES = {
