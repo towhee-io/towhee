@@ -52,8 +52,8 @@ class standard_scaler(StatefulOperator):
         return self._state.model.transform(data)
 
 
-@register(name='builtin/discretizer')
-class discretizer(StatefulOperator):
+@register(name='builtin/num_discretizer')
+class num_discretizer(StatefulOperator):
     """
     Bin numerical features into intervals.
 
@@ -63,7 +63,7 @@ class discretizer(StatefulOperator):
     >>> dc = (
     ...     DataCollection.range(10).map(lambda x: Entity(a=x))
     ...         .set_training()
-    ...         .discretizer['a', 'b'](name='discretizer', n_bins=3)
+    ...         .num_discretizer['a', 'b'](name='discretizer', n_bins=3)
     ... )
 
     >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
@@ -90,8 +90,8 @@ class discretizer(StatefulOperator):
         return self._state.model.transform(data)
 
 
-@register(name='builtin/one_hot_encoder')
-class one_hot_encoder(StatefulOperator):
+@register(name='builtin/cate_one_hot_encoder')
+class cate_one_hot_encoder(StatefulOperator):
     """
     Standardize numerical features by removing the mean and scaling to unit variance.
 
@@ -101,7 +101,7 @@ class one_hot_encoder(StatefulOperator):
     >>> dc = (
     ...     DataCollection(['a','b','c','a','b']).map(lambda x: Entity(a=x))
     ...         .set_training()
-    ...         .one_hot_encoder['a', 'b'](name='one_hot_encoder')
+    ...         .cate_one_hot_encoder['a', 'b'](name='one_hot_encoder')
     ... )
 
     >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
