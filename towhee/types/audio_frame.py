@@ -41,6 +41,12 @@ class AudioFrame(np.ndarray):
         self._sample_rate = getattr(obj, '_sample_rate', None)
         self._timestamp = getattr(obj, '_timestamp', None)
 
+    def __str__(self):
+        return 'AudioFrame' \
+            + ' shape=' + repr(self.shape) \
+            + ' sample_rate=' + self.sample_rate \
+            + ' timestamp=' + self.timestamp
+
     @property
     def sample_rate(self):
         return self._sample_rate

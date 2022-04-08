@@ -16,10 +16,12 @@ import numpy
 from typing import Tuple
 
 from towhee._types import Image
+from towhee.types import AudioFrame
 from towhee.hparam import param_scope
 from towhee.functional.entity import Entity
 
 # pylint: disable=dangerous-default-value
+
 
 def get_df_on_columns(self, index: Tuple[str]):
     # pylint: disable=import-outside-toplevel
@@ -72,7 +74,7 @@ def calc_df(df, feature: str, target: str):
             val = list(df[feature].unique())[i]
             lst.append([feature,                                                         # Variable
                         val,                                                             # Value
-                        df[df[feature] == val].count()[feature]])                         # All
+                        df[df[feature] == val].count()[feature]])                        # All
         data = pd.DataFrame(lst, columns=['Variable', 'Value', 'All'])
         data['Share'] = data['All'] / data['All'].sum()
         return data
@@ -135,7 +137,7 @@ class DisplayMixin:
     def as_str(self):
         return self._factory(map(str, self._iterable))
 
-    def show(self, limit=5, header=None, tablefmt='html', formatter = {}):
+    def show(self, limit=5, header=None, tablefmt='html', formatter={}):
         """
         Print the first n lines of a DataCollection.
 
@@ -146,7 +148,7 @@ class DisplayMixin:
             header (list of `str`):
                 The field names.
             tablefmt (`str`):
-                The format of the output, support html, plain.
+                The format of the output, support html, plain, grid.
         """
 
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
@@ -168,20 +170,20 @@ def table_display(table, tablefmt='html'):
         table (`str`):
             Table in printable format, such as HTML.
         tablefmt (`str`):
-            The format of the output, support html, plain.
+            The format of the output, support html, plain, grid.
     """
     # pylint: disable=import-outside-toplevel
     from towhee.utils import ipython_utils
 
     if tablefmt == 'html':
         ipython_utils.display(ipython_utils.HTML(table))
-    elif tablefmt == 'plain':
-        ipython_utils.display(table)
+    elif tablefmt in ('plain', 'grid'):
+        print(table)
     else:
         raise ValueError('unsupported table format %s' % tablefmt)
 
 
-def to_printable_table(data, header=None, tablefmt='html', formatter = {}):
+def to_printable_table(data, header=None, tablefmt='html', formatter={}):
     """
     Convert two dimensional data structure into printable table
 
@@ -191,13 +193,13 @@ def to_printable_table(data, header=None, tablefmt='html', formatter = {}):
         header (`Iterable[str]`):
             The name of columns defined by users.
         tablefmt (`str`):
-            The format of the output, support html, plain.
+            The format of the output, support html, plain, grid.
     """
     header = [] if not header else header
 
     if tablefmt == 'html':
         return to_html_table(data, header, formatter)
-    elif tablefmt == 'plain':
+    elif tablefmt in ('plain', 'grid'):
         return to_plain_table(data, header, tablefmt)
 
     raise ValueError('unsupported table format %s' % tablefmt)
@@ -213,7 +215,7 @@ def to_plain_table(data, header, tablefmt):
         header (`Iterable[str]`):
             The name of columns defined by users.
         tablefmt (`str`):
-            The format of the output, support plain.
+            The format of the output, support plain, grid.
     """
     # pylint: disable=import-outside-toplevel
     from tabulate import tabulate
@@ -224,19 +226,24 @@ def to_plain_table(data, header, tablefmt):
 
 def _to_plain_cell(data):
     if isinstance(data, str):
-        return _text_brief_repr(data)
+        return _text_brief(data)
     if isinstance(data, Image):
-        return _image_brief_repr(data)
+        return _image_brief(data)
+    elif isinstance(data, AudioFrame):
+        return _audio_frame_brief(data)
     elif isinstance(data, numpy.ndarray):
-        return _ndarray_brief_repr(data)
+        return _ndarray_brief(data)
+
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
-            return _texts_brief_repr(data)
+            return _list_brief(data, _text_brief)
         elif all(isinstance(x, Image) for x in data):
-            return _images_brief_repr(data)
+            return _list_brief(data, _image_brief)
+        elif all(isinstance(x, AudioFrame) for x in data):
+            return _list_brief(data, _audio_frame_brief)
         elif all(isinstance(x, numpy.ndarray) for x in data):
-            return _ndarrays_brief_repr_(data)
-    return _brief_repr(data)
+            return _list_brief(data, _ndarray_brief)
+    return _default_brief(data)
 
 
 def to_html_table(data, header, formatter={}):
@@ -254,7 +261,7 @@ def to_html_table(data, header, formatter={}):
     td_style = 'style="text-align: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
     str_2_callback = {
-        'text': _text_brief_repr,
+        'text': _text_brief,
         'image': _image_to_html_cell
     }
 
@@ -271,39 +278,31 @@ def to_html_table(data, header, formatter={}):
         to_html_callback[i] = cb
     for r in data:
         trs.append(
-            '<tr>' + ' '.join(['<td ' + td_style + '>' + to_html_callback.get(i, _to_html_cell)(x) + '</td>' for i,x in enumerate(r)]) + '</tr>'
+            '<tr>' + ' '.join(['<td ' + td_style + '>' + to_html_callback.get(i, _to_html_cell)(x) + '</td>' for i, x in enumerate(r)]) + '</tr>'
         )
     return '<table ' + tb_style + '>' + ' '.join(trs) + '</table>'
 
 
 def _to_html_cell(data):
     if isinstance(data, str):
-        return _text_brief_repr(data)
+        return _text_brief(data)
     if isinstance(data, Image):
         return _image_to_html_cell(data)
+    elif isinstance(data, AudioFrame):
+        return _audio_frame_brief(data)
     elif isinstance(data, numpy.ndarray):
-        return _ndarray_brief_repr(data)
+        return _ndarray_brief(data)
+
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
-            return _texts_brief_repr(data)
+            return _list_brief(data, _text_brief)
         elif all(isinstance(x, Image) for x in data):
             return _images_to_html_cell(data)
+        elif all(isinstance(x, AudioFrame) for x in data):
+            return _list_brief(data, _audio_frame_brief)
         elif all(isinstance(x, numpy.ndarray) for x in data):
-            return _ndarrays_brief_repr_(data)
-    return _brief_repr(data)
-
-
-def _ndarray_brief_repr(array, maxlen=3):
-    head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
-    if len(array.flatten()) > maxlen:
-        head_vals.append('...')
-    shape = 'shape=' + repr(array.shape)
-
-    return '[' + ', '.join(head_vals) + '] ' + shape
-
-
-def _ndarrays_brief_repr_(arrays, maxlen=3):
-    return '[' + ', '.join([_ndarray_brief_repr(x, maxlen) for x in arrays]) + ']'
+            return _list_brief(data, _ndarray_brief)
+    return _default_brief(data)
 
 
 def _image_to_html_cell(img, width=128, height=128):
@@ -323,26 +322,38 @@ def _images_to_html_cell(imgs, width=128, height=128):
     return ' '.join([_image_to_html_cell(x, width, height) for x in imgs])
 
 
-def _images_brief_repr(imgs):
-    return '[' + ', '.join([_image_brief_repr(x) for x in imgs]) + ']'
+def _ndarray_brief(array, maxlen=3):
+    head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
+    if len(array.flatten()) > maxlen:
+        head_vals.append('...')
+    shape = 'shape=' + repr(array.shape)
+
+    return '[' + ', '.join(head_vals) + '] ' + shape
 
 
-def _image_brief_repr(img):
-    return _ndarray_brief_repr(img) + ' mode=' + img.mode
+def _image_brief(img):
+    return str(img)
 
 
-def _text_brief_repr(text, maxlen=32):
+def _audio_frame_brief(frame):
+    return str(frame)
+
+
+def _text_brief(text, maxlen=32):
     if len(text) > maxlen:
         return text[:maxlen] + '...'
     else:
         return text
 
 
-def _texts_brief_repr(texts, maxlen=32):
-    return '[' + ', '.join([_text_brief_repr(x, maxlen) for x in texts]) + ']'
+def _list_brief(data, str_method, maxlen=4):
+    head_vals = [str_method(x) for i, x in enumerate(data) if i < maxlen]
+    if len(data) > maxlen:
+        head_vals.append('...')
+    return '[' + ','.join(head_vals) + ']' + ' len=' + str(len(data))
 
 
-def _brief_repr(data, maxlen=128):
+def _default_brief(data, maxlen=128):
     s = repr(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
 
