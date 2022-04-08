@@ -184,7 +184,8 @@ def audio_class_pipeline_runner():
 
 def data_collection_API_register():
 
-    data_colection_API_names = ["stream", "unstream", "map", "filter", "zip", "batch", "rolling", "flaten",
+    data_colection_API_names = ["stream", "unstream", "map", "filter", "zip", "batch", "rolling", 
+                                #"flaten",
                                 "exception_safe", "safe", "fill_empty", "drop_empty", "pmap", "mmap", "set_parallel"]
 
     # skip multiple threads tests for memory shortage

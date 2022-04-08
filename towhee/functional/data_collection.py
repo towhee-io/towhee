@@ -521,9 +521,9 @@ class DataCollection(Iterable, AllMixins):
 
         return self._factory(inner())
 
-    def flaten(self) -> 'DataCollection':
+    def flatten(self) -> 'DataCollection':
         """
-        Flaten nested data collections.
+        Flatten nested data collections.
 
         Returns:
             DataCollection: flattened data collection;
@@ -532,7 +532,7 @@ class DataCollection(Iterable, AllMixins):
 
         >>> dc = DataCollection(range(10))
         >>> nested_dc = dc.batch(2)
-        >>> nested_dc.flaten().to_list()
+        >>> nested_dc.flatten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
         def inner():
