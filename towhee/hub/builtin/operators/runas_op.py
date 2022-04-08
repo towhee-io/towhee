@@ -34,7 +34,7 @@ class runas_op:
     >>> entities = [Entity(a=i, b=i) for i in range(5)]
     >>> dc = DataCollection(entities)
     >>> res = dc.runas_op['a', 'b'](func=lambda x: x - 1).to_list()
-    >>> res[0].a = res[0].b + 1
+    >>> res[0].a == res[0].b + 1
     True
     """
     def __init__(self, func: Callable):
