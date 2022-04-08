@@ -43,8 +43,8 @@ try:
     command_options = {
         'build_sphinx': {
             'project': ('setup.py', 'towhee'),
-            'version': ('setup.py', '0.5.1'),
-            'release': ('setup.py', '0.5.1'),
+            'version': ('setup.py', '0.6.0'),
+            'release': ('setup.py', '0.6.0'),
             'source_dir': ('setup.py', 'towhee/doc/source')
         }
     }
@@ -56,7 +56,7 @@ except:  # pylint: disable=bare-except
 if '--models' in sys.argv:
     sys.argv.remove('--models')
     setup(name='towhee.models',
-          version='0.5.1',
+          version='0.6.0',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
@@ -76,7 +76,7 @@ if '--models' in sys.argv:
           **kws)
 else:
     setup(name='towhee',
-          version='0.5.1',
+          version='0.6.0',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
