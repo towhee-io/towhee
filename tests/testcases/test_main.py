@@ -224,8 +224,8 @@ def data_collection_API_cases_runner():
 
 def test_caller():
 
-    # pipeline_runner()
-    # image_class_pipeline_runner()
+    pipeline_runner()
+    image_class_pipeline_runner()
     data_collection_API_cases_runner()
     # skip audio tests for issue 463
     # audio_class_pipeline_runner()

@@ -2,8 +2,7 @@
 #pip install -U pip
 #pip cache purge
 Pillow
-numpy
-towhee==0.5.1.dev161
+towhee==0.5.1.dev171
 pandas 
 scikit-learn 
 opencv-python 
