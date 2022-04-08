@@ -33,7 +33,7 @@ class GlobImpl(CallTracer):
     2. create a data collection of structural data.
 
     >>> towhee.glob['path']('*.jpg').to_list()
-    [{'path': 'a.jpg'}, {'path': 'b.jpg'}]
+    [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
     """
 
     def __init__(self, callback=None, path=None, index=None):
@@ -54,7 +54,29 @@ class GlobZipImpl(CallTracer):
     2. create a data collection of structural data.
 
     >>> towhee.glob_zip['path']('somefile.zip', '*.jpg').to_list()
-    [{'path': 'a.jpg'}, {'path': 'b.jpg'}]
+    [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
+    """
+
+    def __init__(self, callback=None, path=None, index=None):
+        super().__init__(callback=callback, path=path, index=index)
+
+
+class DCImpl(CallTracer):
+    """
+    Return a DataCollection.
+
+    Examples:
+
+    1. create a simple data collection;
+
+    >>> import towhee
+    >>> towhee.dc([0, 1, 2]).to_list()
+    [0, 1, 2]
+
+    2. create a data collection of structural data.
+
+    >>> towhee.dc['column']([0, 1, 2]).to_list()
+    [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
     """
 
     def __init__(self, callback=None, path=None, index=None):
@@ -98,8 +120,15 @@ def _glob_zip_call_back(_, index, *arg, **kws):
         return from_zip(*arg, **kws)
 
 
+def _dc_call_back(_, index, *arg, **kws):
+    if index is not None:
+        return DataCollection.stream(*arg, **kws).map(lambda x: Entity(**{index: x}))
+    else:
+        return DataCollection.stream(*arg, **kws)
+
+
 glob = GlobImpl(_glob_call_back)
 
 glob_zip = GlobZipImpl(_glob_zip_call_back)
 
-dc = DataCollection.stream
+dc = DCImpl(_dc_call_back)
