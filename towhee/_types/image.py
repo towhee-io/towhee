@@ -42,3 +42,11 @@ class Image(np.ndarray):
     @property
     def mode(self):
         return self._mode
+
+    def cv2_to_rgb(self) -> np.ndarray:
+        # pylint: disable=import-outside-toplevel
+        """
+        Convert the OpenCV images from BGR to RGB.
+        """
+        from towhee.utils.cv2_utils import cv2
+        return cv2.cvtColor(self, cv2.COLOR_BGR2RGB)
