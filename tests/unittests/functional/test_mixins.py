@@ -26,7 +26,7 @@ import towhee.functional.mixins.entity_mixin
 import towhee.functional.mixins.metric
 import towhee.functional.mixins.parallel
 import towhee.functional.mixins.state
-from towhee.functional.mixins.display import _ndarray_brief_repr, to_printable_table
+from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection
 
 
@@ -55,10 +55,10 @@ class TestDisplayMixin(unittest.TestCase):
     Unit test for DisplayMixin.
     """
 
-    def test_ndarray_repr(self):
+    def test_ndarray_bref(self):
         arr = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
         # pylint: disable=protected-access
-        self.assertEqual(_ndarray_brief_repr(arr, 3),
+        self.assertEqual(_ndarray_brief(arr, 3),
                          '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
 
     def test_to_printable_table(self):
