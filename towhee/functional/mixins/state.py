@@ -22,9 +22,9 @@ class StateMixin:
 
     Examples:
 
-    >>> from towhee.functional import DataCollection
-    >>> from towhee.hparam import param_scope
-    >>> dc = DataCollection.range(10).set_state(HyperParameter(a=1))
+    >>> from towhee import DataCollection, State
+    >>> from towhee import param_scope
+    >>> dc = DataCollection.range(10).set_state(State(a=1))
     >>> dc.get_state()
     {'a': 1}
 
