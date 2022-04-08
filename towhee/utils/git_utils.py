@@ -126,7 +126,11 @@ class GitUtils:
         """
         Check the status of local repo.
         """
-        return subprocess.check_output(['git', 'status']).decode('utf-8')
+        try:
+            status = subprocess.check_output(['git', 'status'], stderr=subprocess.DEVNULL).decode('utf-8')
+            return status
+        except subprocess.CalledProcessError as e:
+            raise FileNotFoundError('The repo file has not .git.') from e
 
     def add(self, files: Union[str, List[str]] = None):
         """
