@@ -3,5 +3,10 @@
 #pip cache purge
 Pillow
 numpy
-towhee==0.5.1.dev88
+towhee==0.5.1.dev161
+pandas 
+scikit-learn 
+opencv-python 
+ipython 
+matplotlib
 
