@@ -29,17 +29,22 @@ import towhee.functional.mixins.state
 from towhee.functional.mixins.display import _ndarray_brief_repr, to_printable_table
 from towhee import DataCollection
 
-for mod in [
-        towhee.functional.mixins.computer_vision,
-        towhee.functional.mixins.dataset,
-        towhee.functional.mixins.display,
-        towhee.functional.mixins.entity_mixin,
-        towhee.functional.mixins.metric,
-        towhee.functional.mixins.parallel,
-        towhee.functional.mixins.state
-]:
-    TestDataCollectionMixins = doctest.DocTestSuite(mod)
-    unittest.TextTestRunner(verbosity=4).run(TestDataCollectionMixins)
+
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    for mod in [
+            towhee.functional.mixins.computer_vision,
+            towhee.functional.mixins.dataset,
+            towhee.functional.mixins.display,
+            towhee.functional.mixins.entity_mixin,
+            towhee.functional.mixins.metric,
+            towhee.functional.mixins.parallel,
+            towhee.functional.mixins.state,
+    ]:
+        tests.addTests(doctest.DocTestSuite(mod))
+
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()
@@ -53,7 +58,8 @@ class TestDisplayMixin(unittest.TestCase):
     def test_ndarray_repr(self):
         arr = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
         # pylint: disable=protected-access
-        self.assertEqual(_ndarray_brief_repr(arr, 3), '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
+        self.assertEqual(_ndarray_brief_repr(arr, 3),
+                         '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
 
     def test_to_printable_table(self):
         dc = DataCollection([[1.1, 2.2], [3.3, 4.4]])
@@ -86,7 +92,9 @@ class TestDisplayMixin(unittest.TestCase):
         self.assertEqual(html_tbl, html_str)
 
     def test_show(self):
-        logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
+        logo_path = os.path.join(
+            Path(__file__).parent.parent.parent.parent.resolve(),
+            'towhee_logo.png')
         img = cv2.imread(logo_path)
         towhee_img = Image(img, 'BGR')
         dc = DataCollection([[1, img, towhee_img], [2, img, towhee_img]])

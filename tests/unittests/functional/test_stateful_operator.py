@@ -16,9 +16,12 @@ import unittest
 
 import towhee.operator.stateful_operator
 
-for mod in [towhee.operator.stateful_operator]:
-    TestCaseAutoGen = doctest.DocTestSuite(mod)
-    unittest.TextTestRunner(verbosity=4).run(TestCaseAutoGen)
+
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.operator.stateful_operator))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

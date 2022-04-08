@@ -39,9 +39,11 @@ class TestParallel(unittest.TestCase):
         )
 
 
-TestDataCollectionParallelExecution = doctest.DocTestSuite(
-    towhee.functional.mixins.parallel)
-unittest.TextTestRunner().run(TestDataCollectionParallelExecution)
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.functional.mixins.parallel))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

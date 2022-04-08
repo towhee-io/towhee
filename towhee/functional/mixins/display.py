@@ -121,18 +121,6 @@ def _plot_callback(self):
 class DisplayMixin:
     """
     Mixin for display data.
-
-    Example:
-
-    >>> from towhee import DataCollection
-    >>> from towhee import Entity
-    >>> dc = DataCollection([Entity(a=a, b=b, c=c) for a, b, c in zip([2,1], [1,2], [0,1])])
-    >>> dc.feature_summarize['a'](target='c')
-    Variable: a's IV sum is: 0.0
-      Variable  Value  All  Good  Bad  Share  Bad Rate  Distribution Good  Distribution Bad  WoE   IV
-    0        a      1    1     0    1    0.5       1.0                0.0               1.0  0.0 -0.0
-    1        a      2    1     1    0    0.5       0.0                1.0               0.0  0.0  0.0
-    >>> dc.plot['a']()
     """
 
     def __init__(self):
@@ -187,11 +175,6 @@ def table_display(table, tablefmt='html'):
         ipython_utils.display(table)
     else:
         raise ValueError('unsupported table format %s' % tablefmt)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
 
 
 def to_printable_table(data, header=None, tablefmt='html', formatter = {}):
@@ -358,3 +341,8 @@ def _texts_brief_repr(texts, maxlen=32):
 def _brief_repr(data, maxlen=128):
     s = repr(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=False)
