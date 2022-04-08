@@ -83,6 +83,8 @@ def _feature_summarize_callback(self):
     from towhee.utils.pandas_utils import pandas as pd
 
     def wrapper(_: str, index, *arg, **kws):
+        if isinstance(index, str):
+            index = (index,)
         index = list(index)
         if arg:
             kws['target'], = arg
@@ -110,6 +112,8 @@ def _feature_summarize_callback(self):
 def _plot_callback(self):
     # pylint: disable=unused-argument
     def wrapper(_: str, index, *arg, **kws):
+        if isinstance(index, str):
+            index = (index,)
         df = get_df_on_columns(self, index)
         if 'kind' not in kws:
             kws.update(kind='hist')

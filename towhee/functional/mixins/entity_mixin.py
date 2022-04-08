@@ -14,7 +14,22 @@
 from typing import Dict, Any, Optional, Set, Union, List
 
 from towhee.functional.entity import Entity
+from towhee.hparam import param_scope
 
+
+def _select_callback(self):
+    # pylint: disable=unused-argument
+    # pylint: disable=protected-access
+    def wrapper(_: str, index, *arg, **kws):
+        if isinstance(index, str):
+            index = (index,)
+
+        def inner(entity: Entity):
+            data = {column: getattr(entity, column) for column in index}
+            return Entity(**data)
+
+        return self._factory(map(inner, self._iterable))
+    return wrapper
 
 class EntityMixin:
     """
@@ -40,7 +55,32 @@ class EntityMixin:
     ...         .to_list()
     ... )
     ['{"a": 1, "b": 2, "c": 2}', '{"a": 2, "b": 3, "c": 3}']
+
+    Select the entity on the specified columns.
+
+    Examples:
+
+    1. Select the entity on one specified column:
+
+    >>> from towhee import Entity
+    >>> from towhee import DataCollection
+    >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(2)])
+    >>> dc.select['a']().to_list()
+    [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
+
+    2. Select multiple columns and unpack the entity:
+
+    >>> (
+    ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
+    ...         .select['a', 'b']()
+    ...         .as_raw()
+    ...         .to_list()
+    ... )
+    [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
     """
+    def __init__(self):
+        super().__init__()
+        self.select = param_scope().callholder(_select_callback(self))
 
     # pylint: disable=invalid-name
     def fill_entity(self, _DefaultKVs: Optional[Dict[str, Any]] = None, _ReplaceNoneValue: bool = False, **kws):
@@ -199,35 +239,6 @@ class EntityMixin:
 
         return self._factory(map(inner, self._iterable))
 
-    def select(self, *args):
-        """
-        Select the entity on the specified columns.
-
-        Examples:
-
-        1. Select the entity on one specified column:
-
-        >>> from towhee import Entity
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(2)])
-        >>> dc.select('a').to_list()
-        [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
-
-        2. Select multiple columns and unpack the entity:
-
-        >>> (
-        ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
-        ...         .select('a', 'b')
-        ...         .as_raw()
-        ...         .to_list()
-        ... )
-        [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
-        """
-        def inner(entity: Entity):
-            data = {column: getattr(entity, column) for column in args}
-            return Entity(**data)
-
-        return self._factory(map(inner, self._iterable))
 
 if __name__ == '__main__':
     import doctest
