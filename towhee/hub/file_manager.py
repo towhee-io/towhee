@@ -358,10 +358,6 @@ class FileManager():
                     git.clone(tag=tag, install_reqs=install_reqs, local_repo_path=repo_path)
                 # If user does not have git in the system, subprocess throws FileNotFound error.
                 except FileNotFoundError:
-                    engine_log.warning(
-                        '\'git\' not found, execute download instead of clone. ' \
-                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
-                    )
                     pipeline_manager = PipelineManager(author=author, repo=repo)
                     pipeline_manager.download(local_repo_path=file_path.parent, tag=tag, install_reqs=install_reqs)
                     return file_path
@@ -377,10 +373,7 @@ class FileManager():
                         engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', file_name)
                         git.pull()
                 except FileNotFoundError:
-                    engine_log.warning(
-                        '\'git\' not found, cannot update. ' \
-                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
-                    )
+                    pass
                 os.chdir(cwd)
 
         return file_path
@@ -452,10 +445,6 @@ class FileManager():
                     git.clone(tag=tag, install_reqs=install_reqs, local_repo_path=repo_path)
                 # If user does not have git in the system, subprocess throws FileNotFound error.
                 except FileNotFoundError:
-                    engine_log.warning(
-                        '\'git\' not found, execute download instead of clone. ' \
-                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
-                    )
                     operator_manager = OperatorManager(author=author, repo=repo)
                     operator_manager.download(local_repo_path=file_path.parent, tag=tag, install_reqs=install_reqs)
                     return file_path
@@ -471,10 +460,7 @@ class FileManager():
                         engine_log.warning('Your local operator %s is not up to date, updating to latest version...', file_name)
                         git.pull()
                 except FileNotFoundError:
-                    engine_log.warning(
-                        '\'git\' not found, cannot update. ' \
-                        'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
-                    )
+                    pass
                 os.chdir(cwd)
 
         return file_path

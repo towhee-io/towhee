@@ -98,10 +98,25 @@ class GitUtils:
         try:
             subprocess.check_call(['git', 'lfs'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            engine_log.error('You have not install git-lfs, please install it first https://git-lfs.github.com.')
-            raise Exception('You have not install git-lfs, please install it first https://git-lfs.github.com.') from e
+            engine_log.warning(
+                '\'git-lfs\' not found, execute download instead of clone. ' \
+                'If you want to download large file with git-lfs, please install \'git-lfs\' and remove current local cache.'
+            )
+            raise FileNotFoundError('\'git-lfs\' not found, execute download instead of clone. ' \
+                'If you want to download large file with git-lfs, please install \'git-lfs\' and remove current local cache.'
+            ) from e
 
-        subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+        try:
+            subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+        except FileNotFoundError as e:
+            engine_log.warning(
+                '\'git\' not found, execute download instead of clone. ' \
+                'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+            )
+            raise FileNotFoundError(
+                '\'git\' not found, execute download instead of clone. ' \
+                'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+            ) from e
 
         if install_reqs:
             if 'requirements.txt' in os.listdir(local_repo_path):
