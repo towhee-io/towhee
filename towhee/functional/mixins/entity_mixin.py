@@ -23,10 +23,14 @@ def _select_callback(self):
     def wrapper(_: str, index, *arg, **kws):
         if isinstance(index, str):
             index = (index,)
+        if index is None and arg is not None and len(arg) > 0:
+            index = arg
 
         def inner(entity: Entity):
-            data = {column: getattr(entity, column) for column in index}
-            return Entity(**data)
+            if index is not None:
+                data = {column: getattr(entity, column) for column in index}
+                return Entity(**data)
+            return entity
 
         return self._factory(map(inner, self._iterable))
     return wrapper
@@ -56,11 +60,11 @@ class EntityMixin:
     ... )
     ['{"a": 1, "b": 2, "c": 2}', '{"a": 2, "b": 3, "c": 3}']
 
-    Select the entity on the specified columns.
+    Select the entity on the specified fields.
 
     Examples:
 
-    1. Select the entity on one specified column:
+    1. Select the entity on one specified field:
 
     >>> from towhee import Entity
     >>> from towhee import DataCollection
@@ -68,11 +72,21 @@ class EntityMixin:
     >>> dc.select['a']().to_list()
     [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
 
-    2. Select multiple columns and unpack the entity:
+    2. Select multiple fields and unpack the entity:
 
     >>> (
     ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
     ...         .select['a', 'b']()
+    ...         .as_raw()
+    ...         .to_list()
+    ... )
+    [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+
+    3. Another field selection syntax (not suggested):
+
+    >>> (
+    ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
+    ...         .select('a', 'b')
     ...         .as_raw()
     ...         .to_list()
     ... )
