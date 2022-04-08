@@ -42,7 +42,10 @@ def plot_img(img: Union[str, PosixPath, Image, list], title: str = None):
         if isinstance(img, Union[str, PosixPath].__args__):
             img = from_src(img)
         _, ax = pyplot.subplots(1, 1, figsize=(5, 5))
-        ax.imshow(img.to_ndarray())
+        try:
+            ax.imshow(img.to_ndarray())
+        except: # pylint: disable=bare-except
+            ax.imshow(img.cv2_to_rgb())
         ax.axis('off')
         if title:
             ax.set_title(f'{title:.04f}\n')
@@ -65,7 +68,10 @@ def plot_img_list(data: list, titles: list = None):
         img = data[i]
         if isinstance(img, Union[str, PosixPath].__args__):
             img = from_src(img)
-        ax.imshow(img.to_ndarray())
+        try:
+            ax.imshow(img.to_ndarray())
+        except: # pylint: disable=bare-except
+            ax.imshow(img.cv2_to_rgb())
         ax.axis('off')
         if titles and titles[i]:
             ax.set_title(f'{titles[i]:.04f}\n')
