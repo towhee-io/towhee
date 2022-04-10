@@ -289,7 +289,7 @@ def _to_html_cell(data):
     if isinstance(data, Image):
         return _image_to_html_cell(data)
     elif isinstance(data, AudioFrame):
-        return _audio_frame_brief(data)
+        return _audio_frame_to_html_cell(data)
     elif isinstance(data, numpy.ndarray):
         return _ndarray_brief(data)
 
@@ -299,7 +299,7 @@ def _to_html_cell(data):
         elif all(isinstance(x, Image) for x in data):
             return _images_to_html_cell(data)
         elif all(isinstance(x, AudioFrame) for x in data):
-            return _list_brief(data, _audio_frame_brief)
+            return _audio_frames_to_html_cell(data)
         elif all(isinstance(x, numpy.ndarray) for x in data):
             return _list_brief(data, _ndarray_brief)
     return _default_brief(data)
@@ -320,6 +320,27 @@ def _image_to_html_cell(img, width=128, height=128):
 
 def _images_to_html_cell(imgs, width=128, height=128):
     return ' '.join([_image_to_html_cell(x, width, height) for x in imgs])
+
+
+def _audio_frame_to_html_cell(frame, width=128, height=128):
+    # pylint: disable=import-outside-toplevel
+    import matplotlib.pyplot as plt
+
+    signal = frame[0, ...]
+    fourier = numpy.fft.fft(signal)
+    freq = numpy.fft.fftfreq(signal.shape[-1], 1)
+    fig = plt.figure()
+    plt.plot(freq, fourier.real)
+    fig.canvas.draw()
+    data = numpy.frombuffer(fig.canvas.tostring_rgb(), dtype=numpy.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    img = Image(data, 'RGB')
+    plt.close()
+    return _image_to_html_cell(img, width, height)
+
+
+def _audio_frames_to_html_cell(frames, width=128, height=128):
+    return ' '.join([_audio_frame_to_html_cell(x, width, height) for x in frames])
 
 
 def _ndarray_brief(array, maxlen=3):
