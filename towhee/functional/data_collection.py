@@ -636,6 +636,8 @@ class DataCollection(Iterable, AllMixins):
 
             def wrapper(path, index, *arg, **kws):
                 _ = index
+                if self.get_backend() == 'ray':
+                    return self.ray_resolve(dispatcher, path, index, *arg, **kws)
                 op = self.resolve(dispatcher, path, index, *arg, **kws)
                 return self.map(op)
 
