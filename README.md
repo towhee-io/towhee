@@ -52,6 +52,19 @@ Towhee provides a variety of pre-built pipelines. For example, generating an ima
 
 Your image embedding is now stored in `embedding`. It's that simple.
 
+For image datasets, the users can also build their own pipeline with the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API:
+
+```python
+import towhee
+
+towhee.glob('./*.jpg') \
+      .image_decode() \
+      .image_embedding.timm(model_name='resnet50') \
+      .to_list()
+```
+
+where [`image_decode`](https://towhee.io/towhee/image-decode) and [`image_embedding.timm`](https://towhee.io/image-embedding/timm) are operators from [towhee hub](https://towhee.io). The method-chaining style programming interface also support [parallel execution](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#parallel-execution) and [exception handling](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#exception-handling). 
+
 ## Dive deeper
 
 If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
@@ -62,7 +75,7 @@ If you find that one of our default embedding pipelines does not suit you, you c
 
 For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
 
-Custom machine learning pipelines can be defined in a YAML file or via a Spark-like high-level programming interface (coming soon &trade;). The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
+Custom machine learning pipelines can be defined in a YAML file or via the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API. The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
 
 ```python
 # This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/my-embedding-pipeline.yaml
@@ -76,6 +89,8 @@ Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and
 - __Pipeline__: A `Pipeline` is a single embedding generation task that is composed of several operators. Operators are connected together within the pipeline via a directed acyclic graph.
 
 - __Operator__: An `Operator` is a single node within a pipeline. An operator can be a machine learning model, a complex algorithm, or a Python function. All files needed to run the operator are contained within a directory (e.g. code, configs, models, etc...).
+
+- __DataCollection__: A pythonic and method-chaining style API that for building custom unstructured data processing pipelines. `DataCollection` is designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most popular data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
 
 - __Engine__: The `Engine` sits at Towhee's core. Given a `Pipeline`, the `Engine` will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic `Engine` within Towhee to run pipelines on a single-instance machine - K8s and other more complex `Engine` implementations are coming soon.
 
