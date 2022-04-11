@@ -22,10 +22,15 @@ First, install Towhee:
 
 <KatacodaBlock>pip3 install towhee==0.6.0</KatacodaBlock>
 
-If you want to install models in towhee, just run:
+If you want to install models in towhee, just clone towhee:
+
 <KatacodaBlock>
-git clone https://github.com/towhee-io/towhee.git
-cd towhee
+git clone https://github.com/towhee-io/towhee.git && cd towhee
+</KatacodaBlock>
+
+and install towhee.models package:
+
+<KatacodaBlock>
 python setup.py install --models
 </KatacodaBlock>
 
