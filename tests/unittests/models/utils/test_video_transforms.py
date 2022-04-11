@@ -33,6 +33,16 @@ class TestVideoTransforms(unittest.TestCase):
         self.assertEqual(out_slow_r50['video'].shape, (3, 8, 256, 256))
         self.assertEqual(out_slow_r50['audio'].shape, (441344,))
 
+        tfms_c2d_r50 = VideoTransforms('slow_r50')
+        out_c2d_r50 = tfms_c2d_r50('archery.mp4')
+        self.assertEqual(out_c2d_r50['video'].shape, (3, 8, 256, 256))
+        self.assertEqual(out_c2d_r50['audio'].shape, (441344,))
+
+        tfms_i3d_r50 = VideoTransforms('slow_r50')
+        out_i3d_r50 = tfms_i3d_r50('archery.mp4')
+        self.assertEqual(out_i3d_r50['video'].shape, (3, 8, 256, 256))
+        self.assertEqual(out_i3d_r50['audio'].shape, (441344,))
+
         tfms_slowfast_r50 = VideoTransforms('slowfast_r50')
         tfms_slowfast_r101 = VideoTransforms('slowfast_r101')
         out_slowfast_r50 = tfms_slowfast_r50('archery.mp4')

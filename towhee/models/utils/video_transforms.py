@@ -140,71 +140,58 @@ class PackPathway(nn.Module):
         return frame_list
 
 
-video_configs = {
-    "slow_r50": {
+def get_configs(**kwargs):
+    configs = {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 8,
         "sampling_rate": 8,
         "mean": [0.45, 0.45, 0.45],
         "std": [0.225, 0.225, 0.225],
-    },
-    "slowfast_r50": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 32,
-        "sampling_rate": 2,
-        "alpha": 4,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "slowfast_r101": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 32,
-        "sampling_rate": 8,
-        "alpha": 4,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_xs": {
-        "side_size": 182,
-        "crop_size": 182,
-        "num_frames": 4,
-        "sampling_rate": 12,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_s": {
-        "side_size": 182,
-        "crop_size": 182,
-        "num_frames": 13,
-        "sampling_rate": 6,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_m": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 16,
-        "sampling_rate": 5,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "mvit_base_16x4": {
-            "side_size": 224,
-            "crop_size": 224,
-            "num_frames": 16,
-            "sampling_rate": 4,
-            "mean": [0.45, 0.45, 0.45],
-            "std": [0.225, 0.225, 0.225],
-        },
-    "mvit_base_32x3": {
-            "side_size": 224,
-            "crop_size": 224,
-            "num_frames": 32,
-            "sampling_rate": 3,
-            "mean": [0.45, 0.45, 0.45],
-            "std": [0.225, 0.225, 0.225],
-        },
+        }
+    configs.update(**kwargs)
+    return configs
+
+video_configs = {
+    "slow_r50": get_configs(),
+    "c2d_r50": get_configs(),
+    "i3d_r50": get_configs(),
+    "slowfast_r50": get_configs(
+        num_frames=32,
+        sampling_rate=2,
+        alpha=4
+        ),
+    "slowfast_r101": get_configs(
+        num_frames=32,
+        sampling_rate=8,
+        alpha=4
+        ),
+    "x3d_xs": get_configs(
+        side_size=182,
+        crop_size=182,
+        num_frames=4,
+        sampling_rate=12
+        ),
+    "x3d_s": get_configs(
+        side_size=182,
+        crop_size=182,
+        num_frames=13,
+        sampling_rate=6
+        ),
+    "x3d_m": get_configs(
+        num_frames=16,
+        sampling_rate=5
+        ),
+    "mvit_base_16x4": get_configs(
+        side_size=224,
+        crop_size=224,
+        num_frames=16,
+        sampling_rate=4
+        ),
+    "mvit_base_32x3": get_configs(
+        side_size=224,
+        crop_size=224,
+        num_frames=32,
+        sampling_rate=3
+        ),
 }
