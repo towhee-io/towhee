@@ -358,6 +358,9 @@ class DataCollection(Iterable, AllMixins):
         if self.get_executor() is not None:
             return self.pmap(unary_op)
 
+        if hasattr(self._iterable, 'map'):
+            return self._factory(self._iterable.map(unary_op))
+
         # map
         def inner(x):
             if isinstance(x, Option):
@@ -409,6 +412,9 @@ class DataCollection(Iterable, AllMixins):
                     return unary_op(x.get())
                 return not drop_empty
             return unary_op(x)
+
+        if hasattr(self._iterable, 'filter'):
+            return self._factory(self._iterable.filter(unary_op))
 
         return self._factory(filter(inner, self._iterable))
 
