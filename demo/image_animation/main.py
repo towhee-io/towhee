@@ -27,4 +27,4 @@ async def transform_api(file: UploadFile = File(...), model_name: str = Form(...
     return StreamingResponse(filtered_image, media_type="image/png")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='0.0.0.0', port=8000, debug = True)
+    uvicorn.run(app)
