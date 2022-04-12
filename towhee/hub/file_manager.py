@@ -288,7 +288,7 @@ class FileManager():
         with importlib_resources.path('towhee.hub.builtin.pipelines', '{}.yaml'.format(file_name)) as path:
             return path
 
-    def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True):
+    def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True, from_ops: bool = False):
         """
         Obtain the path to the requested pipeline.
 
@@ -303,6 +303,8 @@ class FileManager():
                 Which tag to use of the pipeline. Will use 'main' if locally imported.
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
+            from_ops (`bool`)
+                Whether to run pipeline with `towhee.ops`.
 
         Returns:
             (Path | None)
@@ -348,6 +350,8 @@ class FileManager():
 
                 # If yaml file missing but repo exists.
                 if repo_path.is_dir():
+                    if from_ops:
+                        return
                     rmtree(repo_path)
                     raise FileNotFoundError('Repo exists but \'.yaml\' file missing.')
 

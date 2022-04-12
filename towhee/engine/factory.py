@@ -201,7 +201,7 @@ class _PipelineWrapper:
         return self._pipeline
 
 
-def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
+def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True, **kwargs):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -220,6 +220,7 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
         (`typing.Any`)
             The `Pipeline` output.
     """
+    from_ops = kwargs['from_ops'] if 'from_ops' in kwargs else False
     start_engine()
 
     if os.path.isfile(pipeline_src):
@@ -227,7 +228,7 @@ def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
     else:
         fm = FileManager()
         p_repo = DEFAULT_PIPELINES.get(pipeline_src, pipeline_src)
-        yaml_path = fm.get_pipeline(p_repo, tag, install_reqs)
+        yaml_path = fm.get_pipeline(p_repo, tag, install_reqs, from_ops)
 
     engine = Engine()
     pipeline_ = Pipeline(str(yaml_path))
@@ -273,7 +274,7 @@ class _PipelineBuilder:
     def callback(name, index, *arg, **kws):
         name = name.replace('.', '/').replace('_', '-')
         _ = index
-        return _PipelineBuilder(**kws).pipeline(name, *arg)
+        return _PipelineBuilder(**kws).pipeline(name, *arg, from_ops=True)
 
 
 def _ops_call_back(real_name: str, index: Tuple[str], *arg, **kws):
