@@ -40,7 +40,7 @@ class Image(np.ndarray):
         self._mode = getattr(obj, '_mode', None)
 
     def __str__(self):
-        return 'Image' + ' shape=' + repr(self.shape) + ' mode=' + self.mode
+        return 'Image' + ' shape=' + str(self.shape) + ' mode=' + self.mode
 
     @property
     def mode(self):

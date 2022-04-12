@@ -43,9 +43,9 @@ class AudioFrame(np.ndarray):
 
     def __str__(self):
         return 'AudioFrame' \
-            + ' shape=' + repr(self.shape) \
-            + ' sample_rate=' + self.sample_rate \
-            + ' timestamp=' + self.timestamp
+            + ' shape=' + str(self.shape) \
+            + ' sample_rate=' + str(self.sample_rate) \
+            + ' timestamp=' + str(self.timestamp)
 
     @property
     def sample_rate(self):

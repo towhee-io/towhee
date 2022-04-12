@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from typing import List, Tuple, Union
-from towhee.dataframe import DataFrame
-from towhee.engine.engine import Engine, start_engine
-from towhee.engine.pipeline import Pipeline
-from towhee.pipeline_format import OutputFormat
-from towhee.hub.file_manager import FileManagerConfig, FileManager
+from typing import List, Union
 from towhee.engine import register
-from towhee.engine.factory import ops
+from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.functional import DataCollection, State, Entity
@@ -53,100 +48,6 @@ __all__ = [
     'dc'
 ]
 
-DEFAULT_PIPELINES = {
-    'image-embedding': 'towhee/image-embedding-resnet50',
-    'image-encoding': 'towhee/image-embedding-resnet50',  # TODO: add encoders
-    'music-embedding': 'towhee/music-embedding-vggish',
-    'music-encoding': 'towhee/music-embedding-clmr',  # TODO: clmr -> encoder
-}
-
-_PIPELINE_CACHE_ENV = 'PIPELINE_CACHE'
-
-
-class _PipelineWrapper:
-    """
-    A wrapper class around `Pipeline`.
-
-    The class prevents users from having to create `DataFrame` instances by hand.
-
-    Args:
-        pipeline (`towhee.Pipeline`):
-            Base `Pipeline` instance for which this object will provide a wrapper for.
-    """
-    def __init__(self, pipeline_: Pipeline):
-        self._pipeline = pipeline_
-
-    def __call__(self, *args) -> List[Tuple]:
-        """
-        Wraps the input arguments around a `Dataframe` for Pipeline.__call__(). For
-        example:
-        ```
-        >>> p = pipeline('some-pipeline')
-        >>> result = p(arg0, arg1)
-        ```
-        """
-        if not args:
-            raise RuntimeError('Input data is empty')
-
-        cols = []
-        vargs = []
-        for i, arg in enumerate(args):
-            vtype = type(arg).__name__
-            cols.append(('Col_' + str(i), str(vtype)))
-            vargs.append(arg)
-        vargs = tuple(vargs)
-
-        # Process the data through the pipeline.
-        in_df = DataFrame('_in_df', cols)
-        in_df.put(vargs)
-        out_df = self._pipeline(in_df)
-        format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
-        return format_handler(out_df)
-
-    def __repr__(self) -> str:
-        return repr(self._pipeline)
-
-    @property
-    def pipeline(self) -> Pipeline:
-        return self._pipeline
-
-
-def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True):
-    """
-    Entry method which takes either an input task or path to an operator YAML.
-
-    A `Pipeline` object is created (based on said task) and subsequently added to the
-    existing `Engine`.
-
-    Args:
-        pipeline_src (`str`):
-            pipeline name or YAML file location to use.
-        tag (`str`):
-            Which tag to use for operators/pipelines on hub, defaults to `main`.
-        install_reqs (`bool`):
-            Whether to download the python packages if a requirements.txt file is included in the repo.
-
-    Returns
-        (`typing.Any`)
-            The `Pipeline` output.
-    """
-    start_engine()
-
-    if os.path.isfile(pipeline_src):
-        yaml_path = pipeline_src
-    else:
-        fm = FileManager()
-        p_repo = DEFAULT_PIPELINES.get(pipeline_src, pipeline_src)
-        yaml_path = fm.get_pipeline(p_repo, tag, install_reqs)
-
-    engine = Engine()
-    pipeline_ = Pipeline(str(yaml_path))
-    with param_scope() as hp:
-        if not hp().towhee.dry_run(False):
-            engine.add_pipeline(pipeline_)
-
-    return _PipelineWrapper(pipeline_)
-
 
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     """
@@ -177,38 +78,6 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
     return TorchDataSet(torch_dataset)
-
-
-class Build:
-    """
-    Build a pipeline with template variables.
-
-    A pipeline template is a yaml file contains `template variables`,
-    which will be replaced by `variable values` when createing pipeline instance.
-
-    Examples:
-    ```yaml
-    name: template_name
-    variables:                           <<-- define variables and default values
-        template_variable_1: default_value_1
-        template_variable_2: default_value_2
-    ....
-
-    operator:
-        function: {template_variable_1}  <<-- refer to the variable by name
-    ```
-
-    You can specialize template variable values with the following code:
-
-    >>> pipe = Build(template_variable_1='new_value').pipeline('pipeline_name')
-    """
-    def __init__(self, **kws) -> None:
-        self._kws = kws
-
-    def pipeline(self, *arg, **kws):
-        with param_scope() as hp:
-            hp().variables = self._kws
-            return pipeline(*arg, **kws)
 
 
 class Inject:
@@ -243,23 +112,6 @@ class Inject:
         with param_scope() as hp:
             hp().injections = self._injections
             return pipeline(*arg, **kws)
-
-
-def _pipeline_callback(name, index, *arg, **kws):
-    name = name.replace('.', '/').replace('_', '-')
-    _ = index
-    return Build(**kws).pipeline(name, *arg)
-
-
-pipes = param_scope().callholder(_pipeline_callback)
-"""
-Entry point for creating pipeline instances, for example:
-
->>> pipe_instance = pipes.my_namespace.my_pipeline_name(template_variable_1=xxx, template_variable_2=xxx)
-
-An instance of `my_namespace`/`my_pipeline_name` is created, and template variables in the pipeline,z
-`template_variable_1` and  `template_variable_2` are replaced with given values.
-"""
 
 
 def plot(img1: Union[str, list], img2: list = None):
