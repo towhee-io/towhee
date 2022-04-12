@@ -16,6 +16,7 @@ from towhee.utils.log import engine_log
 try:
     # pylint: disable=unused-import
     import matplotlib
+    import matplotlib.pyplot as plt
 except ModuleNotFoundError as e:
     engine_log.error('matplotlib not found, you can install via `pip install matplotlib`.')
     raise ModuleNotFoundError('matplotlib not found, you can install via `pip install matplotlib`.') from e
