@@ -159,7 +159,7 @@ class DisplayMixin:
         else:
             data = [[x] for x in contents]
 
-        table_display(to_printable_table(data, header, tablefmt, formatter))
+        table_display(to_printable_table(data, header, tablefmt, formatter), tablefmt)
 
 
 def table_display(table, tablefmt='html'):
@@ -173,10 +173,10 @@ def table_display(table, tablefmt='html'):
             The format of the output, support html, plain, grid.
     """
     # pylint: disable=import-outside-toplevel
-    from towhee.utils import ipython_utils
+    from towhee.utils.ipython_utils import display, HTML
 
     if tablefmt == 'html':
-        ipython_utils.display(ipython_utils.HTML(table))
+        display(HTML(table))
     elif tablefmt in ('plain', 'grid'):
         print(table)
     else:
@@ -258,7 +258,7 @@ def to_html_table(data, header, formatter={}):
     """
     tb_style = 'style="border-collapse: collapse;"'
     th_style = 'style="text-align: center; font-size: 130%; border: none;"'
-    td_style = 'style="text-align: center; float: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
+    td_style = 'style="text-align: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
     str_2_callback = {
         'text': _text_brief,
@@ -314,8 +314,9 @@ def _image_to_html_cell(img, width=128, height=128):
     src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode).decode() + '" '
     w = 'width = "' + str(width) + 'px" '
     h = 'height = "' + str(height) + 'px" '
+    style = 'style = "float:left; padding:2px"'
 
-    return '<img ' + src + w + h + '>'
+    return '<img ' + src + w + h + style + '>'
 
 
 def _images_to_html_cell(imgs, width=128, height=128):
@@ -324,7 +325,7 @@ def _images_to_html_cell(imgs, width=128, height=128):
 
 def _audio_frame_to_html_cell(frame, width=128, height=128):
     # pylint: disable=import-outside-toplevel
-    import matplotlib.pyplot as plt
+    from towhee.utils.matplotlib_utils import plt
 
     signal = frame[0, ...]
     fourier = numpy.fft.fft(signal)
