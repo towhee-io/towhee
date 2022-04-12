@@ -258,7 +258,7 @@ def to_html_table(data, header, formatter={}):
     """
     tb_style = 'style="border-collapse: collapse;"'
     th_style = 'style="text-align: center; font-size: 130%; border: none;"'
-    td_style = 'style="text-align: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
+    td_style = 'style="text-align: center; float: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
     str_2_callback = {
         'text': _text_brief,
@@ -312,8 +312,8 @@ def _image_to_html_cell(img, width=128, height=128):
 
     _, img_encode = cv2.imencode('.JPEG', img)
     src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode).decode() + '" '
-    w = 'width = "' + str(width) + '" '
-    h = 'height = "' + str(height) + '" '
+    w = 'width = "' + str(width) + 'px" '
+    h = 'height = "' + str(height) + 'px" '
 
     return '<img ' + src + w + h + '>'
 
