@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ![https://towhee.io](towhee_logo.png#gh-light-mode-only)
 ![https://towhee.io](towhee_logo_dark.png#gh-dark-mode-only)
 
@@ -113,3 +114,9 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <br><!-- Do not remove end of hero-bot --><br>
 
 Looking for a database to store and index your embedding vectors? Check out [Milvus](https://github.com/milvus-io/milvus).
+=======
+# towhee
+Open source platform for embedding tasks
+
+<img src="https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true" width=200>
+>>>>>>> 7e6d190ba6e7e3ed4310f290056b7f86661f1e72
