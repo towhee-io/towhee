@@ -194,4 +194,12 @@ video_configs = {
         num_frames=32,
         sampling_rate=3
         ),
+    "csn_r101": get_configs(
+        num_frames=32,
+        sampling_rate=2
+        ),
+    "r2plus1d_r50": get_configs(
+        num_frames=16,
+        sampling_rate=4
+        )
 }
