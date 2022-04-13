@@ -69,9 +69,6 @@ class TestDisplayMixin(unittest.TestCase):
         self.assertEqual(plain_tbl, '1.1  2.2\n3.3  4.4')
 
         html_tbl = to_printable_table(dc._iterable, tablefmt='html')
-        print('haha')
-        print(html_tbl)
-        print('haha')
         html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
                    '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
                    'border-left: solid 1px #D3D3D3; ">1.1</td> '\
