@@ -70,14 +70,14 @@ class TestDisplayMixin(unittest.TestCase):
 
         html_tbl = to_printable_table(dc._iterable, tablefmt='html')
         html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
-                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">1.1</td> '\
-                   '<td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">2.2</td></tr> '\
-                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">3.3</td> '\
-                   '<td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">4.4</td></tr></table>'
+                   '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">1.1</td> '\
+                   '<td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">2.2</td></tr> '\
+                   '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">3.3</td> '\
+                   '<td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">4.4</td></tr></table>'
         self.assertEqual(html_tbl, html_str)
 
         dc = DataCollection([['hello'], ['world']])
@@ -86,10 +86,10 @@ class TestDisplayMixin(unittest.TestCase):
 
         html_tbl = to_printable_table(dc._iterable, tablefmt='html')
         html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
-                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">hello</td></tr> '\
-                   '<tr><td style="text-align: center; border-right: solid 1px #D3D3D3; '\
-                   'border-left: solid 1px #D3D3D3;">world</td></tr></table>'
+                   '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">hello</td></tr> '\
+                   '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
+                   'border-left: solid 1px #D3D3D3; ">world</td></tr></table>'
         self.assertEqual(html_tbl, html_str)
 
     def test_show(self):
