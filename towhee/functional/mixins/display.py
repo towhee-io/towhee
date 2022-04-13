@@ -159,7 +159,7 @@ class DisplayMixin:
         else:
             data = [[x] for x in contents]
 
-        table_display(to_printable_table(data, header, tablefmt, formatter))
+        table_display(to_printable_table(data, header, tablefmt, formatter), tablefmt)
 
 
 def table_display(table, tablefmt='html'):
@@ -173,10 +173,10 @@ def table_display(table, tablefmt='html'):
             The format of the output, support html, plain, grid.
     """
     # pylint: disable=import-outside-toplevel
-    from towhee.utils import ipython_utils
+    from towhee.utils.ipython_utils import display, HTML
 
     if tablefmt == 'html':
-        ipython_utils.display(ipython_utils.HTML(table))
+        display(HTML(table))
     elif tablefmt in ('plain', 'grid'):
         print(table)
     else:
@@ -258,11 +258,11 @@ def to_html_table(data, header, formatter={}):
     """
     tb_style = 'style="border-collapse: collapse;"'
     th_style = 'style="text-align: center; font-size: 130%; border: none;"'
-    td_style = 'style="text-align: center; float: center; border-right: solid 1px #D3D3D3; border-left: solid 1px #D3D3D3;"'
 
     str_2_callback = {
         'text': _text_brief,
-        'image': _image_to_html_cell
+        'image': _image_to_html_cell,
+        'audio_frame': _audio_frame_to_html_cell,
     }
 
     trs = []
@@ -271,38 +271,49 @@ def to_html_table(data, header, formatter={}):
     to_html_callback = {}
     for i, field in enumerate(header):
         cb = formatter.get(field, None)
-        if cb is None:
-            cb = _to_html_cell
-        elif isinstance(cb, str):
-            cb = str_2_callback.get(cb, _to_html_cell)
+        if isinstance(cb, str):
+            cb = str_2_callback.get(cb, None)
         to_html_callback[i] = cb
     for r in data:
         trs.append(
-            '<tr>' + ' '.join(['<td ' + td_style + '>' + to_html_callback.get(i, _to_html_cell)(x) + '</td>' for i, x in enumerate(r)]) + '</tr>'
+            '<tr>' + ' '.join([_to_html_td(x, to_html_callback.get(i, None)) for i, x in enumerate(r)]) + '</tr>'
         )
     return '<table ' + tb_style + '>' + ' '.join(trs) + '</table>'
 
 
-def _to_html_cell(data):
+def _to_html_td(data, callback=None):
+
+    def wrap_td_tag(content, align='center', vertical_align='center'):
+        td_style = 'style="' \
+            + 'text-align: ' + align + '; ' \
+            + 'vertical-align: ' + vertical_align + '; ' \
+            + 'border-right: solid 1px #D3D3D3; ' \
+            + 'border-left: solid 1px #D3D3D3; ' \
+            + '"'
+        return '<td ' + td_style + '>' + content + '</td>'
+
+    if callback is not None:
+        return wrap_td_tag(callback(data))
+
     if isinstance(data, str):
-        return _text_brief(data)
+        return wrap_td_tag(_text_brief(data))
     if isinstance(data, Image):
-        return _image_to_html_cell(data)
+        return wrap_td_tag(_image_to_html_cell(data))
     elif isinstance(data, AudioFrame):
-        return _audio_frame_to_html_cell(data)
+        return wrap_td_tag(_audio_frame_to_html_cell(data))
     elif isinstance(data, numpy.ndarray):
-        return _ndarray_brief(data)
+        return wrap_td_tag(_ndarray_brief(data), align='left')
 
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
-            return _list_brief(data, _text_brief)
+            return wrap_td_tag(_list_brief(data, _text_brief))
         elif all(isinstance(x, Image) for x in data):
-            return _images_to_html_cell(data)
+            return wrap_td_tag(_images_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, AudioFrame) for x in data):
-            return _audio_frames_to_html_cell(data)
+            return wrap_td_tag(_audio_frames_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, numpy.ndarray) for x in data):
-            return _list_brief(data, _ndarray_brief)
-    return _default_brief(data)
+            return wrap_td_tag(_list_brief(data, _ndarray_brief), align='left')
+    return wrap_td_tag(_default_brief(data))
 
 
 def _image_to_html_cell(img, width=128, height=128):
@@ -314,8 +325,9 @@ def _image_to_html_cell(img, width=128, height=128):
     src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode).decode() + '" '
     w = 'width = "' + str(width) + 'px" '
     h = 'height = "' + str(height) + 'px" '
+    style = 'style = "float:left; padding:2px"'
 
-    return '<img ' + src + w + h + '>'
+    return '<img ' + src + w + h + style + '>'
 
 
 def _images_to_html_cell(imgs, width=128, height=128):
@@ -324,7 +336,7 @@ def _images_to_html_cell(imgs, width=128, height=128):
 
 def _audio_frame_to_html_cell(frame, width=128, height=128):
     # pylint: disable=import-outside-toplevel
-    import matplotlib.pyplot as plt
+    from towhee.utils.matplotlib_utils import plt
 
     signal = frame[0, ...]
     fourier = numpy.fft.fft(signal)
