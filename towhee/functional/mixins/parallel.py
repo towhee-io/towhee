@@ -147,7 +147,10 @@ class ParallelMixin:
         >>> a.zip(b, c).to_list()
         [(0, 0, 0), (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)]
         """
-        queues = [Queue(maxsize=1) for _ in range(count)]
+        if self.is_stream:
+            queues = [Queue(maxsize=1) for _ in range(count)]
+        else:
+            queues = [Queue() for _ in range(count)]
         loop = asyncio.new_event_loop()
 
         def inner(queue):
@@ -221,7 +224,12 @@ class ParallelMixin:
             executor = concurrent.futures.ThreadPoolExecutor(2)
             num_worker = 2
 
-        queue = Queue(num_worker)
+        #If not streamed, we need to be able to hold all values within queue
+        if self.is_stream:
+            queue = Queue(num_worker)
+        else:
+            queue = Queue()
+
         loop = asyncio.new_event_loop()
 
         def inner():

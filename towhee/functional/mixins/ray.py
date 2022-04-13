@@ -98,7 +98,12 @@ class RayMixin:
         else:
             num_worker = 2
 
-        queue = Queue(num_worker)
+        #If not streamed, we need to be able to hold all values within queue
+        if self.is_stream:
+            queue = Queue(num_worker)
+        else:
+            queue = Queue()
+
         loop = asyncio.new_event_loop()
 
         def inner():
