@@ -61,9 +61,11 @@ class ParallelMixin:
             self._backend = parent._backend
             self._executor = parent._executor
             self._num_worker = parent._num_worker
+            if hasattr(parent, '_backend_started'):
+                self._backend_started = parent._backend_started
 
     def get_executor(self):
-        if hasattr(self, '_executor') and isinstance(self._executor, concurrent.futures.ThreadPoolExecutor) :
+        if hasattr(self, '_executor') and isinstance(self._executor, concurrent.futures.ThreadPoolExecutor):
             return self._executor
         return None
 
@@ -76,6 +78,12 @@ class ParallelMixin:
         if hasattr(self, '_num_worker')  and isinstance(self._num_worker, int):
             return self._num_worker
         return None
+
+    def get_backend_started(self):
+        if hasattr(self, '_backend_started')  and isinstance(self._backend_started, bool):
+            return self._backend_started
+        return None
+
 
     def set_parallel(self, num_worker = 2, backend = 'thread'):
         """
@@ -99,6 +107,8 @@ class ParallelMixin:
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker)
         self._backend = backend
         self._num_worker = num_worker
+        if backend == 'ray':
+            self.ray_start()
         return self
 
     def unset_parallel(self):
