@@ -99,6 +99,7 @@ class StateMixin:
         return self
 
     def smap(self, op):
+        self._dag[self._id] = ('smap',(op,), [])
         op.set_state(self._state)
         if self._state().__mode__('evaluating') == 'training':
             op.set_training(True)

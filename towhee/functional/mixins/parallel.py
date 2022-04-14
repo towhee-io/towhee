@@ -64,17 +64,20 @@ class ParallelMixin:
             if hasattr(parent, '_backend_started'):
                 self._backend_started = parent._backend_started
 
-    def get_executor(self):
-        if hasattr(self, '_executor') and isinstance(self._executor, concurrent.futures.ThreadPoolExecutor):
+    @property
+    def executor(self):
+        if hasattr(self, '_executor') and isinstance(self._executor, concurrent.futures.ThreadPoolExecutor) :
             return self._executor
         return None
 
-    def get_backend(self):
+    @property
+    def backend(self):
         if hasattr(self, '_backend')  and isinstance(self._backend, str):
             return self._backend
         return None
 
-    def get_num_worker(self):
+    @property
+    def num_worker(self):
         if hasattr(self, '_num_worker')  and isinstance(self._num_worker, int):
             return self._num_worker
         return None
@@ -158,8 +161,9 @@ class ParallelMixin:
         >>> a.zip(b, c).to_list()
         [(0, 0, 0), (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)]
         """
+        self._dag[self._id] = ('split', (count,), [])
         if self.is_stream:
-            queues = [Queue(maxsize=count) for _ in range(count)]
+            queues = [Queue() for _ in range(count)]
         else:
             queues = [Queue() for _ in range(count)]
         loop = asyncio.new_event_loop()
@@ -215,8 +219,10 @@ class ParallelMixin:
         >>> len(stage_2_thread_set) > 1
         True
         """
+        if self._id not in self._dag:
+            self._dag[self._id] = ('pmap', (unary_op, num_worker, backend), [])
         if backend is None:
-            if self.get_backend() == 'ray':
+            if self.backend == 'ray':
                 return self._ray_pmap(unary_op, num_worker)
             else:
                 return self._thread_pmap(unary_op, num_worker)
@@ -228,16 +234,16 @@ class ParallelMixin:
     def _thread_pmap(self, unary_op, num_worker=None):
         if num_worker is not None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
-        elif self.get_executor() is not None:
+        elif self.executor is not None:
             executor = self._executor
-            num_worker = self._num_worker
+            num_worker = self.num_worker
         else:
             executor = concurrent.futures.ThreadPoolExecutor(2)
             num_worker = 2
 
         #If not streamed, we need to be able to hold all values within queue
         if self.is_stream:
-            queue = Queue(num_worker)
+            queue = Queue()
         else:
             queue = Queue()
 

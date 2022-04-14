@@ -21,6 +21,7 @@ from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
 
+
 class DataCollection(Iterable, AllMixins):
     """
     DataCollection is a pythonic computation and processing framework
@@ -128,7 +129,9 @@ class DataCollection(Iterable, AllMixins):
             self = arg
             if self.is_stream:
                 return self
-            return DataCollection.stream(self._iterable)
+            else:
+                self._iterable = iter(self._iterable)
+            return self
 
         iterable = arg
         if not isinstance(iterable, Iterator):
@@ -161,7 +164,9 @@ class DataCollection(Iterable, AllMixins):
             self = arg
             if not self.is_stream:
                 return self
-            return DataCollection.unstream(self._iterable)
+            else:
+                self._iterable = list(self._iterable)
+            return self
 
         iterable = arg
         if isinstance(iterable, Iterator):
@@ -238,6 +243,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
+        self._dag[self._id] = ('exception_safe', (), [])
         result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
         return self._factory(result)
 
@@ -255,11 +261,11 @@ class DataCollection(Iterable, AllMixins):
 
         >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
         >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
-
         >>> dc3 = dc2.select_from(dc1)
         >>> list(dc3)
         [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
+        self._dag[self._id] = ('select_from', (), [])
         def inner(x):
             if isinstance(x, Iterable):
                 return [other[i] for i in x]
@@ -284,6 +290,7 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
+        self._dag[self._id] = ('fill_empty', (), [])
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
         return self._factory(result)
 
@@ -310,6 +317,7 @@ class DataCollection(Iterable, AllMixins):
         >>> exception_inputs
         [3]
         """
+        self._dag[self._id] = ('drop_empty', (), [])
         if callback is not None:
 
             def inner(data):
@@ -358,8 +366,11 @@ class DataCollection(Iterable, AllMixins):
             return self.smap(unary_op)
 
         # pmap
-        if self.get_executor() is not None:
+        if self.executor is not None:
             return self.pmap(unary_op)
+
+        if self._id not in self._dag:
+            self._dag[self._id] = ('map', (arg,) , [])
 
         if hasattr(self._iterable, 'map'):
             return self._factory(self._iterable.map(unary_op))
@@ -395,6 +406,13 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
+        #TODO Needs a better solution for combining branches
+        swap_ids = [x.id for x in others]
+        for values in self._dag.values():
+            temp = [x if x not in swap_ids else self.id for x in values[2]]
+            values[2].clear()
+            values[2].extend(temp)
+        self._dag[self.id] = ('zip', tuple((x.id for x in others)),[])
         return self._factory(zip(self, *others))
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
@@ -410,6 +428,7 @@ class DataCollection(Iterable, AllMixins):
         Returns:
             DataCollection: filtered data collection
         """
+        self._dag[self._id] = ('filter', (unary_op, drop_empty),[])
 
         # return filter(unary_op, self)
         def inner(x):
@@ -445,6 +464,7 @@ class DataCollection(Iterable, AllMixins):
         >>> 0.09 < ratio < 0.11
         True
         """
+        self._dag[self._id] = ('sample', (), [])
         return self._factory(filter(lambda _: random() < ratio, self))
 
     @staticmethod
@@ -484,6 +504,7 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
+        self._dag[self._id] = ('batch', (size, drop_tail),[])
         def inner():
             buff = []
             for ele in self._iterable:
@@ -522,6 +543,7 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
+        self._dag[self._id] = ('rolling', (), [])
         def inner():
             buff = []
             for ele in self._iterable:
@@ -550,6 +572,7 @@ class DataCollection(Iterable, AllMixins):
         >>> nested_dc.flatten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
+        self._dag[self._id] = ('flatten', (), [])
         def inner():
             for ele in self._iterable:
                 if isinstance(ele, Iterable):
@@ -596,6 +619,7 @@ class DataCollection(Iterable, AllMixins):
         Traceback (most recent call last):
         TypeError: shuffle is not supported for streamed data collection.
         """
+        self._dag[self._id] = ('shuffle', (), [])
         if self.is_stream:
             raise TypeError('shuffle is not supported for streamed data collection.')
         if in_place:
@@ -645,8 +669,6 @@ class DataCollection(Iterable, AllMixins):
 
             def wrapper(path, index, *arg, **kws):
                 _ = index
-                if self.get_backend() == 'ray':
-                    return self.ray_resolve(dispatcher, path, index, *arg, **kws)
                 op = self.resolve(dispatcher, path, index, *arg, **kws)
                 return self.map(op)
 
@@ -725,6 +747,13 @@ class DataCollection(Iterable, AllMixins):
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
         """
+        #TODO Needs a better solution for combining branches
+        swap_id = other._id
+        for values in self._dag.values():
+            temp = [x if x is not swap_id else self._id for x in values[2]]
+            values[2].clear()
+            values[2].extend(temp)
+        self._dag[self._id] = ('add', (other._id,) ,[])
         def inner():
             for x in self:
                 yield x
@@ -764,6 +793,7 @@ class DataCollection(Iterable, AllMixins):
         >>> DataCollection.range(10).head(3).to_list()
         [0, 1, 2]
         """
+        self._dag[self._id] = ('head', (n,), [])
         def inner():
             for i, x in enumerate(self._iterable):
                 if i >= n:

@@ -145,6 +145,7 @@ class DatasetMixin:
         [9]
         """
         from towhee.utils import sklearn_utils
+        self._dag[self._id] = ('split_train_test', tuple(size, **kws), [])
         train_size = size[0]
         test_size = size[1]
         train, test = sklearn_utils.train_test_split(self._iterable, train_size=train_size, test_size=test_size, **kws)

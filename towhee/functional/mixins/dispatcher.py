@@ -32,6 +32,13 @@ class DispatcherMixin:
     """
 
     def resolve(self, call_mapping, path, index, *arg, **kws):
+        self._dag[self._id] = ('resolve', (call_mapping, path, index, arg, kws), [])
+        if self.backend == 'ray':
+            return self._ray_resolve(call_mapping, path, index, *arg, **kws)
+        else:
+            return self._resolve(call_mapping, path, index, *arg, **kws)
+
+    def _resolve(self, call_mapping, path, index, *arg, **kws):
         # pylint: disable=protected-access
         if path in call_mapping:
             return call_mapping[path](*arg, **kws)

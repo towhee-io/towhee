@@ -66,6 +66,7 @@ class RayMixin:
         if self.get_backend_started() is None:
             self.ray_start()
 
+        self._dag[self._id] = ('ray_resolve', (call_mapping, path, index, arg, kws), [])
         # TODO: call mapping solution
         y = call_mapping #pylint: disable=unused-variable
 
@@ -95,7 +96,7 @@ class RayMixin:
 
         actors = [OperatorActor.remote(path, index, str(uuid.uuid4().hex[:12].upper()), *arg, **kws) for _ in range(self._num_worker)]
         pool = ray.util.ActorPool(actors)
-        queue = Queue(self._num_worker)
+        queue = Queue(self.num_worker)
 
         def inner():
             while True:
@@ -131,8 +132,8 @@ class RayMixin:
 
         if num_worker is not None:
             pass
-        elif self.get_executor() is not None:
-            num_worker = self._num_worker
+        elif self.executor is not None:
+            num_worker = self.num_worker
         else:
             num_worker = 2
 
