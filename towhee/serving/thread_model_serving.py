@@ -4,8 +4,7 @@ import copy
 import queue
 import weakref
 import time
-
-from towhee.serving.torch_model_worker import TorchModelWorker
+from pathlib import Path
 
 
 class ThreadModelServing:
@@ -13,9 +12,11 @@ class ThreadModelServing:
     ThreadModelServing
     """
 
-    def __init__(self, model, batch_size: int, max_latency: int, device_ids: List[int]):
+    def __init__(self, model, batch_size: int, max_latency: int, device_ids: List[int], handler_flie=None):
         assert batch_size > 0 and max_latency > 0 and len(device_ids) > 0
         self._model = model
+        self._handler_class = self._load_handler(handler_flie)
+
         self.models = self._create_model_workers(device_ids)
         self._max_latency = max_latency
         self._batch_size = batch_size
@@ -27,16 +28,38 @@ class ThreadModelServing:
         self._tworkers = []
         self._need_stop = False
 
+    def _load_handler_file(self, handler_file):
+        handler_path = Path(handler_file)
+        if not handler_path.exists():
+            raise RuntimeError('Can not find model handler file: %s' % handler_file)
+
+        module_name = handler_file.stem
+        function_name = ''.join([item.capitalize() for item in module_name.split('_')])
+        if module_name.endswith(".py"):
+            module_name = module_name[:-3]
+        module_name = module_name.split("/")[-1]
+        module = importlib.import_module(module_name)
+        if hasattr(module, function_name):
+            return getattr(module, function_name)
+        else:
+            raise RuntimeError('Model handler file %s error, : %s' % handler_file)
+
+    def _load_handler(self, handler_file):
+        if handler_file is None:
+            from towhee.serving.torch_model_handler import TorchModelHandler
+            return TorchModelHandler
+        return self._load_handler_file(handler_file)
+
     def _create_model_workers(self, device_ids: List[int]):
         if len(device_ids) == 1:
-            return [TorchModelWorker(self._model, device_ids[0])]
+            return [self._handler_class(self._model, device_ids[0])]
 
         models = []
         for d_id in device_ids:
             if d_id == -1:
-                models.append(TorchModelWorker(self._model, -1))
+                models.append(self._handler_class(self._model, -1))
             else:
-                models.append(TorchModelWorker(copy.deepcopy(self._model), d_id))
+                models.append(self._handler_class(copy.deepcopy(self._model), d_id))
         return models
 
     @property

@@ -13,17 +13,8 @@
 # limitations under the License.
 
 
-def auto_batch(batch_size, max_latency):
-
-    def decorate(cls):
-        cls.DEFAULT_BATCH_SIZE = batch_size
-        cls.DEFAULT_MAX_LATENCY = max_latency
-        return cls
-    return decorate
-
-
-def create_serving(model, batch_size, max_latency, device_ids):
+def create_serving(model, batch_size, max_latency, device_ids, handler_flie=None):
     from towhee.serving import thread_model_serving
-    serving = thread_model_serving.ThreadModelServing(model, batch_size, max_latency, device_ids)
+    serving = thread_model_serving.ThreadModelServing(model, batch_size, max_latency, device_ids, handler_flie)
     serving.start()
     return serving.proxy()

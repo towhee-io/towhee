@@ -17,8 +17,6 @@ from abc import ABC
 from enum import Enum
 
 
-from towhee.serving import create_serving
-
 # NotShareable:
 #    Stateful & reusable operator.
 
@@ -96,13 +94,14 @@ class NNOperator(Operator):
             The framework to apply.
     """
 
-    def __init__(self, framework: str = 'pytorch'):
+    def __init__(self, framework: str = 'pytorch', devices=None):
         super().__init__()
         self._framework = framework
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
         self._trainer = None  # Trainer(self.get_model())
+        self._model_handler_file = None
 
     @property
     def framework(self):
@@ -123,15 +122,16 @@ class NNOperator(Operator):
         super().after_init(key)
         if extra is None:
             extra = {}
-        default_batch_size = self.DEFAULT_BATCH_SIZE if hasattr(self, 'DEFAULT_BATCH_SIZE') else 1
-        default_max_latency = self.DEFAULT_MAX_LATENCY if hasattr(self, 'DEFAULT_MAX_LATENCY') else 0.1
-        batch_size = extra.get('batch_size', default_batch_size)
-        max_latency = extra.get('max_latency', default_max_latency)
+
+        from towhee.serving import create_serving
+
+        batch_size = extra.get('batch_size', 1)
+        max_latency = extra.get('max_latency', 0.1)
         device_ids = extra.get('device_ids', [-1])
-        if default_batch_size == 1 and len(device_ids) == 1 and device_ids[0] == -1:
+        if batch_size == 1 and len(device_ids) == 1 and device_ids[0] == -1:
             return
 
-        self.model = create_serving(self.model, batch_size, max_latency, device_ids)
+        self.model = create_serving(self.model, batch_size, max_latency, device_ids, self._model_handler_file)
 
     def train(self,
               training_config=None,
