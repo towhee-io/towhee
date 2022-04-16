@@ -96,6 +96,8 @@ class DataCollection(Iterable, AllMixins):
         self._iterable = iterable
 
     def __iter__(self):
+        if hasattr(self._iterable, 'iterrows'):
+            return (x[1] for x in self._iterable.iterrows())
         return iter(self._iterable)
 
     def stream(arg):  # pylint: disable=no-self-argument
@@ -361,6 +363,9 @@ class DataCollection(Iterable, AllMixins):
         if hasattr(self._iterable, 'map'):
             return self._factory(self._iterable.map(unary_op))
 
+        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_apply__'):
+            return self._factory(unary_op.__dataframe_apply__(self._iterable))
+
         # map
         def inner(x):
             if isinstance(x, Option):
@@ -415,6 +420,9 @@ class DataCollection(Iterable, AllMixins):
 
         if hasattr(self._iterable, 'filter'):
             return self._factory(self._iterable.filter(unary_op))
+
+        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_filter__'):
+            return DataCollection(unary_op.__dataframe_apply__(self._iterable))
 
         return self._factory(filter(inner, self._iterable))
 
@@ -656,10 +664,11 @@ class DataCollection(Iterable, AllMixins):
 
         >>> dc.stream()[1]
         Traceback (most recent call last):
-        TypeError: indexing is not supported for streamed data collection.
+        TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
-        if self.is_stream:
-            raise TypeError('indexing is not supported for streamed data collection.')
+        if not hasattr(self._iterable, '__getitem__'):
+            raise TypeError('indexing is only supported for '
+                            'data collection created from list or pandas DataFrame.')
         return self._iterable[index]
 
     def __setitem__(self, index, value):
@@ -678,10 +687,11 @@ class DataCollection(Iterable, AllMixins):
 
         >>> dc.stream()[0]
         Traceback (most recent call last):
-        TypeError: indexing is not supported for streamed data collection.
+        TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
-        if self.is_stream:
-            raise TypeError('indexing is not supported for streamed data collection.')
+        if not hasattr(self._iterable, '__setitem__'):
+            raise TypeError('indexing is only supported for '
+                            'data collection created from list or pandas DataFrame.')
         self._iterable[index] = value
 
     def __rshift__(self, unary_op):
@@ -721,6 +731,22 @@ class DataCollection(Iterable, AllMixins):
                 yield x
 
         return self._factory(inner())
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation for DataCollection.
+
+        Examples:
+
+        >>> DataCollection.unstream([1, 2, 3])
+        [1, 2, 3]
+
+        >>> DataCollection.stream([1, 2, 3]) #doctest: +ELLIPSIS
+        <list_iterator object at...>
+        """
+        if hasattr(self._iterable, '__repr__'):
+            return repr(self._iterable)
+        return super().__repr__()
 
     def head(self, n: int = 5):
         """

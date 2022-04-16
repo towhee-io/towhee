@@ -104,10 +104,13 @@ class StateMixin:
             op.set_training(True)
             with param_scope() as hp:
                 hp().towhee.data_collection.training = True
-                for x in self._iterable:
+                for x in self:
                     op(x)
             op.set_training(False)
             op.fit()
+        if hasattr(self._iterable, 'apply') and hasattr(op, '__dataframe_apply__'):
+            return self._factory(op.__dataframe_apply__(self._iterable))
+
         return self._factory(map(op, self._iterable))
 
 

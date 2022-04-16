@@ -144,7 +144,7 @@ class DatasetMixin:
         from towhee.utils import sklearn_utils
         train_size = size[0]
         test_size = size[1]
-        train, test = sklearn_utils.train_test_split(list(self), train_size=train_size, test_size=test_size, **kws)
+        train, test = sklearn_utils.train_test_split(self._iterable, train_size=train_size, test_size=test_size, **kws)
         return self._factory(train), self._factory(test)
 
     def save_json(self):
