@@ -8,7 +8,7 @@ The Towhee community maintains a list of [Good First Issues](https://github.com/
 
 ### Sharing a new operator or pipeline
 
-Pipeline and operator contributions to our Towhee Hub are just as valued as artwork, code, and documentation contributions. If you have a new model, useful script, or an `x2vec` pipeline that you'd like to share with the Towhee community, [get in touch](towhee-team@zilliz.com) with us!
+Pipeline and operator contributions to our Towhee Hub are just as valued as artwork, code, and documentation contributions. If you have a new model, useful script, or an `x2vec` pipeline that you'd like to share with the Towhee community, [get in touch](mailto:towhee-team@zilliz.com) with us!
 
 ### Submitting a new issue or feature request
 
@@ -16,7 +16,7 @@ Please follow the [templates](https://github.com/towhee-io/towhee/issues/new/cho
 
 ### Style guide
 
-We generally follow the [Google Python style guide](https://google.github.io/styleguide/pyguide.html) - this applies to the main `towhee-io/towhee` repo on Github as well as code uploaded to our Towhee Hub. We have some special rules regarding line length, imports, and whitespace - please take a look at the [Towhee style guide](https://github.com/towhee-io/towhee/STYLE_GUIDE.md) for more information.
+We generally follow the [Google Python style guide](https://google.github.io/styleguide/pyguide.html) - this applies to the main `towhee-io/towhee` repo on Github as well as code uploaded to our Towhee Hub. We have some special rules regarding line length, imports, and whitespace - please take a look at the [Towhee style guide](https://github.com/towhee-io/towhee/blob/main/STYLE_GUIDE.md) for more information.
 
 ## Pull requests
 
