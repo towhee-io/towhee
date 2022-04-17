@@ -166,10 +166,3 @@ interpret_image_classification(op.model.to('cpu'), pil_img, val_transform, "Sali
 
 
     (0.9745060205459595, 261)
-
-
-
-
-```python
-
-```
