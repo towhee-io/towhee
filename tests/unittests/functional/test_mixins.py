@@ -27,6 +27,8 @@ import towhee.functional.mixins.entity_mixin
 import towhee.functional.mixins.metric
 import towhee.functional.mixins.parallel
 import towhee.functional.mixins.state
+import towhee.functional.mixins.serve
+
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection
 
@@ -41,6 +43,7 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.metric,
             towhee.functional.mixins.parallel,
             towhee.functional.mixins.state,
+            towhee.functional.mixins.serve,
     ]:
         tests.addTests(doctest.DocTestSuite(mod))
 

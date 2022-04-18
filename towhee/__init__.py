@@ -22,7 +22,7 @@ from towhee.functional import DataCollection, State, Entity
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
 from towhee.functional import from_zip, from_df
-from towhee.functional import dc
+from towhee.functional import dc, api
 
 __all__ = [
     'DEFAULT_PIPELINES',
@@ -45,7 +45,8 @@ __all__ = [
     'read_camera',
     'from_zip',
     'from_df',
-    'dc'
+    'dc',
+    'api'
 ]
 
 
