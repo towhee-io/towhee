@@ -653,8 +653,3 @@ def bninception(pretrained='imagenet'):
     else:
         raise NotImplementedError
     return model
-
-
-if __name__ == '__main__':
-    net=BNInception()
-    print(net)
