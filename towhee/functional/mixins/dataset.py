@@ -25,12 +25,15 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
-    def from_glob(cls, pattern):
+    def from_glob(cls, *args):
         """
         generate a file list with `pattern`
         """
         from glob import glob
-        return cls.stream(glob(pattern))
+        files = []
+        for path in args:
+            files.extend(glob(path))
+        return cls.stream(files)
 
     @classmethod
     def from_zip(cls, url, pattern, mode='r'):
