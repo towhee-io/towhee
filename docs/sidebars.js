@@ -55,7 +55,10 @@ const sidebars = {
     {
       'Developer guides': [
         {
-          Contributing: ['developer-guides/contributing/contributing-guide'],
+          Contributing: [
+            'developer-guides/contributing/contributing-guide',
+            'developer-guides/contributing/adding-new-doc'
+          ],
         },
         {
           Framework: [
