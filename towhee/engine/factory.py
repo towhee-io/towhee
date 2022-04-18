@@ -64,22 +64,35 @@ class _OperatorLazyWrapper:
         self._op = None
         self._lock = threading.Lock()
 
-    def __call__(self, *arg, **kws):
+    def __check_init__(self):
         with self._lock:
             if self._op is None:
-                self._create_op()
+                with param_scope(index=self._index):
+                    self._op = op(self._name, self._tag, **self._kws)
 
+    def __apply__(self, *arg, **kws):
+        if isinstance(self._index[0], tuple): # Multi inputs.
+            args = [getattr(arg[0], x) for x in self._index[0]]
+        else: # Single input.
+            args = [getattr(arg[0], self._index[0])]
+        return self._op(*args, **kws)
+
+    def __dataframe_apply__(self, df):
+        self.__check_init__()
+        if isinstance(self._index[1], tuple):
+            df[list(self._index[1])] = df.apply(self.__apply__, axis=1, result_type='expand')
+        else:
+            df[self._index[1]] = df.apply(self.__apply__, axis=1)
+        return df
+
+    def __dataframe_filter__(self, df):
+        self.__check_init__()
+        return df[self.__apply__(df)]
+
+    def __call__(self, *arg, **kws):
+        self.__check_init__()
         if bool(self._index):
-            # Multi inputs.
-            if isinstance(self._index[0], tuple):
-                args = []
-                for i in self._index[0]:
-                    args.append(getattr(arg[0], i))
-                res = self._op(*args, **kws)
-            # Single input.
-            else:
-                args = getattr(arg[0], self._index[0])
-                res = self._op(args, **kws)
+            res = self.__apply__(*arg, **kws)
 
             # Multi outputs.
             if isinstance(res, tuple):
@@ -97,9 +110,7 @@ class _OperatorLazyWrapper:
             return res
 
     def train(self, *arg, **kws):
-        with self._lock:
-            if self._op is None:
-                self._create_op()
+        self.__check_init__()
         return self._op.train(*arg, **kws)
 
     def fit(self, *arg):
@@ -107,15 +118,11 @@ class _OperatorLazyWrapper:
 
     @property
     def is_stateful(self):
-        with self._lock:
-            if self._op is None:
-                self._create_op()
+        self.__check_init__()
         return hasattr(self._op, 'fit')
 
     def set_state(self, state):
-        with self._lock:
-            if self._op is None:
-                self._create_op()
+        self.__check_init__()
         self._op.set_state(state)
 
     def set_training(self, flag):
@@ -138,13 +145,6 @@ class _OperatorLazyWrapper:
         else:
             return _OperatorLazyWrapper(real_name, index, arg[0], **kws)
 
-    def _create_op(self):
-        """
-        Instantiate the operator.
-        """
-        # pylint: disable=unused-variable
-        with param_scope(index=self._index) as hp:
-            self._op = op(self._name, self._tag, **self._kws)
 
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',

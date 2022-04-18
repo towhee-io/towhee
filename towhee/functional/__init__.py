@@ -100,9 +100,11 @@ read_camera = DataCollection.from_camera
 from_zip = DataCollection.from_zip
 
 
-def from_df(df):
-    return DataCollection.stream(
-        df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+def from_df(df, as_stream=False):
+    if as_stream:
+        return DataCollection.stream(
+            df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+    return DataCollection(df)
 
 
 def _glob_call_back(_, index, *arg, **kws):

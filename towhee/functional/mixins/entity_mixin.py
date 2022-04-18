@@ -15,6 +15,7 @@ from typing import Dict, Any, Optional, Set, Union, List
 
 from towhee.functional.entity import Entity
 from towhee.hparam import param_scope
+# pylint: disable=import-outside-toplevel
 
 
 def _select_callback(self):
@@ -252,6 +253,14 @@ class EntityMixin:
             return x
 
         return self._factory(map(inner, self._iterable))
+
+    @property
+    def df(self):
+        import pandas as pd
+        if isinstance(self._iterable, pd.DataFrame):
+            return self._iterable
+        else:
+            raise TypeError('data collection is not created from pandas DataFrame.')
 
 
 if __name__ == '__main__':
