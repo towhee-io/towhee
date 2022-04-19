@@ -32,6 +32,11 @@ pretrained_settings = {
 
 
 class BNInception(nn.Module):
+    """
+    Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
+    Sergey Ioffe, Christian Szegedy
+    https://arxiv.org/pdf/1502.03167.pdf
+    """
     def __init__(self, 
                  num_classes=1000):
         super(BNInception, self).__init__()
@@ -637,8 +642,6 @@ class BNInception(nn.Module):
 
 
 def bninception(pretrained='imagenet'):
-    r"""BNInception model architecture from <https://arxiv.org/pdf/1502.03167.pdf>`_ paper.
-    """
     if pretrained is not None:
         print('=> Loading from pretrained model: {}'.format(pretrained))
         settings = pretrained_settings['bninception'][pretrained]

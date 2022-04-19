@@ -7,7 +7,6 @@ class Identity(torch.nn.Module):
 
 
 class SegmentConsensus(torch.nn.Module):
-
     def __init__(self, 
                  consensus_type, 
                  dim=1):

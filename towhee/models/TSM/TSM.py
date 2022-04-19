@@ -12,6 +12,11 @@ from torch.nn.init import normal_, constant_
 import timm
 
 class TSN(nn.Module):
+    """
+    Args:
+    
+    Returns:
+    """
     def __init__(self, 
                  num_class, 
                  num_segments, 

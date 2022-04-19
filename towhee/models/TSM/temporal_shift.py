@@ -9,6 +9,11 @@ import torch.nn.functional as F
 import timm
 
 class TemporalShift(nn.Module):
+    """ 
+    Args:
+
+    Returns:
+    """
     def __init__(self, net, n_segment=3, n_div=8, inplace=False):
         super(TemporalShift, self).__init__()
         self.net = net

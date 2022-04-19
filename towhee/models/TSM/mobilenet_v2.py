@@ -67,6 +67,11 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
+    """
+    MobileNetV2: Inverted Residuals and Linear Bottlenecks.
+    Mark Sandler, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, Liang-Chieh Chen
+    https://arxiv.org/pdf/1801.04381
+    """
     def __init__(self, n_class=1000, input_size=224, width_mult=1.):
         super(MobileNetV2, self).__init__()
         block = InvertedResidual

@@ -7,6 +7,23 @@ from torch.nn import functional as F
 import timm
 
 class _NonLocalBlockND(nn.Module):
+    """
+    Non-local Neural Networks.
+    Xiaolong Wang, Ross Girshick, Abhinav Gupta, Kaiming He
+    https://arxiv.org/pdf/1711.07971
+
+    Args:
+        in_channels ('int'):
+            channel number of input images.
+        inter_channels ('int'):
+            Default: None.
+        dimension ('int'):
+            Default: 3.
+        sub_sample ('bool'):
+            Defalut: True.
+        bn_layer ('bool'):
+            Default: True.
+    """
     def __init__(self, 
                  in_channels, 
                  inter_channels=None, 
@@ -68,11 +85,6 @@ class _NonLocalBlockND(nn.Module):
             self.phi = nn.Sequential(self.phi, max_pool_layer)
 
     def forward(self, x):
-        '''
-        :param x: (b, c, t, h, w)
-        :return:
-        '''
-
         batch_size = x.size(0)
 
         g_x = self.g(x).view(batch_size, self.inter_channels, -1)
