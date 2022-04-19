@@ -7,6 +7,8 @@ import torch
 from torch import nn
 
 from basic_ops import ConsensusModule
+from towhee.models.tsm.mobilenet_v2 import mobilenet_v2, InvertedResidual
+from towhee.models.tsm.bn_inception import bninception
 #from transforms import *
 from torch.nn.init import normal_, constant_
 import timm
@@ -136,7 +138,7 @@ class TSN(nn.Module):
                 self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length
 
         elif base_model == 'mobilenetv2':
-            from archs.mobilenet_v2 import mobilenet_v2, InvertedResidual
+            
             self.base_model = mobilenet_v2(True if self.pretrain == 'imagenet' else False)
 
             self.base_model.last_layer_name = 'classifier'
@@ -160,7 +162,7 @@ class TSN(nn.Module):
                 self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length
 
         elif base_model == 'BNInception':
-            from archs.bn_inception import bninception
+
             self.base_model = bninception(pretrained=self.pretrain)
             self.input_size = self.base_model.input_size
             self.input_mean = self.base_model.mean
