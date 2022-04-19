@@ -22,22 +22,20 @@
 
 import torch
 from torch import nn
+from torch.utils import model_zoo
 from functools import partial
 from collections import OrderedDict
 
 from towhee.models.utils.init_vit_weights import init_vit_weights
-from towhee.models.layers.vit_block import Block
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
-from towhee.models.vit.vit_utils import get_configs, load_pretrained_model
+from .vit_utils import get_configs
+from .vit_block import Block
 
 
 class VitModel(nn.Module):
     """
     Vision Transformer Model
     Args:
-        name (str): model name
-        weights_path (str): path to model weights
-        pretrained (bool): if model is pretrained
         img_size (int): image height or width (height=width)
         patch_size (int): patch height or width (height=width)
         in_c (int): number of image channels
@@ -57,7 +55,6 @@ class VitModel(nn.Module):
         act_layer: activation layer
     """
     def __init__(self,
-                 name=None, weights_path=None, pretrained=False,
                  img_size=224, patch_size=16, in_c=3, num_classes=1000,
                  embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True, qk_scale=None,
                  representation_size=None, drop_ratio=0, attn_drop_ratio=0, drop_path_ratio=0,
@@ -105,10 +102,6 @@ class VitModel(nn.Module):
         nn.init.trunc_normal_(self.cls_token, std=0.02)
         self.apply(init_vit_weights)
 
-        if pretrained:
-            configs = get_configs(name)
-            load_pretrained_model(self, configs, weights_path=weights_path)
-
     def forward_features(self, x):
         # [B, C, H, W] -> [B, num_patches, embed_dim]
         x = self.patch_embed(x)  # [B, 196, 768]
@@ -125,3 +118,25 @@ class VitModel(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+
+def vit_base_16x224(weights_path: str = None, device: str = None):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    configs = get_configs("vit_base_16x224")
+    if "url" in configs:
+        url = configs["url"]
+        configs.pop("url")
+    model = VitModel(**configs)
+
+    if weights_path:
+        state_dict = torch.load(weights_path)
+    elif url:
+        state_dict = model_zoo.load_url(url, map_location=torch.device(device))
+    else:
+        raise AssertionError("No model weights url or path is provided.")
+
+    model.load_state_dict(state_dict, strict=False)
+    model.eval()
+    return model

@@ -21,10 +21,12 @@ from towhee.models.layers.patch_embed2d import PatchEmbed2D
 
 class PatchEmbed2DTest(unittest.TestCase):
     def test_patch_embed2d(self):
-        in_c = 3
-        img_height = img_width = 224
-        mod = PatchEmbed2D()
-        fake_input = torch.rand(1, in_c, img_height, img_width)
-        output = mod(fake_input)
-        gt_output_shape = torch.Size([1, 196, 768])
-        self.assertTrue(output.shape == gt_output_shape)
+        test_shape1 = (1, 3, 224, 224)
+        test_shape2 = (1, 3, 5, 224, 224)
+        fake_img = torch.rand(test_shape1)
+        fake_video = torch.rand(test_shape2)
+        model = PatchEmbed2D()
+        out1 = model(fake_img)
+        out2 = model(fake_video)
+        self.assertTrue(out1.shape == (1, 196, 768))
+        self.assertTrue(out2.shape == (5, 196, 768))
