@@ -1,9 +1,13 @@
+# modified by Zilliz.
+
 from __future__ import print_function, division, absolute_import
 import torch
-import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
+from torch import nn
+from torch.utils import model_zoo
 import torch.nn.functional as F
 
+from functools import partial
+from towhee.models.tsm.temporal_shift import TemporalShift
 
 __all__ = ['BNInception', 'bninception']
 
@@ -37,10 +41,9 @@ class BNInception(nn.Module):
     Sergey Ioffe, Christian Szegedy
     https://arxiv.org/pdf/1502.03167.pdf
     """
-    def __init__(self, 
+    def __init__(self,
                  num_classes=1000):
-        super(BNInception, self).__init__()
-        
+        super().__init__()
         inplace = True
         self._build_features(inplace, num_classes)
 
@@ -100,7 +103,6 @@ class BNInception(nn.Module):
 
     def _temporal_forward_wrap(self, layer_func, index):
         if hasattr(self, 'is_temporal_shift') and self.is_temporal_shift[index] == '1':  # run temporal shuffling
-            from ops.temporal_shift import TemporalShift
             def wrapped_func(x, is_residual, n_segment, fold_div):
                 if is_residual:
                     x_shift = TemporalShift.shift(x, n_segment, fold_div=fold_div)
@@ -108,7 +110,6 @@ class BNInception(nn.Module):
                 else:
                     x = TemporalShift.shift(x, n_segment, fold_div=fold_div)
                     return layer_func(x)
-            from functools import partial
             return partial(wrapped_func, is_residual=self.residual, n_segment=self.n_segment,
                            fold_div=self.fold_div)
         else:
@@ -117,45 +118,45 @@ class BNInception(nn.Module):
     def _block_1(self, x):
         conv1_7x7_s2_out = self.conv1_7x7_s2(x)
         conv1_7x7_s2_bn_out = self.conv1_7x7_s2_bn(conv1_7x7_s2_out)
-        conv1_relu_7x7_out = self.conv1_relu_7x7(conv1_7x7_s2_bn_out)
+        #conv1_relu_7x7_out = self.conv1_relu_7x7(conv1_7x7_s2_bn_out)
         pool1_3x3_s2_out = self.pool1_3x3_s2(conv1_7x7_s2_bn_out)
         return pool1_3x3_s2_out
 
     def _block_2(self, x):
         conv2_3x3_reduce_out = self.conv2_3x3_reduce(x)
         conv2_3x3_reduce_bn_out = self.conv2_3x3_reduce_bn(conv2_3x3_reduce_out)
-        conv2_relu_3x3_reduce_out = self.conv2_relu_3x3_reduce(conv2_3x3_reduce_bn_out)
+        #conv2_relu_3x3_reduce_out = self.conv2_relu_3x3_reduce(conv2_3x3_reduce_bn_out)
         conv2_3x3_out = self.conv2_3x3(conv2_3x3_reduce_bn_out)
         conv2_3x3_bn_out = self.conv2_3x3_bn(conv2_3x3_out)
-        conv2_relu_3x3_out = self.conv2_relu_3x3(conv2_3x3_bn_out)
+        #conv2_relu_3x3_out = self.conv2_relu_3x3(conv2_3x3_bn_out)
         pool2_3x3_s2_out = self.pool2_3x3_s2(conv2_3x3_bn_out)
         return pool2_3x3_s2_out
 
     def _block_3a(self, pool2_3x3_s2_out):
         inception_3a_1x1_out = self.inception_3a_1x1(pool2_3x3_s2_out)
         inception_3a_1x1_bn_out = self.inception_3a_1x1_bn(inception_3a_1x1_out)
-        inception_3a_relu_1x1_out = self.inception_3a_relu_1x1(inception_3a_1x1_bn_out)
+        #inception_3a_relu_1x1_out = self.inception_3a_relu_1x1(inception_3a_1x1_bn_out)
         inception_3a_3x3_reduce_out = self.inception_3a_3x3_reduce(pool2_3x3_s2_out)
         inception_3a_3x3_reduce_bn_out = self.inception_3a_3x3_reduce_bn(inception_3a_3x3_reduce_out)
-        inception_3a_relu_3x3_reduce_out = self.inception_3a_relu_3x3_reduce(inception_3a_3x3_reduce_bn_out)
+        #inception_3a_relu_3x3_reduce_out = self.inception_3a_relu_3x3_reduce(inception_3a_3x3_reduce_bn_out)
         inception_3a_3x3_out = self.inception_3a_3x3(inception_3a_3x3_reduce_bn_out)
         inception_3a_3x3_bn_out = self.inception_3a_3x3_bn(inception_3a_3x3_out)
-        inception_3a_relu_3x3_out = self.inception_3a_relu_3x3(inception_3a_3x3_bn_out)
+        #inception_3a_relu_3x3_out = self.inception_3a_relu_3x3(inception_3a_3x3_bn_out)
         inception_3a_double_3x3_reduce_out = self.inception_3a_double_3x3_reduce(pool2_3x3_s2_out)
         inception_3a_double_3x3_reduce_bn_out = self.inception_3a_double_3x3_reduce_bn(
             inception_3a_double_3x3_reduce_out)
-        inception_3a_relu_double_3x3_reduce_out = self.inception_3a_relu_double_3x3_reduce(
-            inception_3a_double_3x3_reduce_bn_out)
+        #inception_3a_relu_double_3x3_reduce_out = self.inception_3a_relu_double_3x3_reduce(
+            #inception_3a_double_3x3_reduce_bn_out)
         inception_3a_double_3x3_1_out = self.inception_3a_double_3x3_1(inception_3a_double_3x3_reduce_bn_out)
         inception_3a_double_3x3_1_bn_out = self.inception_3a_double_3x3_1_bn(inception_3a_double_3x3_1_out)
-        inception_3a_relu_double_3x3_1_out = self.inception_3a_relu_double_3x3_1(inception_3a_double_3x3_1_bn_out)
+        #inception_3a_relu_double_3x3_1_out = self.inception_3a_relu_double_3x3_1(inception_3a_double_3x3_1_bn_out)
         inception_3a_double_3x3_2_out = self.inception_3a_double_3x3_2(inception_3a_double_3x3_1_bn_out)
         inception_3a_double_3x3_2_bn_out = self.inception_3a_double_3x3_2_bn(inception_3a_double_3x3_2_out)
-        inception_3a_relu_double_3x3_2_out = self.inception_3a_relu_double_3x3_2(inception_3a_double_3x3_2_bn_out)
+        #inception_3a_relu_double_3x3_2_out = self.inception_3a_relu_double_3x3_2(inception_3a_double_3x3_2_bn_out)
         inception_3a_pool_out = self.inception_3a_pool(pool2_3x3_s2_out)
         inception_3a_pool_proj_out = self.inception_3a_pool_proj(inception_3a_pool_out)
         inception_3a_pool_proj_bn_out = self.inception_3a_pool_proj_bn(inception_3a_pool_proj_out)
-        inception_3a_relu_pool_proj_out = self.inception_3a_relu_pool_proj(inception_3a_pool_proj_bn_out)
+        #inception_3a_relu_pool_proj_out = self.inception_3a_relu_pool_proj(inception_3a_pool_proj_bn_out)
         inception_3a_output_out = torch.cat(
             [inception_3a_1x1_bn_out, inception_3a_3x3_bn_out, inception_3a_double_3x3_2_bn_out,
              inception_3a_pool_proj_bn_out], 1)
@@ -164,28 +165,28 @@ class BNInception(nn.Module):
     def _block_3b(self, inception_3a_output_out):
         inception_3b_1x1_out = self.inception_3b_1x1(inception_3a_output_out)
         inception_3b_1x1_bn_out = self.inception_3b_1x1_bn(inception_3b_1x1_out)
-        inception_3b_relu_1x1_out = self.inception_3b_relu_1x1(inception_3b_1x1_bn_out)
+        #inception_3b_relu_1x1_out = self.inception_3b_relu_1x1(inception_3b_1x1_bn_out)
         inception_3b_3x3_reduce_out = self.inception_3b_3x3_reduce(inception_3a_output_out)
         inception_3b_3x3_reduce_bn_out = self.inception_3b_3x3_reduce_bn(inception_3b_3x3_reduce_out)
-        inception_3b_relu_3x3_reduce_out = self.inception_3b_relu_3x3_reduce(inception_3b_3x3_reduce_bn_out)
+        #inception_3b_relu_3x3_reduce_out = self.inception_3b_relu_3x3_reduce(inception_3b_3x3_reduce_bn_out)
         inception_3b_3x3_out = self.inception_3b_3x3(inception_3b_3x3_reduce_bn_out)
         inception_3b_3x3_bn_out = self.inception_3b_3x3_bn(inception_3b_3x3_out)
-        inception_3b_relu_3x3_out = self.inception_3b_relu_3x3(inception_3b_3x3_bn_out)
+        #inception_3b_relu_3x3_out = self.inception_3b_relu_3x3(inception_3b_3x3_bn_out)
         inception_3b_double_3x3_reduce_out = self.inception_3b_double_3x3_reduce(inception_3a_output_out)
         inception_3b_double_3x3_reduce_bn_out = self.inception_3b_double_3x3_reduce_bn(
             inception_3b_double_3x3_reduce_out)
-        inception_3b_relu_double_3x3_reduce_out = self.inception_3b_relu_double_3x3_reduce(
-            inception_3b_double_3x3_reduce_bn_out)
+        #inception_3b_relu_double_3x3_reduce_out = self.inception_3b_relu_double_3x3_reduce(
+            #inception_3b_double_3x3_reduce_bn_out)
         inception_3b_double_3x3_1_out = self.inception_3b_double_3x3_1(inception_3b_double_3x3_reduce_bn_out)
         inception_3b_double_3x3_1_bn_out = self.inception_3b_double_3x3_1_bn(inception_3b_double_3x3_1_out)
-        inception_3b_relu_double_3x3_1_out = self.inception_3b_relu_double_3x3_1(inception_3b_double_3x3_1_bn_out)
+        #inception_3b_relu_double_3x3_1_out = self.inception_3b_relu_double_3x3_1(inception_3b_double_3x3_1_bn_out)
         inception_3b_double_3x3_2_out = self.inception_3b_double_3x3_2(inception_3b_double_3x3_1_bn_out)
         inception_3b_double_3x3_2_bn_out = self.inception_3b_double_3x3_2_bn(inception_3b_double_3x3_2_out)
-        inception_3b_relu_double_3x3_2_out = self.inception_3b_relu_double_3x3_2(inception_3b_double_3x3_2_bn_out)
+        #inception_3b_relu_double_3x3_2_out = self.inception_3b_relu_double_3x3_2(inception_3b_double_3x3_2_bn_out)
         inception_3b_pool_out = self.inception_3b_pool(inception_3a_output_out)
         inception_3b_pool_proj_out = self.inception_3b_pool_proj(inception_3b_pool_out)
         inception_3b_pool_proj_bn_out = self.inception_3b_pool_proj_bn(inception_3b_pool_proj_out)
-        inception_3b_relu_pool_proj_out = self.inception_3b_relu_pool_proj(inception_3b_pool_proj_bn_out)
+        #inception_3b_relu_pool_proj_out = self.inception_3b_relu_pool_proj(inception_3b_pool_proj_bn_out)
         inception_3b_output_out = torch.cat(
             [inception_3b_1x1_bn_out, inception_3b_3x3_bn_out, inception_3b_double_3x3_2_bn_out,
              inception_3b_pool_proj_bn_out], 1)
@@ -194,21 +195,21 @@ class BNInception(nn.Module):
     def _block_3c(self, inception_3b_output_out):
         inception_3c_3x3_reduce_out = self.inception_3c_3x3_reduce(inception_3b_output_out)
         inception_3c_3x3_reduce_bn_out = self.inception_3c_3x3_reduce_bn(inception_3c_3x3_reduce_out)
-        inception_3c_relu_3x3_reduce_out = self.inception_3c_relu_3x3_reduce(inception_3c_3x3_reduce_bn_out)
+        #inception_3c_relu_3x3_reduce_out = self.inception_3c_relu_3x3_reduce(inception_3c_3x3_reduce_bn_out)
         inception_3c_3x3_out = self.inception_3c_3x3(inception_3c_3x3_reduce_bn_out)
         inception_3c_3x3_bn_out = self.inception_3c_3x3_bn(inception_3c_3x3_out)
-        inception_3c_relu_3x3_out = self.inception_3c_relu_3x3(inception_3c_3x3_bn_out)
+        #inception_3c_relu_3x3_out = self.inception_3c_relu_3x3(inception_3c_3x3_bn_out)
         inception_3c_double_3x3_reduce_out = self.inception_3c_double_3x3_reduce(inception_3b_output_out)
         inception_3c_double_3x3_reduce_bn_out = self.inception_3c_double_3x3_reduce_bn(
             inception_3c_double_3x3_reduce_out)
-        inception_3c_relu_double_3x3_reduce_out = self.inception_3c_relu_double_3x3_reduce(
-            inception_3c_double_3x3_reduce_bn_out)
+        #inception_3c_relu_double_3x3_reduce_out = self.inception_3c_relu_double_3x3_reduce(
+            #inception_3c_double_3x3_reduce_bn_out)
         inception_3c_double_3x3_1_out = self.inception_3c_double_3x3_1(inception_3c_double_3x3_reduce_bn_out)
         inception_3c_double_3x3_1_bn_out = self.inception_3c_double_3x3_1_bn(inception_3c_double_3x3_1_out)
-        inception_3c_relu_double_3x3_1_out = self.inception_3c_relu_double_3x3_1(inception_3c_double_3x3_1_bn_out)
+        #inception_3c_relu_double_3x3_1_out = self.inception_3c_relu_double_3x3_1(inception_3c_double_3x3_1_bn_out)
         inception_3c_double_3x3_2_out = self.inception_3c_double_3x3_2(inception_3c_double_3x3_1_bn_out)
         inception_3c_double_3x3_2_bn_out = self.inception_3c_double_3x3_2_bn(inception_3c_double_3x3_2_out)
-        inception_3c_relu_double_3x3_2_out = self.inception_3c_relu_double_3x3_2(inception_3c_double_3x3_2_bn_out)
+        #inception_3c_relu_double_3x3_2_out = self.inception_3c_relu_double_3x3_2(inception_3c_double_3x3_2_bn_out)
         inception_3c_pool_out = self.inception_3c_pool(inception_3b_output_out)
         inception_3c_output_out = torch.cat(
             [inception_3c_3x3_bn_out, inception_3c_double_3x3_2_bn_out, inception_3c_pool_out], 1)
@@ -217,28 +218,28 @@ class BNInception(nn.Module):
     def _block_4a(self, inception_3c_output_out):
         inception_4a_1x1_out = self.inception_4a_1x1(inception_3c_output_out)
         inception_4a_1x1_bn_out = self.inception_4a_1x1_bn(inception_4a_1x1_out)
-        inception_4a_relu_1x1_out = self.inception_4a_relu_1x1(inception_4a_1x1_bn_out)
+        #inception_4a_relu_1x1_out = self.inception_4a_relu_1x1(inception_4a_1x1_bn_out)
         inception_4a_3x3_reduce_out = self.inception_4a_3x3_reduce(inception_3c_output_out)
         inception_4a_3x3_reduce_bn_out = self.inception_4a_3x3_reduce_bn(inception_4a_3x3_reduce_out)
-        inception_4a_relu_3x3_reduce_out = self.inception_4a_relu_3x3_reduce(inception_4a_3x3_reduce_bn_out)
+        #inception_4a_relu_3x3_reduce_out = self.inception_4a_relu_3x3_reduce(inception_4a_3x3_reduce_bn_out)
         inception_4a_3x3_out = self.inception_4a_3x3(inception_4a_3x3_reduce_bn_out)
         inception_4a_3x3_bn_out = self.inception_4a_3x3_bn(inception_4a_3x3_out)
-        inception_4a_relu_3x3_out = self.inception_4a_relu_3x3(inception_4a_3x3_bn_out)
+        #inception_4a_relu_3x3_out = self.inception_4a_relu_3x3(inception_4a_3x3_bn_out)
         inception_4a_double_3x3_reduce_out = self.inception_4a_double_3x3_reduce(inception_3c_output_out)
         inception_4a_double_3x3_reduce_bn_out = self.inception_4a_double_3x3_reduce_bn(
             inception_4a_double_3x3_reduce_out)
-        inception_4a_relu_double_3x3_reduce_out = self.inception_4a_relu_double_3x3_reduce(
-            inception_4a_double_3x3_reduce_bn_out)
+        #inception_4a_relu_double_3x3_reduce_out = self.inception_4a_relu_double_3x3_reduce(
+            #inception_4a_double_3x3_reduce_bn_out)
         inception_4a_double_3x3_1_out = self.inception_4a_double_3x3_1(inception_4a_double_3x3_reduce_bn_out)
         inception_4a_double_3x3_1_bn_out = self.inception_4a_double_3x3_1_bn(inception_4a_double_3x3_1_out)
-        inception_4a_relu_double_3x3_1_out = self.inception_4a_relu_double_3x3_1(inception_4a_double_3x3_1_bn_out)
+        #inception_4a_relu_double_3x3_1_out = self.inception_4a_relu_double_3x3_1(inception_4a_double_3x3_1_bn_out)
         inception_4a_double_3x3_2_out = self.inception_4a_double_3x3_2(inception_4a_double_3x3_1_bn_out)
         inception_4a_double_3x3_2_bn_out = self.inception_4a_double_3x3_2_bn(inception_4a_double_3x3_2_out)
-        inception_4a_relu_double_3x3_2_out = self.inception_4a_relu_double_3x3_2(inception_4a_double_3x3_2_bn_out)
+        #inception_4a_relu_double_3x3_2_out = self.inception_4a_relu_double_3x3_2(inception_4a_double_3x3_2_bn_out)
         inception_4a_pool_out = self.inception_4a_pool(inception_3c_output_out)
         inception_4a_pool_proj_out = self.inception_4a_pool_proj(inception_4a_pool_out)
         inception_4a_pool_proj_bn_out = self.inception_4a_pool_proj_bn(inception_4a_pool_proj_out)
-        inception_4a_relu_pool_proj_out = self.inception_4a_relu_pool_proj(inception_4a_pool_proj_bn_out)
+        #inception_4a_relu_pool_proj_out = self.inception_4a_relu_pool_proj(inception_4a_pool_proj_bn_out)
         inception_4a_output_out = torch.cat(
             [inception_4a_1x1_bn_out, inception_4a_3x3_bn_out, inception_4a_double_3x3_2_bn_out,
              inception_4a_pool_proj_bn_out], 1)
@@ -247,28 +248,28 @@ class BNInception(nn.Module):
     def _block_4b(self, inception_4a_output_out):
         inception_4b_1x1_out = self.inception_4b_1x1(inception_4a_output_out)
         inception_4b_1x1_bn_out = self.inception_4b_1x1_bn(inception_4b_1x1_out)
-        inception_4b_relu_1x1_out = self.inception_4b_relu_1x1(inception_4b_1x1_bn_out)
+        #inception_4b_relu_1x1_out = self.inception_4b_relu_1x1(inception_4b_1x1_bn_out)
         inception_4b_3x3_reduce_out = self.inception_4b_3x3_reduce(inception_4a_output_out)
         inception_4b_3x3_reduce_bn_out = self.inception_4b_3x3_reduce_bn(inception_4b_3x3_reduce_out)
-        inception_4b_relu_3x3_reduce_out = self.inception_4b_relu_3x3_reduce(inception_4b_3x3_reduce_bn_out)
+        #inception_4b_relu_3x3_reduce_out = self.inception_4b_relu_3x3_reduce(inception_4b_3x3_reduce_bn_out)
         inception_4b_3x3_out = self.inception_4b_3x3(inception_4b_3x3_reduce_bn_out)
         inception_4b_3x3_bn_out = self.inception_4b_3x3_bn(inception_4b_3x3_out)
-        inception_4b_relu_3x3_out = self.inception_4b_relu_3x3(inception_4b_3x3_bn_out)
+        #inception_4b_relu_3x3_out = self.inception_4b_relu_3x3(inception_4b_3x3_bn_out)
         inception_4b_double_3x3_reduce_out = self.inception_4b_double_3x3_reduce(inception_4a_output_out)
         inception_4b_double_3x3_reduce_bn_out = self.inception_4b_double_3x3_reduce_bn(
             inception_4b_double_3x3_reduce_out)
-        inception_4b_relu_double_3x3_reduce_out = self.inception_4b_relu_double_3x3_reduce(
-            inception_4b_double_3x3_reduce_bn_out)
+        #inception_4b_relu_double_3x3_reduce_out = self.inception_4b_relu_double_3x3_reduce(
+            #inception_4b_double_3x3_reduce_bn_out)
         inception_4b_double_3x3_1_out = self.inception_4b_double_3x3_1(inception_4b_double_3x3_reduce_bn_out)
         inception_4b_double_3x3_1_bn_out = self.inception_4b_double_3x3_1_bn(inception_4b_double_3x3_1_out)
-        inception_4b_relu_double_3x3_1_out = self.inception_4b_relu_double_3x3_1(inception_4b_double_3x3_1_bn_out)
+        #inception_4b_relu_double_3x3_1_out = self.inception_4b_relu_double_3x3_1(inception_4b_double_3x3_1_bn_out)
         inception_4b_double_3x3_2_out = self.inception_4b_double_3x3_2(inception_4b_double_3x3_1_bn_out)
         inception_4b_double_3x3_2_bn_out = self.inception_4b_double_3x3_2_bn(inception_4b_double_3x3_2_out)
-        inception_4b_relu_double_3x3_2_out = self.inception_4b_relu_double_3x3_2(inception_4b_double_3x3_2_bn_out)
+        #inception_4b_relu_double_3x3_2_out = self.inception_4b_relu_double_3x3_2(inception_4b_double_3x3_2_bn_out)
         inception_4b_pool_out = self.inception_4b_pool(inception_4a_output_out)
         inception_4b_pool_proj_out = self.inception_4b_pool_proj(inception_4b_pool_out)
         inception_4b_pool_proj_bn_out = self.inception_4b_pool_proj_bn(inception_4b_pool_proj_out)
-        inception_4b_relu_pool_proj_out = self.inception_4b_relu_pool_proj(inception_4b_pool_proj_bn_out)
+        #inception_4b_relu_pool_proj_out = self.inception_4b_relu_pool_proj(inception_4b_pool_proj_bn_out)
         inception_4b_output_out = torch.cat(
             [inception_4b_1x1_bn_out, inception_4b_3x3_bn_out, inception_4b_double_3x3_2_bn_out,
              inception_4b_pool_proj_bn_out], 1)
@@ -277,28 +278,28 @@ class BNInception(nn.Module):
     def _block_4c(self, inception_4b_output_out):
         inception_4c_1x1_out = self.inception_4c_1x1(inception_4b_output_out)
         inception_4c_1x1_bn_out = self.inception_4c_1x1_bn(inception_4c_1x1_out)
-        inception_4c_relu_1x1_out = self.inception_4c_relu_1x1(inception_4c_1x1_bn_out)
+        #inception_4c_relu_1x1_out = self.inception_4c_relu_1x1(inception_4c_1x1_bn_out)
         inception_4c_3x3_reduce_out = self.inception_4c_3x3_reduce(inception_4b_output_out)
         inception_4c_3x3_reduce_bn_out = self.inception_4c_3x3_reduce_bn(inception_4c_3x3_reduce_out)
-        inception_4c_relu_3x3_reduce_out = self.inception_4c_relu_3x3_reduce(inception_4c_3x3_reduce_bn_out)
+        #inception_4c_relu_3x3_reduce_out = self.inception_4c_relu_3x3_reduce(inception_4c_3x3_reduce_bn_out)
         inception_4c_3x3_out = self.inception_4c_3x3(inception_4c_3x3_reduce_bn_out)
         inception_4c_3x3_bn_out = self.inception_4c_3x3_bn(inception_4c_3x3_out)
-        inception_4c_relu_3x3_out = self.inception_4c_relu_3x3(inception_4c_3x3_bn_out)
+        #inception_4c_relu_3x3_out = self.inception_4c_relu_3x3(inception_4c_3x3_bn_out)
         inception_4c_double_3x3_reduce_out = self.inception_4c_double_3x3_reduce(inception_4b_output_out)
         inception_4c_double_3x3_reduce_bn_out = self.inception_4c_double_3x3_reduce_bn(
             inception_4c_double_3x3_reduce_out)
-        inception_4c_relu_double_3x3_reduce_out = self.inception_4c_relu_double_3x3_reduce(
-            inception_4c_double_3x3_reduce_bn_out)
+        #inception_4c_relu_double_3x3_reduce_out = self.inception_4c_relu_double_3x3_reduce(
+            #inception_4c_double_3x3_reduce_bn_out)
         inception_4c_double_3x3_1_out = self.inception_4c_double_3x3_1(inception_4c_double_3x3_reduce_bn_out)
         inception_4c_double_3x3_1_bn_out = self.inception_4c_double_3x3_1_bn(inception_4c_double_3x3_1_out)
-        inception_4c_relu_double_3x3_1_out = self.inception_4c_relu_double_3x3_1(inception_4c_double_3x3_1_bn_out)
+        #inception_4c_relu_double_3x3_1_out = self.inception_4c_relu_double_3x3_1(inception_4c_double_3x3_1_bn_out)
         inception_4c_double_3x3_2_out = self.inception_4c_double_3x3_2(inception_4c_double_3x3_1_bn_out)
         inception_4c_double_3x3_2_bn_out = self.inception_4c_double_3x3_2_bn(inception_4c_double_3x3_2_out)
-        inception_4c_relu_double_3x3_2_out = self.inception_4c_relu_double_3x3_2(inception_4c_double_3x3_2_bn_out)
+        #inception_4c_relu_double_3x3_2_out = self.inception_4c_relu_double_3x3_2(inception_4c_double_3x3_2_bn_out)
         inception_4c_pool_out = self.inception_4c_pool(inception_4b_output_out)
         inception_4c_pool_proj_out = self.inception_4c_pool_proj(inception_4c_pool_out)
         inception_4c_pool_proj_bn_out = self.inception_4c_pool_proj_bn(inception_4c_pool_proj_out)
-        inception_4c_relu_pool_proj_out = self.inception_4c_relu_pool_proj(inception_4c_pool_proj_bn_out)
+        #inception_4c_relu_pool_proj_out = self.inception_4c_relu_pool_proj(inception_4c_pool_proj_bn_out)
         inception_4c_output_out = torch.cat(
             [inception_4c_1x1_bn_out, inception_4c_3x3_bn_out, inception_4c_double_3x3_2_bn_out,
              inception_4c_pool_proj_bn_out], 1)
@@ -307,28 +308,28 @@ class BNInception(nn.Module):
     def _block_4d(self, inception_4c_output_out):
         inception_4d_1x1_out = self.inception_4d_1x1(inception_4c_output_out)
         inception_4d_1x1_bn_out = self.inception_4d_1x1_bn(inception_4d_1x1_out)
-        inception_4d_relu_1x1_out = self.inception_4d_relu_1x1(inception_4d_1x1_bn_out)
+        #inception_4d_relu_1x1_out = self.inception_4d_relu_1x1(inception_4d_1x1_bn_out)
         inception_4d_3x3_reduce_out = self.inception_4d_3x3_reduce(inception_4c_output_out)
         inception_4d_3x3_reduce_bn_out = self.inception_4d_3x3_reduce_bn(inception_4d_3x3_reduce_out)
-        inception_4d_relu_3x3_reduce_out = self.inception_4d_relu_3x3_reduce(inception_4d_3x3_reduce_bn_out)
+        #inception_4d_relu_3x3_reduce_out = self.inception_4d_relu_3x3_reduce(inception_4d_3x3_reduce_bn_out)
         inception_4d_3x3_out = self.inception_4d_3x3(inception_4d_3x3_reduce_bn_out)
         inception_4d_3x3_bn_out = self.inception_4d_3x3_bn(inception_4d_3x3_out)
-        inception_4d_relu_3x3_out = self.inception_4d_relu_3x3(inception_4d_3x3_bn_out)
+        #inception_4d_relu_3x3_out = self.inception_4d_relu_3x3(inception_4d_3x3_bn_out)
         inception_4d_double_3x3_reduce_out = self.inception_4d_double_3x3_reduce(inception_4c_output_out)
         inception_4d_double_3x3_reduce_bn_out = self.inception_4d_double_3x3_reduce_bn(
             inception_4d_double_3x3_reduce_out)
-        inception_4d_relu_double_3x3_reduce_out = self.inception_4d_relu_double_3x3_reduce(
-            inception_4d_double_3x3_reduce_bn_out)
+        #inception_4d_relu_double_3x3_reduce_out = self.inception_4d_relu_double_3x3_reduce(
+            #inception_4d_double_3x3_reduce_bn_out)
         inception_4d_double_3x3_1_out = self.inception_4d_double_3x3_1(inception_4d_double_3x3_reduce_bn_out)
         inception_4d_double_3x3_1_bn_out = self.inception_4d_double_3x3_1_bn(inception_4d_double_3x3_1_out)
-        inception_4d_relu_double_3x3_1_out = self.inception_4d_relu_double_3x3_1(inception_4d_double_3x3_1_bn_out)
+        #inception_4d_relu_double_3x3_1_out = self.inception_4d_relu_double_3x3_1(inception_4d_double_3x3_1_bn_out)
         inception_4d_double_3x3_2_out = self.inception_4d_double_3x3_2(inception_4d_double_3x3_1_bn_out)
         inception_4d_double_3x3_2_bn_out = self.inception_4d_double_3x3_2_bn(inception_4d_double_3x3_2_out)
-        inception_4d_relu_double_3x3_2_out = self.inception_4d_relu_double_3x3_2(inception_4d_double_3x3_2_bn_out)
+        #inception_4d_relu_double_3x3_2_out = self.inception_4d_relu_double_3x3_2(inception_4d_double_3x3_2_bn_out)
         inception_4d_pool_out = self.inception_4d_pool(inception_4c_output_out)
         inception_4d_pool_proj_out = self.inception_4d_pool_proj(inception_4d_pool_out)
         inception_4d_pool_proj_bn_out = self.inception_4d_pool_proj_bn(inception_4d_pool_proj_out)
-        inception_4d_relu_pool_proj_out = self.inception_4d_relu_pool_proj(inception_4d_pool_proj_bn_out)
+        #inception_4d_relu_pool_proj_out = self.inception_4d_relu_pool_proj(inception_4d_pool_proj_bn_out)
         inception_4d_output_out = torch.cat(
             [inception_4d_1x1_bn_out, inception_4d_3x3_bn_out, inception_4d_double_3x3_2_bn_out,
              inception_4d_pool_proj_bn_out], 1)
@@ -337,21 +338,21 @@ class BNInception(nn.Module):
     def _block_4e(self, inception_4d_output_out):
         inception_4e_3x3_reduce_out = self.inception_4e_3x3_reduce(inception_4d_output_out)
         inception_4e_3x3_reduce_bn_out = self.inception_4e_3x3_reduce_bn(inception_4e_3x3_reduce_out)
-        inception_4e_relu_3x3_reduce_out = self.inception_4e_relu_3x3_reduce(inception_4e_3x3_reduce_bn_out)
+        #inception_4e_relu_3x3_reduce_out = self.inception_4e_relu_3x3_reduce(inception_4e_3x3_reduce_bn_out)
         inception_4e_3x3_out = self.inception_4e_3x3(inception_4e_3x3_reduce_bn_out)
         inception_4e_3x3_bn_out = self.inception_4e_3x3_bn(inception_4e_3x3_out)
-        inception_4e_relu_3x3_out = self.inception_4e_relu_3x3(inception_4e_3x3_bn_out)
+        #inception_4e_relu_3x3_out = self.inception_4e_relu_3x3(inception_4e_3x3_bn_out)
         inception_4e_double_3x3_reduce_out = self.inception_4e_double_3x3_reduce(inception_4d_output_out)
         inception_4e_double_3x3_reduce_bn_out = self.inception_4e_double_3x3_reduce_bn(
             inception_4e_double_3x3_reduce_out)
-        inception_4e_relu_double_3x3_reduce_out = self.inception_4e_relu_double_3x3_reduce(
-            inception_4e_double_3x3_reduce_bn_out)
+        #inception_4e_relu_double_3x3_reduce_out = self.inception_4e_relu_double_3x3_reduce(
+            #inception_4e_double_3x3_reduce_bn_out)
         inception_4e_double_3x3_1_out = self.inception_4e_double_3x3_1(inception_4e_double_3x3_reduce_bn_out)
         inception_4e_double_3x3_1_bn_out = self.inception_4e_double_3x3_1_bn(inception_4e_double_3x3_1_out)
-        inception_4e_relu_double_3x3_1_out = self.inception_4e_relu_double_3x3_1(inception_4e_double_3x3_1_bn_out)
+        #inception_4e_relu_double_3x3_1_out = self.inception_4e_relu_double_3x3_1(inception_4e_double_3x3_1_bn_out)
         inception_4e_double_3x3_2_out = self.inception_4e_double_3x3_2(inception_4e_double_3x3_1_bn_out)
         inception_4e_double_3x3_2_bn_out = self.inception_4e_double_3x3_2_bn(inception_4e_double_3x3_2_out)
-        inception_4e_relu_double_3x3_2_out = self.inception_4e_relu_double_3x3_2(inception_4e_double_3x3_2_bn_out)
+        #inception_4e_relu_double_3x3_2_out = self.inception_4e_relu_double_3x3_2(inception_4e_double_3x3_2_bn_out)
         inception_4e_pool_out = self.inception_4e_pool(inception_4d_output_out)
         inception_4e_output_out = torch.cat(
             [inception_4e_3x3_bn_out, inception_4e_double_3x3_2_bn_out, inception_4e_pool_out], 1)
@@ -360,28 +361,28 @@ class BNInception(nn.Module):
     def _block_5a(self, inception_4e_output_out):
         inception_5a_1x1_out = self.inception_5a_1x1(inception_4e_output_out)
         inception_5a_1x1_bn_out = self.inception_5a_1x1_bn(inception_5a_1x1_out)
-        inception_5a_relu_1x1_out = self.inception_5a_relu_1x1(inception_5a_1x1_bn_out)
+        #inception_5a_relu_1x1_out = self.inception_5a_relu_1x1(inception_5a_1x1_bn_out)
         inception_5a_3x3_reduce_out = self.inception_5a_3x3_reduce(inception_4e_output_out)
         inception_5a_3x3_reduce_bn_out = self.inception_5a_3x3_reduce_bn(inception_5a_3x3_reduce_out)
-        inception_5a_relu_3x3_reduce_out = self.inception_5a_relu_3x3_reduce(inception_5a_3x3_reduce_bn_out)
+        #inception_5a_relu_3x3_reduce_out = self.inception_5a_relu_3x3_reduce(inception_5a_3x3_reduce_bn_out)
         inception_5a_3x3_out = self.inception_5a_3x3(inception_5a_3x3_reduce_bn_out)
         inception_5a_3x3_bn_out = self.inception_5a_3x3_bn(inception_5a_3x3_out)
-        inception_5a_relu_3x3_out = self.inception_5a_relu_3x3(inception_5a_3x3_bn_out)
+        #inception_5a_relu_3x3_out = self.inception_5a_relu_3x3(inception_5a_3x3_bn_out)
         inception_5a_double_3x3_reduce_out = self.inception_5a_double_3x3_reduce(inception_4e_output_out)
         inception_5a_double_3x3_reduce_bn_out = self.inception_5a_double_3x3_reduce_bn(
             inception_5a_double_3x3_reduce_out)
-        inception_5a_relu_double_3x3_reduce_out = self.inception_5a_relu_double_3x3_reduce(
-            inception_5a_double_3x3_reduce_bn_out)
+        #inception_5a_relu_double_3x3_reduce_out = self.inception_5a_relu_double_3x3_reduce(
+            #inception_5a_double_3x3_reduce_bn_out)
         inception_5a_double_3x3_1_out = self.inception_5a_double_3x3_1(inception_5a_double_3x3_reduce_bn_out)
         inception_5a_double_3x3_1_bn_out = self.inception_5a_double_3x3_1_bn(inception_5a_double_3x3_1_out)
-        inception_5a_relu_double_3x3_1_out = self.inception_5a_relu_double_3x3_1(inception_5a_double_3x3_1_bn_out)
+        #inception_5a_relu_double_3x3_1_out = self.inception_5a_relu_double_3x3_1(inception_5a_double_3x3_1_bn_out)
         inception_5a_double_3x3_2_out = self.inception_5a_double_3x3_2(inception_5a_double_3x3_1_bn_out)
         inception_5a_double_3x3_2_bn_out = self.inception_5a_double_3x3_2_bn(inception_5a_double_3x3_2_out)
-        inception_5a_relu_double_3x3_2_out = self.inception_5a_relu_double_3x3_2(inception_5a_double_3x3_2_bn_out)
+        #inception_5a_relu_double_3x3_2_out = self.inception_5a_relu_double_3x3_2(inception_5a_double_3x3_2_bn_out)
         inception_5a_pool_out = self.inception_5a_pool(inception_4e_output_out)
         inception_5a_pool_proj_out = self.inception_5a_pool_proj(inception_5a_pool_out)
         inception_5a_pool_proj_bn_out = self.inception_5a_pool_proj_bn(inception_5a_pool_proj_out)
-        inception_5a_relu_pool_proj_out = self.inception_5a_relu_pool_proj(inception_5a_pool_proj_bn_out)
+        #inception_5a_relu_pool_proj_out = self.inception_5a_relu_pool_proj(inception_5a_pool_proj_bn_out)
         inception_5a_output_out = torch.cat(
             [inception_5a_1x1_bn_out, inception_5a_3x3_bn_out, inception_5a_double_3x3_2_bn_out,
              inception_5a_pool_proj_bn_out], 1)
@@ -390,28 +391,28 @@ class BNInception(nn.Module):
     def _block_5b(self, inception_5a_output_out):
         inception_5b_1x1_out = self.inception_5b_1x1(inception_5a_output_out)
         inception_5b_1x1_bn_out = self.inception_5b_1x1_bn(inception_5b_1x1_out)
-        inception_5b_relu_1x1_out = self.inception_5b_relu_1x1(inception_5b_1x1_bn_out)
+        #inception_5b_relu_1x1_out = self.inception_5b_relu_1x1(inception_5b_1x1_bn_out)
         inception_5b_3x3_reduce_out = self.inception_5b_3x3_reduce(inception_5a_output_out)
         inception_5b_3x3_reduce_bn_out = self.inception_5b_3x3_reduce_bn(inception_5b_3x3_reduce_out)
-        inception_5b_relu_3x3_reduce_out = self.inception_5b_relu_3x3_reduce(inception_5b_3x3_reduce_bn_out)
+        #inception_5b_relu_3x3_reduce_out = self.inception_5b_relu_3x3_reduce(inception_5b_3x3_reduce_bn_out)
         inception_5b_3x3_out = self.inception_5b_3x3(inception_5b_3x3_reduce_bn_out)
         inception_5b_3x3_bn_out = self.inception_5b_3x3_bn(inception_5b_3x3_out)
-        inception_5b_relu_3x3_out = self.inception_5b_relu_3x3(inception_5b_3x3_bn_out)
+        #inception_5b_relu_3x3_out = self.inception_5b_relu_3x3(inception_5b_3x3_bn_out)
         inception_5b_double_3x3_reduce_out = self.inception_5b_double_3x3_reduce(inception_5a_output_out)
         inception_5b_double_3x3_reduce_bn_out = self.inception_5b_double_3x3_reduce_bn(
             inception_5b_double_3x3_reduce_out)
-        inception_5b_relu_double_3x3_reduce_out = self.inception_5b_relu_double_3x3_reduce(
-            inception_5b_double_3x3_reduce_bn_out)
+        #inception_5b_relu_double_3x3_reduce_out = self.inception_5b_relu_double_3x3_reduce(
+            #inception_5b_double_3x3_reduce_bn_out)
         inception_5b_double_3x3_1_out = self.inception_5b_double_3x3_1(inception_5b_double_3x3_reduce_bn_out)
         inception_5b_double_3x3_1_bn_out = self.inception_5b_double_3x3_1_bn(inception_5b_double_3x3_1_out)
-        inception_5b_relu_double_3x3_1_out = self.inception_5b_relu_double_3x3_1(inception_5b_double_3x3_1_bn_out)
+        #inception_5b_relu_double_3x3_1_out = self.inception_5b_relu_double_3x3_1(inception_5b_double_3x3_1_bn_out)
         inception_5b_double_3x3_2_out = self.inception_5b_double_3x3_2(inception_5b_double_3x3_1_bn_out)
         inception_5b_double_3x3_2_bn_out = self.inception_5b_double_3x3_2_bn(inception_5b_double_3x3_2_out)
-        inception_5b_relu_double_3x3_2_out = self.inception_5b_relu_double_3x3_2(inception_5b_double_3x3_2_bn_out)
+        #inception_5b_relu_double_3x3_2_out = self.inception_5b_relu_double_3x3_2(inception_5b_double_3x3_2_bn_out)
         inception_5b_pool_out = self.inception_5b_pool(inception_5a_output_out)
         inception_5b_pool_proj_out = self.inception_5b_pool_proj(inception_5b_pool_out)
         inception_5b_pool_proj_bn_out = self.inception_5b_pool_proj_bn(inception_5b_pool_proj_out)
-        inception_5b_relu_pool_proj_out = self.inception_5b_relu_pool_proj(inception_5b_pool_proj_bn_out)
+        #inception_5b_relu_pool_proj_out = self.inception_5b_relu_pool_proj(inception_5b_pool_proj_bn_out)
         inception_5b_output_out = torch.cat(
             [inception_5b_1x1_bn_out, inception_5b_3x3_bn_out, inception_5b_double_3x3_2_bn_out,
              inception_5b_pool_proj_bn_out], 1)

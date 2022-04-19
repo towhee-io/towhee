@@ -2,20 +2,21 @@
 # arXiv:1811.08383
 # Ji Lin*, Chuang Gan, Song Han
 # {jilin, songhan}@mit.edu, ganchuang@csail.mit.edu
+# modified by Zilliz.
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
-import timm
+import torchvision
 
 class TemporalShift(nn.Module):
-    """ 
+    """
     Args:
 
     Returns:
     """
     def __init__(self, net, n_segment=3, n_div=8, inplace=False):
-        super(TemporalShift, self).__init__()
+        super().__init__()
         self.net = net
         self.n_segment = n_segment
         self.fold_div = n_div
@@ -36,9 +37,9 @@ class TemporalShift(nn.Module):
 
         fold = c // fold_div
         if inplace:
-            # Due to some out of order error when performing parallel computing. 
+            # Due to some out of order error when performing parallel computing.
             # May need to write a CUDA kernel.
-            raise NotImplementedError  
+            raise NotImplementedError
             # out = InplaceShift.apply(x, fold)
         else:
             out = torch.zeros_like(x)
@@ -50,26 +51,27 @@ class TemporalShift(nn.Module):
 
 
 class InplaceShift(torch.autograd.Function):
-    # Special thanks to @raoyongming for the help to this function
+    """
+        not support higher order gradient
+        input = input.detach_()
+    """
     @staticmethod
-    def forward(ctx, input, fold):
-        # not support higher order gradient
-        # input = input.detach_()
+    def forward(ctx, input_x, fold):
         ctx.fold_ = fold
-        n, t, c, h, w = input.size()
-        buffer = input.data.new(n, t, fold, h, w).zero_()
-        buffer[:, :-1] = input.data[:, 1:, :fold]
-        input.data[:, :, :fold] = buffer
+        n, t, _, h, w = input_x.size()
+        buffer = input_x.data.new(n, t, fold, h, w).zero_()
+        buffer[:, :-1] = input_x.data[:, 1:, :fold]
+        input_x.data[:, :, :fold] = buffer
         buffer.zero_()
-        buffer[:, 1:] = input.data[:, :-1, fold: 2 * fold]
-        input.data[:, :, fold: 2 * fold] = buffer
-        return input
+        buffer[:, 1:] = input_x.data[:, :-1, fold: 2 * fold]
+        input_x.data[:, :, fold: 2 * fold] = buffer
+        return input_x
 
     @staticmethod
     def backward(ctx, grad_output):
         # grad_output = grad_output.detach_()
         fold = ctx.fold_
-        n, t, c, h, w = grad_output.size()
+        n, t, _, h, w = grad_output.size()
         buffer = grad_output.data.new(n, t, fold, h, w).zero_()
         buffer[:, 1:] = grad_output.data[:, :-1, :fold]
         grad_output.data[:, :, :fold] = buffer
@@ -80,8 +82,11 @@ class InplaceShift(torch.autograd.Function):
 
 
 class TemporalPool(nn.Module):
+    """
+        TemporalPool
+    """
     def __init__(self, net, n_segment):
-        super(TemporalPool, self).__init__()
+        super().__init__()
         self.net = net
         self.n_segment = n_segment
 
@@ -107,7 +112,7 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
     assert n_segment_list[-1] > 0
     print('=> n_segment per stage: {}'.format(n_segment_list))
 
-    if isinstance(net, timm.models.resnet.ResNet):
+    if isinstance(net, torchvision.models.ResNet):
         if place == 'block':
             def make_block_temporal(stage, this_segment):
                 blocks = list(stage.children())
@@ -132,7 +137,9 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
                 print('=> Processing stage with {} blocks residual'.format(len(blocks)))
                 for i, b in enumerate(blocks):
                     if i % n_round == 0:
-                        blocks[i].conv1 = TemporalShift(b.conv1, n_segment=this_segment, n_div=n_div)
+                        blocks[i].conv1 = TemporalShift(b.conv1,
+                                                        n_segment=this_segment,
+                                                        n_div=n_div)
                 return nn.Sequential(*blocks)
 
             net.layer1 = make_block_temporal(net.layer1, n_segment_list[0])
@@ -144,9 +151,7 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
 
 
 def make_temporal_pool(net, n_segment):
-    import torchvision
-    import timm
-    if isinstance(net, timm.models.resnet.ResNet):
+    if isinstance(net, torchvision.models.ResNet):
         print('=> Injecting nonlocal pooling')
         net.layer2 = TemporalPool(net.layer2, n_segment)
     else:

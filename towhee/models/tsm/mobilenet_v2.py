@@ -1,7 +1,11 @@
 # Code adapted from https://github.com/tonylins/pytorch-mobilenet-v2
+# modified by Zilliz.
 
-import torch.nn as nn
+from torch import nn
+from torch.utils.model_zoo import load_url
+
 import math
+import numpy as np
 
 
 def conv_bn(inp, oup, stride):
@@ -21,13 +25,15 @@ def conv_1x1_bn(inp, oup):
 
 
 def make_divisible(x, divisible_by=8):
-    import numpy as np
     return int(np.ceil(x * 1. / divisible_by) * divisible_by)
 
 
 class InvertedResidual(nn.Module):
+    """
+        InvertedResidual
+    """
     def __init__(self, inp, oup, stride, expand_ratio):
-        super(InvertedResidual, self).__init__()
+        super().__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -73,7 +79,7 @@ class MobileNetV2(nn.Module):
     https://arxiv.org/pdf/1801.04381
     """
     def __init__(self, n_class=1000, input_size=224, width_mult=1.):
-        super(MobileNetV2, self).__init__()
+        super().__init__()
         block = InvertedResidual
         input_channel = 32
         last_channel = 1280
@@ -138,11 +144,7 @@ def mobilenet_v2(pretrained=True):
     model = MobileNetV2(width_mult=1)
 
     if pretrained:
-        try:
-            from torch.hub import load_state_dict_from_url
-        except ImportError:
-            from torch.utils.model_zoo import load_url as load_state_dict_from_url
-        state_dict = load_state_dict_from_url(
+        state_dict = load_url (
             'https://www.dropbox.com/s/47tyzpofuuyyv1b/mobilenetv2_1.0-f2a8633.pth.tar?dl=1', progress=True)
         model.load_state_dict(state_dict)
     return model
