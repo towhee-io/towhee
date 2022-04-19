@@ -107,7 +107,9 @@ class GitUtils:
             ) from e
 
         try:
-            subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+            output = subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path],stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print("Exception on process, rc=", e.returncode, "output=", e.output)
         except FileNotFoundError as e:
             engine_log.warning(
                 '\'git\' not found, execute download instead of clone. ' \
