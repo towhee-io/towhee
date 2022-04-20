@@ -17,3 +17,4 @@ import towhee.hub.builtin.operators.tensor_like
 import towhee.hub.builtin.operators.runas_op
 import towhee.hub.builtin.operators.feature_engineer
 import towhee.hub.builtin.operators.sklearn
+import towhee.hub.builtin.operators.milvus_search
