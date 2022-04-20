@@ -1,6 +1,9 @@
 name: Documentation improvement
 description: As a Towhee user, I have some suggestions regarding documentation improvements
 title: "[Documentation]: "
+labels: [kind/documentation]
+assignees:
+- binbinlv
 body:
 - type: markdown
   attributes:

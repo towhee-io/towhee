@@ -1,6 +1,9 @@
 name: 🚀 Feature request
 description: As a user, I want to request a feature for Towhee
 title: "[Feature]: "
+labels: [kind/feature]
+assignees:
+  - GuoRentong
 body:
 - type: markdown
   attributes:
