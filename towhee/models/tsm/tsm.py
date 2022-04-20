@@ -12,12 +12,48 @@ from towhee.models.tsm.bn_inception import bninception
 #from transforms import *
 from torch.nn.init import normal_, constant_
 import timm
+from temporal_shift import make_temporal_shift
+from temporal_shift import TemporalShift
 
 class TSN(nn.Module):
     """
     Args:
-    
-    Returns:
+        num_class ('int'):
+            Output class nums.
+        num_segments ('int'):
+             The temperal shift segents.
+        modality ('string'):
+            Modality of the video like "RGB".
+        base_model ('string'):
+            The base model of TSM model. Default: 'resnet101'
+        new_length ('bool')
+            If true, RGBDiff needs one more image to calculate diff. Default: None
+        consensus_type ('string'):
+            The type of consensus. Default: 'avg' 
+        before_softmax ('bool')
+            If true, shift operation works before softmax. Default: True
+        dropout ('float')
+            Dropout rate. Default: 0.8,
+        img_feature_dim ('int'):
+            The feature dimension size of input images. Default: 256
+        crop_num ('int'):
+            The crop numbers of video. Default: 1
+        partial_bn ('bool')
+            If True, add partial batch normalization. Default: True
+        pretrain ('string'):
+            pretrained dataset name. Default: 'imagenet'
+        is_shift ('bool')
+            If True, add temperal shift to the model. Default: False
+        shift_div ('int'):
+            Scale reciprocal of shift operation. Default: 8
+        shift_place ('string'):
+            Shift place. Default: 'blockres'
+        fc_lr5 ('bool')
+            If True, the parameters of the last fc layer in cls_head have 5x lr multiplier and 10x weight decay multiplier. Default: False.
+        temporal_pool ('bool')
+            If true ,use temperal_pool. Default: False
+        non_local ('bool')
+            If true, use the non_local block. Default: False
     """
     def __init__(self, 
                  num_class, 
@@ -32,12 +68,12 @@ class TSN(nn.Module):
                  crop_num=1, 
                  partial_bn=True, 
                  pretrain='imagenet',
-                 is_shift=True, 
+                 is_shift=False, 
                  shift_div=8, 
                  shift_place='blockres', 
                  fc_lr5=False,
                  temporal_pool=False, 
-                 non_local=True):
+                 non_local=False):
         super(TSN, self).__init__()
 
         self.modality = modality
@@ -114,7 +150,6 @@ class TSN(nn.Module):
             self.base_model = timm.create_model(base_model,pretrained = True if self.pretrain == 'imagenet' else False)
             if self.is_shift:
                 print('Adding temporal shift...')
-                from temporal_shift import make_temporal_shift
                 make_temporal_shift(self.base_model, self.num_segments,
                                     n_div=self.shift_div, place=self.shift_place, temporal_pool=self.temporal_pool)
 
@@ -138,7 +173,6 @@ class TSN(nn.Module):
                 self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length
 
         elif base_model == 'mobilenetv2':
-            
             self.base_model = mobilenet_v2(True if self.pretrain == 'imagenet' else False)
 
             self.base_model.last_layer_name = 'classifier'
@@ -148,7 +182,6 @@ class TSN(nn.Module):
 
             self.base_model.avgpool = nn.AdaptiveAvgPool2d(1)
             if self.is_shift:
-                from ops.temporal_shift import TemporalShift
                 for m in self.base_model.modules():
                     if isinstance(m, InvertedResidual) and len(m.conv) == 8 and m.use_res_connect:
                         if self.print_spec:
@@ -162,7 +195,6 @@ class TSN(nn.Module):
                 self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length
 
         elif base_model == 'BNInception':
-
             self.base_model = bninception(pretrained=self.pretrain)
             self.input_size = self.base_model.input_size
             self.input_mean = self.base_model.mean
