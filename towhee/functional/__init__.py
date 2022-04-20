@@ -27,12 +27,12 @@ class GlobImpl(CallTracer):
     1. create a simple data collection;
 
     >>> import towhee
-    >>> towhee.glob('*.jpg', '*.png').to_list()
+    >>> towhee.glob('*.jpg', '*.png').to_list() #doctest: +SKIP
     ['a.jpg', 'b.jpg', 'x.png']
 
     2. create a data collection of structural data.
 
-    >>> towhee.glob['path']('*.jpg').to_list()
+    >>> towhee.glob['path']('*.jpg').to_list() #doctest: +SKIP
     [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
     """
 
@@ -48,12 +48,12 @@ class GlobZipImpl(CallTracer):
     1. create a simple data collection;
 
     >>> import towhee
-    >>> towhee.glob_zip('somefile.zip', '*.jpg').to_list()
+    >>> towhee.glob_zip('somefile.zip', '*.jpg').to_list() #doctest: +SKIP
     ['a.jpg', 'b.jpg]
 
     2. create a data collection of structural data.
 
-    >>> towhee.glob_zip['path']('somefile.zip', '*.jpg').to_list()
+    >>> towhee.glob_zip['path']('somefile.zip', '*.jpg').to_list() #doctest: +SKIP
     [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
     """
 

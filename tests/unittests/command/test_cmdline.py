@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 from towhee.command.develop import SetupCommand, UninstallCommand
-from towhee.command.execute import ExecuteCommand
+# from towhee.command.execute import ExecuteCommand
 
 public_path = Path(__file__).parent.parent.resolve()
 
@@ -40,11 +40,12 @@ class TestCmdline(unittest.TestCase):
         SetupCommand(args_dev)()
         UninstallCommand(args_unins)()
 
-    def test_run(self):
-        img_path = 'https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true'
-        args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
-        ExecuteCommand(args_1)()
-        self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())
+    # TODO: enable this test case with pytest @shiyu22
+    # def test_run(self):
+    #     img_path = 'https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true'
+    #     args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
+    #     ExecuteCommand(args_1)()
+    #     self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,7 +27,8 @@ class DispatcherMixin:
     ...     return x+1
 
     >>> dc = DataCollection.range(5).stream()
-    >>> dc.add_1['a','b','c']()
+    >>> dc.add_1['a','b','c']() #doctest: +ELLIPSIS
+    <map object at ...>
     """
 
     def resolve(self, call_mapping, path, index, *arg, **kws):

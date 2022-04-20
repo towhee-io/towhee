@@ -107,8 +107,8 @@ class MilvusMixin:
         be the same as it.
 
     >>> import towhee
-    >>> from pymilvus import connections
-    >>> mr = (
+    >>> from pymilvus import connections #doctest: +SKIP
+    >>> mr = ( #doctest: +SKIP
     ...     towhee.glob['path']('./*.jpg')
     ...           .image_decode['path', 'img']()
     ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')

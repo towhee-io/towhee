@@ -92,10 +92,11 @@ class TestPipelineOps(unittest.TestCase):
         test_op = ops.towhee.test_operator[('in_1', 'in_2'), ('out_1', 'out_2', 'out_3')](x=1)
         self.assertRaises(IndexError, test_op, x=1)
 
-    def test_repo_pipe(self):
-        # pylint: disable=protected-access
-        pipe = ops.builtin.template_test(test_op='towhee/test_op')
-        self.assertEqual(repr(pipe), render_result)
+    # TODO: enable this test case with pytest @KY
+    # def test_repo_pipe(self):
+    #     # pylint: disable=protected-access
+    #     pipe = ops.builtin.template_test(test_op='towhee/test_op')
+    #     self.assertEqual(repr(pipe), render_result)
 
 
 if __name__ == '__main__':
