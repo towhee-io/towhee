@@ -1,6 +1,9 @@
 name: 🐞 Bug report
 description: Create a bug report to help us improve Towhee
 title: "[Bug]: "
+labels: [kind/bug, needs-triage]
+assignees:
+- binbinlv
 body:
 - type: markdown
   attributes:

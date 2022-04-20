@@ -1,6 +1,9 @@
 name: Design proposal
 description: As a developer, I want to provide a design proposal for Towhee
 title: "[DesignProposal]: "
+labels: [kind/design-proposal, needs-triage]
+assignees:
+  - GuoRentong
 body:
 - type: markdown
   attributes:
