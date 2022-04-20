@@ -14,10 +14,10 @@
 
 import unittest
 import torch
-from towhee.models.TSM.TSM import TSN
+from towhee.models.tsm.tsm import TSN
 
-class TSMTest(unittest.TestCase):
-    def test_TSM(self):
+class TestTSM(unittest.TestCase):
+    def test_tsm(self):
         num_class = 256
         num_segments = 1
         modality = 'RGB'
@@ -27,6 +27,6 @@ class TSMTest(unittest.TestCase):
         self.assertTrue(out.shape == torch.Size([40, 256]))
 
 if __name__ == '__main__':
-    test=TSMTest()
-    test.test_TSM()
+    test=TestTSM()
+    test.test_tsm()
     
