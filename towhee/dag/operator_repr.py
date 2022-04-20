@@ -129,6 +129,7 @@ class OperatorRepr(BaseRepr):
 
         if 'tag' not in info:
             info['tag'] = 'main'
+        print(info.get('threads', 1))
 
         return OperatorRepr(info['name'], info['function'], info['init_args'],
                             info['inputs'], info['outputs'], info['iter_info'], info['tag'], info.get('threads', 1))

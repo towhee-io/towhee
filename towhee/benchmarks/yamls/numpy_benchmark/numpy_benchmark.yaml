@@ -1,0 +1,122 @@
+name: 'numpy-benchmark'
+type: 'numpy-benchmark' # Such as 'image-embedding'
+operators:
+    -
+        name: '_start_op' # Name for this operator, `_start_op` and `_end_op` are required in towhee, other operators can define their own names.
+        function: '_start_op'
+        init_args:
+        inputs:
+            -
+                df: '_start_df' # The dataframe for this operator, `_start_df` and `_end_df` are required in towhee, other operators can define their own name for the dataframe.
+                name: 'x'
+                col: 0
+        outputs:
+            -
+                df: 1
+        iter_info:
+            type: map # Type in Towhee, such as map, flatmap, filter, generator and window etc.
+        threads: 2
+        
+    -
+        name: 'numpy-op1'
+        function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
+        tag: 'main' # The `tags` for the operator repo
+        init_args:
+          size: 1000 # The init args in OperatorName class
+        inputs: # The args of `__call__` in OperatorName class
+            -
+                df: 1
+                name: 'x'
+                col: 0
+        outputs: 
+            - 
+                df: 2
+        iter_info:
+            type: map
+        threads: 2
+    -
+        name: 'numpy-op2'
+        function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
+        tag: 'main' # The `tags` for the operator repo
+        init_args:
+          size: 1000 # The init args in OperatorName class
+        inputs: # The args of `__call__` in OperatorName class
+            -
+                df: 2
+                name: 'x'
+                col: 0
+        outputs: 
+            - 
+                df: 3
+        iter_info:
+            type: map
+        threads: 2
+    -
+        name: 'numpy-op3'
+        function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
+        tag: 'main' # The `tags` for the operator repo
+        init_args:
+          size: 1000 # The init args in OperatorName class
+        inputs: # The args of `__call__` in OperatorName class
+            -
+                df: 3
+                name: 'x'
+                col: 0
+        outputs: 
+            - 
+                df: 4
+        iter_info:
+            type: map
+        threads: 2
+    -
+        name: '_end_op'
+        function: '_end_op'
+        init_args:
+        inputs:
+            -
+                df: 4 # The dataframe for this operator, `_start_df` and `_end_df` are required in towhee, other operators can define their own name for the dataframe.
+                name: 'x'
+                col: 0
+        outputs:
+            -
+                df: '_end_df'
+        iter_info:
+            type: map
+        threads: 2
+dataframes:
+    -
+        name: '_start_df'
+        columns: # The `name` and `vtype` in dataframes.columns should be same as dataframes:'xxx1'
+            -
+                name: 'x'
+                vtype: 'int'
+    -
+        name: 1
+        columns: # The `name` and `vtype` in dataframes.columns should according to the args of `__call__` in OperatorName class
+            -
+                name: 'x'
+                vtype: 'int'
+    -
+        name: 2
+        columns: # The `name` and `vtype` in dataframes.columns should according to the args of `__call__` in OperatorName class
+            -
+                name: 'x'
+                vtype: 'int'
+    -
+        name: 3
+        columns: # The `name` and `vtype` in dataframes.columns should according to the args of `__call__` in OperatorName class
+            -
+                name: 'x'
+                vtype: 'int'
+    -
+        name: 4
+        columns: # The `name` and `vtype` in dataframes.columns should according to the args of `__call__` in OperatorName class
+            -
+                name: 'x'
+                vtype: 'int'
+    -
+        name: '_end_df'
+        columns: # The `name` and `vtype` in dataframes.columns should according to the args of `__call__` in OperatorName class
+            -
+                name: 'x'
+                vtype: 'int'
