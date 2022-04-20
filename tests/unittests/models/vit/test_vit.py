@@ -19,15 +19,13 @@ from PIL import Image
 import torch
 from torchvision import transforms
 
-from towhee.models.vit.vit import VitModel
+from towhee.models.vit import vit_base_16x224
 from tests.unittests import VIT_DIR
 
 
 class VisionTransformerTest(unittest.TestCase):
-    name = 'vit_base_patch16_224'
     test_dir = VIT_DIR
-    weights_path = None
-    model = VitModel(name, pretrained=True)
+    model = vit_base_16x224()
     img = Image.open(os.path.join(test_dir, 'img.jpg'))
     tfms = transforms.Compose([transforms.Resize(256),
                                transforms.CenterCrop(224),
