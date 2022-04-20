@@ -22,11 +22,12 @@ from .state import StateMixin
 from .metric import MetricMixin
 from .ray import RayMixin
 from .serve import ServeMixin
+from .milvus_mixin import MilvusMixin
 
 
 class AllMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                 ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin,
-                RayMixin, ServeMixin):
+                RayMixin, ServeMixin, MilvusMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()

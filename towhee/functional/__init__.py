@@ -27,8 +27,8 @@ class GlobImpl(CallTracer):
     1. create a simple data collection;
 
     >>> import towhee
-    >>> towhee.glob('*.jpg').to_list()
-    ['a.jpg', 'b.jpg]
+    >>> towhee.glob('*.jpg', '*.png').to_list()
+    ['a.jpg', 'b.jpg', 'x.png']
 
     2. create a data collection of structural data.
 

@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import towhee.hub.builtin.operators.computer_vision
-import towhee.hub.builtin.operators.tensor_like
-import towhee.hub.builtin.operators.runas_op
-import towhee.hub.builtin.operators.feature_engineer
-import towhee.hub.builtin.operators.sklearn
-import towhee.hub.builtin.operators.milvus_search
+from towhee.utils.log import engine_log
+
+try:
+    # pylint: disable=unused-import
+    from pymilvus.orm.mutation import MutationResult
+    from pymilvus import Collection
+except ModuleNotFoundError as e:
+    engine_log.error('pymilvus not found, you can install via `pip install pymilvus`.')
+    raise ModuleNotFoundError('pymilvus not found, you can install via `pip install pymilvus`.') from e

@@ -53,6 +53,14 @@ const sidebars = {
       ],
     },
     {
+      'User Guides': [
+        {'Data Collection:': [
+          'user-guides/data-collection/data-collection-with-ray.md'
+        ]
+        }
+      ]
+    },
+    {
       'Developer guides': [
         {
           Contributing: [

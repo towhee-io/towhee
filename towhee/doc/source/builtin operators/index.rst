@@ -10,4 +10,5 @@ Built-in Operators
    tensor like
    feature engineer
    sklearn
+   milvus search
    

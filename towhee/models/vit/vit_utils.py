@@ -20,17 +20,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch
-from torch.utils import model_zoo
-
-
-def load_pretrained_model(model, configs: dict, weights_path: str = None):
-    if weights_path:
-        state_dict = torch.load(weights_path)
-    else:
-        state_dict = model_zoo.load_url(configs['url'], map_location=torch.device('cpu'))
-    res = model.load_state_dict(state_dict, strict=False)
-    return res
 
 def base_configs():
     return dict(
@@ -45,7 +34,7 @@ def base_configs():
 
 
 def get_configs(model_name):
-    if model_name == 'vit_base_patch16_224':
+    if model_name == 'vit_base_16x224':
         configs = base_configs()
         configs.update(dict(
             url='https://github.com/jaelgu/towhee_test/releases/download/v1.0.0/vit_base_patch16_224.pth'

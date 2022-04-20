@@ -17,3 +17,4 @@ torchmetrics>=0.7.0
 matplotlib>=3.0.0
 importlib_metadata
 ipython
+pymilvus
