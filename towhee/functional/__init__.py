@@ -134,3 +134,5 @@ glob = GlobImpl(_glob_call_back)
 glob_zip = GlobZipImpl(_glob_zip_call_back)
 
 dc = DCImpl(_dc_call_back)
+
+api = DataCollection.api

@@ -14,6 +14,7 @@
 
 from typing import Any, Iterable, Iterator, Callable
 from random import random, sample, shuffle
+import reprlib
 
 from towhee.hparam import param_scope
 from towhee.functional.option import Option, Some, Empty
@@ -744,6 +745,8 @@ class DataCollection(Iterable, AllMixins):
         >>> DataCollection.stream([1, 2, 3]) #doctest: +ELLIPSIS
         <list_iterator object at...>
         """
+        if isinstance(self._iterable, list):
+            return reprlib.repr(self._iterable)
         if hasattr(self._iterable, '__repr__'):
             return repr(self._iterable)
         return super().__repr__()
