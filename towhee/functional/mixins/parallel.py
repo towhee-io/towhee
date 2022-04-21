@@ -82,7 +82,8 @@ class ParallelMixin:
             return self._num_worker
         return None
 
-    def get_backend_started(self):
+    @property
+    def backend_started(self):
         if hasattr(self, '_backend_started')  and isinstance(self._backend_started, bool):
             return self._backend_started
         return None

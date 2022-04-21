@@ -63,7 +63,7 @@ class RayMixin:
     def ray_resolve(self, call_mapping, path, index, *arg, **kws):
         import ray #pylint: disable=import-outside-toplevel
 
-        if self.get_backend_started() is None:
+        if self.backend_started() is None:
             self.ray_start()
 
         self._dag[self._id] = ('ray_resolve', (call_mapping, path, index, arg, kws), [])
@@ -127,7 +127,7 @@ class RayMixin:
     def _ray_pmap(self, unary_op, num_worker=None):
         import ray #pylint: disable=import-outside-toplevel
 
-        if self.get_backend_started() is None:
+        if self.backend_started() is None:
             self.ray_start()
 
         if num_worker is not None:
