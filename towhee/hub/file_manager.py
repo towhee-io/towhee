@@ -254,7 +254,10 @@ class FileManager():
                 new_path = cache_path / 'hub' / new_dir / file
 
                 if pipe['overwrite']:
-                    Path.unlink(new_path, missing_ok=True)
+                    try:
+                        Path.unlink(new_path)
+                    except FileNotFoundError:
+                        pass
 
                 if new_path.is_file():
                     # TODO: filip-halt
