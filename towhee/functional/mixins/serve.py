@@ -81,30 +81,30 @@ class ServeMixin:
 
     Examples:
 
-    >>> from fastapi import FastAPI
-    >>> from fastapi.testclient import TestClient
-    >>> app = FastAPI()
+    # >>> from fastapi import FastAPI
+    # >>> from fastapi.testclient import TestClient
+    # >>> app = FastAPI()
 
-    >>> import towhee
-    >>> with towhee.api('/app1') as api:
-    ...     app1 = (
-    ...         api.map(lambda x: x+' -> 1')
-    ...            .map(lambda x: x+' => 1')
-    ...            .bind(app)
-    ...     )
+    # >>> import towhee
+    # >>> with towhee.api('/app1') as api:
+    # ...     app1 = (
+    # ...         api.map(lambda x: x+' -> 1')
+    # ...            .map(lambda x: x+' => 1')
+    # ...            .bind(app)
+    # ...     )
 
-    >>> with towhee.api('/app2') as api:
-    ...     app2 = (
-    ...         api.map(lambda x: x+' -> 2')
-    ...            .map(lambda x: x+' => 2')
-    ...            .bind(app)
-    ...     )
+    # >>> with towhee.api('/app2') as api:
+    # ...     app2 = (
+    # ...         api.map(lambda x: x+' -> 2')
+    # ...            .map(lambda x: x+' => 2')
+    # ...            .bind(app)
+    # ...     )
 
-    >>> client = TestClient(app)
-    >>> client.post('/app1', '1').text
-    '"1 -> 1 => 1"'
-    >>> client.post('/app2', '2').text
-    '"2 -> 2 => 2"'
+    # >>> client = TestClient(app)
+    # >>> client.post('/app1', '1').text
+    # '"1 -> 1 => 1"'
+    # >>> client.post('/app2', '2').text
+    # '"2 -> 2 => 2"'
     """
 
     def bind(self, app=None):

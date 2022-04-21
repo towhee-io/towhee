@@ -16,3 +16,4 @@ ipython
 scikit-learn
 fastapi
 pymilvus
+pytest

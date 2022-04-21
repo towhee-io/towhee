@@ -27,5 +27,5 @@ class TestTSM(unittest.TestCase):
         self.assertTrue(out.shape == torch.Size([40, 256]))
 
 if __name__ == '__main__':
-    unittes.main()
+    unittest.main()
     

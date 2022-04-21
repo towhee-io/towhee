@@ -279,9 +279,9 @@ class _PipelineBuilder:
 
 def _ops_call_back(real_name: str, index: Tuple[str], *arg, **kws):
     try:
-        return _PipelineBuilder.callback(real_name, index, *arg, **kws)
-    except: # pylint: disable=bare-except
         return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
+    except: # pylint: disable=bare-except
+        return _PipelineBuilder.callback(real_name, index, *arg, **kws)
 
 
 class OpsCallTracer(CallTracer):
