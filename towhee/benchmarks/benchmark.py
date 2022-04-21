@@ -22,7 +22,7 @@ def startup():
 
 def three_dots(loops, size, threads):
     x = runner_engine.three_dots(loops, size, threads)
-    y = dc_engine.three_dots(loops, size, threads*3) # Runner is threads per task, dc is threads per pipeline
+    y = dc_engine.three_dots(loops, size, threads)
     print('Three Dots:')
     print('Runner:', x)
     print('DC', y)
