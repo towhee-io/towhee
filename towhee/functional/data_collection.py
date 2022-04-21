@@ -243,7 +243,8 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        self._dag[self._id] = ('exception_safe', (), [])
+        self._op = 'dc.exception_safe'
+        self._init_args = {}
         result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
         return self._factory(result)
 
@@ -265,7 +266,11 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
-        self._dag[self._id] = ('select_from', (), [])
+        self._op = 'dc.select_from'
+        self._init_args = {}
+        self._other_ops.append(other._id)
+        other._consumed = True
+
         def inner(x):
             if isinstance(x, Iterable):
                 return [other[i] for i in x]
@@ -290,7 +295,8 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
-        self._dag[self._id] = ('fill_empty', (), [])
+        self._op = 'dc.fill_empty'
+        self._init_args = {'': other._id}
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
         return self._factory(result)
 
