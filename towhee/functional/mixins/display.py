@@ -154,8 +154,8 @@ class DisplayMixin:
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
-            header = tuple(contents[0].to_dict()) if not header else header
-            data = [list(x.to_dict().values()) for x in contents]
+            header = tuple(contents[0].__dict__) if not header else header
+            data = [list(x.__dict__.values()) for x in contents]
         else:
             data = [[x] for x in contents]
 
