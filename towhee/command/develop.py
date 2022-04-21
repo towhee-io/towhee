@@ -61,7 +61,10 @@ class SetupCommand:
                     symlink_path.mkdir(parents=True)
 
                 symlink = symlink_path / f'{self._args.namespace}_{repo_name}'
-                symlink.unlink(missing_ok=True)
+                try:
+                    symlink.unlink()
+                except FileNotFoundError:
+                    pass
                 packages = [package_name]
                 symlink.symlink_to(path)
                 os.chdir(str(pypi_path))
