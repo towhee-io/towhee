@@ -35,9 +35,7 @@ def create_multiscale_vision_transformers(
     enable_patch_embed=True,
     input_channels=3,
     patch_embed_dim=96,
-    conv_patch_embed_kernel=(3, 7, 7),
     conv_patch_embed_stride=(2, 4, 4),
-    conv_patch_embed_padding=(1, 3, 3),
     enable_patch_embed_norm=False,
     use_2d_patch=False,
     num_heads=1,
@@ -166,15 +164,10 @@ def create_multiscale_vision_transformers(
     if isinstance(spatial_size, int):
         spatial_size = (spatial_size, spatial_size)
 
-    conv_patch_op = nn.Conv2d if use_2d_patch else nn.Conv3d
     if enable_patch_embed:
         patch_embed = PatchEmbed2D(
-            in_channels=input_channels,
-            out_channels=patch_embed_dim,
-            conv_kernel_size=conv_patch_embed_kernel,
-            conv_stride=conv_patch_embed_stride,
-            conv_padding=conv_patch_embed_padding,
-            conv=conv_patch_op,
+            in_chans=input_channels,
+            embed_dim=patch_embed_dim,
         )
     else:
         patch_embed = None
@@ -214,10 +207,10 @@ def create_multiscale_vision_transformers(
 
     norm_patch_embed = norm_layer(patch_embed_dim) if enable_patch_embed_norm else None
 
-    pool_q = [[] for i in range(depth)]
-    pool_kv = [[] for i in range(depth)]
-    stride_q = [[] for i in range(depth)]
-    stride_kv = [[] for i in range(depth)]
+    pool_q = [[] for _ in range(depth)]
+    pool_kv = [[] for _ in range(depth)]
+    stride_q = [[] for _ in range(depth)]
+    stride_kv = [[] for _ in range(depth)]
 
     if pool_q_stride_size is not None:
         for i in range(len(pool_q_stride_size)):

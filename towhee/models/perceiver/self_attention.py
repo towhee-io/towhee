@@ -4,7 +4,7 @@
 
 from torch import nn
 
-from towhee.models.perceiver.MultiHeadAttention import MultiHeadAttention
+from towhee.models.perceiver.multi_head_attention import MultiHeadAttention
 
 
 class SelfAttention(nn.Module):

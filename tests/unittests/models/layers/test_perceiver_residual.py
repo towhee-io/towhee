@@ -16,8 +16,8 @@
 import unittest
 import torch
 
-from towhee.models.perceiver.MultiHeadAttention import MultiHeadAttention
-from towhee.models.perceiver.Residual import Residual
+from towhee.models.perceiver.multi_head_attention import MultiHeadAttention
+from towhee.models.perceiver.residual import Residual
 
 
 class PerceiverResidualTest(unittest.TestCase):
