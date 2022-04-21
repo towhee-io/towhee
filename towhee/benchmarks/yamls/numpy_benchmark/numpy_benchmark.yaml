@@ -15,14 +15,13 @@ operators:
                 df: 1
         iter_info:
             type: map # Type in Towhee, such as map, flatmap, filter, generator and window etc.
-        threads: 2
         
     -
         name: 'numpy-op1'
         function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
         tag: 'main' # The `tags` for the operator repo
         init_args:
-          size: 1000 # The init args in OperatorName class
+          size: 500 # The init args in OperatorName class
         inputs: # The args of `__call__` in OperatorName class
             -
                 df: 1
@@ -39,7 +38,7 @@ operators:
         function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
         tag: 'main' # The `tags` for the operator repo
         init_args:
-          size: 1000 # The init args in OperatorName class
+          size: 500 # The init args in OperatorName class
         inputs: # The args of `__call__` in OperatorName class
             -
                 df: 2
@@ -56,7 +55,7 @@ operators:
         function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
         tag: 'main' # The `tags` for the operator repo
         init_args:
-          size: 1000 # The init args in OperatorName class
+          size: 500 # The init args in OperatorName class
         inputs: # The args of `__call__` in OperatorName class
             -
                 df: 3
@@ -82,7 +81,7 @@ operators:
                 df: '_end_df'
         iter_info:
             type: map
-        threads: 2
+
 dataframes:
     -
         name: '_start_df'
