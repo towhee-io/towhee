@@ -28,9 +28,15 @@ class ExecuteCommand:
 
     def __call__(self):
         pipe = pipeline(self._args.pipeline)
-        res = pipe(self._args.input)
+        try:
+            res = pipe(int(self._args.input))
+        except ValueError:
+            res = pipe(self._args.input)
         if not self._args.output:
-            print(res)
+            try:
+                print(res[0][0])
+            except IndexError:
+                print(res)
         else:
             path = Path(self._args.output)
             self.save_result(path, res)
