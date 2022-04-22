@@ -1,3 +1,7 @@
 class ControlPlane:
     def __init__(self) -> None:
-        pass
+        self._dag = {}
+    
+    @property
+    def dag(self):
+        return self._dag

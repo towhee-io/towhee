@@ -32,7 +32,6 @@ class DispatcherMixin:
     """
 
     def resolve(self, call_mapping, path, index, *arg, **kws):
-        self._dag[self._id] = ('resolve', (call_mapping, path, index, arg, kws), [])
         if self.backend == 'ray':
             return self._ray_resolve(call_mapping, path, index, *arg, **kws)
         else:

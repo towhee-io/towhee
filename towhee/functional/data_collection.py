@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from atexit import register
 from typing import Any, Iterable, Iterator, Callable
 from random import random, sample, shuffle
 import reprlib
+from towhee.functional.mixins.dag import close_dc, register_dag
 
 from towhee.hparam import param_scope
 from towhee.functional.option import Option, Some, Empty
@@ -211,11 +213,11 @@ class DataCollection(Iterable, AllMixins):
         This factory method has been wrapped into a `param_scope()` which contains parent infomations.
         """
         creator = DataCollection.stream if self.is_stream else DataCollection.unstream
-
         def wrapper(*arg, **kws):
             with param_scope() as hp:
                 hp().data_collection.parent = self
-                return creator(*arg, **kws)
+                x = creator(*arg, **kws)
+                return x
 
         return wrapper
 
@@ -243,8 +245,10 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
         [Some(0.0), Some(0.5), Some(1.0)]
         """
-        self._op = 'dc.exception_safe'
-        self._init_args = {}
+        self._op = 'exception_safe'
+        self._init_args = None
+        self._call_args = None
+
         result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
         return self._factory(result)
 
@@ -253,6 +257,7 @@ class DataCollection(Iterable, AllMixins):
         Shortcut for `exception_safe`
         """
         return self.exception_safe()
+
 
     def select_from(self, other):
         """
@@ -266,11 +271,12 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
-        self._op = 'dc.select_from'
-        self._init_args = {}
-        self._other_ops.append(other._id)
-        other._consumed = True
-
+        self._op = 'exception_safe'
+        self._init_args = None
+        self._call_args = other.id
+        self.parent_id.append(other.id)
+        other.notify_consumed(self._id)
+ 
         def inner(x):
             if isinstance(x, Iterable):
                 return [other[i] for i in x]
@@ -296,7 +302,6 @@ class DataCollection(Iterable, AllMixins):
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
         self._op = 'dc.fill_empty'
-        self._init_args = {'': other._id}
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
         return self._factory(result)
 
@@ -323,7 +328,6 @@ class DataCollection(Iterable, AllMixins):
         >>> exception_inputs
         [3]
         """
-        self._dag[self._id] = ('drop_empty', (), [])
         if callback is not None:
 
             def inner(data):
@@ -375,9 +379,6 @@ class DataCollection(Iterable, AllMixins):
         if self.executor is not None:
             return self.pmap(unary_op)
 
-        if self._id not in self._dag:
-            self._dag[self._id] = ('map', (arg,) , [])
-
         if hasattr(self._iterable, 'map'):
             return self._factory(self._iterable.map(unary_op))
 
@@ -394,6 +395,7 @@ class DataCollection(Iterable, AllMixins):
         result = map(inner, self._iterable)
         return self._factory(result)
 
+    @register_dag
     def zip(self, *others) -> 'DataCollection':
         """
         Combine two data collections.
@@ -412,13 +414,15 @@ class DataCollection(Iterable, AllMixins):
         >>> list(dc3)
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
-        #TODO Needs a better solution for combining branches
-        swap_ids = [x.id for x in others]
-        for values in self._dag.values():
-            temp = [x if x not in swap_ids else self.id for x in values[2]]
-            values[2].clear()
-            values[2].extend(temp)
-        self._dag[self.id] = ('zip', tuple((x.id for x in others)),[])
+        self._op = 'zip'
+        self._init_args = None
+        # self._call_args = [other.id for other in others]
+        # self._parent_id.extend([other.id for other in others])
+        # print(self._parent_id)
+        
+        for x in others:
+            x.notify_consumed(self._id)
+
         return self._factory(zip(self, *others))
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
@@ -807,6 +811,7 @@ class DataCollection(Iterable, AllMixins):
                 yield x
         return self._factory(inner())
 
+    @close_dc
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
 
