@@ -38,3 +38,31 @@ class Image(np.ndarray):
         if obj is None:
             return
         self._mode = getattr(obj, '_mode', None)
+
+    def __str__(self):
+        return 'Image' + ' shape=' + str(self.shape) + ' mode=' + self.mode
+
+    def __reduce__(self):
+        # Get numpy pickle
+        pickled_state = super(Image, self).__reduce__() #pylint: disable=super-with-arguments
+        # Attach the attributes to the numpy pickle
+        new_state = pickled_state[2] + (self.__dict__,)
+        return (pickled_state[0], pickled_state[1], new_state)
+
+    def __setstate__(self, state):
+        # Set attributes from the pickle
+        self.__dict__.update(state[-1])
+        # Call the parent's __setstate__ with the other tuple elements.
+        super(Image, self).__setstate__(state[0:-1]) #pylint: disable=super-with-arguments
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def cv2_to_rgb(self) -> np.ndarray:
+        # pylint: disable=import-outside-toplevel
+        """
+        Convert the OpenCV images from BGR to RGB.
+        """
+        from towhee.utils.cv2_utils import cv2
+        return cv2.cvtColor(self, cv2.COLOR_BGR2RGB)

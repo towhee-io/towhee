@@ -50,7 +50,10 @@ class SetupCommand:
         if self._args.action == 'install':
             if not self._args.develop:
                 os.chdir(str(path))
-                sys.argv = ['setup.py', 'install']
+                if not self._args.user:
+                    sys.argv = ['setup.py', 'install']
+                else:
+                    sys.argv = ['setup.py', 'install', '--user']
             else:
                 pypi_path = self._path / repo_name
                 symlink_path = pypi_path / 'towheeoperator'
@@ -58,11 +61,17 @@ class SetupCommand:
                     symlink_path.mkdir(parents=True)
 
                 symlink = symlink_path / f'{self._args.namespace}_{repo_name}'
-                symlink.unlink(missing_ok=True)
+                try:
+                    symlink.unlink()
+                except FileNotFoundError:
+                    pass
                 packages = [package_name]
                 symlink.symlink_to(path)
                 os.chdir(str(pypi_path))
-                sys.argv = ['setup.py', 'develop']
+                if not self._args.user:
+                    sys.argv = ['setup.py', 'develop']
+                else:
+                    sys.argv = ['setup.py', 'develop', '--user']
 
         setup(name=package_name,
               packages=packages,
@@ -91,6 +100,7 @@ class SetupCommand:
     def install(subparsers):
         install = subparsers.add_parser('install', parents=[parser], help='setup command: install operator with setup.py')
         install.add_argument('--develop', action='store_true', help='optional, install operator with setup.py develop')
+        install.add_argument('--user', action='store_true', help='optional, whether to install op to the local path(site.USER_SITE).')
 
 
 class UninstallCommand:

@@ -33,6 +33,16 @@ class TestVideoTransforms(unittest.TestCase):
         self.assertEqual(out_slow_r50['video'].shape, (3, 8, 256, 256))
         self.assertEqual(out_slow_r50['audio'].shape, (441344,))
 
+        tfms_c2d_r50 = VideoTransforms('slow_r50')
+        out_c2d_r50 = tfms_c2d_r50('archery.mp4')
+        self.assertEqual(out_c2d_r50['video'].shape, (3, 8, 256, 256))
+        self.assertEqual(out_c2d_r50['audio'].shape, (441344,))
+
+        tfms_i3d_r50 = VideoTransforms('slow_r50')
+        out_i3d_r50 = tfms_i3d_r50('archery.mp4')
+        self.assertEqual(out_i3d_r50['video'].shape, (3, 8, 256, 256))
+        self.assertEqual(out_i3d_r50['audio'].shape, (441344,))
+
         tfms_slowfast_r50 = VideoTransforms('slowfast_r50')
         tfms_slowfast_r101 = VideoTransforms('slowfast_r101')
         out_slowfast_r50 = tfms_slowfast_r50('archery.mp4')
@@ -53,6 +63,25 @@ class TestVideoTransforms(unittest.TestCase):
         self.assertEqual(out_x3d_xs['audio'].shape, (441344,))
         self.assertEqual(out_x3d_s['audio'].shape, (441344,))
         self.assertEqual(out_x3d_m['audio'].shape, (441344,))
+
+        tfms_mvit_base_16x4 = VideoTransforms('mvit_base_16x4')
+        tfms_mvit_base_32x3 = VideoTransforms('mvit_base_32x3')
+        out_mvit_base_16x4 = tfms_mvit_base_16x4('archery.mp4')
+        out_mvit_base_32x3 = tfms_mvit_base_32x3('archery.mp4')
+        self.assertEqual(out_mvit_base_16x4['video'].shape, (3, 16, 224, 224))
+        self.assertEqual(out_mvit_base_32x3['video'].shape, (3, 32, 224, 224))
+        self.assertEqual(out_mvit_base_16x4['audio'].shape, (441344,))
+        self.assertEqual(out_mvit_base_32x3['audio'].shape, (441344,))
+
+        tfms_csn_r101 = VideoTransforms('csn_r101')
+        out_csn_r101 = tfms_csn_r101('archery.mp4')
+        self.assertEqual(out_csn_r101['video'].shape, (3, 32, 256, 256))
+        self.assertEqual(out_csn_r101['audio'].shape, (441344,))
+
+        tfms_r2plus1d_r50 = VideoTransforms('r2plus1d_r50')
+        out_r2plus1d_r50 = tfms_r2plus1d_r50('archery.mp4')
+        self.assertEqual(out_r2plus1d_r50['video'].shape, (3, 16, 256, 256))
+        self.assertEqual(out_r2plus1d_r50['audio'].shape, (441344,))
 
     def tearDown(self) -> None:
         os.unlink('archery.mp4')

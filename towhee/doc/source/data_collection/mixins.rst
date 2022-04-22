@@ -2,7 +2,6 @@ DataCollection Mixins
 ---------------------
 
 .. automodule:: towhee.functional.mixins
-   :members: DataSourceMixin, DispatcherMixin, ParallelMixin, ComputerVisionMixin, TensorLikeMixin
+   :members: DatasetMixin, DispatcherMixin, ParallelMixin, ComputerVisionMixin, EntityMixin, MetricMixin, StateMixin, MilvusMixin
    :show-inheritance:
-   :special-members:
    :member-order: bysource

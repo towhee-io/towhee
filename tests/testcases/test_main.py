@@ -3,6 +3,7 @@ from operator import methodcaller
 from test_image_embedding import *
 from test_pipeline import *
 from test_audio_embedding import *
+from test_data_collection import *
 
 def pipeline_register():
 
@@ -181,10 +182,52 @@ def audio_class_pipeline_runner():
 
     return True
 
+def data_collection_API_register():
+
+    data_colection_API_names = ["stream", "unstream", "map", "filter", "zip", "batch", "rolling", 
+                                #"flaten",
+                                "exception_safe", "safe", "fill_empty", "drop_empty", "pmap", "mmap", "set_parallel"]
+
+    # skip multiple threads tests for memory shortage
+    skipped_API = []
+
+    return data_colection_API_names, skipped_API
+
+
+def data_collection_API_cases_runner():
+
+    data_colection_API_names, skipped_API = data_collection_API_register()
+    for data_colection_API_name in data_colection_API_names:
+        invalid_data_collection_API_obj = TestDataCollectionAPIsInvalid()
+        for func in dir(invalid_data_collection_API_obj):
+            if func in skipped_API:
+                continue
+            if not func.startswith("__"):
+                print("Testing %s:%s" % (func, data_colection_API_name))
+                res = methodcaller(func, data_colection_API_name)(invalid_data_collection_API_obj)
+                if res == 1:
+                    print("%s:%s PASS" % (func, data_colection_API_name))
+                else:
+                    print("%s:%s FAIL" % (func, data_colection_API_name))
+
+    data_collection_API_obj = TestDataCollectionAPIsValid()
+    for func in dir(data_collection_API_obj):
+        if func in skipped_API:
+            continue
+        if not func.startswith("__"):
+            print("Testing %s" % func)
+            res = methodcaller(func)(data_collection_API_obj)
+            if res == 1:
+                print("%s PASS" % func)
+            else:
+                print("%s FAIL" % func)
+
 def test_caller():
 
-    pipeline_runner()
-    image_class_pipeline_runner()
+    print("PASS CI tests")
+    # pipeline_runner()
+    # image_class_pipeline_runner()
+    # data_collection_API_cases_runner()
     # skip audio tests for issue 463
     # audio_class_pipeline_runner()
 

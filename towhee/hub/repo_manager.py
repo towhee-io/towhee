@@ -268,3 +268,18 @@ class RepoManager:
         commit = self.latest_commit(tag)
         file_list = self.get_file_list(commit)
         self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_repo_path=local_repo_path, install_reqs=install_reqs)
+
+    def get_repo_type(self):
+        """
+        Get the repo type.
+
+        Returns:
+            (`int`)
+                {2: 'operator', 3: 'pipeline'}.
+        """
+        if not self.exists():
+            engine_log.error('%s/%s repo does not exist.', self._author, self._repo)
+            raise ValueError(f'{self._author}/{self._author} repo does not exist.')
+
+        res = self.hub_utils.get_info()
+        return res.json()['type']

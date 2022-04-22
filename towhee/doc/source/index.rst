@@ -6,11 +6,32 @@
 Welcome to Towhee's documentation!
 ==========================================
 
+.. mdinclude:: ../../../README.md
+   :start-line: 6
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
 
+User API
+========
+
+.. toctree::
+   :maxdepth: 3
+   :caption: User API:
+
+   towhee/towhee
    data_collection/index
+   builtin operators/index
+
+Developer API
+=============
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Developer API:
+   
+   towhee/towhee_operator
 
    trainer/trainer
    trainer/trainer.optimization

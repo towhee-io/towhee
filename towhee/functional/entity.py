@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-from typing import overload, Dict, Any, Optional, Tuple
+import json
+from typing import overload
 
 
 class Entity:
@@ -28,41 +28,20 @@ class Entity:
         """
         ...
 
-    @overload
-    def __init__(self, target: Dict[str, Any]):
-        """
-        Create an Entity with the attibutes stored in a dict.
-        """
-        ...
-
-    def __init__(self, target: Optional[Dict[str, Any]] = None, **kwargs):
+    def __init__(self, **kwargs):
         """
         Create an Entity with given attributes.
         """
-        self._data = ['id']
-        self.__setattr__('id', os.urandom(16).hex())
-
-        if target:
-            kwargs.update(target)
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
-            self._data.append(k)
-
-    @property
-    def info(self) -> Tuple[str]:
-        """
-        Return the attributes this eneity contains in the form of a tuple.
-        """
-        return tuple(self._data)
 
     def __repr__(self):
         """
         Define the representation of the Entity.
         """
-        content = str(self.info)
-        content += f' at {getattr(self, "id", id(self))}'
+        content = str(self.__dict__.keys())
         return f'<{self.__class__.__name__} {content.strip()}>'
 
-    def register(self, index: str):
-        self._data.append(index)
+    def __str__(self) -> str:
+        return json.dumps({k: getattr(self, k) for k in self.__dict__})

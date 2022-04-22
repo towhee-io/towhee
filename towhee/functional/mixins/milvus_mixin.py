@@ -1,0 +1,125 @@
+# Copyright 2021 Zilliz. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from typing import Iterable, Tuple
+
+from towhee.hparam import param_scope
+from towhee.utils.log import engine_log
+from ..entity import Entity
+
+
+def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size: int):
+    # pylint: disable=import-outside-toplevel
+    from towhee.utils.milvus_utils import Collection, MutationResult
+    if isinstance(collection, str):
+        collection = Collection(collection)
+    primary_keys = []
+    insert_count = 0
+    first = True
+
+    try:
+        for entity in iterable:
+            if first:
+                if index is None:
+                    index = tuple(entity.__dict__.keys())
+                data = [[] for _ in range(len(index))]
+                first = False
+
+            for i in range(len(index)):
+                data[i].append(getattr(entity, index[i]))
+            if len(data[0]) == batch_size:
+                mr = collection.insert(data)
+                data = [[] for _ in range(len(index))]
+                primary_keys += mr.primary_keys
+                insert_count += mr.insert_count
+                engine_log.info('Successfully inserted %d row data.', mr.insert_count)
+
+        if len(data[0]) > 0:
+            mr = collection.insert(data)
+            primary_keys += mr.primary_keys
+            insert_count += mr.insert_count
+            engine_log.info('Successfully inserted %d row data.', mr.insert_count)
+
+        e = Entity(insert_count=insert_count,
+                   primary_keys=primary_keys,
+                   delete_count=mr.delete_count,
+                   upsert_count=mr.upsert_count,
+                   timestamp=mr.timestamp)
+        milvus_mr = MutationResult(e)
+    except Exception as e:  # pylint: disable=broad-except
+        engine_log.error('Error when insert data to milvus with %s.', e)
+        raise e
+    finally:
+        collection.load()
+    return milvus_mr
+
+
+def _to_milvus_callback(self):
+    # pylint: disable=consider-using-get
+    def wrapper(_: str, index, *arg, **kws):
+        batch_size = 1
+        if index is not None and isinstance(index, str):
+            index = (index,)
+
+        if arg is not None and len(arg) == 1:
+            collection, = arg
+        elif arg is not None and len(arg) == 2:
+            collection, batch_size = arg
+
+        if 'collection' in kws:
+            collection = kws['collection']
+        if 'batch' in kws:
+            batch_size = int(kws['batch'])
+        milvus_mr = _milvus_insert(self, index, collection, batch_size)
+        return milvus_mr
+    return wrapper
+
+
+class MilvusMixin:
+    """
+    Mixins for Milvus, such as loading data into Milvus collections. Note that the Milvus collection is created before loading the data.
+    Refer to https://milvus.io/docs/v2.0.x/create_collection.md.
+
+    Args:
+        collection (`Union[str, Collection]`):
+            The collection name or pymilvus.Collection in Milvus.
+        batch (`str`):
+            The batch size to load into Milvus, defaults to 1.
+
+    Returns:
+        A MutationResult object contains `insert_count` represents how many and a `primary_keys` is a list of primary keys.
+
+    Examples:
+
+    .. note::
+        The shape of embedding vector refer to https://towhee.io/image-embedding/timm. And the dimension of the "test" collection should
+        be the same as it.
+
+    >>> import towhee
+    >>> from pymilvus import connections #doctest: +SKIP
+    >>> mr = ( #doctest: +SKIP
+    ...     towhee.glob['path']('./*.jpg')
+    ...           .image_decode['path', 'img']()
+    ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')
+    ...           .to_milvus['vec'](collection='test', batch=1000)
+    ... )
+    """
+    def __init__(self):
+        super().__init__()
+        self.to_milvus = param_scope().callholder(_to_milvus_callback(self))
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=False)

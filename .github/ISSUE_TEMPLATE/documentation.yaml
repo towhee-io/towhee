@@ -1,6 +1,7 @@
 name: Enhancement request
 description: As a developer, I want to make an enhancement for Towhee
 title: "[Enhancement]: "
+labels: [kind/enhancement]
 body:
 - type: markdown
   attributes:

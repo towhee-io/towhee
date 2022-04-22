@@ -26,8 +26,8 @@ from tests.unittests.mock_operators import PYTORCH_OBJECT_DETECTION_OPERATOR_PAT
 cache_path = Path(__file__).parent.parent.resolve()
 test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/1cef8fb87d5ca2b8a833b5f9549634aa.jpg')
 
-model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cpu')
+model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True).to(device)
 
 
 class TestOperator(unittest.TestCase):

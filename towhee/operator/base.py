@@ -15,6 +15,7 @@
 from abc import abstractmethod
 from abc import ABC
 from enum import Enum
+from enum import Flag, auto
 
 
 # NotShareable:
@@ -27,6 +28,12 @@ from enum import Enum
 #    Stateless operator
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
+
+
+class OperatorFlag(Flag):
+    EMPTYFLAG = auto()
+    STATELESS = auto()
+    REUSEABLE = auto()
 
 
 class Operator(ABC):
@@ -84,6 +91,14 @@ class Operator(ABC):
     def shared_type(self):
         return SharedType.NotShareable
 
+    @key.setter
+    def key(self, value):
+        self._key = value
+
+    @property
+    def flag(self):
+        return OperatorFlag.STATELESS | OperatorFlag.REUSEABLE
+
 
 class NNOperator(Operator):
     """
@@ -100,7 +115,11 @@ class NNOperator(Operator):
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
-        self._trainer = None  # Trainer(self.get_model())
+        self._trainer = None
+
+    @property
+    def flag(self):
+        return OperatorFlag.STATELESS | OperatorFlag.REUSEABLE
 
         self._model_handler = None
         self._handler_args = None
@@ -197,7 +216,7 @@ class NNOperator(Operator):
         """
         from towhee.trainer.trainer import Trainer  # pylint: disable=import-outside-toplevel
         if self._trainer is None:
-            self._trainer = Trainer(self.get_model(),
+            self._trainer = Trainer(self.model,
                                     training_config,
                                     train_dataset,
                                     eval_dataset,
@@ -244,9 +263,6 @@ class NNOperator(Operator):
         """
         self.trainer.save(path, overwrite)
 
-    # def change_before_train(self, **kwargs):
-    #     pass
-
 
 class PyOperator(Operator):
     """
@@ -256,3 +272,7 @@ class PyOperator(Operator):
     def __init__(self):
         super().__init__()
         pass
+
+    @property
+    def flag(self):
+        return OperatorFlag.EMPTYFLAG

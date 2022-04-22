@@ -7,7 +7,14 @@ tqdm>=4.59.0
 pillow>=8.3.1
 scipy>=1.5.3
 opencv-python>=4.5.3.56
-torchmetrics>=0.7.0
+torchmetrics==0.7.0
 ruamel.yaml<=0.16.6
 matplotlib>=3.0.0
 importlib_metadata
+tabulate
+ipython
+scikit-learn
+fastapi
+pymilvus
+pytest
+fairscale

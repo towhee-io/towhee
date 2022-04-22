@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-from towhee.functional.entity import Entity
+from towhee import Entity
 
 
 class TestEntity(unittest.TestCase):
@@ -22,12 +22,11 @@ class TestEntity(unittest.TestCase):
     def test_init(self):
         d = {'a': 'A', 'b': 'B', 'c': 'C'}
         e1 = Entity()
-        e2 = Entity(d)
+        e2 = Entity(**d)
         e3 = Entity(a='A', b='B', c='C')
         self.assertTrue(isinstance(e1, Entity))
         self.assertTrue(isinstance(e2, Entity))
         self.assertTrue(isinstance(e3, Entity))
-        self.assertTrue(isinstance(e1.id, str))
         self.assertEqual(e2.a, e3.a)
         self.assertEqual(e2.b, e3.b)
         self.assertEqual(e2.c, e3.c)

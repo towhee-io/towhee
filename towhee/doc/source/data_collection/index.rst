@@ -1,5 +1,5 @@
-data_collection API
-===================
+towhee.DataCollection
+=====================
 
 .. toctree::
    :maxdepth: 2
@@ -8,4 +8,3 @@ data_collection API
    get_started
    data_collection
    mixins
-   option

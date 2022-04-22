@@ -15,7 +15,7 @@
 
 import unittest
 
-from towhee.trainer.training_config import TrainingConfig
+from towhee.trainer.training_config import TrainingConfig, get_config_help
 
 
 class TrainerArgsTest(unittest.TestCase):
@@ -30,6 +30,9 @@ class TrainerArgsTest(unittest.TestCase):
     def test_train_batch_size(self) -> None:
         self.assertEqual(4, self.training_args.train_batch_size)
 
+    def test_help(self):
+        help_dict = get_config_help()
+        self.assertIn('seed', help_dict.keys())
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

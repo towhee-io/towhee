@@ -15,8 +15,38 @@
 from torch import nn
 from towhee.models.utils.general_utils import to_2tuple
 
+
 class PatchEmbed2D(nn.Module):
-    """ 2D Image to Patch Embedding
+    """
+    2D Image to Patch Embedding
+
+    Args:
+        img_size (`int=224`):
+            image height (should be equal to width)
+        patch_size (`int=16`):
+            patch height (should be equal to width)
+        in_chans (`int=3`):
+            the number of image channels
+        embed_dim (`int=768`):
+            embedding dimension
+        norm_layer (`nn.Module=None`):
+            normalization layer
+        flatten (`bool=True`):
+            if flat output
+
+    Example:
+        >>> import torch
+        >>> from towhee.models.layers.patch_embed2d import PatchEmbed2D
+        >>>
+        >>> test_shape1 = (1, 3, 224, 224)
+        >>> test_shape2 = (1, 3, 5, 224, 224)
+        >>> fake_img = torch.rand(test_shape1)
+        >>> fake_video = torch.rand(test_shape2)
+        >>> model = PatchEmbed2D()
+        >>> out1 = model(fake_img)
+        >>> out2 = model(fake_video)
+        >>> print(out1.shape, out2.shape)
+        torch.Size([1, 196, 768]) torch.Size([5, 196, 768])
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, norm_layer=None, flatten=True):
         super().__init__()
@@ -32,9 +62,15 @@ class PatchEmbed2D(nn.Module):
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
-        _, _, h, w = x.shape
-        assert h == self.img_size[0] and w == self.img_size[1], \
-            f'Input image size ({h}*{w}) doesn\'t match model ({self.img_size[0]}*{self.img_size[1]}).'
+        if len(x.shape) == 4:
+            _, _, h, w = x.shape
+            assert h == self.img_size[0] and w == self.img_size[1], \
+                f'Input image size ({h}*{w}) doesn\'t match model ({self.img_size[0]}*{self.img_size[1]}).'
+        elif len(x.shape) == 5:
+            _, _, _, h, w = x.shape
+            x = x.permute(1, 3, 4, 0, 2).flatten(3).permute(3, 0, 1, 2)  # BCTHW -> (B*T)CHW
+            assert h == self.img_size[0] and w == self.img_size[1], \
+                f'Input frame size ({h}*{w}) doesn\'t match model ({self.img_size[0]}*{self.img_size[1]}).'
         x = self.proj(x)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
@@ -42,3 +78,15 @@ class PatchEmbed2D(nn.Module):
         return x
 
 
+# if __name__ == '__main__':
+#     import torch
+#
+#     test_shape1 = (1, 3, 224, 224)
+#     test_shape2 = (1, 3, 5, 224, 224)
+#     fake_img = torch.rand(test_shape1)
+#     fake_video = torch.rand(test_shape2)
+#     model = PatchEmbed2D()
+#     out1 = model(fake_img)
+#     out2 = model(fake_video)
+#     assert(out1.shape == (1, 196, 768))
+#     assert(out2.shape == (5, 196, 768))

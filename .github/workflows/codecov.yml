@@ -4,16 +4,19 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v3.0.0
     - name: Setup Python
-      uses: actions/setup-python@master
+      uses: actions/setup-python@v3.0.0
       with:
         python-version: 3.8
     - name: Generate coverage report
       run: |
-        pip install coverage
+        pip install coverage pytest pytest-xdist
+        pip install -r test_requirements.txt
         coverage erase
-        coverage run setup.py test -s tests.unittests
+        coverage run -m pytest
+    - name: Generate xml report
+      run: |
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2

@@ -77,7 +77,7 @@ class VideoTransforms:
 
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.tfms_params = tfms_params[model_name]
+        self.tfms_params = video_configs[model_name]
         self.tfms = ApplyTransformToKey(
             key="video",
             transform=Compose([
@@ -97,7 +97,7 @@ class VideoTransforms:
             ]),
         )
 
-    def __call__(self, video_path: str, start_sec=0, end_sec=30):
+    def __call__(self, video_path: str, start_sec: float = 0.0, end_sec: float = 30.0):
         video = EncodedVideo.from_path(video_path)
         video_data = video.get_clip(start_sec=start_sec, end_sec=end_sec)
         video_data = self.tfms(video_data)
@@ -140,55 +140,66 @@ class PackPathway(nn.Module):
         return frame_list
 
 
-tfms_params = {
-    "slow_r50": {
+def get_configs(**kwargs):
+    configs = {
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 8,
         "sampling_rate": 8,
         "mean": [0.45, 0.45, 0.45],
         "std": [0.225, 0.225, 0.225],
-    },
-    "slowfast_r50": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 32,
-        "sampling_rate": 2,
-        "alpha": 4,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "slowfast_r101": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 32,
-        "sampling_rate": 8,
-        "alpha": 4,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_xs": {
-        "side_size": 182,
-        "crop_size": 182,
-        "num_frames": 4,
-        "sampling_rate": 12,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_s": {
-        "side_size": 182,
-        "crop_size": 182,
-        "num_frames": 13,
-        "sampling_rate": 6,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    },
-    "x3d_m": {
-        "side_size": 256,
-        "crop_size": 256,
-        "num_frames": 16,
-        "sampling_rate": 5,
-        "mean": [0.45, 0.45, 0.45],
-        "std": [0.225, 0.225, 0.225],
-    }
+        }
+    configs.update(**kwargs)
+    return configs
+
+video_configs = {
+    "slow_r50": get_configs(),
+    "c2d_r50": get_configs(),
+    "i3d_r50": get_configs(),
+    "slowfast_r50": get_configs(
+        num_frames=32,
+        sampling_rate=2,
+        alpha=4
+        ),
+    "slowfast_r101": get_configs(
+        num_frames=32,
+        sampling_rate=8,
+        alpha=4
+        ),
+    "x3d_xs": get_configs(
+        side_size=182,
+        crop_size=182,
+        num_frames=4,
+        sampling_rate=12
+        ),
+    "x3d_s": get_configs(
+        side_size=182,
+        crop_size=182,
+        num_frames=13,
+        sampling_rate=6
+        ),
+    "x3d_m": get_configs(
+        num_frames=16,
+        sampling_rate=5
+        ),
+    "mvit_base_16x4": get_configs(
+        side_size=224,
+        crop_size=224,
+        num_frames=16,
+        sampling_rate=4
+        ),
+    "mvit_base_32x3": get_configs(
+        side_size=224,
+        crop_size=224,
+        num_frames=32,
+        sampling_rate=3
+        ),
+    "csn_r101": get_configs(
+        num_frames=32,
+        sampling_rate=2
+        ),
+    "r2plus1d_r50": get_configs(
+        num_frames=16,
+        sampling_rate=4
+        )
 }

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import Optional, List, Any, Tuple
+
+import cv2
 from PIL import Image
 from torchvision import transforms
 from torchvision.io import read_image
@@ -162,15 +164,17 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
     return count_dict
 
 
-def show_transform(image_path: str, transform: Any):
+def show_transform(image_path: str, transform: Any, sample_num: int = 6):
     """
-    Show the result which `torchvision.tranforms` or any other callable function act on the image.
+    Show the result which `torchvision.transforms` or any other callable function act on the image.
     Only the Image transforms is supported. Such as `ToTensor` or `Normalize` is invalid.
     Args:
         image_path (`str`):
             The original image path.
         transform (`Any`):
-            torchvision.tranforms` or any other callable function.
+            torchvision.transforms` or any other callable function.
+        sample_num (`int`):
+            Sample number.
 
     """
     if not is_matplotlib_available():
@@ -178,7 +182,7 @@ def show_transform(image_path: str, transform: Any):
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     plt.rcParams['savefig.bbox'] = 'tight'
     orig_img = Image.open(image_path)
-    trans_img_list = [transform(orig_img) for _ in range(6)]
+    trans_img_list = [transform(orig_img) for _ in range(sample_num)]
     _plot_transform(orig_img, trans_img_list)
 
 
@@ -270,9 +274,24 @@ def plot_lrs_for_config(configs: TrainingConfig, num_training_steps: int, start_
 
 
 def predict_image_classification(model: nn.Module, input_: torch.Tensor):
+    """
+    Predict using an image classification model.
+    Args:
+        model (`nn.Module`):
+            Pytorch model.
+        input_ (`Tensor`):
+            Input image tensor.
+    Returns:
+        (`tuple`)
+            Prediction score which max is 1, and label idx.
+
+    """
     output = model(input_)
     output = F.softmax(output, dim=1)
     prediction_score, pred_label_idx = torch.topk(output, 1)
+    if isinstance(pred_label_idx, torch.Tensor):
+        pred_label_idx = pred_label_idx.squeeze().item()
+    prediction_score = prediction_score.squeeze().detach().item()
     return prediction_score, pred_label_idx
 
 
@@ -386,7 +405,100 @@ def interpret_image_classification(model: nn.Module, image: Any, eval_transform:
         grads = saliency.attribute(input_, target=pred_label_idx)
         _viz_image_attr_multiple(grads, trans_image, fig_size, cmap, titles=titles, **kwargs)
 
-    if isinstance(pred_label_idx, torch.Tensor):
-        pred_label_idx = pred_label_idx.squeeze().item()
-    prediction_score = prediction_score.squeeze().detach().item()
     return prediction_score, pred_label_idx
+
+
+class LRP:
+    """
+    Layer-wise relevance propagation.
+    https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0130140&type=printable
+    """
+
+    def __init__(self, model):
+        self.model = model
+        self.model.eval()
+
+    def generate_lrp(self, input_tensor: nn.Module, index: int = None, method: str = 'transformer_attribution',
+                     is_ablation: bool = False, start_layer: int = 0):
+        """
+        Generate LRP for a specific layer.
+        Args:
+            input_tensor (`nn.Module`):
+                The input tensor to the model.
+            index (`int`):
+                The index of the layer to be visualized.
+            method (`str`):
+                The method to be used for LRP.
+            is_ablation (`bool`):
+                Whether to use ablation.
+            start_layer (`int`):
+                The index of the layer to start from.
+
+        Returns:
+            (`torch.Tensor`):
+                The LRP tensor.
+        """
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        output = self.model(input_tensor)
+        kwargs = {'alpha': 1}
+        if index is None:
+            index = np.argmax(output.cpu().data.numpy(), axis=-1)
+
+        one_hot = np.zeros((1, output.size()[-1]), dtype=np.float32)
+        one_hot[0, index] = 1
+        one_hot_vector = one_hot
+        one_hot = torch.from_numpy(one_hot).requires_grad_(True).to(device)
+        one_hot = torch.sum(one_hot * output).to(device)
+
+        self.model.zero_grad()
+        one_hot.backward(retain_graph=True)
+
+        return self.model.relprop(torch.tensor(one_hot_vector).to(input_tensor.device), method=method,
+                                  is_ablation=is_ablation,
+                                  start_layer=start_layer, **kwargs)
+
+
+def _show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    heatmap = cv2.applyColorMap(np.uint8(255 * mask), cv2.COLORMAP_JET)
+    heatmap = np.float32(heatmap) / 255
+    cam = heatmap + np.float32(img)
+    cam = cam / np.max(cam)
+    return cam
+
+
+def generate_attention(model: nn.Module, image_tensor: torch.Tensor, class_index: int = None) -> np.ndarray:
+    """
+    Generate attention visualization of the model.
+    https://openaccess.thecvf.com/content/CVPR2021/papers/
+    Chefer_Transformer_Interpretability_Beyond_Attention_Visualization_CVPR_2021_paper.pdf
+    Args:
+        model (nn.Module):
+            Model to visualize.
+        image_tensor (torch.Tensor):
+            Image tensor.
+        class_index (int):
+            Class index.
+
+    Returns:
+        (`numpy.ndarray`):
+            Attention map.
+    """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model.to(device)
+    model.eval()
+    attribution_generator = LRP(model)
+    transformer_attribution = attribution_generator.generate_lrp(image_tensor.unsqueeze(0).to(device=device),
+                                                                 method='transformer_attribution',
+                                                                 index=class_index).detach()
+    transformer_attribution = transformer_attribution.reshape(1, 1, 14, 14)
+    transformer_attribution = torch.nn.functional.interpolate(transformer_attribution, scale_factor=16, mode='bilinear')
+    transformer_attribution = transformer_attribution.reshape(224, 224).to(device).data.cpu().numpy()
+    transformer_attribution = (transformer_attribution - transformer_attribution.min()) / (
+            transformer_attribution.max() - transformer_attribution.min())
+    image_transformer_attribution = image_tensor.permute(1, 2, 0).data.cpu().numpy()
+    image_transformer_attribution = (image_transformer_attribution - image_transformer_attribution.min()) / (
+            image_transformer_attribution.max() - image_transformer_attribution.min())
+    vis = _show_cam_on_image(image_transformer_attribution, transformer_attribution)
+    vis = np.uint8(255 * vis)
+    vis = cv2.cvtColor(np.array(vis), cv2.COLOR_RGB2BGR)
+    return vis

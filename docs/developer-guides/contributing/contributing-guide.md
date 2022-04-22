@@ -5,11 +5,7 @@ title: Contributing guide
 
 ### Contributing to Towhee
 
-Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. Regardless of how you contribute, please remember to be respectful towards your fellow Towheeians.
-
-**Contributing code**
-
-The Towhee community maintains a list of [Good First Issues](https://github.com/towhee-io/towhee/contribute).
+Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. The Towhee community maintains a list of [Good First Issues](https://github.com/towhee-io/towhee/contribute) - feel free to browse and see if any of these issues pique your interest. Regardless of how you contribute, please remember to be respectful towards your fellow Towheeians.
 
 **Sharing a new operator or pipeline**
 
@@ -22,6 +18,10 @@ Please follow the [templates](https://github.com/towhee-io/towhee/issues/new/cho
 **Style guide**
 
 We generally follow the [Google Python style guide](https://google.github.io/styleguide/pyguide.html) - this applies to the main `towhee-io/towhee` repo on Github as well as code uploaded to our Towhee Hub. We have some special rules regarding line length, imports, and whitespace - please take a look at the [Towhee style guide](https://github.com/towhee-io/towhee/STYLE_GUIDE.md) for more information.
+
+**Documentation**
+
+If you've noticed a typo or other error somewhere in the [documentation](https://docs.towhee.io), you can push an update by editing the corresponding page in the `towhee/docs` directory, submitting a pull request (see the next section), and waiting for the changes to be merged into the repo. If you need to add a new page or make other substantial documentation changes, please refer to [this page](./adding-new-doc).
 
 ### Pull requests
 

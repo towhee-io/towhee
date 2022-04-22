@@ -12,14 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .data_source import DataSourceMixin
+from .dataset import DatasetMixin
 from .dispatcher import DispatcherMixin
 from .parallel import ParallelMixin
 from .computer_vision import ComputerVisionMixin
-from .tensor_like import TensorLikeMixin
 from .entity_mixin import EntityMixin
+from .display import DisplayMixin
+from .state import StateMixin
+from .metric import MetricMixin
+from .ray import RayMixin
+from .serve import ServeMixin
+from .milvus_mixin import MilvusMixin
+from .save import SaveMixin
 
 
-class AllMixins(DataSourceMixin, DispatcherMixin, ParallelMixin, ComputerVisionMixin, TensorLikeMixin, EntityMixin):
+class AllMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
+                ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin,
+                RayMixin, ServeMixin, MilvusMixin, SaveMixin):
+
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()

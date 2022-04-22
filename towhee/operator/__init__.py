@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.operator.base import Operator, NNOperator, PyOperator, SharedType
+from towhee.operator.base import Operator, NNOperator, PyOperator, OperatorFlag, SharedType
+from towhee.operator.stateful_operator import StatefulOperator
 
-__all__ = ['Operator', 'NNOperator', 'PyOperator', 'SharedType']
+__all__ = [
+    'Operator', 'NNOperator', 'PyOperator', 'StatefulOperator', 'OperatorFlag',
+    'SharedType'
+]

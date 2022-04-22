@@ -13,16 +13,21 @@
 # limitations under the License.
 import doctest
 import unittest
+from pathlib import Path
 from collections import namedtuple
-
-from towhee import ops
-from towhee import register
-from towhee.functional import DataCollection
-from towhee.hparam.hyperparameter import param_scope
-from towhee.functional.entity import Entity
 
 import towhee.functional.data_collection
 import towhee.functional.option
+
+from towhee import ops
+from towhee import register
+from towhee import DataCollection
+from towhee import param_scope
+from towhee import Entity
+
+import towhee
+
+public_path = Path(__file__).parent.parent.resolve()
 
 
 @register(name='myop/add-1')
@@ -56,7 +61,7 @@ class TestDataCollection(unittest.TestCase):
     tests for data collection
     """
     def test_example_for_basic_api(self):
-        dc = DataCollection(range(10))
+        dc = towhee.dc(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
         self.assertListEqual(list(result), [1, 2])
 
@@ -90,7 +95,6 @@ class TestDataCollection(unittest.TestCase):
         self.assertTrue(hasattr(dc, '_iterable'))
         for i in dc:
             self.assertTrue(hasattr(i, 'num'))
-            self.assertTrue(hasattr(i, 'id'))
             self.assertFalse(hasattr(i, 'usage'))
 
         kvs = {'foo': 'bar'}
@@ -99,16 +103,147 @@ class TestDataCollection(unittest.TestCase):
         self.assertTrue(hasattr(res, '_iterable'))
         for i in res:
             self.assertTrue(hasattr(i, 'num'))
-            self.assertTrue(hasattr(i, 'id'))
             self.assertEqual(i.usage, 'test')
             self.assertEqual(i.foo, 'bar')
 
+        kvs = {'foo': None}
+        res = dc.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs)
+        self.assertTrue(hasattr(res, '_iterable'))
+        for i in res:
+            self.assertTrue(hasattr(i, 'num'))
+            self.assertEqual(i.usage, 'test')
+            self.assertEqual(i.foo, 0)
 
-TestDataCollectionExamples = doctest.DocTestSuite(towhee.functional.data_collection)
-unittest.TextTestRunner().run(TestDataCollectionExamples)
+    def test_replace(self):
+        entities = [Entity(num=i) for i in range(5)]
+        dc = DataCollection(entities)
+        j = 0
+        for i in dc:
+            self.assertTrue(i.num == j)
+            j += 1
 
-TestOptionExamples = doctest.DocTestSuite(towhee.functional.option)
-unittest.TextTestRunner().run(TestOptionExamples)
+        dc.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
+        j = 1
+        for i in dc:
+            self.assertTrue(i.num == j)
+            j += 1
+
+    def test_from_json(self):
+        json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
+        res = DataCollection.from_json(json_path)
+
+        self.assertTrue(isinstance(res, DataCollection))
+        for i in res:
+            self.assertTrue(isinstance(i, Entity))
+
+    def test_from_csv(self):
+        csv_path = public_path / 'test_util' / 'test_mixins' / 'test.csv'
+        res = DataCollection.from_csv(csv_path)
+
+        self.assertTrue(isinstance(res, DataCollection))
+        for i in res:
+            self.assertTrue(isinstance(i, Entity))
+
+    def test_runas_op(self):
+        def add(x):
+            return x + 1
+
+        entities = [Entity(a=i, b=i + 1) for i in range(5)]
+        dc = DataCollection(entities)
+
+        res = dc.runas_op['a', 'b'](func=lambda x: x - 1)
+        for i in res:
+            self.assertTrue(i.a == i.b + 1)
+
+        res = dc.runas_op['a', 'b'](func=add)
+        for i in res:
+            self.assertTrue(i.a == i.b - 1)
+
+        self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
+
+    def test_head(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(5)]
+        dc = DataCollection(entities)
+
+        dc.head(1)
+
+        json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
+        res = DataCollection.from_json(json_path)
+
+        res.head(1)
+
+    def test_dropna(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(10)]
+        entities.append(Entity(a=10, b=''))
+        dc = DataCollection(entities)
+
+        for i in dc:
+            self.assertTrue(i.b != '' if i.a != 10 else i.b == '')
+
+        res = dc.dropna()
+        for i in res:
+            self.assertTrue(i.b != '')
+
+    def test_rename(self):
+        entities = [Entity(a=i, b=i + 1) for i in range(100000)]
+        dc = DataCollection(entities)
+        for i in dc:
+            self.assertTrue(hasattr(i, 'a') and hasattr(i, 'b'))
+            self.assertFalse(hasattr(i, 'A') or hasattr(i, 'B'))
+
+        res = dc.rename(column={'a': 'A', 'b': 'B'})
+        for i in res:
+            self.assertFalse(hasattr(i, 'a') and hasattr(i, 'b'))
+            self.assertTrue(hasattr(i, 'A') or hasattr(i, 'B'))
+
+    def test_classifier_procedure(self):
+        csv_path = public_path / 'test_util' / 'data.csv'
+        out = DataCollection.from_csv(csv_path=csv_path).unstream()
+
+        # pylint: disable=unnecessary-lambda
+        out = (
+            out.runas_op['a', 'a'](func=lambda x: int(x))
+                .runas_op['b', 'b'](func=lambda x: int(x))
+                .runas_op['c', 'c'](func=lambda x: int(x))
+                .runas_op['d', 'd'](func=lambda x: int(x))
+                .runas_op['e', 'e'](func=lambda x: int(x))
+                .runas_op['target', 'target'](func=lambda x: int(x))
+        )
+
+        out = out.tensor_hstack[('a', 'b', 'c', 'd', 'e'), 'fea']()
+
+        train, test = out.split_train_test()
+
+        train.set_training().logistic_regression[('fea', 'target'), 'lr_train_predict'](name='logistic')
+
+        test.set_evaluating(train.get_state()) \
+            .logistic_regression[('fea', 'target'), 'lr_evaluate_predict'](name = 'logistic') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'lr_evaluate_predict']('lr') \
+            .report()
+
+        train.set_training().decision_tree[('fea', 'target'), 'dt_train_predict'](name='decision_tree')
+
+        test.set_evaluating(train.get_state()) \
+            .decision_tree[('fea', 'target'), 'dt_evaluate_predict'](name = 'decision_tree') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'dt_evaluate_predict']('dt') \
+            .report()
+
+        train.set_training().svc[('fea', 'target'), 'svm_train_predict'](name='svm_classifier')
+
+        test.set_evaluating(train.get_state()) \
+            .svc[('fea', 'target'), 'svm_evaluate_predict'](name = 'svm_classifier') \
+            .with_metrics(['accuracy', 'recall']) \
+            .evaluate['target', 'svm_evaluate_predict']('svm') \
+            .report()
+
+def load_tests(loader, tests, ignore):
+    #pylint: disable=unused-argument
+    tests.addTests(doctest.DocTestSuite(towhee.functional.data_collection))
+    tests.addTests(doctest.DocTestSuite(towhee.functional.option))
+    return tests
+
 
 if __name__ == '__main__':
     unittest.main()

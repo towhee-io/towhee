@@ -1,7 +1,7 @@
-DataCollection 
+DataCollection
 --------------
 
-.. automodule:: towhee.functional
+.. automodule:: towhee
    :members: DataCollection
    :show-inheritance:
    :special-members:

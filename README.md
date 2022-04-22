@@ -52,6 +52,19 @@ Towhee provides a variety of pre-built pipelines. For example, generating an ima
 
 Your image embedding is now stored in `embedding`. It's that simple.
 
+For image datasets, the users can also build their own pipeline with the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API:
+
+```python
+import towhee
+
+towhee.glob('./*.jpg') \
+      .image_decode() \
+      .image_embedding.timm(model_name='resnet50') \
+      .to_list()
+```
+
+where [`image_decode`](https://towhee.io/towhee/image-decode) and [`image_embedding.timm`](https://towhee.io/image-embedding/timm) are operators from [towhee hub](https://towhee.io). The method-chaining style programming interface also support [parallel execution](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#parallel-execution) and [exception handling](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#exception-handling). 
+
 ## Dive deeper
 
 If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
@@ -62,7 +75,7 @@ If you find that one of our default embedding pipelines does not suit you, you c
 
 For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
 
-Custom machine learning pipelines can be defined in a YAML file or via a Spark-like high-level programming interface (coming soon &trade;). The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
+Custom machine learning pipelines can be defined in a YAML file or via the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API. The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
 
 ```python
 # This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/my-embedding-pipeline.yaml
@@ -77,6 +90,8 @@ Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and
 
 - __Operator__: An `Operator` is a single node within a pipeline. An operator can be a machine learning model, a complex algorithm, or a Python function. All files needed to run the operator are contained within a directory (e.g. code, configs, models, etc...).
 
+- __DataCollection__: A pythonic and method-chaining style API that for building custom unstructured data processing pipelines. `DataCollection` is designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most popular data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
+
 - __Engine__: The `Engine` sits at Towhee's core. Given a `Pipeline`, the `Engine` will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic `Engine` within Towhee to run pipelines on a single-instance machine - K8s and other more complex `Engine` implementations are coming soon.
 
 For a deeper dive into Towhee and its architecture, check out the [Towhee docs](https://docs.towhee.io).
@@ -87,7 +102,7 @@ Remember that writing code is not the only way to contribute! Submitting issues,
 
 Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
 <br><!-- Do not remove start of hero-bot --><br>
-<img src="https://img.shields.io/badge/all--contributors-21-orange"><br>
+<img src="https://img.shields.io/badge/all--contributors-24-orange"><br>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
 <a href="https://github.com/GuoRentong"><img src="https://avatars.githubusercontent.com/u/57477222?v=4" width="30px" /></a>
 <a href="https://github.com/Tumao727"><img src="https://avatars.githubusercontent.com/u/20420181?v=4" width="30px" /></a>
@@ -95,13 +110,16 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/derekdqc"><img src="https://avatars.githubusercontent.com/u/11754703?v=4" width="30px" /></a>
 <a href="https://github.com/filip-halt"><img src="https://avatars.githubusercontent.com/u/81822489?v=4" width="30px" /></a>
 <a href="https://github.com/fzliu"><img src="https://avatars.githubusercontent.com/u/6334158?v=4" width="30px" /></a>
+<a href="https://github.com/gexy185"><img src="https://avatars.githubusercontent.com/u/103474331?v=4" width="30px" /></a>
 <a href="https://github.com/jaelgu"><img src="https://avatars.githubusercontent.com/u/86251631?v=4" width="30px" /></a>
 <a href="https://github.com/jeffoverflow"><img src="https://avatars.githubusercontent.com/u/24581746?v=4" width="30px" /></a>
 <a href="https://github.com/jennyli-z"><img src="https://avatars.githubusercontent.com/u/93511422?v=4" width="30px" /></a>
 <a href="https://github.com/jingkl"><img src="https://avatars.githubusercontent.com/u/34296482?v=4" width="30px" /></a>
 <a href="https://github.com/junjiejiangjjj"><img src="https://avatars.githubusercontent.com/u/14136703?v=4" width="30px" /></a>
 <a href="https://github.com/krishnakatyal"><img src="https://avatars.githubusercontent.com/u/37455387?v=4" width="30px" /></a>
+<a href="https://github.com/omartarek206"><img src="https://avatars.githubusercontent.com/u/40853054?v=4" width="30px" /></a>
 <a href="https://github.com/oneseer"><img src="https://avatars.githubusercontent.com/u/28955741?v=4" width="30px" /></a>
+<a href="https://github.com/pravee42"><img src="https://avatars.githubusercontent.com/u/65100038?v=4" width="30px" /></a>
 <a href="https://github.com/reiase"><img src="https://avatars.githubusercontent.com/u/5417329?v=4" width="30px" /></a>
 <a href="https://github.com/shiyu22"><img src="https://avatars.githubusercontent.com/u/53459423?v=4" width="30px" /></a>
 <a href="https://github.com/sre-ci-robot"><img src="https://avatars.githubusercontent.com/u/56469371?v=4" width="30px" /></a>

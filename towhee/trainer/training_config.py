@@ -45,6 +45,25 @@ def dump_default_yaml(yaml_path):
     trainer_log.info("dump default yaml to %s", yaml_path)
 
 
+def get_config_help():
+    """
+    Get config setting infos.
+    Returns:
+        (`dict`)
+            The help dict.
+    """
+    config_fields = fields(TrainingConfig)
+    help_dict = {}
+    for config_field in config_fields:
+        metadata_dict = config_field.metadata
+        help_dict[config_field.name] = metadata_dict
+    for field_name, metadata_dict in help_dict.items():
+        print("- " + field_name)
+        print(metadata_dict)
+        print("")
+    return help_dict
+
+
 def _early_stopping_factory():
     return {"monitor": "eval_epoch_metric", "patience": 4, "mode": "max"}
 
@@ -140,10 +159,12 @@ class TrainingConfig:
     eval_steps: int = field(default=None, metadata={HELP: "Run an evaluation every X steps.", CATEGORY: "train"})
     batch_size: Optional[int] = field(default=8, metadata={HELP: "Batch size for training.", CATEGORY: "train"})
     val_batch_size: Optional[int] = field(default=-1, metadata={HELP: "Batch size for evaluation.", CATEGORY: "train"})
-    seed: int = field(default=42, metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
+    seed: int = field(default=42,
+                      metadata={HELP: "Random seed that will be set at the beginning of training.", CATEGORY: "train"})
 
     epoch_num: int = field(default=2, metadata={HELP: "Total number of training epochs to perform.", CATEGORY: "train"})
-    dataloader_pin_memory: bool = field(default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.", CATEGORY: "train"})
+    dataloader_pin_memory: bool = field(default=True, metadata={HELP: "Whether or not to pin memory for DataLoader.",
+                                                                CATEGORY: "train"})
     dataloader_drop_last: bool = field(
         default=True, metadata={
             HELP: "Drop the last incomplete batch if it is not divisible by the batch size.", CATEGORY: "train"
@@ -153,33 +174,44 @@ class TrainingConfig:
         default=0,
         metadata={
             HELP:
-            "Number of subprocesses to use for data loading."
-            "default 0 means that the data will be loaded in the main process."
-            "-1 means using all the cpu kernels,"
-            "it will greatly improve the speed when distributed training.",
+                "Number of subprocesses to use for data loading."
+                "default 0 means that the data will be loaded in the main process."
+                "-1 means using all the cpu kernels,"
+                "it will greatly improve the speed when distributed training.",
             CATEGORY:
-            "train"
+                "train"
         },
     )
     lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
-    metric: Optional[str] = field(default="Accuracy", metadata={HELP: "The metric to use to compare two different models.", CATEGORY: "metrics"})
+    metric: Optional[str] = field(default="Accuracy",
+                                  metadata={HELP: "The metric to use to compare two different models.",
+                                            CATEGORY: "metrics"})
 
     print_steps: Optional[int] = field(
         default=None,
         metadata={
-            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`", CATEGORY: "logging"
+            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`",
+            CATEGORY: "logging"
         }
     )
     load_best_model_at_end: Optional[bool] = field(
         default=False,
         metadata={
-            HELP: "Whether or not to load the best model found during training at the end of training.", CATEGORY: "train"
+            HELP: "Whether or not to load the best model found during training at the end of training.",
+            CATEGORY: "train"
         },
     )
-    early_stopping: Union[dict, str] = field(default_factory=_early_stopping_factory, metadata={HELP: ".", CATEGORY: "callback"})
-    model_checkpoint: Union[dict, str] = field(default_factory=_model_checkpoint_factory, metadata={HELP: ".", CATEGORY: "callback"})
-    tensorboard: Optional[Union[dict, str]] = field(default_factory=_tensorboard_factory, metadata={HELP: ".", CATEGORY: "callback"})
-    loss: Union[str, Dict[str, Any]] = field(default="CrossEntropyLoss", metadata={HELP: "Pytorch loss in torch.nn package", CATEGORY: "learning"})
+    early_stopping: Union[dict, str] = field(default_factory=_early_stopping_factory, metadata={
+        HELP: "If the metrics is not better than before in several epoch, it will stop the training.",
+        CATEGORY: "callback"}
+                                             )
+    model_checkpoint: Union[dict, str] = field(default_factory=_model_checkpoint_factory,
+                                               metadata={HELP: "How many n epoch to save checkpoints",
+                                                         CATEGORY: "callback"})
+    tensorboard: Optional[Union[dict, str]] = field(default_factory=_tensorboard_factory,
+                                                    metadata={HELP: "Tensorboard.", CATEGORY: "callback"})
+    loss: Union[str, Dict[str, Any]] = field(default="CrossEntropyLoss",
+                                             metadata={HELP: "Pytorch loss in torch.nn package", CATEGORY: "learning"})
     optimizer: Union[str, Dict[str, Any]] = field(
         default="Adam", metadata={
             HELP: "Pytorch optimizer Class name in torch.optim package", CATEGORY: "learning"
@@ -193,24 +225,27 @@ class TrainingConfig:
             CATEGORY: "learning"
         },
     )
-    warmup_ratio: float = field(default=0.0, metadata={HELP: "Linear warmup over warmup_ratio fraction of total steps.", CATEGORY: "learning"})
+    warmup_ratio: float = field(default=0.0, metadata={HELP: "Linear warmup over warmup_ratio fraction of total steps.",
+                                                       CATEGORY: "learning"})
     warmup_steps: int = field(default=0, metadata={HELP: "Linear warmup over warmup_steps.", CATEGORY: "learning"})
     device_str: str = field(
         default=None,
         metadata={
             HELP:
-            ("None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
-             "`cpu` -> use cpu only;"
-             "`cuda:2` -> use the No.2 gpu."),
+                ("None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
+                 "`cpu` -> use cpu only;"
+                 "`cuda:2` -> use the No.2 gpu."),
             CATEGORY:
-            "device"
+                "device"
         }
     )
     sync_bn: bool = field(default=False, metadata={
         HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
         CATEGORY: "device"
     })
-    freeze_bn: bool = field(default=False, metadata={HELP: "will completely freeze all BatchNorm layers during training.", CATEGORY: "train"})
+    freeze_bn: bool = field(default=False,
+                            metadata={HELP: "will completely freeze all BatchNorm layers during training.",
+                                      CATEGORY: "train"})
 
     def __post_init__(self):
         if self.output_dir is not None:

@@ -95,7 +95,28 @@ class GitUtils:
             raise ValueError(f'{self._author}/{self._repo} repo does not exist.')
 
         url = f'{self._root}/{self._author}/{self._repo}.git'
-        subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+        try:
+            subprocess.check_call(['git', 'lfs'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            engine_log.warning(
+                '\'git-lfs\' not found, execute download instead of clone. ' \
+                'If you want to download large file with git-lfs, please install \'git-lfs\' and remove current local cache.'
+            )
+            raise FileNotFoundError('\'git-lfs\' not found, execute download instead of clone. ' \
+                'If you want to download large file with git-lfs, please install \'git-lfs\' and remove current local cache.'
+            ) from e
+
+        try:
+            subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+        except FileNotFoundError as e:
+            engine_log.warning(
+                '\'git\' not found, execute download instead of clone. ' \
+                'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+            )
+            raise FileNotFoundError(
+                '\'git\' not found, execute download instead of clone. ' \
+                'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
+            ) from e
 
         if install_reqs:
             if 'requirements.txt' in os.listdir(local_repo_path):
@@ -105,7 +126,11 @@ class GitUtils:
         """
         Check the status of local repo.
         """
-        return subprocess.check_output(['git', 'status']).decode('utf-8')
+        try:
+            status = subprocess.check_output(['git', 'status'], stderr=subprocess.DEVNULL).decode('utf-8')
+            return status
+        except subprocess.CalledProcessError as e:
+            raise FileNotFoundError('The repo file has not .git.') from e
 
     def add(self, files: Union[str, List[str]] = None):
         """

@@ -110,7 +110,7 @@ class OperatorContext:
             self._op_status = OpStatus.FINISHED
         return self._op_status
 
-    def start(self, executor: ThreadPoolTaskExecutor, count: int = 1) -> None:
+    def start(self, executor: ThreadPoolTaskExecutor) -> None:
         if self._op_status != OpStatus.NOT_RUNNING:
             raise RuntimeError('OperatorContext can only be started once')
 
@@ -121,7 +121,7 @@ class OperatorContext:
                 dy_extra = hp.get(self._repr.name, {}).get('extra', {})
                 extra = {} if self._repr.extra is None else copy.deepcopy(self._repr.extra)
                 extra.update(dy_extra)
-                for i in range(count):
+                for i in range(self._repr.threads):
                     self._op_runners.append(
                         create_runner(
                             self._repr.iter_info['type'],

@@ -13,11 +13,19 @@
 # limitations under the License.
 
 from towhee.types.image import Image
+from towhee.types.audio_frame import AudioFrame
+from towhee.types.arg import arg, to_image_color
 
 __all__ = [
     'Image',
+    'AudioFrame',
+    'arg',
+    'to_image_color',
 ]
 
 equivalents = {
     'towhee.types.image.Image': 'towhee.types.Image',
+    'towhee.types.audio_frame.AudioFrame': 'towhee.types.AudioFrame',
+    'towhee.types.arg.arg': 'towhee.types.arg',
+    'towhee.types.arg.to_image_color': 'towhee.types.to_image_color',
 }

@@ -44,7 +44,9 @@ class OperatorRepr(BaseRepr):
         outputs: List[Dict[str, Any]],
         iter_info: Dict[str, Any],
         tag: str = 'main',
-        extra=None
+        extra=None,
+        threads: int = 1
+
     ):
         super().__init__(name)
         self._function = function
@@ -54,6 +56,9 @@ class OperatorRepr(BaseRepr):
         self._init_args = init_args
         self._iter_info = iter_info
         self._extra = extra
+        self._threads = threads
+        if self._threads != 1 and self._iter_info.get('type') not in ['filter', 'map']:
+            raise RuntimeError('Only filter and map operator support multi-threads')
 
     @property
     def function(self):
@@ -108,6 +113,10 @@ class OperatorRepr(BaseRepr):
     def extra(self):
         return self._extra
 
+    @property
+    def threads(self) -> int:
+        return self._threads
+
     @staticmethod
     def from_dict(info: Dict[str, Any]) -> 'OperatorRepr':
         """
@@ -127,9 +136,10 @@ class OperatorRepr(BaseRepr):
         if 'tag' not in info:
             info['tag'] = 'main'
 
-        return OperatorRepr(info['name'], info['function'], info['init_args'], info['inputs'],
-                            info['outputs'], info['iter_info'], info['tag'], info.get('extra'))
+        return OperatorRepr(info['name'], info['function'], info['init_args'],
+                            info['inputs'], info['outputs'], info['iter_info'],
+                            info['tag'], info.get('extra'), info.get('threads', 1))
 
-    @staticmethod
+    @ staticmethod
     def from_ir(function: str, init_args: Dict[str, Any]) -> 'OperatorRepr':
         return OperatorRepr('', function, init_args, None, None, None)
