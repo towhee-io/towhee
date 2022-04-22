@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .vit import vit_base_16x224
+from .vit import vit

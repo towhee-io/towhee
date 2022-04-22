@@ -29,6 +29,7 @@ except ModuleNotFoundError:
 from towhee.models.utils.init_vit_weights import init_vit_weights
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from towhee.models.timesformer.timesformer_block import Block
+from towhee.models.timesformer.timesformer_utils import load_pretrained, get_configs
 
 
 class TimeSformer(nn.Module):
@@ -40,7 +41,7 @@ class TimeSformer(nn.Module):
             image height of video frame (equal to width)
         patch_size (`int=16`):
             patch height (equal to width)
-        in_chans (`int=3`):
+        in_c (`int=3`):
             number of image channel
         num_classes (`int=1000`):
             number of categories of classification
@@ -56,9 +57,9 @@ class TimeSformer(nn.Module):
             if use qkv_bias
         qk_scale (`float=None`):
             number to scale qk
-        drop_rate (`float=0.`):
+        drop_ratio (`float=0.`):
             drop rate of blocks & position embedding layer
-        attn_drop_rate (`float=0.`):
+        attn_drop_ratio (`float=0.`):
             attention drop rate
         norm_layer (`nn.module=nn.LayerNorm`):
             module used in normalization layer
@@ -75,13 +76,13 @@ class TimeSformer(nn.Module):
         >>>
         >>> fake_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
         >>> model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='divided_space_time')
-        >>> pred = model(dummy_video)
+        >>> pred = model(fake_video)
         >>> print(pred.shape)
     """
 
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
-                 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
-                 drop_path_rate=0.1, norm_layer=nn.LayerNorm, num_frames=8,
+    def __init__(self, img_size=224, patch_size=16, in_c=3, num_classes=1000, embed_dim=768, depth=12,
+                 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_ratio=0., attn_drop_ratio=0.,
+                 drop_path_ratio=0.1, norm_layer=nn.LayerNorm, num_frames=8,
                  attention_type='divided_space_time', dropout=0.):
         super().__init__()
         assert (attention_type in ['divided_space_time', 'space_only', 'joint_space_time'])
@@ -93,23 +94,23 @@ class TimeSformer(nn.Module):
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.patch_embed = PatchEmbed2D(
-            img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+            img_size=img_size, patch_size=patch_size, in_chans=in_c, embed_dim=embed_dim)
         self.num_patches = self.patch_embed.num_patches
 
         # Positional Embeddings
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, embed_dim))
-        self.pos_drop = nn.Dropout(p=drop_rate)
+        self.pos_drop = nn.Dropout(p=drop_ratio)
         if self.attention_type != 'space_only':
             self.time_embed = nn.Parameter(torch.zeros(1, num_frames, embed_dim))
-            self.time_drop = nn.Dropout(p=drop_rate)
+            self.time_drop = nn.Dropout(p=drop_ratio)
 
         # Attention Blocks
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, self.depth)]  # stochastic depth decay rule
+        dpr = [x.item() for x in torch.linspace(0, drop_path_ratio, self.depth)]  # stochastic depth decay rule
         self.blocks = nn.ModuleList([
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
+                drop=drop_ratio, attn_drop=attn_drop_ratio, drop_path=dpr[i], norm_layer=norm_layer,
                 attention_type=self.attention_type)
             for i in range(self.depth)])
         self.norm = norm_layer(embed_dim)
@@ -131,17 +132,6 @@ class TimeSformer(nn.Module):
                         nn.init.constant_(m.temporal_fc.weight, 0)
                         nn.init.constant_(m.temporal_fc.bias, 0)
                     i += 1
-
-    @torch.jit.ignore
-    def no_weight_decay(self):
-        return {'pos_embed', 'cls_token', 'time_embed'}
-
-    def get_classifier(self):
-        return self.head
-
-    def reset_classifier(self, num_classes):
-        self.num_classes = num_classes
-        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
     def forward_features(self, x):
         b, _, t, h, _ = x.shape
@@ -202,10 +192,63 @@ class TimeSformer(nn.Module):
         return x
 
 
+def timesformer(
+        model_name: str,
+        pretrained: bool = True,
+        checkpoint_path: str = None,
+        device: str = 'cpu'
+):
+    if device != 'cpu':
+        assert torch.cuda.is_available()
+
+    configs = get_configs(model_name)
+
+    model = TimeSformer(
+        img_size=configs['img_size'],
+        patch_size=configs['patch_size'],
+        in_c=configs['in_c'],
+        num_classes=configs['num_classes'],
+        embed_dim=configs['embed_dim'],
+        depth=configs['depth'],
+        num_heads=configs['num_heads'],
+        mlp_ratio=configs['mlp_ratio'],
+        qkv_bias=configs['qkv_bias'],
+        qk_scale=configs['qk_scale'],
+        drop_ratio=configs['drop_ratio'],
+        attn_drop_ratio=configs['attn_drop_ratio'],
+        drop_path_ratio=configs['drop_path_ratio'],
+        norm_layer=configs['norm_layer'],
+        num_frames=configs['num_frames'],
+        attention_type=configs['attention_type'],
+        dropout=configs['dropout']
+    )
+
+    model.to(device)
+    if pretrained:
+        model = load_pretrained(model, configs, checkpoint_path=checkpoint_path, strict=True, device=device)
+
+    model.eval()
+    return model
+
+
 # if __name__ == '__main__':
 #     import torch
+#     import random
+#     import numpy as np
 #
-#     model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='joint_space_time')
+#     def setup_seed(seed):
+#         torch.manual_seed(seed)
+#         torch.cuda.manual_seed_all(seed)
+#         np.random.seed(seed)
+#         random.seed(seed)
+#         torch.backends.cudnn.deterministic = True
+#
+#     setup_seed(24)
 #     dummy_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
-#     pred = model(dummy_video)
-#     assert(pred.shape == (1, 400))
+#
+#     # model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='joint_space_time')
+#     # pred = model(dummy_video)
+#     # assert(pred.shape == (1, 400))
+#
+#     model = timesformer(model_name='timesformer_k400_8x224')
+#     print(model(dummy_video))
