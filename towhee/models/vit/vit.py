@@ -43,7 +43,7 @@ class VitModel(nn.Module):
         embed_dim (int): number of features
         depth (int): number of blocks
         num_heads (int): number of heads for Multi-Attention layer
-        mlp_ratio (int): mlp ratio
+        mlp_ratio (float): mlp ratio
         qkv_bias (bool): if add bias to qkv layer
         qk_scale (float): number to scale qk
         representation_size (int): size of representations
@@ -56,8 +56,8 @@ class VitModel(nn.Module):
     """
     def __init__(self,
                  img_size=224, patch_size=16, in_c=3, num_classes=1000,
-                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True, qk_scale=None,
-                 representation_size=None, drop_ratio=0, attn_drop_ratio=0, drop_path_ratio=0,
+                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None,
+                 representation_size=None, drop_ratio=0., attn_drop_ratio=0., drop_path_ratio=0.,
                  embed_layer=PatchEmbed2D, norm_layer=None, act_layer=None):
         super().__init__()
         self.num_classes = num_classes
@@ -120,23 +120,30 @@ class VitModel(nn.Module):
         return x
 
 
-def vit_base_16x224(weights_path: str = None, device: str = None):
+def vit(
+        model_name: str = "vit_base_16x224",
+        pretrained: bool = True,
+        weights_path: str = None,
+        device: str = None
+        ):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    configs = get_configs("vit_base_16x224")
+    configs = get_configs(model_name)
     if "url" in configs:
         url = configs["url"]
         configs.pop("url")
+
     model = VitModel(**configs)
 
-    if weights_path:
-        state_dict = torch.load(weights_path)
-    elif url:
-        state_dict = model_zoo.load_url(url, map_location=torch.device(device))
-    else:
-        raise AssertionError("No model weights url or path is provided.")
+    if pretrained:
+        if weights_path:
+            state_dict = torch.load(weights_path)
+        elif url:
+            state_dict = model_zoo.load_url(url, map_location=torch.device(device))
+        else:
+            raise AssertionError("No model weights url or path is provided.")
+        model.load_state_dict(state_dict, strict=False)
 
-    model.load_state_dict(state_dict, strict=False)
     model.eval()
     return model
