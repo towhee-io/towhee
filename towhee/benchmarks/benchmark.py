@@ -5,12 +5,13 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
 os.environ['NUMEXPR_NUM_THREADS'] = '1'
-import numpy 
-from pathlib import Path 
+import numpy #pylint: disable=unused-import
+from pathlib import Path
 import time
 
-from towhee.hub.file_manager import FileManagerConfig, FileManager 
-from towhee.benchmarks import runner_engine, dc_engine 
+from towhee.hub.file_manager import FileManagerConfig, FileManager
+from towhee.benchmarks import runner_engine, dc_engine
+
 
 def startup():
     fmc = FileManagerConfig()
