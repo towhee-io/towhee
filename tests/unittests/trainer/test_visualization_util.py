@@ -13,6 +13,7 @@
 # limitations under the License.
 import unittest
 import torch
+import matplotlib
 
 from pathlib import Path
 from PIL import Image
@@ -25,6 +26,7 @@ from torch import nn
 from torch.optim.lr_scheduler import StepLR
 
 cur_dir = Path(__file__).parent
+matplotlib.use("agg")
 
 
 class TestVisualizationUtil(unittest.TestCase):
@@ -110,6 +112,7 @@ class MockVit(nn.Module):
     """
     mock vit model
     """
+
     def __init__(self):
         super().__init__()
         self.conv = nn.Conv2d(3, 1, kernel_size=16, stride=16, padding=1)
