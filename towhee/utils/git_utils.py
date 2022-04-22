@@ -124,11 +124,11 @@ class GitUtils:
 
     def status(self):
         """
-        Check the status of local repo.
+        Check if the local repo is out-dated.
         """
         try:
-            status = subprocess.check_output(['git', 'status'], stderr=subprocess.DEVNULL).decode('utf-8')
-            return status
+            status = subprocess.check_output(['git', 'rev-list', 'origin', '^HEAD'], stderr=subprocess.DEVNULL).decode('utf-8')
+            return 'up-to-date' if not status else 'behind'
         except subprocess.CalledProcessError as e:
             raise FileNotFoundError('The repo file has not .git.') from e
 
@@ -192,4 +192,10 @@ class GitUtils:
             branch (`str`):
                 The remote branch.
         """
-        return subprocess.check_call(['git', 'pull', remote, branch])
+        try:
+            res =  subprocess.check_call(['git', 'pull', remote, branch])
+        except subprocess.CalledProcessError as e:
+            engine_log.error(e.output)
+            raise e
+
+        return res
