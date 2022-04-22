@@ -23,14 +23,13 @@ from torch import nn
 import torch.nn.functional as F
 import torchvision
 from torchvision import models
-from torchvision.models import _utils
 
 from towhee.models.retina_face.ssh import SSH
 from towhee.models.retina_face.mobilenet_v1 import MobileNetV1
 from towhee.models.retina_face.retinaface_fpn import RetinaFaceFPN
 from towhee.models.retina_face.heads import ClassHead, BboxHead, LandmarkHead
 from towhee.models.retina_face.prior_box import PriorBox
-from towhee.models.retina_face.utils import decode, decode_landm
+from towhee.models.retina_face.utils import decode, decode_landm, IntermediateLayerGetter
 
 class RetinaFace(nn.Module):
     """
@@ -64,7 +63,7 @@ class RetinaFace(nn.Module):
             #backbone = models.resnet50(pretrained=cfg['pretrain'])
             backbone = models.resnet50(False)
 
-        self.body = _utils.IntermediateLayerGetter(backbone, cfg['return_layers'])
+        self.body = IntermediateLayerGetter(backbone, cfg['return_layers'])
         in_channels_stage2 = cfg['in_channel']
         in_channels_list = [
             in_channels_stage2 * 2,
