@@ -375,8 +375,8 @@ class FileManager():
                 os.chdir(repo_path)
                 try:
                     git = GitUtils(author, repo)
-                    if 'Your branch is behind' in git.status():
-                        engine_log.warning('Your local pipeline %s is not up to date, updating to latest version...', file_name)
+                    if git.status() == 'behind':
+                        engine_log.warning('Your local pipeline %s is not up to date, tring to update to latest version...', file_name)
                         git.pull()
                 except FileNotFoundError:
                     pass
@@ -462,8 +462,8 @@ class FileManager():
                 os.chdir(repo_path)
                 try:
                     git = GitUtils(author, repo)
-                    if 'Your branch is behind' in git.status():
-                        engine_log.warning('Your local operator %s is not up to date, updating to latest version...', file_name)
+                    if git.status() == 'behind':
+                        engine_log.warning('Your local operator %s is not up to date, tring to update to latest version...', file_name)
                         git.pull()
                 except FileNotFoundError:
                     pass
