@@ -15,10 +15,12 @@
 
 from typing import NamedTuple, List
 
-import cv2
-from PIL import Image
 
+from towhee._types import Image
 from towhee.operator import Operator, SharedType
+
+
+Cv2Outputs = NamedTuple('Outputs', [('img', 'Image')])
 
 
 class Cv2Decoder(Operator):
@@ -26,22 +28,26 @@ class Cv2Decoder(Operator):
     Cv2 decoder
     """
 
-    def __init__(self):
+    def __init__(self, count=10):
         super().__init__()
-        self.key = ()
+        self.count = count
 
-    def __call__(self, video_path: str) -> NamedTuple('Outputs', [('imgs', List['Image'])]):
-        Outputs = NamedTuple('Outputs', [('imgs', List['Image'])])
-        imgs = []
+    def __call__(self, video_path: str):
+        import cv2
+        import time
         cap = cv2.VideoCapture(video_path)
         while True:
+            if self.count <= 0:
+                break
             _, frame = cap.read()
             if frame is not None:
-                imgs.append(Image.fromarray(frame))
+                yield Cv2Outputs(Image(frame, 'BGR'))
+                self.count -= 1
+                time.sleep(0.1)
             else:
                 cap.release()
-                return Outputs(imgs)
+                break
 
     @property
     def shared_type(self):
-        return SharedType.Shareable
+        return SharedType.NotReusable

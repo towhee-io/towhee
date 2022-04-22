@@ -13,36 +13,49 @@
 # limitations under the License.
 
 from typing import NamedTuple
+from pathlib import Path
 
 import torch
 from torch import nn
 
 from towhee.operator import NNOperator, SharedType
 from towhee.utils.log import engine_log
-from towhee.serving import auto_batch
+
+from timm.data.transforms_factory import create_transform
+from timm.data import resolve_data_config
+from timm.models.factory import create_model
 
 Outputs = NamedTuple("Outputs", [("res", int)])
 
 
-@auto_batch(5, 0.01)
 class BatchNnOperator(NNOperator):
     """
     A test NNOperator with no functionality.
     """
 
-    def __init__(self, framework: str = 'pytorch'):
-        super().__init__()
-        self._framework = framework
-        self.model = nn.Identity()
+    def __init__(self, model_name, num_classes=1000, framework: str = 'pytorch'):
+        super().__init__(framework)
+        self.model = create_model(model_name, pretrained=False, num_classes=num_classes)
+        self.model.eval()
+        self._model_handler = Path(__file__).absolute().parent / 'handler.py'
 
-    def __call__(self, num: int, batch: int):
-        t = torch.randn(num, num)
-        if batch == 1:
-            res = [self.model(t)]
-        else:
-            res = self.model([t] * batch)
-        return Outputs(torch.stack(res).sum())
+    def __call__(self, img: 'towhee._types.Image'):
+        ret = self.predict(img)
+        return Outputs(ret)
 
     @property
     def shared_type(self):
         return SharedType.Shareable
+
+
+# if __name__ == '__main__':
+#     op = BatchNnOperator('resnet50')
+#     op.initialize('test', {'batch_size': 2})
+#     from towhee._types.image import Image
+#     import cv2
+#     ndarray_img = cv2.imread('/Users/jiangjunjie/WorkSpace/images/1.png')
+#     rgb_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
+
+#     img = Image(rgb_img, 'RGB')
+#     out = op(img)
+#     print(out)

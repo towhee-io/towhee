@@ -117,12 +117,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_batch_pipeline(self):
         p = pipeline('local/batch_pipeline')
-        res = p(3, 45)
+        res = p('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
 
         from towhee.hparam import param_scope
         with param_scope(**{'batch_nn': {'extra': {'batch_size': 8}}}) as hp:
             p2 = pipeline('local/batch_pipeline')
-            res = p2(3, 55)
+            res = p2('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
 
 
 if __name__ == '__main__':

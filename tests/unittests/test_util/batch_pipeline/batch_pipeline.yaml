@@ -7,37 +7,44 @@ operators:
         inputs:
             -
                 df: '_start_df'
-                name: 'num'
+                name: 'video_path'
                 col: 0
-            -
-                df: '_start_df'
-                name: 'batch'
-                col: 1                
         outputs:
             -
                 df: 'input_df'
         iter_info:
             type: map
     -
+      name: 'video'
+      function: 'local/cv2_decoder'
+      init_args:
+      inputs:
+            -
+                df: 'input_df'
+                name: 'video_path'
+                col: 0
+      outputs:
+            -
+                df: 'video_df'
+      iter_info:
+            type: generator
+    -
         name: 'batch_nn'
         function: 'local/batch_nn_operator'
         init_args:
+          model_name: 'resnet50'
         inputs:
             -
-                df: 'input_df'
-                name: 'num'
+                df: 'video_df'
+                name: 'img'
                 col: 0
-            -
-                df: 'input_df'
-                name: 'batch'
-                col: 1
         outputs:
             -
                 df: 'output_df'
         iter_info:
             type: map
         extra:
-          batch_size: 10
+          batch_size: 3
           max_latency: 0.1
     -
         name: '_end_op'
@@ -58,29 +65,29 @@ dataframes:
         name: '_start_df'
         columns:
             -
-                name: 'num'
-                vtype: 'int'
-            -
-                name: 'batch'
-                vtype: 'int'
+                name: 'video_path'
+                vtype: 'str'
     -
         name: 'input_df'
         columns:
             -
-                name: 'num'
-                vtype: 'int'
+                name: 'video_path'
+                vtype: 'str'
+    -
+        name: 'video_df'
+        columns:
             -
-                name: 'batch'
-                vtype: 'int'
+                name: 'img'
+                vtype: 'Image'
     -
         name: 'output_df'
         columns:
             -
                 name: 'res'
-                vtype: 'int'
+                vtype: 'ndarray'                                
     -
         name: '_end_df'
         columns:
             -
                 name: 'res'
-                vtype: 'int'
+                vtype: 'ndarray'

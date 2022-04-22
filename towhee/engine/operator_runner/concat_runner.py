@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
 from towhee.engine.operator_runner.runner_base import RunnerBase, OpInfo
 
 

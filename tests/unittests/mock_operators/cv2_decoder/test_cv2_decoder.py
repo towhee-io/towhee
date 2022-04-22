@@ -25,7 +25,10 @@ class TestCv2Decoder(unittest.TestCase):
 
     def test_cv2_decoder(self):
         test_video = Path(__file__).parent / 'test_video.avi'
-        decoder = Cv2Decoder()
+        count = 10
+        decoder = Cv2Decoder(count)
         out = decoder(str(test_video))
 
-        self.assertEqual(len(out.imgs), 85)
+        for frame in out:
+            count -= 1
+        self.assertEqual(count, 0)

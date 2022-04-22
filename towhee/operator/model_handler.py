@@ -1,12 +1,12 @@
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 
 
 class HandlerBase(ABC):
 
-    @abstractclassmethod
+    @abstractmethod
     def __init__(self, model, device_id):
         pass
 
-    @abstractclassmethod
+    @abstractmethod
     def __call__(self, batch_data):
         pass

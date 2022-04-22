@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-def create_serving(model, batch_size, max_latency, device_ids, handler_flie=None):
-    from towhee.serving import thread_model_serving
-    serving = thread_model_serving.ThreadModelServing(model, batch_size, max_latency, device_ids, handler_flie)
+def create_serving(model, batch_size, max_latency, device_ids, handler=None):
+    from towhee.serving import thread_model_serving  # pylint: disable=import-outside-toplevel
+    serving = thread_model_serving.ThreadModelServing(model, batch_size, max_latency, device_ids, handler)
     serving.start()
     return serving.proxy()

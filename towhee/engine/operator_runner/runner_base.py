@@ -123,7 +123,7 @@ class RunnerBase(ABC):
 
     @property
     def op_extra(self):
-        return self._op_info._extra
+        return self._op_info.extra
 
     @property
     def status(self) -> RunnerStatus:

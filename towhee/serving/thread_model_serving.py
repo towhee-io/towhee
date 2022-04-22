@@ -1,4 +1,5 @@
 from typing import List, Union
+import importlib
 import threading
 import copy
 import queue
@@ -12,12 +13,9 @@ class ThreadModelServing:
     ThreadModelServing
     """
 
-    def __init__(self, model, batch_size: int, max_latency: int, device_ids: List[int], handler_flie=None):
+    def __init__(self, model, batch_size: int, max_latency: int, device_ids: List[int], handler=None):
         assert batch_size > 0 and max_latency > 0 and len(device_ids) > 0
         self._model = model
-        self._handler_class = self._load_handler(handler_flie)
-
-        self.models = self._create_model_workers(device_ids)
         self._max_latency = max_latency
         self._batch_size = batch_size
         self._input_queue = queue.Queue()
@@ -28,27 +26,38 @@ class ThreadModelServing:
         self._tworkers = []
         self._need_stop = False
 
-    def _load_handler_file(self, handler_file):
-        handler_path = Path(handler_file)
+        self._handler_class = self._load_handler(handler)
+        self.models = self._create_model_workers(device_ids)
+
+    def _load_handler_file(self, handler):
+        handler_path = Path(handler)
         if not handler_path.exists():
-            raise RuntimeError('Can not find model handler file: %s' % handler_file)
-
-        module_name = handler_file.stem
-        function_name = ''.join([item.capitalize() for item in module_name.split('_')])
-        if module_name.endswith(".py"):
-            module_name = module_name[:-3]
-        module_name = module_name.split("/")[-1]
-        module = importlib.import_module(module_name)
-        if hasattr(module, function_name):
-            return getattr(module, function_name)
+            module, class_name = self._load_internal_handler(handler)
         else:
-            raise RuntimeError('Model handler file %s error, : %s' % handler_file)
+            module_name = handler.stem
+            module_spec = importlib.util.spec_from_file_location(module_name, handler)
+            module = importlib.util.module_from_spec(module_spec)
+            module_spec.loader.exec_module(module)
+            class_name = ''.join([item.capitalize() for item in module_name.split('_')])
 
-    def _load_handler(self, handler_file):
-        if handler_file is None:
-            from towhee.serving.torch_model_handler import TorchModelHandler
+        if hasattr(module, class_name):
+            return getattr(module, class_name)
+        else:
+            raise RuntimeError('Load model handler %s.%s error' % (handler, class_name))
+
+    def _load_internal_handler(self, handler):
+        module_name = '.{0}'.format(handler)
+        try:
+            model = importlib.import_module(module_name, 'towhee.operator')
+            return model, ''.join([item.capitalize() for item in handler.split('_')])
+        except ImportError:
+            RuntimeError('Can not find model handler: %s' % handler)
+
+    def _load_handler(self, handler):
+        if handler is None:
+            from towhee.serving.torch_model_handler import TorchModelHandler  # pylint: disable=import-outside-toplevel
             return TorchModelHandler
-        return self._load_handler_file(handler_file)
+        return self._load_handler_file(handler)
 
     def _create_model_workers(self, device_ids: List[int]):
         if len(device_ids) == 1:
@@ -62,11 +71,11 @@ class ThreadModelServing:
                 models.append(self._handler_class(copy.deepcopy(self._model), d_id))
         return models
 
-    @property
+    @ property
     def model(self):
         return self._model
 
-    @property
+    @ property
     def _auto_task_id(self):
         with self._lock:
             self._task_id += 1
@@ -159,7 +168,7 @@ class ThreadServingProxy:
     def __init__(self, model_serving: ThreadModelServing):
         self._model_serving = model_serving
 
-    @property
+    @ property
     def model(self):
         return self._model_serving.model
 

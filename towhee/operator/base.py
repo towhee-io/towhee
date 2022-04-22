@@ -69,7 +69,7 @@ class Operator(ABC):
         """
         raise NotImplementedError
 
-    def after_init(self, key, extra=None):
+    def initialize(self, key, extra=None):  # pylint: disable=unused-argument
         self._key = key
 
     @property
@@ -94,14 +94,16 @@ class NNOperator(Operator):
             The framework to apply.
     """
 
-    def __init__(self, framework: str = 'pytorch', devices=None):
+    def __init__(self, framework: str = 'pytorch'):
         super().__init__()
         self._framework = framework
         self.operator_name = type(self).__name__
         self.model = None
         self.model_card = None
         self._trainer = None  # Trainer(self.get_model())
-        self._model_handler_file = None
+
+        self._model_handler = None
+        self._handler_args = None
 
     @property
     def framework(self):
@@ -111,27 +113,26 @@ class NNOperator(Operator):
     def framework(self, framework: str):
         self._framework = framework
 
-    def get_model(self):
-        """
-        Get the framework naive model, if an operator need to be trained,
-        this method should be overwritten.
-        """
-        raise NotImplementedError()
+    def predict(self, data):
+        model = self.model if not hasattr(self, '_model_client') else self._model_client
+        return model(data)
 
-    def after_init(self, key, extra):
-        super().after_init(key)
+    def initialize(self, key, extra):
+        super().initialize(key)
         if extra is None:
             extra = {}
 
-        from towhee.serving import create_serving
-
+        from towhee.serving import create_serving  # pylint: disable=import-outside-toplevel
         batch_size = extra.get('batch_size', 1)
         max_latency = extra.get('max_latency', 0.1)
         device_ids = extra.get('device_ids', [-1])
         if batch_size == 1 and len(device_ids) == 1 and device_ids[0] == -1:
             return
-
-        self.model = create_serving(self.model, batch_size, max_latency, device_ids, self._model_handler_file)
+        if self._model_handler is None:
+            # For support the nnops which is published before model serving.
+            self.model = create_serving(self.model, batch_size, max_latency, device_ids, None)
+        else:
+            self._model_client = create_serving(self.model, batch_size, max_latency, device_ids, self._model_handler)
 
     def train(self,
               training_config=None,

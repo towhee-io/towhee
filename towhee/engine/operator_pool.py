@@ -102,7 +102,7 @@ class OperatorPool:
 
             if not storage.op_available():
                 op = self._op_loader.load_operator(hub_op_id, op_args, tag)
-                op.after_init(op_key, extra)
+                op.initialize(op_key, extra)
                 storage.put(op, True)
             return storage.get()
 
