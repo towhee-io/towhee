@@ -7,8 +7,8 @@ Image embedding pipelines are used for reduction the dimensionality of the input
 
 ### Popular Scenarios
 
-- [Reverse image search](../tutorials/reverse-image-search.md)
-- [Image deduplication](../tutorials/image-deduplication.md)
+- [Reverse image search](../Tutorials/reverse-image-search.md)
+- [Image deduplication](../Tutorials/image-deduplication.md)
 - Copyright infringement detection
 - Item tagging
 - Celebrity tagging
