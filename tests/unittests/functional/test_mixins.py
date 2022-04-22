@@ -87,6 +87,39 @@ class TestSaveMixin(unittest.TestCase):
         out_3.unlink()
         out_4.unlink()
 
+class TestMetricMixin(unittest.TestCase):
+    """
+    Unittest for MetricMixin.
+    """
+    def test_hit_ratio(self):
+        true = [[1,2,3,4,5,6,7,8,9,10]]
+        pred_1 = [[0,1,2,3,4,5,6,7,8,9,10]]
+        pred_2 = [[0,1,2,3,4,5,6,7,8]]
+        pred_3 = [[0,11,12]]
+
+        mhr = towhee.functional.mixins.metric.mean_hit_ratio
+        self.assertEqual(1, mhr(true, pred_1))
+        self.assertEqual(0.8, mhr(true, pred_2))
+        self.assertEqual(0, mhr(true, pred_3))
+
+    def test_average_precision(self):
+        true = [[1,2,3,4,5]]
+        pred_1 = [[1,6,2,7,8,3,9,10,4,5]]
+        pred_2 = [[0,1,6,7,2,8,3,9,10]]
+        pred_3 = [[0,11,12]]
+
+        trues = [[1,2,3,4,5], [1,2,3,4,5]]
+        pred_4 = [[1,6,2,7,8,3,9,10,4,5], [0,1,6,7,2,8,3,9,10]]
+
+        mean_ap = towhee.functional.mixins.metric.mean_average_precision
+        self.assertEqual(0.62, round(mean_ap(true, pred_1), 2))
+        self.assertEqual(0.44, round(mean_ap(true, pred_2), 2))
+        self.assertEqual(0, mean_ap(true, pred_3))
+        self.assertEqual(0.53, round(mean_ap(trues, pred_4), 2))
+
+
+
+
 
 class TestDisplayMixin(unittest.TestCase):
     """
