@@ -3,7 +3,6 @@ from typing import List
 import torch
 from PIL import Image as PILImage
 
-from timm.models.factory import create_model
 from timm.data.transforms_factory import create_transform
 from timm.data import resolve_data_config
 
@@ -38,6 +37,10 @@ class Handler(HandlerBase):
 
     def __call__(self, imgs: List['towhee.Image']) -> 'numpy.ndarray':
         batch = self.preprocess(imgs)
+        if self._device_id >= 0:
+            batch = batch.to(self._device_id)
         with torch.no_grad():
             infer = self.model.forward_features(batch)
+            if self._device_id >= 0:
+                infer = infer.detach().cpu()
         return self.postprocess(infer)
