@@ -5,14 +5,15 @@
 import os
 
 try:
+    # pylint: disable=unused-import
     import fairscale
-except ModuleNotFoundError:
+except ImportError:
     os.system("pip install fairscale")
 from fairscale.nn import checkpoint_wrapper
 
-from towhee.models.perceiver.Sequential import Sequential
-from towhee.models.perceiver.Residual import Residual
-from towhee.models.perceiver.SelfAttention import SelfAttention
+from towhee.models.perceiver.sequential import Sequential
+from towhee.models.perceiver.residual import Residual
+from towhee.models.perceiver.self_attention import SelfAttention
 from towhee.models.perceiver.mlp import mlp
 
 

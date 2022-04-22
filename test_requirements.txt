@@ -17,3 +17,4 @@ scikit-learn
 fastapi
 pymilvus
 pytest
+fairscale
