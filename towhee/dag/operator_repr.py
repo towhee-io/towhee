@@ -140,6 +140,6 @@ class OperatorRepr(BaseRepr):
                             info['inputs'], info['outputs'], info['iter_info'],
                             info['tag'], info.get('extra'), info.get('threads', 1))
 
-    @ staticmethod
+    @staticmethod
     def from_ir(function: str, init_args: Dict[str, Any]) -> 'OperatorRepr':
         return OperatorRepr('', function, init_args, None, None, None)

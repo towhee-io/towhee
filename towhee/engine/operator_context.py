@@ -118,7 +118,8 @@ class OperatorContext:
 
         try:
             with param_scope() as hp:
-                dy_extra = hp.get(self._repr.name, {}).get('extra', {})
+                key = '%s.extra' % self._repr.name
+                dy_extra = hp.get(key).get_or_else({})
                 extra = {} if self._repr.extra is None else copy.deepcopy(self._repr.extra)
                 extra.update(dy_extra)
                 for i in range(self._repr.threads):

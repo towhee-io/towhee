@@ -15,17 +15,11 @@
 from typing import NamedTuple
 from pathlib import Path
 
-import torch
-from torch import nn
-
 from towhee.operator import NNOperator, SharedType
-from towhee.utils.log import engine_log
 
-from timm.data.transforms_factory import create_transform
-from timm.data import resolve_data_config
 from timm.models.factory import create_model
 
-Outputs = NamedTuple("Outputs", [("res", int)])
+Outputs = NamedTuple('Outputs', [('res', int)])
 
 
 class BatchNnOperator(NNOperator):
@@ -46,16 +40,3 @@ class BatchNnOperator(NNOperator):
     @property
     def shared_type(self):
         return SharedType.Shareable
-
-
-# if __name__ == '__main__':
-#     op = BatchNnOperator('resnet50')
-#     op.initialize('test', {'batch_size': 2})
-#     from towhee._types.image import Image
-#     import cv2
-#     ndarray_img = cv2.imread('/Users/jiangjunjie/WorkSpace/images/1.png')
-#     rgb_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
-
-#     img = Image(rgb_img, 'RGB')
-#     out = op(img)
-#     print(out)

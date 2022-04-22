@@ -116,13 +116,12 @@ class NNOperator(Operator):
         self.model = None
         self.model_card = None
         self._trainer = None
+        self._model_handler = None
+        self._handler_args = None
 
     @property
     def flag(self):
         return OperatorFlag.STATELESS | OperatorFlag.REUSEABLE
-
-        self._model_handler = None
-        self._handler_args = None
 
     @property
     def framework(self):

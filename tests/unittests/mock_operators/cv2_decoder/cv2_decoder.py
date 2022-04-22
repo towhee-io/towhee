@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import NamedTuple, List
+from typing import NamedTuple
 
 
 from towhee._types import Image
@@ -33,8 +33,8 @@ class Cv2Decoder(Operator):
         self.count = count
 
     def __call__(self, video_path: str):
-        import cv2
-        import time
+        import cv2  # pylint: disable=import-outside-toplevel
+        import time  # pylint: disable=import-outside-toplevel
         cap = cv2.VideoCapture(video_path)
         while True:
             if self.count <= 0:

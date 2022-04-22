@@ -29,6 +29,6 @@ class TestCv2Decoder(unittest.TestCase):
         decoder = Cv2Decoder(count)
         out = decoder(str(test_video))
 
-        for frame in out:
+        for _ in out:
             count -= 1
         self.assertEqual(count, 0)

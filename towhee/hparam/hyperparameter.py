@@ -286,7 +286,7 @@ class HyperParameter(dict):
             obj = obj[p]
         obj[path[-1]] = safe_numeric(value)
 
-    def get(self, name: str, default: any = None) -> Any:
+    def get(self, name: str) -> Any:
         """
         get a parameter by a string name
 
@@ -309,10 +309,7 @@ class HyperParameter(dict):
             if p not in obj:
                 return _Accessor(obj, p)
             obj = obj[p]
-        if default is not None:
-            return obj[path[-1]] if path[-1] in obj else default
-        else:
-            return obj[path[-1]] if path[-1] in obj else _Accessor(self, name)
+        return obj[path[-1]] if path[-1] in obj else _Accessor(self, name)
 
     def __setitem__(self, key, value):
         """

@@ -103,12 +103,12 @@ class TestThreadModelServing(unittest.TestCase):
 
         serving.start()
         batch_data = [torch.randn(3, 3) for _ in range(10)]
-        fut = serving._recv(batch_data)
+        fut = serving._recv(batch_data)  # pylint: disable=protected-access
         fut.result()
         self.assertEqual(torch.stack(fut.result()).sum(), torch.stack(batch_data).sum())
 
         begin = time.time()
-        fut = serving._recv(torch.randn(3, 3))
+        fut = serving._recv(torch.randn(3, 3))  # pylint: disable=protected-access
         fut.result()
         self.assertGreater(time.time() - begin, 0.48)
         serving.stop()
@@ -125,7 +125,7 @@ class TestThreadModelServing(unittest.TestCase):
             batch_data = [torch.randn(3, 3) for _ in range(bs)]
             if len(batch_data) == 1:
                 batch_data = batch_data[0]
-            fut = serving._recv(batch_data)
+            fut = serving._recv(batch_data)  # pylint: disable=protected-access
             if idx == 0:
                 self.assertEqual(fut.result().sum(), batch_data.sum())
             else:

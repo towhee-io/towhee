@@ -18,3 +18,4 @@ fastapi
 pymilvus
 pytest
 fairscale
+timm>=0.5.4

@@ -11,7 +11,11 @@ from towhee.operator.model_handler import HandlerBase
 
 
 class Handler(HandlerBase):
-    def __init__(self, model, device_id, **args):
+    '''
+    Handler
+    '''
+
+    def __init__(self, model, device_id):
         self._device_id = device_id
         self.model = model
         if device_id >= 0:

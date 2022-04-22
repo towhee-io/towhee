@@ -117,12 +117,12 @@ class TestPipeline(unittest.TestCase):
 
     def test_batch_pipeline(self):
         p = pipeline('local/batch_pipeline')
-        res = p('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
+        p('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
 
-        from towhee.hparam import param_scope
-        with param_scope(**{'batch_nn': {'extra': {'batch_size': 8}}}) as hp:
+        from towhee.hparam import param_scope  # pylint: disable=import-outside-toplevel
+        with param_scope(**{'batch_nn': {'extra': {'batch_size': 8}}}):
             p2 = pipeline('local/batch_pipeline')
-            res = p2('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
+            p2('https://dl.fbaipublicfiles.com/pytorchvideo/projects/archery.mp4')
 
     def test_multi_runners(self):
         p = pipeline('local/test_multi_runner')
