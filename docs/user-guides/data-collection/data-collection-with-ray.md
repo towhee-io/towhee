@@ -7,7 +7,7 @@ authors:
 ---
 
 # What is Ray
-[Ray](https://github.com/ray-project/ray) is python framework that simplifies the scaling and distributing of local workloads. On top of this, Ray provides many libraries for a wide range of ML workloads. In our case, we are using the Core API from Ray, as we require rays abilities in the lower levels of our code. 
+[Ray](https://github.com/ray-project/ray) is python framework that simplifies the scaling and distributing of local workloads. On top of this, Ray provides many libraries for a wide range of ML workloads. In our case, we are using the Core API from Ray, as we require rays abilities in the lower levels of our code.
 
 
 ## How to Use
@@ -19,7 +19,7 @@ This command sets all subsequent parallizable commands to run parallized on Ray.
 corresponds to how many workers are going to be assigned to the tasks. Due to different implementations
 for different tasks, it isnt always a set in stone mapping. For example, in some instances, num workers
 corresponds to how many active tasks should be running at once, while in another task it might mean how
-many workers are assigned to the tasks. 
+many workers are assigned to the tasks.
 
 An example of using set parallel is as follows:
 ```python
@@ -30,12 +30,12 @@ c = b.to_list()
 ```
 In this example, both map() commands following the set_parallel() command will run on the ray backend.
 
-> **_Note:_** Currently, the only supported functions that can run on the Ray backend are map() and operators from the [Towhee](towhee.io) hub.
+> **_Note:_** Currently, the only supported functions that can run on the Ray backend are map() and operators from the [Towhee](https://towhee.io) hub.
 
 
 **2. Using the `dc.pmap(... backend='ray')` and `dc.mmap(... backend='ray')`**
 
-These commands are the parallel versions of map() and mmap(). With pmap(), you are using multiple machines to asynchronously calculate the map function results for the input. mmap() is the same, but instead of one function, you are running multiple functions, with each function outputting its own subsequent DataCollection. 
+These commands are the parallel versions of map() and mmap(). With pmap(), you are using multiple machines to asynchronously calculate the map function results for the input. mmap() is the same, but instead of one function, you are running multiple functions, with each function outputting its own subsequent DataCollection.
 
 
 ## Custom Ray Connections
