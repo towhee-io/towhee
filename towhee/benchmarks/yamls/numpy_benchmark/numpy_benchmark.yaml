@@ -32,7 +32,7 @@ operators:
                 df: 2
         iter_info:
             type: map
-        threads: 2
+        threads: 1
     -
         name: 'numpy-op2'
         function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
@@ -49,7 +49,7 @@ operators:
                 df: 3
         iter_info:
             type: map
-        threads: 2
+        threads: 1
     -
         name: 'numpy-op3'
         function: 'filip-halt/numpy-benchmark-operator' # 'user/operator-name', such as 'towhee/resnet50-image-embedding'
@@ -66,7 +66,7 @@ operators:
                 df: 4
         iter_info:
             type: map
-        threads: 2
+        threads: 1
     -
         name: '_end_op'
         function: '_end_op'
