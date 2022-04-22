@@ -124,9 +124,9 @@ def _glob_zip_call_back(_, index, *arg, **kws):
 
 def _dc_call_back(_, index, *arg, **kws):
     if index is not None:
-        return DataCollection.stream(*arg, **kws).map(lambda x: Entity(**{index: x}))
+        return DataCollection(*arg, **kws).map(lambda x: Entity(**{index: x}))
     else:
-        return DataCollection.stream(*arg, **kws)
+        return DataCollection(*arg, **kws)
 
 
 glob = GlobImpl(_glob_call_back)

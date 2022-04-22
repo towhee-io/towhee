@@ -2,5 +2,5 @@
 Get Started
 ===========
 
-.. mdinclude:: ../../../../docs/get-started/data-collection.md
-   :start-line: 6
+.. include:: ../../../../docs/get-started/data-collection.md
+   :parser: myst_parser.sphinx_

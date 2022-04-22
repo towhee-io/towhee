@@ -13,6 +13,15 @@ Welcome to Towhee's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+User Guide
+==========
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide:
+
+   user_guide/index.rst
+
 User API
 ========
 

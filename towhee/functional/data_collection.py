@@ -670,7 +670,7 @@ class DataCollection(Iterable, AllMixins):
         if not hasattr(self._iterable, '__getitem__'):
             raise TypeError('indexing is only supported for '
                             'data collection created from list or pandas DataFrame.')
-        return self._iterable[index]
+        return DataCollection(self._iterable[index])
 
     def __setitem__(self, index, value):
         """
@@ -694,6 +694,13 @@ class DataCollection(Iterable, AllMixins):
             raise TypeError('indexing is only supported for '
                             'data collection created from list or pandas DataFrame.')
         self._iterable[index] = value
+
+    def append(self, item):
+        if hasattr(self._iterable, 'append'):
+            self._iterable.append(item)
+            return self
+        raise TypeError('appending is only supported for '
+                            'data collection created from list.')
 
     def __rshift__(self, unary_op):
         """
