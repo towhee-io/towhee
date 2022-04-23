@@ -21,7 +21,7 @@ We generally follow the [Google Python style guide](https://google.github.io/sty
 
 **Documentation**
 
-If you've noticed a typo or other error somewhere in the [documentation](https://docs.towhee.io), you can push an update by editing the corresponding page in the `towhee/docs` directory, submitting a pull request (see the next section), and waiting for the changes to be merged into the repo. If you need to add a new page or make other substantial documentation changes, please refer to [this page](./adding-new-doc).
+If you've noticed a typo or other error somewhere in the [documentation](https://docs.towhee.io), you can push an update by editing the corresponding page in the `towhee/docs` directory, submitting a pull request (see the next section), and waiting for the changes to be merged into the repo. If you need to add a new page or make other substantial documentation changes, please refer to [this page](./adding-new-doc.md).
 
 ### Pull requests
 
