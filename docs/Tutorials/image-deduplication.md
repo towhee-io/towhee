@@ -56,7 +56,6 @@ Putting it all together, we can check if two images are duplicate with the follo
 ```python
 >>> from towhee import pipeline
 >>> import numpy as np
-
 >>> embedding_pipeline = pipeline('image-encoding')
 >>> img0_embedding = embedding_pipeline('/path/to/img0')
 >>> img1_embedding = embedding_pipeline('/path/to/img1')
