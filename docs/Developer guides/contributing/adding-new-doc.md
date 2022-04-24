@@ -1,54 +1,19 @@
 ---
-id: contributing-guide
+id: adding-new-doc
 title: Adding a new docs page
 ---
 
-If you've implemented a new pipeline time, or other large feature, please test your changes locally first before submitting a pull request to the main Towhee repo:
+All Towhee documentation is written via [markdown](https://www.markdownguide.org/) pages. If you're looking to update a page, please visit the [main Towhee repo](https://github.com/towhee-io/towhee/tree/main/docs) and find the corresponding `.md` file. The sidebar structure on the [docs page](https://docs.towhee.io) matches the directory structure in the `docs` subfolder of the main Towhee repo, so if you're having trouble finding the right file, try going through subdirectories as if they were menu items on the sidebar.
 
-1. Make sure you have `node` and `yarn` installed. On Debian-based Linux distros, you can use the built-in package manager `apt`:
+### Adding a new documentation page
 
-```shell
-$ sudo apt install nodejs
-$ npm install --global yarn
-```
-
-If you're on MacOS, you can use [`brew`](https://brew.sh/):
-
-```shell
-% brew install node
-% brew install yarn
-```
-
-2. Fork the [`towhee-docs`](https://github.com/towhee-io/towhee-docs) repo. Once that's done, clone your forked version of `towhee-docs`:
-
-```shell
-$ git clone https://github.com/<your_username>/towhee-docs.git
-$ cd towhee-docs
-```
-
-3. There's a `towhee` subfolder within `towhee-docs` that currently points to the main Towhee repo. Delete that folder and create a symlink to your development directory. For example:
-
-```shell
-$ rm -r towhee
-$ ln -s /home/<your_username>/towhee towhee
-```
-
-4. With the above three steps complete, you can now view changes to the local documentation with:
-
-```shell
-$ yarn
-$ yarn start
-```
-
-5. The header for newly added pages should look something like this:
+Adding a new documentation page is also simple - simply find the right menu item you'd like to put it under and add a new file. The header of your new file should contain two fields: and `id`, which is a unique identifier for your document, and `title`, which will appear as an `<h1>` on the first line of your page. Note that the `id` field should correspond to the name of your file. For example, if your filename is `a-unique-page-id.md`, then the header would look something like this:
 
 ```md
 ---
-id: page-id
-title: This is a dummy title
+id: a-unique-page-id
+title: Title of your document
 ---
 ```
 
-**IMPORTANT**: Be sure to also update the `sidebar.js` file within the `towhee/docs` directory with your newly added page. If you don't do this, your new page won't show up on the Towhee docs page.
-
-6. Before submitting a pull request with your changes, please repeat step 4 and test your changes locally.
+Once that's done, you can add the remaining content as a regular markdown file. If you've implemented a new pipeline type or other large feature, please test your changes locally first before submitting a pull request to the main Towhee repo. You can do so with any markdown viewer.
