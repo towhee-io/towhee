@@ -78,6 +78,7 @@ class TimeSformer(nn.Module):
         >>> model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='divided_space_time')
         >>> pred = model(fake_video)
         >>> print(pred.shape)
+        torch.Size([1, 400])
     """
 
     def __init__(self, img_size=224, patch_size=16, in_c=3, num_classes=1000, embed_dim=768, depth=12,

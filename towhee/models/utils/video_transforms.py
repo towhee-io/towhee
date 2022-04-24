@@ -16,7 +16,10 @@
 
 
 import os
+import logging
+from typing import Union
 
+import numpy
 import torch
 from torch import nn
 
@@ -50,6 +53,19 @@ from pytorchvideo.transforms import (
     # UniformCropVideo
 )
 
+log = logging.getLogger()
+
+
+def transform_video(video: Union[str, numpy.ndarray], model_name: str = None, **kwargs):
+    if model_name:
+        cfg = video_configs[model_name]
+        cfg.update(model_name=model_name)
+    else:
+        cfg = get_configs(**kwargs)
+    tsfm = VideoTransforms(cfg)
+    output = tsfm(video)
+    return output
+
 
 class VideoTransforms:
     """
@@ -64,43 +80,78 @@ class VideoTransforms:
         - x3d_m
 
     Args:
-        model_name (`str`):
-            model name
+        cfg:
+            configs including parameters
     Returns:
-        A dictionary including tensors for both video and audio.
+        A dictionary including tensors for video (and audio).
 
     Example:
         >>> from towhee.models.utils.video_transforms import VideoTransforms
-        >>> tfms = VideoTransforms("slowfast_r50")
-        >>> video_data = tfms(video_path="path/to/video", start_sec=0, end_sec=30)
+        >>>
+        >>> model_name = "x3d_xs"
+        >>> cfg = video_configs[model_name]
+        >>> cfg.update(model_name=model_name)
+        >>> tsfm = VideoTransforms(cfg)
+        >>> output = tsfm(video)
+        >>> print(output.shape)
+        torch.Size([3, 4, 182, 182])
     """
 
-    def __init__(self, model_name: str):
-        self.model_name = model_name
-        self.tfms_params = video_configs[model_name]
+    def __init__(self, cfg):
+        if "model_name" in cfg.keys():
+            self.model_name = cfg["model_name"]
+        else:
+            self.model_name = "default"
+        if "sampling_rate" in cfg.keys():
+            self.sampling_rate = cfg["sampling_rate"]
+        else:
+            self.sampling_rate = None
+        if "alpha" in cfg.keys():
+            self.alpha = cfg["alpha"]
+        try:
+            self.num_frames = cfg["num_frames"]
+            self.mean = cfg["mean"]
+            self.std = cfg["std"]
+            self.side_size = cfg["side_size"]
+            self.crop_size = cfg["crop_size"]
+        except KeyError as e:
+            log.error("Invalid key in configs: %s", e)
+            raise KeyError from e
+
         self.tfms = ApplyTransformToKey(
             key="video",
             transform=Compose([
-                UniformTemporalSubsample(self.tfms_params["num_frames"]),
+                UniformTemporalSubsample(self.num_frames),
                 Lambda(lambda x: x / 255.0),
                 NormalizeVideo(
-                    mean=self.tfms_params["mean"],
-                    std=self.tfms_params["std"],
+                    mean=self.mean,
+                    std=self.std,
                     inplace=True
                 ),
-                ShortSideScale(size=self.tfms_params["side_size"]),
+                ShortSideScale(size=self.side_size),
                 CenterCropVideo(
-                    size=(self.tfms_params["crop_size"], self.tfms_params["crop_size"])
+                    size=(self.crop_size, self.crop_size)
                 ),
                 CollectFrames(),
-                PackPathway(alpha=self.tfms_params["alpha"]) if model_name.startswith("slowfast") else nn.Identity()
-            ]),
-        )
+                PackPathway(alpha=self.alpha) if self.model_name.startswith("slowfast") else nn.Identity()
+                ]),
+            )
+        if self.model_name.startswith("slowfast"):
+            log.info("Using PackPathway for slowfast model.")
 
-    def __call__(self, video_path: str, start_sec: float = 0.0, end_sec: float = 30.0):
-        video = EncodedVideo.from_path(video_path)
-        video_data = video.get_clip(start_sec=start_sec, end_sec=end_sec)
-        video_data = self.tfms(video_data)
+    def __call__(self, video: Union[str, numpy.ndarray], start_sec: float = 0.0, end_sec: float = 30):
+        if isinstance(video, str):
+            video = EncodedVideo.from_path(video)
+            video = video.get_clip(start_sec=start_sec, end_sec=end_sec)
+            if self.sampling_rate:
+                total_frames = self.num_frames * self.sampling_rate
+                frames_per_sec = total_frames / (end_sec - start_sec)
+                log.info("Frames per second: %s", frames_per_sec)
+        elif isinstance(video, numpy.ndarray):
+            assert video.dtype == numpy.float32
+            video = dict(video=torch.from_numpy(video))
+
+        video_data = self.tfms(video)
         if isinstance(video_data["video"], list) and str(self.tfms._transform.transforms[-1]) == "PackPathway()":
             video_data["video_slow"] = video_data["video"][0]
             video_data["video_fast"] = video_data["video"][1]
@@ -145,12 +196,12 @@ def get_configs(**kwargs):
         "side_size": 256,
         "crop_size": 256,
         "num_frames": 8,
-        "sampling_rate": 8,
         "mean": [0.45, 0.45, 0.45],
         "std": [0.225, 0.225, 0.225],
         }
-    configs.update(**kwargs)
+    configs.update(kwargs)
     return configs
+
 
 video_configs = {
     "slow_r50": get_configs(),
