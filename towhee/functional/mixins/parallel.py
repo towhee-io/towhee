@@ -325,8 +325,3 @@ class EOS():
     Internal object used to signify end of processing queue.
     '''
     pass
-
-
-if __name__ == '__main__':  # pylint: disable=inconsistent-quotes
-    import doctest
-    doctest.testmod(verbose=False)

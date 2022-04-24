@@ -391,8 +391,3 @@ def _list_brief(data, str_method, maxlen=4):
 def _default_brief(data, maxlen=128):
     s = str(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

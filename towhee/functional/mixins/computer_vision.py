@@ -24,8 +24,3 @@ class ComputerVisionMixin:
         for im in self:
             cv2.imshow(title, im)
             cv2.waitKey(1)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
