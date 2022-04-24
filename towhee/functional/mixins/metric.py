@@ -71,6 +71,28 @@ def get_scores_dict(collector: Collector):
 
     return scores_dict
 
+def mean_hit_ratio(actual, predicted):
+    ratios = []
+    for act, pre in zip(actual, predicted):
+        hit_num = len(set(act) & set(pre))
+        ratios.append(hit_num / len(act))
+
+    return sum(ratios) / len(ratios)
+
+def mean_average_precision(actual, predicted):
+    aps = []
+    for act, pre in zip(actual, predicted):
+        cnt = 0
+        precision_sum = 0
+        for i, p in enumerate(pre):
+            if p in act:
+                cnt += 1
+                precision_sum += cnt/(i+1)
+            ap = precision_sum / cnt if cnt else 0
+        aps.append(ap)
+
+    return sum(aps) / len(aps)
+
 
 def _evaluate_callback(self):
 
@@ -106,6 +128,12 @@ def _evaluate_callback(self):
             elif metric_type == 'confusion_matrix':
                 re = sklearn_utils.confusion_matrix(actual_list,
                                                     predicted_list)
+            elif metric_type == 'mean_hit_ratio':
+                re = mean_hit_ratio(actual_list,
+                               predicted_list)
+            elif metric_type == 'mean_average_precision':
+                re = mean_average_precision(actual_list,
+                                            predicted_list)
             score[name].update({metric_type: re})
         self.collector.add_scores(score)
         return self
@@ -143,6 +171,11 @@ class MetricMixin:
         rf       0.8     0.8
         {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 0.8, 'recall': 0.8}}
 
+        >>> dc2 = DataCollection([Entity(pred=[1,6,2,7,8,3,9,10,4,5], act=[1,2,3,4,5])])
+        >>> dc2.with_metrics(['mean_average_precision', 'mean_hit_ratio']).evaluate['act', 'pred'](name='test').report()
+              mean_average_precision  mean_hit_ratio
+        test                0.622222             1.0
+        {'test': {'mean_average_precision': 0.6222222222222221, 'mean_hit_ratio': 1.0}}
         """
         from towhee.utils.ipython_utils import HTML, display
         from towhee.utils.pandas_utils import pandas as pd
