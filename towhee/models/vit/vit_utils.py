@@ -20,16 +20,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.models.layers.patch_embed2d import PatchEmbed2D
+
 
 def base_configs():
     return dict(
         img_size=224,
         patch_size=16,
+        in_c=3,
         num_classes=1000,
         embed_dim=768,
         depth=12,
         num_heads=12,
+        mlp_ratio=4.,
+        qkv_bias=True,
+        qk_scale=None,
+        representation_size=None,
         drop_ratio=0,
+        attn_drop_ratio=0,
+        drop_path_ratio=0,
+        embed_layer=PatchEmbed2D,
+        norm_layer=None,
+        act_layer=None
     )
 
 
@@ -37,6 +49,6 @@ def get_configs(model_name):
     if model_name == 'vit_base_16x224':
         configs = base_configs()
         configs.update(dict(
-            url='https://github.com/jaelgu/towhee_test/releases/download/v1.0.0/vit_base_patch16_224.pth'
+            url='https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_p16_224-80ecf9dd.pth'
         ))
         return configs

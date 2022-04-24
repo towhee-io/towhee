@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.perceiver.CrossAttention import CrossAttention
+from towhee.models.perceiver.cross_attention import CrossAttention
 
 
 class PerceiverCrossAttentionTest(unittest.TestCase):

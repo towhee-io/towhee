@@ -154,8 +154,8 @@ class DisplayMixin:
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
-            header = tuple(contents[0].to_dict()) if not header else header
-            data = [list(x.to_dict().values()) for x in contents]
+            header = tuple(contents[0].__dict__) if not header else header
+            data = [list(x.__dict__.values()) for x in contents]
         else:
             data = [[x] for x in contents]
 
@@ -313,6 +313,8 @@ def _to_html_td(data, callback=None):
             return wrap_td_tag(_audio_frames_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, numpy.ndarray) for x in data):
             return wrap_td_tag(_list_brief(data, _ndarray_brief), align='left')
+        else:
+            return wrap_td_tag(_list_brief(data, _default_brief), align='left')
     return wrap_td_tag(_default_brief(data))
 
 
@@ -387,7 +389,7 @@ def _list_brief(data, str_method, maxlen=4):
 
 
 def _default_brief(data, maxlen=128):
-    s = repr(data)
+    s = str(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
 
 

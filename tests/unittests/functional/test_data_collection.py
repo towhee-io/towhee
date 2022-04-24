@@ -161,13 +161,6 @@ class TestDataCollection(unittest.TestCase):
 
         self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
 
-    def test_to_dict(self):
-        entities = [Entity(a=i, b=i + 1) for i in range(5)]
-        dc = DataCollection(entities)
-
-        for i in dc:
-            self.assertTrue(isinstance(i.to_dict(), dict))
-
     def test_head(self):
         entities = [Entity(a=i, b=i + 1) for i in range(5)]
         dc = DataCollection(entities)
@@ -244,7 +237,6 @@ class TestDataCollection(unittest.TestCase):
             .with_metrics(['accuracy', 'recall']) \
             .evaluate['target', 'svm_evaluate_predict']('svm') \
             .report()
-
 
 def load_tests(loader, tests, ignore):
     #pylint: disable=unused-argument

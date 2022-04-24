@@ -45,6 +45,3 @@ class Entity:
 
     def __str__(self) -> str:
         return json.dumps({k: getattr(self, k) for k in self.__dict__})
-
-    def to_dict(self):
-        return self.__dict__

@@ -7,7 +7,7 @@ Audio is defined as any human-hearable sound; audio embedding is the process of 
 
 ### Popular scenarios
 
-- [Identify music with an audio snippet](../tutorials/music-recognition-system.md)
+- [Identify music with an audio snippet](/Tutorials/music-recognition-system.md)
 - Recognize audio events or scenes
 - Tag music for genres, artists, emotion
 - Music copyright infringement

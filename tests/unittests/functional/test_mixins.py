@@ -31,6 +31,9 @@ import towhee.functional.mixins.serve
 
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection
+from towhee import Entity
+
+public_path = Path(__file__).parent.parent.resolve()
 
 
 def load_tests(loader, tests, ignore):
@@ -50,20 +53,82 @@ def load_tests(loader, tests, ignore):
     return tests
 
 
-if __name__ == '__main__':
-    unittest.main()
+# pylint: disable=import-outside-toplevel
+class TestSaveMixin(unittest.TestCase):
+    """
+    Unit test for SaveMixin.
+    """
+    def test_to_csv(self):
+        import pandas as pd
+        csv_file = public_path / 'test_util' / 'test_mixins' / 'test.csv'
+
+        record = pd.read_csv(csv_file, encoding='utf-8')
+        dc_1 = towhee.from_df(record).unstream()
+        dc_2 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
+        e = [Entity(a=i, b=i + 1, c=i + 2) for i in range(5)]
+        dc_3 = DataCollection(e).unstream()
+        dc_4 = DataCollection(iter(e)).unstream()
+
+        out_1 = public_path / 'test_util' / 'test_mixins' / 'test_1.csv'
+        out_2 = public_path / 'test_util' / 'test_mixins' / 'test_2.csv'
+        out_3 = public_path / 'test_util' / 'test_mixins' / 'test_3.csv'
+        out_4 = public_path / 'test_util' / 'test_mixins' / 'test_4.csv'
+        dc_1.to_csv(csv_path=out_1)
+        dc_2.to_csv(csv_path=out_2)
+        dc_3.to_csv(csv_path=out_3)
+        dc_4.to_csv(csv_path=out_4)
+
+        self.assertTrue(out_1.is_file())
+        self.assertTrue(out_2.is_file())
+        self.assertTrue(out_3.is_file())
+        self.assertTrue(out_4.is_file())
+        out_1.unlink()
+        out_2.unlink()
+        out_3.unlink()
+        out_4.unlink()
+
+class TestMetricMixin(unittest.TestCase):
+    """
+    Unittest for MetricMixin.
+    """
+    def test_hit_ratio(self):
+        true = [[1,2,3,4,5,6,7,8,9,10]]
+        pred_1 = [[0,1,2,3,4,5,6,7,8,9,10]]
+        pred_2 = [[0,1,2,3,4,5,6,7,8]]
+        pred_3 = [[0,11,12]]
+
+        mhr = towhee.functional.mixins.metric.mean_hit_ratio
+        self.assertEqual(1, mhr(true, pred_1))
+        self.assertEqual(0.8, mhr(true, pred_2))
+        self.assertEqual(0, mhr(true, pred_3))
+
+    def test_average_precision(self):
+        true = [[1,2,3,4,5]]
+        pred_1 = [[1,6,2,7,8,3,9,10,4,5]]
+        pred_2 = [[0,1,6,7,2,8,3,9,10]]
+        pred_3 = [[0,11,12]]
+
+        trues = [[1,2,3,4,5], [1,2,3,4,5]]
+        pred_4 = [[1,6,2,7,8,3,9,10,4,5], [0,1,6,7,2,8,3,9,10]]
+
+        mean_ap = towhee.functional.mixins.metric.mean_average_precision
+        self.assertEqual(0.62, round(mean_ap(true, pred_1), 2))
+        self.assertEqual(0.44, round(mean_ap(true, pred_2), 2))
+        self.assertEqual(0, mean_ap(true, pred_3))
+        self.assertEqual(0.53, round(mean_ap(trues, pred_4), 2))
+
+
+
 
 
 class TestDisplayMixin(unittest.TestCase):
     """
     Unit test for DisplayMixin.
     """
-
     def test_ndarray_bref(self):
         arr = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
         # pylint: disable=protected-access
-        self.assertEqual(_ndarray_brief(arr, 3),
-                         '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
+        self.assertEqual(_ndarray_brief(arr, 3), '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
 
     def test_to_printable_table(self):
         dc = DataCollection([[1.1, 2.2], [3.3, 4.4]])
@@ -96,11 +161,13 @@ class TestDisplayMixin(unittest.TestCase):
         self.assertEqual(html_tbl, html_str)
 
     def test_show(self):
-        logo_path = os.path.join(
-            Path(__file__).parent.parent.parent.parent.resolve(),
-            'towhee_logo.png')
+        logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
         img = cv2.imread(logo_path)
         towhee_img = Image(img, 'BGR')
         dc = DataCollection([[1, img, towhee_img], [2, img, towhee_img]])
         dc.show(tablefmt='plain')
         dc.show(tablefmt='html')
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.perceiver.SelfAttention import SelfAttention
+from towhee.models.perceiver.self_attention import SelfAttention
 
 
 class PerceiverSelfAttentionTest(unittest.TestCase):

@@ -3,7 +3,7 @@
 
 
 from towhee.models.perceiver.create_self_attention import create_self_attention
-from towhee.models.perceiver.Sequential import Sequential
+from towhee.models.perceiver.sequential import Sequential
 
 
 def create_self_attention_block(
