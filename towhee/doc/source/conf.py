@@ -12,10 +12,10 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../..'))
 sys.path.insert(0, os.path.abspath('../../../..'))
-
 
 # -- Project information -----------------------------------------------------
 
@@ -27,28 +27,42 @@ author = 'Towhee Team'
 release = 'v0.5.0'
 show_authors = True
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-	'sphinx.ext.autodoc',
-	'sphinx.ext.napoleon',
-    	'sphinx.ext.viewcode',
-    	'sphinx.ext.githubpages',
-    	'sphinx_copybutton',
-    	'm2r2',
-    	'sphinx.ext.autosummary',
-    	'sphinxcontrib.prettyspecialmethods'
-	]
+    'myst_nb',
+    'sphinx_copybutton',
+    'sphinx_inline_tabs',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.githubpages',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinxcontrib.prettyspecialmethods'
+]
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "colon_fence",
+    "smartquotes",
+    "replacements",
+]
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: |\(.\) \$ "
 copybutton_prompt_is_regexp = True
 
-source_suffix = ['.rst', '.md']
-
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.md': 'myst-nb',
+}
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -63,7 +77,6 @@ language = 'en'
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['trainer/modules.rst']
-
 
 # -- Options for HTML output -------------------------------------------------
 
