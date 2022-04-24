@@ -13,9 +13,13 @@
 # limitations under the License.
 
 import queue
+import json
 import threading
 import concurrent.futures
+from towhee.functional.entity import Entity
+from towhee.functional.option import Some
 # pylint: disable=import-outside-toplevel
+
 
 class _APIWrapper:
     """
@@ -23,13 +27,23 @@ class _APIWrapper:
     """
     tls = threading.local()
 
-    def __init__(self, path='/', cls=None) -> None:
+    def __init__(self, index=None, cls=None) -> None:
         self._queue = queue.Queue()
-        self._path = path
         self._cls = cls
 
+        if index is not None:
+            self._index = index if isinstance(index, list) else [index]
+        else:
+            self._index = index
+
     def feed(self, x):
-        self._queue.put(x)
+        if self._index is None:
+            entity = x
+        else:
+            entity = json.loads(x)
+            entity = Entity(**{k: entity.get(k, None) for k in self._index})
+        entity = Some(entity)
+        self._queue.put(entity)
 
     @property
     def path(self):
@@ -78,36 +92,47 @@ class _PipeWrapper:
 class ServeMixin:
     """
     Mixin for API serve
-
-    Examples:
-
-    # >>> from fastapi import FastAPI
-    # >>> from fastapi.testclient import TestClient
-    # >>> app = FastAPI()
-
-    # >>> import towhee
-    # >>> with towhee.api('/app1') as api:
-    # ...     app1 = (
-    # ...         api.map(lambda x: x+' -> 1')
-    # ...            .map(lambda x: x+' => 1')
-    # ...            .bind(app)
-    # ...     )
-
-    # >>> with towhee.api('/app2') as api:
-    # ...     app2 = (
-    # ...         api.map(lambda x: x+' -> 2')
-    # ...            .map(lambda x: x+' => 2')
-    # ...            .bind(app)
-    # ...     )
-
-    # >>> client = TestClient(app)
-    # >>> client.post('/app1', '1').text
-    # '"1 -> 1 => 1"'
-    # >>> client.post('/app2', '2').text
-    # '"2 -> 2 => 2"'
     """
 
-    def bind(self, app=None):
+    def serve(self, path='/', app=None):
+        """
+        Serve the DataCollection as a RESTful API
+
+        Args:
+            path (str, optional): API path. Defaults to '/'.
+            app (_type_, optional): The FastAPI app the API bind to, will create one if None.
+
+        Returns:
+            _type_: the app that bind to
+
+        Examples:
+
+        >>> from fastapi import FastAPI
+        >>> from fastapi.testclient import TestClient
+        >>> app = FastAPI()
+
+        >>> import towhee
+        >>> with towhee.api() as api:
+        ...     app1 = (
+        ...         api.map(lambda x: x+' -> 1')
+        ...            .map(lambda x: x+' => 1')
+        ...            .serve('/app1', app)
+        ...     )
+
+        >>> with towhee.api['x']() as api:
+        ...     app2 = (
+        ...         api.runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 2')
+        ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 2')
+        ...            .select['y']()
+        ...            .serve('/app2', app)
+        ...     )
+
+        >>> client = TestClient(app)
+        >>> client.post('/app1', '1').text
+        '"1 -> 1 => 1"'
+        >>> client.post('/app2', '{"x": "2"}').text
+        '{"y":"2 -> 2 => 2"}'
+        """
         if app is None:
             from fastapi import FastAPI, Request
             app = FastAPI()
@@ -118,17 +143,64 @@ class ServeMixin:
 
         pipeline = _PipeWrapper(self._iterable, api)
 
-        @app.post(api.path)
+        @app.post(path)
         async def wrapper(req: Request):
             nonlocal pipeline
             req = (await req.body()).decode()
-            return pipeline.execute(req)
+            rsp = pipeline.execute(req)
+            if rsp.is_empty():
+                return rsp.get()
+            return rsp.get()
 
         return app
 
+    def as_function(self):
+        """
+        Make the DataCollection as callable function
+
+        Returns:
+            _type_: a callable function
+
+        Examples:
+
+        >>> import towhee
+        >>> with towhee.api() as api:
+        ...     func1 = (
+        ...         api.map(lambda x: x+' -> 1')
+        ...            .map(lambda x: x+' => 1')
+        ...            .as_function()
+        ...     )
+
+        >>> with towhee.api['x']() as api:
+        ...     func2 = (
+        ...         api.runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 2')
+        ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 2')
+        ...            .select['y']()
+        ...            .as_raw()
+        ...            .as_function()
+        ...     )
+
+        >>> func1('1')
+        '1 -> 1 => 1'
+        >>> func2('{"x": "2"}')
+        '2 -> 2 => 2'
+        """
+
+        api = _APIWrapper.tls.place_holder
+
+        pipeline = _PipeWrapper(self._iterable, api)
+
+        def wrapper(req):
+            rsp = pipeline.execute(req)
+            if rsp.is_empty():
+                return rsp.get()
+            return rsp.get()
+
+        return wrapper
+
     @classmethod
-    def api(cls, path='/'):
-        return _APIWrapper(path, cls)
+    def api(cls, index=None):
+        return _APIWrapper(index=index, cls=cls)
 
 
 if __name__ == '__main__':
