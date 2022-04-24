@@ -28,22 +28,27 @@ class milvus_search:
             The collection name or pymilvus.Collection in Milvus.
         kwargs
             The kwargs with collection.search, refer to https://milvus.io/docs/v2.0.x/search.md#Prepare-search-parameters.
+            And the 'anns_field' defaults to the vector field name, limit defaults to 10, and for default param:
+                IVF_FLAT: {"params": {"nprobe": 10}},
+                IVF_SQ8: {"params": {"nprobe": 10}},
+                IVF_PQ: {"params": {"nprobe": 10}},
+                HNSW: {"params": {"ef": 10}},
+                IVF_HNSW: {"params": {"nprobe": 10, "ef": 10}},
+                RHNSW_FLAT: {"params": {"ef": 10}},
+                RHNSW_SQ: {"params": {"ef": 10}},
+                RHNSW_PQ: {"params": {"ef": 10}},
+                ANNOY: {"params": {"search_k": 10}}.
 
     Examples:
 
     >>> import towhee
     >>> from pymilvus import connections
     >>> connections.connect(host='localhost', port='19530')
-    >>> search_args = dict(
-    ...    param={"metric_type": "L2", "params": {"nprobe": 10}},
-    ...    output_fields=["count", "random_value"],
-    ...    limit=10
-    ... )
     >>> (
     ...    towhee.glob['path']('./*.jpg')
     ...           .image_decode['path', 'img']()
     ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')
-    ...           .milvus_search['vec', 'results'](collection='test', **search_args)
+    ...           .milvus_search['vec', 'results'](collection='test')
     ...           .to_list()
     ... )
     [<Entity dict_keys(['path', 'img', 'vec', 'results'])>,
@@ -66,6 +71,24 @@ class milvus_search:
             for schema in fields_schema:
                 if schema.dtype in (101, 100):
                     self.kwargs['anns_field'] = schema.name
+
+        if 'limit' not in self.kwargs:
+            self.kwargs['limit'] = 10
+
+        index_params = {
+            'IVF_FLAT': {'params': {'nprobe': 10}},
+            'IVF_SQ8': {'params': {'nprobe': 10}},
+            'IVF_PQ': {'params': {'nprobe': 10}},
+            'HNSW': {'params': {'ef': 10}},
+            'RHNSW_FLAT': {'params': {'ef': 10}},
+            'RHNSW_SQ': {'params': {'ef': 10}},
+            'RHNSW_PQ': {'params': {'ef': 10}},
+            'IVF_HNSW': {'params': {'nprobe': 10, 'ef': 10}},
+            'ANNOY': {'params': {'search_k': 10}}
+        }
+
+        index_type = self.collection.indexes[0].params['index_type']
+        self.kwargs['param'] = index_params[index_type]
 
         milvus_result = self.collection.search(
             data=[query],
