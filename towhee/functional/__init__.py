@@ -82,6 +82,42 @@ class DCImpl(CallTracer):
     def __init__(self, callback=None, path=None, index=None):
         super().__init__(callback=callback, path=path, index=index)
 
+class ApiImpl(CallTracer):
+    """
+    Return a towhee API.
+
+    Examples:
+
+    >>> from fastapi import FastAPI
+    >>> from fastapi.testclient import TestClient
+    >>> app = FastAPI()
+
+    >>> import towhee
+    >>> with towhee.api() as api:
+    ...     app1 = (
+    ...         api.map(lambda x: x+' -> 1')
+    ...            .map(lambda x: x+' => 1')
+    ...            .serve('/app1', app)
+    ...     )
+
+    >>> with towhee.api['x']() as api:
+    ...     app2 = (
+    ...         api.runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 2')
+    ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 2')
+    ...            .select['y']()
+    ...            .serve('/app2', app)
+    ...     )
+
+    >>> client = TestClient(app)
+    >>> client.post('/app1', '1').text
+    '"1 -> 1 => 1"'
+    >>> client.post('/app2', '{"x": "2"}').text
+    '{"y":"2 -> 2 => 2"}'
+    """
+
+    def __init__(self, callback=None, path=None, index=None):
+        super().__init__(callback=callback, path=None, index=index)
+
 
 def stream(iterable):
     return DataCollection.stream(iterable)
@@ -135,4 +171,9 @@ glob_zip = GlobZipImpl(_glob_zip_call_back)
 
 dc = DCImpl(_dc_call_back)
 
-api = DataCollection.api
+def _api_call_back(_, index, *arg, **kws):
+    #pylint: disable=unused-argument
+    kws['index'] = index
+    return DataCollection.api( **kws)
+
+api = ApiImpl(_api_call_back)

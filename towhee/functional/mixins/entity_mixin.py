@@ -33,7 +33,7 @@ def _select_callback(self):
                 return Entity(**data)
             return entity
 
-        return self._factory(map(inner, self._iterable))
+        return self.map(inner)
     return wrapper
 
 class EntityMixin:
@@ -207,7 +207,7 @@ class EntityMixin:
             if len(x.__dict__) == 1:
                 return list(x.__dict__.values())[0]
             return tuple(getattr(x, name) for name in x.__dict__)
-        return self._factory(map(inner, self._iterable))
+        return self.map(inner)
 
     def replace(self, **kws):
         """
