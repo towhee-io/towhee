@@ -261,9 +261,3 @@ class EntityMixin:
             return self._iterable
         else:
             raise TypeError('data collection is not created from pandas DataFrame.')
-
-
-if __name__ == '__main__':
-    import doctest
-
-    doctest.testmod(verbose=False)

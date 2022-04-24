@@ -112,8 +112,3 @@ class StateMixin:
             return self._factory(op.__dataframe_apply__(self._iterable))
 
         return self._factory(map(op, self._iterable))
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

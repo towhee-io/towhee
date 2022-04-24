@@ -37,9 +37,3 @@ class DispatcherMixin:
             return call_mapping[path](*arg, **kws)
         else:
             return ops._callback(path, index, *arg, **kws)
-
-
-if __name__ == '__main__':
-    import doctest
-
-    doctest.testmod(verbose=False)

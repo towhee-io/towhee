@@ -187,8 +187,3 @@ class MetricMixin:
         else:
             display(df)
         return self.collector.scores
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False, optionflags=doctest.ELLIPSIS)
