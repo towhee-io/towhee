@@ -56,14 +56,19 @@ from pytorchvideo.transforms import (
 log = logging.getLogger()
 
 
-def transform_video(video: Union[str, numpy.ndarray], model_name: str = None, **kwargs):
+def transform_video(
+        video: Union[str, numpy.ndarray],
+        model_name: str = None,
+        start_sec: float = 0.,
+        end_sec: float = 30.,
+        **kwargs):
     if model_name:
         cfg = video_configs[model_name]
         cfg.update(model_name=model_name)
     else:
         cfg = get_configs(**kwargs)
     tsfm = VideoTransforms(cfg)
-    output = tsfm(video)
+    output = tsfm(video=video, start_sec=start_sec, end_sec=end_sec)
     return output
 
 
