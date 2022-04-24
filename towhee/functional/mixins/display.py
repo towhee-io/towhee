@@ -313,6 +313,8 @@ def _to_html_td(data, callback=None):
             return wrap_td_tag(_audio_frames_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, numpy.ndarray) for x in data):
             return wrap_td_tag(_list_brief(data, _ndarray_brief), align='left')
+        else:
+            return wrap_td_tag(_list_brief(data, _default_brief), align='left')
     return wrap_td_tag(_default_brief(data))
 
 
@@ -387,7 +389,7 @@ def _list_brief(data, str_method, maxlen=4):
 
 
 def _default_brief(data, maxlen=128):
-    s = repr(data)
+    s = str(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
 
 
