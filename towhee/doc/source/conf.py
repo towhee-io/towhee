@@ -24,7 +24,7 @@ copyright = '2022, Towhee Team'
 author = 'Towhee Team'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.5.0'
+release = 'v0.6.0'
 show_authors = True
 
 # -- General configuration ---------------------------------------------------
