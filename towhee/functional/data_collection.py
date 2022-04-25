@@ -670,6 +670,8 @@ class DataCollection(Iterable, AllMixins):
         if not hasattr(self._iterable, '__getitem__'):
             raise TypeError('indexing is only supported for '
                             'data collection created from list or pandas DataFrame.')
+        if isinstance(index, int):
+            return self._iterable[index]
         return DataCollection(self._iterable[index])
 
     def __setitem__(self, index, value):

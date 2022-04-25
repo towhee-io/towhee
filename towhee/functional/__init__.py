@@ -108,11 +108,22 @@ class ApiImpl(CallTracer):
     ...            .serve('/app2', app)
     ...     )
 
+    >>> with towhee.api() as api:
+    ...     app2 = (
+    ...         api.parse_json()
+    ...            .runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 3')
+    ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 3')
+    ...            .select['y']()
+    ...            .serve('/app3', app)
+    ...     )
+
     >>> client = TestClient(app)
     >>> client.post('/app1', '1').text
     '"1 -> 1 => 1"'
-    >>> client.post('/app2', '{"x": "2"}').text
+    >>> client.post('/app2', '2').text
     '{"y":"2 -> 2 => 2"}'
+    >>> client.post('/app3', '{"x": "3"}').text
+    '{"y":"3 -> 3 => 3"}'
     """
 
     def __init__(self, callback=None, path=None, index=None):

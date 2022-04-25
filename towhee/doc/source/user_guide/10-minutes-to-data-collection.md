@@ -94,7 +94,7 @@ We can take a quick look at the data by `head()`:
 
 ```
 
-If you are running a jupyter notebook, `show()` is suggested for better interface:
+If you are running a jupyter notebook, `show()` is suggested for a better interface:
 
 ```{code-cell} ipython3
 ---
@@ -179,7 +179,7 @@ The code using `DataCollection` is more straightforward. Each action generates a
 ## Use operators
 
 `Operator` represents the basic unit of computation that is applied to the items in a `DataCollection`. 
-There are many predefined Operators on [towhee hub](https://towhee.io), including the most popular deep learning model from the area of computer vision and natural language processing.
+There are many predefined Operators on [towhee hub](https://towhee.io), including the most popular deep learning model from computer vision and natural language processing.
 
 ### Towhee Operator
 
@@ -192,7 +192,7 @@ We can load an `Operator` from towhee hub as follows:
 
 ```
 
-Where `towhee` is the namespace of the operator, and `image_decode` is the operator name. Normally refer to an operator with its full name: `namespace/name`. 
+Where `towhee` is the namespace of the operator, and `image_decode` is the operator name. An operator is usually referred to with its full name: `namespace/name`. 
 
 `towhee` is the namespace for official operators,
 and also the default namespace if namespace is not specified:
@@ -218,7 +218,7 @@ It is also easy to define a custom operator with a function:
 
 ```
 
-If the operator needs additional initialise arguments, it has to be defined as a class:
+If the operator needs additional initialize arguments, it has to be defined as a class:
 
 ```python
 >>> @register
@@ -251,7 +251,7 @@ we can call the operator with its name directly on a `DataCollection`:
 
 ```
 
-`add_1()` is an operator that register to `towhee` with a decorator. We can invoke the operator as simple as calling a method of `DataCollection`. `DataCollection` will dispatch missing function calls to the operators.
+`add_1()` is an operator that registers to `towhee` with a decorator. We can invoke the operator as simple as calling a method of `DataCollection`. `DataCollection` will dispatch missing function calls to the operators.
 
 Such call dispatch makes the code easy to read. Here is an example that compares the code using and not using call dispatch
 
@@ -280,7 +280,7 @@ Towhee also provides streamed `DataCollection`.
 
 ### Create a streamed DataCollection
 
-Streamed `DataCollection` is created from an generator.
+Streamed `DataCollection` is created from a generator.
 
 ```python
 >>> dc = towhee.dc(iter([0, 1, 2, 3]))
@@ -291,7 +291,7 @@ Streamed `DataCollection` is created from an generator.
 
 ### Use of streamed DataCollection
 
-Streamed `DataCollection` is designed to behave exactly the same as the unstreamed one. But we should notice that the computation will not run until we start to consume items from it.
+Streamed `DataCollection` is designed to behave the same as the unstreamed one. But we should notice that the computation will not run until we start to consume items from it.
 
 ````{tab} streamed
 ```python
@@ -344,7 +344,7 @@ debug print: 4
 ```
 ````
 
-In the example of streamed `DataCollection`, `debug_print()` is not executed until we started to access the items in the `DataCollection`. But for unstreamed `DataCollection`, it is executed immediately.
+In the example of streamed `DataCollection`, `debug_print()` is not executed until we start to access the items in the `DataCollection`. But for unstreamed `DataCollection`, it is executed immediately.
 
 ## Tabular Data
 
