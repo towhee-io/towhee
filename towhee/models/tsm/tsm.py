@@ -16,7 +16,7 @@ from towhee.models.tsm.basic_ops import ConsensusModule
 from towhee.models.tsm.mobilenet_v2 import mobilenet_v2, InvertedResidual
 from towhee.models.tsm.bn_inception import bninception
 from towhee.models.tsm.temporal_shift import make_temporal_shift, TemporalShift
-from towhee.models.tsm.non_local import make_non_local
+from towhee.models.layers.non_local import make_non_local
 
 class TSN(nn.Module):
     """
@@ -110,13 +110,9 @@ class TSN(nn.Module):
         self._prepare_tsn(num_class)
 
         if self.modality == 'Flow':
-            print('Converting the ImageNet model to a flow init model')
             self.base_model = self._construct_flow_model(self.base_model)
-            print('Done. Flow model ready...')
         elif self.modality == 'RGBDiff':
-            print('Converting the ImageNet model to RGB+Diff init model')
             self.base_model = self._construct_diff_model(self.base_model)
-            print('Done. RGBDiff model ready.')
 
         self.consensus = ConsensusModule(consensus_type)
 
@@ -151,14 +147,12 @@ class TSN(nn.Module):
         if 'resnet' in base_model:
             self.base_model = getattr(torchvision.models, base_model)(True if self.pretrain == 'imagenet' else False)
             if self.is_shift:
-                #print('Adding temporal shift...')
                 make_temporal_shift(self.base_model, self.num_segments,
                                     n_div=self.shift_div,
                                     place=self.shift_place,
                                     temporal_pool=self.temporal_pool)
 
             if self.non_local:
-                #print('Adding non-local module...')
                 make_non_local(self.base_model, self.num_segments)
 
             self.base_model.last_layer_name = 'fc'
@@ -212,7 +206,6 @@ class TSN(nn.Module):
             elif self.modality == 'RGBDiff':
                 self.input_mean = self.input_mean * (1 + self.new_length)
             if self.is_shift:
-                print('Adding temporal shift...')
                 self.base_model.build_temporal_ops(
                     self.num_segments, is_temporal_shift=self.shift_place, shift_div=self.shift_div)
         else:
@@ -304,9 +297,6 @@ class TSN(nn.Module):
             model_dir = model_zoo.load_url(
             'https://www.dropbox.com/s/35ftw2t4mxxgjae/BNInceptionFlow-ef652051.pth.tar?dl=1')
             base_model.load_state_dict(model_dir)
-            print('=> Loading pretrained Flow weight done...')
-        else:
-            print('#' * 30, 'Warning! No Flow pretrained model is found')
         return base_model
 
     def _construct_diff_model(self, base_model, keep_rgb=False):

@@ -110,7 +110,6 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
     else:
         n_segment_list = [n_segment] * 4
     assert n_segment_list[-1] > 0
-    print('=> n_segment per stage: {}'.format(n_segment_list))
 
     if isinstance(net, torchvision.models.ResNet):
         if place == 'block':
@@ -130,11 +129,8 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
             n_round = 1
             if len(list(net.layer3.children())) >= 23:
                 n_round = 2
-                print('=> Using n_round {} to insert temporal shift'.format(n_round))
-
             def make_block_temporal(stage, this_segment):
                 blocks = list(stage.children())
-                print('=> Processing stage with {} blocks residual'.format(len(blocks)))
                 for i, b in enumerate(blocks):
                     if i % n_round == 0:
                         blocks[i].conv1 = TemporalShift(b.conv1,
@@ -152,7 +148,6 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
 
 def make_temporal_pool(net, n_segment):
     if isinstance(net, torchvision.models.ResNet):
-        print('=> Injecting nonlocal pooling')
         net.layer2 = TemporalPool(net.layer2, n_segment)
     else:
         raise NotImplementedError

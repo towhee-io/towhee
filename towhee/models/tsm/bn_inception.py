@@ -644,7 +644,6 @@ class BNInception(nn.Module):
 
 def bninception(pretrained='imagenet'):
     if pretrained is not None:
-        print('=> Loading from pretrained model: {}'.format(pretrained))
         settings = pretrained_settings['bninception'][pretrained]
         num_classes = settings['num_classes']
         model = BNInception(num_classes=num_classes)
