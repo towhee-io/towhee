@@ -149,15 +149,3 @@ class DatasetMixin:
         test_size = size[1]
         train, test = sklearn_utils.train_test_split(self._iterable, train_size=train_size, test_size=test_size, **kws)
         return self._factory(train), self._factory(test)
-
-    def save_json(self):
-        pass
-
-    def save_image(self):
-        pass
-
-    def save_csv(self):
-        pass
-
-    def get_info(self):
-        pass
