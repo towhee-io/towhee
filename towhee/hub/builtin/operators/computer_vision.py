@@ -11,11 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import uuid
+from pathlib import Path
+import numpy as np
 
 from towhee.engine import register
+from towhee._types.image import Image
+from towhee.types.image_utils import to_image_color
 
 # pylint: disable=import-outside-toplevel
 # pylint: disable=invalid-name
+# pylint: disable=redefined-builtin
 
 
 @register(name='builtin/image_load')
@@ -42,7 +48,6 @@ def image_load(file_or_buff):
     [(100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3), (100, 100, 3)]
     """
     from towhee.utils.cv2_utils import cv2
-    import numpy as np
 
     if isinstance(file_or_buff, str):
         return cv2.imread(file_or_buff)
@@ -204,6 +209,45 @@ class image_blur:
         from towhee.utils.cv2_utils import cv2
 
         return cv2.blur(x, self._ksize)
+
+
+@register(name='builtin/save_image')
+class save_image:
+    """
+    Save image to specific directory with the uuid name.
+
+    Args:
+        dir (`str`):
+            The directory to save image.
+
+    Examples:
+
+    >>> import towhee
+    >>> (
+    ...     towhee.dc['path'](['https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'])
+    ...           .image_decode['path', 'img']()
+    ...           .save_image['img','path_new'](dir='temp/pic')
+    ...           .to_list()
+    ... )
+    [<Entity dict_keys(['path', 'img', 'path_new'])>]
+    """
+
+    def __init__(self, dir: str):
+        self._file = str(uuid.uuid4()) + '.jpg'
+        self._img_path = str(Path(dir) / self._file)
+        if not Path(dir).exists():
+            Path(dir).mkdir(parents=True)
+
+    def __call__(self, img):
+        from towhee.utils.pil_utils import PILImage
+        from towhee.utils.ndarray_utils import cv2
+        if isinstance(img, PILImage.Image):
+            img = to_image_color(img, 'RGB')
+            img.save(self._img_path)
+        elif isinstance(img, (Image, np.ndarray)):
+            img = to_image_color(img, 'BGR')
+            cv2.imwrite(self._img_path, img)
+        return self._img_path
 
 
 __test__ = {'image_load': image_load.__doc__}
