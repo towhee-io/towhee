@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from atexit import register
 from typing import Any, Iterable, Iterator, Callable
 from random import random, sample, shuffle
 import reprlib

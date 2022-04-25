@@ -28,11 +28,9 @@ def register_dag(f):
         info = {'op': self.op, 'init_args': self.init_args, 'call_args': self.call_args, 'parent_id': self.parent_id, 'child_id':  children_ids}
         self.control_plane.dag[self.id] = info
         return children
-    
+
     return wrapper
         
-
-
 
 class DagMixin:
     """
@@ -51,12 +49,10 @@ class DagMixin:
         else:
             self._parent_id = parent.id
             self._control_plane = parent.control_plane
-        self._consumed = False
         self._op = None
         self._init_args = None
         self._call_args = None
         self._child_id = []
-        self._consumed = False
 
     @property
     def id(self):
@@ -73,7 +69,7 @@ class DagMixin:
     @property
     def control_plane(self):
         return self._control_plane
-    
+
     @property
     def init_args(self):
         return self._init_args
@@ -81,17 +77,15 @@ class DagMixin:
     @property
     def call_args(self):
         return self._call_args
-    
+
     @property
     def op(self):
         return self._op
 
-
-    def notify_consumed(self, id):
+    def notify_consumed(self, new_id):
         print(self.parent_id)
-        info = {'op': 'nop', 'init_args': None, 'call_args': None, 'parent_id': self.parent_id, 'child_id':  [id]}
+        info = {'op': 'nop', 'init_args': None, 'call_args': None, 'parent_id': self.parent_id, 'child_id':  [new_id]}
         self.control_plane.dag[self.id] = info
-        self._consumed = True
 
     # def __getattribute__(self, __name: str):
     #     if super().__getattribute__('_consumed'):
