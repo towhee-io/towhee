@@ -55,7 +55,8 @@ def image_load(file_or_buff):
         buff = np.frombuffer(file_or_buff.read(), dtype=np.uint8)
     else:
         buff = np.frombuffer(file_or_buff, dtype=np.uint8)
-    return cv2.imdecode(buff, 1)
+    bgr_cv_image = cv2.imdecode(buff, 1)
+    return Image(bgr_cv_image, 'BGR')
 
 
 @register(name='builtin/image_dump')
@@ -242,7 +243,6 @@ class save_image:
         from towhee.utils.pil_utils import PILImage
         from towhee.utils.ndarray_utils import cv2
         if isinstance(img, PILImage.Image):
-            img = to_image_color(img, 'RGB')
             img.save(self._img_path)
         elif isinstance(img, (Image, np.ndarray)):
             img = to_image_color(img, 'BGR')
