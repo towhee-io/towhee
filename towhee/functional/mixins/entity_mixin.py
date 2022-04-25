@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import json
+
 from typing import Dict, Any, Optional, Set, Union, List
 
 from towhee.functional.entity import Entity
@@ -174,6 +177,42 @@ class EntityMixin:
                 data = dict(zip(schema, x))
                 return Entity(**data)
         return self._factory(map(inner, self._iterable))
+
+    def parse_json(self):
+        """
+        Parse string to entities.
+
+        Examples:
+
+        >>> from towhee import DataCollection
+        >>> dc = (
+        ...     DataCollection(['{"x": 1}'])
+        ...         .parse_json()
+        ... )
+        >>> dc[0].x
+        1
+        """
+        def inner(x):
+            data = json.loads(x)
+            return Entity(**data)
+        return self.map(inner)
+
+    def as_json(self):
+        """
+        Convert entities to json
+
+        Examples:
+
+        >>> from towhee import DataCollection, Entity
+        >>> (
+        ...     DataCollection([Entity(x=1)])
+        ...         .as_json()
+        ... )
+        ['{"x": 1}']
+        """
+        def inner(x):
+            return json.dumps(x.__dict__)
+        return self.map(inner)
 
     def as_raw(self):
         """

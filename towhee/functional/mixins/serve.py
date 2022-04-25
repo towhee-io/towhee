@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import queue
-import json
 import threading
 import concurrent.futures
 from towhee.functional.entity import Entity
@@ -36,18 +35,16 @@ class _APIWrapper:
         else:
             self._index = index
 
-    def feed(self, x):
+    def feed(self, x) -> None:
         if self._index is None:
             entity = x
         else:
-            entity = json.loads(x)
-            entity = Entity(**{k: entity.get(k, None) for k in self._index})
+            if len(self._index) == 1:
+                x = (x, )
+            data = dict(zip(self._index, x))
+            entity = Entity(**data)
         entity = Some(entity)
         self._queue.put(entity)
-
-    @property
-    def path(self):
-        return self._path
 
     def __iter__(self):
         while True:
@@ -127,11 +124,22 @@ class ServeMixin:
         ...            .serve('/app2', app)
         ...     )
 
+        >>> with towhee.api() as api:
+        ...     app2 = (
+        ...         api.parse_json()
+        ...            .runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 3')
+        ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 3')
+        ...            .select['y']()
+        ...            .serve('/app3', app)
+        ...     )
+
         >>> client = TestClient(app)
         >>> client.post('/app1', '1').text
         '"1 -> 1 => 1"'
-        >>> client.post('/app2', '{"x": "2"}').text
+        >>> client.post('/app2', '2').text
         '{"y":"2 -> 2 => 2"}'
+        >>> client.post('/app3', '{"x": "3"}').text
+        '{"y":"3 -> 3 => 3"}'
         """
         if app is None:
             from fastapi import FastAPI, Request
@@ -180,10 +188,22 @@ class ServeMixin:
         ...            .as_function()
         ...     )
 
+        >>> with towhee.api() as api:
+        ...     func3 = (
+        ...         api.parse_json()
+        ...            .runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 3')
+        ...            .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 3')
+        ...            .select['y']()
+        ...            .as_json()
+        ...            .as_function()
+        ...     )
+
         >>> func1('1')
         '1 -> 1 => 1'
-        >>> func2('{"x": "2"}')
+        >>> func2('2')
         '2 -> 2 => 2'
+        >>> func3('{"x": "3"}')
+        '{"y": "3 -> 3 => 3"}'
         """
 
         api = _APIWrapper.tls.place_holder
