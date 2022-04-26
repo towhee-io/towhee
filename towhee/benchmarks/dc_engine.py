@@ -27,6 +27,18 @@ def image_embedding(image, loops, threads):
         .image_embedding.timm(model_name = 'resnet50') \
         .to_list()
     time2 = time.time()
+    print(len(dc))
+    del dc
+    runtime = time2 - time1
+    return runtime
+
+def text_embedding(text, loops, threads):
+    text = [text] * loops
+    time1 = time.time()
+    dc = DataCollection(text).stream().set_parallel(num_worker=threads) \
+        .towhee.transformers_nlp_auto(model_name= 'albert-base-v1') \
+        .to_list()
+    time2 = time.time()
     del dc
     runtime = time2 - time1
     return runtime

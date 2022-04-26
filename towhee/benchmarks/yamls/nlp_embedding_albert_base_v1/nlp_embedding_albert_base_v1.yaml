@@ -1,15 +1,14 @@
-name: image_embedding_resnet50
-type: image-embedding
+name: nlp_embedding_albert_base_v1
 operators:
 - name: _start_op
   function: _start_op
   init_args: null
   inputs:
   - df: _start_df
-    name: img_path
+    name: txt
     col: 0
   outputs:
-  - df: img_str
+  - df: input_txt
   iter_info:
     type: map
 - name: 'flat_op'
@@ -17,39 +16,27 @@ operators:
   init_args:
     repeat: 1
   inputs:
-  - df: 'img_str'
+  - df: 'input_txt'
     name: 'txt'
     col: 0
   outputs:
-  - df: 'img_str1'
+  - df: 'input_txt1'
   iter_info:
     type: flatmap
-- name: image_decoder
-  function: local/image-decoder
-  tag: main
-  init_args: null
-  inputs:
-  - df: img_str
-    name: image_path
-    col: 0
-  outputs:
-  - df: image
-  iter_info:
-    type: map
 - name: embedding_model
-  function: towhee/timm-image-embedding
+  function: towhee/transformers-nlp-auto
   tag: main
   init_args:
-    model_name: resnet50
+    model_name: albert-base-v1
   inputs:
-  - df: image
-    name: image
+  - df: input_txt1
+    name: txt
     col: 0
   outputs:
   - df: embedding
   iter_info:
     type: map
-  threads: 1
+  threads: 2
 - name: _end_op
   function: _end_op
   init_args: null
@@ -64,20 +51,16 @@ operators:
 dataframes:
 - name: _start_df
   columns:
-  - name: img_path
+  - name: txt
     vtype: str
-- name: img_str
-  columns:
-  - name: img_path
-    vtype: str
-- name: img_str1
+- name: input_txt
   columns:
   - name: txt
     vtype: str
-- name: image
+- name: input_txt1
   columns:
-  - name: image
-    vtype: towhee.types.Image
+  - name: txt
+    vtype: str
 - name: embedding
   columns:
   - name: feature_vector

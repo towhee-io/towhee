@@ -38,11 +38,30 @@ def image_embedding(image, loops, threads):
             x['threads'] = threads
     with open(yaml_path, 'w', encoding='utf8') as f:
         yaml.dump(yam, f, default_flow_style=False, sort_keys=False)
-    y = []
     time1 = time.time()
     pipeline = towhee.pipeline('local/image_embedding_resnet50')
-    for _ in range(loops):
-        y.append(pipeline(image))
+    inputs = [image] * loops
+    y = pipeline(inputs)
+    print(len(y))
     time2 = time.time()
+    del y
     runtime = time2 - time1
     return runtime
+
+def text_embedding(text, loops, threads):
+    yaml_path = new_cache_path / 'hub/local/nlp_embedding_albert_base_v1/main/nlp_embedding_albert_base_v1.yaml'
+    yam = load_yaml(yaml_path)
+    for x in yam['operators']:
+        if 'threads' in x:
+            x['threads'] = threads
+    with open(yaml_path, 'w', encoding='utf8') as f:
+        yaml.dump(yam, f, default_flow_style=False, sort_keys=False)
+    time1 = time.time()
+    pipeline = towhee.pipeline('local/nlp_embedding_albert_base_v1')
+    inputs = [text] * loops
+    y = pipeline(inputs)
+    time2 = time.time()
+    del y
+    runtime = time2 - time1
+    return runtime
+
