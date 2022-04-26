@@ -18,3 +18,4 @@ fastapi
 pymilvus
 pytest
 fairscale
+python-multipart

@@ -86,6 +86,18 @@ class _PipeWrapper:
         return future.result()
 
 
+async def _decode_content(req):
+    from multipart.multipart import parse_options_header
+    content_type_header = req.headers.get('Content-Type')
+    content_type, _ = parse_options_header(content_type_header)
+
+    if content_type in {b'multipart/form-data'}:
+        return await req.form()
+    if content_type.startswith(b'image/'):
+        return await req.body()
+    return (await req.body()).decode()
+
+
 class ServeMixin:
     """
     Mixin for API serve
@@ -154,7 +166,7 @@ class ServeMixin:
         @app.post(path)
         async def wrapper(req: Request):
             nonlocal pipeline
-            req = (await req.body()).decode()
+            req = await _decode_content(req)
             rsp = pipeline.execute(req)
             if rsp.is_empty():
                 return rsp.get()
