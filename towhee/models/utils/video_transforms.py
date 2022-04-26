@@ -46,8 +46,8 @@ try:
 except ModuleNotFoundError:
     os.system('pip install "git+https://github.com/facebookresearch/pytorchvideo.git"')
     from pytorchvideo.data.encoded_video import EncodedVideo
+
 from pytorchvideo.transforms import (
-    ApplyTransformToKey,
     ShortSideScale,
     UniformTemporalSubsample,
     # UniformCropVideo
@@ -123,24 +123,21 @@ class VideoTransforms:
             log.error("Invalid key in configs: %s", e)
             raise KeyError from e
 
-        self.tfms = ApplyTransformToKey(
-            key="video",
-            transform=Compose([
-                UniformTemporalSubsample(self.num_frames),
-                Lambda(lambda x: x / 255.0),
-                NormalizeVideo(
-                    mean=self.mean,
-                    std=self.std,
-                    inplace=True
-                ),
-                ShortSideScale(size=self.side_size),
-                CenterCropVideo(
-                    size=(self.crop_size, self.crop_size)
-                ),
-                CollectFrames(),
-                PackPathway(alpha=self.alpha) if self.model_name.startswith("slowfast") else nn.Identity()
-                ]),
-            )
+        self.tfms = Compose([
+                            UniformTemporalSubsample(self.num_frames) if self.num_frames else nn.Identity(),
+                            Lambda(lambda x: x / 255.0),
+                            NormalizeVideo(
+                                mean=self.mean,
+                                std=self.std,
+                                inplace=True
+                            ),
+                            ShortSideScale(size=self.side_size),
+                            CenterCropVideo(
+                                size=(self.crop_size, self.crop_size)
+                            ),
+                            CollectFrames(),
+                            PackPathway(alpha=self.alpha) if self.model_name.startswith("slowfast") else nn.Identity()
+                            ])
         if self.model_name.startswith("slowfast"):
             log.info("Using PackPathway for slowfast model.")
 
@@ -148,20 +145,18 @@ class VideoTransforms:
         if isinstance(video, str):
             video = EncodedVideo.from_path(video)
             video = video.get_clip(start_sec=start_sec, end_sec=end_sec)
+            video = video["video"]
             if self.sampling_rate:
                 total_frames = self.num_frames * self.sampling_rate
                 frames_per_sec = total_frames / (end_sec - start_sec)
                 log.info("Frames per second: %s", frames_per_sec)
         elif isinstance(video, numpy.ndarray):
             assert video.dtype == numpy.float32
-            video = dict(video=torch.from_numpy(video))
+            video = torch.from_numpy(video)
 
         video_data = self.tfms(video)
-        if isinstance(video_data["video"], list) and str(self.tfms._transform.transforms[-1]) == "PackPathway()":
-            video_data["video_slow"] = video_data["video"][0]
-            video_data["video_fast"] = video_data["video"][1]
-        else:
-            video_data["video"] = torch.stack(video_data["video"])
+        if not (isinstance(video_data, list) and str(self.tfms.transforms[-1]) == "PackPathway()"):
+            video_data = torch.stack(video_data)
         return video_data
 
 
