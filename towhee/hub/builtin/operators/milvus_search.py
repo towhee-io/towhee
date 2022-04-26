@@ -28,7 +28,8 @@ class milvus_search:
             The collection name or pymilvus.Collection in Milvus.
         kwargs
             The kwargs with collection.search, refer to https://milvus.io/docs/v2.0.x/search.md#Prepare-search-parameters.
-            And the 'anns_field' defaults to the vector field name, limit defaults to 10, and for default param:
+            And the `anns_field` defaults to the vector field name, `limit` defaults to 10, and `metric_type` in `param` defaults to 'L2'
+            if there has no index(FLAT), and for default index `param`:
                 IVF_FLAT: {"params": {"nprobe": 10}},
                 IVF_SQ8: {"params": {"nprobe": 10}},
                 IVF_PQ: {"params": {"nprobe": 10}},
@@ -87,8 +88,14 @@ class milvus_search:
             'ANNOY': {'params': {'search_k': 10}}
         }
 
-        index_type = self.collection.indexes[0].params['index_type']
-        self.kwargs['param'] = index_params[index_type]
+        if 'param' not in self.kwargs:
+            if len(self.collection.indexes) != 0:
+                index_type = self.collection.indexes[0].params['index_type']
+                self.kwargs['param'] = index_params[index_type]
+            elif 'metric_type' in self.kwargs:
+                self.kwargs['param'] = {'metric_type': self.kwargs['metric_type']}
+            else:
+                self.kwargs['param'] = {'metric_type': 'L2'}
 
         milvus_result = self.collection.search(
             data=[query],
