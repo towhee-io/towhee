@@ -18,14 +18,14 @@ def close_dc(f):
     return wrapper
 
 def register_dag(f):
-    def wrapper(self, *args):
-        children = f(self, *args)
+    def wrapper(self, *args, **kwargs):
+        children = f(self, *args, **kwargs)
         # check if list of dc or just dc
         if isinstance(children, type(self)):
             children_ids = [children.id]
         else:
             children_ids = [x.id for x in children]
-        info = {'op': self.op, 'init_args': self.init_args, 'call_args': self.call_args, 'parent_id': self.parent_id, 'child_id':  children_ids}
+        info = {'op': self.op, 'is_stream': self.is_stream, 'init_args': self.init_args, 'call_args': self.call_args, 'parent_id': self.parent_id, 'child_id':  children_ids}
         self.control_plane.dag[self.id] = info
         return children
 
@@ -47,7 +47,7 @@ class DagMixin:
             self._parent_id = ['start']
             self._control_plane = ControlPlane()
         else:
-            self._parent_id = parent.id
+            self._parent_id = [parent.id]
             self._control_plane = parent.control_plane
         self._op = None
         self._init_args = None
@@ -82,10 +82,25 @@ class DagMixin:
     def op(self):
         return self._op
 
+    def register_dag(self, children):
+        # check if list of dc or just dc
+        if isinstance(children, type(self)):
+            children_ids = [children.id]
+        else:
+            children_ids = [x.id for x in children]
+        info = {'op': self.op, 'is_stream': self.is_stream, 'init_args': self.init_args, 'call_args': self.call_args, 'parent_id': self.parent_id, 'child_id':  children_ids}
+        self.control_plane.dag[self.id] = info
+        return children
+
     def notify_consumed(self, new_id):
         print(self.parent_id)
         info = {'op': 'nop', 'init_args': None, 'call_args': None, 'parent_id': self.parent_id, 'child_id':  [new_id]}
         self.control_plane.dag[self.id] = info
+
+    def compile_dag(self):
+        info = {'op': 'nop', 'init_args': None, 'call_args': None, 'parent_id': self.parent_id, 'child_id':  ['end']}
+        self.control_plane.dag[self.id] = info
+        return self.control_plane.dag
 
     # def __getattribute__(self, __name: str):
     #     if super().__getattribute__('_consumed'):

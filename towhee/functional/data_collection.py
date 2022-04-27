@@ -245,18 +245,17 @@ class DataCollection(Iterable, AllMixins):
         [Some(0.0), Some(0.5), Some(1.0)]
         """
         self._op = 'exception_safe'
-        self._init_args = None
-        self._call_args = None
 
         result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
-        return self._factory(result)
+        child = self._factory(result)
+        self.register_dag(child)
+        return child
 
     def safe(self):
         """
         Shortcut for `exception_safe`
         """
         return self.exception_safe()
-
 
     def select_from(self, other):
         """
@@ -272,7 +271,7 @@ class DataCollection(Iterable, AllMixins):
         """
         self._op = 'exception_safe'
         self._init_args = None
-        self._call_args = other.id
+        self._call_args = {'other': other}
         self.parent_id.append(other.id)
         other.notify_consumed(self._id)
  
@@ -282,7 +281,9 @@ class DataCollection(Iterable, AllMixins):
             return other[x]
 
         result = map(inner, self._iterable)
-        return self._factory(result)
+        child = self._factory(result)
+        self.register_dag(child)
+        return child
 
     def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
@@ -300,9 +301,12 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
         [0.0, 0.5, 1.0, -1.0, 2.0]
         """
-        self._op = 'dc.fill_empty'
+        self._op = 'fill_empty'
+        self._call_args = {'defualt': default}
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
-        return self._factory(result)
+        child = self._factory(result)
+        self.register_dag(child)
+        return child
 
     def drop_empty(self, callback: Callable = None) -> 'DataCollection':
         """
@@ -327,8 +331,10 @@ class DataCollection(Iterable, AllMixins):
         >>> exception_inputs
         [3]
         """
-        if callback is not None:
+        self._op = 'drop_empty'
+        self._call_args = {'callback': callback}
 
+        if callback is not None:
             def inner(data):
                 for x in data:
                     if isinstance(x, Empty):
@@ -338,14 +344,15 @@ class DataCollection(Iterable, AllMixins):
 
             result = inner(self._iterable)
         else:
-
             def inner(data):
                 for x in data:
                     if isinstance(x, Some):
                         yield x.get()
 
             result = inner(self._iterable)
-        return self._factory(result)
+        child = self._factory(result)
+        self.register_dag(child)
+        return child
 
     def map(self, *arg):
         """
@@ -391,10 +398,16 @@ class DataCollection(Iterable, AllMixins):
             else:
                 return unary_op(x)
 
-        result = map(inner, self._iterable)
-        return self._factory(result)
+        # if other ops are using map within themselves.
+        if self._op is None:
+            self._op = 'map'
+            self._call_args = {'*arg': arg}
 
-    @register_dag
+        result = map(inner, self._iterable)
+        child = self._factory(result)
+        self.register_dag(child)
+        return child
+
     def zip(self, *others) -> 'DataCollection':
         """
         Combine two data collections.
@@ -414,15 +427,15 @@ class DataCollection(Iterable, AllMixins):
         [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
         self._op = 'zip'
-        self._init_args = None
-        # self._call_args = [other.id for other in others]
-        # self._parent_id.extend([other.id for other in others])
-        # print(self._parent_id)
+        self._call_args = {'*args': others}
+        self._parent_id.extend([other.id for other in others])
         
         for x in others:
             x.notify_consumed(self._id)
 
-        return self._factory(zip(self, *others))
+        child = self._factory(zip(self, *others))
+        self.register(child)
+        return child
 
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
         """
@@ -437,7 +450,8 @@ class DataCollection(Iterable, AllMixins):
         Returns:
             DataCollection: filtered data collection
         """
-        self._dag[self._id] = ('filter', (unary_op, drop_empty),[])
+        self._op = 'filter'
+        self._call_args = {'unary_op': unary_op, 'drop_empty': drop_empty}
 
         # return filter(unary_op, self)
         def inner(x):
@@ -448,12 +462,18 @@ class DataCollection(Iterable, AllMixins):
             return unary_op(x)
 
         if hasattr(self._iterable, 'filter'):
-            return self._factory(self._iterable.filter(unary_op))
+            child = self._factory(self._iterable.filter(unary_op))
+            self.register_dag(child)
+            return child
 
         if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_filter__'):
-            return DataCollection(unary_op.__dataframe_apply__(self._iterable))
+            child = DataCollection(unary_op.__dataframe_apply__(self._iterable))
+            self.register_dag(child)
+            return child
 
-        return self._factory(filter(inner, self._iterable))
+        child = self._factory(filter(inner, self._iterable))
+        self.register_dag(child)
+        return child
 
     def sample(self, ratio=1.0) -> 'DataCollection':
         """
@@ -473,8 +493,12 @@ class DataCollection(Iterable, AllMixins):
         >>> 0.09 < ratio < 0.11
         True
         """
-        self._dag[self._id] = ('sample', (), [])
-        return self._factory(filter(lambda _: random() < ratio, self))
+        self._op = 'sample'
+        self._call_args = {'ratio': ratio}
+
+        child = self._factory(filter(lambda _: random() < ratio, self))
+        self.register_dag(child)
+        return child
 
     @staticmethod
     def range(*arg, **kws):
@@ -513,7 +537,9 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         """
-        self._dag[self._id] = ('batch', (size, drop_tail),[])
+        self._op = 'batch'
+        self._call_args = {'size': size, 'drop_tail': drop_tail}
+
         def inner():
             buff = []
             for ele in self._iterable:
@@ -524,7 +550,9 @@ class DataCollection(Iterable, AllMixins):
             if not drop_tail and len(buff) > 0:
                 yield DataCollection.unstream(buff)
 
-        return self._factory(inner())
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
 
     def rolling(self, size: int, drop_head=True, drop_tail=True):
         """
@@ -552,7 +580,9 @@ class DataCollection(Iterable, AllMixins):
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
-        self._dag[self._id] = ('rolling', (), [])
+        self._op = 'rolling'
+        self._call_args = {'size': size, 'drop_head': drop_head, 'drop_tail': drop_tail}
+
         def inner():
             buff = []
             for ele in self._iterable:
@@ -565,7 +595,9 @@ class DataCollection(Iterable, AllMixins):
                 yield DataCollection.unstream(buff)
                 buff = buff[1:]
 
-        return self._factory(inner())
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
 
     def flatten(self) -> 'DataCollection':
         """
@@ -581,7 +613,8 @@ class DataCollection(Iterable, AllMixins):
         >>> nested_dc.flatten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
-        self._dag[self._id] = ('flatten', (), [])
+        self._op = 'flatten'
+
         def inner():
             for ele in self._iterable:
                 if isinstance(ele, Iterable):
@@ -590,7 +623,9 @@ class DataCollection(Iterable, AllMixins):
                 else:
                     yield ele
 
-        return self._factory(inner())
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
 
     def shuffle(self, in_place=False) -> 'DataCollection':
         """
@@ -628,7 +663,9 @@ class DataCollection(Iterable, AllMixins):
         Traceback (most recent call last):
         TypeError: shuffle is not supported for streamed data collection.
         """
-        self._dag[self._id] = ('shuffle', (), [])
+        self._op = 'shuffle'
+        self._call_args = {'in_place': in_place}
+
         if self.is_stream:
             raise TypeError('shuffle is not supported for streamed data collection.')
         if in_place:
@@ -679,14 +716,18 @@ class DataCollection(Iterable, AllMixins):
             def wrapper(path, index, *arg, **kws):
                 _ = index
                 op = self.resolve(dispatcher, path, index, *arg, **kws)
-                return self.map(op)
+                print(op)
+                if not isinstance(op, DataCollection):
+                    return self.map(op)
+                else:
+                    return op
 
             callholder = hp.callholder(wrapper)
         return getattr(callholder, name)
 
     def __getitem__(self, index):
         """
-        Indexing for data collection.
+        Indexing for datxa collection.
 
         Examples:
 
@@ -755,21 +796,20 @@ class DataCollection(Iterable, AllMixins):
 
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
-        """
-        #TODO Needs a better solution for combining branches
-        swap_id = other._id
-        for values in self._dag.values():
-            temp = [x if x is not swap_id else self._id for x in values[2]]
-            values[2].clear()
-            values[2].extend(temp)
-        self._dag[self._id] = ('add', (other._id,) ,[])
+        """        
+        self._call_args = {'other': other}
+        self._parent_id.append(other.id)
+        other.notify_consumed(self._id)
+
         def inner():
             for x in self:
                 yield x
             for x in other:
                 yield x
 
-        return self._factory(inner())
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
 
     def __repr__(self) -> str:
         """
@@ -802,15 +842,19 @@ class DataCollection(Iterable, AllMixins):
         >>> DataCollection.range(10).head(3).to_list()
         [0, 1, 2]
         """
-        self._dag[self._id] = ('head', (n,), [])
+        self._op = 'head'
+        self._call_args = {'n': n}
+
         def inner():
             for i, x in enumerate(self._iterable):
                 if i >= n:
                     break
                 yield x
-        return self._factory(inner())
 
-    @close_dc
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
+
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
 
