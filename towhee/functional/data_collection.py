@@ -16,7 +16,7 @@ from typing import Any, Iterable, Iterator, Callable
 from random import random, sample, shuffle
 import reprlib
 
-from towhee.hparam import param_scope
+from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
@@ -640,18 +640,22 @@ class DataCollection(Iterable, AllMixins):
         ...     dc.add(1).mul(2).to_list() # call registered operator
         [4, 6, 8, 10]
         """
+
+        # pylint: disable=protected-access
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
 
-            def wrapper(path, index, *arg, **kws):
-                _ = index
+            @dynamic_dispatch
+            def wrapper(*arg, **kws):
+                with param_scope() as hp:
+                    path = hp._name
+                    index = hp._index
                 if self.get_backend() == 'ray':
                     return self.ray_resolve(dispatcher, path, index, *arg, **kws)
                 op = self.resolve(dispatcher, path, index, *arg, **kws)
                 return self.map(op)
 
-            callholder = hp.callholder(wrapper)
-        return getattr(callholder, name)
+        return getattr(wrapper, name)
 
     def __getitem__(self, index):
         """

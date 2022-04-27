@@ -321,7 +321,7 @@ class FileManager():
             pipeline_split = pipeline.split('/')
             # For now assuming all piplines will be classifed as 'author/repo'.
             if len(pipeline_split) != 2:
-                raise ValueError('''Incorrect pipeline format, should be '<author>/<pipeline_repo>'.''')
+                raise ValueError(f'''Incorrect pipeline format: {pipeline}, should be '<author>/<pipeline_repo>'.''')
             author = pipeline_split[0]
             repo = pipeline_split[1]
             file_name = repo.replace('-', '_')

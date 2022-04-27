@@ -194,8 +194,7 @@ class DynamicDispatch:
         self._index = index
 
     def __call__(self, *args, **kws) -> Any:
-        with param_scope(_index = self._index,
-                         _name = self._name):
+        with param_scope(_index=self._index, _name=self._name):
             return self._func(*args, **kws)
 
     def __getattr__(self, name: str) -> Any:
@@ -206,55 +205,13 @@ class DynamicDispatch:
     def __getitem__(self, index):
         return dynamic_dispatch(self._func, self._name, index)
 
+
 def dynamic_dispatch(func, name=None, index=None):
-    new_class = type(func.__name__, (DynamicDispatch, object,),
-                     dict(__doc__=func.__doc__))
+    new_class = type(func.__name__, (
+        DynamicDispatch,
+        object,
+    ), dict(__doc__=func.__doc__))
     return new_class(func, name, index)
-
-class _CallHolder:
-    """
-    Helper for tracking function calls.
-
-    Examples:
-    >>> ch = _CallHolder()
-    >>> ch.my.foo(a=1,b=2)
-    ('my.foo', None, (), {'a': 1, 'b': 2})
-
-    >>> ch.myspace2.gee(c=1,d=2)
-    ('myspace2.gee', None, (), {'c': 1, 'd': 2})
-    """
-
-    @staticmethod
-    def default_callback(path, index, *arg, **kws):
-        return (path, index, arg, kws)
-
-    def __init__(self, callback: Callable = None, path=None, index=None):
-        self._callback = callback if callback is not None else _CallHolder.default_callback
-        self._path = path
-        self._index = index
-
-    def __getattr__(self, name: str) -> Any:
-        if name in self.__dict__:
-            return self.__dict__[name]
-        if name in ['_path', '_callback', '_index']:
-            return self.__dict__[name]
-
-        if self._path:
-            name = '{}.{}'.format(self._path, name)
-        return _CallHolder(self._callback, name, self._index)
-
-    def __setattr__(self, name: str, value: Any):
-        if name in ['_path', '_callback', '_index']:
-            self.__dict__[name] = value
-
-    def __getitem__(self, index):
-        return _CallHolder(self._callback, self._path, index)
-
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self._callback(self._path, self._index, *args, **kwds)
-
-
-CallTracer = _CallHolder
 
 
 class HyperParameter(dict):
@@ -431,19 +388,31 @@ class HyperParameter(dict):
 
         return _Accessor(self, None)
 
-    def callholder(self, callback: Callable = None):
+    def dispatch(self, callback: Callable = None):
         """
         Return a call holder.
 
         Examples:
-        >>> ch = param_scope().callholder()
+        >>> ch = param_scope().dispatch()
         >>> ch.my.foo(a=1,b=2)
         ('my.foo', None, (), {'a': 1, 'b': 2})
 
         >>> ch.myspace2.gee(c=1,d=2)
         ('myspace2.gee', None, (), {'c': 1, 'd': 2})
         """
-        return _CallHolder(callback)
+
+        # pylint: disable=protected-access
+        @dynamic_dispatch
+        def wrapper(*arg, **kws):
+            with param_scope() as hp:
+                name = hp._name
+                index = hp._index
+            return callback(name, index, *arg, **kws)
+
+        return wrapper
+
+    def callholder(self, callback: Callable = None):
+        return self.dispatch(callback)
 
     @staticmethod
     def loads(s):
@@ -601,7 +570,9 @@ def auto_param(name_or_func):
             with param_scope() as hp:
                 local_params = {}
                 for k, v in predef_kws.items():
-                    if getattr(hp(), v).get_or_else(None) is not None and k not in kws:
+                    if getattr(
+                            hp(),
+                            v).get_or_else(None) is not None and k not in kws:
                         kws[k] = hp.get(v)
                         local_params[v] = hp.get(v)
                     else:

@@ -36,4 +36,4 @@ class DispatcherMixin:
         if path in call_mapping:
             return call_mapping[path](*arg, **kws)
         else:
-            return ops._callback(path, index, *arg, **kws)
+            return getattr(ops,path)[index](*arg, **kws)

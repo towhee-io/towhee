@@ -21,7 +21,7 @@ from towhee.engine.pipeline import Pipeline
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hub.file_manager import FileManager
-from towhee.hparam.hyperparameter import CallTracer, param_scope
+from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
 # pylint: disable=unused-import
 from towhee.hub import preclude
 
@@ -276,15 +276,8 @@ class _PipelineBuilder:
         _ = index
         return _PipelineBuilder(**kws).pipeline(name, *arg, from_ops=True)
 
-
-def _ops_call_back(real_name: str, index: Tuple[str], *arg, **kws):
-    try:
-        return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
-    except: # pylint: disable=bare-except
-        return _PipelineBuilder.callback(real_name, index, *arg, **kws)
-
-
-class OpsCallTracer(CallTracer):
+@dynamic_dispatch
+def ops(*arg, **kws):
     """
     Entry point for creating operator instances, for example:
 
@@ -295,11 +288,13 @@ class OpsCallTracer(CallTracer):
 
     >>> op_instance = ops.my_namespace.my_op_name(init_arg1=xxx, init_arg2=xxx, rtype='operator')
     >>> pipe_instance = ops.my_namespace.my_pipe_name(init_arg1=xxx, init_arg2=xxx, rtype='pipeline')
-
-
     """
-    def __init__(self, callback=None, path=None, index=None):
-        super().__init__(callback=callback, path=path, index=index)
 
-
-ops = OpsCallTracer(_ops_call_back)
+    # pylint: disable=protected-access
+    with param_scope() as hp:
+        real_name = hp._name
+        index = hp._index
+    try:
+        return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
+    except: # pylint: disable=bare-except
+        return _PipelineBuilder.callback(real_name, index, *arg, **kws)

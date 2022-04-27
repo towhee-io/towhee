@@ -150,7 +150,7 @@ class MetricMixin:
     def __init__(self):
         super().__init__()
         self.collector = Collector()
-        self.evaluate = param_scope().callholder(_evaluate_callback(self))
+        self.evaluate = param_scope().dispatch(_evaluate_callback(self))
 
     def with_metrics(self, metric_types: list = None):
         self.collector.metrics = metric_types
