@@ -131,8 +131,8 @@ class DisplayMixin:
 
     def __init__(self):
         super().__init__()
-        self.feature_summarize = param_scope().callholder(_feature_summarize_callback(self))
-        self.plot = param_scope().callholder(_plot_callback(self))
+        self.feature_summarize = param_scope().dispatch(_feature_summarize_callback(self))
+        self.plot = param_scope().dispatch(_plot_callback(self))
 
     def as_str(self):
         return self._factory(map(str, self._iterable))

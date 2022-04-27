@@ -120,7 +120,7 @@ class MilvusMixin:
     """
     def __init__(self):
         super().__init__()
-        self.to_milvus = param_scope().callholder(_to_milvus_callback(self))
+        self.to_milvus = param_scope().dispatch(_to_milvus_callback(self))
 
 
 if __name__ == '__main__':
