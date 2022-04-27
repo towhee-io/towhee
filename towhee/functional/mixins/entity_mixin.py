@@ -17,27 +17,9 @@ import json
 from typing import Dict, Any, Optional, Set, Union, List
 
 from towhee.functional.entity import Entity
-from towhee.hparam import param_scope
-# pylint: disable=import-outside-toplevel
+from towhee.hparam import dynamic_dispatch, param_scope
+# pylint: disable=protected-access
 
-
-def _select_callback(self):
-    # pylint: disable=unused-argument
-    # pylint: disable=protected-access
-    def wrapper(_: str, index, *arg, **kws):
-        if isinstance(index, str):
-            index = (index,)
-        if index is None and arg is not None and len(arg) > 0:
-            index = arg
-
-        def inner(entity: Entity):
-            if index is not None:
-                data = {column: getattr(entity, column) for column in index}
-                return Entity(**data)
-            return entity
-
-        return self.map(inner)
-    return wrapper
 
 class EntityMixin:
     """
@@ -96,12 +78,38 @@ class EntityMixin:
     ... )
     [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
     """
+
     def __init__(self):
+        # pylint: disable=useless-super-delegation
         super().__init__()
-        self.select = param_scope().callholder(_select_callback(self))
+
+    @property
+    def select(self):
+
+        @dynamic_dispatch
+        def selector(*arg):
+            index = param_scope()._index
+            if isinstance(index, str):
+                index = (index, )
+            if index is None and arg is not None and len(arg) > 0:
+                index = arg
+
+            def inner(entity: Entity):
+                if index is not None:
+                    return Entity(
+                        **{col: getattr(entity, col)
+                           for col in index})
+                return entity
+
+            return self.map(inner)
+
+        return selector
 
     # pylint: disable=invalid-name
-    def fill_entity(self, _DefaultKVs: Optional[Dict[str, Any]] = None, _ReplaceNoneValue: bool = False, **kws):
+    def fill_entity(self,
+                    _DefaultKVs: Optional[Dict[str, Any]] = None,
+                    _ReplaceNoneValue: bool = False,
+                    **kws):
         """
         When DataCollection's iterable exists of Entities and some indexes missing, fill default value for those indexes.
 
@@ -124,7 +132,7 @@ class EntityMixin:
 
         return self._factory(map(fill, self._iterable))
 
-    def as_entity(self, schema: Optional[List[str]]=None):
+    def as_entity(self, schema: Optional[List[str]] = None):
         """
         Convert elements into Entities.
 
@@ -168,14 +176,17 @@ class EntityMixin:
         """
 
         if schema is None:
+
             def inner(x):
                 return Entity(**x)
         else:
+
             def inner(x):
                 if len(schema) == 1:
                     x = (x, )
                 data = dict(zip(schema, x))
                 return Entity(**data)
+
         return self._factory(map(inner, self._iterable))
 
     def parse_json(self):
@@ -192,9 +203,11 @@ class EntityMixin:
         >>> dc[0].x
         1
         """
+
         def inner(x):
             data = json.loads(x)
             return Entity(**data)
+
         return self.map(inner)
 
     def as_json(self):
@@ -210,8 +223,10 @@ class EntityMixin:
         ... )
         ['{"x": 1}']
         """
+
         def inner(x):
             return json.dumps(x.__dict__)
+
         return self.map(inner)
 
     def as_raw(self):
@@ -246,12 +261,14 @@ class EntityMixin:
             if len(x.__dict__) == 1:
                 return list(x.__dict__.values())[0]
             return tuple(getattr(x, name) for name in x.__dict__)
+
         return self.map(inner)
 
     def replace(self, **kws):
         """
         Replace specific attributes with given vlues.
         """
+
         def inner(entity: Entity):
             for index, convert_dict in kws.items():
                 origin_value = getattr(entity, index)
@@ -270,6 +287,7 @@ class EntityMixin:
             na (`Set[str]`):
                 Those entities contain values in na will be dropped.
         """
+
         def inner(entity: Entity):
             for val in entity.__dict__.values():
                 if val in na:
@@ -278,6 +296,7 @@ class EntityMixin:
             return True
 
         return self._factory(filter(inner, self._iterable))
+
     def rename(self, column: Dict[str, str]):
         """
         Rename an column in DataCollection.
@@ -286,6 +305,7 @@ class EntityMixin:
             column (`Dict[str, str]`):
                 The columns to rename and their corresponding new name.
         """
+
         def inner(x):
             for key in column:
                 x.__dict__[column[key]] = x.__dict__.pop(key)
@@ -295,8 +315,10 @@ class EntityMixin:
 
     @property
     def df(self):
+        # pylint: disable=import-outside-toplevel
         import pandas as pd
         if isinstance(self._iterable, pd.DataFrame):
             return self._iterable
         else:
-            raise TypeError('data collection is not created from pandas DataFrame.')
+            raise TypeError(
+                'data collection is not created from pandas DataFrame.')
