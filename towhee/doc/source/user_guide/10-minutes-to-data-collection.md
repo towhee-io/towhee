@@ -14,13 +14,13 @@ kernelspec:
   name: python3
 ---
 
-# 10 minutes to DataCollection
+# DataCollection in 10 Minutes
 
-This is a short introduction to `DataCollection`, an unstructured data processing framework provided by `towhee`. More complex examples can be found in the GitHub repo of [towhee](https://github.com/towhee-io/towhee).
+This section is a short introduction to `DataCollection`, an unstructured data processing framework provided by `towhee`. More complex examples can be found in the Towhee [GitHub](https://github.com/towhee-io/towhee). 
 
 ## Preparation
 
-The latest version of `towhee` can be installed with:
+The latest version of `towhee` can be installed with `pip`, or `python -m pip` if `pip` is not presented in your `PATH`:
 
 ````{tab} pip
 ```shell
@@ -33,7 +33,7 @@ $ python -m pip install towhee
 ```
 ````
 
-After that, we can import `towhee` as follows;
+With the package installed, we can import `towhee` with the following:
 
 
 ```python
@@ -41,49 +41,39 @@ After that, we can import `towhee` as follows;
 
 ```
 
-## Create a DataCollection
+## Creating a DataCollection
 
-`DataCollection` is an enhancement to the built-in `list` in python. Creating a `DataCollection` from a `list`:
-
-````{tab} DataCollection
-```python
->>> dc = towhee.dc([0, 1, 2, 3])
->>> dc
-[0, 1, 2, 3]
-
-```
-````
-````{tab} python
-```python
->>> dc = [0, 1, 2, 3]
->>> dc
-[0, 1, 2, 3]
-
-```
-````
-
-The behavior of `DataCollection` is designed to be the same as `list`, making it easy to understand and compatible with most of the popular data science toolkits:
+`DataCollection` is an enhancement to the built-in `list` in Python. Creating a `DataCollection` from a `list` is as simple as:
 
 ```python
 >>> dc = towhee.dc([0, 1, 2, 3])
 >>> dc
 [0, 1, 2, 3]
 
->>> dc[1]
-1
+```
 
->>> dc[3]
-3
+The behavior of `DataCollection` is designed to be mimic `list`, making it easy to understand for most Python users and compatible with most of the popular data science toolkits;
 
+```python
+>>> dc = towhee.dc([0, 1, 2, 3])
+>>> dc
+[0, 1, 2, 3]
+
+# indexing
+>>> dc[1], dc[2]
+(1, 2)
+
+# slicing
 >>> dc[:2]
 [0, 1]
 
+# appending
 >>> dc.append(4).append(5)
 [0, 1, 2, 3, 4, 5]
 
 ```
 
-## View Data 
+## Viewing Data 
 
 We can take a quick look at the data by `head()`:
 
@@ -94,7 +84,7 @@ We can take a quick look at the data by `head()`:
 
 ```
 
-If you are running a jupyter notebook, `show()` is suggested for a better interface:
+If you are running within a jupyter notebook, `show()` is recommended as it provides a better interface:
 
 ```{code-cell} ipython3
 ---
@@ -108,11 +98,11 @@ dc = towhee.dc([0, 1, 2, 3])
 dc.show(limit=5)
 ```
 
-## Process Data
+## Processing Data
 
-### Apply a function by `map()`
+### Applying a Function
 
-Apply a function to the entities in a `DataCollection` :
+Applying a function to the elements in a `DataCollection` can be done with a simple `map()` call:
 
 ```python
 >>> towhee.dc([0, 1, 2, 3, 4]).map(lambda x: x*2)
@@ -120,16 +110,16 @@ Apply a function to the entities in a `DataCollection` :
 
 ```
 
-### Filter the data with `filter()`
+### Applying a Filter
 
-Select some entities in a `DataCollection` with a filter
+Filtering the data in a `DataCollection`: 
 ```python
 >>> towhee.dc([0, 1, 2, 3, 4]).filter(lambda x: int(x%2)==0)
 [0, 2, 4]
 
 ```
 
-### Chained Function Invocation
+### Chaining Data Processing Steps
 
 `DataCollection` supports *method-chaining style programming*, making the code clean and fluent. 
 
@@ -174,16 +164,16 @@ Select some entities in a `DataCollection` with a filter
 ```
 ````
 
-The code using `DataCollection` is more straightforward. Each action generates a new `DataCollection`, thus it can be followed by another action directly. 
+The code using `DataCollection` is more straightforward, as each action generates a new `DataCollection`, thus allowing step by step instructions.
 
-## Use operators
+## Towhee Operators
 
-`Operator` represents the basic unit of computation that is applied to the items in a `DataCollection`. 
-There are many predefined Operators on [towhee hub](https://towhee.io), including the most popular deep learning model from computer vision and natural language processing.
+Operators are the basic units of computation that can be applied to the elements within a `DataCollection`. 
+There are many predefined Operators on the Towhee [hub](https://towhee.io), including popular deep learning models ranging from computer vision to natural language processing.
 
-### Towhee Operator
+### Using Operators
 
-We can load an `Operator` from towhee hub as follows:
+We can load an `Operator` from the Towhee hub with the following:
 
 ```python
 >>> from towhee import ops
@@ -194,8 +184,7 @@ We can load an `Operator` from towhee hub as follows:
 
 Where `towhee` is the namespace of the operator, and `image_decode` is the operator name. An operator is usually referred to with its full name: `namespace/name`. 
 
-`towhee` is the namespace for official operators,
-and also the default namespace if namespace is not specified:
+`towhee` is the namespace for official operators, and also is the default namespace if not specified:
 
 ```python
 >>> from towhee import ops
@@ -204,9 +193,9 @@ and also the default namespace if namespace is not specified:
 
 ```
 
-### Custom Operator
+### Custom Operators
 
-It is also easy to define a custom operator with a function:
+It is also easy to define custom operators with standard Python functions:
 
 ```python
 >>> from towhee import register
@@ -218,7 +207,7 @@ It is also easy to define a custom operator with a function:
 
 ```
 
-If the operator needs additional initialize arguments, it has to be defined as a class:
+If the operator needs additional initializations arguments, it can be defined as a class:
 
 ```python
 >>> @register
@@ -233,10 +222,9 @@ If the operator needs additional initialize arguments, it has to be defined as a
 
 ```
 
-### Use named `Operator` with `DataCollection`
+### Using named `Operator`'s with `DataCollection`
 
-When an operator is uploaded to towhee hub or registered with `@register`,
-we can call the operator with its name directly on a `DataCollection`:
+When an operator is uploaded to the Towhee hub or registered with `@register`, we can call the operato directly on a `DataCollection`:
 
 ```python
 >>> @register
@@ -251,11 +239,11 @@ we can call the operator with its name directly on a `DataCollection`:
 
 ```
 
-`add_1()` is an operator that registers to `towhee` with a decorator. We can invoke the operator as simple as calling a method of `DataCollection`. `DataCollection` will dispatch missing function calls to the operators.
+`add_1()` is an operator that was registered to `towhee` using a decorator. We can invoke the operator by calling it as a method of `DataCollection`. `DataCollection` will dispatch missing function calls to the registered operators.
 
-Such call dispatch makes the code easy to read. Here is an example that compares the code using and not using call dispatch
+Such call dispatching makes the code easy to read. Here is code comparison of using call dispatch:
 
-````{tab} use call dispatch
+````{tab} using call dispatch
 ```python
 towhee.dc(some_image_list) \
     .image_decode() \
@@ -263,7 +251,7 @@ towhee.dc(some_image_list) \
     .tensor_normalize(axis=1)
 ```
 ````
-````{tab} not use call dispatch
+````{tab} not using call dispatch
 ```python
 towhee.dc(some_image_list) \
     .map(ops.image_decode()) \
@@ -271,16 +259,30 @@ towhee.dc(some_image_list) \
     .map(ops.tensor_normalize(axis=1))
 ```
 ````
+````{tab} without data collection
+```python
+image_decode = ops.image_decode()
+image_embedding = ops.towhee.image_embedding(model_name='resnet50')
+tensor_normalize = ops.tensor_normalize(axis=1)
+
+result = []
+for path in some_image_list:
+  img = image_decode(path)
+  embedding = image_embedding(img)
+  vec = tensor_normalize(embedding)
+  result.append(vec)
+```
+````
 
 ## Stream Processing
 
-For large-scale datasets, using a `list` is too memory-consuming for having to load the entire dataset into the memory. And the users may prefer stream processing with `generator`, which is offered by python and support to proceed only one item at once.
+For large-scale datasets, using a `list` is too memory-intensive due to having to load the entire dataset into memory. Because of this, users often opt for stream processing with Python `generators`. These generators allow you to act on values as they come in, instead of having to wait for all the previous values to finish first before moving to the next step.
 
-Towhee also provides streamed `DataCollection`.
+Towhee provides a similar streaming mechanism within `DataCollection`.
 
-### Create a streamed DataCollection
+### Creating a Streamed DataCollection
 
-Streamed `DataCollection` is created from a generator.
+A streamed `DataCollection` is created from a generator:
 
 ```python
 >>> dc = towhee.dc(iter([0, 1, 2, 3]))
@@ -289,9 +291,17 @@ Streamed `DataCollection` is created from a generator.
 
 ```
 
-### Use of streamed DataCollection
+We can also convert an unstreamed `DataCollection` into a streamed one:
 
-Streamed `DataCollection` is designed to behave the same as the unstreamed one. But we should notice that the computation will not run until we start to consume items from it.
+```python
+>>> dc = towhee.dc([0, 1, 2, 3])
+>>> dc.stream() #doctest: +ELLIPSIS
+<list_iterator object at ...>
+```
+
+### Using Streamed DataCollections
+
+Streamed `DataCollection`'s are designed to behave in the same way as the unstreamed ones. One important details is that the computation will not run until we begin consuming items from the `DataCollection`.
 
 ````{tab} streamed
 ```python
@@ -344,13 +354,55 @@ debug print: 4
 ```
 ````
 
-In the example of streamed `DataCollection`, `debug_print()` is not executed until we start to access the items in the `DataCollection`. But for unstreamed `DataCollection`, it is executed immediately.
+In the example of the streamed `DataCollection`, `debug_print()` is not executed until we start to access the items in the `DataCollection`. But for unstreamed `DataCollection`, it is executed immediately.
 
 ## Tabular Data
 
-### Create a DataFrame with schema
+In this section we will introduce how to handle structured data with `DataCollection`. The term `tabular` refers to structured data that is organized into columns and rows, a widely used format by data scientists and supported by most machine learning toolkits.
+
+### Creating a DataCollection with a Schema
+
+- We can directly read data from files:
+
+```python
+dc = towhee.read_csv('some.csv')
+dc = towhee.read_json('some.json')
+```
+
+- We can also load data from a pandas DataFrame:
+
+```python
+df = pandas.read_sql(...)
+dc = towhee.from_df(df)
+```
+
+- We can also convert a list of `dict`s into a `DataCollection`:
+
+```{code-cell} ipython3
+>>> dc = towhee.dc([{'a': i, 'b': i*2} for i in range(5)]).as_entity()
+>>> dc.show()
+```
+
+We call each row of the table an `Entity`. Both `a` and `b` are fields within the entity.
 
 ### Apply Functions/Operators according to schema
 
+We can apply an operator according to the fields of the entities:
+
+```{code-cell} ipython3
+>>> @towhee.register
+... def add_1(x):
+...   return x+1
+
+>>> dc.add_1['a', 'c']().show()
+```
+
+`['a', 'c']` is the syntax for specifying operator input and output,  field `a` is used as input, and field `c` is used as output. We can also apply a lambda function to tabular data with `runas_op`:
+
+```{code-cell} ipython3
+>>> dc.runas_op['b', 'd'](func=lambda x: x*2).show()
+```
+
 ## Advanced Features
 
+`DataCollection` also support advanced features such as parallel execution and distributed execution. To get more details about advanced feature, please refer to the API document of `DataCollection`. 
