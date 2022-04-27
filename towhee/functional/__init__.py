@@ -16,10 +16,37 @@ from .entity import Entity
 from .option import Option, Some, Empty
 from towhee.hparam import HyperParameter as State
 
-from towhee.hparam.hyperparameter import CallTracer
+from towhee.hparam import param_scope
+from towhee.hparam import dynamic_dispatch
+# pylint: disable=protected-access
 
 
-class GlobImpl(CallTracer):
+def stream(iterable):
+    return DataCollection.stream(iterable)
+
+
+def unstream(iterable):
+    return DataCollection.unstream(iterable)
+
+
+read_csv = DataCollection.from_csv
+
+read_json = DataCollection.from_json
+
+read_camera = DataCollection.from_camera
+
+from_zip = DataCollection.from_zip
+
+
+def from_df(df, as_stream=False):
+    if as_stream:
+        return DataCollection.stream(
+            df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+    return DataCollection(df)
+
+
+@dynamic_dispatch
+def glob(*arg):
     """
     Return a DataCollection of paths matching a pathname pattern.
     Examples:
@@ -36,11 +63,14 @@ class GlobImpl(CallTracer):
     [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
     """
 
-    def __init__(self, callback=None, path=None, index=None):
-        super().__init__(callback=callback, path=path, index=index)
+    index = param_scope()._index
+    if index is None:
+        return DataCollection.from_glob(*arg)
+    return DataCollection.from_glob(*arg).map(lambda x: Entity(**{index: x}))
 
 
-class GlobZipImpl(CallTracer):
+@dynamic_dispatch
+def glob_zip(uri, pattern):
     """
     Return a DataCollection of files matching a pathname pattern from a zip archive.
     Examples:
@@ -57,34 +87,24 @@ class GlobZipImpl(CallTracer):
     [<Entity dict_keys(['path'])>, <Entity dict_keys(['path'])>]
     """
 
-    def __init__(self, callback=None, path=None, index=None):
-        super().__init__(callback=callback, path=path, index=index)
+    index = param_scope()._index
+    if index is None:
+        return DataCollection.from_zip(uri, pattern)
+    return DataCollection.from_zip(uri,
+                                   pattern).map(lambda x: Entity(**{index: x}))
 
 
-class DCImpl(CallTracer):
+@dynamic_dispatch
+def api():
     """
-    Return a DataCollection.
+    Serve the DataCollection as a RESTful API
 
-    Examples:
+    Args:
+        path (str, optional): API path. Defaults to '/'.
+        app (_type_, optional): The FastAPI app the API bind to, will create one if None.
 
-    1. create a simple data collection;
-
-    >>> import towhee
-    >>> towhee.dc([0, 1, 2]).to_list()
-    [0, 1, 2]
-
-    2. create a data collection of structural data.
-
-    >>> towhee.dc['column']([0, 1, 2]).to_list()
-    [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
-    """
-
-    def __init__(self, callback=None, path=None, index=None):
-        super().__init__(callback=callback, path=path, index=index)
-
-class ApiImpl(CallTracer):
-    """
-    Return a towhee API.
+    Returns:
+        _type_: the app that bind to
 
     Examples:
 
@@ -125,66 +145,29 @@ class ApiImpl(CallTracer):
     >>> client.post('/app3', '{"x": "3"}').text
     '{"y":"3 -> 3 => 3"}'
     """
-
-    def __init__(self, callback=None, path=None, index=None):
-        super().__init__(callback=callback, path=None, index=index)
+    return DataCollection.api(index=param_scope()._index)
 
 
-def stream(iterable):
-    return DataCollection.stream(iterable)
+@dynamic_dispatch
+def dc(iterable):
+    """
+    Return a DataCollection.
 
+    Examples:
 
-def unstream(iterable):
-    return DataCollection.unstream(iterable)
+    1. create a simple data collection;
 
+    >>> import towhee
+    >>> towhee.dc([0, 1, 2]).to_list()
+    [0, 1, 2]
 
-read_csv = DataCollection.from_csv
+    2. create a data collection of structural data.
 
-read_json = DataCollection.from_json
+    >>> towhee.dc['column']([0, 1, 2]).to_list()
+    [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
+    """
 
-read_camera = DataCollection.from_camera
-
-from_zip = DataCollection.from_zip
-
-
-def from_df(df, as_stream=False):
-    if as_stream:
-        return DataCollection.stream(
-            df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
-    return DataCollection(df)
-
-
-def _glob_call_back(_, index, *arg, **kws):
-    if index is not None:
-        return DataCollection.from_glob(
-            *arg, **kws).map(lambda x: Entity(**{index: x}))
-    else:
-        return DataCollection.from_glob(*arg, **kws)
-
-
-def _glob_zip_call_back(_, index, *arg, **kws):
-    if index is not None:
-        return from_zip(*arg, **kws).map(lambda x: Entity(**{index: x}))
-    else:
-        return from_zip(*arg, **kws)
-
-
-def _dc_call_back(_, index, *arg, **kws):
-    if index is not None:
-        return DataCollection(*arg, **kws).map(lambda x: Entity(**{index: x}))
-    else:
-        return DataCollection(*arg, **kws)
-
-
-glob = GlobImpl(_glob_call_back)
-
-glob_zip = GlobZipImpl(_glob_zip_call_back)
-
-dc = DCImpl(_dc_call_back)
-
-def _api_call_back(_, index, *arg, **kws):
-    #pylint: disable=unused-argument
-    kws['index'] = index
-    return DataCollection.api( **kws)
-
-api = ApiImpl(_api_call_back)
+    index = param_scope()._index
+    if index is None:
+        return DataCollection(iterable)
+    return DataCollection(iterable).map(lambda x: Entity(**{index: x}))
