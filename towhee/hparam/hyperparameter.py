@@ -393,7 +393,9 @@ class HyperParameter(dict):
         Return a call holder.
 
         Examples:
-        >>> ch = param_scope().dispatch()
+        >>> def debug_print(path, index, *arg, **kws):
+        ...     return (path, index, arg, kws)
+        >>> ch = param_scope().dispatch(debug_print)
         >>> ch.my.foo(a=1,b=2)
         ('my.foo', None, (), {'a': 1, 'b': 2})
 
@@ -597,8 +599,3 @@ def safe_numeric(value):
         except:  # pylint: disable=bare-except
             pass
     return value
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

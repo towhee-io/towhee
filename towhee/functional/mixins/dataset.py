@@ -25,7 +25,7 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
-    def from_glob(cls, *args):
+    def from_glob(cls, *args): # pragma: no cover
         """
         generate a file list with `pattern`
         """
@@ -36,7 +36,7 @@ class DatasetMixin:
         return cls.stream(files)
 
     @classmethod
-    def from_zip(cls, url, pattern, mode='r'):
+    def from_zip(cls, url, pattern, mode='r'): # pragma: no cover
         """load files from url/path.
 
         Args:
@@ -73,7 +73,7 @@ class DatasetMixin:
         return cls.stream(inner())
 
     @classmethod
-    def from_camera(cls, device_id=0, limit=-1):
+    def from_camera(cls, device_id=0, limit=-1): # pragma: no cover
         """
         read images from a camera.
         """

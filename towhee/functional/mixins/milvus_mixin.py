@@ -19,7 +19,7 @@ from towhee.utils.log import engine_log
 from ..entity import Entity
 
 
-def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size: int):
+def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size: int): # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.milvus_utils import Collection, MutationResult
     if isinstance(collection, str):
@@ -65,7 +65,7 @@ def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size
     return milvus_mr
 
 
-def _to_milvus_callback(self):
+def _to_milvus_callback(self): # pragma: no cover
     # pylint: disable=consider-using-get
     def wrapper(_: str, index, *arg, **kws):
         batch_size = 1
@@ -91,7 +91,7 @@ def _to_milvus_callback(self):
     return wrapper
 
 
-class MilvusMixin:
+class MilvusMixin: # pragma: no cover
     """
     Mixins for Milvus, such as loading data into Milvus collections. Note that the Milvus collection is created before loading the data.
     Refer to https://milvus.io/docs/v2.0.x/create_collection.md.
@@ -123,8 +123,3 @@ class MilvusMixin:
     def __init__(self):
         super().__init__()
         self.to_milvus = param_scope().dispatch(_to_milvus_callback(self))
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

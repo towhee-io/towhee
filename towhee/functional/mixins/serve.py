@@ -233,8 +233,3 @@ class ServeMixin:
     @classmethod
     def api(cls, index=None):
         return _APIWrapper(index=index, cls=cls)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

@@ -701,7 +701,22 @@ class DataCollection(Iterable, AllMixins):
                             'data collection created from list or pandas DataFrame.')
         self._iterable[index] = value
 
-    def append(self, item):
+    def append(self, item: Any) -> 'DataCollection':
+        """
+        Append item to data collection
+
+        Args:
+            item (Any): the item to append
+
+        Returns:
+            DataCollection: self
+
+        Examples:
+
+        >>> dc = DataCollection([0, 1, 2])
+        >>> dc.append(3).append(4)
+        [0, 1, 2, 3, 4]
+        """
         if hasattr(self._iterable, 'append'):
             self._iterable.append(item)
             return self
@@ -786,9 +801,3 @@ class DataCollection(Iterable, AllMixins):
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
-
-
-if __name__ == '__main__':  # pylint: disable=inconsistent-quotes
-    import doctest
-
-    doctest.testmod(verbose=False)
