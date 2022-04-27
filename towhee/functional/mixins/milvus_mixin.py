@@ -82,10 +82,12 @@ def _to_milvus_callback(self):
         if 'batch' in kws:
             batch_size = int(kws['batch'])
 
+        dc_data = self
         if 'unstream' not in kws or kws['unstream']:
-            self.unstream()
-        _ = _milvus_insert(self, index, collection, batch_size)
-        return self
+            dc_data = self.unstream()
+
+        _ = _milvus_insert(dc_data, index, collection, batch_size)
+        return dc_data
     return wrapper
 
 
