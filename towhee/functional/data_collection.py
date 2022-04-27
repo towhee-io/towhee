@@ -159,9 +159,9 @@ class DataCollection(Iterable, AllMixins):
         # pylint: disable=protected-access
         if isinstance(arg, DataCollection):
             self = arg
-            if not self.is_stream:
-                return self
-            return DataCollection.unstream(self._iterable)
+            if self.is_stream:
+                self._iterable = list(self._iterable)
+            return self
 
         iterable = arg
         if isinstance(iterable, Iterator):
