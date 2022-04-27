@@ -91,7 +91,10 @@ class RayMixin:
             def cleanup(self):
                 from shutil import rmtree #pylint: disable=import-outside-toplevel
                 from towhee import engine #pylint: disable=import-outside-toplevel
-                rmtree(engine.DEFAULT_LOCAL_CACHE_ROOT)
+                try:
+                    rmtree(engine.DEFAULT_LOCAL_CACHE_ROOT)
+                except FileNotFoundError:
+                    pass
 
         actors = [OperatorActor.remote(path, index, str(uuid.uuid4().hex[:12].upper()), *arg, **kws) for _ in range(self._num_worker)]
         pool = ray.util.ActorPool(actors)
