@@ -19,7 +19,7 @@ class ComputerVisionMixin:
     """
 
     # pylint: disable=import-outside-toplevel
-    def image_imshow(self, title='image'):
+    def image_imshow(self, title='image'): # pragma: no cover
         from towhee.utils.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)

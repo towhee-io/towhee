@@ -9,7 +9,7 @@ from towhee.functional.option import Option, Empty, _Reason
 from towhee.functional.mixins.parallel import EOS
 
 
-def _map_task_ray(unary_op):
+def _map_task_ray(unary_op): # pragma: no cover
     def map_wrapper(x):
         try:
             if isinstance(x, Option):
@@ -23,7 +23,7 @@ def _map_task_ray(unary_op):
     return map_wrapper
 
 
-class RayMixin:
+class RayMixin: # pragma: no cover
     """
     Mixin for parallel ray execution.
     """

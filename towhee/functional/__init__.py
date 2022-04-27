@@ -46,7 +46,7 @@ def from_df(df, as_stream=False):
 
 
 @dynamic_dispatch
-def glob(*arg):
+def glob(*arg): # pragma: no cover
     """
     Return a DataCollection of paths matching a pathname pattern.
     Examples:
@@ -70,7 +70,7 @@ def glob(*arg):
 
 
 @dynamic_dispatch
-def glob_zip(uri, pattern):
+def glob_zip(uri, pattern): # pragma: no cover
     """
     Return a DataCollection of files matching a pathname pattern from a zip archive.
     Examples:

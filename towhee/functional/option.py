@@ -23,6 +23,7 @@ class _Reason:
     """
     reason for `Empty` value
     """
+
     def __init__(self, x: Any, e: Exception) -> None:
         self._value = x
         self._exception = e
@@ -87,6 +88,14 @@ class Option(Generic[A]):
 
         Returns:
             Option[B]: boxed value
+
+        Examples:
+
+        >>> Option.of(1).flat_map(lambda x: x+1)
+        2
+
+        >>> Option.empty().flat_map(lambda x: x+1)
+        Empty()
         """
         if isinstance(self, Some):
             return f(self._value)
@@ -102,10 +111,11 @@ class Option(Generic[A]):
         Returns:
             Option[B]: boxed return value
         """
+
         def wrapper(x):
             try:
                 return Some(f(x))
-            except Exception as e: # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 return Empty(x, e)
 
         return self.flat_map(wrapper)
@@ -122,6 +132,14 @@ class Option(Generic[A]):
 
     def get_or_else(self, default):
         """Return unboxed value, or default is the value is empty.
+
+        Examples:
+
+        >>> Option.of(0).get_or_else(1)
+        0
+
+        >>> Option.empty().get_or_else(1)
+        1
         """
         if self.is_some():
             return self.get()
@@ -132,6 +150,7 @@ class Some(Option[A]):
     """
     `Some` value for `Option`
     """
+
     def __init__(self, x: A) -> None:
         self._value = x
 
@@ -151,6 +170,7 @@ class Empty(Option[A]):
     """
     `Empty` value for `Option`
     """
+
     def __init__(self, x: Any = None, e: Exception = None) -> None:
         self._reason = _Reason(x, e)
 
@@ -167,8 +187,3 @@ class Empty(Option[A]):
 
 
 empty = Empty()
-
-if __name__ == '__main__':
-    import doctest
-
-    doctest.testmod(verbose=False)
