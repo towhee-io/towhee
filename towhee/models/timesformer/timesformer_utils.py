@@ -59,9 +59,7 @@ def load_pretrained(
         cfg,
         checkpoint_path=None,
         strict=True,
-        device='cpu'
-):
-
+        device='cpu'):
     num_classes = cfg['num_classes']
     in_c = cfg['in_c']
     img_size = cfg['img_size']
@@ -172,7 +170,7 @@ def load_pretrained(
     return model
 
 
-def get_configs(model_name):
+def get_configs(model_name: str = None):
     if model_name == 'timesformer_k400_8x224':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
@@ -186,4 +184,4 @@ def get_configs(model_name):
             classifier='head',
             filter_fn=None,
         ))
-        return configs
+    return configs
