@@ -120,30 +120,36 @@ class VitModel(nn.Module):
         return x
 
 
-def vit(
-        model_name: str = "vit_base_16x224",
-        pretrained: bool = True,
+def create_model(
+        model_name: str = None,
+        pretrained: bool = False,
         weights_path: str = None,
-        device: str = None
+        device: str = None,
+        **kwargs
         ):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    configs = get_configs(model_name)
-    if "url" in configs:
-        url = configs["url"]
-        configs.pop("url")
+    if model_name is None:
+        if pretrained:
+            raise AssertionError("Fail to load pretrained model: no model name is specified.")
+        model = VitModel(**kwargs)
+    else:
+        configs = get_configs(model_name)
+        if "url" in configs:
+            url = configs["url"]
+            configs.pop("url")
 
-    model = VitModel(**configs)
+        model = VitModel(**configs)
 
-    if pretrained:
-        if weights_path:
-            state_dict = torch.load(weights_path)
-        elif url:
-            state_dict = model_zoo.load_url(url, map_location=torch.device(device))
-        else:
-            raise AssertionError("No model weights url or path is provided.")
-        model.load_state_dict(state_dict, strict=False)
+        if pretrained:
+            if weights_path:
+                state_dict = torch.load(weights_path)
+            elif url:
+                state_dict = model_zoo.load_url(url, map_location=torch.device(device))
+            else:
+                raise AssertionError("No model weights url or path is provided.")
+            model.load_state_dict(state_dict, strict=False)
 
     model.eval()
     return model

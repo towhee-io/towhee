@@ -14,7 +14,7 @@
 
 import unittest
 import torch
-from towhee.models.timesformer.timesformer import TimeSformer, timesformer
+from towhee.models import timesformer
 
 
 class TestTimesformer(unittest.TestCase):
@@ -26,15 +26,21 @@ class TestTimesformer(unittest.TestCase):
 
     # timesformer_k400_8x32 with attention_type='divided_space_time',
     def test_timesformer(self, video=dummy_video):
-        model = timesformer(model_name='timesformer_k400_8x224', pretrained=False)
+        model = timesformer.create_model(model_name='timesformer_k400_8x224', pretrained=False)
         pred = model(video)
+        feats = model.forward_features(video)
         self.assertTrue(pred.shape == (1, 400))
+        self.assertTrue(feats.shape == (1, 768))
 
     def test_other_types(self, video=dummy_video):
         for attention_type in ['space_only', 'joint_space_time']:
-            model = TimeSformer(img_size=224, num_classes=400, num_frames=4, attention_type=attention_type)
+            model = timesformer.create_model(
+                pretrained=False,
+                img_size=224, num_classes=400, num_frames=4, attention_type=attention_type)
             pred = model(video)
+            feats = model.forward_features(video)
             self.assertTrue(pred.shape == (1, 400))
+            self.assertTrue(feats.shape == (1, 768))
 
 
 if __name__ == '__main__':

@@ -19,13 +19,13 @@ from PIL import Image
 import torch
 from torchvision import transforms
 
-from towhee.models.vit import vit
+from towhee.models import vit
 from tests.unittests import VIT_DIR
 
 
 class VisionTransformerTest(unittest.TestCase):
     test_dir = VIT_DIR
-    model = vit(model_name='vit_base_16x224')
+    model = vit.create_model(model_name='vit_base_16x224', pretrained=True)
     img = Image.open(os.path.join(test_dir, 'img.jpg'))
     tfms = transforms.Compose([transforms.Resize(256),
                                transforms.CenterCrop(224),
@@ -50,6 +50,14 @@ class VisionTransformerTest(unittest.TestCase):
             p = prob * 100
             print(f'[{idx}] {label:<75} ({p:.2f}%)')
             self.assertEqual('giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', self.labels_map[idx])
+
+    def test_model(self):
+        dummy_img = torch.rand(1, 3, 224, 224)
+        model = vit.create_model(num_classes=400)
+        features = model.forward_features(dummy_img)
+        self.assertTrue(features.shape, (1, 768))
+        out = model(dummy_img)
+        self.assertTrue(out.shape, (1, 400))
 
 
 if __name__ == '__main__':

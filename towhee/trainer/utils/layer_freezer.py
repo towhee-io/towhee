@@ -13,8 +13,8 @@ class LayerFreezer:
 
     Example:
         >>> from towhee.trainer.utils.layer_freezer import LayerFreezer
-        >>> from towhee.models.vit.vit import VitModel
-        >>> my_model = VitModel('vit_base_patch16_224')
+        >>> from towhee.models import vit
+        >>> my_model = vit.create_model()
         >>> my_freezer = LayerFreezer(my_model)
         >>> # Check if modules in the last layer are frozen
         >>> my_freezer.status(-1)

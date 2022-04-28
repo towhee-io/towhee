@@ -72,7 +72,7 @@ class TimeSformer(nn.Module):
 
     Examples:
         >>> import torch
-        >>> from towhee.models.timesformer.timesformer import TimeSformer
+        >>> from towhee.models.create_model.create_model import TimeSformer
         >>>
         >>> fake_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
         >>> model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='divided_space_time')
@@ -166,7 +166,7 @@ class TimeSformer(nn.Module):
             # Resize time embeddings in case they don't match
             if t != self.time_embed.size(1):
                 time_embed = self.time_embed.transpose(1, 2)
-                new_time_embed = nn.functional.interpolate(time_embed, size=(t), mode='nearest')
+                new_time_embed = nn.functional.interpolate(time_embed, size=t, mode='nearest')
                 new_time_embed = new_time_embed.transpose(1, 2)
                 x = x + new_time_embed
             else:
@@ -193,36 +193,41 @@ class TimeSformer(nn.Module):
         return x
 
 
-def timesformer(
-        model_name: str,
-        pretrained: bool = True,
+def create_model(
+        model_name: str = None,
+        pretrained: bool = False,
         checkpoint_path: str = None,
-        device: str = 'cpu'
-):
+        device: str = 'cpu',
+        **kwargs):
     if device != 'cpu':
         assert torch.cuda.is_available()
 
-    configs = get_configs(model_name)
-
-    model = TimeSformer(
-        img_size=configs['img_size'],
-        patch_size=configs['patch_size'],
-        in_c=configs['in_c'],
-        num_classes=configs['num_classes'],
-        embed_dim=configs['embed_dim'],
-        depth=configs['depth'],
-        num_heads=configs['num_heads'],
-        mlp_ratio=configs['mlp_ratio'],
-        qkv_bias=configs['qkv_bias'],
-        qk_scale=configs['qk_scale'],
-        drop_ratio=configs['drop_ratio'],
-        attn_drop_ratio=configs['attn_drop_ratio'],
-        drop_path_ratio=configs['drop_path_ratio'],
-        norm_layer=configs['norm_layer'],
-        num_frames=configs['num_frames'],
-        attention_type=configs['attention_type'],
-        dropout=configs['dropout']
-    )
+    if model_name is None:
+        if pretrained:
+            raise AssertionError('Fail to load pretrained model: no model name is specified.')
+        model = TimeSformer(**kwargs)
+    else:
+        configs = get_configs(model_name)
+        configs.update(**kwargs)
+        model = TimeSformer(
+            img_size=configs['img_size'],
+            patch_size=configs['patch_size'],
+            in_c=configs['in_c'],
+            num_classes=configs['num_classes'],
+            embed_dim=configs['embed_dim'],
+            depth=configs['depth'],
+            num_heads=configs['num_heads'],
+            mlp_ratio=configs['mlp_ratio'],
+            qkv_bias=configs['qkv_bias'],
+            qk_scale=configs['qk_scale'],
+            drop_ratio=configs['drop_ratio'],
+            attn_drop_ratio=configs['attn_drop_ratio'],
+            drop_path_ratio=configs['drop_path_ratio'],
+            norm_layer=configs['norm_layer'],
+            num_frames=configs['num_frames'],
+            attention_type=configs['attention_type'],
+            dropout=configs['dropout']
+        )
 
     model.to(device)
     if pretrained:
@@ -251,5 +256,5 @@ def timesformer(
 #     # pred = model(dummy_video)
 #     # assert(pred.shape == (1, 400))
 #
-#     model = timesformer(model_name='timesformer_k400_8x224')
+#     model = create_model(model_name='timesformer_k400_8x224')
 #     print(model(dummy_video))
