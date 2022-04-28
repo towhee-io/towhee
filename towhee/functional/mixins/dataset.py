@@ -16,6 +16,7 @@ from typing import Union
 from pathlib import Path
 
 from towhee.functional.entity import Entity
+from towhee.functional.mixins.dag import register_dag
 
 
 class DatasetMixin:
@@ -25,6 +26,7 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
+    @register_dag
     def from_glob(cls, *args): # pragma: no cover
         """
         generate a file list with `pattern`

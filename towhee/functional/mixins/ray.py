@@ -7,6 +7,7 @@ from towhee.hub.file_manager import FileManagerConfig
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.functional.mixins.parallel import EOS
+from towhee.engine.factory import ops
 
 
 def _map_task_ray(unary_op): # pragma: no cover
@@ -69,7 +70,7 @@ class RayMixin: # pragma: no cover
 
         #TODO: Make local functions work with ray
         if path in call_mapping:
-            return map(call_mapping[path](*arg, **kws))
+            return self.map(call_mapping[path](*arg, **kws))
 
         @ray.remote
         class OperatorActor:

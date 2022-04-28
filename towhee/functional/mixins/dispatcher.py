@@ -33,6 +33,7 @@ class DispatcherMixin:
 
     def resolve(self, call_mapping, path, index, *arg, **kws):
         # pylint: disable=protected-access
+        print(call_mapping, path, index, arg, kws)
         if path in call_mapping:
             return call_mapping[path](*arg, **kws)
         else:
