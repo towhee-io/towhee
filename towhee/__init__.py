@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-from typing import List, Union
+from typing import Union
 from towhee.engine import register
 from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.functional import DataCollection, State, Entity
+from towhee.connectors import Connectors as connectors
 
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
@@ -37,6 +37,7 @@ __all__ = [
     'DataCollection',
     'State',
     'Entity',
+    'connectors',
     #
     'glob',
     'glob_zip',

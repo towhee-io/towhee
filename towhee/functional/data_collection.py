@@ -17,6 +17,7 @@ from random import random, sample, shuffle
 import reprlib
 
 from towhee.hparam import param_scope, dynamic_dispatch
+from towhee.functional.entity import Entity
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import AllMixins
 
@@ -459,40 +460,66 @@ class DataCollection(Iterable, AllMixins):
         """
         return DataCollection(range(*arg, **kws))
 
-    def batch(self, size, drop_tail=False) -> 'DataCollection':
+    def batch(self, size, drop_tail=False, raw=True):
         """
         Create small batches from data collections.
 
         Args:
             size (int): window size;
-            drop_tail (bool): drop tailing windows that not full;
+            drop_tail (bool): drop tailing windows that not full, defaults to False;
+            raw (bool): whether to return raw data instead of DataCollection, defaults to True
 
         Returns:
-            DataCollection: data collection of batched windows;
+            DataCollection of batched windows or batch raw data
 
         Examples:
 
         >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(2)]
+        >>> [list(batch) for batch in dc.batch(2, raw=False)]
         [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
 
         >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(3)]
+        >>> dc.batch(3)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
 
         >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(3, drop_tail=True)]
+        >>> dc.batch(3, drop_tail=True)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+
+        >>> from towhee import Entity
+        >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
+        >>> dc.batch(2)
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
         def inner():
             buff = []
+            count = 0
             for ele in self._iterable:
-                buff.append(ele)
-                if len(buff) == size:
-                    yield DataCollection.unstream(buff)
+                if isinstance(ele, Entity):
+                    if count == 0:
+                        buff = ele
+                        for key in ele.__dict__.keys():
+                            buff.__dict__[key] = [buff.__dict__[key]]
+                        count = 1
+                        continue
+                    for key in ele.__dict__.keys():
+                        buff.__dict__[key].append(ele.__dict__[key])
+                else:
+                    buff.append(ele)
+                count += 1
+
+                if count == size:
+                    if raw:
+                        yield buff
+                    else:
+                        yield DataCollection.unstream(buff if isinstance(buff, list) else [buff])
                     buff = []
-            if not drop_tail and len(buff) > 0:
-                yield DataCollection.unstream(buff)
+                    count = 0
+            if not drop_tail and count > 0:
+                if raw:
+                    yield buff
+                else:
+                    yield DataCollection.unstream(buff if isinstance(buff, list) else [buff])
 
         return self._factory(inner())
 
@@ -798,6 +825,10 @@ class DataCollection(Iterable, AllMixins):
                     break
                 yield x
         return self._factory(inner())
+
+    def run(self):
+        for _ in self._iterable:
+            pass
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
