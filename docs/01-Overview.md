@@ -7,7 +7,7 @@ slug: /
 
 Towhee is a framework that provides simple APIs for developing data processing and search application powered by ML.
 
-To accomplish this, we built Towhee atop popular machine learning and unstructured data processing libraries, i.e. `torch`, `timm`, `transformers`, etc. Models or functions from different libraries are wrapped as standard Towhee operators, and can be freely integrated into application-oriented pipelines using a Pythonic API. To ensure user-friendliness, pipelines can be called in just a single line of code, without the need to understand the underlying models or modules used to build it. For more information, take a look at our [quick start](/Getting%20Started/quick-start.mdx) page.
+To accomplish this, we built Towhee atop popular machine learning and unstructured data processing libraries, i.e. `torch`, `timm`, `transformers`, etc. Models or functions from different libraries are wrapped as standard Towhee operators, and can be freely integrated into application-oriented pipelines using a Pythonic API. To ensure user-friendliness, pipelines can be called in just a single line of code, without the need to understand the underlying models or modules used to build it. For more information, take a look at our [quick start](/02-Getting%20Started/quick-start.mdx) page.
 
 ### Problems Towhee solves
 
@@ -37,18 +37,18 @@ To accomplish this, we built Towhee atop popular machine learning and unstructur
 
 #### Getting started:
 
-- [Quick Start](/Getting%20Started/quick-start.mdx): install Towhee and try your first pipeline.
+- [Quick Start](/02-Getting%20Started/quick-start.mdx): install Towhee and try your first pipeline.
 
 #### Tutorials:
 
-- [Reverse image search](/Tutorials/reverse-image-search.md): search for similar or related images.
-- [Image deduplication](/Tutorials/image-deduplication.md): detect and remove identical or near-identical photos.
-- [Music recognition](/Tutorials/music-recognition-system.md): music identification with full-length song or a snippet.
+- [Reverse image search](/03-Tutorials/reverse-image-search.md): search for similar or related images.
+- [Image deduplication](/03-Tutorials/image-deduplication.md): detect and remove identical or near-identical photos.
+- [Music recognition](/03-Tutorials/music-recognition-system.md): music identification with full-length song or a snippet.
 
 #### Supported pipelines:
 
-- [Image embedding pipelines](/Supported%20pipelines/image-embedding.md)
-- [Audio embedding pipelines](/Supported%20pipelines/audio-embedding.md)
+- [Image embedding pipelines](/04-Supported%20pipelines/image-embedding.md)
+- [Audio embedding pipelines](/04-Supported%20pipelines/audio-embedding.md)
 
 #### Supported operators:
 
