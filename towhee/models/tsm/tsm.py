@@ -20,13 +20,11 @@
 import torch
 from torch import nn
 from torch.nn.init import normal_, constant_
-from torch.utils import model_zoo
 
 import numpy as np
 import torchvision
 
 from towhee.models.utils.basic_ops import ConsensusModule
-from towhee.models.tsm.bn_inception import bninception
 from towhee.models.layers.non_local import make_non_local
 from towhee.models.tsm.mobilenet_v2 import mobilenet_v2, InvertedResidual
 from towhee.models.tsm.temporal_shift import TemporalShift, make_temporal_shift
@@ -143,6 +141,7 @@ class TSN(nn.Module):
 
         elif base_model == 'mobilenetv2':
             self.base_model = mobilenet_v2(bool(self.pretrain == 'imagenet'))
+
             self.base_model.last_layer_name = 'classifier'
             self.input_size = 224
             self.input_mean = [0.485, 0.456, 0.406]
@@ -159,20 +158,6 @@ class TSN(nn.Module):
             elif self.modality == 'RGBDiff':
                 self.input_mean = [0.485, 0.456, 0.406] + [0] * 3 * self.new_length
                 self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length
-
-        elif base_model == 'BNInception':
-            self.base_model = bninception(pretrained=self.pretrain)
-            self.input_size = self.base_model.input_size
-            self.input_mean = self.base_model.mean
-            self.input_std = self.base_model.std
-            self.base_model.last_layer_name = 'fc'
-            if self.modality == 'Flow':
-                self.input_mean = [128]
-            elif self.modality == 'RGBDiff':
-                self.input_mean = self.input_mean * (1 + self.new_length)
-            if self.is_shift:
-                self.base_model.build_temporal_ops(
-                    self.num_segments, is_temporal_shift=self.shift_place, shift_div=self.shift_div)
         else:
             raise ValueError('Unknown base model: {}'.format(base_model))
 
@@ -207,7 +192,7 @@ class TSN(nn.Module):
 
     def _get_diff(self, input_x, keep_rgb=False):
         input_c = 3 if self.modality in ['RGB', 'RGBDiff'] else 2
-        input_view = input_x.view((-1, self.num_segments, self.new_length + 1, input_c,) + input.size()[2:])
+        input_view = input_x.view((-1, self.num_segments, self.new_length + 1, input_c,) + input_x.size()[2:])
         if keep_rgb:
             new_data = input_view.clone()
         else:
@@ -238,7 +223,7 @@ class TSN(nn.Module):
 
         new_conv = nn.Conv2d(2 * self.new_length, conv_layer.out_channels,
                              conv_layer.kernel_size, conv_layer.stride, conv_layer.padding,
-                             bool(len(params) == 2))
+                             bias=bool(len(params) == 2))
         new_conv.weight.data = new_kernels
         if len(params) == 2:
             new_conv.bias.data = params[1].data # add bias if neccessary
@@ -247,9 +232,6 @@ class TSN(nn.Module):
         # replace the first convlution layer
         setattr(container, layer_name, new_conv)
 
-        if self.base_model_name == 'BNInception':
-            model_dir = model_zoo.load_url('https://www.dropbox.com/s/35ftw2t4mxxgjae/BNInceptionFlow-ef652051.pth.tar?dl=1')
-            base_model.load_state_dict(model_dir)
         return base_model
 
     def _construct_diff_model(self, base_model, keep_rgb=False):
@@ -275,7 +257,7 @@ class TSN(nn.Module):
 
         new_conv = nn.Conv2d(new_kernel_size[1], conv_layer.out_channels,
                              conv_layer.kernel_size, conv_layer.stride, conv_layer.padding,
-                             bool(len(params) == 2))
+                             bias=bool(len(params) == 2))
         new_conv.weight.data = new_kernels
         if len(params) == 2:
             new_conv.bias.data = params[1].data  # add bias if neccessary
@@ -284,4 +266,3 @@ class TSN(nn.Module):
         # replace the first convolution layer
         setattr(container, layer_name, new_conv)
         return base_model
-
