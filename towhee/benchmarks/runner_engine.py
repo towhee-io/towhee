@@ -42,7 +42,6 @@ def image_embedding(image, loops, threads):
     pipeline = towhee.pipeline('local/image_embedding_resnet50')
     inputs = [image] * loops
     y = pipeline(inputs)
-    print(len(y))
     time2 = time.time()
     del y
     runtime = time2 - time1

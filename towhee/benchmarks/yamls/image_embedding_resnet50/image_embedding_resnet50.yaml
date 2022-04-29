@@ -13,9 +13,8 @@ operators:
   iter_info:
     type: map
 - name: 'flat_op'
-  function: 'local/repeat_operator'
-  init_args:
-    repeat: 1
+  function: 'local/flatmap_operator'
+  init_args: null
   inputs:
   - df: 'img_str'
     name: 'txt'

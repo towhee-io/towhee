@@ -17,16 +17,15 @@ from typing import NamedTuple
 from towhee.operator import Operator, SharedType
 
 
-class RepeatOperator(Operator):
+class FlatmapOperator(Operator):
     """
     repeat input num
     """
 
-    def __init__(self, repeat: int):
+    def __init__(self):
         super().__init__()
-        self._repeat = repeat
 
-    def __call__(self, txt: int):
+    def __call__(self, txt: list):
         Outputs = NamedTuple('Outputs', [('txt', str)])
         return [Outputs(i) for i in txt]
 

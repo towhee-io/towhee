@@ -33,7 +33,6 @@ class ImageDecoder(Operator):
         return cv2.imread(image_path)
 
     def __call__(self, image_path: str):
-        print(image_path)
         image_path = image_path[0] if isinstance(image_path, list) else image_path
         if image_path.startswith('http'):
             bgr_cv_image = ImageDecoder._load_from_remote(image_path)

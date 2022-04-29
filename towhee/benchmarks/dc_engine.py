@@ -27,7 +27,6 @@ def image_embedding(image, loops, threads):
         .image_embedding.timm(model_name = 'resnet50') \
         .to_list()
     time2 = time.time()
-    print(len(dc))
     del dc
     runtime = time2 - time1
     return runtime
