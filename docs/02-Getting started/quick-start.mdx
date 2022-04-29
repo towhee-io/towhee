@@ -1,7 +1,4 @@
----
-id: quick-start
-title: Quick start
----
+# Quick start
 
 import KatacodaBtn from '../../src/components/katacoda/button/katacoda-launch-button.jsx';
 import KatacodaBlock from '../../src/components/katacoda/block/katacoda-shell-block.jsx';
@@ -20,10 +17,10 @@ The browser-based terminal you just brought up is a completely clean environment
 
 First, install Towhee:
 
-<KatacodaBlock>pip3 install towhee==0.6.0</KatacodaBlock>
+<KatacodaBlock>pip3 install towhee</KatacodaBlock>
 
 If you want to install models in towhee, just run:
-<KatacodaBlock>pip3 install towhee.models==0.6.0</KatacodaBlock>
+<KatacodaBlock>pip3 install towhee.models</KatacodaBlock>
 
 <!--First, download the source code from [Github](https://github.com/towhee-io/towhee): <KatacodaBlock>git clone https://github.com/towhee-io/towhee.git</KatacodaBlock>
 
@@ -47,13 +44,13 @@ Data transformations are central to Towhee; Pipelines are simply a series of tra
 
 Now let's instantiate an image embedding pipeline:
 
-<KatacodaBlock>embedding_pipeline = pipeline('image-embedding')</KatacodaBlock>
+<KatacodaBlock>p = pipeline('image-embedding')</KatacodaBlock>
 
 Towhee allows users to specify an image via URL:
 
 <KatacodaBlock>
   output =
-  embedding_pipeline('https://github.com/towhee-io/towhee/blob/main/docs/get-started/towhee.jpeg?raw=true')
+  p('https://github.com/towhee-io/towhee/blob/main/docs/get-started/towhee.jpeg?raw=true')
 </KatacodaBlock>
 
 That's it! The embedding vector for the corresponding input image (`towhee.jpeg`) is stored in the `output` variable:
@@ -71,24 +68,28 @@ Alternatively, we can use a local image instead. Let's grab one:
 
 The default `image-embedding` pipeline supports both HTTP (via the `requests` library) and local paths. Run it through the pipeline as so:
 
-<KatacodaBlock>output = embedding_pipeline('towhee.jpeg')</KatacodaBlock>
+<KatacodaBlock>output = p('towhee.jpeg')</KatacodaBlock>
 
-### Other pipelines
+Note that the default model used by `image-embedding` is `ResNet50` (you can find the corresponding mapping for default pipelines [here](https://github.com/towhee-io/towhee/blob/main/towhee/__init__.py#L25)). The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
 
-Note that the default model used by `image-embedding` is `Resnet50` (you can find the corresponding mapping for default pipelines [here](https://github.com/towhee-io/towhee/blob/main/towhee/__init__.py#L25)). The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
+### Prototyping ML applications
 
-We can also try a different image embedding pipeline instead of the default one. Towhee provides a way to directly call a pipeline repository on the Towhee hub:
+Towhee also provides `DataCollection` - Pythonic method-chaining API for developing applications and running pipelines in just a couple lines of code. Let's import it first:
 
-<KatacodaBlock>
-  embedding_pipeline = pipeline('towhee/image-embedding-resnet101')
-</KatacodaBlock>
+<KatacodaBlock>from towhee.functional import DataCollection</KatacodaBlock>
 
-This automatically loads the pipeline located at `towhee/image-embedding-resnet101` on the Towhee hub.
+Now let's get the list of all numbers divisible by 7 between 0 and 99:
+
+<KatacodaBlock>DataCollection.range(100).filter(lambda x: x % 7).to_list()</KatacodaBlock>
+
+It's as easy as that! Feel free to continue trying - we have more examples here.
+
+### Cleaning up
 
 Once you're finished, be sure to quit out of the enviroment using:
 
 <KatacodaBlock>quit()</KatacodaBlock>
 
-### Try more pipelines
+### Learn more
 
-A summary of our image embedding pipelines can be found [here](../04-Supported pipelines/image-embedding.md). In addition, we recommend that you browse the [hub](https://towhee.io/pipelines) to find more interesting pipelines.
+A list of all the operators we provide can be found [here](https://towhee.io/operators). As always, if you have any questions or comments, feel free to get in touch with us via [Slack](https://slack.towhee.io).
