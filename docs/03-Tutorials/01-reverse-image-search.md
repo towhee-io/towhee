@@ -1,11 +1,4 @@
----
-id: reverse-image-search
-title: Reverse image search
-authors:
-  - name: Shiyu Chen
-    url: https://github.com/shiyu22
-    imageURL: https://github.com/shiyu22.png
----
+# Reverse Image Search
 
 This tutorial can run as [jupyter notebook](https://jupyter.org/install), you can refer to [reverse_image_search.jupyter](https://github.com/towhee-io/towhee/blob/main/tutorials/reverse_image_search.ipynb). Have fun with it!
 
@@ -55,7 +48,7 @@ The downloaded data contains two directories - `dataset` for the image dataset a
 
 ### Install Towhee
 
-We'll use `pip` in this tutorial. We also support installing Towhee via `conda` as well as from source; check out [this page](https://docs.towhee.io/get-started/install) for more information.
+We'll use `pip` in this tutorial. We also support installing Towhee via `conda` as well as from source; check out [this page](/02-Getting%20started/02-install.md) for more information.
 
 ```bash
 $ pip3 install towhee

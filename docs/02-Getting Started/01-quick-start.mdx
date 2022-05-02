@@ -1,0 +1,95 @@
+# Quick Start
+
+import KatacodaBtn from '../../src/components/katacoda/button/katacoda-launch-button.jsx';
+import KatacodaBlock from '../../src/components/katacoda/block/katacoda-shell-block.jsx';
+
+## Launch terminal
+
+In this short tutorial, you can try Towhee for yourself in this browser-based scenario. To begin, click the "Launch Terminal" button below.
+
+<KatacodaBtn />
+
+Clicking on any of the code snippets below will automatically paste the contents of the snippet into the terminal you just launched. Once you close this page, the environment that you just spun up along with all of its contents will be wiped clean.
+
+## Install Towhee
+
+The browser-based terminal you just brought up is a completely clean environment, so we'll need to install Towhee first: (click the following command, it will be copied into the terminal)
+
+First, install Towhee:
+
+<KatacodaBlock>pip3 install towhee</KatacodaBlock>
+
+If you want to install models in towhee, just run:
+<KatacodaBlock>pip3 install towhee.models</KatacodaBlock>
+
+<!--First, download the source code from [Github](https://github.com/towhee-io/towhee): <KatacodaBlock>git clone https://github.com/towhee-io/towhee.git</KatacodaBlock>
+
+Go into the towhee directory: <KatacodaBlock>cd towhee</KatacodaBlock>
+
+Run the provided setup script: <KatacodaBlock>python3 setup.py install</KatacodaBlock>-->
+
+## Some prep work
+
+Once Towhee is installed, let's move onto a bit of prep work.
+
+## Running your first pipeline
+
+Now it's time to generate your first embedding with Towhee! Open up a `python` terminal:
+
+<KatacodaBlock>python3</KatacodaBlock>
+
+Data transformations are central to Towhee; Pipelines are simply a series of transformations connected together in a directed acyclic graph. All pre-built Towhee pipelines are given names that are representative of the task at hand. To create a pipeline, import the `pipeline` function from `towhee`:
+
+<KatacodaBlock>from towhee import pipeline</KatacodaBlock>
+
+Now let's instantiate an image embedding pipeline:
+
+<KatacodaBlock>p = pipeline('image-embedding')</KatacodaBlock>
+
+Towhee allows users to specify an image via URL:
+
+<KatacodaBlock>
+  output =
+  p('https://github.com/towhee-io/towhee/blob/main/docs/get-started/towhee.jpeg?raw=true')
+</KatacodaBlock>
+
+That's it! The embedding vector for the corresponding input image (`towhee.jpeg`) is stored in the `output` variable:
+
+<KatacodaBlock>print(output)</KatacodaBlock>
+
+## Using a local image
+
+Alternatively, we can use a local image instead. Let's grab one:
+
+<KatacodaBlock>
+  wget
+  https://github.com/towhee-io/towhee/raw/main/docs/get-started/towhee.jpeg
+</KatacodaBlock>
+
+The default `image-embedding` pipeline supports both HTTP (via the `requests` library) and local paths. Run it through the pipeline as so:
+
+<KatacodaBlock>output = p('towhee.jpeg')</KatacodaBlock>
+
+Note that the default model used by `image-embedding` is `ResNet50` (you can find the corresponding mapping for default pipelines [here](https://github.com/towhee-io/towhee/blob/main/towhee/__init__.py#L25)). The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
+
+## Prototyping ML applications
+
+Towhee also provides `DataCollection` - Pythonic method-chaining API for developing applications and running pipelines in just a couple lines of code. Let's import it first:
+
+<KatacodaBlock>from towhee.functional import DataCollection</KatacodaBlock>
+
+Now let's get the list of all numbers divisible by 7 between 0 and 99:
+
+<KatacodaBlock>DataCollection.range(100).filter(lambda x: x % 7).to_list()</KatacodaBlock>
+
+It's as easy as that! Feel free to continue trying - we have more examples here.
+
+## Cleaning up
+
+Once you're finished, be sure to quit out of the enviroment using:
+
+<KatacodaBlock>quit()</KatacodaBlock>
+
+## Learn more
+
+A list of all the operators we provide can be found [here](https://towhee.io/operators). As always, if you have any questions or comments, feel free to get in touch with us via [Slack](https://slack.towhee.io).
