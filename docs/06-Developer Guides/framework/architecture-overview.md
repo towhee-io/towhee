@@ -17,7 +17,7 @@ Similar to Spark and Pandas DataFrames, a Towhee DataFrame is a two dimensional 
 
 **Pipeline**
 
-A Towhee Pipeline is a collection of Operators and DataFrames connected together via a [directed acyclic graph](/06-Developer%20guides/framework/DAG-details.md); data flows through the Pipeline in a single direction. During runtime, operators consume data from one or many input dataframes, perform computation, and put the resulting data into the output DataFrame.
+A Towhee Pipeline is a collection of Operators and DataFrames connected together via a [directed acyclic graph](/06-Developer%20Guides/framework/DAG-details.md); data flows through the Pipeline in a single direction. During runtime, operators consume data from one or many input dataframes, perform computation, and put the resulting data into the output DataFrame.
 
 ![avatar](./framework.png)
 
