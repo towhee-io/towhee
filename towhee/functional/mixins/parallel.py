@@ -15,6 +15,7 @@ import concurrent.futures
 from queue import Queue
 import asyncio
 import threading
+import time
 
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
@@ -158,8 +159,9 @@ class ParallelMixin:
         >>> a.zip(b, c).to_list()
         [(0, 0, 0), (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)]
         """
+        # Figure out better optimization
         if self.is_stream:
-            queues = [Queue(maxsize=count) for _ in range(count)]
+            queues = [Queue(count) for _ in range(count)]
         else:
             queues = [Queue() for _ in range(count)]
         loop = asyncio.new_event_loop()
@@ -173,12 +175,34 @@ class ParallelMixin:
                     yield x
 
         async def worker():
+            cached_values = {x: [] for x in range(count)}
+
             for x in self:
-                for queue in queues:
-                    queue.put(x)
-            for queue in queues:
+                #TODO: Use some kind of event instead of wait
+                sleepy = .01
+                while all(y.full() for y in queues):
+                    time.sleep(sleepy)
+
+                for i, queue in enumerate(queues):
+                    if len(cached_values[i]) > 0:
+                        while not queue.full() and len(cached_values[i]) > 0:
+                            queue.put(cached_values[i].pop(0))
+                    if len(cached_values[i]) == 0 and not queue.full():
+                        queue.put(x)
+                    else:
+                        cached_values[i].append(x)
+
+            for i, queue in enumerate(queues):
                 poison = EOS()
-                queue.put(poison)
+                cached_values[i].append(poison)
+
+            while len(cached_values) > 0:
+                for x in list(cached_values.keys()):
+                    if len(cached_values[x]) == 0:
+                        del cached_values[x]
+                    else:
+                        while not queues[x].full() and len(cached_values[x]) > 0:
+                            queues[x].put(cached_values[x].pop(0))
 
         def worker_wrapper():
             loop.run_until_complete(worker())
@@ -246,6 +270,7 @@ class ParallelMixin:
         def inner():
             while True:
                 x = queue.get()
+                queue.task_done()
                 if isinstance(x, EOS):
                     break
                 else:

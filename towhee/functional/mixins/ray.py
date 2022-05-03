@@ -24,6 +24,7 @@ def _map_task_ray(unary_op): # pragma: no cover
 
 
 class RayMixin: # pragma: no cover
+    #pylint: disable=import-outside-toplevel
     """
     Mixin for parallel ray execution.
     """
@@ -47,7 +48,7 @@ class RayMixin: # pragma: no cover
                 Whichever pip installed modules that are used within a custom function supplied to the pipeline,
                 whether it be in lambda functions, locally registered operators, or functions themselves.
         """
-        import ray #pylint: disable=import-outside-toplevel
+        import ray
 
         local_packages = [] if local_packages is None else local_packages
         pip_packages = [] if pip_packages is None else pip_packages
@@ -61,36 +62,36 @@ class RayMixin: # pragma: no cover
         return self
 
     def ray_resolve(self, call_mapping, path, index, *arg, **kws):
-        import ray #pylint: disable=import-outside-toplevel
+        import ray
 
         if self.get_backend_started() is None:
             self.ray_start()
 
-        # TODO: call mapping solution
-        y = call_mapping #pylint: disable=unused-variable
+        #TODO: Make local functions work with ray
+        if path in call_mapping:
+            return call_mapping[path](*arg, **kws)
 
         @ray.remote
         class OperatorActor:
             """Ray actor that runs hub operators."""
 
             def __init__(self, path1, index1, uid, *arg1, **kws1):
-                from towhee import engine #pylint: disable=import-outside-toplevel
-                from towhee.engine.factory import _ops_call_back #pylint: disable=import-outside-toplevel
-                from pathlib import Path #pylint: disable=import-outside-toplevel
-
+                from towhee import engine
+                from towhee.engine.factory import _OperatorLazyWrapper
+                from pathlib import Path
                 engine.DEFAULT_LOCAL_CACHE_ROOT = Path.home() / ('.towhee/ray_actor_cache_' + uid)
                 engine.LOCAL_PIPELINE_CACHE = engine.DEFAULT_LOCAL_CACHE_ROOT / 'pipelines'
                 engine.LOCAL_OPERATOR_CACHE = engine.DEFAULT_LOCAL_CACHE_ROOT / 'operators'
                 x = FileManagerConfig()
                 x.update_default_cache(engine.DEFAULT_LOCAL_CACHE_ROOT)
-                self.op = _ops_call_back(path1, index1, *arg1, **kws1)
+                self.op = _OperatorLazyWrapper.callback(path1, index1, *arg1, **kws1)
 
             def __call__(self, *arg1, **kwargs1):
                 return self.op(*arg1, **kwargs1)
 
             def cleanup(self):
-                from shutil import rmtree #pylint: disable=import-outside-toplevel
-                from towhee import engine #pylint: disable=import-outside-toplevel
+                from shutil import rmtree
+                from towhee import engine
                 try:
                     rmtree(engine.DEFAULT_LOCAL_CACHE_ROOT)
                 except FileNotFoundError:
@@ -123,11 +124,13 @@ class RayMixin: # pragma: no cover
         t = threading.Thread(target=worker)
         t.start()
 
-        return self._factory(inner())
+        child = self._factory(inner())
+        self.register_dag(child)
+        return child
 
 
     def _ray_pmap(self, unary_op, num_worker=None):
-        import ray #pylint: disable=import-outside-toplevel
+        import ray
 
         if self.get_backend_started() is None:
             self.ray_start()
