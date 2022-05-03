@@ -1,9 +1,4 @@
----
-id: pipeline-overview
-title: Pipeline overview
----
-
-### Pipeline overview
+# Pipeline Overview
 
 _Note: if you have not done so, we highly recommend you read our [architecture overview](./architecture-overview.md) section first_
 

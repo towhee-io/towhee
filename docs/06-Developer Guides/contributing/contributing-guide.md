@@ -1,11 +1,8 @@
----
-id: contributing-guide
-title: Contributing guide
----
-
-### Contributing to Towhee
+# Contributing Guide
 
 Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. The Towhee community maintains a list of [Good First Issues](https://github.com/towhee-io/towhee/contribute) - feel free to browse and see if any of these issues pique your interest. Regardless of how you contribute, please remember to be respectful towards your fellow Towheeians.
+
+### Contributing to Towhee
 
 **Sharing a new operator or pipeline**
 

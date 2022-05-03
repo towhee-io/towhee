@@ -1,11 +1,8 @@
----
-id: image-embedding
-title: Image embedding pipelines
----
+# Image Embedding Pipelines
 
 Image embedding pipelines are used for reduction the dimensionality of the input image processed by general neural networks, including deep neural networks and transformers. They are important for images’ classification related applications, because these correspond to a huge dimension data (e.g. a 20 megapixel camera picture with 3 RGB layers means 60 millions of integers as the total info stored in the image).
 
-### Popular Scenarios
+## Popular Scenarios
 
 - [Reverse image search](/03-Tutorials/reverse-image-search.md)
 - [Image deduplication](/03-Tutorials/image-deduplication.md)
@@ -13,7 +10,7 @@ Image embedding pipelines are used for reduction the dimensionality of the input
 - Item tagging
 - Celebrity tagging
 
-### Pipelines
+## Pipelines
 
 These are the pipelines containing pre-trained ResNet models implemented based on this [paper](https://arxiv.org/pdf/1512.03385.pdf):
 
@@ -41,6 +38,6 @@ Each pipeline mentioned above employs a single model. In contrast, an ensemble c
 
 **[image-embedding-efficientnetb7-swinlarge-ensemble](https://hub.towhee.io/towhee/image-embedding-efficientnetb7-swinlarge-ensemble)**
 
-### Pipeline family
+## Pipeline family
 
 All the pipelines mentioned above belong to `image-embedding-pipeline family`. Pipeline members of the family follow [this interface](https://hub.towhee.io/towhee/image-embedding-pipeline-template).

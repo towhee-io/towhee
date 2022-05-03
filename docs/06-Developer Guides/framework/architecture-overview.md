@@ -1,11 +1,6 @@
----
-id: architecture-overview
-title: Architecture overview
----
+# Architecture Overview
 
-### Architecture overview
-
-##### Basic components
+## Basic components
 
 **Operator**
 
