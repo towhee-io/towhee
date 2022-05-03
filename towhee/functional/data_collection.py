@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from typing import Any, Iterable, Iterator, Callable
-from random import random, sample, shuffle
+import random
 import reprlib
 
 from towhee.hparam import param_scope, dynamic_dispatch
@@ -102,19 +102,12 @@ class DataCollection(Iterable, AllMixins):
             return (x[1] for x in self._iterable.iterrows())
         return iter(self._iterable)
 
-    def stream(arg):  # pylint: disable=no-self-argument
+    def stream(self):
         """
         Create a stream data collection.
 
         Examples:
-
-        1. Create a streamed data collection
-
-        >>> dc = DataCollection.stream([0,1,2,3,4])
-        >>> dc.is_stream
-        True
-
-        2. Convert a data collection to streamed version
+        1. Convert a data collection to streamed version
 
         >>> dc = DataCollection([0, 1, 2, 3, 4])
         >>> dc.is_stream
@@ -125,18 +118,10 @@ class DataCollection(Iterable, AllMixins):
         True
         """
         # pylint: disable=protected-access
-        if isinstance(arg, DataCollection):
-            self = arg
-            if self.is_stream:
-                return self
-            return DataCollection.stream(self._iterable)
+        iterable = iter(self._iterable) if not self.is_stream else self._iterable
+        return self._factory(iterable, parent_stream = False)
 
-        iterable = arg
-        if not isinstance(iterable, Iterator):
-            iterable = iter(iterable)
-        return DataCollection(iterable)
-
-    def unstream(arg):  # pylint: disable=no-self-argument
+    def unstream(self):
         """
         Create a unstream data collection.
 
@@ -144,7 +129,7 @@ class DataCollection(Iterable, AllMixins):
 
         1. Create a unstream data collection
 
-        >>> dc = DataCollection.unstream(iter(range(5)))
+        >>> dc = DataCollection(iter(range(5))).unstream()
         >>> dc.is_stream
         False
 
@@ -157,17 +142,8 @@ class DataCollection(Iterable, AllMixins):
         >>> dc.is_stream
         False
         """
-        # pylint: disable=protected-access
-        if isinstance(arg, DataCollection):
-            self = arg
-            if not self.is_stream:
-                return self
-            return DataCollection.unstream(self._iterable)
-
-        iterable = arg
-        if isinstance(iterable, Iterator):
-            iterable = list(iterable)
-        return DataCollection(iterable)
+        iterable = list(self._iterable) if self.is_stream else self._iterable
+        return self._factory(iterable, parent_stream = False)
 
     @property
     def is_stream(self):
@@ -199,21 +175,30 @@ class DataCollection(Iterable, AllMixins):
         """
         return isinstance(self._iterable, Iterator)
 
-    @property
-    def _factory(self):
+    def _factory(self, iterable, parent_stream = True):
         """
         Factory method for data collection.
 
-        This factory method has been wrapped into a `param_scope()` which contains parent infomations.
+        This factory method has been wrapped into a `param_scope()` which contains parent information.
+
+        Args:
+            iterable: An iterable object, the data being stored in the DC
+            parent_stream: Whether to copy the parents format (streamed vs unstreamed)
+
+        Returns:
+            DataCollection: DataCollection encapsulating the iterable.
         """
-        creator = DataCollection.stream if self.is_stream else DataCollection.unstream
+        if parent_stream is True:
+            if self.is_stream:
+                if not isinstance(iterable, Iterator):
+                    iterable = iter(iterable)
+            else:
+                if isinstance(iterable, Iterator):
+                    iterable = list(iterable)
 
-        def wrapper(*arg, **kws):
-            with param_scope() as hp:
-                hp().data_collection.parent = self
-                return creator(*arg, **kws)
-
-        return wrapper
+        with param_scope() as hp:
+            hp().data_collection.parent = self
+            return DataCollection(iterable)
 
     def exception_safe(self):
         """
@@ -446,7 +431,7 @@ class DataCollection(Iterable, AllMixins):
         >>> 0.09 < ratio < 0.11
         True
         """
-        return self._factory(filter(lambda _: random() < ratio, self))
+        return self._factory(filter(lambda _: random.random() < ratio, self))
 
     @staticmethod
     def range(*arg, **kws):
@@ -512,14 +497,14 @@ class DataCollection(Iterable, AllMixins):
                     if raw:
                         yield buff
                     else:
-                        yield DataCollection.unstream(buff if isinstance(buff, list) else [buff])
+                        yield buff if isinstance(buff, list) else [buff]
                     buff = []
                     count = 0
             if not drop_tail and count > 0:
                 if raw:
                     yield buff
                 else:
-                    yield DataCollection.unstream(buff if isinstance(buff, list) else [buff])
+                    yield buff if isinstance(buff, list) else [buff]
 
         return self._factory(inner())
 
@@ -554,11 +539,11 @@ class DataCollection(Iterable, AllMixins):
             for ele in self._iterable:
                 buff.append(ele)
                 if not drop_head or len(buff) == size:
-                    yield DataCollection.unstream(buff.copy())
+                    yield buff.copy()
                 if len(buff) == size:
                     buff = buff[1:]
             while not drop_tail and len(buff) > 0:
-                yield DataCollection.unstream(buff)
+                yield buff
                 buff = buff[1:]
 
         return self._factory(inner())
@@ -587,12 +572,9 @@ class DataCollection(Iterable, AllMixins):
 
         return self._factory(inner())
 
-    def shuffle(self, in_place=False) -> 'DataCollection':
+    def shuffle(self) -> 'DataCollection':
         """
-        Shuffle an unstreamed data collection.
-
-        Args:
-            in_place (bool): shuffle the data collection in place;
+        Shuffle an unstreamed data collection in place.
 
         Returns:
             DataCollection: shuffled data collection;
@@ -602,34 +584,21 @@ class DataCollection(Iterable, AllMixins):
         1. Shuffle:
 
         >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> shuffled = dc.shuffle()
-        >>> tuple(dc) == tuple(range(5))
-        True
-
-        >>> tuple(shuffled) == tuple(range(5))
+        >>> a = dc.shuffle()
+        >>> tuple(a) == tuple(range(5))
         False
 
-        2. In place shuffle:
+        2. streamed data collection is not supported:
 
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> _ = dc.shuffle(True)
-        >>> tuple(dc) == tuple(range(5))
-        False
-
-        3. streamed data collection is not supported:
-
-        >>> dc = DataCollection.stream([0, 1, 2, 3, 4])
+        >>> dc = DataCollection([0, 1, 2, 3, 4]).stream()
         >>> _ = dc.shuffle()
         Traceback (most recent call last):
         TypeError: shuffle is not supported for streamed data collection.
         """
         if self.is_stream:
             raise TypeError('shuffle is not supported for streamed data collection.')
-        if in_place:
-            shuffle(self._iterable)
-            return self
-        else:
-            return DataCollection.unstream(sample(self._iterable, len(self._iterable)))
+        iterable = random.sample(self._iterable, len(self._iterable))
+        return self._factory(iterable)
 
     def __getattr__(self, name):
         """
@@ -794,10 +763,10 @@ class DataCollection(Iterable, AllMixins):
 
         Examples:
 
-        >>> DataCollection.unstream([1, 2, 3])
+        >>> DataCollection([1, 2, 3]).unstream()
         [1, 2, 3]
 
-        >>> DataCollection.stream([1, 2, 3]) #doctest: +ELLIPSIS
+        >>> DataCollection([1, 2, 3]).stream() #doctest: +ELLIPSIS
         <list_iterator object at...>
         """
         if isinstance(self._iterable, list):
@@ -832,3 +801,8 @@ class DataCollection(Iterable, AllMixins):
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

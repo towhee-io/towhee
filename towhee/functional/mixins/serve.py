@@ -52,7 +52,7 @@ class _APIWrapper:
 
     def __enter__(self):
         _APIWrapper.tls.place_holder = self
-        return self._cls.stream(self)
+        return self._cls(self).stream()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if hasattr(_APIWrapper.tls, 'place_holder'):

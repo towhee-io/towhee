@@ -33,7 +33,7 @@ class DatasetMixin:
         files = []
         for path in args:
             files.extend(glob(path))
-        return cls.stream(files)
+        return cls(files).stream()
 
     @classmethod
     def from_zip(cls, url, pattern, mode='r'): # pragma: no cover
@@ -70,7 +70,7 @@ class DatasetMixin:
                     with zfile.open(path, mode=mode) as f:
                         yield f.read()
 
-        return cls.stream(inner())
+        return cls(inner()).stream()
 
     @classmethod
     def from_camera(cls, device_id=0, limit=-1): # pragma: no cover
@@ -89,7 +89,7 @@ class DatasetMixin:
                     yield im
                     cnt -= 1
 
-        return cls.stream(inner())
+        return cls(inner()).stream()
 
     @classmethod
     def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
@@ -103,7 +103,7 @@ class DatasetMixin:
                     string = f.readline()
                     yield Entity(**data)
 
-        return cls.stream(inner())
+        return cls(inner()).stream()
 
     @classmethod
     def from_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
@@ -115,7 +115,7 @@ class DatasetMixin:
                 for line in data:
                     yield Entity(**line)
 
-        return cls.stream(inner())
+        return cls(inner()).stream()
 
     def random_sample(self):
         # core API already exists
