@@ -7,9 +7,9 @@ slug: /
 
 Towhee is a framework that provides simple APIs for developing data processing and search application powered by ML.
 
-To accomplish this, we built Towhee atop popular machine learning and unstructured data processing libraries, i.e. `torch`, `timm`, `transformers`, etc. Models or functions from different libraries are wrapped as standard Towhee operators, and can be freely integrated into application-oriented pipelines using a Pythonic API. To ensure user-friendliness, pipelines can be called in just a single line of code, without the need to understand the underlying models or modules used to build it. For more information, take a look at our [quick start](/02-Getting%20started/quick-start.mdx) page.
+To accomplish this, we built Towhee atop popular machine learning and unstructured data processing libraries, i.e. `torch`, `timm`, `transformers`, etc. Models or functions from different libraries are wrapped as standard Towhee operators, and can be freely integrated into application-oriented pipelines using a Pythonic API. To ensure user-friendliness, pipelines can be called in just a single line of code, without the need to understand the underlying models or modules used to build it. For more information, take a look at our [quick start](/02-Getting%20Started/quick-start.mdx) page.
 
-### Problems Towhee solves
+## Problems Towhee solves
 
 - **An embedding pipeline is far more than a single neural network.** Think about embedding items from a given video. Such embedding process will involve video decompression, key-frame extraction, frame deduplication, object detection, cropping, encoding, etc. For industrial practice, this necessitates a platform that offers end-to-end embedding pipeline solutions, as well as supporting data parallelism and resource management.
 
@@ -25,7 +25,7 @@ To accomplish this, we built Towhee atop popular machine learning and unstructur
 
 \*_These features are coming in a future version of Towhee._
 
-### Design philosophy
+## Design philosophy
 
 - **Convenient**: Towhee pipelines can be created to implement a variety of embedding tasks. Any pipeline creations or embedding tasks can be done in no more than 10 lines of code. We provide a number of pre-built pipelines on our [hub](https://towhee.io/pipelines?limit=30&page=1).
 
@@ -33,26 +33,24 @@ To accomplish this, we built Towhee atop popular machine learning and unstructur
 
 - **Application-oriented**: Instead of being "just another model hub", we provide full end-to-end embedding pipelines. Each pipeline can make use of any number of machine learning models or Python functions in a variety of configurations - ensembles, flows, or any combination thereof.
 
-### Where to go from here
+## Where to go from here
 
-#### Getting started:
+### Getting started:
 
-- [Quick Start](/02-Getting%20started/quick-start.mdx): install Towhee and try your first pipeline.
+- [Quick Start](/02-Getting%20Started/quick-start.mdx): install Towhee and try your first pipeline.
 
-#### Tutorials:
+### Tutorials:
 
 - [Reverse image search](/03-Tutorials/reverse-image-search.md): search for similar or related images.
 - [Image deduplication](/03-Tutorials/image-deduplication.md): detect and remove identical or near-identical photos.
 - [Music recognition](/03-Tutorials/music-recognition-system.md): music identification with full-length song or a snippet.
 
-#### Supported pipelines:
+### Supported pipelines:
 
-- [Image embedding pipelines](/04-Supported%20pipelines/image-embedding.md)
-- [Audio embedding pipelines](/04-Supported%20pipelines/audio-embedding.md)
+- [Image embedding pipelines](/04-Supported%20Pipelines/image-embedding.md)
+- [Audio embedding pipelines](/04-Supported%20Pipelines/audio-embedding.md)
 
-#### Supported operators:
-
-#### Community:
+### Community:
 
 - Github: https://github.com/towhee-io/towhee
 - Slack: https://slack.towhee.io

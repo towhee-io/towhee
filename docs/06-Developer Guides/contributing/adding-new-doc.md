@@ -1,7 +1,4 @@
----
-id: adding-new-doc
-title: Adding a new docs page
----
+# Adding a New Docs Page
 
 All Towhee documentation is written via [markdown](https://www.markdownguide.org/) pages. If you're looking to update a page, please visit the [main Towhee repo](https://github.com/towhee-io/towhee/tree/main/docs) and find the corresponding `.md` file. The sidebar structure on the [docs page](https://docs.towhee.io) matches the directory structure in the `docs` subfolder of the main Towhee repo, so if you're having trouble finding the right file, try going through subdirectories as if they were menu items on the sidebar.
 

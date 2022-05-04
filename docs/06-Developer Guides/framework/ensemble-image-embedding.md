@@ -1,7 +1,4 @@
----
-id: image-ensemble-training
-title: Image ensemble training
----
+# Ensemble Image Embedding
 
 Towhee provides ensemble pipelines for ensemble learning, which utilize multiple models to jointly solve problems like classification, image retrieval and so on. In addition to this, grid search and fusion model training solutions are included in Towhee, allowing developers to spend more time focussing on overall system design.
 
@@ -9,7 +6,7 @@ In the future, a multi-modal fusion will be released to help improve the tools u
 
 Why would someone use an ensemble? We tested an image embedding ensemble for image retrieval on the Imagenet2012 dataset. When we used one model to extract embedding vectors, we got a best result of (0.6034 mAP@50) out of the 4 models we tested. When we concated the embeddings from the four different models, we got a better result of (0.6161 mAP@50), a 1.3% improvement. This result shows that the embedding ensemble method does improve the retrieval result compared to a single model.
 
-### Imagenet dataset ensemble experiments
+## Imagenet dataset ensemble experiments
 
 **Dataset**: ImageNet(Train:128k val: 50k)
 
@@ -17,7 +14,7 @@ Why would someone use an ensemble? We tested an image embedding ensemble for ima
 
 **Evaluation Methodology**: for every image in the ImageNet val dataset, return a sorted list(size 51) for most similar images in the dataset, calculate the metric score for the 50 closest images (first in list ignored as it is the query image). In this test, the images tagged with the same labels as the queried image would be considered positive, and the others would be considered negative.
 
-### Single model experiments
+## Single model experiments
 
 | exp | Models                        | dimension | mAP@50 score       | rank |
 | --- | ----------------------------- | --------- | ------------------ | ---- |

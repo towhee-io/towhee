@@ -1,12 +1,8 @@
----
-id: hub-integration-and-caching
-title: Hub integration and caching
----
+# Hub Integration and Caching
 
 A large part of what makes Towhee unique compared to other pipelining software is its emphasis on open source and integration with its own hub. Towhee hub allows for sharing and contributing pipelines and operators that cover a wide range of use cases, allowing everyone to develop embedding and other ML applications with just a few lines of code.
 
-
-### Towhee Hub
+## Towhee Hub
 
 **Implementation**
 

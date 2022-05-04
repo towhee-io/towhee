@@ -51,7 +51,7 @@ The folder `data` downloaded contains two directories - `music_dataset` for the 
 
 ### Install Towhee
 
-We'll use `pip` in this tutorial. We also support installing Towhee via `conda` as well as from source; check out [this page](/02-Getting%20started/02-install.md) for more information.
+We'll use `pip` in this tutorial. We also support installing Towhee via `conda` as well as from source; check out [this page](/02-Getting%20Started/02-install.md) for more information.
 
 ```bash
 $ pip3 install towhee
