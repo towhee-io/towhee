@@ -2,7 +2,7 @@
 
 _Note: if you have not done so, we highly recommend you read our [architecture overview](./architecture-overview.md) section first_
 
-All Towhee Pipelines are represented through a `YAML` file. This file defines how individual Operators are chained together to generate a usable result. Within Towhee, YAML files are loaded and converted into a [graph representation](./DAG-details.md), which is essentially a Python object instance that is easily readable by a Towhee Engine.
+All Towhee Pipelines are represented through a `YAML` file. This file defines how individual Operators are chained together to generate a usable result. Within Towhee, YAML files are loaded and converted into a [graph representation](./architecture-part-i.md), which is essentially a Python object instance that is easily readable by a Towhee Engine.
 
 Here's an example of a Pipeline YAML, pulled directly from the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50/src/branch/main/image_embedding_resnet50.yaml).
 
