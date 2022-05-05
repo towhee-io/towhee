@@ -33,10 +33,17 @@ class TestActionClip(unittest.TestCase):
     # Test Visual Prompt
     def test_visual_prompt(self):
         clip_state_dict = self.clip_model.state_dict()
-        vis_prompt = action_clip.VisualPrompt('Transf', clip_state_dict, 8)
+        vis_prompt = action_clip.VisualPrompt("Transf", clip_state_dict, 8)
         vis_feats = vis_prompt(self.frames)
         self.assertTrue(vis_feats.shape, (1, 512))
 
+    def test_text_prompt(self):
+        text = ["archery", "dance"]
+        classes, num_text_aug, text_dict = action_clip.text_prompt(text)
+        self.assertTrue(classes.shape, (32, 77))
+        self.assertTrue(text_dict[0].shape, (2, 77))
+        self.assertEqual(num_text_aug, len(text_dict), 16)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

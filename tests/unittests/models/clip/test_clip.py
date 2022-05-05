@@ -14,6 +14,7 @@
 
 import unittest
 import torch
+from towhee.models import clip
 from towhee.models.clip import CLIP
 
 
@@ -38,6 +39,11 @@ class TestClip(unittest.TestCase):
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 
+    def test_text(self):
+        text = ["a dog", "a cat"]
+        text_tokens = clip.tokenize(text)
+        self.assertTrue(text_tokens.shape, (2, 77))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
