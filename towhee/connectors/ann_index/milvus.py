@@ -143,7 +143,10 @@ class MilvusDB(ANNIndex):
 
         data = []
         for arg in args:
-            data.append(arg)
+            if isinstance(arg, list):
+                data += arg
+            else:
+                data.append(arg)
         milvus_result = self.collection.search(
             data=data,
             **kwargs
@@ -169,7 +172,8 @@ class MilvusDB(ANNIndex):
 
     def connect(self):
         from towhee.utils.milvus_utils import connections
-        connections.connect(host=self._host, port=self._port)
+        if not connections.has_connection('default'):
+            connections.connect(host=self._host, port=self._port)
 
     def disconnect(self):
         from towhee.utils.milvus_utils import connections
