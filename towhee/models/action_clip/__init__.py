@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from .visual_prompt import *
+from .text_prompt import *
