@@ -11,9 +11,9 @@ To accomplish this, we built Towhee atop popular machine learning and unstructur
 
 ## Problems Towhee solves
 
-- **An embedding pipeline is far more than a single neural network.** Think about embedding items from a given video. Such embedding process will involve video decompression, key-frame extraction, frame deduplication, object detection, cropping, encoding, etc. For industrial practice, this necessitates a platform that offers end-to-end embedding pipeline solutions, as well as supporting data parallelism and resource management.
+- **Modern ML applications are far more than a single neural network.** Running a modern ML application in production requires a combination of online pre-processing, data transformation, the models themselves, and other ML-related tools. Building an application that recognizes objects within a video, for example, involves decompression, key-frame extraction, image deduplication, object detection, etc. For industrial use cases, this necessitates a platform that offers a fast and robust method for developing end-to-end application pipelines that use ML models in addition to supporting data parallelism and resource management.
 
-  Towhee solves this problem by reintroducing the concept of `Pipeline` as being _application-centric_ instead of _model-centric_. Where model-centric pipelines are composed of a single model followed by auxiliary code, application-centric pipelines treat every single data processing step as a first-class citizen.
+  Towhee solves this problem by reintroducing the concept of `Pipeline` as being _application-centric_ instead of _model-centric_. Where model-centric pipelines are composed of a single model followed by auxiliary code, application-centric pipelines treat every single data processing step as a first-class citizen. Towhee also exposes a [Pythonic API](/02-Getting%20Started/03-data-collection.md) for developing more complex applications in just a couple lines of code.
 
 - **Too many model implementations exist without any interface standard.** Machine learning models (NN-based and traditional) are ubiquitous. Different implementations of machine learning models require different auxiliary code to support testing and fine-tuning, making model evaluation and productionization a tedious task.
 
@@ -44,11 +44,6 @@ To accomplish this, we built Towhee atop popular machine learning and unstructur
 - [Reverse image search](/03-Tutorials/01-reverse-image-search.md): search for similar or related images.
 - [Image deduplication](/03-Tutorials/03-image-deduplication.md): detect and remove identical or near-identical photos.
 - [Music recognition](/03-Tutorials/02-music-recognition-system.md): music identification with full-length song or a snippet.
-
-### Supported pipelines:
-
-- [Image embedding pipelines](/04-Supported%20Pipelines/image-embedding.md)
-- [Audio embedding pipelines](/04-Supported%20Pipelines/audio-embedding.md)
 
 ### Community:
 

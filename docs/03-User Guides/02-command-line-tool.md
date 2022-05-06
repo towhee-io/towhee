@@ -1,15 +1,8 @@
----
-id: cmdline
-title: Command Line Tool
----
-
-### About command-line tool
+# Towhee Command Line Tool
 
 Towhee provides a command-line tool called `towhee`, which helps users and developers to develop and test a pipeline or operator.
 
-### For developers
-
-#### create an operator/pipeline
+## Create an operator/pipeline
 
 To start a new operator, you can prepare initial code with the following command:
 
@@ -19,7 +12,7 @@ $ towhee template --type operator --name new_operator # or -t operator -n new_op
 
 This command creates an empty operator called `new_operator` in the directory with the same name.
 
-#### debugging development
+## Debugging
 
 In order to test the new operator, we need to create an `egg-link` file in the `site-packages` directory. The file helps the python interrupter to find our code when importing `new_operator`.
 
@@ -28,20 +21,20 @@ $ towhee develop --develop ./new_operator
 ```
 where `./new_operator` is the path for the operator's  source code.
 
-#### install an operator/pipeline
+## Installing a new operator
 
 Operators/pipelines can be installed into python environment with the following command:
-```shell 
+```shell
 $ towhee develop -i ./new_operator
 ```
 
-#### packaging 
+## Packaging
 
 ```shell
 $ towhee develop -p ./new_operator
 ```
 
-### For Users
+## Running a pipeline
 
 To run a pipeline from command line
 
