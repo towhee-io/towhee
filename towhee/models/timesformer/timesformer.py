@@ -72,7 +72,7 @@ class TimeSformer(nn.Module):
 
     Examples:
         >>> import torch
-        >>> from towhee.models.create_model.create_model import TimeSformer
+        >>> from towhee.models.timesformer import TimeSformer
         >>>
         >>> fake_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
         >>> model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='divided_space_time')

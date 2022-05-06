@@ -21,22 +21,26 @@ class TestTimesformer(unittest.TestCase):
     """
     Test TimeSformer model
     """
-    # (batch x channels x frames x height x width)
-    dummy_video = torch.randn(1, 3, 4, 224, 224)
-
     # timesformer_k400_8x32 with attention_type='divided_space_time',
-    def test_timesformer(self, video=dummy_video):
-        model = timesformer.create_model(model_name='timesformer_k400_8x224', pretrained=False)
+    def test_timesformer(self):
+        video = torch.randn(1, 3, 4, 4, 4)
+        model = timesformer.create_model(
+            model_name='timesformer_k400_8x224',
+            pretrained=False,
+            img_size=4,
+            patch_size=2
+            )
         pred = model(video)
         feats = model.forward_features(video)
         self.assertTrue(pred.shape == (1, 400))
         self.assertTrue(feats.shape == (1, 768))
 
-    def test_other_types(self, video=dummy_video):
+    def test_other_types(self):
+        video = torch.randn(1, 3, 2, 4, 4)
         for attention_type in ['space_only', 'joint_space_time']:
             model = timesformer.create_model(
                 pretrained=False,
-                img_size=224, num_classes=400, num_frames=4, attention_type=attention_type)
+                img_size=4, num_classes=400, num_frames=2, patch_size=2, attention_type=attention_type)
             pred = model(video)
             feats = model.forward_features(video)
             self.assertTrue(pred.shape == (1, 400))

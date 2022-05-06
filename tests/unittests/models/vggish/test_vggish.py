@@ -20,9 +20,10 @@ from towhee.models.vggish.torch_vggish import VGG
 class TestVGG(unittest.TestCase):
     def test_vgg(self):
         model = VGG()
-        test_input = torch.randn(3, 1, 96, 64)
+        test_input = torch.randn(1, 1, 96, 64)
         out = model(test_input)
-        self.assertTrue(out.shape == (3, 128))
+        self.assertTrue(out.shape == (1, 128))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

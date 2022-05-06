@@ -21,57 +21,71 @@ class TestClip(unittest.TestCase):
     """
     Test CLIP model
     """
-    img = torch.rand(1, 3, 224, 224)
-    text = torch.randint(high=49408, size=(2, 77), dtype=torch.int32)
-
     def test_clip(self):
+        img = torch.rand(1, 3, 4, 4)
+        text = torch.randint(high=49408, size=(2, 77), dtype=torch.int32)
         model = clip.create_model(
-            embed_dim=512, image_resolution=224, vision_layers=12, vision_width=768, vision_patch_size=16,
+            embed_dim=512, image_resolution=4, vision_layers=12, vision_width=768, vision_patch_size=2,
             context_length=77, vocab_size=49408, transformer_width=512, transformer_heads=8, transformer_layers=12
             )
-        image_features = model.encode_image(self.img)
-        text_features = model.encode_text(self.text)
+        image_features = model.encode_image(img)
+        text_features = model.encode_text(text)
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
 
-        logits_per_img, logits_per_text = model(self.img, self.text)
+        logits_per_img, logits_per_text = model(img, text)
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 
     def test_models(self):
-        model = clip.create_model(model_name="clip_vit_b16", pretrained=False, weights_path=None)
-        image_features = model.encode_image(self.img)
-        text_features = model.encode_text(self.text)
+        img = torch.rand(1, 3, 224, 224)
+        text = torch.randint(high=49408, size=(2, 77), dtype=torch.int32)
+
+        model = clip.create_model(
+            model_name="clip_vit_b16",
+            pretrained=False,
+            )
+        image_features = model.encode_image(img)
+        text_features = model.encode_text(text)
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
-        logits_per_img, logits_per_text = model(self.img, self.text)
+        logits_per_img, logits_per_text = model(img, text)
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 
-        model = clip.create_model(model_name="clip_vit_b32", pretrained=False, weights_path=None)
-        image_features = model.encode_image(self.img)
-        text_features = model.encode_text(self.text)
+        model = clip.create_model(
+            model_name="clip_vit_b32",
+            pretrained=False
+            )
+        image_features = model.encode_image(img)
+        text_features = model.encode_text(text)
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
-        logits_per_img, logits_per_text = model(self.img, self.text)
+        logits_per_img, logits_per_text = model(img, text)
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 
-        model = clip.create_model(model_name="clip_resnet_r50", pretrained=False, weights_path=None)
-        image_features = model.encode_image(self.img)
-        text_features = model.encode_text(self.text)
+        model = clip.create_model(
+            model_name="clip_resnet_r50",
+            pretrained=False
+            )
+        image_features = model.encode_image(img)
+        text_features = model.encode_text(text)
         self.assertTrue(image_features.shape, (1, 1024))
         self.assertTrue(text_features.shape, (2, 1024))
-        logits_per_img, logits_per_text = model(self.img, self.text)
+        logits_per_img, logits_per_text = model(img, text)
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 
-        model = clip.create_model(model_name="clip_resnet_r101", pretrained=False, weights_path=None)
-        image_features = model.encode_image(self.img)
-        text_features = model.encode_text(self.text)
+        model = clip.create_model(
+            model_name="clip_resnet_r101",
+            pretrained=False
+            )
+        image_features = model.encode_image(img)
+        text_features = model.encode_text(text)
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
-        logits_per_img, logits_per_text = model(self.img, self.text)
+        logits_per_img, logits_per_text = model(img, text)
         self.assertTrue(logits_per_img.shape, (1, 2))
         self.assertTrue(logits_per_text.shape, (2, 1))
 

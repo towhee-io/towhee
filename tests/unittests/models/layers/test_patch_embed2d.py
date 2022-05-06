@@ -21,22 +21,26 @@ from towhee.models.layers.patch_embed2d import PatchEmbed2D
 
 class PatchEmbed2DTest(unittest.TestCase):
     def test_patch_embed2d(self):
-        test_shape1 = (1, 3, 224, 224)
-        test_shape2 = (1, 3, 5, 224, 224)
+        test_shape1 = (1, 3, 4, 4)
+        test_shape2 = (1, 3, 2, 4, 4)
         fake_img = torch.rand(test_shape1)
         fake_video = torch.rand(test_shape2)
-        model = PatchEmbed2D()
+        model = PatchEmbed2D(img_size=4, patch_size=2)
         out1 = model(fake_img)
         out2 = model(fake_video)
-        self.assertTrue(out1.shape == (1, 196, 768))
-        self.assertTrue(out2.shape == (5, 196, 768))
+        self.assertTrue(out1.shape == (1, 4, 768))
+        self.assertTrue(out2.shape == (2, 4, 768))
 
     def test_patch_embed2d_with_lrp(self):
-        test_shape1 = (1, 3, 224, 224)
+        test_shape1 = (1, 3, 4, 4)
         fake_img = torch.rand(test_shape1)
         kwargs = {'alpha': 1}
-        model = PatchEmbed2D()
+        model = PatchEmbed2D(img_size=4, patch_size=2)
         out1 = model(fake_img)
-        # torch.Size([1, 3, 224, 224])
+        # torch.Size([1, 3, 4, 4])
         out2 = model.relprop(out1, **kwargs)
-        self.assertTrue(out2.shape == torch.Size([1, 3, 224, 224]))
+        self.assertTrue(out2.shape == torch.Size([1, 3, 4, 4]))
+
+
+if __name__ == '__main__':
+    unittest.main()
