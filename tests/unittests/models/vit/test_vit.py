@@ -40,8 +40,7 @@ class VisionTransformerTest(unittest.TestCase):
         _labels_map.append(labels_map[str(i)])
     labels_map = _labels_map
     # labels_map = [labels_map[str(i)] for i in range(1000)]
-    with torch.no_grad():
-        outputs = model(img).squeeze(0)
+    outputs = model(img).squeeze(0)
 
     def test_pretrained(self):
         for idx in torch.topk(self.outputs, k=1).indices.tolist():
