@@ -14,13 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from collections import OrderedDict
 from typing import Tuple, Union
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch import nn
+
+from .clip_utils import get_configs, _download
 
 
 class Bottleneck(nn.Module):
@@ -76,6 +78,7 @@ class AttentionPool2d(nn.Module):
     """
     Attention
     """
+
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         super().__init__()
         self.positional_embedding = nn.Parameter(torch.randn(spacial_dim ** 2 + 1, embed_dim) / embed_dim ** 0.5)
@@ -89,7 +92,7 @@ class AttentionPool2d(nn.Module):
         x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(2, 0, 1)  # NCHW -> (HW)NC
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
-        x, _ = F.multi_head_attention_forward(
+        x, _ = nn.functional.multi_head_attention_forward(
             query=x, key=x, value=x,
             embed_dim_to_check=x.shape[-1],
             num_heads=self.num_heads,
@@ -119,6 +122,7 @@ class ModifiedResNet(nn.Module):
     - Performs anti-aliasing strided convolutions, where an avgpool is prepended to convolutions with stride > 1
     - The final pooling layer is a QKV attention instead of an average pool
     """
+
     def __init__(self, layers, output_dim, heads, input_resolution=224, width=64):
         super().__init__()
         self.output_dim = output_dim
@@ -173,6 +177,7 @@ class ModifiedResNet(nn.Module):
 
 class LayerNorm(nn.LayerNorm):
     """Subclass torch's LayerNorm to handle fp16."""
+
     def forward(self, x):
         orig_type = x.dtype
         ret = super().forward(x.type(torch.float32))
@@ -183,6 +188,7 @@ class QuickGELU(nn.Module):
     """
     QuickGELU
     """
+
     def forward(self, x: torch.Tensor):
         return x * torch.sigmoid(1.702 * x)
 
@@ -191,6 +197,7 @@ class ResidualAttentionBlock(nn.Module):
     """
     ResidualAttentuonBlock
     """
+
     def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None):
         super().__init__()
 
@@ -229,6 +236,7 @@ class VisionTransformer(nn.Module):
     """
     ViT
     """
+
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
         super().__init__()
         self.input_resolution = input_resolution
@@ -250,7 +258,7 @@ class VisionTransformer(nn.Module):
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
         x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(
-            x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1) # shape = [*, grid ** 2 + 1, width]
+            x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
 
@@ -270,6 +278,7 @@ class CLIP(nn.Module):
     """
     CLIP model
     """
+
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -404,62 +413,70 @@ class CLIP(nn.Module):
 def convert_weights(model: nn.Module):
     """Convert applicable model parameters to fp16"""
 
-    def _convert_weights_to_fp16(l):
-        if isinstance(l, (nn.Conv1d, nn.Conv2d, nn.Linear)):
-            l.weight.data = l.weight.data.half()
-            if l.bias is not None:
-                l.bias.data = l.bias.data.half()
+    def _convert_weights_to_fp16(layer):
+        if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Linear)):
+            layer.weight.data = layer.weight.data.half()
+            if layer.bias is not None:
+                layer.bias.data = layer.bias.data.half()
 
-        if isinstance(l, nn.MultiheadAttention):
+        if isinstance(layer, nn.MultiheadAttention):
             for attr in [*[f"{s}_proj_weight" for s in ["in", "q", "k", "v"]], "in_proj_bias", "bias_k", "bias_v"]:
-                tensor = getattr(l, attr)
+                tensor = getattr(layer, attr)
                 if tensor is not None:
                     tensor.data = tensor.data.half()
 
         for name in ["text_projection", "proj"]:
-            if hasattr(l, name):
-                attr = getattr(l, name)
+            if hasattr(layer, name):
+                attr = getattr(layer, name)
                 if attr is not None:
                     attr.data = attr.data.half()
 
     model.apply(_convert_weights_to_fp16)
 
 
-def build_model(state_dict: dict):
-    vit = "visual.proj" in state_dict
+def create_model(
+        model_name: str = None,
+        pretrained: bool = False,
+        weights_path: str = None,
+        jit: bool = False,
+        device: str = None,
+        **kwargs
+):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    if vit:
-        vision_width = state_dict["visual.conv1.weight"].shape[0]
-        vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
-        vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
-        grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
-        image_resolution = vision_patch_size * grid_size
+    if model_name is None:
+        if pretrained:
+            raise AttributeError("Fail to load pretrained model: no model name is specified.")
+        model = CLIP(**kwargs)
     else:
-        counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
-        vision_layers = tuple(counts)
-        vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]
-        output_width = round((state_dict["visual.attnpool.positional_embedding"].shape[0] - 1) ** 0.5)
-        vision_patch_size = None
-        assert output_width ** 2 + 1 == state_dict["visual.attnpool.positional_embedding"].shape[0]
-        image_resolution = output_width * 32
+        configs = get_configs(model_name)
+        configs.update(**kwargs)
+        if "url" in configs:
+            url = configs["url"]
+            configs.pop("url")
+        model = CLIP(**configs)
 
-    embed_dim = state_dict["text_projection"].shape[1]
-    context_length = state_dict["positional_embedding"].shape[0]
-    vocab_size = state_dict["token_embedding.weight"].shape[0]
-    transformer_width = state_dict["ln_final.weight"].shape[0]
-    transformer_heads = transformer_width // 64
-    transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith("transformer.resblocks")))
+        if pretrained:
+            if weights_path:
+                local_path = weights_path
+            elif url:
+                cache_dir = os.path.expanduser("~/.cache/clip")
+                local_path = _download(url, cache_dir)
+            else:
+                raise AttributeError("No url or local path is provided for pretrained model.")
 
-    model = CLIP(
-        embed_dim,
-        image_resolution, vision_layers, vision_width, vision_patch_size,
-        context_length, vocab_size, transformer_width, transformer_heads, transformer_layers
-    )
+            if jit:
+                pass  # todo
+            else:
+                state_dict = torch.load(local_path, map_location=device)
+                for key in ["input_resolution", "context_length", "vocab_size"]:
+                    if key in state_dict:
+                        del state_dict[key]
 
-    for key in ["input_resolution", "context_length", "vocab_size"]:
-        if key in state_dict:
-            del state_dict[key]
-
-    convert_weights(model)
-    model.load_state_dict(state_dict)
-    return model.eval()
+                convert_weights(model)
+                model.load_state_dict(state_dict)
+                if str(device) == "cpu":
+                    model.float()
+    model.eval()
+    return model
