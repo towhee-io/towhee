@@ -15,6 +15,7 @@
 from torch import nn
 from towhee.models.utils.general_utils import to_2tuple
 
+from towhee.models.layers.layers_with_relprop import Conv2d
 
 class PatchEmbed2D(nn.Module):
     """
@@ -58,7 +59,7 @@ class PatchEmbed2D(nn.Module):
         self.num_patches = self.grid_size[0] * self.grid_size[1]
         self.flatten = flatten
 
-        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+        self.proj = Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
@@ -76,6 +77,15 @@ class PatchEmbed2D(nn.Module):
             x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
         x = self.norm(x)
         return x
+
+    def relprop(self, cam, **kwargs):
+        cam = cam.transpose(1, 2)
+        cam = cam.reshape(cam.shape[0], cam.shape[1],
+                          (self.img_size[0] // self.patch_size[0]), (self.img_size[1] // self.patch_size[1]))
+        if not isinstance(self.norm, nn.Identity):
+            cam = self.norm.relprop(cam, **kwargs)
+        cam = self.proj.relprop(cam, **kwargs)
+        return cam
 
 
 # if __name__ == '__main__':
