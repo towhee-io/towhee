@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import warnings
 from collections import OrderedDict
 from typing import Tuple, Union
 
@@ -22,7 +23,9 @@ import numpy as np
 import torch
 from torch import nn
 
-from .clip_utils import get_configs, _download
+from .clip_utils import get_configs, _download, convert_weights, patch_device, patch_float
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class Bottleneck(nn.Module):
@@ -410,30 +413,6 @@ class CLIP(nn.Module):
         return logits_per_image, logits_per_text
 
 
-def convert_weights(model: nn.Module):
-    """Convert applicable model parameters to fp16"""
-
-    def _convert_weights_to_fp16(layer):
-        if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Linear)):
-            layer.weight.data = layer.weight.data.half()
-            if layer.bias is not None:
-                layer.bias.data = layer.bias.data.half()
-
-        if isinstance(layer, nn.MultiheadAttention):
-            for attr in [*[f"{s}_proj_weight" for s in ["in", "q", "k", "v"]], "in_proj_bias", "bias_k", "bias_v"]:
-                tensor = getattr(layer, attr)
-                if tensor is not None:
-                    tensor.data = tensor.data.half()
-
-        for name in ["text_projection", "proj"]:
-            if hasattr(layer, name):
-                attr = getattr(layer, name)
-                if attr is not None:
-                    attr.data = attr.data.half()
-
-    model.apply(_convert_weights_to_fp16)
-
-
 def create_model(
         model_name: str = None,
         pretrained: bool = False,
@@ -467,7 +446,14 @@ def create_model(
                 raise AttributeError("No url or local path is provided for pretrained model.")
 
             if jit:
-                pass  # todo
+                try:
+                    import torchvision  # pylint: disable=unused-import, import-outside-toplevel
+                except ModuleNotFoundError:
+                    warnings.warn("Additional package is required for jit: torchvision")
+                model = torch.jit.load(local_path, map_location=device).eval()
+                patch_device(model, device)
+                if device == "cpu":
+                    patch_float(model)
             else:
                 state_dict = torch.load(local_path, map_location=device)
                 for key in ["input_resolution", "context_length", "vocab_size"]:
@@ -476,7 +462,7 @@ def create_model(
 
                 convert_weights(model)
                 model.load_state_dict(state_dict)
+                model.eval()
                 if str(device) == "cpu":
                     model.float()
-    model.eval()
     return model
