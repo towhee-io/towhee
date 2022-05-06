@@ -14,4 +14,4 @@
 
 from .base import ANNIndex
 from .milvus import MilvusDB
-
+from .faiss import FaissIndexL2, HNSW64Index

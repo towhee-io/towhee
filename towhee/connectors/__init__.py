@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .ann_index import MilvusDB
+from .ann_index import MilvusDB, FaissIndexL2, HNSW64Index
 
 
 class Connectors:
@@ -22,3 +22,11 @@ class Connectors:
     @staticmethod
     def milvus(*args, **kwargs):
         return MilvusDB(*args, **kwargs)
+
+    @staticmethod
+    def faiss_indexl2(dim, path=None):
+        return FaissIndexL2(dim, path)
+
+    @staticmethod
+    def hnsw64_index(dim, path=None):
+        return HNSW64Index(dim, path)
