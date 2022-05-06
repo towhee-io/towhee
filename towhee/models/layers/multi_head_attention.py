@@ -19,7 +19,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+try:
+    # pylint: disable=unused-import
+    import einops
+except ImportError:
+    os.system('pip install einops')
+
 from torch import nn
+
+from einops import rearrange
+from towhee.models.layers.layers_with_relprop import Einsum, Linear, Dropout, Softmax
+
 
 class MultiHeadAttention(nn.Module):
     """
@@ -61,41 +73,111 @@ class MultiHeadAttention(nn.Module):
                  proj_drop_ratio=0.,
                  with_qkv=True):
         super().__init__()
+        _ = with_qkv
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
         self.scale = qk_scale or self.head_dim ** -0.5
-        self.with_qkv = with_qkv
-        if self.with_qkv:
-            self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-            self.proj = nn.Linear(dim, dim)
-            self.proj_drop = nn.Dropout(proj_drop_ratio)
-        self.attn_drop = nn.Dropout(attn_drop_ratio)
+
+        # A = Q*K^T
+        self.matmul1 = Einsum('bhid,bhjd->bhij')
+        # attn = A*V
+        self.matmul2 = Einsum('bhij,bhjd->bhid')
+
+        self.qkv = Linear(dim, dim * 3, qkv_bias)  # pylint: disable=too-many-function-args
+        self.attn_drop = Dropout(attn_drop_ratio)  # pylint: disable=too-many-function-args
+        self.proj = Linear(dim, dim)  # pylint: disable=too-many-function-args
+        self.proj_drop = Dropout(proj_drop_ratio)  # pylint: disable=too-many-function-args
+        self.softmax = Softmax(dim=-1)  # pylint: disable=unexpected-keyword-arg
+
+        self.attn_cam = None
+        self.attn = None
+        self.v = None
+        self.v_cam = None
+        self.attn_gradients = None
+
+    def get_attn(self):
+        return self.attn
+
+    def save_attn(self, attn):
+        self.attn = attn
+        self.attn.requires_grad = True
+
+    def save_attn_cam(self, cam):
+        self.attn_cam = cam
+
+    def get_attn_cam(self):
+        return self.attn_cam
+
+    def get_v(self):
+        return self.v
+
+    def save_v(self, v):
+        self.v = v
+
+    def save_v_cam(self, cam):
+        self.v_cam = cam
+
+    def get_v_cam(self):
+        return self.v_cam
+
+    def save_attn_gradients(self, attn_gradients):
+        self.attn_gradients = attn_gradients
+
+    def get_attn_gradients(self):
+        return self.attn_gradients
 
     def forward(self, x):
         batch_size, new_num_patch, dim = x.shape
 
-        if self.with_qkv:
-            qkv = self.qkv(x).reshape(
-                batch_size,
-                new_num_patch,
-                3,
-                self.num_heads,
-                self.head_dim,
-            ).permute(2, 0, 3, 1, 4)
-            q, k, v = qkv[0], qkv[1], qkv[2]
-        else:
-            qkv = x.reshape(batch_size, new_num_patch, self.num_heads, dim // self.num_heads).permute(0, 2, 1, 3)
-            q, k, v = qkv, qkv, qkv
+        qkv = self.qkv(x).reshape(
+            batch_size,
+            new_num_patch,
+            3,
+            self.num_heads,
+            self.head_dim,
+        ).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
 
+        self.save_v(v)
+
+        self.matmul1([q, k])
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
+        self.save_attn(attn)
+        attn.requires_grad = True
+        attn.register_hook(self.save_attn_gradients)
 
+        self.matmul2([attn, v])
         x = (attn @ v).transpose(1, 2).reshape(batch_size, new_num_patch, dim)
-        if self.with_qkv:
-            x = self.proj(x)
-            x = self.proj_drop(x)
+        x = self.proj(x)
+        x = self.proj_drop(x)
         return x
+
+    def relprop(self, cam, **kwargs):
+        cam = self.proj_drop.relprop(cam, **kwargs)
+        cam = self.proj.relprop(cam, **kwargs)
+        cam = rearrange(cam, 'b n (h d) -> b h n d', h=self.num_heads)
+
+        # attn = A*V
+        (cam1, cam_v) = self.matmul2.relprop(cam, **kwargs)
+        cam1 /= 2
+        cam_v /= 2
+
+        self.save_v_cam(cam_v)
+        self.save_attn_cam(cam1)
+
+        cam1 = self.attn_drop.relprop(cam1, **kwargs)
+        cam1 = self.softmax.relprop(cam1, **kwargs)
+
+        # A = Q*K^T
+        (cam_q, cam_k) = self.matmul1.relprop(cam1, **kwargs)
+        cam_q /= 2
+        cam_k /= 2
+
+        cam_qkv = rearrange([cam_q, cam_k, cam_v], 'qkv b h n d -> b n (qkv h d)', qkv=3, h=self.num_heads)
+
+        return self.qkv.relprop(cam_qkv, **kwargs)
 
 
 # if __name__ == '__main__':
