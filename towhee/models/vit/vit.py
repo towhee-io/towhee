@@ -30,6 +30,21 @@ from towhee.models.utils.init_vit_weights import init_vit_weights
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from .vit_utils import get_configs
 from .vit_block import Block
+from towhee.models.layers.layers_with_relprop import LayerNorm, GELU, Linear, IndexSelect, Add
+
+
+def compute_rollout_attention(all_layer_matrices, start_layer=0):
+    # adding residual consideration
+    num_tokens = all_layer_matrices[0].shape[1]
+    batch_size = all_layer_matrices[0].shape[0]
+    eye = torch.eye(num_tokens).expand(batch_size, num_tokens, num_tokens).to(all_layer_matrices[0].device)
+    all_layer_matrices = [all_layer_matrices[i] + eye for i in range(len(all_layer_matrices))]
+    # all_layer_matrices = [all_layer_matrices[i] / all_layer_matrices[i].sum(dim=-1, keepdim=True)
+    #                       for i in range(len(all_layer_matrices))]
+    joint_attention = all_layer_matrices[start_layer]
+    for i in range(start_layer+1, len(all_layer_matrices)):
+        joint_attention = all_layer_matrices[i].bmm(joint_attention)
+    return joint_attention
 
 
 class VitModel(nn.Module):
@@ -63,8 +78,8 @@ class VitModel(nn.Module):
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.num_tokens = 1
-        norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
-        act_layer = act_layer or nn.GELU
+        norm_layer = norm_layer or partial(LayerNorm, eps=1e-6)
+        act_layer = act_layer or GELU
 
         self.patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_chans=in_c, embed_dim=embed_dim)
         num_patches = self.patch_embed.num_patches
@@ -87,7 +102,7 @@ class VitModel(nn.Module):
             self.has_logits = True
             self.num_features = representation_size
             self.pre_logits = nn.Sequential(OrderedDict([
-                ("fc", nn.Linear(embed_dim, representation_size)),
+                ("fc", Linear(embed_dim, representation_size)),  # pylint: disable=too-many-function-args
                 ("act", nn.Tanh())
             ]))
         else:
@@ -95,12 +110,16 @@ class VitModel(nn.Module):
             self.pre_logits = nn.Identity()
 
         # Classifier head(s)
-        self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
+        self.head = Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()    # pylint: disable=too-many-function-args
 
         # Weight init
         nn.init.trunc_normal_(self.pos_embed, std=0.02)
         nn.init.trunc_normal_(self.cls_token, std=0.02)
         self.apply(init_vit_weights)
+
+        self.pool = IndexSelect()
+        self.add = Add()
+        self.inp_grad = None
 
     def forward_features(self, x):
         # [B, C, H, W] -> [B, num_patches, embed_dim]
@@ -109,15 +128,113 @@ class VitModel(nn.Module):
         cls_token = self.cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_token, x), dim=1)  # [B, 197, 768]
 
-        x = self.pos_drop(x + self.pos_embed)
-        x = self.blocks(x)
+        x = self.add([x, self.pos_embed])
+        x.register_hook(self.save_inp_grad)
+        x = self.pos_drop(x)
+        for blk in self.blocks:
+            x = blk(x)
         x = self.norm(x)
         return self.pre_logits(x[:, 0])
 
     def forward(self, x):
-        x = self.forward_features(x)
+        # [B, C, H, W] -> [B, num_patches, embed_dim]
+        x = self.patch_embed(x)  # [B, 196, 768]
+        # [1, 1, 768] -> [B, 1, 768]
+        cls_token = self.cls_token.expand(x.shape[0], -1, -1)
+        x = torch.cat((cls_token, x), dim=1)  # [B, 197, 768]
+
+        x = self.add([x, self.pos_embed])
+        x.register_hook(self.save_inp_grad)
+        x = self.pos_drop(x)
+        for blk in self.blocks:
+            x = blk(x)
+        x = self.norm(x)
+        x = self.pool(x, dim=1, indices=torch.tensor(0, device=x.device))
+        x = x.squeeze(1)
         x = self.head(x)
         return x
+
+    def save_inp_grad(self, grad):
+        self.inp_grad = grad
+
+    def get_inp_grad(self):
+        return self.inp_grad
+
+    def relprop(self, cam=None, method="transformer_attribution", is_ablation=False, start_layer=0, **kwargs):
+        # print(kwargs)
+        # print("conservation 1", cam.sum())
+        cam = self.head.relprop(cam, **kwargs)
+        cam = cam.unsqueeze(1)
+        cam = self.pool.relprop(cam, **kwargs)
+        cam = self.norm.relprop(cam, **kwargs)
+        for blk in reversed(self.blocks):
+            cam = blk.relprop(cam, **kwargs)
+
+        # print("conservation 2", cam.sum())
+        # print("min", cam.min())
+
+        if method == "full":
+            (cam, _) = self.add.relprop(cam, **kwargs)
+            cam = cam[:, 1:]
+            cam = self.patch_embed.relprop(cam, **kwargs)
+            # sum on channels
+            cam = cam.sum(dim=1)
+            return cam
+
+        elif method == "rollout":
+            # cam rollout
+            attn_cams = []
+            for blk in self.blocks:
+                attn_heads = blk.attn.get_attn_cam().clamp(min=0)
+                avg_heads = (attn_heads.sum(dim=1) / attn_heads.shape[1]).detach()
+                attn_cams.append(avg_heads)
+            cam = compute_rollout_attention(attn_cams, start_layer=start_layer)
+            cam = cam[:, 0, 1:]
+            return cam
+
+        # our method, method name grad is legacy
+        elif method in ("transformer_attribution", "grad"):
+            cams = []
+            for blk in self.blocks:
+                grad = blk.attn.get_attn_gradients()
+                cam = blk.attn.get_attn_cam()
+                cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
+                grad = grad[0].reshape(-1, grad.shape[-1], grad.shape[-1])
+                cam = grad * cam
+                cam = cam.clamp(min=0).mean(dim=0)
+                cams.append(cam.unsqueeze(0))
+            rollout = compute_rollout_attention(cams, start_layer=start_layer)
+            cam = rollout[:, 0, 1:]
+            return cam
+
+        elif method == "last_layer":
+            cam = self.blocks[-1].attn.get_attn_cam()
+            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
+            if is_ablation:
+                grad = self.blocks[-1].attn.get_attn_gradients()
+                grad = grad[0].reshape(-1, grad.shape[-1], grad.shape[-1])
+                cam = grad * cam
+            cam = cam.clamp(min=0).mean(dim=0)
+            cam = cam[0, 1:]
+            return cam
+
+        elif method == "last_layer_attn":
+            cam = self.blocks[-1].attn.get_attn()
+            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
+            cam = cam.clamp(min=0).mean(dim=0)
+            cam = cam[0, 1:]
+            return cam
+
+        elif method == "second_layer":
+            cam = self.blocks[1].attn.get_attn_cam()
+            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
+            if is_ablation:
+                grad = self.blocks[1].attn.get_attn_gradients()
+                grad = grad[0].reshape(-1, grad.shape[-1], grad.shape[-1])
+                cam = grad * cam
+            cam = cam.clamp(min=0).mean(dim=0)
+            cam = cam[0, 1:]
+            return cam
 
 
 def create_model(
