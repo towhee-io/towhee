@@ -23,6 +23,8 @@ from torch import nn
 from towhee.models.layers.multi_head_attention import MultiHeadAttention
 from towhee.models.layers.droppath import DropPath
 from towhee.models.layers.mlp import Mlp
+from towhee.models.layers.layers_with_relprop import GELU, LayerNorm, DropPath, Add, Clone
+
 
 class Block(nn.Module):
     """
@@ -48,8 +50,8 @@ class Block(nn.Module):
                  drop_ratio=0,
                  attn_drop_ratio=0,
                  drop_path_ratio=0,
-                 act_layer=nn.GELU,
-                 norm_layer=nn.LayerNorm):
+                 act_layer=GELU,
+                 norm_layer=LayerNorm):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = MultiHeadAttention(
@@ -64,10 +66,29 @@ class Block(nn.Module):
         self.norm2 = norm_layer(dim)
         self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop_ratio)
 
+        self.add1 = Add()
+        self.add2 = Add()
+        self.clone1 = Clone()
+        self.clone2 = Clone()
+
     def forward(self, x):
-        x = x + self.drop_path(self.attn(self.norm1(x)))
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        x1, x2 = self.clone1(x, 2)
+        x = self.add1([x1, self.attn(self.norm1(x2))])
+        x1, x2 = self.clone2(x, 2)
+        x = self.add2([x1, self.mlp(self.norm2(x2))])
         return x
+
+    def relprop(self, cam, **kwargs):
+        (cam1, cam2) = self.add2.relprop(cam, **kwargs)
+        cam2 = self.mlp.relprop(cam2, **kwargs)
+        cam2 = self.norm2.relprop(cam2, **kwargs)
+        cam = self.clone2.relprop((cam1, cam2), **kwargs)
+
+        (cam1, cam2) = self.add1.relprop(cam, **kwargs)
+        cam2 = self.attn.relprop(cam2, **kwargs)
+        cam2 = self.norm1.relprop(cam2, **kwargs)
+        cam = self.clone1.relprop((cam1, cam2), **kwargs)
+        return cam
 
 # if __name__=='__main__':
 #     import torch
