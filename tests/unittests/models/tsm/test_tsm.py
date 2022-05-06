@@ -100,4 +100,3 @@ class TSMTest(unittest.TestCase):
                     non_local = non_local)
         out = model(input_tensor)
         self.assertTrue(out.shape == torch.Size([3,256]))
-

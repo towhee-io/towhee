@@ -75,7 +75,10 @@ class VideoSwinTransformer(nn.Module):
                  norm_layer=nn.LayerNorm,
                  patch_norm=False,
                  frozen_stages=-1,
-                 use_checkpoint=False):
+                 use_checkpoint=False,
+                 depth_mode=None,
+                 depth_patch_embed_separate_params=True,
+                 ):
         super().__init__()
 
         self.pretrained = pretrained
@@ -91,6 +94,41 @@ class VideoSwinTransformer(nn.Module):
         self.patch_embed = PatchEmbed3D(
             patch_size=patch_size, c=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)
+
+        if depth_mode is not None:
+            assert depth_mode in ["separate_d_tokens", "summed_rgb_d_tokens", "rgbd"]
+            if depth_mode in ["separate_d_tokens", "summed_rgb_d_tokens"]:
+                depth_chans = 1
+                assert (
+                    depth_patch_embed_separate_params
+                ), "separate tokenization needs separate parameters"
+                if depth_mode == "separate_d_tokens":
+                    raise NotImplementedError()
+            else:
+                assert depth_mode == "rgbd"
+                depth_chans = 4
+
+            self.depth_patch_embed_separate_params = depth_patch_embed_separate_params
+
+            if depth_patch_embed_separate_params:
+                self.depth_patch_embed = PatchEmbed3D(
+                    patch_size=patch_size,
+                    c=depth_chans,
+                    embed_dim=embed_dim,
+                    norm_layer=norm_layer if self.patch_norm else None,
+                )
+            else:
+                # share parameters with patch_embed
+                # delete the layer we built above
+                del self.patch_embed
+                assert depth_chans == 4
+                self.patch_embed = PatchEmbed3D(
+                    patch_size=patch_size,
+                    c=3,
+                    embed_dim=embed_dim,
+                    additional_variable_channels=[1],
+                    norm_layer=norm_layer if self.patch_norm else None,
+                )
 
         self.pos_drop = nn.Dropout(p=drop_rate)
 
@@ -169,6 +207,7 @@ class VideoSwinTransformer(nn.Module):
         relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
         for k in relative_position_bias_table_keys:
             relative_position_bias_table_pretrained = state_dict[k]
+            # pylint: disable=E1136
             relative_position_bias_table_current = self.state_dict()[k]
             l1, nh1 = relative_position_bias_table_pretrained.size()
             l2, nh2 = relative_position_bias_table_current.size()
@@ -193,8 +232,32 @@ class VideoSwinTransformer(nn.Module):
         del checkpoint
         torch.cuda.empty_cache()
 
+    def get_patch_embedding(self, x):
+        # x: B x C x T x H x W
+        assert x.ndim == 5
+        has_depth = x.shape[1] == 4
+
+        if has_depth:
+            if self.depth_mode in ["summed_rgb_d_tokens"]:
+                x_rgb = x[:, :3, ...]
+                x_d = x[:, 3:, ...]
+                x_d = self.depth_patch_embed(x_d)
+                x_rgb = self.patch_embed(x_rgb)
+                # sum the two sets of tokens
+                x = x_rgb + x_d
+            elif self.depth_mode == "rgbd":
+                if self.depth_patch_embed_separate_params:
+                    x = self.depth_patch_embed(x)
+                else:
+                    x = self.patch_embed(x)
+            else:
+                raise NotImplementedError()
+        else:
+            x = self.patch_embed(x)
+        return x
+
     def forward(self, x):
-        x = self.patch_embed(x)
+        x = self.get_patch_embedding(x)
 
         x = self.pos_drop(x)
 
