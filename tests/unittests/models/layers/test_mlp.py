@@ -21,9 +21,9 @@ from towhee.models.layers.mlp import Mlp
 
 class MlpTest(unittest.TestCase):
     def test_mlp(self):
-        in_features = 32
-        hidden_features = 64
-        out_features = 128
+        in_features = 4
+        hidden_features = 6
+        out_features = 8
         mod = Mlp(in_features, hidden_features, out_features)
         fake_input = torch.rand(1, in_features)
         output = mod(fake_input)
@@ -31,13 +31,16 @@ class MlpTest(unittest.TestCase):
         self.assertTrue(output.shape == gt_output_shape)
 
     def test_mlp_with_lrp(self):
-        in_features = 32
-        hidden_features = 64
-        out_features = 128
+        in_features = 4
+        hidden_features = 6
+        out_features = 8
         mod = Mlp(in_features, hidden_features, out_features)
         fake_input = torch.rand(1, in_features)
         output = mod(fake_input)
         kwargs = {'alpha': 1}
-        # torch.Size([1, 32])
         output2 = mod.relprop(output, **kwargs)
-        self.assertTrue(output2.shape == torch.Size([1, 32]))
+        self.assertTrue(output2.shape == torch.Size([1, 4]))
+
+
+if __name__ == '__main__':
+    unittest.main()

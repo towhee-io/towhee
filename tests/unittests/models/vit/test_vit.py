@@ -40,8 +40,7 @@ class VisionTransformerTest(unittest.TestCase):
         _labels_map.append(labels_map[str(i)])
     labels_map = _labels_map
     # labels_map = [labels_map[str(i)] for i in range(1000)]
-    with torch.no_grad():
-        outputs = model(img).squeeze(0)
+    outputs = model(img).squeeze(0)
 
     def test_pretrained(self):
         for idx in torch.topk(self.outputs, k=1).indices.tolist():
@@ -52,8 +51,8 @@ class VisionTransformerTest(unittest.TestCase):
             self.assertEqual('giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca', self.labels_map[idx])
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
-        model = vit.create_model(num_classes=400)
+        dummy_img = torch.rand(1, 3, 4, 4)
+        model = vit.create_model(num_classes=400, img_size=4, patch_size=2)
         features = model.forward_features(dummy_img)
         self.assertTrue(features.shape, (1, 768))
         out = model(dummy_img)

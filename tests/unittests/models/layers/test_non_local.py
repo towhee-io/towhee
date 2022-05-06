@@ -22,66 +22,71 @@ class TestNonLocal(unittest.TestCase):
     """
     def test_non_local_blocknd(self):
         """
-        Test non-local bloacknd.
+        Test non-local blocknd.
         """
         in_channels = 3
         inter_channels = None
         dimension = 3
         sub_sample = True
         bn_layer = True
-        net = _NonLocalBlockND(in_channels = in_channels,
-                               inter_channels = inter_channels,
-                               dimension = dimension,
-                               sub_sample = sub_sample,
-                               bn_layer = bn_layer)
-        input_tensor = torch.randn(1,3,1,224,224)
+        net = _NonLocalBlockND(in_channels=in_channels,
+                               inter_channels=inter_channels,
+                               dimension=dimension,
+                               sub_sample=sub_sample,
+                               bn_layer=bn_layer)
+        input_tensor = torch.randn(1, 3, 1, 4, 4)
         output_tensor = net(input_tensor)
-        self.assertTrue(output_tensor.shape == torch.Size([1,3,1,224,224]))
+        self.assertTrue(output_tensor.shape == torch.Size([1, 3, 1, 4, 4]))
 
     def test_non_local_block1d(self):
         """
-        Test non-local bloack1d.
+        Test non-local block1d.
         """
         in_channels = 1
         inter_channels = None
         sub_sample = True
         bn_layer = True
-        net = NONLocalBlock1D(in_channels = in_channels,
-                              inter_channels = inter_channels,
-                              sub_sample = sub_sample,
-                              bn_layer = bn_layer)
-        input_tensor = torch.randn(1,1,224)
+        net = NONLocalBlock1D(in_channels=in_channels,
+                              inter_channels=inter_channels,
+                              sub_sample=sub_sample,
+                              bn_layer=bn_layer)
+        input_tensor = torch.randn(1, 1, 4)
         output_tensor = net(input_tensor)
-        self.assertTrue(output_tensor.shape == torch.Size([1,1,224]))
+        self.assertTrue(output_tensor.shape == torch.Size([1, 1, 4]))
 
     def test_non_local_block2d(self):
         """
-        Test non-local bloack2d.
+        Test non-local block2d.
         """
         in_channels = 2
         inter_channels = None
         sub_sample = True
         bn_layer = True
-        net = NONLocalBlock2D(in_channels = in_channels,
-                              inter_channels = inter_channels,
-                              sub_sample = sub_sample,
-                              bn_layer = bn_layer)
-        input_tensor = torch.randn(1,2,224,224)
+        net = NONLocalBlock2D(in_channels=in_channels,
+                              inter_channels=inter_channels,
+                              sub_sample=sub_sample,
+                              bn_layer=bn_layer)
+        input_tensor = torch.randn(1, 2, 4, 4)
         output_tensor = net(input_tensor)
-        self.assertTrue(output_tensor.shape == torch.Size([1,2,224,224]))
+        self.assertTrue(output_tensor.shape == torch.Size([1, 2, 4, 4]))
 
     def test_non_local_block3d(self):
         """
-        Test non-local bloack3d.
+        Test non-local block3d.
         """
         in_channels = 3
         inter_channels = None
         sub_sample = True
         bn_layer = True
-        net = NONLocalBlock3D(in_channels = in_channels,
-                              inter_channels = inter_channels,
-                              sub_sample = sub_sample,
-                              bn_layer = bn_layer)
-        input_tensor = torch.randn(1,3,1,224,224)
+        net = NONLocalBlock3D(in_channels=in_channels,
+                              inter_channels=inter_channels,
+                              sub_sample=sub_sample,
+                              bn_layer=bn_layer)
+        input_tensor = torch.randn(1, 3, 1, 4, 4)
         output_tensor = net(input_tensor)
-        self.assertTrue(output_tensor.shape == torch.Size([1,3,1,224,224]))
+        self.assertTrue(output_tensor.shape == torch.Size([1, 3, 1, 4, 4]))
+
+
+if __name__ == '__main__':
+    unittest.main()
+

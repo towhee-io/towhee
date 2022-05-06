@@ -21,7 +21,11 @@ from towhee.models.layers.patch_embed3d import PatchEmbed3D
 
 class PatchEmbed3DTest(unittest.TestCase):
     def test_patch_embed3d(self):
-        input_tensor = torch.rand(3, 3, 224, 224, 3)
+        input_tensor = torch.rand(1, 3, 4, 4, 3)
         pe3 = PatchEmbed3D()
-        output = pe3(input_tensor)  # shape: torch.Size([3, 96, 112, 56, 1])
-        self.assertTrue(output.shape == torch.Size([3, 96, 112, 56, 1]))
+        output = pe3(input_tensor)
+        self.assertTrue(output.shape == torch.Size([1, 96, 2, 1, 1]))
+
+
+if __name__ == '__main__':
+    unittest.main()

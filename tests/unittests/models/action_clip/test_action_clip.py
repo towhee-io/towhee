@@ -16,7 +16,7 @@ import unittest
 import torch
 
 from towhee.models import action_clip
-from towhee.models.clip import CLIP
+from towhee.models import clip
 
 
 class TestActionClip(unittest.TestCase):
@@ -24,11 +24,10 @@ class TestActionClip(unittest.TestCase):
     Test ActionClip model
     """
     # (b, t, c)
-    frames = torch.rand(1, 8, 512)
-    clip_model = CLIP(
-            embed_dim=512, image_resolution=224, vision_layers=12, vision_width=768, vision_patch_size=16,
-            context_length=77, vocab_size=49408, transformer_width=512, transformer_heads=8, transformer_layers=12
-            )
+    frames = torch.rand(1, 4, 512)
+    clip_model = clip.create_model(
+            embed_dim=512, image_resolution=4, vision_layers=12, vision_width=768, vision_patch_size=2,
+            context_length=77, vocab_size=49408, transformer_width=512, transformer_heads=8, transformer_layers=12)
 
     # Test Visual Prompt
     def test_visual_prompt(self):

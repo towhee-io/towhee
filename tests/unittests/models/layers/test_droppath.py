@@ -21,10 +21,10 @@ from towhee.models.layers.droppath import DropPath
 
 class DropPathTest(unittest.TestCase):
     def test_droppath(self):
-        mod = DropPath(drop_prob = 0.5)
+        mod = DropPath(drop_prob=0.5)
 
-        h = 224
-        w = 224
+        h = 4
+        w = 4
         in_features = 3
 
         fake_input = torch.rand(1, in_features, h, w)
@@ -33,3 +33,6 @@ class DropPathTest(unittest.TestCase):
         gt_output_shape = torch.Size([1, out_features, h, w])
         self.assertTrue(output.shape == gt_output_shape)
 
+
+if __name__ == '__main__':
+    unittest.main()

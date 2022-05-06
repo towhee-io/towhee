@@ -13,12 +13,15 @@
 # limitations under the License.
 import unittest
 import torch
-from towhee.models.layers.padding_functions import get_padding, get_same_padding, is_static_pad, pad_same, get_padding_value
+from towhee.models.layers.padding_functions import get_padding, get_same_padding, is_static_pad, pad_same, \
+    get_padding_value
+
 
 class TestPaddingFunctions(unittest.TestCase):
     """
     Test Padding utility functions
     """
+
     def test_get_padding(self):
         """
         Test get_padding_function.
@@ -41,13 +44,13 @@ class TestPaddingFunctions(unittest.TestCase):
         k = 3
         s = 1
         d = 1
-        self.assertEqual(get_same_padding(x,k,s,d), 2)
+        self.assertEqual(get_same_padding(x, k, s, d), 2)
 
         x = 224
         k = 5
         s = 1
         d = 1
-        self.assertEqual(get_same_padding(x,k,s,d), 4)
+        self.assertEqual(get_same_padding(x, k, s, d), 4)
 
     def test_is_static_pad(self):
         """
@@ -71,7 +74,7 @@ class TestPaddingFunctions(unittest.TestCase):
         stride = 1
         dilation = 1
 
-        padding, dynamic = get_padding_value('same', kernel, stride = stride, dilation = dilation)
+        padding, dynamic = get_padding_value('same', kernel, stride=stride, dilation=dilation)
         self.assertEqual(padding, 1)
         self.assertEqual(dynamic, False)
 
@@ -79,12 +82,15 @@ class TestPaddingFunctions(unittest.TestCase):
         """
         Test pad same function.
         """
-        x = torch.Tensor(1,3,224,224)
-        k = [3,3]
-        s = [1,1]
-        d = [1,1]
+        x = torch.Tensor(1, 3, 4, 4)
+        k = [3, 3]
+        s = [1, 1]
+        d = [1, 1]
         value = 128.0
         out = pad_same(x, k, s, d, value)
-        self.assertEqual(out.shape, torch.Size((1,3,226,226)))
-        self.assertEqual(out[0,0,0,0], 128.0)
+        self.assertEqual(out.shape, torch.Size((1, 3, 6, 6)))
+        self.assertEqual(out[0, 0, 0, 0], 128.0)
 
+
+if __name__ == '__main__':
+    unittest.main()
