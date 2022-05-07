@@ -224,10 +224,9 @@ def data_collection_API_cases_runner():
 
 def test_caller():
 
-    print("PASS CI tests")
-    # pipeline_runner()
+    pipeline_runner()
     # image_class_pipeline_runner()
-    # data_collection_API_cases_runner()
+    data_collection_API_cases_runner()
     # skip audio tests for issue 463
     # audio_class_pipeline_runner()
 
