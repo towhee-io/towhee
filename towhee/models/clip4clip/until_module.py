@@ -18,27 +18,16 @@
 import logging
 import torch
 import torch.nn.functional as F
-import math
 from torch import nn
 
 logger = logging.getLogger(__name__)
 
-def gelu(x):
-    """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-    """
-    return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
-
-def swish(x):
-    return x * torch.sigmoid(x)
-
-ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish}
 
 class LayerNorm(nn.Module):
     """
     Layer normalization component.
     """
+
     def __init__(self, hidden_size, eps=1e-12):
         """Construct a layernorm module in the TF style (epsilon inside the square root).
         """
@@ -53,10 +42,12 @@ class LayerNorm(nn.Module):
         x = (x - u) / torch.sqrt(s + self.variance_epsilon)
         return self.weight * x + self.bias
 
+
 class PreTrainedModel(nn.Module):
     """ An abstract class to handle weights initialization and
         a simple interface for dowloading and loading pretrained models.
     """
+
     def init_weights(self, module):
         """ Initialize the weights.
         """
@@ -74,8 +65,6 @@ class PreTrainedModel(nn.Module):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    # def resize_token_embeddings(self, new_num_tokens=None):
-    #     raise NotImplementedError
 
 ##################################
 ###### LOSS FUNCTION #############
@@ -87,4 +76,3 @@ class CrossEn(nn.Module):
         nce_loss = -logpt
         sim_loss = nce_loss.mean()
         return sim_loss
-
