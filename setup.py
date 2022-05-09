@@ -53,7 +53,9 @@ if '--models' in sys.argv:
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': ['towhee=towhee.command.cmdline:main'],
-          })
+          },
+          long_description_content_type='text/markdown'
+          )
 else:
     setup(use_scm_version={'local_scheme': 'no-local-version'},
           setup_requires=['setuptools_scm'],
@@ -66,4 +68,6 @@ else:
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': ['towhee=towhee.command.cmdline:main'],
-          })
+          },
+          long_description_content_type='text/markdown'
+          )
