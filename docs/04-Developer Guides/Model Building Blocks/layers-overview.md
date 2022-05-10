@@ -1,11 +1,8 @@
----
-id: layers-overview
-title: Architecture part III - Layers
----
+# Built-in Layers
 
-Towhee offers an increasing group of layer blocks, which play as 'legos' for fast construction of machine learning models. Classical and newly published models are all supported.
+Towhee offers a large group of neural network building blocks which can be used as "legos" for fast construction of machine learning models. Classical, modern, and hypermodern blocks are all supported.
 
-Layer blocks, referred to as layers in Towhee, are reusable and time-saving, thus not needing to be reimplemented for developers, researchers, and machine learning projects. For computation concerns, layers can be optimized for different platforms. See Towhee's layers in [repo](https://github.com/towhee-io/towhee/tree/main/towhee/models/layers). Developers are welcome to contribute to the diversity of reusable layers.
+Layer blocks, referred to as `layers` in Towhee, are reusable and time-saving, thus not needing to be reimplemented for developers, researchers, and machine learning projects. For computation concerns, layers can be optimized for different platforms. See Towhee's layers in [repo](https://github.com/towhee-io/towhee/tree/main/towhee/models/layers). Developers are welcome to contribute to the diversity of reusable layers.
 
 **Example**
 

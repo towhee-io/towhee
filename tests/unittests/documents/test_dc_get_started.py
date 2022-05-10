@@ -15,7 +15,7 @@
 import unittest
 import doctest
 
-suit = doctest.DocFileSuite('../../../docs/02-Getting Started/03-data-collection.md')
+suit = doctest.DocFileSuite('../../../docs/03-User Guides/01-DataCollection/01-data-collection.md')
 unittest.TextTestRunner(verbosity=5).run(suit)
 
 if __name__ == '__main__':
