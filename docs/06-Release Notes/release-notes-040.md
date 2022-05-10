@@ -1,3 +1,5 @@
+# Towhee v0.4.0 Release Notes
+
 #### Highlights
 - The Towhee website has a new look and feel! The new Towhee website includes several important docs, including in-depth Towhee tutorials, pipeline and operator summaries, development and contributing guides, and more. See https://docs.towhee.io. If you have any feedback for the website design or encounter any bugs, please open an issue through Github.
 - Towhee now offers pre-built embedding pipelines that use transformer-based models: SwinTransformer and ViT.

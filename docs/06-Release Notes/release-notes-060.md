@@ -1,4 +1,4 @@
-# v0.6.0 Release Notes
+# Towhee v0.6.0 Release Notes
 
 #### Highlights
 

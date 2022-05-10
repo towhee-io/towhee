@@ -1,4 +1,4 @@
-# v0.5.0 Release Notes
+# Towhee v0.5.0 Release Notes
 
 #### Highlights
 - training/fine-tuning is supported! For the cases when an operator is a wrapper of neural network model,  users can train or fine-tune the model via `train()` method of the operator.
