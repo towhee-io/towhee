@@ -115,15 +115,15 @@ class RepoCommand:
         print('\nInitializing the repo file structure...\n')
         if is_pipeline:
             temp_path = Path(self._args.dir) / 'pipeline_template'
-            GitUtils('towhee', 'pipeline-template').clone(local_repo_path=temp_path)
+            PipelineManager('towhee', 'pipeline-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_pipeline(temp_path, repo_path)
         elif self._args.type == 'pyop':
             temp_path = Path(self._args.dir) / 'pyoperator_template'
-            GitUtils('towhee', 'pyoperator-template').clone(local_repo_path=temp_path)
+            OperatorManager('towhee', 'pyoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_pyoperator(temp_path, repo_path)
         elif self._args.type == 'nnop':
             temp_path = Path(self._args.dir) / 'nnoperator_template'
-            GitUtils('towhee', 'nnoperator-template').clone(local_repo_path=temp_path)
+            OperatorManager('towhee', 'nnoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_nnoperator(temp_path, repo_path, self._args.framework)
         shutil.rmtree(str(temp_path))
 
