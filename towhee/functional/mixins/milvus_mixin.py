@@ -19,11 +19,13 @@ from towhee.utils.log import engine_log
 from ..entity import Entity
 
 
-def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size: int): # pragma: no cover
+def _milvus_insert(iterable: Iterable, index: Tuple[str], host, port,
+                   collection_name, batch_size: int = 100):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.milvus_utils import Collection, MutationResult
-    if isinstance(collection, str):
-        collection = Collection(collection)
+    from towhee.utils.milvus_utils import Collection, MutationResult, connections
+    connections.connect(host=host, port=port)
+    collection = Collection(name=collection_name)
+
     primary_keys = []
     insert_count = 0
     first = True
@@ -65,33 +67,37 @@ def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size
     return milvus_mr
 
 
-def _to_milvus_callback(self): # pragma: no cover
+def _to_milvus_callback(self):  # pragma: no cover
     # pylint: disable=consider-using-get
     def wrapper(_: str, index, *arg, **kws):
         batch_size = 1
         if index is not None and isinstance(index, str):
             index = (index,)
 
-        if arg is not None and len(arg) == 1:
-            collection, = arg
-        elif arg is not None and len(arg) == 2:
-            collection, batch_size = arg
+        if arg is not None and len(arg) == 3:
+            host, port, collection_name = arg
 
-        if 'collection' in kws:
-            collection = kws['collection']
-        if 'batch' in kws:
-            batch_size = int(kws['batch'])
+        if 'host' in kws:
+            host = kws['host']
+
+        if 'port' in kws:
+            port = kws['port']
+
+        if 'collection_name' in kws:
+            collection_name = kws['collection_name']
+
+        batch_size = 100
 
         dc_data = self
         if 'unstream' not in kws or kws['unstream']:
             dc_data = self.unstream()
 
-        _ = _milvus_insert(dc_data, index, collection, batch_size)
+        _ = _milvus_insert(dc_data, index, host, port, collection_name, batch_size)
         return dc_data
     return wrapper
 
 
-class MilvusMixin: # pragma: no cover
+class MilvusMixin:  # pragma: no cover
     """
     Mixins for Milvus, such as loading data into Milvus collections. Note that the Milvus collection is created before loading the data.
     Refer to https://milvus.io/docs/v2.0.x/create_collection.md.
@@ -120,6 +126,7 @@ class MilvusMixin: # pragma: no cover
     ...           .to_milvus['vec'](collection='test', batch=1000)
     ... )
     """
+
     def __init__(self):
         super().__init__()
         self.to_milvus = param_scope().dispatch(_to_milvus_callback(self))

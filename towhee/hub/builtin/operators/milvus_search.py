@@ -17,6 +17,7 @@ from towhee.engine import register
 # pylint: disable=import-outside-toplevel
 # pylint: disable=invalid-name
 
+
 @register(name='builtin/milvus_search')
 class milvus_search:
     """
@@ -55,13 +56,12 @@ class milvus_search:
     [<Entity dict_keys(['path', 'img', 'vec', 'results'])>,
      <Entity dict_keys(['path', 'img', 'vec', 'results'])>]
     """
-    def __init__(self, collection, **kwargs):
-        from towhee.utils.milvus_utils import Collection
 
-        if isinstance(collection, str):
-            self.collection = Collection(collection)
-        elif isinstance(collection, Collection):
-            self.collection = collection
+    def __init__(self, collection_name, **kwargs):
+        from towhee.utils.milvus_utils import Collection, connections
+        if 'host' in kwargs and 'port' in kwargs:
+            connections.connect(host=kwargs['host'], port=kwargs['port'])
+        self.collection = Collection(collection_name)
         self.kwargs = kwargs
 
     def __call__(self, query: list):
