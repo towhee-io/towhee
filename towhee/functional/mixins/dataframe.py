@@ -21,7 +21,7 @@ from towhee.hparam import dynamic_dispatch, param_scope
 # pylint: disable=protected-access
 
 
-class EntityMixin:
+class DataFrameMixin:
     """
     Mixin to help deal with Entity.
 
@@ -30,7 +30,7 @@ class EntityMixin:
     1. define an operator with `register` decorator
 
     >>> from towhee import register
-    >>> from towhee import DataCollection
+    >>> from towhee import DataFrame
     >>> @register
     ... def add_1(x):
     ...     return x+1
@@ -38,7 +38,7 @@ class EntityMixin:
     2. apply the operator to named field of entity and save result to another named field
 
     >>> (
-    ...     DataCollection([dict(a=1, b=2), dict(a=2, b=3)])
+    ...     DataFrame([dict(a=1, b=2), dict(a=2, b=3)])
     ...         .as_entity()
     ...         .add_1['a', 'c']() # <-- use field `a` as input and filed `c` as output
     ...         .as_str()
@@ -53,15 +53,15 @@ class EntityMixin:
     1. Select the entity on one specified field:
 
     >>> from towhee import Entity
-    >>> from towhee import DataCollection
-    >>> dc = DataCollection([Entity(a=i, b=i, c=i) for i in range(2)])
-    >>> dc.select['a']().to_list()
+    >>> from towhee import DataFrame
+    >>> df = DataFrame([Entity(a=i, b=i, c=i) for i in range(2)])
+    >>> df.select['a']().to_list()
     [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
 
     2. Select multiple fields and unpack the entity:
 
     >>> (
-    ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
+    ...     DataFrame([Entity(a=i, b=i, c=i) for i in range(5)])
     ...         .select['a', 'b']()
     ...         .as_raw()
     ...         .to_list()
@@ -71,7 +71,7 @@ class EntityMixin:
     3. Another field selection syntax (not suggested):
 
     >>> (
-    ...     DataCollection([Entity(a=i, b=i, c=i) for i in range(5)])
+    ...     DataFrame([Entity(a=i, b=i, c=i) for i in range(5)])
     ...         .select('a', 'b')
     ...         .as_raw()
     ...         .to_list()
@@ -111,13 +111,29 @@ class EntityMixin:
                     _ReplaceNoneValue: bool = False,
                     **kws):
         """
-        When DataCollection's iterable exists of Entities and some indexes missing, fill default value for those indexes.
+        When DataFrame's iterable exists of Entities and some indexes missing, fill default value for those indexes.
 
         Args:
             _ReplaceNoneValue (`bool`):
                 Whether to replace None in Entity's value.
             _DefaultKVs (`Dict[str, Any]`):
                 The key-value pairs stored in a dict.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(num=i) for i in range(3)]
+        >>> df = DataFrame(entities)
+        >>> df
+        [<Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>]
+
+        >>> kvs = {'foo': 'bar'}
+        >>> df.fill_entity(kvs).fill_entity(usage='test').to_list()
+        [<Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>]
+
+        >>> kvs = {'FOO': None}
+        >>> df.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs).to_list()[0].FOO
+        0
         """
         if _DefaultKVs:
             kws.update(_DefaultKVs)
@@ -143,9 +159,9 @@ class EntityMixin:
         Examples:
         1. convert dicts into entities:
 
-        >>> from towhee import DataCollection
+        >>> from towhee import DataFrame
         >>> (
-        ...     DataCollection([dict(a=1, b=2), dict(a=2, b=3)])
+        ...     DataFrame([dict(a=1, b=2), dict(a=2, b=3)])
         ...         .as_entity()
         ...         .as_str()
         ...         .to_list()
@@ -154,9 +170,9 @@ class EntityMixin:
 
         2. convert tuples into entities:
 
-        >>> from towhee import DataCollection
+        >>> from towhee import DataFrame
         >>> (
-        ...     DataCollection([(1, 2), (2, 3)])
+        ...     DataFrame([(1, 2), (2, 3)])
         ...         .as_entity(schema=['a', 'b'])
         ...         .as_str()
         ...         .to_list()
@@ -165,9 +181,9 @@ class EntityMixin:
 
         3. convert single value into entities:
 
-        >>> from towhee import DataCollection
+        >>> from towhee import DataFrame
         >>> (
-        ...     DataCollection([1, 2])
+        ...     DataFrame([1, 2])
         ...         .as_entity(schema=['a'])
         ...         .as_str()
         ...         .to_list()
@@ -195,12 +211,12 @@ class EntityMixin:
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc = (
-        ...     DataCollection(['{"x": 1}'])
+        >>> from towhee import DataFrame
+        >>> df = (
+        ...     DataFrame(['{"x": 1}'])
         ...         .parse_json()
         ... )
-        >>> dc[0].x
+        >>> df[0].x
         1
         """
 
@@ -216,9 +232,9 @@ class EntityMixin:
 
         Examples:
 
-        >>> from towhee import DataCollection, Entity
+        >>> from towhee import DataFrame, Entity
         >>> (
-        ...     DataCollection([Entity(x=1)])
+        ...     DataFrame([Entity(x=1)])
         ...         .as_json()
         ... )
         ['{"x": 1}']
@@ -237,9 +253,9 @@ class EntityMixin:
 
         1. unpack multiple values from entities:
 
-        >>> from towhee import DataCollection
+        >>> from towhee import DataFrame
         >>> (
-        ...     DataCollection([(1, 2), (2, 3)])
+        ...     DataFrame([(1, 2), (2, 3)])
         ...         .as_entity(schema=['a', 'b'])
         ...         .as_raw()
         ...         .to_list()
@@ -249,7 +265,7 @@ class EntityMixin:
         2. unpack single value from entities:
 
         >>> (
-        ...     DataCollection([1, 2])
+        ...     DataFrame([1, 2])
         ...         .as_entity(schema=['a'])
         ...         .as_raw()
         ...         .to_list()
@@ -267,6 +283,19 @@ class EntityMixin:
     def replace(self, **kws):
         """
         Replace specific attributes with given vlues.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+
+        >>> entities = [Entity(num=i) for i in range(5)]
+        >>> df = DataFrame(entities)
+        >>> [i.num for i in df]
+        [0, 1, 2, 3, 4]
+
+        >>> df = df.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
+        >>> [i.num for i in df]
+        [1, 2, 3, 4, 5]
         """
 
         def inner(entity: Entity):
@@ -279,13 +308,25 @@ class EntityMixin:
 
         return self._factory(map(inner, self._iterable))
 
-    def dropna(self, na: Set[str] = {'', None}) -> Union[bool, 'DataCollection']:  # pylint: disable=dangerous-default-value
+    def dropna(self, na: Set[str] = {'', None}) -> Union[bool, 'DataFrame']:  # pylint: disable=dangerous-default-value
         """
         Drop entities that contain some specific values.
 
         Args:
             na (`Set[str]`):
                 Those entities contain values in na will be dropped.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(a=i, b=i + 1) for i in range(3)]
+        >>> entities.append(Entity(a=3, b=''))
+        >>> df = DataFrame(entities)
+        >>> df
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+
+        >>> df.dropna()
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
 
         def inner(entity: Entity):
@@ -299,11 +340,22 @@ class EntityMixin:
 
     def rename(self, column: Dict[str, str]):
         """
-        Rename an column in DataCollection.
+        Rename an column in DataFrame.
 
         Args:
             column (`Dict[str, str]`):
                 The columns to rename and their corresponding new name.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(a=i, b=i + 1) for i in range(3)]
+        >>> df = DataFrame(entities)
+        >>> df
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+
+        >>> df.rename(column={'a': 'A', 'b': 'B'})
+        [<Entity dict_keys(['A', 'B'])>, <Entity dict_keys(['A', 'B'])>, <Entity dict_keys(['A', 'B'])>]
         """
 
         def inner(x):

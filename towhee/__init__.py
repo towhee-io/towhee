@@ -16,13 +16,13 @@ from towhee.engine import register
 from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
-from towhee.functional import DataCollection, State, Entity
+from towhee.functional import DataCollection, State, Entity, DataFrame
 from towhee.connectors import Connectors as connectors
 
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
 from towhee.functional import from_zip, from_df
-from towhee.functional import dc, api
+from towhee.functional import dc, df, api
 
 __all__ = [
     'DEFAULT_PIPELINES',
@@ -35,6 +35,7 @@ __all__ = [
     'dataset',
     'Document',
     'DataCollection',
+    'DataFrame',
     'State',
     'Entity',
     'connectors',

@@ -105,7 +105,7 @@ class ServeMixin:
 
     def serve(self, path='/', app=None):
         """
-        Serve the DataCollection as a RESTful API
+        Serve the DataFrame as a RESTful API
 
         Args:
             path (str, optional): API path. Defaults to '/'.
@@ -176,7 +176,7 @@ class ServeMixin:
 
     def as_function(self):
         """
-        Make the DataCollection as callable function
+        Make the DataFrame as callable function
 
         Returns:
             _type_: a callable function
