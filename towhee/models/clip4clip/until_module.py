@@ -15,12 +15,9 @@
 # limitations under the License.
 """PyTorch BERT model."""
 
-import logging
 import torch
 import torch.nn.functional as F
 from torch import nn
-
-logger = logging.getLogger(__name__)
 
 
 class LayerNorm(nn.Module):
@@ -66,9 +63,6 @@ class PreTrainedModel(nn.Module):
             module.bias.data.zero_()
 
 
-##################################
-###### LOSS FUNCTION #############
-##################################
 class CrossEn(nn.Module):
     def forward(self, sim_matrix):
         logpt = F.log_softmax(sim_matrix, dim=-1)

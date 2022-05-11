@@ -14,9 +14,12 @@
 
 import unittest
 import torch
+import numpy as np
 
-from towhee.models.clip import get_configs
-from towhee.models.clip4clip.clip4clip import CLIP4Clip
+from towhee.models.clip import SimpleTokenizer
+from towhee.models.clip4clip import convert_tokens_to_id
+from towhee.models.clip4clip import create_model
+from towhee.models import clip4clip
 
 
 class TestCLIP4Clip(unittest.TestCase):
@@ -24,22 +27,25 @@ class TestCLIP4Clip(unittest.TestCase):
     Test CLIP4Clip model
     """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    configs = get_configs("clip_vit_b32")
-    if "url" in configs:
-        url = configs["url"]
-        configs.pop("url")
-    configs["context_length"] = 32
-    model = CLIP4Clip(**configs)
-    model.to(device)
+    model = create_model(model_name="clip_vit_b32", context_length=32, pretrained=False, device=device)
 
     def test_forward(self):
         input_ids = torch.randint(low=0, high=2, size=(2, 1, 32))
-        segment_ids = torch.randint(low=0, high=2, size=(2, 1, 32))
-        input_mask = torch.randint(low=0, high=2, size=(2, 1, 32))
         video = torch.randn(2, 1, 12, 1, 3, 224, 224)
         video_mask = torch.randint(low=0, high=2, size=(2, 1, 12))
-        loss = self.model(input_ids, segment_ids, input_mask, video, video_mask)
+        loss = self.model(input_ids, video, video_mask)
         self.assertTrue(loss.size() == torch.Size([]))
+
+    def test_token(self):
+        text = "hello world"
+        text_tokens = clip4clip.tokenize(text)
+        self.assertEqual(text_tokens, ["hello</w>", "world</w>"])
+
+    def test_convert_tokens_to_id(self):
+        tokenizer = SimpleTokenizer()
+        text = "kids feeding and playing with the horse"
+        res = convert_tokens_to_id(tokenizer, text, max_words=32)
+        self.assertEqual(res.all(), np.array([[49406, 1911, 9879, 537, 1629, 593, 518, 4558, 49407] + [0] * 23]).all())
 
 
 if __name__ == "__main__":

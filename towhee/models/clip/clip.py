@@ -17,7 +17,7 @@
 import os
 import warnings
 from collections import OrderedDict
-from typing import Tuple, Union
+from typing import Tuple, Union, Callable
 
 import numpy as np
 import torch
@@ -201,7 +201,7 @@ class ResidualAttentionBlock(nn.Module):
     ResidualAttentuonBlock
     """
 
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None):
+    def __init__(self, d_model: int, n_head: int, attn_mask: Union[torch.Tensor, Callable] = None):
         super().__init__()
 
         self.attn = nn.MultiheadAttention(d_model, n_head)
@@ -215,8 +215,12 @@ class ResidualAttentionBlock(nn.Module):
         self.attn_mask = attn_mask
 
     def attention(self, x: torch.Tensor):
-        self.attn_mask = self.attn_mask.to(dtype=x.dtype, device=x.device) if self.attn_mask is not None else None
-        return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
+        attn_mask_ = self.attn_mask
+        if self.attn_mask is not None and hasattr(self.attn_mask, "__call__"):
+            attn_mask_ = self.attn_mask(x.size(0))  # LND
+
+        attn_mask_ = attn_mask_.to(dtype=x.dtype, device=x.device) if attn_mask_ is not None else None
+        return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
 
     def forward(self, x: torch.Tensor):
         x = x + self.attention(self.ln_1(x))
@@ -225,7 +229,7 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: Union[torch.Tensor, Callable] = None):
         super().__init__()
         self.width = width
         self.layers = layers
@@ -294,7 +298,9 @@ class CLIP(nn.Module):
                  vocab_size: int,
                  transformer_width: int,
                  transformer_heads: int,
-                 transformer_layers: int
+                 transformer_layers: int,
+                 # whether used for CLIP4Clip model
+                 clip4clip: bool = False,
                  ):
         super().__init__()
 
@@ -319,13 +325,20 @@ class CLIP(nn.Module):
                 heads=vision_heads,
                 output_dim=embed_dim
             )
-
-        self.transformer = Transformer(
-            width=transformer_width,
-            layers=transformer_layers,
-            heads=transformer_heads,
-            attn_mask=self.build_attention_mask()
-        )
+        if clip4clip:
+            self.transformer = Transformer(
+                width=transformer_width,
+                layers=transformer_layers,
+                heads=transformer_heads,
+                attn_mask=self.build_attention_mask_for_clip4clip
+            )
+        else:
+            self.transformer = Transformer(
+                width=transformer_width,
+                layers=transformer_layers,
+                heads=transformer_heads,
+                attn_mask=self.build_attention_mask()
+            )
 
         self.vocab_size = vocab_size
         self.token_embedding = nn.Embedding(vocab_size, transformer_width)
@@ -374,6 +387,12 @@ class CLIP(nn.Module):
         mask.triu_(1)  # zero out the lower diagonal
         return mask
 
+    def build_attention_mask_for_clip4clip(self, context_length):
+        mask = torch.zeros(context_length, context_length)
+        mask.fill_(float("-inf"))
+        mask.triu_(1)  # zero out the lower diagonal
+        return mask
+
     @property
     def dtype(self):
         return self.visual.conv1.weight.dtype
@@ -381,18 +400,34 @@ class CLIP(nn.Module):
     def encode_image(self, image):
         return self.visual(image.type(self.dtype))
 
-    def encode_text(self, text):
-        x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+    def encode_text(self, text, clip4clip=False, return_hidden=False):
+        if clip4clip:
+            x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
 
-        x = x + self.positional_embedding.type(self.dtype)
-        x = x.permute(1, 0, 2)  # NLD -> LND
-        x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
-        x = self.ln_final(x).type(self.dtype)
+            pos_emd = self.positional_embedding[:x.size(1), :].type(self.dtype)
+            x = x + pos_emd
+            x = x.permute(1, 0, 2)  # NLD -> LND
+            x = self.transformer(x)
+            x = x.permute(1, 0, 2)  # LND -> NLD
 
-        # x.shape = [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding (eot_token is the highest number in each sequence)
-        x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+            hidden = self.ln_final(x).type(self.dtype) @ self.text_projection
+
+            # x.shape = [batch_size, n_ctx, transformer.width]
+            # take features from the eot embedding (eot_token is the highest number in each sequence)
+            x = hidden[torch.arange(hidden.shape[0]), text.argmax(dim=-1)]
+
+            if return_hidden:
+                return x, hidden
+        else:
+            x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+
+            x = x + self.positional_embedding.type(self.dtype)
+            x = x.permute(1, 0, 2)  # NLD -> LND
+            x = self.transformer(x)
+            x = x.permute(1, 0, 2)  # LND -> NLD
+            x = self.ln_final(x).type(self.dtype)
+
+            x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
 
         return x
 
