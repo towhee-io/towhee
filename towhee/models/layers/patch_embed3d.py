@@ -18,23 +18,36 @@ class PatchEmbed3D(nn.Module):
             Number of linear projection output channels.
         norm_layer (`nn.Module`):
             Normalization layer.
+        stride (`tuple[int]`):
+            Stride size.
     """
-    def __init__(self, patch_size=(2, 4, 4), c=3, embed_dim=96, norm_layer=None, additional_variable_channels=None):
+
+    def __init__(self, patch_size=(2, 4, 4), c=3, embed_dim=96, norm_layer=None,
+                 additional_variable_channels=None, stride=None):
         super().__init__()
         self.patch_size = patch_size
         self.c = c
         self.embed_dim = embed_dim
         self.additional_variable_channels = additional_variable_channels
 
-        self.proj = nn.Conv3d(c, embed_dim, kernel_size=patch_size, stride=patch_size)
+        if not stride:
+            self.proj = nn.Conv3d(c, embed_dim, kernel_size=patch_size, stride=patch_size)
+        else:
+            self.proj = nn.Conv3d(c, embed_dim, kernel_size=patch_size, stride=stride)
         if additional_variable_channels:
             # we create var_proj separately from proj
             # this makes it convenient to ignore var_proj on downstream tasks
             # where we only use RGB
-            self.var_proj = [
-                nn.Conv3d(x, embed_dim, kernel_size=patch_size, stride=patch_size)
-                for x in additional_variable_channels
-            ]
+            if not stride:
+                self.var_proj = [
+                    nn.Conv3d(x, embed_dim, kernel_size=patch_size, stride=patch_size)
+                    for x in additional_variable_channels
+                ]
+            else:
+                self.var_proj = [
+                    nn.Conv3d(x, embed_dim, kernel_size=patch_size, stride=stride)
+                    for x in additional_variable_channels
+                ]
             self.var_proj = nn.ModuleList(self.var_proj)
 
         if norm_layer is not None:
