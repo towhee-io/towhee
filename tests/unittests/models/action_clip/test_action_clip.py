@@ -23,22 +23,20 @@ class TestActionClip(unittest.TestCase):
     """
     Test ActionClip model
     """
-    # (b, t, c)
-    frames = torch.rand(1, 4, 512)
+    video = torch.rand(1, 2, 3, 4, 4)
+    text = ["archery", "dance"]
     clip_model = clip.create_model(
             embed_dim=512, image_resolution=4, vision_layers=12, vision_width=768, vision_patch_size=2,
             context_length=77, vocab_size=49408, transformer_width=512, transformer_heads=8, transformer_layers=12)
 
-    # Test Visual Prompt
-    def test_visual_prompt(self):
-        clip_state_dict = self.clip_model.state_dict()
-        vis_prompt = action_clip.VisualPrompt("Transf", clip_state_dict, 8)
-        vis_feats = vis_prompt(self.frames)
+    # Test video encoder
+    def test_encode_video(self):
+        vis_feats = action_clip.encode_video(self.video, self.clip_model, prompt="Transf")
         self.assertTrue(vis_feats.shape, (1, 512))
 
+    # Test text encoder
     def test_text_prompt(self):
-        text = ["archery", "dance"]
-        classes, num_text_aug, text_dict = action_clip.text_prompt(text)
+        classes, num_text_aug, text_dict= action_clip.encode_text(self.text, self.clip_model, return_long=True)
         self.assertTrue(classes.shape, (32, 77))
         self.assertTrue(text_dict[0].shape, (2, 77))
         self.assertEqual(num_text_aug, len(text_dict), 16)

@@ -32,7 +32,7 @@ class TestUtils(unittest.TestCase):
     def test_similarity(self):
         text_features = torch.ones(6, 10)
         fusion_features = torch.ones(1, 10)
-        similarity = action_clip.get_similarity(text_features, fusion_features, num_txt_augs=3, norm=True)
+        similarity = action_clip.get_similarity(text_features, fusion_features, num_text_augs=3, norm=True)
         self.assertTrue(similarity[0].tolist() == [0.5, 0.5])
 
 

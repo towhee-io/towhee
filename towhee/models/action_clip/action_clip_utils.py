@@ -29,11 +29,11 @@ def map_state_dict(checkpoint, state_dict_name: str = None):
     return new_state_dict
 
 
-def get_similarity(text_features, fusion_features, num_txt_augs, norm: bool = False):
+def get_similarity(text_features, visual_features, num_text_augs, norm: bool = False):
     if norm:
         text_features /= text_features.norm(dim=-1, keepdim=True)
-        fusion_features /= fusion_features.norm(dim=-1, keepdim=True)
-    similarity = (100.0 * text_features @ fusion_features.T)
-    similarity = similarity.view(fusion_features.size(0), num_txt_augs, -1).softmax(dim=-1)
+        visual_features /= visual_features.norm(dim=-1, keepdim=True)
+    similarity = (100.0 * text_features @ visual_features.T)
+    similarity = similarity.view(visual_features.size(0), num_text_augs, -1).softmax(dim=-1)
     similarity = similarity.mean(dim=1, keepdim=False)
     return similarity
