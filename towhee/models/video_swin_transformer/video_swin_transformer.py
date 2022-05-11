@@ -55,6 +55,8 @@ class VideoSwinTransformer(nn.Module):
             -1 means not freezing any parameters.
         use_checkpoint (`bool`):
             Use checkpoint.
+        stride (`tuple[int]`):
+            stride size for patch embed3d.
     """
 
     def __init__(self,
@@ -78,6 +80,7 @@ class VideoSwinTransformer(nn.Module):
                  use_checkpoint=False,
                  depth_mode=None,
                  depth_patch_embed_separate_params=True,
+                 stride=None
                  ):
         super().__init__()
 
@@ -93,7 +96,7 @@ class VideoSwinTransformer(nn.Module):
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed3D(
             patch_size=patch_size, c=in_chans, embed_dim=embed_dim,
-            norm_layer=norm_layer if self.patch_norm else None)
+            norm_layer=norm_layer if self.patch_norm else None, stride=stride)
 
         if depth_mode is not None:
             assert depth_mode in ["separate_d_tokens", "summed_rgb_d_tokens", "rgbd"]
@@ -116,6 +119,7 @@ class VideoSwinTransformer(nn.Module):
                     c=depth_chans,
                     embed_dim=embed_dim,
                     norm_layer=norm_layer if self.patch_norm else None,
+                    stride=stride
                 )
             else:
                 # share parameters with patch_embed
@@ -128,6 +132,7 @@ class VideoSwinTransformer(nn.Module):
                     embed_dim=embed_dim,
                     additional_variable_channels=[1],
                     norm_layer=norm_layer if self.patch_norm else None,
+                    stride=stride
                 )
 
         self.pos_drop = nn.Dropout(p=drop_rate)
