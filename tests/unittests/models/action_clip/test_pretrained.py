@@ -16,29 +16,23 @@ import unittest
 import torch
 
 from towhee.models import action_clip
-from towhee.models import clip
 
 
-class TestActionClip(unittest.TestCase):
+class TestPretrained(unittest.TestCase):
     """
-    Test ActionClip model
+    Test ActionClip model with pretrained clip
     """
-    video = torch.rand(1, 2, 3, 4, 4)
-    text = ["archery", "dance"]
-    clip_model = clip.create_model(
-            embed_dim=512, image_resolution=4, vision_layers=12, vision_width=768, vision_patch_size=2,
-            context_length=77, vocab_size=49408, transformer_width=512, transformer_heads=8, transformer_layers=12)
-    model = action_clip.create_model(clip_model=clip_model, cfg={"num_frames": 2})
+    video = torch.ones(1, 8, 3, 224, 224)
+    text = ["a", "b"]
+    model = action_clip.create_model(clip_model="clip_vit_b32", pretrained=True, jit=True)
 
     # Test video encoder
-    def test_encode_video(self):
+    def test_pretrained(self):
         vis_feats = self.model.encode_video(self.video)
-        self.assertEqual(vis_feats.shape, (1, 512))
-
-    # Test text encoder
-    def test_encode_text(self):
         text_features = self.model.encode_text(self.text)
-        self.assertEqual(text_features.shape, (32, 512))
+        num_augs = int(text_features.size(0) / len(self.text))
+        similarity = action_clip.get_similarity(text_features, vis_feats, num_text_augs=num_augs)
+        self.assertEqual(similarity.shape, (1, 2))
 
 
 if __name__ == "__main__":

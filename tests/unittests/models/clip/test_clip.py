@@ -30,12 +30,12 @@ class TestClip(unittest.TestCase):
             )
         image_features = model.encode_image(img)
         text_features = model.encode_text(text)
-        self.assertTrue(image_features.shape, (1, 512))
-        self.assertTrue(text_features.shape, (2, 512))
+        self.assertEqual(image_features.shape, (1, 512))
+        self.assertEqual(text_features.shape, (2, 512))
 
         logits_per_img, logits_per_text = model(img, text)
-        self.assertTrue(logits_per_img.shape, (1, 2))
-        self.assertTrue(logits_per_text.shape, (2, 1))
+        self.assertEqual(logits_per_img.shape, (1, 2))
+        self.assertEqual(logits_per_text.shape, (2, 1))
 
     def test_models(self):
         img = torch.rand(1, 3, 224, 224)
@@ -50,8 +50,8 @@ class TestClip(unittest.TestCase):
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
         logits_per_img, logits_per_text = model(img, text)
-        self.assertTrue(logits_per_img.shape, (1, 2))
-        self.assertTrue(logits_per_text.shape, (2, 1))
+        self.assertEqual(logits_per_img.shape, (1, 2))
+        self.assertEqual(logits_per_text.shape, (2, 1))
 
         model = clip.create_model(
             model_name="clip_vit_b32",
@@ -59,11 +59,11 @@ class TestClip(unittest.TestCase):
             )
         image_features = model.encode_image(img)
         text_features = model.encode_text(text)
-        self.assertTrue(image_features.shape, (1, 512))
-        self.assertTrue(text_features.shape, (2, 512))
+        self.assertEqual(image_features.shape, (1, 512))
+        self.assertEqual(text_features.shape, (2, 512))
         logits_per_img, logits_per_text = model(img, text)
-        self.assertTrue(logits_per_img.shape, (1, 2))
-        self.assertTrue(logits_per_text.shape, (2, 1))
+        self.assertEqual(logits_per_img.shape, (1, 2))
+        self.assertEqual(logits_per_text.shape, (2, 1))
 
         model = clip.create_model(
             model_name="clip_resnet_r50",
@@ -71,11 +71,11 @@ class TestClip(unittest.TestCase):
             )
         image_features = model.encode_image(img)
         text_features = model.encode_text(text)
-        self.assertTrue(image_features.shape, (1, 1024))
-        self.assertTrue(text_features.shape, (2, 1024))
+        self.assertEqual(image_features.shape, (1, 1024))
+        self.assertEqual(text_features.shape, (2, 1024))
         logits_per_img, logits_per_text = model(img, text)
-        self.assertTrue(logits_per_img.shape, (1, 2))
-        self.assertTrue(logits_per_text.shape, (2, 1))
+        self.assertEqual(logits_per_img.shape, (1, 2))
+        self.assertEqual(logits_per_text.shape, (2, 1))
 
         model = clip.create_model(
             model_name="clip_resnet_r101",
@@ -86,13 +86,13 @@ class TestClip(unittest.TestCase):
         self.assertTrue(image_features.shape, (1, 512))
         self.assertTrue(text_features.shape, (2, 512))
         logits_per_img, logits_per_text = model(img, text)
-        self.assertTrue(logits_per_img.shape, (1, 2))
-        self.assertTrue(logits_per_text.shape, (2, 1))
+        self.assertEqual(logits_per_img.shape, (1, 2))
+        self.assertEqual(logits_per_text.shape, (2, 1))
 
     def test_text(self):
         text = ["a dog", "a cat"]
         text_tokens = clip.tokenize(text)
-        self.assertTrue(text_tokens.shape, (2, 77))
+        self.assertEqual(text_tokens.shape, (2, 77))
 
 
 if __name__ == "__main__":

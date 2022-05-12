@@ -37,3 +37,20 @@ def get_similarity(text_features, visual_features, num_text_augs, norm: bool = F
     similarity = similarity.view(visual_features.size(0), num_text_augs, -1).softmax(dim=-1)
     similarity = similarity.mean(dim=1, keepdim=False)
     return similarity
+
+
+def get_configs(model_name: str = None, **kwargs):
+    configs = dict(
+        visual_prompt_type='Transf',
+        num_frames=8
+        )
+    configs.update(**kwargs)
+    if model_name == 'clip_vit_b16':
+        configs.update(
+            num_frames=8
+            )
+    elif model_name == 'clip_vit_b32':
+        configs.update(
+            num_frames=8
+            )
+    return configs

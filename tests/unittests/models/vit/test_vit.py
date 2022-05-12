@@ -56,7 +56,7 @@ class VisionTransformerTest(unittest.TestCase):
         features = model.forward_features(dummy_img)
         self.assertTrue(features.shape, (1, 768))
         out = model(dummy_img)
-        self.assertTrue(out.shape, (1, 400))
+        self.assertEqual(out.shape, (1, 400))
 
 
 if __name__ == '__main__':
