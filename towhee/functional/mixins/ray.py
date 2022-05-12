@@ -64,12 +64,12 @@ class RayMixin: # pragma: no cover
     def ray_resolve(self, call_mapping, path, index, *arg, **kws):
         import ray
 
-        if self.get_backend_started() is None:
-            self.ray_start()
+        # if self.get_backend_started() is None:
+        #     self.ray_start()
 
         #TODO: Make local functions work with ray
         if path in call_mapping:
-            return call_mapping[path](*arg, **kws)
+            return map(call_mapping[path](*arg, **kws))
 
         @ray.remote
         class OperatorActor:
@@ -125,15 +125,14 @@ class RayMixin: # pragma: no cover
         t.start()
 
         child = self._factory(inner())
-        self.register_dag(child)
         return child
 
 
     def _ray_pmap(self, unary_op, num_worker=None):
         import ray
 
-        if self.get_backend_started() is None:
-            self.ray_start()
+        # if self.get_backend_started() is None:
+        #     self.ray_start()
 
         if num_worker is not None:
             pass

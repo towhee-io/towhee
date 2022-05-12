@@ -108,8 +108,8 @@ class ParallelMixin:
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker)
         self._backend = backend
         self._num_worker = num_worker
-        if backend == 'ray':
-            self.ray_start()
+        # if backend == 'ray':
+        #     self.ray_start()
         return self
 
     def unset_parallel(self):
