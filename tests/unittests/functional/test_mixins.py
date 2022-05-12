@@ -23,14 +23,14 @@ from towhee._types.image import Image
 import towhee.functional.mixins.computer_vision
 import towhee.functional.mixins.dataset
 import towhee.functional.mixins.display
-import towhee.functional.mixins.entity_mixin
+import towhee.functional.mixins.dataframe
 import towhee.functional.mixins.metric
 import towhee.functional.mixins.parallel
 import towhee.functional.mixins.state
 import towhee.functional.mixins.serve
 
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
-from towhee import DataCollection
+from towhee import DataCollection, DataFrame
 from towhee import Entity
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -42,7 +42,7 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.computer_vision,
             towhee.functional.mixins.dataset,
             towhee.functional.mixins.display,
-            towhee.functional.mixins.entity_mixin,
+            towhee.functional.mixins.dataframe,
             towhee.functional.mixins.metric,
             towhee.functional.mixins.parallel,
             towhee.functional.mixins.state,
@@ -66,8 +66,8 @@ class TestSaveMixin(unittest.TestCase):
         dc_1 = towhee.from_df(record).unstream()
         dc_2 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
         e = [Entity(a=i, b=i + 1, c=i + 2) for i in range(5)]
-        dc_3 = DataCollection(e).unstream()
-        dc_4 = DataCollection(iter(e)).unstream()
+        dc_3 = DataFrame(e).unstream()
+        dc_4 = DataFrame(iter(e)).unstream()
 
         out_1 = public_path / 'test_util' / 'test_mixins' / 'test_1.csv'
         out_2 = public_path / 'test_util' / 'test_mixins' / 'test_2.csv'

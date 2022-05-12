@@ -19,10 +19,11 @@ import reprlib
 from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.entity import Entity
 from towhee.functional.option import Option, Some, Empty
-from towhee.functional.mixins import AllMixins
+from towhee.functional.mixins import DCMixins
+from towhee.functional.mixins.dataframe import DataFrameMixin
 
 
-class DataCollection(Iterable, AllMixins):
+class DataCollection(Iterable, DCMixins):
     """
     DataCollection is a pythonic computation and processing framework
     for unstructured data in machine learning and data science.
@@ -801,6 +802,42 @@ class DataCollection(Iterable, AllMixins):
 
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
+
+class DataFrame(DataCollection, DataFrameMixin):
+    """
+    Entity based DataCollection.
+
+    Args:
+        iterable (Iterable): input data.
+
+    >>> from towhee import Entity
+    >>> DataFrame([Entity(id=a) for a in [1,2,3]])
+    [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
+    """
+    def _factory(self, iterable, parent_stream = True):
+        """
+        Factory method for DataFrame.
+
+        This factory method has been wrapped into a `param_scope()` which contains parent information.
+
+        Args:
+            iterable: An iterable object, the data being stored in the DC
+            parent_stream: Whether to copy the parents format (streamed vs unstreamed)
+
+        Returns:
+            DataFrame: DataFrame encapsulating the iterable.
+        """
+        if parent_stream is True:
+            if self.is_stream:
+                if not isinstance(iterable, Iterator):
+                    iterable = iter(iterable)
+            else:
+                if isinstance(iterable, Iterator):
+                    iterable = list(iterable)
+
+        with param_scope() as hp:
+            hp().data_collection.parent = self
+            return DataFrame(iterable)
 
 
 if __name__ == '__main__':

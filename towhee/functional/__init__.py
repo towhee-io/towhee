@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .data_collection import DataCollection
+from .data_collection import DataCollection, DataFrame
 from .entity import Entity
 from .option import Option, Some, Empty
 from towhee.hparam import HyperParameter as State
@@ -38,11 +38,10 @@ read_camera = DataCollection.from_camera
 from_zip = DataCollection.from_zip
 
 
-def from_df(df, as_stream=False):
+def from_df(dataframe, as_stream=False):
     if as_stream:
-        return DataCollection.stream(
-            df.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
-    return DataCollection(df)
+        return DataFrame.stream(dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+    return DataFrame(dataframe)
 
 
 @dynamic_dispatch
@@ -66,7 +65,7 @@ def glob(*arg): # pragma: no cover
     index = param_scope()._index
     if index is None:
         return DataCollection.from_glob(*arg)
-    return DataCollection.from_glob(*arg).map(lambda x: Entity(**{index: x}))
+    return DataFrame.from_glob(*arg).map(lambda x: Entity(**{index: x}))
 
 
 @dynamic_dispatch
@@ -90,8 +89,7 @@ def glob_zip(uri, pattern): # pragma: no cover
     index = param_scope()._index
     if index is None:
         return DataCollection.from_zip(uri, pattern)
-    return DataCollection.from_zip(uri,
-                                   pattern).map(lambda x: Entity(**{index: x}))
+    return DataFrame.from_zip(uri, pattern).map(lambda x: Entity(**{index: x}))
 
 
 @dynamic_dispatch
@@ -145,7 +143,7 @@ def api():
     >>> client.post('/app3', '{"x": "3"}').text
     '{"y":"3 -> 3 => 3"}'
     """
-    return DataCollection.api(index=param_scope()._index)
+    return DataFrame.api(index=param_scope()._index)
 
 
 @dynamic_dispatch
@@ -164,10 +162,35 @@ def dc(iterable):
     2. create a data collection of structural data.
 
     >>> towhee.dc['column']([0, 1, 2]).to_list()
-    [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
+    [{'column': 0}, {'column': 1}, {'column': 2}]
     """
 
     index = param_scope()._index
     if index is None:
         return DataCollection(iterable)
-    return DataCollection(iterable).map(lambda x: Entity(**{index: x}))
+    return DataCollection(iterable).map(lambda x: {index: x})
+    # return DataCollection(iterable).map(lambda x: Entity(**{index: x}))
+
+@dynamic_dispatch
+def df(iterable):
+    """
+    Return a DataFrame.
+
+    Examples:
+
+    1. create a simple dataframe;
+
+    >>> import towhee
+    >>> towhee.df([0, 1, 2]).to_list()
+    [0, 1, 2]
+
+    2. create a data collection of structural data.
+
+    >>> towhee.df['column']([0, 1, 2]).to_list()
+    [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
+    """
+
+    index = param_scope()._index
+    if index is None:
+        return DataFrame(iterable)
+    return DataFrame(iterable).map(lambda x: Entity(**{index: x}))

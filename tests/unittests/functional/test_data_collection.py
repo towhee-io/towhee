@@ -88,46 +88,6 @@ class TestDataCollection(unittest.TestCase):
             .to_list()
         self.assertListEqual(result, [2, 4, 6, 8, 10])
 
-    def test_fill_entity(self):
-        entities = [Entity(num=i) for i in range(5)]
-        dc = DataCollection(entities)
-
-        self.assertTrue(hasattr(dc, '_iterable'))
-        for i in dc:
-            self.assertTrue(hasattr(i, 'num'))
-            self.assertFalse(hasattr(i, 'usage'))
-
-        kvs = {'foo': 'bar'}
-        res = dc.fill_entity(usage='test').fill_entity(kvs)
-
-        self.assertTrue(hasattr(res, '_iterable'))
-        for i in res:
-            self.assertTrue(hasattr(i, 'num'))
-            self.assertEqual(i.usage, 'test')
-            self.assertEqual(i.foo, 'bar')
-
-        kvs = {'foo': None}
-        res = dc.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs)
-        self.assertTrue(hasattr(res, '_iterable'))
-        for i in res:
-            self.assertTrue(hasattr(i, 'num'))
-            self.assertEqual(i.usage, 'test')
-            self.assertEqual(i.foo, 0)
-
-    def test_replace(self):
-        entities = [Entity(num=i) for i in range(5)]
-        dc = DataCollection(entities)
-        j = 0
-        for i in dc:
-            self.assertTrue(i.num == j)
-            j += 1
-
-        dc.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
-        j = 1
-        for i in dc:
-            self.assertTrue(i.num == j)
-            j += 1
-
     def test_from_json(self):
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
         res = DataCollection.from_json(json_path)
@@ -171,30 +131,6 @@ class TestDataCollection(unittest.TestCase):
         res = DataCollection.from_json(json_path)
 
         res.head(1)
-
-    def test_dropna(self):
-        entities = [Entity(a=i, b=i + 1) for i in range(10)]
-        entities.append(Entity(a=10, b=''))
-        dc = DataCollection(entities)
-
-        for i in dc:
-            self.assertTrue(i.b != '' if i.a != 10 else i.b == '')
-
-        res = dc.dropna()
-        for i in res:
-            self.assertTrue(i.b != '')
-
-    def test_rename(self):
-        entities = [Entity(a=i, b=i + 1) for i in range(100000)]
-        dc = DataCollection(entities)
-        for i in dc:
-            self.assertTrue(hasattr(i, 'a') and hasattr(i, 'b'))
-            self.assertFalse(hasattr(i, 'A') or hasattr(i, 'B'))
-
-        res = dc.rename(column={'a': 'A', 'b': 'B'})
-        for i in res:
-            self.assertFalse(hasattr(i, 'a') and hasattr(i, 'b'))
-            self.assertTrue(hasattr(i, 'A') or hasattr(i, 'B'))
 
     def test_classifier_procedure(self):
         csv_path = public_path / 'test_util' / 'data.csv'

@@ -16,7 +16,6 @@ from .dataset import DatasetMixin
 from .dispatcher import DispatcherMixin
 from .parallel import ParallelMixin
 from .computer_vision import ComputerVisionMixin
-from .entity_mixin import EntityMixin
 from .display import DisplayMixin
 from .state import StateMixin
 from .metric import MetricMixin
@@ -26,8 +25,8 @@ from .milvus_mixin import MilvusMixin
 from .save import SaveMixin
 
 
-class AllMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, EntityMixin, StateMixin, MetricMixin,
+class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
+                ComputerVisionMixin, StateMixin, MetricMixin,
                 RayMixin, ServeMixin, MilvusMixin, SaveMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
