@@ -15,13 +15,7 @@
 import numpy as np
 
 from towhee.engine import register
-from towhee.utils.log import engine_log
 from towhee.operator.stateful_operator import StatefulOperator
-try:
-    from scipy import sparse
-except ModuleNotFoundError as e:
-    engine_log.error('scipy not found, you can install via `pip install scipy`.')
-    raise ModuleNotFoundError('scipy not found, you can install via `pip install scipy`.') from e
 
 
 # pylint: disable=import-outside-toplevel
@@ -37,6 +31,7 @@ class logistic_regression(StatefulOperator):
 
     def fit(self):
         from towhee.utils.sklearn_utils import LogisticRegression
+        from towhee.utils.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = LogisticRegression(**self._model_agrs)
@@ -57,6 +52,7 @@ class random_forest(StatefulOperator):
 
     def fit(self):
         from towhee.utils.sklearn_utils import RandomForestClassifier
+        from towhee.utils.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = RandomForestClassifier(**self._model_agrs)
@@ -77,6 +73,7 @@ class decision_tree(StatefulOperator):
 
     def fit(self):
         from towhee.utils.sklearn_utils import DecisionTreeClassifier
+        from towhee.utils.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = DecisionTreeClassifier(**self._model_agrs)
@@ -97,6 +94,7 @@ class svc(StatefulOperator):
 
     def fit(self):
         from towhee.utils.sklearn_utils import svm
+        from towhee.utils.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = svm.SVC(**self._model_agrs)
