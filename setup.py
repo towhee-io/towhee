@@ -37,7 +37,7 @@ def parse_requirements(file_name: str) -> List[str]:
 if '--models' in sys.argv:
     sys.argv.remove('--models')
     setup(name='towhee.models',
-          version='0.6.0',
+          version='0.6.1',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
@@ -57,7 +57,12 @@ if '--models' in sys.argv:
           long_description_content_type='text/markdown'
           )
 else:
-    setup(use_scm_version={'local_scheme': 'no-local-version'},
+    setup(name='towhee',
+          version='0.6.1',
+          description='',
+          author='Towhee Team',
+          author_email='towhee-team@zilliz.com',
+          use_scm_version={'local_scheme': 'no-local-version'},
           setup_requires=['setuptools_scm'],
           test_suite='setup.test_suite',
           install_requires=parse_requirements('requirements.txt'),
