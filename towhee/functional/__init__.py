@@ -21,12 +21,12 @@ from towhee.hparam import dynamic_dispatch
 # pylint: disable=protected-access
 
 
-def stream(iterable):
-    return DataCollection.stream(iterable)
+# def stream(iterable):
+#     return DataCollection.stream(iterable)
 
 
-def unstream(iterable):
-    return DataCollection.unstream(iterable)
+# def unstream(iterable):
+#     return DataCollection.unstream(iterable)
 
 
 read_csv = DataCollection.from_csv

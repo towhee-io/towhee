@@ -49,7 +49,6 @@ We use a `prime number` example to go through core conceptions in `DataCollectio
 
 ```python
 >>> dc = DataCollection([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) # use construction method
->>> dc = DataCollection.unstream(range(10)) # use factory method
 
 ```
 
@@ -57,7 +56,6 @@ When the inputs are very large (for example, 1M), storing all the input in the m
 
 ```python
 >>> dc = DataCollection(iter(range(10000))) # use construction method
->>> dc = DataCollection.stream(range(10000)) # use factory method
 
 ```
 
