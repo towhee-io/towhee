@@ -2,7 +2,7 @@ name: Publish Towhee to TestPyPI
 on:
   push:
     branches:
-      - 'main'
+      - 'branch0.6.1'
 jobs:
   build-n-publish:
     name: Build and Publish Towhee to TestPyPI
