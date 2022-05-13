@@ -143,6 +143,9 @@ class HubUtils:
         """
         url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/{file_path}?ref={tag}'
         response = requests.get(url, stream=True)
+        if response.status_code != 200:
+            url = f'{self._root}/api/v1/repos/{self._author}/{self._repo}/raw/%2F{file_path}?ref={tag}'
+            response = requests.get(url, stream=True)
         return response
 
     def get_lfs(self, file_path: str, tag: str) -> requests.Response:
