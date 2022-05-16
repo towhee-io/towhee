@@ -47,6 +47,7 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.parallel,
             towhee.functional.mixins.state,
             towhee.functional.mixins.serve,
+            towhee.functional.mixins.column,
     ]:
         tests.addTests(doctest.DocTestSuite(mod))
 
