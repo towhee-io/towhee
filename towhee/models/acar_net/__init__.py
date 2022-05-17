@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from .neck import *
+from .head import *
