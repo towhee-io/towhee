@@ -74,10 +74,10 @@ class ColumnMixin:
             nonlocal attrs
             offset, entity = off_ent
             attrs = [*entity.__dict__] if not attrs else attrs
-            setattr(entity, 'offset', offset)
-            setattr(entity, 'data', col_table)
             for attr in attrs:
                 delattr(entity, attr)
+            setattr(entity, 'offset', offset)
+            setattr(entity, 'data', col_table)
 
         any(map(inner, enumerate(self._iterable)))
 

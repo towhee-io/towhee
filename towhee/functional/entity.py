@@ -32,9 +32,15 @@ class Entity:
         """
         Create an Entity with given attributes.
         """
-
         for k, v in kwargs.items():
             self.__setattr__(k, v)
+
+    def __getattr__(self, name):
+        if 'data' not in self.__dict__:
+            raise KeyError(f'Field "{name}" does not exist in table schema')
+        else:
+            # TODO(ky): Turn pyarrow.lib.Scalar to python built-in object?
+            return self.data[name][self.offset].as_py()
 
     def __repr__(self):
         """
