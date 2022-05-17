@@ -803,6 +803,22 @@ class DataCollection(Iterable, DCMixins):
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self)
 
+    def to_df(self):
+        """
+        Turn a DataCollection to DataFrame.
+
+        Examples:
+
+        >>> from towhee import DataCollection, Entity
+        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+        >>> dc = DataCollection(e)
+        >>> type(dc)
+        <class 'towhee.functional.data_collection.DataCollection'>
+        >>> type(dc.to_df())
+        <class 'towhee.functional.data_collection.DataFrame'>
+        """
+        return DataFrame(self._iterable)
+
 class DataFrame(DataCollection, DataFrameMixin):
     """
     Entity based DataCollection.
@@ -838,6 +854,22 @@ class DataFrame(DataCollection, DataFrameMixin):
         with param_scope() as hp:
             hp().data_collection.parent = self
             return DataFrame(iterable)
+
+    def to_dc(self):
+        """
+        Turn a DataFrame to DataCollection.
+
+        Examples:
+
+        >>> from towhee import DataFrame, Entity
+        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+        >>> df = DataFrame(e)
+        >>> type(df)
+        <class 'towhee.functional.data_collection.DataFrame'>
+        >>> type(df.to_dc())
+        <class 'towhee.functional.data_collection.DataCollection'>
+        """
+        return DataCollection(self._iterable)
 
 
 if __name__ == '__main__':
