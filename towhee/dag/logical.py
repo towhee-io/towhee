@@ -15,9 +15,9 @@
 from typing import List
 
 
-class TransformationMeta:
+class OpCallMeta:
     """
-    `TransformationMeta` records the meta data of each transfromation.
+    `OpCallMeta` records the meta data of each operator call.
 
     Args:
         op (`Callable`):
@@ -34,49 +34,27 @@ class TransformationMeta:
         self.is_active = False
 
 
-class TransformationsDAG:
+class LogicalDAG:
     """
     The DAG consists of all the transfromations.
     """
 
     def __init__(self):
-        self._transformations = []
-        self._output2t_map = {}
+        self._op_calls = []
 
-    def add_transformation(self, t: TransformationMeta):
+    def add_op_call(self, op_call: OpCallMeta):
         """
-        Add a transformation to DAG.
+        Add a operator call meta to DAG.
 
         Args:
-            t (`TransformationMeta`):
-                The new transformation need to be added.
+            op_call (`OpCallMeta`):
+                The new operator call meta need to be added.
         """
-        self._transformations.append(t)
-        self._output2t_map[t.output] = t
+        self._op_calls.append(op_call)
 
     @property
-    def transformations(self) -> List[TransformationMeta]:
+    def op_calls(self) -> List[OpCallMeta]:
         """
-        Getter of all the transformations.
+        Getter of all the operator call metas.
         """
-        return self._transformations
-
-    def find_parents(self, t: TransformationMeta) -> List[TransformationMeta]:
-        """
-        Find all the parents of a transformation by its inputs. If the parent corresponding
-        to an input is not found, the returned value at that parent position will be None.
-
-        Args:
-            t (`TransformationMeta`):
-                The transformation.
-
-        Return (`list[TransformationMeta]`):
-            The parents of the given transformation.
-        """
-        parents = []
-        for i in t.inputs:
-            if i in self._output2t_map:
-                parents.append(self._output2t_map[i])
-            else:
-                parents.append(None)
-        return parents
+        return self._op_calls
