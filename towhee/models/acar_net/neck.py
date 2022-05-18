@@ -84,3 +84,12 @@ class BasicNeck(nn.Module):
         return {'num_rois': num_rois, 'rois': rois, 'roi_ids': roi_ids, 'targets': targets,
                 'sizes_before_padding': sizes_before_padding,
                 'filenames': filenames, 'mid_times': mid_times, 'bboxes': bboxes, 'bbox_ids': bbox_ids}
+
+
+def neck(model_name: str = 'basic', **kwargs):
+    model_list = ['basic']
+    if model_name == 'basic':
+        model = BasicNeck(**kwargs)
+    else:
+        raise ValueError(f'Expected element in {model_list} but got: {model_name}.')
+    return model

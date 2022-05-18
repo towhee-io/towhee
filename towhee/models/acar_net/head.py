@@ -216,3 +216,14 @@ class HR2ONL(nn.Module):
 
         x = x + virt_feats
         return x
+
+
+def head(model_name: str, **kwargs):
+    model_list = ['linear', 'acar']
+    if model_name == 'linear':
+        model = LinearHead(**kwargs)
+    elif model_name == 'acar':
+        model = ACARHead(**kwargs)
+    else:
+        raise ValueError(f'Expected element in {model_list} but got: {model_name}.')
+    return model
