@@ -15,7 +15,7 @@
 from typing import List
 
 
-class OpCallMeta:
+class DCDependency:
     """
     `OpCallMeta` records the meta data of each operator call.
 
@@ -25,36 +25,36 @@ class OpCallMeta:
         inputs (`List[towhee.DataCollection]`):
             The operator's input DataCollections.
         output (`towhee.DataCollection`):
+            The operator's output DataCollection.
     """
 
     def __init__(self, op, inputs, output):
         self.op = op
         self.inputs = inputs
         self.output = output
-        self.is_active = False
 
 
-class LogicalDAG:
+class DCDependencyGraph:
     """
-    The DAG consists of all the transfromations.
+    The DAG consists of all the DataCollection dependencies.
     """
 
     def __init__(self):
-        self._op_calls = []
+        self._dc_dependencies = []
 
-    def add_op_call(self, op_call: OpCallMeta):
+    def add_dc_dependency(self, dependency: DCDependency):
         """
-        Add a operator call meta to DAG.
+        Add a DataCollection dependency to DAG.
 
         Args:
-            op_call (`OpCallMeta`):
-                The new operator call meta need to be added.
+            dependency (`DCDependency`):
+                The DataCollection dependency need to be added.
         """
-        self._op_calls.append(op_call)
+        self._dc_dependencies.append(dependency)
 
     @property
-    def op_calls(self) -> List[OpCallMeta]:
+    def dc_dependencies(self) -> List[DCDependency]:
         """
-        Getter of all the operator call metas.
+        Getter of all the DataCollection dependencies.
         """
-        return self._op_calls
+        return self._dc_dependencies
