@@ -15,14 +15,14 @@
 import unittest
 import torch
 
-from towhee.models.acar_net import BasicNeck
+from towhee.models import acar_net
 
 
-class TestAcarNeck(unittest.TestCase):
+class TestNeck(unittest.TestCase):
     """
     Test ACAR-NET Neck
     """
-    def test_neck(self):
+    def test_basic(self):
         data = {
             # 'clips': [torch.rand(1, 3, 10, 224, 224)],
             'aug_info': [{'crop_box': [0.0, 0.0, 1.0, 1.0], 'flip': False, 'pad_ratio': [1.0, 1.0]}],
@@ -33,7 +33,7 @@ class TestAcarNeck(unittest.TestCase):
             ]],
             'mid_times': [5]
         }
-        neck = BasicNeck(num_classes=3)
+        neck = acar_net.neck('basic', num_classes=3)
         out = neck(data)
         self.assertTrue(out['filenames'] == ['dummy video'])
         self.assertTrue(out['mid_times'] == [5])

@@ -23,8 +23,6 @@ from torch import nn
 
 BN = nn.BatchNorm3d
 
-__all__ = ['slowfast50', 'slowfast101', 'slowfast152', 'slowfast200']
-
 
 class Bottleneck(nn.Module):
     """
@@ -223,29 +221,16 @@ class SlowFast(nn.Module):
         return nn.Sequential(*layers)
 
 
-def slowfast50(**kwargs):
-    """Constructs a SlowFast-50 model.
-    """
-    model = SlowFast(Bottleneck, [3, 4, 6, 3], **kwargs)
-    return model
-
-
-def slowfast101(**kwargs):
-    """Constructs a SlowFast-101 model.
-    """
-    model = SlowFast(Bottleneck, [3, 4, 23, 3], **kwargs)
-    return model
-
-
-def slowfast152(**kwargs):
-    """Constructs a SlowFast-152 model.
-    """
-    model = SlowFast(Bottleneck, [3, 8, 36, 3], **kwargs)
-    return model
-
-
-def slowfast200(**kwargs):
-    """Constructs a SlowFast-200 model.
-    """
-    model = SlowFast(Bottleneck, [3, 24, 36, 3], **kwargs)
+def backbone(model_name: str, **kwargs):
+    model_list = ['slowfast50', 'slowfast101', 'slowfast152', 'slowfast200']
+    if model_name == 'slowfast50':
+        model = SlowFast(Bottleneck, [3, 4, 6, 3], **kwargs)
+    elif model_name == 'slowfast101':
+        model = SlowFast(Bottleneck, [3, 4, 23, 3], **kwargs)
+    elif model_name == 'slowfast152':
+        model = SlowFast(Bottleneck, [3, 8, 36, 3], **kwargs)
+    elif model_name == 'slowfast200':
+        model = SlowFast(Bottleneck, [3, 24, 36, 3], **kwargs)
+    else:
+        raise ValueError(f'Expected element in {model_list} but got: {model_name}.')
     return model

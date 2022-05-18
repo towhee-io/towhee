@@ -15,3 +15,4 @@
 from .neck import *
 from .head import *
 from .backbone import *
+from .model import *

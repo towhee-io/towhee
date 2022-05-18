@@ -15,15 +15,15 @@
 import unittest
 import torch
 
-from towhee.models.acar_net import LinearHead, ACARHead
+from towhee.models import acar_net
 
 
-class TestAcarHead(unittest.TestCase):
+class TestHead(unittest.TestCase):
     """
     Test ACAR-NET heads
     """
     data = {
-        'features': torch.rand(1, 128, 3, 4, 4),
+        'features': [torch.rand(1, 128, 2, 3, 3), torch.rand(1, 16, 8, 3, 3)],
         'rois': torch.rand(1, 5),
         'num_rois': 1,
         'roi_ids': [0, 1],
@@ -31,12 +31,12 @@ class TestAcarHead(unittest.TestCase):
         }
 
     def test_linear(self):
-        head = LinearHead(width=128, num_classes=10)
+        head = acar_net.head('linear', width=144, num_classes=10)
         out = head(self.data)
         self.assertTrue(out.shape == (1, 10))
 
     def test_acar(self):
-        head = ACARHead(width=128, num_classes=10, reduce_dim=64, hidden_dim=32)
+        head = acar_net.head('acar', width=144, num_classes=10)
         out = head(self.data)
         self.assertTrue(out.shape == (1, 10))
 

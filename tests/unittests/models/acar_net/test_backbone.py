@@ -15,38 +15,40 @@
 import unittest
 import torch
 
-from towhee.models.acar_net import slowfast50, slowfast101, slowfast152, slowfast200
+from towhee.models import acar_net
 
 
-class TestAcarBackbone(unittest.TestCase):
+class TestBackbone(unittest.TestCase):
     """
     Test ACAR-NET Backbone
     """
     data = torch.rand(1, 3, 8, 4, 4)
 
     def test_slowfast50(self):
-        model = slowfast50(alpha=4, beta=0.125, fuse_only_conv=False, fuse_kernel_size=7, slow_full_span=True)
+        model = acar_net.backbone(
+            'slowfast50',
+            alpha=4, beta=0.125, fuse_only_conv=False, fuse_kernel_size=7, slow_full_span=True)
         out = model(self.data)
         self.assertEqual(len(out), 2)
         self.assertEqual(out[0].shape, (1, 2048, 2, 1, 1))
         self.assertEqual(out[1].shape, (1, 256, 8, 1, 1))
 
     def test_slowfast101(self):
-        model = slowfast101(alpha=4, beta=0.125)
+        model = acar_net.backbone('slowfast101', alpha=4, beta=0.125)
         out = model(self.data)
         self.assertEqual(len(out), 2)
         self.assertEqual(out[0].shape, (1, 2048, 2, 1, 1))
         self.assertEqual(out[1].shape, (1, 256, 8, 1, 1))
 
     def test_slowfast152(self):
-        model = slowfast152(alpha=4, beta=0.125)
+        model = acar_net.backbone('slowfast152', alpha=4, beta=0.125)
         out = model(self.data)
         self.assertEqual(len(out), 2)
         self.assertEqual(out[0].shape, (1, 2048, 2, 1, 1))
         self.assertEqual(out[1].shape, (1, 256, 8, 1, 1))
 
     def test_slowfast200(self):
-        model = slowfast200(alpha=4, beta=0.125)
+        model = acar_net.backbone('slowfast200', alpha=4, beta=0.125)
         out = model(self.data)
         self.assertEqual(len(out), 2)
         self.assertEqual(out[0].shape, (1, 2048, 2, 1, 1))
