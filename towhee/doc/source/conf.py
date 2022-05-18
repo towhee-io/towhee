@@ -41,7 +41,6 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.prettyspecialmethods'
 ]
 
 myst_enable_extensions = [
@@ -54,6 +53,8 @@ myst_enable_extensions = [
     "smartquotes",
     "replacements",
 ]
+
+autosummary_generate = True 
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: |\(.\) \$ "
 copybutton_prompt_is_regexp = True

@@ -46,6 +46,12 @@ Developer API
    trainer/trainer.optimization
    trainer/trainer.utils
 
+Full API
+=============
+.. toctree::
+   :caption: Full API:
+
+   _autosummary/towhee
 
 Indices and tables
 ==================
