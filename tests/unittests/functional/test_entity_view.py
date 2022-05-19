@@ -11,32 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import unittest
 import doctest
+import unittest
 
-import towhee.functional.entity
-from towhee import Entity
+import towhee.functional.entity_view
+
 
 def load_tests(loader, tests, ignore):
     #pylint: disable=unused-argument
-    tests.addTests(doctest.DocTestSuite(towhee.functional.entity))
+    tests.addTests(doctest.DocTestSuite(towhee.functional.entity_view))
     return tests
 
-class TestEntity(unittest.TestCase):
-    """
-    Unit test for Entity class.
-    """
-    def test_init(self):
-        d = {'a': 'A', 'b': 'B', 'c': 'C'}
-        e1 = Entity()
-        e2 = Entity(**d)
-        e3 = Entity(a='A', b='B', c='C')
-        self.assertTrue(isinstance(e1, Entity))
-        self.assertTrue(isinstance(e2, Entity))
-        self.assertTrue(isinstance(e3, Entity))
-        self.assertEqual(e2.a, e3.a)
-        self.assertEqual(e2.b, e3.b)
-        self.assertEqual(e2.c, e3.c)
 
 if __name__ == '__main__':
     unittest.main()

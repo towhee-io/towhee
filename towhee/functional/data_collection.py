@@ -18,9 +18,11 @@ import reprlib
 
 from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.entity import Entity
+from towhee.functional.entity_view import EntityView
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import DCMixins
 from towhee.functional.mixins.dataframe import DataFrameMixin
+from towhee.functional.mixins.column import ColumnMixin
 
 
 class DataCollection(Iterable, DCMixins):
@@ -88,7 +90,6 @@ class DataCollection(Iterable, DCMixins):
         b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
 
     """
-
     def __init__(self, iterable: Iterable) -> None:
         """Initializes a new DataCollection instance.
 
@@ -120,7 +121,7 @@ class DataCollection(Iterable, DCMixins):
         """
         # pylint: disable=protected-access
         iterable = iter(self._iterable) if not self.is_stream else self._iterable
-        return self._factory(iterable, parent_stream = False)
+        return self._factory(iterable, parent_stream=False)
 
     def unstream(self):
         """
@@ -144,7 +145,7 @@ class DataCollection(Iterable, DCMixins):
         False
         """
         iterable = list(self._iterable) if self.is_stream else self._iterable
-        return self._factory(iterable, parent_stream = False)
+        return self._factory(iterable, parent_stream=False)
 
     @property
     def is_stream(self):
@@ -176,7 +177,7 @@ class DataCollection(Iterable, DCMixins):
         """
         return isinstance(self._iterable, Iterator)
 
-    def _factory(self, iterable, parent_stream = True):
+    def _factory(self, iterable, parent_stream=True):
         """
         Factory method for data collection.
 
@@ -669,8 +670,7 @@ class DataCollection(Iterable, DCMixins):
         TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
         if not hasattr(self._iterable, '__getitem__'):
-            raise TypeError('indexing is only supported for '
-                            'data collection created from list or pandas DataFrame.')
+            raise TypeError('indexing is only supported for ' 'data collection created from list or pandas DataFrame.')
         if isinstance(index, int):
             return self._iterable[index]
         return DataCollection(self._iterable[index])
@@ -694,8 +694,7 @@ class DataCollection(Iterable, DCMixins):
         TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
         if not hasattr(self._iterable, '__setitem__'):
-            raise TypeError('indexing is only supported for '
-                            'data collection created from list or pandas DataFrame.')
+            raise TypeError('indexing is only supported for ' 'data collection created from list or pandas DataFrame.')
         self._iterable[index] = value
 
     def append(self, item: Any) -> 'DataCollection':
@@ -717,8 +716,7 @@ class DataCollection(Iterable, DCMixins):
         if hasattr(self._iterable, 'append'):
             self._iterable.append(item)
             return self
-        raise TypeError('appending is only supported for '
-                            'data collection created from list.')
+        raise TypeError('appending is only supported for ' 'data collection created from list.')
 
     def __rshift__(self, unary_op):
         """
@@ -794,6 +792,7 @@ class DataCollection(Iterable, DCMixins):
                 if i >= n:
                     break
                 yield x
+
         return self._factory(inner())
 
     def run(self):
@@ -819,7 +818,8 @@ class DataCollection(Iterable, DCMixins):
         """
         return DataFrame(self._iterable)
 
-class DataFrame(DataCollection, DataFrameMixin):
+
+class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     """
     Entity based DataCollection.
 
@@ -830,7 +830,16 @@ class DataFrame(DataCollection, DataFrameMixin):
     >>> DataFrame([Entity(id=a) for a in [1,2,3]])
     [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
     """
-    def _factory(self, iterable, parent_stream = True):
+    def __init__(self, iterable: Iterable) -> None:
+        """Initializes a new DataCollection instance.
+
+        Args:
+            iterable (Iterable): input data
+        """
+        super().__init__(iterable)
+        self._mode = self.ModeFlag.ROWBASEDFLAG
+
+    def _factory(self, iterable, parent_stream=True):
         """
         Factory method for DataFrame.
 
@@ -870,6 +879,45 @@ class DataFrame(DataCollection, DataFrameMixin):
         <class 'towhee.functional.data_collection.DataCollection'>
         """
         return DataCollection(self._iterable)
+
+    @property
+    def mode(self):
+        """
+        Return the storage mode of the DataFrame.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
+        >>> df = DataFrame(e)
+        >>> df.mode
+        <ModeFlag.ROWBASEDFLAG: 1>
+        >>> df.to_column()
+        >>> df.mode
+        <ModeFlag.COLBASEDFLAG: 2>
+        """
+        return self._mode
+
+    def __iter__(self):
+        """
+        Define the way of iterating a DataFrame.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
+        >>> df = DataFrame(e)
+        >>> df.to_list()[0]
+        <Entity dict_keys(['a', 'b'])>
+        >>> df.to_column()
+        >>> df.to_list()[0]
+        <EntityView dict_keys(['a', 'b'])>
+        """
+        if hasattr(self._iterable, 'iterrows'):
+            return (x[1] for x in self._iterable.iterrows())
+        if self._mode == self.ModeFlag.ROWBASEDFLAG:
+            return iter(self._iterable)
+        return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
 
 
 if __name__ == '__main__':

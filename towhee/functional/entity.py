@@ -32,16 +32,38 @@ class Entity:
         """
         Create an Entity with given attributes.
         """
-
         for k, v in kwargs.items():
             self.__setattr__(k, v)
+
+    # def __getattr__(self, name):
+    #     if 'data' not in self.__dict__:
+    #         raise KeyError(f'Field "{name}" does not exist in table schema')
+    #     else:
+    #         return self.data[name][self.offset].as_py()
 
     def __repr__(self):
         """
         Define the representation of the Entity.
+
+        Examples:
+
+        >>> from towhee import Entity
+        >>> e = Entity(a = 1, b = 2)
+        >>> e
+        <Entity dict_keys(['a', 'b'])>
         """
         content = str(self.__dict__.keys())
         return f'<{self.__class__.__name__} {content.strip()}>'
 
     def __str__(self) -> str:
+        """
+        Return the str representation of an Entity.
+
+        Examples:
+
+        >>> from towhee import Entity
+        >>> e = Entity(a = 1, b = 2)
+        >>> str(e)
+        '{"a": 1, "b": 2}'
+        """
         return json.dumps({k: getattr(self, k) for k in self.__dict__})
