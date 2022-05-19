@@ -13,10 +13,19 @@
 # limitations under the License.
 
 from towhee.utils.log import engine_log
+import os
 
 try:
     # pylint: disable=unused-import
     import pandas
-except ModuleNotFoundError as e:
-    engine_log.error('pandas not found, you can install via `pip install pandas`.')
-    raise ModuleNotFoundError('pandas not found, you can install via `pip install pandas`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    engine_log.error('pandas not found, try to install pandas automatically.')
+
+    try:
+        # try to install automatically, and reload the `pandas` module
+        os.system("pip install pandas")
+        # pylint: disable=unused-import
+        import pandas
+    except:
+        engine_log.error('pandas not found, you can install via `pip install pandas`.')
+        raise ModuleNotFoundError('pandas not found, you can install via `pip install pandas`.') from moduleNotFound
