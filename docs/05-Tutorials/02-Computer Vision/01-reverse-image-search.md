@@ -40,7 +40,7 @@ df = pd.read_csv('reverse_image_search.csv')
 df.head()
 ```
 
-<img src="reverse_image_search_showcsv.png" alt="img" style="zoom:50%;" />
+<img src={require('./reverse_image_search_showcsv.png').default} alt="img" style={{ zoom: '50%' }} />
 
 
 To use the dataset for image search, let's first define some helper functions:
@@ -107,7 +107,7 @@ In this section, we'll show how to build our image search engine using Milvus. T
 
 We use [Towhee](https://towhee.io/), a machine learning framework that allows for creating data processing pipelines. [Towhee](https://towhee.io/) also provides predefined operators which implement insert and query operation in Milvus.
 
-<img src="./reverse_image_search_workflow.png" alt="img" style="zoom:50%;" />
+<img src={require('./reverse_image_search_workflow.png').default} alt="img" style={{ zoom: '50%' }} />
 
 
 ### Load Image Embeddings into Milvus
@@ -155,7 +155,7 @@ Now that embeddings for candidate images have been inserted into Milvus, we can 
 )
 ```
 
-<img src="reverse_image_search_results.png" alt="img" style="zoom:100%;" />
+![img](reverse_image_search_results.png)
 
 ## Evaluation
 
@@ -180,7 +180,7 @@ benchmark = (
 )
 ```
 
-<img src="reverse_image_search_metric1.png"  alt="img" style="zoom:50%" />
+<img src={require('./reverse_image_search_metric1.png').default} alt="img" style={{ zoom: '50%' }} />
 
 
 ### Optimization I: embedding vector normalization
@@ -213,7 +213,8 @@ benchmark = (
 )
 ```
 
-<img src="reverse_image_search_metric2.png" alt="img" style="zoom:50%;" />
+<img src={require('./reverse_image_search_metric2.png').default} alt="img" style={{ zoom: '50%' }} />
+
 
 
 ### Optimization II: increase model complexity
@@ -278,7 +279,7 @@ benchmark = (
 )
 ```
 
-<img src="reverse_image_search_metric3.png" alt="img" style="zoom:50%;" />
+<img src={require('./reverse_image_search_metric3.png').default} alt="img" style={{ zoom: '50%' }} />
 
 
 ## Release a Showcase
