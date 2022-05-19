@@ -1,6 +1,8 @@
 # Reverse Image Search
 
-This tutorial can run as [jupyter notebook](https://jupyter.org/install), you can refer to [reverse_image_search.jupyter](https://github.com/towhee-io/towhee/blob/main/tutorials/reverse_image_search.ipynb). Have fun with it!
+This tutorial can run as [jupyter notebook](https://jupyter.org/install), you can refer to [Build an Image Search Engine in Minutes](https://github.com/towhee-io/examples/blob/main/image/reverse_image_search/build_image_search_engine.ipynb). Have fun with it!
+
+> If you are interested in how to deploy online service with large-scale image data, you can refert to another notebook "[Deep Dive into Real-World Image Search Engine with Towhee](https://github.com/towhee-io/examples/blob/main/image/reverse_image_search/deep_dive_image_search.ipynb)", you will lean how to optimize algorithm, feed with large-scale image datasets, and deploy as a micro-service. 
 
 ## Scenario introduction
 
@@ -8,179 +10,300 @@ This tutorial can run as [jupyter notebook](https://jupyter.org/install), you ca
 
 A few applications of reverse image search include finding the original source of an image, searching for similar content, and product recommendation.
 
-## Tutorial overview
+## Overview
 
-Building a reverse image search system typically involves the following steps:
-1. model and pipeline selection
-2. computing embedding vectors for the existing image dataset
-3. insert all generated embedding vectors into a vector database
-4. process search queries
-
-A block diagram for a basic reverse image search system is shown in the images below. The first image shows how an existing image dataset is transformed into embedding vectors and inserted into a vector database, while the second image shows how the system processes query images.
-
-![img](./reverse_image_search_step1.png)
-
-![img](./reverse_image_search_step2.png)
-
-In the upcoming sections, we will first walk you through some of the prep work required for this tutorial. After that, we will elaborate on each of the four steps mentioned above.
+This tutorial illustrates how to build an image search engine from scratch using [Milvus](https://milvus.io/). We'll go through image search procedures and evaluate the performance. Moreover, we managed to make the core functionality as simple as 15 lines of code, with which you can start hacking your own image search engine.
 
 ## Preparation
 
-In this step, we will download the image dataset, install [Towhee](https://towhee.io/), and setup [Milvus](https://milvus.io/), an open source vector database.
+### Prepare the data
 
-### Download the image dataset
+First, we need to prepare the dataset and Milvus environment. A subset of the ImageNet dataset (100 classes, 10 images for each class) is used in this demo, and the dataset is available via [Google Drive](https://drive.google.com/file/d/1lRhHODcFXUEHf7n-GFlvYgBikhg81KbB/view?usp=sharing) and [Github](https://github.com/towhee-io/data/raw/main/image/reverse_image_search.zip).
 
-In this tutorial, we will use a subset of the ImageNet dataset (100 classes, 10 images for each class). You can download the dataset via:
+The dataset is organized as follows:
 
-- Google Drive: https://drive.google.com/file/d/1bg1RtUjeZlOfV2BiA2nf7sn5Jec9b-9I/view?usp=sharing
-- Dropbox: https://www.dropbox.com/s/ucv15cxblok84x0/image_dataset.zip?dl=0
-- Aliyun Drive: https://www.aliyundrive.com/s/dLdeDWEhcnr
-
-In this tutorial, we will use `gdown` to download and unzip the data from Google Drive.
+- **train**: directory of candidate images;
+- **test**: directory of the query images;
+- **reverse_image_search.csv**: a csv file containing an ***id\***, ***path\***, and ***label\*** for each image;
 
 ```bash
-$ pip3 install gdown
-$ gdown "https://drive.google.com/uc?id=1bg1RtUjeZlOfV2BiA2nf7sn5Jec9b-9I"
-$ unzip -q image_dataset.zip
+$ curl -L https://github.com/towhee-io/data/raw/main/image/reverse_image_search.zip -O
+$ unzip -q -o reverse_image_search.zip
 ```
 
-The downloaded data contains two directories - `dataset` for the image dataset and `query` for the query images.
-
-### Install Towhee
-
-We'll use `pip` in this tutorial. We also support installing Towhee via `conda` as well as from source; check out [this page](/02-Getting%20Started/02-install.md) for more information.
-
-```bash
-$ pip3 install towhee
-```
-
-### Setup Milvus
-
-Milvus is an open-source vector database built to power embedding similarity search and AI applications. More info about Milvus is available [here](https://github.com/milvus-io/milvus).
-
-We'll be using `docker-compose` to install Milvus standalone. Before installing Milvus (see the [official Milvus installation guide](https://milvus.io/docs/v2.0.0/install_standalone-docker.md)), make sure you have the necessary [prerequisites](https://milvus.io/docs/v2.0.0/prerequisite-docker.md).
-
-```bash
-# download the latest docker-compose file
-$ wget https://github.com/milvus-io/milvus/releases/download/v2.0.0-pre-ga/milvus-standalone-docker-compose.yml -O docker-compose.yml
-# start the Milvus service
-$ docker-compose up -d
-# check the state of the containers
-$ docker-compose ps
-```
-
-We will also need to install Python bindings for Milvus.
-
-```bash
-$ pip3 install pymilvus==2.0.0rc9
-```
-
-## Steps in Python
-
-### 1. Model and pipeline selection
-
-The first step in building a reverse image search system is selecting an appropriate embedding model and one of its associated pipelines. Within Towhee, all pipelines can be found on the [Towhee hub](https://towhee.io/pipelines). Clicking on any of the categories on the right hand side of the page will filter the results based on the specified task; selecting the `image-embedding` category will reveal all image embedding pipelines that Towhee offers. We also provide a summary of popular image embedding pipelines [here](https://docs.towhee.io/pipelines/image-embedding).
-
-Resource requirements, accuracy, inference latency are key trade-offs when selecting a proper pipeline. Towhee provides a multitude of pipelines to meet various application demands. The current state-of-the-art embedding pipelines are ensemble pipelines that include multiple models (our [best ensemble](https://towhee.io/towhee/image-embedding-3ways-ensemble-v1) combines the Swin Transformer with EfficientNet and Resnet-101). These pipelines are fairly computational expensive. In contrast, if a slightly less "accurate" but much faster pipeline is okay for your application, we recommend EfficientNet ([image-embedding-efficientnetb7](https://towhee.io/towhee/image-embedding-efficientnetb7)). For demonstration purposes, we will be using Resnet-50 ([image-embedding-resnet50](https://towhee.io/towhee/image-embedding-resnet50)) in this tutorial.
+Let's take a quick look on the csv file:
 
 ```python
-from towhee import pipeline
-embedding_pipeline = pipeline('towhee/image-embedding-resnet50')
+import pandas as pd
+
+df = pd.read_csv('reverse_image_search.csv')
+df.head()
 ```
 
-### 2. Computing embedding vectors for the existing image dataset
+<img src="reverse_image_search_showcsv.png" alt="img" style="zoom:50%;" />
 
-With an optimal pipeline selected, computing embedding vectors over our image dataset is the next step. All `image-embedding` Towhee pipelines output an embedding vector given an image path.
+
+To use the dataset for image search, let's first define some helper functions:
+
+- **read_images(results)**: read images by image IDs;
+- **ground_truth(path)**: ground-truth for each query image, which is used for calculating mHR(mean hit ratio) and mAP(mean average precision);
 
 ```python
-import numpy as np
-import os
-from pathlib import Path
+import cv2
+from towhee._types.image import Image
 
-dataset_path = './image_dataset/dataset/'
-images = []
-vectors = []
+id_img = df.set_index('id')['path'].to_dict()
+label_ids = {}
+for label in set(df['label']):
+    label_ids[label] = list(df[df['label']==label].id)
 
-for img_path in Path(dataset_path).glob('*'):
-    vec = embedding_pipeline(str(img_path))
-    norm_vec = vec / np.linalg.norm(vec)
-    vectors.append(norm_vec.tolist())
-    images.append(str(img_path.resolve()))
+def read_images(results):
+    imgs = []
+    for re in results:
+        path = id_img[re.id]
+        imgs.append(Image(cv2.imread(path), 'BGR'))
+    return imgs
+
+def ground_truth(path):
+    label = path.split('/')[-2]
+    return label_ids[label]
 ```
 
-### 3. Insert all generated embedding vectors into a vector database
+### Create a Milvus Collection
 
-While brute-force computation of distances between queries and all image dataset vectors is perfectly fine for small datasets, scaling to billions of image dataset items requires a production-grade vector database that utilizes a search index to greatly speed up the query process. Here, we'll insert the vectors computed in the previous section into a Milvus collection.
+Before getting started, please make sure you have [installed milvus](https://milvus.io/docs/v2.0.x/install_standalone-docker.md). Let's first create a `reverse_image_search` collection that uses the [L2 distance metric](https://milvus.io/docs/v2.0.x/metric.md#Euclidean-distance-L2) and an [IVF_FLAT index](https://milvus.io/docs/v2.0.x/index.md#IVF_FLAT).
 
 ```python
-import pymilvus as milvus
+from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
 
-collection_name = 'reverse_image_search'
-vec_dim = len(vectors[0])
+def create_milvus_collection(collection_name, dim):
+    connections.connect(host='127.0.0.1', port='19530')
+    
+    if utility.has_collection(collection_name):
+        utility.drop_collection(collection_name)
+    
+    fields = [
+    FieldSchema(name='id', dtype=DataType.INT64, descrition='ids', is_primary=True, auto_id=False),
+    FieldSchema(name='embedding', dtype=DataType.FLOAT_VECTOR, descrition='embedding vectors', dim=dim)
+    ]
+    schema = CollectionSchema(fields=fields, description='reverse image search')
+    collection = Collection(name=collection_name, schema=schema)
 
-# connect to local Milvus service
-milvus.connections.connect(host='127.0.0.1', port=19530)
+    # create IVF_FLAT index for collection.
+    index_params = {
+        'metric_type':'L2',
+        'index_type':"IVF_FLAT",
+        'params':{"nlist":2048}
+    }
+    collection.create_index(field_name="embedding", index_params=index_params)
+    return collection
 
-# create collection
-id_field = milvus.FieldSchema(name="id", dtype=milvus.DataType.INT64, is_primary=True, auto_id=True)
-vec_field = milvus.FieldSchema(name="vec", dtype=milvus.DataType.FLOAT_VECTOR, dim=vec_dim)
-schema = milvus.CollectionSchema(fields=[id_field, vec_field])
-collection = milvus.Collection(name=collection_name, schema=schema)
-
-# insert data to Milvus
-res = collection.insert([vectors])
-collection.load()
-img_dict = {}
-
-# maintain mappings between primary keys and the original images for image retrieval
-for i, key in enumerate(res.primary_keys):
-    img_dict[key] = images[i]
+collection = create_milvus_collection('reverse_image_search', 2048)
 ```
 
-### 4. Process search queries
+## Reverse Image Search
 
-We can use the same pipeline to generate an embedding vector for each query image. We can then search across the collection using the vector.
+In this section, we'll show how to build our image search engine using Milvus. The basic idea behind semantic image search is the extract embeddings from images using a deep neural network and compare the embeddings with those stored in Milvus.
+
+We use [Towhee](https://towhee.io/), a machine learning framework that allows for creating data processing pipelines. [Towhee](https://towhee.io/) also provides predefined operators which implement insert and query operation in Milvus.
+
+<img src="./reverse_image_search_workflow.png" alt="img" style="zoom:50%;" />
+
+
+### Load Image Embeddings into Milvus
+
+We first extract embeddings from images with `resnet50` model and insert the embeddings into Milvus for indexing. Towhee provides a [method-chaining style API](https://towhee.readthedocs.io/en/main/index.html) so that users can assemble a data processing pipeline with operators.
 
 ```python
-query_img_path = './image_dataset/query/'
-query_images = []
-query_vectors = []
-top_k = 5
+import towhee
 
-for img_path in Path(query_img_path).glob('*'):
-    vec = embedding_pipeline(str(img_path))
-    norm_vec = vec / np.linalg.norm(vec)
-    query_vectors.append(norm_vec.tolist())
-    query_images.append(str(img_path.resolve()))
+collection = create_milvus_collection('reverse_image_search', 2048)
 
-query_results = collection.search(data=query_vectors, anns_field="vec", param={"metric_type": 'L2'}, limit=top_k)
+dc = (
+    towhee.read_csv('reverse_image_search.csv')
+      .runas_op['id', 'id'](func=lambda x: int(x))
+      .image_decode['path', 'img']()
+      .image_embedding.timm['img', 'vec'](model_name='resnet50')
+      .to_milvus['id', 'vec'](collection=collection, batch=100)
+)
 ```
 
-Display the results.
+#### Explanation of Data Processing Pipeline
 
-```bash
-import matplotlib.pyplot as plt
-from PIL import Image
+Here is detailed explanation for each line of the code:
 
-for i in range(len(query_results)):
-    results = query_results[i]
-    query_file = query_images[i]
+- `towhee.read_csv('reverse_image_search.csv')`: read tabular data from csv file (`id`, `path` and `label` columns);
+- `.runas_op['id', 'id'](func=lambda x: int(x))`: for each row from the data, convert the data type of the column `id` from `str` to `int`;
+- `.image_decode['path', 'img']()`: for each row from the data, read and decode the image at `path` and put the pixel data into column `img`;
+- `.image_embedding.timm['img', 'vec'](model_name='resnet50')`: extract embedding feature with `image_embedding.timm`, an operator from the [Towhee hub](https://towhee.io/image-embedding/timm) based on [pytorch-image-models](https://github.com/rwightman/pytorch-image-models). This operator supports a variety of image models trained on [ImageNet](https://image-net.org/), including `vgg16`, `resnet50`, `vit_base_patch8_224`, `convnext_base`, etc.
+- `.tensor_normalize['vec', 'vec']()`: normalize the resulting embedding vector;
+- `.to_milvus['id', 'vec'](collection=collection, batch=100)`: insert image embedding features in to Milvus;
 
-    result_files = [img_dict[result.id] for result in results]
-    distances = [result.distance for result in results]
+### Query Similar Images from Milvus
 
-    fig_query, ax_query = plt.subplots(1,1, figsize=(5,5))
-    ax_query.imshow(Image.open(query_file))
-    ax_query.set_title("Searched Image\n")
-    ax_query.axis('off')
+Now that embeddings for candidate images have been inserted into Milvus, we can query across it for nearest neighbors. Again, we use Towhee to load the input image, compute an embedding vector, and use the vector as a query for Milvus. Because Milvus only outputs image IDs and distance values, we provide a `read_images` function to get the original image based on IDs and display.
 
-    fig, ax = plt.subplots(1,len(result_files),figsize=(20,20))
-    for x in range(len(result_files)):
-        ax[x].imshow(Image.open(result_files[x]))
-        ax[x].set_title('dist: ' + str(distances[x])[0:5])
-        ax[x].axis('off')
+```
+(
+    towhee.glob['path']('./test/w*/*.JPEG')
+      .image_decode['path', 'img']()
+      .image_embedding.timm['img', 'vec'](model_name='resnet50')
+      .milvus_search['vec', 'result'](collection=collection, limit=5)
+      .runas_op['result', 'result_img'](func=read_images)
+      .select['img', 'result_img']()
+      .show()
+)
 ```
 
-![img](./reverse_image_search_results1.png)
+<img src="reverse_image_search_results.png" alt="img" style="zoom:100%;" />
 
-![img](./reverse_image_search_results2.png)
+## Evaluation
+
+We have finished the core functionality of the image search engine. However, we don't know whether it achieves a reasonable performance. We need to evaluate the search engine against the ground truth so that we know if there is any room to improve it.
+
+In this section, we'll evaluate the strength of our image search engine using mHR and mAP:
+
+- [mHR (recall@K)](https://amitness.com/2020/08/information-retrieval-evaluation/#2-recallk): This metric describes how many actual relevant results were returned out of all ground-truth relevant results by the search engine. For example, if we have put 100 pictures of cats into the search engine and then query the image search engine with another picture of cats. The total relevant result is 100, and the actual relevant results are the number of cat images in the top 100 results returned by the search engine. If there are 80 images about cats in the search result, the hit ratio is 80/100;
+- [mAP](https://amitness.com/2020/08/information-retrieval-evaluation/#3-mean-average-precisionmap): Average precision describes whether all of the relevant results are ranked higher than irrelevant results.
+
+```python
+benchmark = (
+    towhee.glob['path']('./test/*/*.JPEG')
+        .image_decode['path', 'img']()
+        .image_embedding.timm['img', 'vec'](model_name='resnet50')
+        .milvus_search['vec', 'result'](collection=collection, limit=10)
+        .runas_op['path', 'ground_truth'](func=ground_truth)
+        .runas_op['result', 'result'](func=lambda res: [x.id for x in res])
+        .with_metrics(['mean_hit_ratio', 'mean_average_precision'])
+        .evaluate['ground_truth', 'result']('resnet50')
+        .report()
+)
+```
+
+<img src="reverse_image_search_metric1.png"  alt="img" style="zoom:50%" />
+
+
+### Optimization I: embedding vector normalization
+
+A quick optimization is normalizing the embedding features before indexing them in Milvus. This results in *cosine similarity*, which measures the similarity between two vectors using the angle between them while ignoring the magnitude of the vectors.
+
+```python
+collection = create_milvus_collection('reverse_image_search_norm', 2048)
+
+dc = (
+    towhee.read_csv('reverse_image_search.csv')
+      .runas_op['id', 'id'](func=lambda x: int(x))
+      .image_decode['path', 'img']()
+      .image_embedding.timm['img', 'vec'](model_name='resnet50')
+      .tensor_normalize['vec', 'vec']()
+      .to_milvus['id', 'vec'](collection=collection, batch=100)
+)
+
+benchmark = (
+    towhee.glob['path']('./test/*/*.JPEG')
+        .image_decode['path', 'img']()
+        .image_embedding.timm['img', 'vec'](model_name='resnet50')
+        .tensor_normalize['vec', 'vec']()
+        .milvus_search['vec', 'result'](collection=collection, limit=10)
+        .runas_op['path', 'ground_truth'](func=ground_truth)
+        .runas_op['result', 'result'](func=lambda res: [x.id for x in res])
+        .with_metrics(['mean_hit_ratio', 'mean_average_precision'])
+        .evaluate['ground_truth', 'result']('resnet50')
+        .report()
+)
+```
+
+<img src="reverse_image_search_metric2.png" alt="img" style="zoom:50%;" />
+
+
+### Optimization II: increase model complexity
+
+Another quick optimization is increase model complexity (at the cost of runtime). With Towhee, this is very easy: we simply replace Resnet-50 with [EfficientNet-B7](https://pytorch.org/vision/stable/models.html#classification), an image classificiation model which has better accuracy on ImageNet. Although Towhee provides a pre-trained EfficientNet-B7 model via `timm`, we'll use `torchvision` to demonstrate how external models and functions can be used within Towhee.
+
+```python
+import torch
+import towhee
+from torchvision import models
+from torchvision import transforms
+from PIL import Image as PILImage
+
+
+torch_model = models.efficientnet_b7(pretrained=True)
+torch_model = torch.nn.Sequential(*(list(torch_model.children())[:-1]))
+torch_model.to('cuda' if torch.cuda.is_available() else 'cpu')
+torch_model.eval()
+preprocess = transforms.Compose([
+    transforms.Resize(size=224, interpolation=transforms.InterpolationMode.BICUBIC),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
+
+def efficientnet_b7(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = PILImage.fromarray(img.astype('uint8'), 'RGB')
+    img = torch.unsqueeze(preprocess(img), 0)
+    img = img.to('cuda' if torch.cuda.is_available() else 'cpu')
+    embedding = torch_model(img).detach().cpu().numpy()
+    return embedding.reshape([2560])
+```
+
+Then use `efficientnet_b7` to generate embedding vector and show the evaluation.
+
+```python
+collection = create_milvus_collection('image_search_efficientnet_b7', 2560)
+
+dc = (
+    towhee.read_csv('reverse_image_search.csv')
+        .runas_op['id', 'id'](func=lambda x: int(x))
+        .image_decode['path', 'img']()
+        .runas_op['img', 'vec'](func=efficientnet_b7)
+        .tensor_normalize['vec', 'vec']()
+        .to_milvus['id', 'vec'](collection=collection, batch=100)
+    )
+
+benchmark = (
+    towhee.glob['path']('./test/*/*.JPEG')
+        .image_decode['path', 'img']()
+        .runas_op['img', 'vec'](func=efficientnet_b7)
+        .tensor_normalize['vec', 'vec']()
+        .milvus_search['vec', 'result'](collection=collection, limit=10)
+        .runas_op['path', 'ground_truth'](func=ground_truth)
+        .runas_op['result', 'result'](func=lambda res: [x.id for x in res])
+        .with_metrics(['mean_hit_ratio', 'mean_average_precision'])
+        .evaluate['ground_truth', 'result']('efficientnet_b7')
+        .report()
+)
+```
+
+<img src="reverse_image_search_metric3.png" alt="img" style="zoom:50%;" />
+
+
+## Release a Showcase
+
+We've done an excellent job on the core functionality of our image search engine. Now it's time to build a showcase with interface. [Gradio](https://gradio.app/) is a great tool for building demos. With Gradio, we simply need to wrap the data processing pipeline via a `search_in_milvus` function:
+
+```python
+import gradio
+from towhee.types.image_utils import from_pil
+
+with towhee.api() as api:
+    milvus_search_function = (
+        api.runas_op(func=lambda img: from_pil(img))
+            .image_embedding.timm(model_name='resnet50')
+            .tensor_normalize()
+            .milvus_search(collection='reverse_image_search_norm', limit=5)
+            .runas_op(func=lambda res: [id_img[x.id] for x in res])
+            .as_function()
+    )
+
+interface = gradio.Interface(milvus_search_function, 
+                             gradio.inputs.Image(type="pil", source='upload'),
+                             [gradio.outputs.Image(type="file", label=None) for _ in range(5)])
+
+interface.launch(inline=True)
+```
+
+![Alt Text](reverse_image_search_showcase.gif)
