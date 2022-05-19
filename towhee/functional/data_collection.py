@@ -18,6 +18,7 @@ import reprlib
 
 from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.entity import Entity
+from towhee.functional.entity_view import EntityView
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import DCMixins
 from towhee.functional.mixins.dataframe import DataFrameMixin
@@ -817,6 +818,7 @@ class DataCollection(Iterable, DCMixins):
         """
         return DataFrame(self._iterable)
 
+
 class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     """
     Entity based DataCollection.
@@ -835,7 +837,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             iterable (Iterable): input data
         """
         super().__init__(iterable)
-        self._is_row = True
+        self._mode = self.ModeFlag.ROWBASEDFLAG
 
     def _factory(self, iterable, parent_stream=True):
         """
@@ -878,8 +880,44 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         """
         return DataCollection(self._iterable)
 
-    def is_row(self):
-        return self._is_row
+    @property
+    def mode(self):
+        """
+        Return the storage mode of the DataFrame.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
+        >>> df = DataFrame(e)
+        >>> df.mode
+        <ModeFlag.ROWBASEDFLAG: 1>
+        >>> df.to_column()
+        >>> df.mode
+        <ModeFlag.COLBASEDFLAG: 2>
+        """
+        return self._mode
+
+    def __iter__(self):
+        """
+        Define the way of iterating a DataFrame.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
+        >>> df = DataFrame(e)
+        >>> df.to_list()[0]
+        <Entity dict_keys(['a', 'b'])>
+        >>> df.to_column()
+        >>> df.to_list()[0]
+        <EntityView dict_keys(['a', 'b'])>
+        """
+        if hasattr(self._iterable, 'iterrows'):
+            return (x[1] for x in self._iterable.iterrows())
+        if self._mode == self.ModeFlag.ROWBASEDFLAG:
+            return iter(self._iterable)
+        return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
 
 
 if __name__ == '__main__':
