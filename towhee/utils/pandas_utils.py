@@ -23,7 +23,7 @@ except ModuleNotFoundError as moduleNotFound:
 
     try:
         # try to install automatically, and reload the `pandas` module
-        os.system("pip install pandas")
+        os.system('pip install pandas')
         # pylint: disable=unused-import
         import pandas
     except:
