@@ -22,7 +22,7 @@ import numpy
 import torch
 from torch import nn
 
-from torchvision.transforms import Compose, Lambda
+from torchvision.transforms import Compose
 
 try:
     from torchvideo.transforms import (
@@ -124,7 +124,6 @@ class VideoTransforms:
             raise KeyError from e
 
         tfms_list = [UniformTemporalSubsample(self.num_frames),
-                     Lambda(lambda x: x / 255.0),
                      NormalizeVideo(mean=self.mean, std=self.std, inplace=True),
                      ShortSideScale(size=self.side_size),
                      CenterCropVideo(size=(self.crop_size, self.crop_size)),
