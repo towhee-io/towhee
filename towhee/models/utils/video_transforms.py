@@ -130,7 +130,7 @@ class VideoTransforms:
                      CollectFrames(),
                      PackPathway(alpha=self.alpha)]
         if self.num_frames is None:
-            del tfms_list[:2]
+            del tfms_list[0]
         if not self.model_name.startswith("slowfast"):
             del tfms_list[-1]
         self.tfms = Compose(tfms_list)
