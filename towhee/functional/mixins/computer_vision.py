@@ -42,13 +42,12 @@ class ComputerVisionMixin:
 
         return cls(inner())
 
-    def to_video(self, path):
+    def to_video(self, path, fmt='MJPG', fps=15):
         from towhee.utils.cv2_utils import cv2
 
         out = None
         for frame in self:
             if out is None:
-                out = cv2.VideoWriter(
-                    path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10,
-                    (frame.shape[1], frame.shape[0]))
+                out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fmt), fps,
+                                      (frame.shape[1], frame.shape[0]))
             out.write(frame)
