@@ -35,7 +35,11 @@ read_json = DataCollection.from_json
 
 read_camera = DataCollection.from_camera
 
+read_video = DataCollection.read_video
+
 from_zip = DataCollection.from_zip
+
+to_video = DataCollection.to_video
 
 
 def from_df(dataframe, as_stream=False):
