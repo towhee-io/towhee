@@ -234,14 +234,16 @@ class save_image:
     """
 
     def __init__(self, dir: str):
-        self._file = str(uuid.uuid4()) + '.jpg'
-        self._img_path = str(Path(dir) / self._file)
-        if not Path(dir).exists():
-            Path(dir).mkdir(parents=True)
+        self._dir = dir
+        if not Path(self._dir).exists():
+            Path(self._dir).mkdir(parents=True)
 
     def __call__(self, img):
         from towhee.utils.pil_utils import PILImage
         from towhee.utils.ndarray_utils import cv2
+
+        self._file = str(uuid.uuid4()) + '.jpg'
+        self._img_path = str(Path(self._dir) / self._file)
         if isinstance(img, PILImage.Image):
             img.save(self._img_path)
         elif isinstance(img, (Image, np.ndarray)):
