@@ -29,9 +29,9 @@ from towhee.hparam import dynamic_dispatch
 #     return DataCollection.unstream(iterable)
 
 
-read_csv = DataCollection.from_csv
+read_csv = DataFrame.from_csv
 
-read_json = DataCollection.from_json
+read_json = DataFrame.from_json
 
 read_camera = DataCollection.from_camera
 
