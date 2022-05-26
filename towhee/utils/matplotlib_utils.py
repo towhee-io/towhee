@@ -11,12 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from towhee.utils.log import engine_log
-
 try:
     # pylint: disable=unused-import
     import matplotlib
     import matplotlib.pyplot as plt
-except ModuleNotFoundError as e:
-    engine_log.error('matplotlib not found, you can install via `pip install matplotlib`.')
-    raise ModuleNotFoundError('matplotlib not found, you can install via `pip install matplotlib`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('matplotlib')
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('matplotlib not found, you can install via `pip install matplotlib`.')
+        raise ModuleNotFoundError('matplotlib not found, you can install via `pip install matplotlib`.') from moduleNotFound

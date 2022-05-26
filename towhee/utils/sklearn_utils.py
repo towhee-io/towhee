@@ -21,6 +21,12 @@ try:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.tree import DecisionTreeClassifier
     from sklearn import svm
-except ModuleNotFoundError as e:
-    engine_log.error('sklearn not found, you can install via `pip install scikit-learn`.')
-    raise ModuleNotFoundError('sklearn not found, you can install via `pip install scikit-learn`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('sklearn')
+        from scipy import sparse
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('sklearn not found, you can install via `pip install sklearn`.')
+        raise ModuleNotFoundError('sklearn not found, you can install via `pip install sklearn`.') from moduleNotFound
