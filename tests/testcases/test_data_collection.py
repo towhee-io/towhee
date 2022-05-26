@@ -56,7 +56,8 @@ class TestDataCollectionAPIsValid:
         expected: return stream successfully
         """
         data = []
-        dc = DataCollection.stream(data)
+        dc = towhee.dc(data)
+        dc = dc.stream()
         result = dc.is_stream
         assert result is True
         assert operator.eq(data, dc.to_list())
@@ -71,7 +72,8 @@ class TestDataCollectionAPIsValid:
         """
         size = 5
         data = [random.random() for _ in range(size)]
-        dc = DataCollection.stream(data)
+        dc = towhee.dc(data)
+        dc = dc.stream()
         result = dc.is_stream
         assert result is True
         assert operator.eq(data, dc.to_list())
@@ -86,7 +88,8 @@ class TestDataCollectionAPIsValid:
         """
         size = 5
         data = iter(range(size))
-        dc = DataCollection.stream(data)
+        dc = towhee.dc(data)
+        dc = dc.stream()
         result = dc.is_stream
         assert result is True
 
@@ -100,7 +103,8 @@ class TestDataCollectionAPIsValid:
         """
         size = 10000000
         data = [random.random() for _ in range(size)]
-        dc = DataCollection.stream(data)
+        dc = towhee.dc(data)
+        dc = dc.stream()
         result = dc.is_stream
         assert result is True
         assert operator.eq(data, dc.to_list())
@@ -129,7 +133,7 @@ class TestDataCollectionAPIsValid:
         """
         size = 5
         data = iter(range(size))
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         dc = dc.map(str)
         result = dc.to_list()
         assert len(result) == size
@@ -143,7 +147,7 @@ class TestDataCollectionAPIsValid:
         expected: return map successfully
         """
         data = []
-        dc = DataCollection(data)
+        dc =towhee.dc(data)
         dc = dc.map(str)
         result = dc.to_list()
         assert result == data
@@ -186,7 +190,7 @@ class TestDataCollectionAPIsValid:
         """
         size = 5
         data = iter(range(size))
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         dc = dc.filter(str)
         result = dc.to_list()
         assert len(result) == size
@@ -200,7 +204,7 @@ class TestDataCollectionAPIsValid:
         expected: return filter successfully
         """
         data = []
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         dc = dc.filter(str)
         result = dc.to_list()
         assert result == data
@@ -243,7 +247,7 @@ class TestDataCollectionAPIsValid:
         """
         size = 7
         data = iter(range(size))
-        dc1 = DataCollection(data)
+        dc1 = towhee.dc(data)
         dc2 = dc1.map(str)
         dc3 = dc1.zip(dc2)
         result = dc3.to_list()
@@ -258,7 +262,7 @@ class TestDataCollectionAPIsValid:
         expected: return zip successfully
         """
         data = []
-        dc1 = DataCollection(data)
+        dc1 = towhee.dc(data)
         size = 1
         dc2 = DataCollection.range(size)
         dc3 = dc1.zip(dc2)
@@ -304,7 +308,7 @@ class TestDataCollectionAPIsValid:
         """
         data_size = 6
         data = iter(range(data_size))
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         size = 3
         result = [list(batch) for batch in dc.batch(size, drop_tail=True)]
         assert len(result) == int(data_size/size) 
@@ -404,7 +408,7 @@ class TestDataCollectionAPIsValid:
         """
         data_size = 6
         data = iter(range(data_size))
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         size = 3
         result = [list(batch) for batch in dc.rolling(size, drop_tail=False)]
         assert len(result) == data_size
@@ -464,7 +468,7 @@ class TestDataCollectionAPIsValid:
         """
         data_size = 6
         data = iter(range(data_size))
-        dc = DataCollection(data)
+        dc = towhee.dc(data)
         size = 3
         res = dc.batch(size)
         result = res.flatten().to_list()
