@@ -38,6 +38,8 @@ from_zip = DataCollection.from_zip
 
 to_video = DataCollection.to_video
 
+read_audio = DataCollection.read_audio
+
 
 def from_df(dataframe, as_stream=False):
     if as_stream:
