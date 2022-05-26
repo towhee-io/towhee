@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from towhee.utils.log import engine_log
-
 try:
     # pylint: disable=unused-import
     from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
@@ -25,7 +23,13 @@ except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('sklearn')
-        from scipy import sparse
+        # pylint: disable=unused-import
+        from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
+        from sklearn.model_selection import train_test_split
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.tree import DecisionTreeClassifier
+        from sklearn import svm
     except:
         from towhee.utils.log import engine_log
         engine_log.error('sklearn not found, you can install via `pip install sklearn`.')

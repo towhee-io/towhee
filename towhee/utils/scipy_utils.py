@@ -18,6 +18,7 @@ except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('scipy')
+        # pylint: disable=unused-import
         from scipy import sparse
     except:
         from towhee.utils.log import engine_log

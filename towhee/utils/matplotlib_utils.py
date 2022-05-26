@@ -19,6 +19,7 @@ except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('matplotlib')
+        # pylint: disable=unused-import
         import matplotlib
         import matplotlib.pyplot as plt
     except:

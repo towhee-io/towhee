@@ -19,6 +19,7 @@ except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('pymilvus')
+        # pylint: disable=unused-import
         from pymilvus.orm.mutation import MutationResult
         from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
     except:
