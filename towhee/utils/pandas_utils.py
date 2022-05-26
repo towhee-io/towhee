@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.utils.log import engine_log
-import os
-
 try:
     # pylint: disable=unused-import
     import pandas
 except ModuleNotFoundError as moduleNotFound:
+    from towhee.utils.log import engine_log
     engine_log.error('pandas not found, try to install pandas automatically.')
 
     try:
