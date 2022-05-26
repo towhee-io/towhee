@@ -227,14 +227,21 @@ class save_image:
     >>> (
     ...     towhee.dc['path'](['https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'])
     ...           .image_decode['path', 'img']()
-    ...           .save_image['img','path_new'](dir='temp/pic')
+    ...           .save_image['img','path_new'](dir='temp/pic', format="jpg", keep_original_filename = False)
     ...           .to_list()
     ... )
     [<Entity dict_keys(['path', 'img', 'path_new'])>]
     """
 
-    def __init__(self, dir: str):
+    def __init__(self, dir: str, format: str, keep_original_filename: bool):
         self._dir = dir
+        # specify image format
+        if format == "":
+            self._format = "jpg"
+        else:
+            self._format = format
+        # save original file name
+        self._keep_original_filename = keep_original_filename
         if not Path(self._dir).exists():
             Path(self._dir).mkdir(parents=True)
 
@@ -242,7 +249,12 @@ class save_image:
         from towhee.utils.pil_utils import PILImage
         from towhee.utils.ndarray_utils import cv2
 
-        self._file = str(uuid.uuid4()) + '.jpg'
+        if self._keep_original_filename == True:
+            # todo Pass the pipeline filename
+            self._file = str(uuid.uuid4()) + '.' + self._format
+        else:
+            self._file = str(uuid.uuid4()) + '.' + self._format
+
         self._img_path = str(Path(self._dir) / self._file)
         if isinstance(img, PILImage.Image):
             img.save(self._img_path)
