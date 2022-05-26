@@ -21,7 +21,8 @@ def to_image_color(img: Image, target_mode: str):
     """
     # pylint: disable=import-outside-toplevel
     from towhee.utils.cv2_utils import cv2
-
+    if not hasattr(img, 'mode'):
+        return img
     if img.mode == target_mode:
         return img
 

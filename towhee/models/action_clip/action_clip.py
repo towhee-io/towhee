@@ -81,7 +81,7 @@ def create_model(
         configs.update(**cfg)
     visual_prompt_type = configs["visual_prompt_type"]
     num_frames = configs["num_frames"]
-    visual_prompt = VisualPrompt(visual_prompt_type, clip_model.state_dict(), num_frames)
+    visual_prompt = VisualPrompt(visual_prompt_type, clip_model.state_dict(), num_frames).to(device)
     if pretrained and checkpoints:
         if "clip_state_dict" in checkpoints:
             clip_state_dict = map_state_dict(checkpoints, "clip_state_dict")

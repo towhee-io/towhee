@@ -12,15 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=import-outside-toplevel
+
 
 class ComputerVisionMixin:
     """
     Mixin for computer vision problems.
     """
 
-    # pylint: disable=import-outside-toplevel
-    def image_imshow(self, title='image'): # pragma: no cover
+    def image_imshow(self, title='image'):  # pragma: no cover
         from towhee.utils.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)
             cv2.waitKey(1)
+
+    @classmethod
+    def read_video(cls, path):
+
+        def inner():
+            from towhee.utils.cv2_utils import cv2
+
+            cap = cv2.VideoCapture(path)
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if ret is True:
+                    yield frame
+                else:
+                    cap.release()
+
+        return cls(inner())
+
+    def to_video(self, path, fmt='MJPG', fps=15):
+        from towhee.utils.cv2_utils import cv2
+
+        out = None
+        for frame in self:
+            if out is None:
+                out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fmt), fps,
+                                      (frame.shape[1], frame.shape[0]))
+            out.write(frame)

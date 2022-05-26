@@ -33,6 +33,8 @@ Features marked with a star (\*) are on our roadmap and have not yet been implem
 
 ## Getting started
 
+[Run in Colab](https://colab.research.google.com/github/towhee-io/towhee/blob/main/docs/02-Getting%20Started/quick-start.ipynb)
+
 Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 
 ```bash

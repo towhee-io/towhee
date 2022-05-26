@@ -41,6 +41,14 @@ class ColumnMixin:
         ----
         a: [["abc","def","ghi"]]
         b: [[1,2,3]]
+
+        >>> df.stream()._create_col_table()
+        pyarrow.Table
+        a: string
+        b: int64
+        ----
+        a: [["abc","def","ghi"]]
+        b: [[1,2,3]]
         """
         header = None
         cols = None
@@ -53,11 +61,10 @@ class ColumnMixin:
             for col, name in zip(cols, header):
                 col.append(getattr(entity, name))
 
-        # TODO(KY): map?
-        any(map(inner, self._iterable))
-        table = pa.Table.from_arrays(cols, names=header)
+        for entity in self._iterable:
+            inner(entity)
 
-        return table
+        return pa.Table.from_arrays(cols, names=header)
 
     def to_column(self):
         """
