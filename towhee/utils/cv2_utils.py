@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     import cv2
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('opencv-python')
-        # pylint: disable=unused-import
+        # pylint: disable=unused-import,ungrouped-imports
         import cv2
     except:
         from towhee.utils.log import engine_log

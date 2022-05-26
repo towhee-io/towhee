@@ -20,13 +20,13 @@ from towhee.utils.log import engine_log
 from towhee.types import Image
 
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     from PIL import Image as PILImage
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('pillow')
-        # pylint: disable=unused-import
+        # pylint: disable=unused-import,ungrouped-imports
         from PIL import Image as PILImage
     except:
         engine_log.error('PIL not found, you can install via `pip install pillow`.')

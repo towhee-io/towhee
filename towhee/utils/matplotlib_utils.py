@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     import matplotlib
     import matplotlib.pyplot as plt
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('matplotlib')
-        # pylint: disable=unused-import
+        # pylint: disable=unused-import,ungrouped-imports
         import matplotlib
         import matplotlib.pyplot as plt
     except:

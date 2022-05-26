@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
     from sklearn.model_selection import train_test_split
     from sklearn.linear_model import LogisticRegression
@@ -23,7 +23,7 @@ except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('sklearn')
-        # pylint: disable=unused-import
+        # pylint: disable=unused-import,ungrouped-imports
         from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
         from sklearn.model_selection import train_test_split
         from sklearn.linear_model import LogisticRegression

@@ -20,13 +20,13 @@ from towhee.utils.log import engine_log
 from towhee.utils.ndarray_utils import from_src
 
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     from matplotlib import pyplot
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('matplotlib')
-        # pylint: disable=unused-import
+        # pylint: disable=unused-import,ungrouped-imports
         from matplotlib import pyplot
     except:
         engine_log.error('matplotlib not found, you can install via `pip install matplotlib`.')
