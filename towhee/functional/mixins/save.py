@@ -57,4 +57,5 @@ class SaveMixin:
                         writer = writer if writer else csv.writer(f)
                         writer.writerow(row)
 
-                any(map(inner, self._iterable))
+                for row in self._iterable:
+                    inner(row)

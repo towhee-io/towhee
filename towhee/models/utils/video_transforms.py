@@ -17,13 +17,12 @@
 
 import os
 import logging
-from typing import Union
 
 import numpy
 import torch
 from torch import nn
 
-from torchvision.transforms import Compose, Lambda
+from torchvision.transforms import Compose
 
 try:
     from torchvideo.transforms import (
@@ -40,35 +39,34 @@ except ModuleNotFoundError:
         CollectFrames,
         # PILVideoToTensor
     )
-
 try:
-    from pytorchvideo.data.encoded_video import EncodedVideo
+    from pytorchvideo.transforms import (
+        ShortSideScale,
+        UniformTemporalSubsample,
+        # UniformCropVideo
+    )
 except ModuleNotFoundError:
     os.system('pip install "git+https://github.com/facebookresearch/pytorchvideo.git"')
-    from pytorchvideo.data.encoded_video import EncodedVideo
-
-from pytorchvideo.transforms import (
-    ShortSideScale,
-    UniformTemporalSubsample,
-    # UniformCropVideo
-)
+    from pytorchvideo.transforms import (
+        ShortSideScale,
+        UniformTemporalSubsample,
+        # UniformCropVideo
+    )
 
 log = logging.getLogger()
 
 
 def transform_video(
-        video: Union[str, numpy.ndarray],
+        video: numpy.ndarray,
         model_name: str = None,
-        start_sec: float = 0.,
-        end_sec: float = 30.,
         **kwargs):
     if model_name:
         cfg = video_configs[model_name]
-        cfg.update(model_name=model_name)
+        cfg.update(model_name=model_name, **kwargs)
     else:
         cfg = get_configs(**kwargs)
     tsfm = VideoTransforms(cfg)
-    output = tsfm(video=video, start_sec=start_sec, end_sec=end_sec)
+    output = tsfm(video)
     return output
 
 
@@ -113,6 +111,8 @@ class VideoTransforms:
             self.sampling_rate = None
         if "alpha" in cfg.keys():
             self.alpha = cfg["alpha"]
+        else:
+            self.alpha = None
         try:
             self.num_frames = cfg["num_frames"]
             self.mean = cfg["mean"]
@@ -123,36 +123,24 @@ class VideoTransforms:
             log.error("Invalid key in configs: %s", e)
             raise KeyError from e
 
-        self.tfms = Compose([
-                            UniformTemporalSubsample(self.num_frames) if self.num_frames else nn.Identity(),
-                            Lambda(lambda x: x / 255.0),
-                            NormalizeVideo(
-                                mean=self.mean,
-                                std=self.std,
-                                inplace=True
-                            ),
-                            ShortSideScale(size=self.side_size),
-                            CenterCropVideo(
-                                size=(self.crop_size, self.crop_size)
-                            ),
-                            CollectFrames(),
-                            PackPathway(alpha=self.alpha) if self.model_name.startswith("slowfast") else nn.Identity()
-                            ])
+        tfms_list = [UniformTemporalSubsample(self.num_frames),
+                     NormalizeVideo(mean=self.mean, std=self.std, inplace=True),
+                     ShortSideScale(size=self.side_size),
+                     CenterCropVideo(size=(self.crop_size, self.crop_size)),
+                     CollectFrames(),
+                     PackPathway(alpha=self.alpha)]
+        if self.num_frames is None:
+            del tfms_list[0]
+        if not self.model_name.startswith("slowfast"):
+            del tfms_list[-1]
+        self.tfms = Compose(tfms_list)
         if self.model_name.startswith("slowfast"):
             log.info("Using PackPathway for slowfast model.")
 
-    def __call__(self, video: Union[str, numpy.ndarray], start_sec: float = 0.0, end_sec: float = 30):
-        if isinstance(video, str):
-            video = EncodedVideo.from_path(video)
-            video = video.get_clip(start_sec=start_sec, end_sec=end_sec)
-            video = video["video"]
-            if self.sampling_rate:
-                total_frames = self.num_frames * self.sampling_rate
-                frames_per_sec = total_frames / (end_sec - start_sec)
-                log.info("Frames per second: %s", frames_per_sec)
-        elif isinstance(video, numpy.ndarray):
-            assert video.dtype == numpy.float32
-            video = torch.from_numpy(video)
+    # video: shape (c, t, w, h)
+    def __call__(self, video: numpy.ndarray):
+        assert video.dtype == numpy.float32
+        video = torch.from_numpy(video)
 
         video_data = self.tfms(video)
         if not (isinstance(video_data, list) and str(self.tfms.transforms[-1]) == "PackPathway()"):

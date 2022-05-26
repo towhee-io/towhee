@@ -29,13 +29,17 @@ from towhee.hparam import dynamic_dispatch
 #     return DataCollection.unstream(iterable)
 
 
-read_csv = DataCollection.from_csv
+read_csv = DataFrame.from_csv
 
-read_json = DataCollection.from_json
+read_json = DataFrame.from_json
 
 read_camera = DataCollection.from_camera
 
+read_video = DataCollection.read_video
+
 from_zip = DataCollection.from_zip
+
+to_video = DataCollection.to_video
 
 
 def from_df(dataframe, as_stream=False):
@@ -162,35 +166,10 @@ def dc(iterable):
     2. create a data collection of structural data.
 
     >>> towhee.dc['column']([0, 1, 2]).to_list()
-    [{'column': 0}, {'column': 1}, {'column': 2}]
-    """
-
-    index = param_scope()._index
-    if index is None:
-        return DataCollection(iterable)
-    return DataCollection(iterable).map(lambda x: {index: x})
-    # return DataCollection(iterable).map(lambda x: Entity(**{index: x}))
-
-@dynamic_dispatch
-def df(iterable):
-    """
-    Return a DataFrame.
-
-    Examples:
-
-    1. create a simple dataframe;
-
-    >>> import towhee
-    >>> towhee.df([0, 1, 2]).to_list()
-    [0, 1, 2]
-
-    2. create a data collection of structural data.
-
-    >>> towhee.df['column']([0, 1, 2]).to_list()
     [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
     """
 
     index = param_scope()._index
     if index is None:
-        return DataFrame(iterable)
+        return DataCollection(iterable)
     return DataFrame(iterable).map(lambda x: Entity(**{index: x}))
