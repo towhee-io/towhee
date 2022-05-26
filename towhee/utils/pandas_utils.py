@@ -22,10 +22,10 @@ except ModuleNotFoundError as moduleNotFound:
     engine_log.error('pandas not found, try to install pandas automatically.')
 
     try:
+        from towhee.utils.dependency_control import prompt_install
         # try to install automatically, and reload the `pandas` module
-        os.system('pip install pandas')
-        # pylint: disable=unused-import
-        import pandas
+        prompt_install('pandas')
+        import pandas # pylint: disable=ungrouped-imports
     except:
         engine_log.error('pandas not found, you can install via `pip install pandas`.')
         raise ModuleNotFoundError('pandas not found, you can install via `pip install pandas`.') from moduleNotFound
