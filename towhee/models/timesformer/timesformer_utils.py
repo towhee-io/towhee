@@ -184,4 +184,19 @@ def get_configs(model_name: str = None):
             classifier='head',
             filter_fn=None,
         ))
+    elif model_name == 'timesformer_k400_96x224':
+        configs = vit_configs('vit_base_16x224')
+        configs.update(dict(
+            url='https://www.dropbox.com/s/r1iuxahif3sgimo/TimeSformer_divST_96x4_224_K400.pyth?dl=0',
+            num_frames=96,
+            attention_type='divided_space_time',
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=400,
+            dropout=0.,
+            first_conv='patch_embed.proj',
+            classifier='head',
+            filter_fn=None,
+        ))
+    else:
+        raise AttributeError(f'Invalid model_name {model_name}.')
     return configs
