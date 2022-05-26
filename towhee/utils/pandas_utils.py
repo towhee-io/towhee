@@ -16,14 +16,11 @@ try:
     # pylint: disable=unused-import
     import pandas
 except ModuleNotFoundError as moduleNotFound:
-    from towhee.utils.log import engine_log
-    engine_log.error('pandas not found, try to install pandas automatically.')
-
     try:
         from towhee.utils.dependency_control import prompt_install
-        # try to install automatically, and reload the `pandas` module
         prompt_install('pandas')
         import pandas # pylint: disable=ungrouped-imports
     except:
+        from towhee.utils.log import engine_log
         engine_log.error('pandas not found, you can install via `pip install pandas`.')
         raise ModuleNotFoundError('pandas not found, you can install via `pip install pandas`.') from moduleNotFound

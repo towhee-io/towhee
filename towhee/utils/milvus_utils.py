@@ -11,13 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from towhee.utils.log import engine_log
-
 try:
-    # pylint: disable=unused-import
+    # pylint: disable=unused-import,ungrouped-imports
     from pymilvus.orm.mutation import MutationResult
     from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
-except ModuleNotFoundError as e:
-    engine_log.error('pymilvus not found, you can install via `pip install pymilvus`.')
-    raise ModuleNotFoundError('pymilvus not found, you can install via `pip install pymilvus`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('pymilvus')
+        # pylint: disable=unused-import,ungrouped-imports
+        from pymilvus.orm.mutation import MutationResult
+        from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('pymilvus not found, you can install via `pip install pymilvus`.')
+        raise ModuleNotFoundError('pymilvus not found, you can install via `pip install pymilvus`.') from moduleNotFound

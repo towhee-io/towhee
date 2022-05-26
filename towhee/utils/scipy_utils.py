@@ -11,10 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from towhee.utils.log import engine_log
-# pylint: disable=unused-import
 try:
+    # pylint: disable=unused-import,ungrouped-imports
     from scipy import sparse
-except ModuleNotFoundError as e:
-    engine_log.error('scipy not found, you can install via `pip install scipy`.')
-    raise ModuleNotFoundError('scipy not found, you can install via `pip install scipy`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('scipy')
+        # pylint: disable=unused-import,ungrouped-imports
+        from scipy import sparse
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('scipy not found, you can install via `pip install scipy`.')
+        raise ModuleNotFoundError('scipy not found, you can install via `pip install scipy`.') from moduleNotFound

@@ -25,10 +25,19 @@ from towhee.utils.log import engine_log
 from towhee.utils.repo_normalize import RepoNormalize
 
 try:
+    # pylint: disable=unused-import,ungrouped-imports
     import cv2
-except ModuleNotFoundError as e:
-    engine_log.error('cv2 not found, you can install via `pip install opencv-python`.')
-    raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from e
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('opencv-python')
+        # pylint: disable=unused-import,ungrouped-imports
+        import cv2
+    except:
+        engine_log.error('cv2 not found, you can install via `pip install opencv-python`.')
+        raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from moduleNotFound
+
+
 
 
 def from_src(src: Union[str, PosixPath]) -> Image:
