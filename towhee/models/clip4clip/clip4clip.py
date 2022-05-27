@@ -56,7 +56,7 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
         self.loss_fct = CrossEn()
         self.apply(self.init_weights)
 
-    def forward(self, input_ids, video, video_mask=None):
+    def forward(self, input_ids, video, video_mask):
         input_ids = input_ids.view(-1, input_ids.shape[-1])
         video_mask = video_mask.view(-1, video_mask.shape[-1])
 
