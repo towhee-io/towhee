@@ -24,15 +24,20 @@ class _TensorArrayType(pa.ExtensionType):
 
     def __init__(self, shape: Tuple[int, ...], dtype: pa.DataType):
         self._shape = shape
+        self._ext_shape = [-1]
+        for x in shape:
+            self._ext_shape.append(x)
         pa.ExtensionType.__init__(self, pa.list_(dtype), 'Towhee')
 
     @property
     def shape(self):
         return self._shape
 
+    @property
+    def ext_shape(self):
+        return self._ext_shape
+
     def __arrow_ext_serialize__(self):
-        # since we don't have a parameterized type, we don't need extra
-        # metadata to be deserialized
         return b''
 
     def __reduce__(self):
@@ -52,10 +57,13 @@ class TensorArray(pa.ExtensionArray):
     >>> arr[0]
     array([0, 1])
 
-    >>> arr = TensorArray.from_numpy(np.arange(30).reshape([5,2,3]))
+    >>> arr = TensorArray.from_numpy(np.arange(36).reshape([6,2,3]))
     >>> arr[1]
     array([[ 6,  7,  8],
            [ 9, 10, 11]])
+    >>> list(arr.chunks(5))[1]
+    array([[[30, 31, 32],
+            [33, 34, 35]]])
     """
 
     @classmethod
@@ -90,7 +98,16 @@ class TensorArray(pa.ExtensionArray):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return super().__getitem__(index)
+            retval = super().__getitem__(index)
+            storage = retval.storage
+            return storage.flatten().to_numpy().reshape(self.type.ext_shape)
         retval = super().__getitem__(index)
         storage = retval.value.values
         return storage.to_numpy().reshape(self.type.shape)
+
+    def as_numpy(self):
+        return self.storage.flatten().to_numpy().reshape(self.type.ext_shape)
+
+    def chunks(self, chunk_size=None):
+        for i in range(0, len(self), chunk_size):
+            yield self.as_numpy()[i:i + chunk_size]
