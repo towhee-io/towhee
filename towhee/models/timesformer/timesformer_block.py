@@ -74,7 +74,7 @@ class Block(nn.Module):
                  drop_path=0.1, act_layer=nn.GELU, norm_layer=nn.LayerNorm, attention_type='divided_space_time'):
         super().__init__()
         self.attention_type = attention_type
-        assert(attention_type in ['divided_space_time', 'space_only', 'joint_space_time'])
+        assert(attention_type in ['divided_space_time', 'space_only', 'joint_space_time', 'frozen_in_time'])
 
         self.norm1 = norm_layer(dim)
         self.attn = MultiHeadAttention(
@@ -83,7 +83,7 @@ class Block(nn.Module):
             attn_drop_ratio=attn_drop, proj_drop_ratio=drop)
 
         # Temporal Attention Parameters
-        if self.attention_type == 'divided_space_time':
+        if self.attention_type in ['divided_space_time', 'frozen_in_time']:
             self.temporal_norm1 = norm_layer(dim)
             self.temporal_attn = MultiHeadAttention(
                 dim, num_heads=num_heads,
@@ -105,8 +105,9 @@ class Block(nn.Module):
             x = x + self.drop_path(self.attn(self.norm1(x)))
             x = x + self.drop_path(self.mlp(self.norm2(x)))
             return x
-        elif self.attention_type == 'divided_space_time':
+        elif self.attention_type in ['divided_space_time', 'frozen_in_time'] :
             # Temporal
+            original_input = x[:, 1:, :]
             xt = x[:, 1:, :]
             xt = rearrange(xt, 'b (h w t) m -> (b h w) t m', b=b, h=h, w=w, t=t)
             res_temporal = self.drop_path(self.temporal_attn(self.temporal_norm1(xt)))
@@ -133,9 +134,14 @@ class Block(nn.Module):
             x = xt
 
             # Mlp
-            x = torch.cat((init_cls_token, x), 1) + torch.cat((cls_token, res), 1)
+            if self.attention_type == 'frozen_in_time':
+                x = torch.cat((init_cls_token, original_input), 1) + torch.cat((cls_token, res), 1)
+
+            else:
+                x = torch.cat((init_cls_token, x), 1) + torch.cat((cls_token, res), 1)
             x = x + self.drop_path(self.mlp(self.norm2(x)))
             return x
+
 
 
 # if __name__ == '__main__':

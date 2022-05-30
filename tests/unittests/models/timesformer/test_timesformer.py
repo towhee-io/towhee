@@ -59,6 +59,17 @@ class TestTimesformer(unittest.TestCase):
             self.assertTrue(pred.shape == (1, 400))
             self.assertTrue(feats.shape == (1, 768))
 
+    def test_frozen_types(self):
+        video = torch.randn(1, 3, 2, 4, 4)
+        model = timesformer.create_model(
+            pretrained=False,
+            img_size=4,
+            num_classes=400, num_frames=2, patch_size=2, attention_type='frozen_in_time')
+        pred = model(video)
+        feats = model.forward_features(video)
+        self.assertTrue(pred.shape == (1, 400))
+        self.assertTrue(feats.shape == (1, 768))
+
 
 if __name__ == '__main__':
     unittest.main()
