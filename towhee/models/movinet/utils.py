@@ -21,6 +21,7 @@ from torch import nn, Tensor
 
 class Hardsigmoid(nn.Module):
     def __init__(self) -> None:
+        # pylint: disable=W0235
         super().__init__()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -29,6 +30,7 @@ class Hardsigmoid(nn.Module):
 
 class Swish(nn.Module):
     def __init__(self) -> None:
+        # pylint: disable=W0235
         super().__init__()
 
     def forward(self, x: Tensor) -> Tensor:
