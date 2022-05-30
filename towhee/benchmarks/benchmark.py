@@ -54,7 +54,7 @@ def text_embedding(loops, threads):
     print('DC', y)
 
 startup()
-# three_dots(100, 1000, 2)
+three_dots(100, 1000, 2)
 image_embedding(50, 4)
-# text_embedding(50, 4)
+text_embedding(50, 4)
 
