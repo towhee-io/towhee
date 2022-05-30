@@ -86,7 +86,7 @@ class TimeSformer(nn.Module):
                  drop_path_ratio=0.1, norm_layer=nn.LayerNorm, num_frames=8,
                  attention_type='divided_space_time', dropout=0.):
         super().__init__()
-        assert (attention_type in ['divided_space_time', 'space_only', 'joint_space_time'])
+        assert (attention_type in ['divided_space_time', 'space_only', 'joint_space_time', 'frozen_in_time'])
         self.img_size = img_size
         self.patch_size = patch_size
         self.attention_type = attention_type
@@ -252,9 +252,8 @@ def create_model(
 #     setup_seed(24)
 #     dummy_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
 #
-#     # model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='joint_space_time')
-#     # pred = model(dummy_video)
-#     # assert(pred.shape == (1, 400))
-#
+#     model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='frozen_in_time')
+#     pred = model(dummy_video)
+#     assert(pred.shape == (1, 400))
 #     model = create_model(model_name='timesformer_k400_8x224')
 #     print(model(dummy_video))
