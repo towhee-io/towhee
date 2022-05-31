@@ -1,6 +1,5 @@
 import threading
 from typing import List, Tuple
-import weakref
 
 from towhee.dataframe.dataframe import DataFrame, Responses
 
@@ -16,7 +15,7 @@ class DataFrameIterator:
     """
 
     def __init__(self, df: DataFrame, block: bool = True):
-        self._df_ref = weakref.ref(df)
+        self._df = df
         self._df_name = df.name
         self._offset = 0
         self._block = block
@@ -50,7 +49,7 @@ class DataFrameIterator:
         """
         Returns current accessible data size.
         """
-        return self._df_ref().size - self._offset
+        return self._df.size - self._offset
 
     @property
     def id(self) -> int:
@@ -61,7 +60,7 @@ class DataFrameIterator:
         Remove unblock and remove iterator.
         """
         if self._done is not True:
-            df = self._df_ref()
+            df = self._df
             df.remove_iter(self._id)
             self._done = True
 
@@ -96,7 +95,7 @@ class MapIterator(DataFrameIterator):
                 The iteration end if the `DataFrame` is sealed and the last row is
                 reached.
         """
-        df = self._df_ref()
+        df = self._df
 
         if self._done:
             raise StopIteration
@@ -207,7 +206,7 @@ class WindowIterator(DataFrameIterator):
                 The iteration end iff the `DataFrame` is sealed and the last row is
                 reached.
         """
-        df = self._df_ref()
+        df = self._df
 
         if self._done:
             df.remove_iter(self._id)
