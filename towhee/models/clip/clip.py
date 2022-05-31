@@ -509,7 +509,7 @@ def create_model(
 
                 # loading JIT archive
                 model = torch.jit.load(local_path, map_location=device).eval()
-                state_dict = None
+                state_dict = model.state_dict()
             except RuntimeError:
                 # loading saved state dict
                 if jit:
@@ -518,8 +518,6 @@ def create_model(
                 state_dict = torch.load(local_path, map_location="cpu")
 
             if not jit:
-                if state_dict is None:
-                    state_dict = model.state_dict()
                 clip_model = CLIP(**configs)
                 for key in ["input_resolution", "context_length", "vocab_size"]:
                     if key in state_dict:
