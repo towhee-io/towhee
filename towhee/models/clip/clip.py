@@ -455,7 +455,28 @@ def create_model(
         jit: bool = False,
         device: str = None,
         **kwargs
-):
+) -> CLIP:
+    """
+    Create a CLIP model.
+    Args:
+        model_name (`str`):
+            CLIP model name, can be one of 'clip_resnet_r50', 'clip_resnet_r101', 'clip_vit_b16', 'clip_vit_b32'
+        pretrained (`bool`):
+            Whether to load pretrained weights.
+        weights_path (`str`):
+            Path to the weights file.
+        jit (`bool`):
+            Whether returned one is a jit model, only useful when `pretrained` is True.
+        device (`str`):
+            Model device to use.
+        **kwargs (`dict`):
+            Extra arguments to pass to the model.
+
+    Returns:
+        model (`CLIP`):
+            The CLIP model.
+
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -480,24 +501,38 @@ def create_model(
             else:
                 raise AttributeError("No url or local path is provided for pretrained model.")
 
-            if jit:
+            try:
                 try:
                     import torchvision  # pylint: disable=unused-import, import-outside-toplevel
                 except ModuleNotFoundError:
                     warnings.warn("Additional package is required for jit: torchvision")
+
+                # loading JIT archive
                 model = torch.jit.load(local_path, map_location=device).eval()
-                patch_device(model, device)
-                if device == "cpu":
-                    patch_float(model)
-            else:
-                state_dict = torch.load(local_path, map_location=device)
+                state_dict = None
+            except RuntimeError:
+                # loading saved state dict
+                if jit:
+                    warnings.warn(f"File {local_path} is not a JIT archive. Loading as a state dict instead")
+                    jit = False
+                state_dict = torch.load(local_path, map_location="cpu")
+
+            if not jit:
+                if state_dict is None:
+                    state_dict = model.state_dict()
+                clip_model = CLIP(**configs)
                 for key in ["input_resolution", "context_length", "vocab_size"]:
                     if key in state_dict:
                         del state_dict[key]
 
                 convert_weights(model)
-                model.load_state_dict(state_dict)
+                clip_model.load_state_dict(state_dict)
+                model = clip_model
                 model.eval()
                 if str(device) == "cpu":
                     model.float()
+            else:
+                patch_device(model, device)
+                if device == "cpu":
+                    patch_float(model)
     return model
