@@ -14,7 +14,7 @@
 import unittest
 import torch
 from towhee.models.layers.padding_functions import get_padding, get_same_padding, is_static_pad, pad_same, \
-    get_padding_value
+    get_padding_value, same_padding
 
 
 class TestPaddingFunctions(unittest.TestCase):
@@ -91,6 +91,27 @@ class TestPaddingFunctions(unittest.TestCase):
         self.assertEqual(out.shape, torch.Size((1, 3, 6, 6)))
         self.assertEqual(out[0, 0, 0, 0], 128.0)
 
+    def test_same_padding(self):
+        """
+        Test same padding function.
+        """
+        in_height = 4
+        in_width = 4
+        stride_h = 1
+        stride_w = 1
+        filter_height = 1
+        filter_width = 1
+        x = torch.Tensor(1, 3, 4, 4)
+        out = same_padding(x = x,
+                    in_height = in_height,
+                    in_width = in_width,
+                    stride_h = stride_h,
+                    stride_w = stride_w,
+                    filter_height = filter_height,
+                    filter_width = filter_width,
+                    )
+        print(out.shape)
+        self.assertTrue(out.shape == torch.Size([1, 3, 4, 4]))
 
 if __name__ == '__main__':
     unittest.main()

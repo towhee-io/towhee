@@ -15,6 +15,7 @@
 import math
 from typing import List, Tuple
 import torch
+from torch import Tensor
 import torch.nn.functional as F
 
 # Calculate symmetric padding for a convolution
@@ -123,3 +124,42 @@ def get_padding_value(padding: str, kernel_size: int, **kwargs) -> Tuple[int, bo
             # Default to PyTorch style 'same'-ish symmetric padding
             padding = get_padding(kernel_size, **kwargs)
     return padding, dynamic
+
+def same_padding(x: Tensor,
+                 in_height: int, in_width: int,
+                 stride_h: int, stride_w: int,
+                 filter_height: int, filter_width: int) -> Tensor:
+    """
+    Args:
+        x(`torch.Tensor`):
+            Input tensor.
+        in_height(`int`):
+            Input height.
+        in_width(`int`):
+            Input width.
+        stride_h(`int`):
+            stride height.
+        stride_w(`int`):
+            stride width.
+        filter_height(`int`):
+            filter height.
+        filter_width(`int`):
+            filter width.
+    Returns:
+        (`torch.Tensor`):
+            Output Tensor for conv with 'SAME' padding.
+    """
+    if in_height % stride_h == 0:
+        pad_along_height = max(filter_height - stride_h, 0)
+    else:
+        pad_along_height = max(filter_height - (in_height % stride_h), 0)
+    if in_width % stride_w == 0:
+        pad_along_width = max(filter_width - stride_w, 0)
+    else:
+        pad_along_width = max(filter_width - (in_width % stride_w), 0)
+    pad_top = pad_along_height // 2
+    pad_bottom = pad_along_height - pad_top
+    pad_left = pad_along_width // 2
+    pad_right = pad_along_width - pad_left
+    padding_pad = (pad_left, pad_right, pad_top, pad_bottom)
+    return torch.nn.functional.pad(x, padding_pad)
