@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import unittest
+from types import SimpleNamespace
+from towhee.models.drl.module_cross import CrossModel
 from towhee.models.drl.drl import DRL
 
 
@@ -27,6 +29,21 @@ class TestDRL(unittest.TestCase):
         # 77
         context_length = state_dict["positional_embedding"].shape[0]
         self.assertTrue(context_length == 77)
+
+    def test_crossmodel(self):
+        cross_config = SimpleNamespace(**{
+            "hidden_dropout_prob": 0.1,
+            "hidden_size": 512,
+            "max_position_embeddings": 128,
+            "num_attention_heads": 8,
+            "num_hidden_layers": 4,
+            "vocab_size": 512,
+        })
+        cross = CrossModel(cross_config)
+        width = cross.transformer.width
+        self.assertTrue(width == 512)
+        tes = cross.pooler.state_dict()["ln_pool.bias"].shape[0]  # pylint: disable=unsubscriptable-object
+        self.assertTrue(tes == 512)
 
 
 if __name__ == "__main__":
