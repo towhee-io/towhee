@@ -20,3 +20,6 @@ pytest
 fairscale
 python-multipart
 pyarrow
+transformers>=4.19.2
+timm>=0.4.12
+einops>=0.4.1
