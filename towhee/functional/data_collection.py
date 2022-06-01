@@ -919,6 +919,12 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             return iter(self._iterable)
         return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
 
+    def map(self, *arg):
+        if self._mode == self.ModeFlag.COLBASEDFLAG and hasattr(arg[0], '__vcall__'):
+            self._iterable = arg[0].__vcall__(self._iterable)
+            return self
+        else:
+            return super().map(*arg)
 
 if __name__ == '__main__':
     import doctest

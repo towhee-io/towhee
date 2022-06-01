@@ -15,6 +15,7 @@ import os
 import threading
 from typing import List, Tuple
 
+import numpy as np
 from towhee.dataframe import DataFrame
 from towhee.pipeline_format import OutputFormat
 from towhee.engine.pipeline import Pipeline
@@ -24,6 +25,7 @@ from towhee.hub.file_manager import FileManager
 from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
 # pylint: disable=unused-import
 from towhee.hub import preclude
+from towhee.types.tensor_array import TensorArray
 
 
 def op(operator_src: str, tag: str = 'main', **kwargs):
@@ -71,9 +73,9 @@ class _OperatorLazyWrapper:
                     self._op = op(self._name, self._tag, **self._kws)
 
     def __apply__(self, *arg, **kws):
-        if isinstance(self._index[0], tuple): # Multi inputs.
+        if isinstance(self._index[0], tuple):  # Multi inputs.
             args = [getattr(arg[0], x) for x in self._index[0]]
-        else: # Single input.
+        else:  # Single input.
             args = [getattr(arg[0], self._index[0])]
         return self._op(*args, **kws)
 
@@ -89,6 +91,48 @@ class _OperatorLazyWrapper:
         self.__check_init__()
         return df[self.__apply__(df)]
 
+    def __vcall__(self, *arg, **kws):
+        self.__check_init__()
+        if bool(self._index):
+            args = []
+            if isinstance(self._index[0], tuple):
+                # Multi inputs.
+                for col in self._index[0]:
+                    buffer = arg[0][col].chunk(0).buffers()[-1]
+                    shape = [-1, *arg[0][col].chunk(0).type.shape] if isinstance(arg[0][col].chunk(0), TensorArray) else [len(arg[0][col]), -1]
+                    dtype = arg[0][col].chunk(0).type.storage_type.value_type if isinstance(arg[0][col].chunk(0), TensorArray) \
+                        else arg[0][col].type.value_type if hasattr(arg[0][col].type, 'value_type') \
+                        else arg[0][col].type
+                    dtype = dtype.to_pandas_dtype()
+                    args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+            else:
+                # Single input.
+                col = self._index[0]
+                buffer = arg[0][col].chunk(0).buffers()[-1]
+                shape = [-1, *arg[0][col].chunk(0).type.shape] if isinstance(arg[0][col].chunk(0), TensorArray) else [len(arg[0][col]), -1]
+                dtype = arg[0][col].chunk(0).type.storage_type.value_type if isinstance(arg[0][col].chunk(0), TensorArray) \
+                    else arg[0][col].type.value_type if hasattr(arg[0][col].type, 'value_type') \
+                    else arg[0][col].type
+                dtype = dtype.to_pandas_dtype()
+                args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+
+        if hasattr(self._op, '__vcall__'):
+            res = self._op.__vcall__(*args, **kws)
+            if isinstance(res, tuple):
+                # Mulit outputs.
+                arrs = [TensorArray.from_numpy(x) for x in res]
+                table = arg[0]
+                for i, j in zip(self._index[1], arrs):
+                    table = table.append_column(i, j)
+                return table
+            else:
+                # Single input.
+                arr = TensorArray.from_numpy(res)
+                table = arg[0].append_column(self._index[1], arr)
+                return table
+        else:
+            self.__call__(*args, **kws)
+
     def __call__(self, *arg, **kws):
         self.__check_init__()
         if bool(self._index):
@@ -98,8 +142,8 @@ class _OperatorLazyWrapper:
             if isinstance(res, tuple):
                 if not isinstance(self._index[1], tuple) or len(self._index[1]) != len(res):
                     raise IndexError(f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.')
-                for i in range(len(res)):
-                    setattr(arg[0], self._index[1][i], res[i])
+                for i, j in zip(self._index[1], res):
+                    setattr(arg[0], i, j)
             # Single output.
             else:
                 setattr(arg[0], self._index[1], res)
@@ -152,6 +196,7 @@ DEFAULT_PIPELINES = {
     'music-embedding': 'towhee/music-embedding-vggish',
     'music-encoding': 'towhee/music-embedding-clmr',  # TODO: clmr -> encoder
 }
+
 
 class _PipelineWrapper:
     """
@@ -276,6 +321,7 @@ class _PipelineBuilder:
         _ = index
         return _PipelineBuilder(**kws).pipeline(name, *arg, from_ops=True)
 
+
 @dynamic_dispatch
 def ops(*arg, **kws):
     """
@@ -296,5 +342,5 @@ def ops(*arg, **kws):
         index = hp._index
     try:
         return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
-    except: # pylint: disable=bare-except
+    except:  # pylint: disable=bare-except
         return _PipelineBuilder.callback(real_name, index, *arg, **kws)

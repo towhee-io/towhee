@@ -38,7 +38,11 @@ class EntityView:
         self._table = table
 
     def __getattr__(self, name):
-        return self._table[name][self._offset].as_py()
+        try:
+            return self._table[name][self._offset].as_py()
+        # pylint: disable=bare-except
+        except:
+            return self._table[name][self._offset]
 
     def __repr__(self):
         """

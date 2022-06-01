@@ -13,8 +13,8 @@
 # limitations under the License.
 from enum import Flag, auto
 
-import pyarrow as pa
-
+from towhee.utils.thirdparty.pyarrow import pa
+from towhee.types.tensor_array import TensorArray
 
 class ColumnMixin:
     """
@@ -64,7 +64,16 @@ class ColumnMixin:
         for entity in self._iterable:
             inner(entity)
 
-        return pa.Table.from_arrays(cols, names=header)
+        arrays = []
+        for col in cols:
+            try:
+                arrays.append(pa.array(col))
+            # pylint: disable=bare-except
+            except:
+                arrays.append(TensorArray.from_numpy(col))
+
+        res = pa.Table.from_arrays(arrays, names=header)
+        return res
 
     def to_column(self):
         """
@@ -86,7 +95,8 @@ class ColumnMixin:
         a: [["abc","def","ghi"]]
         b: [[1,2,3]]
         """
-        self._iterable = self._create_col_table()
+        res = self._create_col_table()
+        self._iterable = res
         self._mode = self.ModeFlag.COLBASEDFLAG
 
 
