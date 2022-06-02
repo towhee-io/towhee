@@ -119,6 +119,9 @@ class NNOperator(Operator):
     def framework(self, framework: str):
         self._framework = framework
 
+    def save_model(self):
+        raise NotImplementedError
+
     def train(self,
               training_config=None,
               train_dataset=None,

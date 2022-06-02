@@ -21,10 +21,13 @@ from towhee.models.violet.violet import VioletBase
 
 
 class VioletTest(unittest.TestCase):
+    """
+    Simple operator test
+    """
     def test_violet(self):
-        img = torch.rand(1, 5, 3, 224, 224)
-        txt = torch.randint(20230, size=(1, 25,))
-        mask_i = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        img = torch.rand(1, 5, 3, 32, 32)
+        txt = torch.randint(20230, size=(1, 5,))
+        mask_i = [[1, 1, 1, 0, 0]]
         mask = []
         for i in range(0, 1):
             mask.append(mask_i)
@@ -34,4 +37,8 @@ class VioletTest(unittest.TestCase):
 
         md = VioletBase()
         feat_img, _, _, _ = md.go_feat(img, txt, mask)
-        self.assertTrue(feat_img.shape == torch.Size([1, 250, 768]))
+        self.assertTrue(feat_img.shape == torch.Size([1, 10, 768]))
+
+
+if __name__ == "__main__":
+    unittest.main()

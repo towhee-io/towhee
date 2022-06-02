@@ -33,12 +33,18 @@ class TestOperator(unittest.TestCase):
         self.assertTrue(issubclass(NNOperator, Operator))
 
         nn_operator = load_local_operator('nn_operator', NN_OPERATOR_PATH)
+
         pt_op = nn_operator.TestNNOperator()
         tf_op = nn_operator.TestNNOperator('tensorflow')
         self.assertIsInstance(pt_op, NNOperator)
         self.assertIsInstance(tf_op, NNOperator)
         self.assertEqual(pt_op.framework, 'pytorch')
         self.assertEqual(tf_op.framework, 'tensorflow')
+
+        try:
+            pt_op.save_model()
+        except NotImplementedError:
+            pass
 
         pt_op.framework = 'tensorflow'
         self.assertEqual(pt_op.framework, tf_op.framework)
