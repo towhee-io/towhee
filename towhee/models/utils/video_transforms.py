@@ -1,5 +1,5 @@
-# Original implementation by Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-#
+# Inspired by pytorchvideo / Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Inspired by torchvision: https://github.com/pytorch/vision
 # Modifications by Copyright 2022 Zilliz . All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -19,26 +19,12 @@ import os
 import logging
 
 import numpy
+import numbers
 import torch
 from torch import nn
 
 from torchvision.transforms import Compose
 
-try:
-    from torchvideo.transforms import (
-        CenterCropVideo,
-        NormalizeVideo,
-        CollectFrames,
-        # PILVideoToTensor
-    )
-except ModuleNotFoundError:
-    os.system('pip install "git+https://github.com/willprice/torchvideo.git"')
-    from torchvideo.transforms import (
-        CenterCropVideo,
-        NormalizeVideo,
-        CollectFrames,
-        # PILVideoToTensor
-    )
 try:
     from pytorchvideo.transforms import (
         ShortSideScale,
@@ -126,8 +112,7 @@ class VideoTransforms:
         tfms_list = [UniformTemporalSubsample(self.num_frames),
                      NormalizeVideo(mean=self.mean, std=self.std, inplace=True),
                      ShortSideScale(size=self.side_size),
-                     CenterCropVideo(size=(self.crop_size, self.crop_size)),
-                     CollectFrames(),
+                     CenterCropVideo(crop_size=self.crop_size),
                      PackPathway(alpha=self.alpha)]
         if self.num_frames is None:
             del tfms_list[0]
@@ -143,8 +128,6 @@ class VideoTransforms:
         video = torch.from_numpy(video)
 
         video_data = self.tfms(video)
-        if not (isinstance(video_data, list) and str(self.tfms.transforms[-1]) == "PackPathway()"):
-            video_data = torch.stack(video_data)
         return video_data
 
 
@@ -165,7 +148,6 @@ class PackPathway(nn.Module):
         self.alpha = alpha
 
     def forward(self, frames: torch.Tensor):
-        frames = torch.stack(frames)
         fast_pathway = frames
         # Perform temporal sampling from the fast pathway.
         slow_pathway = torch.index_select(
@@ -177,6 +159,70 @@ class PackPathway(nn.Module):
         )
         frame_list = [slow_pathway, fast_pathway]
         return frame_list
+
+
+class CenterCropVideo:
+    """
+    Original code from torchvision: https://github.com/pytorch/vision/tree/main/torchvision/transforms
+
+    Args:
+        clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
+    Returns:
+        torch.tensor: central cropping of video clip. Size is
+        (C, T, crop_size, crop_size)
+    """
+    def __init__(self, crop_size):
+        if isinstance(crop_size, numbers.Number):
+            self.crop_size = (int(crop_size), int(crop_size))
+        else:
+            self.crop_size = crop_size
+
+    def __call__(self, clip):
+        assert clip.ndimension() == 4
+        h, w = clip.size(-2), clip.size(-1)
+        th, tw = self.crop_size
+        if h < th or w < tw:
+            raise ValueError("height and width must be no smaller than crop_size")
+
+        i = int(round((h - th) / 2.0))
+        j = int(round((w - tw) / 2.0))
+        return clip[..., i: i + th, j: j + tw]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(crop_size={self.crop_size})"
+
+
+class NormalizeVideo:
+    """
+    Original code from torchvision: https://github.com/pytorch/vision/tree/main/torchvision/transforms
+
+    Normalize the video clip by mean subtraction and division by standard deviation
+    Args:
+        mean (3-tuple): pixel RGB mean
+        std (3-tuple): pixel RGB standard deviation
+        inplace (boolean): whether do in-place normalization
+    """
+
+    def __init__(self, mean, std, inplace=False):
+        self.mean = mean
+        self.std = std
+        self.inplace = inplace
+
+    def __call__(self, clip):
+        """
+        Args:
+            clip (torch.tensor): video clip to be normalized. Size is (C, T, H, W)
+        """
+        assert clip.ndimension() == 4
+        if not self.inplace:
+            clip = clip.clone()
+        mean = torch.as_tensor(self.mean, dtype=clip.dtype, device=clip.device)
+        std = torch.as_tensor(self.std, dtype=clip.dtype, device=clip.device)
+        clip.sub_(mean[:, None, None, None]).div_(std[:, None, None, None])
+        return clip
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std}, inplace={self.inplace})"
 
 
 def get_configs(**kwargs):
