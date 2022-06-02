@@ -25,9 +25,10 @@ class TestAudioFrame(unittest.TestCase):
     def test_ndarray_methods(self):
         # pylint: disable=protected-access
         data = np.array([0, 0.707, 1, 0.707, 0, -0.707, -1, -0.707, 0])
-        frame = AudioFrame(data, sample_rate=11025, timestamp=1)
+        frame = AudioFrame(data, sample_rate=11025, timestamp=1, layout='stereo')
         self.assertEqual(frame.sample_rate, 11025)
         self.assertEqual(frame.timestamp, 1)
+        self.assertEqual(frame.layout, 'stereo')
         self.assertListEqual(list(frame.shape), [9])
         self.assertEqual(frame.sum(), 0)
 
@@ -37,6 +38,7 @@ class TestAudioFrame(unittest.TestCase):
         self.assertEqual(frame_arr.sum(), 0)
         self.assertEqual(frame_arr.sample_rate, None)
         self.assertEqual(frame_arr.timestamp, None)
+        self.assertEqual(frame_arr.layout, None)
 
         clip = frame[:4]
         self.assertListEqual(list(clip.shape), [4])
