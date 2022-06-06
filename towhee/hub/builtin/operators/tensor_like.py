@@ -189,13 +189,33 @@ class tensor_normalize:
 
 @register(name='builtin/tensor_reshape')
 class tensor_reshape:
+    """
+    Reshape input tensor.
 
+    Examples:
+
+    >>> import numpy as np
+    >>> from towhee import dc
+    >>> df = dc['tensor']([np.array([i, j]) for i, j in zip(range(3), range(3))])
+    >>> df.tensor_reshape['tensor', 'new_tensor'](shape = [2, 1]).map(lambda x: x.new_tensor.shape).to_list()
+    [(2, 1), (2, 1), (2, 1)]
+
+    >>> df.to_column()
+    >>> df.tensor_reshape['tensor', 'new_new_tensor'](shape = [2, 1])['new_new_tensor'].map(lambda x: x.shape).to_list()
+    [(2, 1), (2, 1), (2, 1)]
+    """
     def __init__(self, shape):
         self._shape = shape
 
     def __call__(self, x):
 
         return x.reshape(self._shape)
+
+    def __vcall__(self, x):
+        self._shape.insert(0, -1)
+        array = x.reshape(self._shape)
+
+        return array
 
 
 @register(name='builtin/tensor_random')
@@ -211,9 +231,15 @@ class tensor_random:
 
     Examples:
 
-    >>> from towhee.functional import DataCollection
-    >>> DataCollection.range(5).tensor_random(shape=[1,2,3]).map(lambda x: x.shape).to_list()
-    [(1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3), (1, 2, 3)]
+    >>> import numpy as np
+    >>> from towhee import dc
+    >>> df = dc['a'](range(3))
+    >>> df.tensor_random['a', 'b'](shape = [2, 1]).map(lambda x: x.b.shape).to_list()
+    [(2, 1), (2, 1), (2, 1)]
+
+    >>> df.to_column()
+    >>> df.tensor_random['a', 'c'](shape = [2, 1])['c'].map(lambda x: x.shape).to_list()
+    [(2, 1), (2, 1), (2, 1)]
     """
 
     def __init__(self, shape):
@@ -223,6 +249,42 @@ class tensor_random:
         import numpy as np
 
         return np.random.random(self._shape)
+
+    def __vcall__(self, x):
+        import numpy as np
+
+        self._shape.insert(0, x.size)
+        return np.random.random(self._shape)
+
+@register(name='builtin/tensor_matmul')
+class tensor_matmul:
+    """
+    Matrix multiplication.
+
+    Examples:
+    >>> import numpy as np
+    >>> from towhee import DataFrame, Entity
+    >>> from towhee.types.tensor_array import TensorArray
+    >>> df = DataFrame([Entity(a = np.ones([2, 1]), b = np.ones([1, 2])) for _ in range(3)])
+    >>> df.tensor_matmul[('a', 'b'), 'c']().to_list()
+    [<Entity dict_keys(['a', 'b', 'c'])>, <Entity dict_keys(['a', 'b', 'c'])>, <Entity dict_keys(['a', 'b', 'c'])>]
+
+    >>> df.to_column()
+    >>> df.tensor_matmul[('a', 'b'), 'd']().to_list()
+    [<EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>]df
+    """
+    def __init__(self):
+        pass
+
+    def __call__(self, x, y):
+        import numpy as np
+
+        return np.matmul(x, y)
+
+    def __vcall__(self, x, y):
+        import numpy as np
+
+        return np.matmul(x, y)
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ import numpy as np
 from towhee.utils.thirdparty.pyarrow import pa
 
 
-class _TensorArrayType(pa.ExtensionType):
+class _TensorArrayType(pa.PyExtensionType):
     """Tensor array type
     """
 
@@ -27,7 +27,7 @@ class _TensorArrayType(pa.ExtensionType):
         self._ext_shape = [-1]
         for x in shape:
             self._ext_shape.append(x)
-        pa.ExtensionType.__init__(self, pa.list_(dtype), 'Towhee')
+        super().__init__(pa.list_(dtype))
 
     @property
     def shape(self):
@@ -37,11 +37,8 @@ class _TensorArrayType(pa.ExtensionType):
     def ext_shape(self):
         return self._ext_shape
 
-    def __arrow_ext_serialize__(self):
-        return b''
-
     def __reduce__(self):
-        return TensorArray, (self._shape, self.storage_type.value_type)
+        return _TensorArrayType, (self._shape, self.storage_type.value_type)
 
     def __arrow_ext_class__(self):
         return TensorArray
@@ -111,3 +108,6 @@ class TensorArray(pa.ExtensionArray):
     def chunks(self, chunk_size=None):
         for i in range(0, len(self), chunk_size):
             yield self.as_numpy()[i:i + chunk_size]
+
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
