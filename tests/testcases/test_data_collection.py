@@ -48,68 +48,6 @@ class TestDataCollectionAPIsInvalid:
 
 class TestDataCollectionAPIsValid:
     """ Test case of invalid data collection interface """
-
-    def test_data_collection_stream_empty(self):
-        """
-        target: test stream() API for empty list
-        method: create a streamed data collection from empty list
-        expected: return stream successfully
-        """
-        data = []
-        dc = towhee.dc(data)
-        dc = dc.stream()
-        result = dc.is_stream
-        assert result is True
-        assert operator.eq(data, dc.to_list())
-
-        return True
-
-    def test_data_collection_stream_list(self):
-        """
-        target: test stream() API of DataCollection
-        method: create a streamed data collection from list
-        expected: return stream successfully
-        """
-        size = 5
-        data = [random.random() for _ in range(size)]
-        dc = towhee.dc(data)
-        dc = dc.stream()
-        result = dc.is_stream
-        assert result is True
-        assert operator.eq(data, dc.to_list())
-
-        return True
-
-    def test_data_collection_stream_iter(self):
-        """
-        target: test stream() API of DataCollection
-        method: create a streamed data collection from iter
-        expected: return stream successfully
-        """
-        size = 5
-        data = iter(range(size))
-        dc = towhee.dc(data)
-        dc = dc.stream()
-        result = dc.is_stream
-        assert result is True
-
-        return True
-
-    def test_data_collection_stream_large_size(self):
-        """
-        target: test stream() API of DataCollection for large size data
-        method: create a streamed data collection from long list
-        expected: return stream successfully
-        """
-        size = 10000000
-        data = [random.random() for _ in range(size)]
-        dc = towhee.dc(data)
-        dc = dc.stream()
-        result = dc.is_stream
-        assert result is True
-        assert operator.eq(data, dc.to_list())
-
-        return True
     
     def test_data_collection_map_lambda(self):
         """
