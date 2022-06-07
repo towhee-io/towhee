@@ -167,9 +167,13 @@ def dc(iterable):
 
     >>> towhee.dc['column']([0, 1, 2]).to_list()
     [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
+
+    >>> towhee.dc['string', 'int']([['a', 1], ['b', 2], ['c', 3]]).to_list()
+    [<Entity dict_keys(['string', 'int'])>, <Entity dict_keys(['string', 'int'])>, <Entity dict_keys(['string', 'int'])>]
+
     """
 
     index = param_scope()._index
     if index is None:
         return DataCollection(iterable)
-    return DataFrame(iterable).map(lambda x: Entity(**{index: x}))
+    return DataFrame(iterable).map(lambda x: Entity(**dict(zip(index, x))))
