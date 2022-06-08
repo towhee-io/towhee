@@ -19,3 +19,4 @@ pymilvus
 pytest
 fairscale
 python-multipart
+torchvideo
