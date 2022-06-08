@@ -20,14 +20,11 @@ from towhee.hparam import param_scope
 from towhee.hparam import dynamic_dispatch
 # pylint: disable=protected-access
 
-
 # def stream(iterable):
 #     return DataCollection.stream(iterable)
 
-
 # def unstream(iterable):
 #     return DataCollection.unstream(iterable)
-
 
 read_csv = DataFrame.from_csv
 
@@ -44,12 +41,13 @@ to_video = DataCollection.to_video
 
 def from_df(dataframe, as_stream=False):
     if as_stream:
-        return DataFrame.stream(dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+        return DataFrame.stream(
+            dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
     return DataFrame(dataframe)
 
 
 @dynamic_dispatch
-def glob(*arg): # pragma: no cover
+def glob(*arg):  # pragma: no cover
     """
     Return a DataCollection of paths matching a pathname pattern.
     Examples:
@@ -73,7 +71,7 @@ def glob(*arg): # pragma: no cover
 
 
 @dynamic_dispatch
-def glob_zip(uri, pattern): # pragma: no cover
+def glob_zip(uri, pattern):  # pragma: no cover
     """
     Return a DataCollection of files matching a pathname pattern from a zip archive.
     Examples:
@@ -96,8 +94,7 @@ def glob_zip(uri, pattern): # pragma: no cover
     return DataFrame.from_zip(uri, pattern).map(lambda x: Entity(**{index: x}))
 
 
-@dynamic_dispatch
-def api():
+def _api():
     """
     Serve the DataCollection as a RESTful API
 
@@ -150,8 +147,10 @@ def api():
     return DataFrame.api(index=param_scope()._index)
 
 
-@dynamic_dispatch
-def dc(iterable):
+api = dynamic_dispatch(_api)
+
+
+def _dc(iterable):
     """
     Return a DataCollection.
 
@@ -167,9 +166,17 @@ def dc(iterable):
 
     >>> towhee.dc['column']([0, 1, 2]).to_list()
     [<Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>, <Entity dict_keys(['column'])>]
+
+    >>> towhee.dc['string', 'int']([['a', 1], ['b', 2], ['c', 3]]).to_list()
+    [<Entity dict_keys(['string', 'int'])>, <Entity dict_keys(['string', 'int'])>, <Entity dict_keys(['string', 'int'])>]
     """
 
     index = param_scope()._index
     if index is None:
         return DataCollection(iterable)
+    if isinstance(index, (list, tuple)):
+        return DataFrame(iterable).map(lambda x: Entity(**dict(zip(index, x))))
     return DataFrame(iterable).map(lambda x: Entity(**{index: x}))
+
+
+dc = dynamic_dispatch(_dc)
