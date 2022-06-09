@@ -28,6 +28,7 @@ from towhee.models.utils.basic_ops import ConsensusModule
 from towhee.models.layers.non_local import make_non_local
 from towhee.models.tsm.mobilenet_v2 import mobilenet_v2, InvertedResidual
 from towhee.models.tsm.temporal_shift import TemporalShift, make_temporal_shift
+from towhee.models.tsm.config import _C
 
 class TSN(nn.Module):
     """
@@ -190,6 +191,25 @@ class TSN(nn.Module):
             output = self.consensus(base_out)
             return output.squeeze(1)
 
+    def forward_features(self, input_x, no_reshape=False):
+        if not no_reshape:
+            sample_len = (3 if self.modality == 'RGB' else 2) * self.new_length
+
+            if self.modality == 'RGBDiff':
+                sample_len = 3 * self.new_length
+                input_x = self._get_diff(input_x)
+
+            base_out = self.base_model(input_x.view((-1, sample_len) + input_x.size()[-2:]))
+        else:
+            base_out = self.base_model(input_x)
+        if self.reshape:
+            if self.is_shift and self.temporal_pool:
+                base_out = base_out.view((-1, self.num_segments // 2) + base_out.size()[1:])
+            else:
+                base_out = base_out.view((-1, self.num_segments) + base_out.size()[1:])
+            output = self.consensus(base_out)
+            return output.squeeze(1)
+
     def _get_diff(self, input_x, keep_rgb=False):
         input_c = 3 if self.modality in ['RGB', 'RGBDiff'] else 2
         input_view = input_x.view((-1, self.num_segments, self.new_length + 1, input_c,) + input_x.size()[2:])
@@ -266,3 +286,50 @@ class TSN(nn.Module):
         # replace the first convolution layer
         setattr(container, layer_name, new_conv)
         return base_model
+
+def create_model(
+        model_name: str = None,
+        pretrained: bool = False,
+        weights_path: str = None,
+        device: str = 'cpu',
+        ):
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if model_name == 'tsm_k400_r50_seg8':
+        model_config = _C.MODEL.TSMK400R50
+    elif model_name == 'tsm_some_r50_seg8':
+        model_config  = _C.MODEL.TSMSOMER50
+    elif model_name == 'tsm_somev2_r50_seg16':
+        model_config = _C.MODEL.TSMSOMEV2R50SEG16
+    elif model_name == 'tsm_flow_k400_r50_seg8':
+        model_config = _C.MODEL.TSMFlowK400R50
+    else:
+        raise AttributeError(f'Invalid model_name {model_name}.')
+    model = TSN(
+                num_class = model_config.num_class,
+                num_segments = model_config.num_segments,
+                new_length = model_config.new_length,
+                modality = model_config.input_modality,
+                base_model = model_config.base_model,
+                consensus_type = model_config.consensus_module,
+                img_feature_dim = model_config.img_feature_dim,
+                pretrain = model_config.pretrain,
+                is_shift = model_config.is_shift,
+                shift_div = model_config.shift_div,
+                shift_place = model_config.shift_place,
+                non_local = model_config.non_local,
+                dropout = model_config.dropout_ratio,
+                )
+    if pretrained:
+        checkpoint = torch.load(weights_path)
+        checkpoint = checkpoint['state_dict']
+        base_dict = {'.'.join(k.split('.')[1:]): v for k, v in list(checkpoint.items())}
+        replace_dict = {'base_model.classifier.weight': 'new_fc.weight',
+                        'base_model.classifier.bias': 'new_fc.bias',
+                        }
+        for k, v in replace_dict.items():
+            if k in base_dict:
+                base_dict[v] = base_dict.pop(k)
+        model.load_state_dict(base_dict)
+    model.to(device)
+    return model
