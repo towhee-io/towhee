@@ -1,6 +1,8 @@
 towhee 
 ------
 
+.. autodata:: towhee.api
+
 .. autodata:: towhee.dc
 
 .. autodata:: towhee.ops

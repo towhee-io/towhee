@@ -291,7 +291,7 @@ def create_model(
         model_name: str = None,
         pretrained: bool = False,
         weights_path: str = None,
-        device: str = 'cpu',
+        device: str = 'gpu',
         ):
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
