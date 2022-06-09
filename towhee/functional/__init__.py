@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from multiprocessing import dummy
 from .data_collection import DataCollection, DataFrame
 from .entity import Entity
 from .option import Option, Some, Empty
@@ -96,14 +97,7 @@ def glob_zip(uri, pattern):  # pragma: no cover
 
 def _api():
     """
-    Serve the DataCollection as a RESTful API
-
-    Args:
-        path (str, optional): API path. Defaults to '/'.
-        app (_type_, optional): The FastAPI app the API bind to, will create one if None.
-
-    Returns:
-        _type_: the app that bind to
+    Create an API input, for building RestFul API or application API.
 
     Examples:
 
@@ -148,6 +142,50 @@ def _api():
 
 
 api = dynamic_dispatch(_api)
+
+
+def _dummy_input():
+    """
+    Create a dummy input.
+
+    >>> from fastapi import FastAPI
+    >>> from fastapi.testclient import TestClient
+    >>> app = FastAPI()
+
+    >>> import towhee
+    >>> app1 = (
+    ...     towhee.dummy_input().map(lambda x: x+' -> 1')
+    ...        .map(lambda x: x+' => 1')
+    ...        .serve('/app1', app)
+    ... )
+
+    >>> app2 = (
+    ...     towhee.dummy_input['x']().runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 2')
+    ...        .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 2')
+    ...        .select['y']()
+    ...        .serve('/app2', app)
+    ... )
+
+    >>> app2 = (
+    ...     towhee.dummy_input().parse_json()
+    ...        .runas_op['x', 'x_plus_1'](func=lambda x: x+' -> 3')
+    ...        .runas_op['x_plus_1', 'y'](func=lambda x: x+' => 3')
+    ...        .select['y']()
+    ...        .serve('/app3', app)
+    ... )
+
+    >>> client = TestClient(app)
+    >>> client.post('/app1', '1').text
+    '"1 -> 1 => 1"'
+    >>> client.post('/app2', '2').text
+    '{"y":"2 -> 2 => 2"}'
+    >>> client.post('/app3', '{"x": "3"}').text
+    '{"y":"3 -> 3 => 3"}'
+    """
+    return _api().__enter__()
+
+
+dummy_input = dynamic_dispatch(_dummy_input)
 
 
 def _dc(iterable):
