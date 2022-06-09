@@ -23,7 +23,7 @@ from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
 from towhee.functional import read_video, to_video
 from towhee.functional import from_zip, from_df
-from towhee.functional import dc, api
+from towhee.functional import dc, api, dummy_input
 
 __all__ = [
     'DEFAULT_PIPELINES',
@@ -51,7 +51,8 @@ __all__ = [
     'read_video',
     'to_video',
     'dc',
-    'api'
+    'api',
+    'dummy_input'
 ]
 
 
