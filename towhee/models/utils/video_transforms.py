@@ -1,5 +1,5 @@
-# Original implementation by Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-#
+# Inspired by pytorchvideo / Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# Inspired by torchvision: https://github.com/pytorch/vision
 # Modifications by Copyright 2022 Zilliz . All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -17,58 +17,42 @@
 
 import os
 import logging
-from typing import Union
 
 import numpy
+import numbers
 import torch
 from torch import nn
 
-from torchvision.transforms import Compose, Lambda
+from torchvision.transforms import Compose
 
 try:
-    from torchvideo.transforms import (
-        CenterCropVideo,
-        NormalizeVideo,
-        CollectFrames,
-        # PILVideoToTensor
+    from pytorchvideo.transforms import (
+        ShortSideScale,
+        UniformTemporalSubsample,
+        # UniformCropVideo
     )
-except ModuleNotFoundError:
-    os.system('pip install "git+https://github.com/willprice/torchvideo.git"')
-    from torchvideo.transforms import (
-        CenterCropVideo,
-        NormalizeVideo,
-        CollectFrames,
-        # PILVideoToTensor
-    )
-
-try:
-    from pytorchvideo.data.encoded_video import EncodedVideo
 except ModuleNotFoundError:
     os.system('pip install "git+https://github.com/facebookresearch/pytorchvideo.git"')
-    from pytorchvideo.data.encoded_video import EncodedVideo
-
-from pytorchvideo.transforms import (
-    ShortSideScale,
-    UniformTemporalSubsample,
-    # UniformCropVideo
-)
+    from pytorchvideo.transforms import (
+        ShortSideScale,
+        UniformTemporalSubsample,
+        # UniformCropVideo
+    )
 
 log = logging.getLogger()
 
 
 def transform_video(
-        video: Union[str, numpy.ndarray],
+        video: numpy.ndarray,
         model_name: str = None,
-        start_sec: float = 0.,
-        end_sec: float = 30.,
         **kwargs):
     if model_name:
         cfg = video_configs[model_name]
-        cfg.update(model_name=model_name)
+        cfg.update(model_name=model_name, **kwargs)
     else:
         cfg = get_configs(**kwargs)
     tsfm = VideoTransforms(cfg)
-    output = tsfm(video=video, start_sec=start_sec, end_sec=end_sec)
+    output = tsfm(video)
     return output
 
 
@@ -113,6 +97,8 @@ class VideoTransforms:
             self.sampling_rate = None
         if "alpha" in cfg.keys():
             self.alpha = cfg["alpha"]
+        else:
+            self.alpha = None
         try:
             self.num_frames = cfg["num_frames"]
             self.mean = cfg["mean"]
@@ -123,40 +109,25 @@ class VideoTransforms:
             log.error("Invalid key in configs: %s", e)
             raise KeyError from e
 
-        self.tfms = Compose([
-                            UniformTemporalSubsample(self.num_frames) if self.num_frames else nn.Identity(),
-                            Lambda(lambda x: x / 255.0),
-                            NormalizeVideo(
-                                mean=self.mean,
-                                std=self.std,
-                                inplace=True
-                            ),
-                            ShortSideScale(size=self.side_size),
-                            CenterCropVideo(
-                                size=(self.crop_size, self.crop_size)
-                            ),
-                            CollectFrames(),
-                            PackPathway(alpha=self.alpha) if self.model_name.startswith("slowfast") else nn.Identity()
-                            ])
+        tfms_list = [UniformTemporalSubsample(self.num_frames),
+                     NormalizeVideo(mean=self.mean, std=self.std, inplace=True),
+                     ShortSideScale(size=self.side_size),
+                     CenterCropVideo(crop_size=self.crop_size),
+                     PackPathway(alpha=self.alpha)]
+        if self.num_frames is None:
+            del tfms_list[0]
+        if not self.model_name.startswith("slowfast"):
+            del tfms_list[-1]
+        self.tfms = Compose(tfms_list)
         if self.model_name.startswith("slowfast"):
             log.info("Using PackPathway for slowfast model.")
 
-    def __call__(self, video: Union[str, numpy.ndarray], start_sec: float = 0.0, end_sec: float = 30):
-        if isinstance(video, str):
-            video = EncodedVideo.from_path(video)
-            video = video.get_clip(start_sec=start_sec, end_sec=end_sec)
-            video = video["video"]
-            if self.sampling_rate:
-                total_frames = self.num_frames * self.sampling_rate
-                frames_per_sec = total_frames / (end_sec - start_sec)
-                log.info("Frames per second: %s", frames_per_sec)
-        elif isinstance(video, numpy.ndarray):
-            assert video.dtype == numpy.float32
-            video = torch.from_numpy(video)
+    # video: shape (c, t, w, h)
+    def __call__(self, video: numpy.ndarray):
+        assert video.dtype == numpy.float32
+        video = torch.from_numpy(video)
 
         video_data = self.tfms(video)
-        if not (isinstance(video_data, list) and str(self.tfms.transforms[-1]) == "PackPathway()"):
-            video_data = torch.stack(video_data)
         return video_data
 
 
@@ -177,7 +148,6 @@ class PackPathway(nn.Module):
         self.alpha = alpha
 
     def forward(self, frames: torch.Tensor):
-        frames = torch.stack(frames)
         fast_pathway = frames
         # Perform temporal sampling from the fast pathway.
         slow_pathway = torch.index_select(
@@ -189,6 +159,70 @@ class PackPathway(nn.Module):
         )
         frame_list = [slow_pathway, fast_pathway]
         return frame_list
+
+
+class CenterCropVideo:
+    """
+    Original code from torchvision: https://github.com/pytorch/vision/tree/main/torchvision/transforms
+
+    Args:
+        clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
+    Returns:
+        torch.tensor: central cropping of video clip. Size is
+        (C, T, crop_size, crop_size)
+    """
+    def __init__(self, crop_size):
+        if isinstance(crop_size, numbers.Number):
+            self.crop_size = (int(crop_size), int(crop_size))
+        else:
+            self.crop_size = crop_size
+
+    def __call__(self, clip):
+        assert clip.ndimension() == 4
+        h, w = clip.size(-2), clip.size(-1)
+        th, tw = self.crop_size
+        if h < th or w < tw:
+            raise ValueError("height and width must be no smaller than crop_size")
+
+        i = int(round((h - th) / 2.0))
+        j = int(round((w - tw) / 2.0))
+        return clip[..., i: i + th, j: j + tw]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(crop_size={self.crop_size})"
+
+
+class NormalizeVideo:
+    """
+    Original code from torchvision: https://github.com/pytorch/vision/tree/main/torchvision/transforms
+
+    Normalize the video clip by mean subtraction and division by standard deviation
+    Args:
+        mean (3-tuple): pixel RGB mean
+        std (3-tuple): pixel RGB standard deviation
+        inplace (boolean): whether do in-place normalization
+    """
+
+    def __init__(self, mean, std, inplace=False):
+        self.mean = mean
+        self.std = std
+        self.inplace = inplace
+
+    def __call__(self, clip):
+        """
+        Args:
+            clip (torch.tensor): video clip to be normalized. Size is (C, T, H, W)
+        """
+        assert clip.ndimension() == 4
+        if not self.inplace:
+            clip = clip.clone()
+        mean = torch.as_tensor(self.mean, dtype=clip.dtype, device=clip.device)
+        std = torch.as_tensor(self.std, dtype=clip.dtype, device=clip.device)
+        clip.sub_(mean[:, None, None, None]).div_(std[:, None, None, None])
+        return clip
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std}, inplace={self.inplace})"
 
 
 def get_configs(**kwargs):
