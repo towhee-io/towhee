@@ -16,12 +16,13 @@
 
 import logging
 import math
+import subprocess
+from pathlib import Path
 from functools import partial
 from collections import OrderedDict
 
 import torch
 from torch import nn
-from torch.utils import model_zoo
 
 from towhee.models.vit.vit_utils import get_configs as vit_configs
 
@@ -73,12 +74,22 @@ def load_pretrained(
             log.error('No pretrained weights are provided.')
             raise AttributeError('No pretrained weights are provided.')
         else:
-            state_dict = model_zoo.load_url(cfg['url'], progress=False, map_location='cpu')
-    else:
-        state_dict = torch.load(checkpoint_path, map_location=device)
-        if 'model' in state_dict.keys():
-            state_dict = torch.load(checkpoint_path, map_location=device)['model']
+            url = cfg['url']
+            if url.endswith('?dl=0'):
+                checkpoint_name = url.split('/')[-1][:-5]
+            else:
+                checkpoint_name = url.split('/')[-1]
+            cache_path = str(Path.home().joinpath('.cache/towhee'))
+            Path(cache_path).mkdir(parents=True, exist_ok=True)
+            checkpoint_path = str(Path(cache_path).joinpath(checkpoint_name))
+            if not Path(checkpoint_path).exists():
+                cmd = f'wget -O {checkpoint_path} {url}'
+                log.warning('Downloading %s to %s', url, checkpoint_path)
+                subprocess.call(cmd, shell=True)
 
+    state_dict = torch.load(checkpoint_path, map_location=device)
+    if 'model' in state_dict.keys():
+        state_dict = torch.load(checkpoint_path, map_location=device)['model']
     state_dict = map_state_dict(checkpoint=state_dict)
 
     if filter_fn is not None:
