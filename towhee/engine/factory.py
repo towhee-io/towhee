@@ -15,7 +15,6 @@ import os
 import threading
 from typing import List, Tuple
 
-import numpy as np
 from towhee.dataframe import DataFrame
 from towhee.pipeline_format import OutputFormat
 from towhee.engine.pipeline import Pipeline
@@ -25,7 +24,11 @@ from towhee.hub.file_manager import FileManager
 from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
 # pylint: disable=unused-import
 from towhee.hub import preclude
-from towhee.types.tensor_array import TensorArray
+
+from .execution.base_execution import BaseExecution
+from .execution.pandas_execution import PandasExecution
+from .execution.stateful_execution import StatefulExecution
+from .execution.vectorized_execution import VectorizedExecution
 
 
 def op(operator_src: str, tag: str = 'main', **kwargs):
@@ -54,11 +57,20 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
     return op_obj
 
 
-class _OperatorLazyWrapper:
+class _OperatorLazyWrapper(  #
+        BaseExecution,  #
+        PandasExecution,  #
+        StatefulExecution,  #
+        VectorizedExecution):
     """
     operator wrapper for lazy initialization.
     """
-    def __init__(self, real_name: str, index: Tuple[str], tag: str = 'main', **kws) -> None:
+
+    def __init__(self,
+                 real_name: str,
+                 index: Tuple[str],
+                 tag: str = 'main',
+                 **kws) -> None:
         self._name = real_name.replace('.', '/').replace('_', '-')
         self._index = index
         self._tag = tag
@@ -72,106 +84,6 @@ class _OperatorLazyWrapper:
                 with param_scope(index=self._index):
                     self._op = op(self._name, self._tag, **self._kws)
 
-    def __apply__(self, *arg, **kws):
-        if isinstance(self._index[0], tuple):  # Multi inputs.
-            args = [getattr(arg[0], x) for x in self._index[0]]
-        else:  # Single input.
-            args = [getattr(arg[0], self._index[0])]
-        return self._op(*args, **kws)
-
-    def __dataframe_apply__(self, df):
-        self.__check_init__()
-        if isinstance(self._index[1], tuple):
-            df[list(self._index[1])] = df.apply(self.__apply__, axis=1, result_type='expand')
-        else:
-            df[self._index[1]] = df.apply(self.__apply__, axis=1)
-        return df
-
-    def __dataframe_filter__(self, df):
-        self.__check_init__()
-        return df[self.__apply__(df)]
-
-    def __vcall__(self, *arg, **kws):
-        self.__check_init__()
-        if bool(self._index):
-            args = []
-            if isinstance(self._index[0], tuple):
-                # Multi inputs.
-                for col in self._index[0]:
-                    buffer = arg[0][col].chunk(0).buffers()[-1]
-                    shape = [-1, *arg[0][col].chunk(0).type.shape] if isinstance(arg[0][col].chunk(0), TensorArray) else [len(arg[0][col]), -1]
-                    dtype = arg[0][col].chunk(0).type.storage_type.value_type if isinstance(arg[0][col].chunk(0), TensorArray) \
-                        else arg[0][col].type.value_type if hasattr(arg[0][col].type, 'value_type') \
-                        else arg[0][col].type
-                    dtype = dtype.to_pandas_dtype()
-                    args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
-            else:
-                # Single input.
-                col = self._index[0]
-                buffer = arg[0][col].chunk(0).buffers()[-1]
-                shape = [-1, *arg[0][col].chunk(0).type.shape] if isinstance(arg[0][col].chunk(0), TensorArray) else [len(arg[0][col]), -1]
-                dtype = arg[0][col].chunk(0).type.storage_type.value_type if isinstance(arg[0][col].chunk(0), TensorArray) \
-                    else arg[0][col].type.value_type if hasattr(arg[0][col].type, 'value_type') \
-                    else arg[0][col].type
-                dtype = dtype.to_pandas_dtype()
-                args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
-
-        if hasattr(self._op, '__vcall__'):
-            res = self._op.__vcall__(*args, **kws)
-            if isinstance(res, tuple):
-                # Mulit outputs.
-                arrs = [TensorArray.from_numpy(x) for x in res]
-                table = arg[0]
-                for i, j in zip(self._index[1], arrs):
-                    table = table.append_column(i, j)
-                return table
-            else:
-                # Single input.
-                arr = TensorArray.from_numpy(res)
-                table = arg[0].append_column(self._index[1], arr)
-                return table
-        else:
-            self.__call__(*args, **kws)
-
-    def __call__(self, *arg, **kws):
-        self.__check_init__()
-        if bool(self._index):
-            res = self.__apply__(*arg, **kws)
-
-            # Multi outputs.
-            if isinstance(res, tuple):
-                if not isinstance(self._index[1], tuple) or len(self._index[1]) != len(res):
-                    raise IndexError(f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.')
-                for i, j in zip(self._index[1], res):
-                    setattr(arg[0], i, j)
-            # Single output.
-            else:
-                setattr(arg[0], self._index[1], res)
-
-            return arg[0]
-        else:
-            res = self._op(*arg, **kws)
-            return res
-
-    def train(self, *arg, **kws):
-        self.__check_init__()
-        return self._op.train(*arg, **kws)
-
-    def fit(self, *arg):
-        self._op.fit(*arg)
-
-    @property
-    def is_stateful(self):
-        self.__check_init__()
-        return hasattr(self._op, 'fit')
-
-    def set_state(self, state):
-        self.__check_init__()
-        self._op.set_state(state)
-
-    def set_training(self, flag):
-        self._op.set_training(flag)
-
     @property
     def function(self):
         return self._name
@@ -183,7 +95,9 @@ class _OperatorLazyWrapper:
     @staticmethod
     def callback(real_name: str, index: Tuple[str], *arg, **kws):
         if arg and not kws:
-            raise ValueError('The init args should be passed in the form of kwargs(i.e. You should specify the keywords of your init arguments.)')
+            raise ValueError(
+                'The init args should be passed in the form of kwargs(i.e. You should specify the keywords of your init arguments.)'
+            )
         if len(arg) == 0:
             return _OperatorLazyWrapper(real_name, index, **kws)
         else:
@@ -208,6 +122,7 @@ class _PipelineWrapper:
         pipeline (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
+
     def __init__(self, pipeline_: Pipeline):
         self._pipeline = pipeline_
 
@@ -235,7 +150,8 @@ class _PipelineWrapper:
         in_df = DataFrame('_in_df', cols)
         in_df.put(vargs)
         out_df = self._pipeline(in_df)
-        format_handler = OutputFormat.get_format_handler(self._pipeline.pipeline_type)
+        format_handler = OutputFormat.get_format_handler(
+            self._pipeline.pipeline_type)
         return format_handler(out_df)
 
     def __repr__(self) -> str:
@@ -246,7 +162,10 @@ class _PipelineWrapper:
         return self._pipeline
 
 
-def pipeline(pipeline_src: str, tag: str = 'main', install_reqs: bool = True, **kwargs):
+def pipeline(pipeline_src: str,
+             tag: str = 'main',
+             install_reqs: bool = True,
+             **kwargs):
     """
     Entry method which takes either an input task or path to an operator YAML.
 
@@ -307,6 +226,7 @@ class _PipelineBuilder:
 
     >>> pipe = _PipelineBuilder(template_variable_1='new_value').pipeline('pipeline_name')
     """
+
     def __init__(self, **kws) -> None:
         self._kws = kws
 
