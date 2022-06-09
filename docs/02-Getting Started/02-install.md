@@ -23,6 +23,7 @@ $ python3 -m venv towhee_env  # create a virtual environment
 $ source towhee_env/bin/activate  # activate your newly created virtual environment
 $ pip3 install -U pip  # we recommend updating pip first before installing Towhee
 $ pip3 install -U towhee  # install Towhee
+$ pip3 install -U towhee.models  #install towhee.models
 ```
 
 Alternatively, if you are on Windows, install Python 3.6+ first, either through the Windows Store or through one of the [official releases](https://www.python.org/downloads/windows). You can then install Towhee as follows:
