@@ -162,7 +162,7 @@ class DisplayMixin:
         table_display(to_printable_table(data, header, tablefmt, formatter), tablefmt)
 
 
-def table_display(table, tablefmt='html'): # pragma: no cover
+def table_display(table, tablefmt='html'):  # pragma: no cover
     """
     Display table
 
@@ -183,7 +183,7 @@ def table_display(table, tablefmt='html'): # pragma: no cover
         raise ValueError('unsupported table format %s' % tablefmt)
 
 
-def to_printable_table(data, header=None, tablefmt='html', formatter={}): # pragma: no cover
+def to_printable_table(data, header=None, tablefmt='html', formatter={}):  # pragma: no cover
     """
     Convert two dimensional data structure into printable table
 
@@ -205,7 +205,7 @@ def to_printable_table(data, header=None, tablefmt='html', formatter={}): # prag
     raise ValueError('unsupported table format %s' % tablefmt)
 
 
-def to_plain_table(data, header, tablefmt): # pragma: no cover
+def to_plain_table(data, header, tablefmt):  # pragma: no cover
     """
     Convert two dimensional data structure into plain table
 
@@ -224,7 +224,7 @@ def to_plain_table(data, header, tablefmt): # pragma: no cover
     return tabulate(tb_contents, headers=header, tablefmt=tablefmt)
 
 
-def _to_plain_cell(data): # pragma: no cover
+def _to_plain_cell(data):  # pragma: no cover
     if isinstance(data, str):
         return _text_brief(data)
     if isinstance(data, Image):
@@ -246,7 +246,7 @@ def _to_plain_cell(data): # pragma: no cover
     return _default_brief(data)
 
 
-def to_html_table(data, header, formatter={}): # pragma: no cover
+def to_html_table(data, header, formatter={}):  # pragma: no cover
     """
     Convert two dimensional data structure into html table
 
@@ -263,6 +263,7 @@ def to_html_table(data, header, formatter={}): # pragma: no cover
         'text': _text_brief,
         'image': _image_to_html_cell,
         'audio_frame': _audio_frame_to_html_cell,
+        'video_path': _video_path_to_html_cell,
     }
 
     trs = []
@@ -281,7 +282,7 @@ def to_html_table(data, header, formatter={}): # pragma: no cover
     return '<table ' + tb_style + '>' + ' '.join(trs) + '</table>'
 
 
-def _to_html_td(data, callback=None): # pragma: no cover
+def _to_html_td(data, callback=None):  # pragma: no cover
 
     def wrap_td_tag(content, align='center', vertical_align='center'):
         td_style = 'style="' \
@@ -318,7 +319,7 @@ def _to_html_td(data, callback=None): # pragma: no cover
     return wrap_td_tag(_default_brief(data))
 
 
-def _image_to_html_cell(img, width=128, height=128): # pragma: no cover
+def _image_to_html_cell(img, width=128, height=128):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.cv2_utils import cv2
     import base64
@@ -332,11 +333,11 @@ def _image_to_html_cell(img, width=128, height=128): # pragma: no cover
     return '<img ' + src + w + h + style + '>'
 
 
-def _images_to_html_cell(imgs, width=128, height=128): # pragma: no cover
+def _images_to_html_cell(imgs, width=128, height=128):  # pragma: no cover
     return ' '.join([_image_to_html_cell(x, width, height) for x in imgs])
 
 
-def _audio_frame_to_html_cell(frame, width=128, height=128): # pragma: no cover
+def _audio_frame_to_html_cell(frame, width=128, height=128):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.matplotlib_utils import plt
 
@@ -353,11 +354,25 @@ def _audio_frame_to_html_cell(frame, width=128, height=128): # pragma: no cover
     return _image_to_html_cell(img, width, height)
 
 
-def _audio_frames_to_html_cell(frames, width=128, height=128): # pragma: no cover
+def _audio_frames_to_html_cell(frames, width=128, height=128):  # pragma: no cover
     return ' '.join([_audio_frame_to_html_cell(x, width, height) for x in frames])
 
 
-def _ndarray_brief(array, maxlen=3): # pragma: no cover
+def _video_path_to_html_cell(path, width=128, height=128):
+    src = 'src="' + path + '" '
+    type_suffix_idx = path.rfind('.')
+    if type_suffix_idx == -1:
+        raise ValueError('unsupported video format %s' % path)
+
+    video_type = 'type="video/' + path[path.rfind('.') + 1:].lower() + '" '
+    w = 'width = "' + str(width) + 'px" '
+    h = 'height = "' + str(height) + 'px" '
+    style = 'style = "float:left; padding:2px"'
+
+    return '<video ' + w + h + style + 'controls><source ' + src + video_type + '></source></video>'
+
+
+def _ndarray_brief(array, maxlen=3):  # pragma: no cover
     head_vals = [repr(v) for i, v in enumerate(array.flatten()) if i < maxlen]
     if len(array.flatten()) > maxlen:
         head_vals.append('...')
@@ -366,28 +381,28 @@ def _ndarray_brief(array, maxlen=3): # pragma: no cover
     return '[' + ', '.join(head_vals) + '] ' + shape
 
 
-def _image_brief(img): # pragma: no cover
+def _image_brief(img):  # pragma: no cover
     return str(img)
 
 
-def _audio_frame_brief(frame): # pragma: no cover
+def _audio_frame_brief(frame):  # pragma: no cover
     return str(frame)
 
 
-def _text_brief(text, maxlen=32): # pragma: no cover
+def _text_brief(text, maxlen=32):  # pragma: no cover
     if len(text) > maxlen:
         return text[:maxlen] + '...'
     else:
         return text
 
 
-def _list_brief(data, str_method, maxlen=4): # pragma: no cover
+def _list_brief(data, str_method, maxlen=4):  # pragma: no cover
     head_vals = [str_method(x) for i, x in enumerate(data) if i < maxlen]
     if len(data) > maxlen:
         head_vals.append('...')
     return '[' + ','.join(head_vals) + ']' + ' len=' + str(len(data))
 
 
-def _default_brief(data, maxlen=128): # pragma: no cover
+def _default_brief(data, maxlen=128):  # pragma: no cover
     s = str(data)
     return s[:maxlen] + '...' if len(s) > maxlen else s
