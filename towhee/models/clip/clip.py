@@ -24,6 +24,7 @@ import torch
 from torch import nn
 
 from .clip_utils import get_configs, _download, convert_weights, patch_device, patch_float
+from towhee.models.clip.auxilary import multi_head_attention_forward, MultiheadAttention
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -82,7 +83,7 @@ class AttentionPool2d(nn.Module):
     Attention
     """
 
-    def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
+    def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None, vis=False):
         super().__init__()
         self.positional_embedding = nn.Parameter(torch.randn(spacial_dim ** 2 + 1, embed_dim) / embed_dim ** 0.5)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
@@ -90,12 +91,16 @@ class AttentionPool2d(nn.Module):
         self.v_proj = nn.Linear(embed_dim, embed_dim)
         self.c_proj = nn.Linear(embed_dim, output_dim or embed_dim)
         self.num_heads = num_heads
+        self.vis = vis
 
     def forward(self, x):
         x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(2, 0, 1)  # NCHW -> (HW)NC
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
-        x, _ = nn.functional.multi_head_attention_forward(
+        multi_head_attention_forward_func = nn.functional.multi_head_attention_forward
+        if self.vis:
+            multi_head_attention_forward_func = multi_head_attention_forward
+        x, _ = multi_head_attention_forward_func(
             query=x, key=x, value=x,
             embed_dim_to_check=x.shape[-1],
             num_heads=self.num_heads,
@@ -126,7 +131,7 @@ class ModifiedResNet(nn.Module):
     - The final pooling layer is a QKV attention instead of an average pool
     """
 
-    def __init__(self, layers, output_dim, heads, input_resolution=224, width=64):
+    def __init__(self, layers, output_dim, heads, input_resolution=224, width=64, vis=False):
         super().__init__()
         self.output_dim = output_dim
         self.input_resolution = input_resolution
@@ -149,7 +154,7 @@ class ModifiedResNet(nn.Module):
         self.layer4 = self._make_layer(width * 8, layers[3], stride=2)
 
         embed_dim = width * 32  # the ResNet feature dimension
-        self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
+        self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim, vis)
 
     def _make_layer(self, planes, blocks, stride=1):
         layers = [Bottleneck(self._inplanes, planes, stride)]
@@ -201,10 +206,12 @@ class ResidualAttentionBlock(nn.Module):
     ResidualAttentuonBlock
     """
 
-    def __init__(self, d_model: int, n_head: int, attn_mask: Union[torch.Tensor, Callable] = None):
+    def __init__(self, d_model: int, n_head: int, attn_mask: Union[torch.Tensor, Callable] = None, vis=False):
         super().__init__()
-
+        self.vis = vis
         self.attn = nn.MultiheadAttention(d_model, n_head)
+        if vis:
+            self.attn = MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
         self.mlp = nn.Sequential(OrderedDict([
             ("c_fc", nn.Linear(d_model, d_model * 4)),
@@ -214,13 +221,27 @@ class ResidualAttentionBlock(nn.Module):
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
 
+        self.attn_probs = None
+        self.attn_grad = None
+
+    def set_attn_probs(self, attn_probs):
+        self.attn_probs = attn_probs
+
+    def set_attn_grad(self, attn_grad):
+        self.attn_grad = attn_grad
+
     def attention(self, x: torch.Tensor):
         attn_mask_ = self.attn_mask
         if self.attn_mask is not None and hasattr(self.attn_mask, "__call__"):
             attn_mask_ = self.attn_mask(x.size(0))  # LND
 
         attn_mask_ = attn_mask_.to(dtype=x.dtype, device=x.device) if attn_mask_ is not None else None
-        return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
+        if self.vis:
+            return \
+            self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_, attention_probs_forward_hook=self.set_attn_probs,
+                      attention_probs_backwards_hook=self.set_attn_grad)[0]
+        else:
+            return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
 
     def forward(self, x: torch.Tensor):
         x = x + self.attention(self.ln_1(x))
@@ -229,11 +250,11 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: Union[torch.Tensor, Callable] = None):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: Union[torch.Tensor, Callable] = None, vis: bool = False):
         super().__init__()
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask, vis) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
@@ -244,7 +265,7 @@ class VisionTransformer(nn.Module):
     ViT
     """
 
-    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
+    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int, vis: bool = False):
         super().__init__()
         self.input_resolution = input_resolution
         self.output_dim = output_dim
@@ -255,7 +276,7 @@ class VisionTransformer(nn.Module):
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
         self.ln_pre = LayerNorm(width)
 
-        self.transformer = Transformer(width, layers, heads)
+        self.transformer = Transformer(width, layers, heads, vis=vis)
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
@@ -301,6 +322,8 @@ class CLIP(nn.Module):
                  transformer_layers: int,
                  # whether used for CLIP4Clip model
                  clip4clip: bool = False,
+                 # whether be able to visualize
+                 vis: bool = False
                  ):
         super().__init__()
 
@@ -313,7 +336,8 @@ class CLIP(nn.Module):
                 output_dim=embed_dim,
                 heads=vision_heads,
                 input_resolution=image_resolution,
-                width=vision_width
+                width=vision_width,
+                vis=vis
             )
         else:
             vision_heads = vision_width // 64
@@ -323,7 +347,8 @@ class CLIP(nn.Module):
                 width=vision_width,
                 layers=vision_layers,
                 heads=vision_heads,
-                output_dim=embed_dim
+                output_dim=embed_dim,
+                vis=vis
             )
         if clip4clip:
             self.transformer = Transformer(
@@ -337,7 +362,8 @@ class CLIP(nn.Module):
                 width=transformer_width,
                 layers=transformer_layers,
                 heads=transformer_heads,
-                attn_mask=self.build_attention_mask()
+                attn_mask=self.build_attention_mask(),
+                vis=vis
             )
 
         self.vocab_size = vocab_size
