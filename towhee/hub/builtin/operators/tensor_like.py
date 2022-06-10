@@ -204,6 +204,7 @@ class tensor_reshape:
     >>> df.tensor_reshape['tensor', 'new_new_tensor'](shape = [2, 1])['new_new_tensor'].map(lambda x: x.shape).to_list()
     [(2, 1), (2, 1), (2, 1)]
     """
+
     def __init__(self, shape):
         self._shape = shape
 
@@ -256,6 +257,7 @@ class tensor_random:
         self._shape.insert(0, x.size)
         return np.random.random(self._shape)
 
+
 @register(name='builtin/tensor_matmul')
 class tensor_matmul:
     """
@@ -273,17 +275,22 @@ class tensor_matmul:
     >>> df.tensor_matmul[('a', 'b'), 'd']().to_list()
     [<EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>]df
     """
-    def __init__(self):
-        pass
 
-    def __call__(self, x, y):
+    def __init__(self, trans=None):
+        self._trans = trans
+
+    def __call__(self, x, y=None):
         import numpy as np
 
+        if y is None and self._trans is not None:
+            return np.matmul(x, self._trans)
         return np.matmul(x, y)
 
-    def __vcall__(self, x, y):
+    def __vcall__(self, x, y=None):
         import numpy as np
 
+        if y is None and self._trans is not None:
+            return np.matmul(x, self._trans)
         return np.matmul(x, y)
 
 
