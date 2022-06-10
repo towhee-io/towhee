@@ -1,14 +1,16 @@
 # original code from https://github.com/SwinTransformer/Video-Swin-Transformer
 # modified by Zilliz.
 
-from torch import nn
 import torch
+from torch import nn
+from torch.utils import model_zoo
 from einops import rearrange
-
-
 from towhee.models.layers.patch_embed3d import PatchEmbed3D
 from towhee.models.layers.patch_merging3d import PatchMerging3D
 from towhee.models.video_swin_transformer.video_swin_transformer_block import VideoSwinTransformerBlock
+from collections import OrderedDict
+from towhee.models.utils.init_vit_weights import init_vit_weights
+import logging
 
 
 class VideoSwinTransformer(nn.Module):
@@ -21,7 +23,7 @@ class VideoSwinTransformer(nn.Module):
         pretrained (`str`):
             Load pretrained weights. Default: None
         pretrained2d (`bool`):
-            Load image pretrained weights. Default: True
+            Load image pretrained weights. Default: False
         patch_size (`tuple[int]`):
             Patch size. Default: (4,4,4).
         in_chans (`int)`:
@@ -36,6 +38,8 @@ class VideoSwinTransformer(nn.Module):
             Window size. Default: 7.
         mlp_ratio (`float`):
             Ratio of mlp hidden dim to embedding dim. Default: 4.
+        num_classes (`int`):
+            the classification num.
         qkv_bias (`bool`):
             If True, add a learnable bias to query, key, value. Default: True
         qk_scale (`float`):
@@ -61,7 +65,7 @@ class VideoSwinTransformer(nn.Module):
 
     def __init__(self,
                  pretrained=None,
-                 pretrained2d=True,
+                 pretrained2d=False,
                  patch_size=(4, 4, 4),
                  in_chans=3,
                  embed_dim=96,
@@ -69,18 +73,21 @@ class VideoSwinTransformer(nn.Module):
                  num_heads=(3, 6, 12, 24),
                  window_size=(2, 7, 7),
                  mlp_ratio=4.,
+                 num_classes=1000,
                  qkv_bias=True,
                  qk_scale=None,
                  drop_rate=0.,
                  attn_drop_rate=0.,
                  drop_path_rate=0.2,
+                 cls_dropout_ratio=0.4,
                  norm_layer=nn.LayerNorm,
                  patch_norm=False,
                  frozen_stages=-1,
                  use_checkpoint=False,
                  depth_mode=None,
                  depth_patch_embed_separate_params=True,
-                 stride=None
+                 stride=None,
+                 device="cpu"
                  ):
         super().__init__()
 
@@ -92,7 +99,7 @@ class VideoSwinTransformer(nn.Module):
         self.frozen_stages = frozen_stages
         self.window_size = window_size
         self.patch_size = patch_size
-
+        self.num_classes = num_classes
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed3D(
             patch_size=patch_size, c=in_chans, embed_dim=embed_dim,
@@ -163,7 +170,20 @@ class VideoSwinTransformer(nn.Module):
 
         # add a norm layer for each output
         self.norm = norm_layer(self.num_features)
+        # use `nn.AdaptiveAvgPool3d` to adaptively match the in_channels.
+        self.avg_pool3d = nn.AdaptiveAvgPool3d((1, 1, 1))
+        self.cls_dropout_ratio = cls_dropout_ratio
+        if self.cls_dropout_ratio != 0:
+            self.dropout = nn.Dropout(p=self.cls_dropout_ratio)
+        else:
+            self.dropout = None
 
+        self.fc_cls = nn.Linear(self.num_features, self.num_classes)
+
+        self.apply(init_vit_weights)
+        # if load pretrained weights
+        if self.pretrained not in ["", None]:
+            self.load_pretrained_weights(self.pretrained, device=device)
         self._freeze_stages()
 
     def _freeze_stages(self):
@@ -180,16 +200,14 @@ class VideoSwinTransformer(nn.Module):
                 for param in m.parameters():
                     param.requires_grad = False
 
-    def inflate_weights(self, logger):
+    def inflate_weights(self):
         """
         Inflate the swin2d parameters to swin3d.
         The differences between swin3d and swin2d mainly lie in an extra
         axis. To utilize the pretrained parameters in 2d model,
         the weight of swin2d models should be inflated to fit in the shapes of
         the 3d counterpart.
-        Args:
-            logger (`logging.Logger`):
-                The logger used to print debugging infomation.
+
         """
         checkpoint = torch.load(self.pretrained, map_location="cpu")
         state_dict = checkpoint["model"]
@@ -219,7 +237,7 @@ class VideoSwinTransformer(nn.Module):
             l2 = (2*self.window_size[1]-1) * (2*self.window_size[2]-1)
             wd = self.window_size[0]
             if nh1 != nh2:
-                logger.warning(f"Error in loading {k}, passing")
+                logging.info("Error in loading %s, passing", k)
             else:
                 if l1 != l2:
                     s1 = int(l1 ** 0.5)
@@ -232,10 +250,36 @@ class VideoSwinTransformer(nn.Module):
             state_dict[k] = relative_position_bias_table_pretrained.repeat(2*wd-1, 1)
 
         msg = self.load_state_dict(state_dict, strict=False)
-        logger.info(msg)
-        logger.info(f"=> loaded successfully '{self.pretrained}'")
+        logging.info(msg)
+        logging.info("=> loaded successfully %s", self.pretrained)
         del checkpoint
         torch.cuda.empty_cache()
+
+    def load_pretrained_weights(self, pretrained=None, device=None):
+        """Initialize the weights from pretrained weights.
+        Args:
+            pretrained (str, optional): Path to pre-trained weights.
+                Defaults to None.
+        """
+
+        def map_state_dic(checkpoint):
+            new_state_dict = OrderedDict()
+            for k, v in checkpoint["state_dict"].items():
+                name = k
+                if "backbone" in k or "cls_head" in k:
+                    name = name[9:]
+                new_state_dict[name] = v
+            return new_state_dict
+
+        logging.info("load model from: %s", self.pretrained)
+        if self.pretrained2d:
+            # Inflate 2D model into 3D model.
+            self.inflate_weights()
+        else:
+            # Directly load 3D model.
+            checkpoint = model_zoo.load_url(pretrained, map_location=torch.device(device))
+            new_state_dict = map_state_dic(checkpoint)
+            self.load_state_dict(new_state_dict, strict=True)
 
     def get_patch_embedding(self, x):
         # x: B x C x T x H x W
@@ -274,3 +318,26 @@ class VideoSwinTransformer(nn.Module):
         x = rearrange(x, "n d h w c -> n c d h w")
 
         return x
+
+    def forward_features(self, x):
+        x = self.forward(x)
+        # [n, c, 1, 1, 1]
+        x = self.avg_pool3d(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
+        # [n, c]
+        x = x.view(x.size(0), -1)
+        return x
+
+    def head(self, x):
+        """
+        Warnings: need first load the forward_features function to get the features
+        Args:
+            x: x (torch.Tensor): The input data. [n, c]
+        Returns:
+
+        """
+        # [n, num_classes]
+        cls_score = self.fc_cls(x)
+        return cls_score
+
