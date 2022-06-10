@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 from collections import namedtuple
 from typing import Any, Dict, List
 
@@ -171,11 +172,14 @@ class OperatorRegistry:
             name = URI(cls.__name__ if name is None else name).resolve_repo(
                 _get_default_namespace())
 
+            if isinstance(cls, types.FunctionType):
+                OperatorRegistry.REGISTRY[name + '_func'] = cls
+
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):
                 func = cls
                 cls = type(
-                    cls.__name__, (object, ), {
+                    cls.__name__, (object,), {
                         '__call__': lambda _, *arg, **kws: func(*arg, **kws),
                         '__doc__': func.__doc__,
                     })

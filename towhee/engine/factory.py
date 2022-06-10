@@ -20,8 +20,10 @@ from towhee.pipeline_format import OutputFormat
 from towhee.engine.pipeline import Pipeline
 from towhee.engine.engine import Engine, start_engine
 from towhee.engine.operator_loader import OperatorLoader
+from towhee.engine.operator_registry import OperatorRegistry
 from towhee.hub.file_manager import FileManager
 from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
+from towhee.utils.numba import njit
 # pylint: disable=unused-import
 from towhee.hub import preclude
 
@@ -77,12 +79,17 @@ class _OperatorLazyWrapper(  #
         self._kws = kws
         self._op = None
         self._lock = threading.Lock()
+        self._compile()
 
     def __check_init__(self):
         with self._lock:
             if self._op is None:
                 with param_scope(index=self._index):
                     self._op = op(self._name, self._tag, **self._kws)
+
+    def _compile(self):
+        func = OperatorRegistry.resolve(self._name+'_func')
+        self._func = njit(func, nogil=True) if func is not None else None
 
     @property
     def function(self):
