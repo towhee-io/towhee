@@ -19,11 +19,9 @@ from pathlib import Path
 from PIL import Image
 from torchvision import transforms
 from torchvision.models import resnet18
-from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic, show_transform, \
-    plot_lrs_for_config, plot_lrs_for_scheduler, interpret_image_classification, generate_attention, \
-    show_attention_for_clip
+from towhee.trainer.utils.plot_utils import image_folder_sample_show, image_folder_statistic, show_transform, \
+    plot_lrs_for_config, plot_lrs_for_scheduler, interpret_image_classification
 from towhee.trainer.training_config import TrainingConfig
-from towhee.models.clip import clip
 from torch import nn
 from torch.optim.lr_scheduler import StepLR
 
@@ -108,55 +106,6 @@ class TestVisualizationLRScheduler(unittest.TestCase):
         interpret_image_classification(model, img, val_transform, "GradientShap")
         interpret_image_classification(model, img, val_transform, "Saliency")
         self.img_path.unlink()
-
-
-class MockVit(nn.Module):
-    """
-    mock vit model
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.conv = nn.Conv2d(3, 1, kernel_size=16, stride=16, padding=1)
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x.flatten()
-
-    def relprop(self, rel, **kwargs):
-        print(kwargs)
-        return rel
-
-
-class TestAttention(unittest.TestCase):
-    """
-    test attention visualization
-    """
-
-    def setUp(self) -> None:
-        self.model = MockVit()
-
-    def test_attention(self):
-        res = generate_attention(self.model, torch.randn(3, 224, 224), class_index=0)
-        self.assertEqual(res.shape[0], 224)
-
-
-class TestCLIPAttention(unittest.TestCase):
-    """
-    test CLIP attention visualization
-    """
-
-    def test_attention(self):
-        model = clip.create_model(
-            model_name="clip_vit_b32",
-            pretrained=False,  # Use True in practice
-            device="cpu",
-            jit=False,
-            vis=True
-        )
-        mock_img = Image.new(mode="RGB", size=(20, 20))
-        text_list = ["This is a mock text."]
-        show_attention_for_clip(model, mock_img, text_list)
 
 
 if __name__ == "__main__":
