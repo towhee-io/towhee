@@ -20,8 +20,10 @@ from PIL import Image
 from torchvision import transforms
 from torchvision.models import resnet18
 from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic, show_transform, \
-    plot_lrs_for_config, plot_lrs_for_scheduler, interpret_image_classification, generate_attention
+    plot_lrs_for_config, plot_lrs_for_scheduler, interpret_image_classification, generate_attention, \
+    show_attention_for_clip
 from towhee.trainer.training_config import TrainingConfig
+from towhee.models.clip import clip
 from torch import nn
 from torch.optim.lr_scheduler import StepLR
 
@@ -137,6 +139,24 @@ class TestAttention(unittest.TestCase):
     def test_attention(self):
         res = generate_attention(self.model, torch.randn(3, 224, 224), class_index=0)
         self.assertEqual(res.shape[0], 224)
+
+
+class TestCLIPAttention(unittest.TestCase):
+    """
+    test CLIP attention visualization
+    """
+
+    def test_attention(self):
+        model = clip.create_model(
+            model_name="clip_vit_b32",
+            pretrained=False,  # Use True in practice
+            device="cpu",
+            jit=False,
+            vis=True
+        )
+        mock_img = Image.new(mode="RGB", size=(20, 20))
+        text_list = ["This is a mock text."]
+        show_attention_for_clip(model, mock_img, text_list)
 
 
 if __name__ == "__main__":
