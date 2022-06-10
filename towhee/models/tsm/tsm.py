@@ -165,7 +165,25 @@ class TSN(nn.Module):
     def partialbn(self, enable):
         self._enable_pbn = enable
 
-    def head(self, input_x, no_reshape=False):
+    def head(self, base_out):
+        if self.dropout > 0:
+            base_out = self.new_fc(base_out)
+
+        if not self.before_softmax:
+            base_out = self.softmax(base_out)
+        if self.reshape:
+            if self.is_shift and self.temporal_pool:
+                base_out = base_out.view((-1, self.num_segments // 2) + base_out.size()[1:])
+            else:
+                base_out = base_out.view((-1, self.num_segments) + base_out.size()[1:])
+            output = self.consensus(base_out)
+            return output.squeeze(1)
+
+    def forward(self, input_x, no_reshape=False):
+        base_out = self.forward_features(input_x, no_reshape)
+        return self.head(base_out)
+
+    def forward_features(self, input_x, no_reshape=False):
         if not no_reshape:
             sample_len = (3 if self.modality == 'RGB' else 2) * self.new_length
 
@@ -177,29 +195,6 @@ class TSN(nn.Module):
         else:
             base_out = self.base_model(input_x)
         return base_out
-
-    def reshape_features(self, base_out):
-        if self.reshape:
-            if self.is_shift and self.temporal_pool:
-                base_out = base_out.view((-1, self.num_segments // 2) + base_out.size()[1:])
-            else:
-                base_out = base_out.view((-1, self.num_segments) + base_out.size()[1:])
-            output = self.consensus(base_out)
-            return output.squeeze(1)
-
-    def forward(self, input_x, no_reshape=False):
-        base_out = self.head(input_x, no_reshape)
-
-        if self.dropout > 0:
-            base_out = self.new_fc(base_out)
-
-        if not self.before_softmax:
-            base_out = self.softmax(base_out)
-        return self.reshape_features(base_out)
-
-    def forward_features(self, input_x, no_reshape=False):
-        base_out = self.head(input_x, no_reshape)
-        return self.reshape_features(base_out)
 
     def _get_diff(self, input_x, keep_rgb=False):
         input_c = 3 if self.modality in ['RGB', 'RGBDiff'] else 2
