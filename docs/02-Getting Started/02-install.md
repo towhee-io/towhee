@@ -32,6 +32,7 @@ Alternatively, if you are on Windows, install Python 3.6+ first, either through 
 c:\> python -m venv towhee_env
 c:\> source towhee_env/Scripts/Activate
 c:\> pip3 install -U towhee
+c:\> pip3 install -U towhee.models
 ```
 
 ### Install Towhee from source
@@ -43,7 +44,7 @@ $ python3 -m venv towhee_env
 $ source towhee_env/bin/activate
 ```
 
-After activating the virtual enviroment, run the following commands to install Towhee.
+After activating the virtual environment, run the following commands to install Towhee.
 
 ```shell
 $ git clone https://github.com/towhee-io/towhee.git
