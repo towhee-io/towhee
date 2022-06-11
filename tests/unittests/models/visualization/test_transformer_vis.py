@@ -12,47 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import torch
-import matplotlib
 
 from pathlib import Path
 
-from towhee.models.visualization.transformer_visualization import generate_attention
-from torch import nn
+import matplotlib
+from PIL import Image
+from towhee.models.visualization.transformer_visualization import show_image_heatmap
+from towhee.models import vit
+from towhee.models.multiscale_vision_transformers import create_mvit_model
 
 cur_dir = Path(__file__).parent
+
 matplotlib.use("agg")
 
 
-class MockVit(nn.Module):
+class TestViTShow(unittest.TestCase):
     """
-    mock vit model
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.conv = nn.Conv2d(3, 1, kernel_size=16, stride=16, padding=1)
-
-    def forward(self, x):
-        x = self.conv(x)
-        return x.flatten()
-
-    def relprop(self, rel, **kwargs):
-        print(kwargs)
-        return rel
-
-
-class TestAttention(unittest.TestCase):
-    """
-    test attention visualization
+    test show heatmap for ViT.
     """
 
     def setUp(self) -> None:
-        self.model = MockVit()
+        self.model = vit.create_model(model_name="vit_base_16x224", pretrained=False)
 
-    def test_attention(self):
-        res = generate_attention(self.model, torch.randn(3, 224, 224), class_index=0)
-        self.assertEqual(res.shape[0], 224)
+    def test_show_heatmap(self):
+        mock_img = Image.new(mode="RGB", size=(20, 20))
+        show_image_heatmap(self.model, mock_img)
+
+
+class TestMViTShow(unittest.TestCase):
+    """
+    test show heatmap for MViT.
+    """
+
+    def setUp(self) -> None:
+        self.model = create_mvit_model("imagenet_b_16_conv")
+
+    def test_show_heatmap(self):
+        mock_img = Image.new(mode="RGB", size=(20, 20))
+        show_image_heatmap(self.model, mock_img)
 
 
 if __name__ == "__main__":

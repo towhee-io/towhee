@@ -13,11 +13,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Any
+
 from torch import nn
+from PIL import Image
 
 import torch
+from torchvision import transforms
 import numpy as np
 import cv2
+from towhee.trainer.utils.file_utils import is_matplotlib_available
+from towhee.utils.log import models_log
 
 
 class LRP:
@@ -31,7 +37,7 @@ class LRP:
         self.model.eval()
 
     def generate_lrp(self, input_tensor: nn.Module, index: int = None, method: str = 'transformer_attribution',
-                     is_ablation: bool = False, start_layer: int = 0):
+                     start_layer: int = 0, device=None):
         """
         Generate LRP for a specific layer.
         Args:
@@ -41,16 +47,17 @@ class LRP:
                 The index of the layer to be visualized.
             method (`str`):
                 The method to be used for LRP.
-            is_ablation (`bool`):
-                Whether to use ablation.
             start_layer (`int`):
                 The index of the layer to start from.
+            device (`str`):
+                Model device.
 
         Returns:
             (`torch.Tensor`):
                 The LRP tensor.
         """
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if device is None:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
         output = self.model(input_tensor)
         kwargs = {'alpha': 1}
         if index is None:
@@ -66,11 +73,10 @@ class LRP:
         one_hot.backward(retain_graph=True)
 
         return self.model.relprop(torch.tensor(one_hot_vector).to(input_tensor.device), method=method,
-                                  is_ablation=is_ablation,
                                   start_layer=start_layer, **kwargs)
 
 
-def _show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
+def _add_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
     heatmap = cv2.applyColorMap(np.uint8(255 * mask), cv2.COLORMAP_JET)
     heatmap = np.float32(heatmap) / 255
     cam = heatmap + np.float32(img)
@@ -78,7 +84,24 @@ def _show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return cam
 
 
-def generate_attention(model: nn.Module, image_tensor: torch.Tensor, class_index: int = None) -> np.ndarray:
+def _reshape_attr_and_get_heatmap(image_relevance: torch.Tensor, img_tensor: torch.Tensor, img_size=224):
+    side_length = int(np.sqrt(image_relevance.shape[-1]))
+    image_relevance = image_relevance.reshape(1, 1, side_length, side_length)
+    image_relevance = torch.nn.functional.interpolate(image_relevance, size=img_size, mode='bilinear')
+    image_relevance = image_relevance.reshape(img_size, img_size).data.cpu().numpy()
+    image_relevance = (image_relevance - image_relevance.min()) / (image_relevance.max() - image_relevance.min())
+    if len(img_tensor.shape) == 4:
+        img_tensor = img_tensor[0]
+    img_np = img_tensor.permute(1, 2, 0).data.cpu().numpy()
+    img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min())
+    vis = _add_cam_on_image(img_np, image_relevance)
+    vis = np.uint8(255 * vis)
+    vis = cv2.cvtColor(np.array(vis), cv2.COLOR_RGB2BGR)
+    return vis
+
+
+def generate_attention(model: nn.Module, image_tensor: torch.Tensor, method='transformer_attribution',
+                       class_index: int = None, img_size: int = 224, device: str = None) -> np.ndarray:
     """
     Generate attention visualization of the model.
     https://openaccess.thecvf.com/content/CVPR2021/papers/
@@ -88,29 +111,68 @@ def generate_attention(model: nn.Module, image_tensor: torch.Tensor, class_index
             Model to visualize.
         image_tensor (torch.Tensor):
             Image tensor.
+        method (str):
+            `full`, `rollout` or `transformer_attribution`. Default is `transformer_attribution`.
         class_index (int):
             Class index.
+        img_size (int):
+            Image size.
+        device (str):
+            Model device, cpu or cuda
 
     Returns:
         (`numpy.ndarray`):
             Attention map.
     """
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
     model.eval()
     attribution_generator = LRP(model)
-    transformer_attribution = attribution_generator.generate_lrp(image_tensor.unsqueeze(0).to(device=device),
-                                                                 method='transformer_attribution',
-                                                                 index=class_index).detach()
-    transformer_attribution = transformer_attribution.reshape(1, 1, 14, 14)
-    transformer_attribution = torch.nn.functional.interpolate(transformer_attribution, scale_factor=16, mode='bilinear')
-    transformer_attribution = transformer_attribution.reshape(224, 224).to(device).data.cpu().numpy()
-    transformer_attribution = (transformer_attribution - transformer_attribution.min()) / (
-            transformer_attribution.max() - transformer_attribution.min())
-    image_transformer_attribution = image_tensor.permute(1, 2, 0).data.cpu().numpy()
-    image_transformer_attribution = (image_transformer_attribution - image_transformer_attribution.min()) / (
-            image_transformer_attribution.max() - image_transformer_attribution.min())
-    vis = _show_cam_on_image(image_transformer_attribution, transformer_attribution)
-    vis = np.uint8(255 * vis)
-    vis = cv2.cvtColor(np.array(vis), cv2.COLOR_RGB2BGR)
+    image_relevance = attribution_generator.generate_lrp(image_tensor.unsqueeze(0).to(device=device),
+                                                         method=method,
+                                                         index=class_index).detach()
+    vis = _reshape_attr_and_get_heatmap(image_relevance, image_tensor, img_size=img_size)
     return vis
+
+
+def show_image_heatmap(model: nn.Module, pil_img: Image, method: str = 'transformer_attribution', transform: Any = None,
+                       device: str = None):
+    """
+    Show image heatmap for transformer model.
+    Args:
+        model (`nn.Module`):
+            Transformer model.
+        pil_img (`Image`):
+            Pil Image.
+        method (`str`):
+            `full`, `rollout` or `transformer_attribution`.
+            Algorithm for attention vis, default is `transformer_attribution`
+        transform (`Any`):
+            Pytorch transforms or function, can be None by default.
+        device (`str`):
+            model device.
+
+    """
+    if transform is None:
+        normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ])
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model.to(device)
+    img_tensor = transform(pil_img)
+    if not is_matplotlib_available():
+        models_log.warning('Matplotlib is not available.')
+    import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
+    _, axs = plt.subplots(1, 2)
+    axs[0].imshow(pil_img)
+    axs[0].axis('off')
+    vis_img = generate_attention(model, img_tensor, method=method, img_size=img_tensor.shape[-1], device=device)
+    axs[1].imshow(vis_img)
+    axs[1].axis('off')
+    plt.show()
