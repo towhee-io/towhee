@@ -639,6 +639,8 @@ class DataCollection(Iterable, DCMixins):
         [4, 6, 8, 10]
         """
 
+        if name.startswith('_'):
+            return super().__getattr__(self, name)
         # pylint: disable=protected-access
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
@@ -830,14 +832,19 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     >>> DataFrame([Entity(id=a) for a in [1,2,3]])
     [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
     """
-    def __init__(self, iterable: Iterable) -> None:
+
+    def __init__(self, iterable: Iterable=None, **kws) -> None:
         """Initializes a new DataCollection instance.
 
         Args:
             iterable (Iterable): input data
         """
-        super().__init__(iterable)
-        self._mode = self.ModeFlag.ROWBASEDFLAG
+        if iterable is not None:
+            super().__init__(iterable)
+            self._mode = self.ModeFlag.ROWBASEDFLAG
+        else:
+            super().__init__(DataFrame.from_arrow_talbe(**kws))
+            self._mode = self.ModeFlag.COLBASEDFLAG
 
     def _factory(self, iterable, parent_stream=True):
         """
@@ -920,10 +927,16 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
 
     def map(self, *arg):
-        if self._mode == self.ModeFlag.COLBASEDFLAG and hasattr(arg[0], '__vcall__'):
-            self._iterable = arg[0].__vcall__(self._iterable)
-            return self
+        if hasattr(arg[0], '__check_init__'):
+            arg[0].__check_init__()
+        # print (self._mode == self.ModeFlag.COLBASEDFLAG, hasattr(arg[0], '__has_vcall__'))
+        if self._mode == self.ModeFlag.COLBASEDFLAG and hasattr(arg[0], '__has_vcall__'):
+            # print('df_vcall')
+            # self._iterable = arg[0].__vcall__(self._iterable)
+            # return self
+            return self.cmap(arg[0])
         else:
+            # print('dc_call')
             return super().map(*arg)
 
 if __name__ == '__main__':
