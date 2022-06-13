@@ -83,7 +83,7 @@ def _to_milvus_callback(self): # pragma: no cover
             batch_size = int(kws['batch'])
 
         dc_data = self
-        if 'unstream' not in kws or kws['unstream']:
+        if 'stream' in kws and not kws['stream']:
             dc_data = self.unstream()
 
         _ = _milvus_insert(dc_data, index, collection, batch_size)
@@ -101,6 +101,8 @@ class MilvusMixin: # pragma: no cover
             The collection name or pymilvus.Collection in Milvus.
         batch (`str`):
             The batch size to load into Milvus, defaults to 1.
+        stream (`bool`, optional):
+            Whther the stream mode with `to_milvus`, defaults to True.
 
     Returns:
         A MutationResult object contains `insert_count` represents how many and a `primary_keys` is a list of primary keys.
