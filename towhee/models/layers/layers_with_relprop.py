@@ -1,12 +1,28 @@
-# original code from https://github.com/hila-chefer/Transformer-Explainability/blob/main/modules/layers_ours.py
+# Built on top of the original implementation at https://github.com/hila-chefer/Transformer-Explainability
+#
+# Modifications by Copyright 2022 Zilliz. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import torch
 from torch import nn
 import torch.nn.functional as F
 
 __all__ = ['forward_hook', 'Clone', 'Add', 'Cat', 'ReLU', 'GELU', 'Dropout', 'BatchNorm2d', 'Linear', 'MaxPool2d',
-           'AdaptiveAvgPool2d', 'AvgPool2d', 'Conv2d', 'Sequential', 'safe_divide', 'Einsum', 'Softmax', 'IndexSelect',
-           'LayerNorm', 'AddEye']
+           'MaxPool3d', 'AdaptiveAvgPool2d', 'AvgPool2d', 'Conv2d', 'Conv3d', 'Sequential', 'safe_divide', 'Einsum',
+           'Softmax', 'IndexSelect', 'LayerNorm', 'AddEye', 'Sigmoid']
+
+from towhee.utils.log import models_log
 
 
 def safe_divide(a, b):
@@ -38,6 +54,7 @@ class RelProp(nn.Module):
     """
     Rel prop basic class
     """
+
     def __init__(self):
         super().__init__()
         # if not self.training:
@@ -56,6 +73,7 @@ class RelPropSimple(RelProp):
     """
     Rel prop simple class
     """
+
     def relprop(self, r, alpha):
         z = self.forward(self.x)
         s = safe_divide(r, z)
@@ -72,6 +90,7 @@ class AddEye(RelPropSimple):
     """
     Add eye
     """
+
     # input of shape B, C, seq_len, seq_len
     def forward(self, inp):
         return inp + torch.eye(inp.shape[2]).expand_as(inp).to(inp.device)
@@ -89,6 +108,10 @@ class Softmax(nn.Softmax, RelProp):
     pass
 
 
+class Sigmoid(nn.Sigmoid, RelProp):
+    pass
+
+
 class LayerNorm(nn.LayerNorm, RelProp):
     pass
 
@@ -98,6 +121,10 @@ class Dropout(nn.Dropout, RelProp):
 
 
 class MaxPool2d(nn.MaxPool2d, RelPropSimple):
+    pass
+
+
+class MaxPool3d(nn.MaxPool3d, RelPropSimple):
     pass
 
 
@@ -113,6 +140,7 @@ class Add(RelPropSimple):
     """
     Add with rel prop
     """
+
     def forward(self, inputs):
         return torch.add(*inputs)
 
@@ -142,6 +170,7 @@ class Einsum(RelPropSimple):
     """
     einsum with rel prop
     """
+
     def __init__(self, equation):
         super().__init__()
         self.equation = equation
@@ -154,6 +183,7 @@ class IndexSelect(RelProp):
     """
     IndexSelect with rel prop
     """
+
     def forward(self, inputs, dim, indices):
         self.__setattr__('dim', dim)
         self.__setattr__('indices', indices)
@@ -176,6 +206,7 @@ class Clone(RelProp):
     """
     Clone with rel prop
     """
+
     def forward(self, inp, num):
         self.__setattr__('num', num)
         outputs = []
@@ -200,6 +231,7 @@ class Cat(RelProp):
     """
     Cat with rel prop
     """
+
     def forward(self, inputs, dim):
         self.__setattr__('dim', dim)
         return torch.cat(inputs, dim)
@@ -220,6 +252,7 @@ class Sequential(nn.Sequential):
     """
     Sequential with rel prop
     """
+
     def relprop(self, r, alpha):
         for m in reversed(self._modules.values()):
             r = m.relprop(r, alpha)
@@ -230,6 +263,7 @@ class BatchNorm2d(nn.BatchNorm2d, RelProp):
     """
     BatchNorm2d with rel prop
     """
+
     def relprop(self, r, alpha):
         x = self.x
         beta = 1 - alpha
@@ -247,6 +281,7 @@ class Linear(nn.Linear, RelProp):
     """
     Linear with rel prop
     """
+
     def relprop(self, r, alpha):
         beta = alpha - 1
         pw = torch.clamp(self.weight, min=0)
@@ -276,6 +311,7 @@ class Conv2d(nn.Conv2d, RelProp):
     """
     Conv2d with rel prop
     """
+
     def gradprop2(self, dy, weight):
         z = self.forward(self.x)
 
@@ -312,6 +348,37 @@ class Conv2d(nn.Conv2d, RelProp):
             def f(w1, w2, x1, x2):
                 z1 = F.conv2d(x1, w1, bias=None, stride=self.stride, padding=self.padding)
                 z2 = F.conv2d(x2, w2, bias=None, stride=self.stride, padding=self.padding)
+                s1 = safe_divide(r, z1)
+                s2 = safe_divide(r, z2)
+                c1 = x1 * self.gradprop(z1, x1, s1)[0]
+                c2 = x2 * self.gradprop(z2, x2, s2)[0]
+                return c1 + c2
+
+            activator_relevances = f(pw, nw, px, nx)
+            inhibitor_relevances = f(nw, pw, px, nx)
+
+            r = alpha * activator_relevances - beta * inhibitor_relevances
+        return r
+
+
+class Conv3d(nn.Conv3d, RelProp):
+    """
+    Conv3d layer with relprop
+    """
+    def relprop(self, r, alpha):
+        if self.x.shape[2] == 3:  # image input layer, zB rule
+            models_log.info('image input layer, relprop not implemented.')
+            pass
+        else:  # αβ rule
+            beta = alpha - 1
+            pw = torch.clamp(self.weight, min=0)
+            nw = torch.clamp(self.weight, max=0)
+            px = torch.clamp(self.x, min=0)
+            nx = torch.clamp(self.x, max=0)
+
+            def f(w1, w2, x1, x2):
+                z1 = F.conv3d(x1, w1, bias=self.bias, stride=self.stride, padding=self.padding, groups=self.groups)
+                z2 = F.conv3d(x2, w2, bias=self.bias, stride=self.stride, padding=self.padding, groups=self.groups)
                 s1 = safe_divide(r, z1)
                 s2 = safe_divide(r, z2)
                 c1 = x1 * self.gradprop(z1, x1, s1)[0]

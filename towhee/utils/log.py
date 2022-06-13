@@ -20,3 +20,4 @@ logging.basicConfig(format=FORMAT)
 
 engine_log = logging.getLogger('towhee.engine')
 trainer_log = logging.getLogger('towhee.trainer')
+models_log = logging.getLogger('towhee.models')

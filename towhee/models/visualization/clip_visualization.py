@@ -17,15 +17,14 @@ from typing import List, Tuple, Callable
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from torch import nn
-from towhee.models.visualization.transformer_visualization import _show_cam_on_image
+from towhee.models.visualization.transformer_visualization import _reshape_attr_and_get_heatmap
 from towhee.models import clip
 from towhee.models.clip import SimpleTokenizer
 from towhee.trainer.utils.file_utils import is_captum_available, is_matplotlib_available
-from towhee.utils.log import trainer_log
+from towhee.utils.log import models_log
 
 import torch
 import numpy as np
-import cv2
 
 
 def get_clip_relevance(model: nn.Module, pil_img: Image, text_list: List[str], device: str, vis_start_layer: int = 11,
@@ -128,21 +127,12 @@ def show_image_relevance(image_relevance: torch.Tensor, img_tensor: torch.Tensor
             Original input image.
     """
     if not is_matplotlib_available():
-        trainer_log.warning('Matplotlib is not available.')
+        models_log.warning('Matplotlib is not available.')
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     _, axs = plt.subplots(1, 2)
     axs[0].imshow(orig_image)
     axs[0].axis('off')
-    side_length = int(np.sqrt(image_relevance.shape[-1]))
-    image_relevance = image_relevance.reshape(1, 1, side_length, side_length)
-    image_relevance = torch.nn.functional.interpolate(image_relevance, size=224, mode='bilinear')
-    image_relevance = image_relevance.reshape(224, 224).data.cpu().numpy()
-    image_relevance = (image_relevance - image_relevance.min()) / (image_relevance.max() - image_relevance.min())
-    img_np = img_tensor[0].permute(1, 2, 0).data.cpu().numpy()
-    img_np = (img_np - img_np.min()) / (img_np.max() - img_np.min())
-    vis = _show_cam_on_image(img_np, image_relevance)
-    vis = np.uint8(255 * vis)
-    vis = cv2.cvtColor(np.array(vis), cv2.COLOR_RGB2BGR)
+    vis = _reshape_attr_and_get_heatmap(image_relevance, img_tensor)
     axs[1].imshow(vis)
     axs[1].axis('off')
     plt.show()
@@ -161,11 +151,11 @@ def show_heatmap_on_text(text: str, text_encoding: torch.Tensor, rel_text: torch
 
     """
     if not is_captum_available():
-        trainer_log.warning('You should install Captum first. Please run `pip install captum`.')
+        models_log.warning('You should install Captum first. Please run `pip install captum`.')
         return None
     from captum.attr import visualization as viz  # pylint: disable=import-outside-toplevel
     if not is_matplotlib_available():
-        trainer_log.warning('Matplotlib is not available.')
+        models_log.warning('Matplotlib is not available.')
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     tokenizer = SimpleTokenizer()
@@ -199,7 +189,7 @@ def show_attention_for_clip(model: nn.Module, pil_img: Image, text_list: List[st
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     rel_text, rel_image, text_tokens, img_tensor = get_clip_relevance(model, pil_img, text_list, device)
     if not is_matplotlib_available():
-        trainer_log.warning('Matplotlib is not available.')
+        models_log.warning('Matplotlib is not available.')
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     batch_size = len(text_list)
     for i in range(batch_size):
