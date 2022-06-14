@@ -52,7 +52,7 @@ plt.ylabel('time(s)')
 plt.show()
 ```
 
-- Secondly we compare matrix dot, with matrix size (10000, 2, 5), (100000, 2, 5), (1000000, 2, 5). In this step we want to investigate how different chunk sizes affect computational speed so we run dot in different chunk sizes.
+- Secondly we compare matrix matmul, with matrix size (10000, 2, 5), (100000, 2, 5), (1000000, 2, 5). In this step we want to investigate how different chunk sizes affect computational speed so we run matmul in different chunk sizes.
 
 ```{code-cell} ipython3
 ---
@@ -75,13 +75,13 @@ for i in [100000, 1000000, 10000000]:
 	trans = np.random.random([5,2])
 
 	time_1 = time.process_time()
-	[np.dot(a, trans) for a in arr.chunks(20)]
+	[np.matmul(a, trans) for a in arr.chunks(20)]
 	time_2 = time.process_time()
-	[np.dot(a, trans) for a in arr.chunks(50)]
+	[np.matmul(a, trans) for a in arr.chunks(50)]
 	time_3 = time.process_time()
-	[np.dot(a, trans) for a in arr]
+	[np.matmul(a, trans) for a in arr]
 	time_4 = time.process_time()
-	[np.dot(a, trans) for a in dc]
+	[np.matmul(a, trans) for a in dc]
 	time_5 = time.process_time()
 	chunk_s.append(time_2 - time_1)
 	chunk_l.append(time_3 - time_2)
@@ -90,7 +90,7 @@ for i in [100000, 1000000, 10000000]:
 ```
 
 ```{code-cell} ipython3
-plt.title('Matrix dot Result Analysis')
+plt.title('Matrix matmul Result Analysis')
 plt.xscale('log')
 plt.yscale('log')
 plt.plot(x, chunk_s, color='green', label='chunk size 20')

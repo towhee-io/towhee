@@ -86,6 +86,9 @@ class _OperatorLazyWrapper(  #
             if self._op is None:
                 with param_scope(index=self._index):
                     self._op = op(self._name, self._tag, **self._kws)
+                    # print('has vcall', hasattr(self._op, '__vcall__'))
+                    if hasattr(self._op, '__vcall__'):
+                        self.__has_vcall__ = True
 
     def _compile(self):
         func = OperatorRegistry.resolve(self._name+'_func')

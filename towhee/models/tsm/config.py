@@ -47,6 +47,26 @@ _C.MODEL.TSMK400R50.shift_div = 8
 _C.MODEL.TSMK400R50.non_local = False
 
 ###################
+###TSMK400R50S16###
+###################
+
+_C.MODEL.TSMK400R50S16 = CN()
+_C.MODEL.TSMK400R50S16.weights = 'TSM_kinetics_RGB_resnet50_shift8_blockres_avg_segment16_e50.pth'
+_C.MODEL.TSMK400R50S16.num_class = 400
+_C.MODEL.TSMK400R50S16.is_shift = True
+_C.MODEL.TSMK400R50S16.num_segments = 16
+_C.MODEL.TSMK400R50S16.new_length = 1
+_C.MODEL.TSMK400R50S16.input_modality = 'RGB'
+_C.MODEL.TSMK400R50S16.consensus_module = 'avg'
+_C.MODEL.TSMK400R50S16.dropout_ratio = 0.8
+_C.MODEL.TSMK400R50S16.img_feature_dim = 256
+_C.MODEL.TSMK400R50S16.base_model = 'resnet50'
+_C.MODEL.TSMK400R50S16.pretrain = False
+_C.MODEL.TSMK400R50S16.shift_place = 'blockres'
+_C.MODEL.TSMK400R50S16.shift_div = 8
+_C.MODEL.TSMK400R50S16.non_local = False
+
+###################
 #### TSMSOMER50 ###
 ###################
 

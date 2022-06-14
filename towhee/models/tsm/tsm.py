@@ -165,24 +165,12 @@ class TSN(nn.Module):
     def partialbn(self, enable):
         self._enable_pbn = enable
 
-    def forward(self, input_x, no_reshape=False):
-        if not no_reshape:
-            sample_len = (3 if self.modality == 'RGB' else 2) * self.new_length
-
-            if self.modality == 'RGBDiff':
-                sample_len = 3 * self.new_length
-                input_x = self._get_diff(input_x)
-
-            base_out = self.base_model(input_x.view((-1, sample_len) + input_x.size()[-2:]))
-        else:
-            base_out = self.base_model(input_x)
-
+    def head(self, base_out):
         if self.dropout > 0:
             base_out = self.new_fc(base_out)
 
         if not self.before_softmax:
             base_out = self.softmax(base_out)
-
         if self.reshape:
             if self.is_shift and self.temporal_pool:
                 base_out = base_out.view((-1, self.num_segments // 2) + base_out.size()[1:])
@@ -190,6 +178,10 @@ class TSN(nn.Module):
                 base_out = base_out.view((-1, self.num_segments) + base_out.size()[1:])
             output = self.consensus(base_out)
             return output.squeeze(1)
+
+    def forward(self, input_x, no_reshape=False):
+        base_out = self.forward_features(input_x, no_reshape)
+        return self.head(base_out)
 
     def forward_features(self, input_x, no_reshape=False):
         if not no_reshape:
@@ -202,13 +194,7 @@ class TSN(nn.Module):
             base_out = self.base_model(input_x.view((-1, sample_len) + input_x.size()[-2:]))
         else:
             base_out = self.base_model(input_x)
-        if self.reshape:
-            if self.is_shift and self.temporal_pool:
-                base_out = base_out.view((-1, self.num_segments // 2) + base_out.size()[1:])
-            else:
-                base_out = base_out.view((-1, self.num_segments) + base_out.size()[1:])
-            output = self.consensus(base_out)
-            return output.squeeze(1)
+        return base_out
 
     def _get_diff(self, input_x, keep_rgb=False):
         input_c = 3 if self.modality in ['RGB', 'RGBDiff'] else 2
@@ -288,15 +274,17 @@ class TSN(nn.Module):
         return base_model
 
 def create_model(
-        model_name: str = None,
+        model_name: str = 'tsm_k400_r50_seg8',
         pretrained: bool = False,
         weights_path: str = None,
-        device: str = 'gpu',
+        device: str = 'cpu',
         ):
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if model_name == 'tsm_k400_r50_seg8':
         model_config = _C.MODEL.TSMK400R50
+    elif model_name == 'tsm_k400_r50_seg16':
+        model_config  = _C.MODEL.TSMK400R50S16
     elif model_name == 'tsm_some_r50_seg8':
         model_config  = _C.MODEL.TSMSOMER50
     elif model_name == 'tsm_somev2_r50_seg16':
@@ -321,7 +309,7 @@ def create_model(
                 dropout = model_config.dropout_ratio,
                 )
     if pretrained:
-        checkpoint = torch.load(weights_path)
+        checkpoint = torch.load(weights_path, map_location=device)
         checkpoint = checkpoint['state_dict']
         base_dict = {'.'.join(k.split('.')[1:]): v for k, v in list(checkpoint.items())}
         replace_dict = {'base_model.classifier.weight': 'new_fc.weight',

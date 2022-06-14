@@ -93,9 +93,8 @@ op.train(training_config, train_dataset=train_data, eval_dataset=eval_data)
 # 6. Predict
 With the fine-tuned model, you can then use the operator to classify a bird picture.
 
-
 ```python
-from towhee.trainer.utils.visualization import predict_image_classification
+from towhee.trainer.utils.plot_utils import predict_image_classification
 import random
 import matplotlib.pyplot as plt
 
@@ -129,16 +128,15 @@ print('probability = {}'.format(prediction_score))
 # 7.Interpret model
 If you try to understand why this image will be classified as a mandrin duck, you can use `interpret_image_classification` utils in towhee, which using [captum](https://captum.ai/) as backend. So you must install it first using `pip install captum` or `conda install captum -c pytorch`.
 
-
-
 ```python
 from PIL import Image
 import numpy as np
-from towhee.trainer.utils.visualization import interpret_image_classification
+from towhee.trainer.utils.plot_utils import interpret_image_classification
+
 pil_img = Image.fromarray(np.uint8(img_np * 255))
 val_transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize(mean=mean, std=std),
-                               ])
+                                    transforms.Normalize(mean=mean, std=std),
+                                    ])
 interpret_image_classification(op.model.to('cpu'), pil_img, val_transform, "Occlusion")
 interpret_image_classification(op.model.to('cpu'), pil_img, val_transform, "GradientShap")
 interpret_image_classification(op.model.to('cpu'), pil_img, val_transform, "Saliency")

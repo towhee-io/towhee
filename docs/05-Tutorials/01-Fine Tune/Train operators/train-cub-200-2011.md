@@ -128,9 +128,8 @@ train_data_dir = os.path.join(data_dir, 'train')
 test_data_dir = os.path.join(data_dir, 'test')
 ```
 
-
 ```python
-from towhee.trainer.utils.visualization import image_folder_sample_show, image_folder_statistic
+from towhee.trainer.utils.plot_utils import image_folder_sample_show, image_folder_statistic
 
 image_folder_sample_show(train_data_dir, rows=4, cols=4, img_size=255)
 ```
@@ -143,9 +142,8 @@ image_folder_sample_show(train_data_dir, rows=4, cols=4, img_size=255)
 
 You can also watch the image count number of each class.
 
-
 ```python
-from towhee.trainer.utils.visualization import image_folder_statistic
+from towhee.trainer.utils.plot_utils import image_folder_statistic
 
 train_cls_count_dict = image_folder_statistic(train_data_dir, show_bar=True)
 ```
@@ -183,9 +181,8 @@ You can plot the trend chart of lr in the config. The `lr_scheduler_type` can be
 
 #### linear
 
-
 ```python
-from towhee.trainer.utils.visualization import plot_lrs_for_config
+from towhee.trainer.utils.plot_utils import plot_lrs_for_config
 
 training_config.lr_scheduler_type = 'linear'
 plot_lrs_for_config(training_config, num_training_steps=100, start_lr=1)
@@ -243,9 +240,8 @@ plot_lrs_for_config(training_config, num_training_steps=100, start_lr=1)
 #### custom lr scheduler
 If you want to use pytorch native lr scheduler to custom your lr, you can use `plot_lrs_for_scheduler()` to previously plot it.
 
-
 ```python
-from towhee.trainer.utils.visualization import plot_lrs_for_scheduler
+from towhee.trainer.utils.plot_utils import plot_lrs_for_scheduler
 from torch import nn
 import torch
 from torch.optim.lr_scheduler import StepLR
@@ -359,9 +355,8 @@ eval_data = ImageFolder(test_data_dir, transform=val_transform)
 
 We can plot the transforms images to intuitively feel the impact of image transformation on training.
 
-
 ```python
-from towhee.trainer.utils.visualization import show_transform
+from towhee.trainer.utils.plot_utils import show_transform
 
 img_path = os.path.join(train_data_dir, '118.House_Sparrow', 'House_Sparrow_0006_111034.jpg')
 

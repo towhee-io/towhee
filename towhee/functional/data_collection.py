@@ -639,6 +639,8 @@ class DataCollection(Iterable, DCMixins):
         [4, 6, 8, 10]
         """
 
+        if name.startswith('_'):
+            return super().__getattribute__(name)
         # pylint: disable=protected-access
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
@@ -830,16 +832,21 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     >>> DataFrame([Entity(id=a) for a in [1,2,3]])
     [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
     """
-    def __init__(self, iterable: Iterable) -> None:
+
+    def __init__(self, iterable: Iterable=None, **kws) -> None:
         """Initializes a new DataCollection instance.
 
         Args:
             iterable (Iterable): input data
         """
-        super().__init__(iterable)
-        self._mode = self.ModeFlag.ROWBASEDFLAG
+        if iterable is not None:
+            super().__init__(iterable)
+            self._mode = self.ModeFlag.ROWBASEDFLAG
+        else:
+            super().__init__(DataFrame.from_arrow_talbe(**kws))
+            self._mode = self.ModeFlag.COLBASEDFLAG
 
-    def _factory(self, iterable, parent_stream=True):
+    def _factory(self, iterable, parent_stream=True, mode=None):
         """
         Factory method for DataFrame.
 
@@ -852,6 +859,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         Returns:
             DataFrame: DataFrame encapsulating the iterable.
         """
+
+        # pylint: disable=protected-access
         if parent_stream is True:
             if self.is_stream:
                 if not isinstance(iterable, Iterator):
@@ -862,7 +871,10 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
 
         with param_scope() as hp:
             hp().data_collection.parent = self
-            return DataFrame(iterable)
+            df = DataFrame(iterable)
+            if mode is not None:
+                df._mode = self._mode
+            return df
 
     def to_dc(self):
         """
@@ -892,7 +904,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         >>> df = DataFrame(e)
         >>> df.mode
         <ModeFlag.ROWBASEDFLAG: 1>
-        >>> df.to_column()
+        >>> df = df.to_column()
         >>> df.mode
         <ModeFlag.COLBASEDFLAG: 2>
         """
@@ -909,7 +921,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         >>> df = DataFrame(e)
         >>> df.to_list()[0]
         <Entity dict_keys(['a', 'b'])>
-        >>> df.to_column()
+        >>> df = df.to_column()
         >>> df.to_list()[0]
         <EntityView dict_keys(['a', 'b'])>
         """
@@ -920,9 +932,10 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
 
     def map(self, *arg):
-        if self._mode == self.ModeFlag.COLBASEDFLAG and hasattr(arg[0], '__vcall__'):
-            self._iterable = arg[0].__vcall__(self._iterable)
-            return self
+        if hasattr(arg[0], '__check_init__'):
+            arg[0].__check_init__()
+        if self._mode == self.ModeFlag.COLBASEDFLAG:# and hasattr(arg[0], '__has_vcall__'):
+            return self.cmap(arg[0])
         else:
             return super().map(*arg)
 

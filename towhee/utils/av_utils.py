@@ -13,11 +13,10 @@
 # limitations under the License.
 
 
-import logging
-
-FORMAT = '%(asctime)s - %(thread)d - %(filename)s-%(module)s:%(lineno)s - %(levelname)s: %(message)s'
-logging.basicConfig(format=FORMAT)
-
-engine_log = logging.getLogger('towhee.engine')
-trainer_log = logging.getLogger('towhee.trainer')
-models_log = logging.getLogger('towhee.models')
+try:
+    # pylint: disable=unused-import
+    import av
+except ModuleNotFoundError as e:
+    from towhee.utils.dependency_control import prompt_install
+    prompt_install('av')
+    import av # pylint: disable=ungrouped-imports

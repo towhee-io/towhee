@@ -106,8 +106,9 @@ class TensorArray(pa.ExtensionArray):
         return self.storage.flatten().to_numpy().reshape(self.type.ext_shape)
 
     def chunks(self, chunk_size=None):
+        view = self.as_numpy()
         for i in range(0, len(self), chunk_size):
-            yield self.as_numpy()[i:i + chunk_size]
+            yield view[i:i + chunk_size]
 
     def __iter__(self):
         return (self[i] for i in range(len(self)))

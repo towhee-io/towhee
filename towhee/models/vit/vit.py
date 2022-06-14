@@ -42,7 +42,7 @@ def compute_rollout_attention(all_layer_matrices, start_layer=0):
     # all_layer_matrices = [all_layer_matrices[i] / all_layer_matrices[i].sum(dim=-1, keepdim=True)
     #                       for i in range(len(all_layer_matrices))]
     joint_attention = all_layer_matrices[start_layer]
-    for i in range(start_layer+1, len(all_layer_matrices)):
+    for i in range(start_layer + 1, len(all_layer_matrices)):
         joint_attention = all_layer_matrices[i].bmm(joint_attention)
     return joint_attention
 
@@ -69,6 +69,7 @@ class VitModel(nn.Module):
         norm_layer: normalization layer
         act_layer: activation layer
     """
+
     def __init__(self,
                  img_size=224, patch_size=16, in_c=3, num_classes=1000,
                  embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None,
@@ -110,7 +111,7 @@ class VitModel(nn.Module):
             self.pre_logits = nn.Identity()
 
         # Classifier head(s)
-        self.head = Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()    # pylint: disable=too-many-function-args
+        self.head = Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()  # pylint: disable=too-many-function-args
 
         # Weight init
         nn.init.trunc_normal_(self.pos_embed, std=0.02)
@@ -160,7 +161,7 @@ class VitModel(nn.Module):
     def get_inp_grad(self):
         return self.inp_grad
 
-    def relprop(self, cam=None, method="transformer_attribution", is_ablation=False, start_layer=0, **kwargs):
+    def relprop(self, cam=None, method="transformer_attribution", start_layer=0, **kwargs):
         # print(kwargs)
         # print("conservation 1", cam.sum())
         cam = self.head.relprop(cam, **kwargs)
@@ -169,9 +170,6 @@ class VitModel(nn.Module):
         cam = self.norm.relprop(cam, **kwargs)
         for blk in reversed(self.blocks):
             cam = blk.relprop(cam, **kwargs)
-
-        # print("conservation 2", cam.sum())
-        # print("min", cam.min())
 
         if method == "full":
             (cam, _) = self.add.relprop(cam, **kwargs)
@@ -207,35 +205,6 @@ class VitModel(nn.Module):
             cam = rollout[:, 0, 1:]
             return cam
 
-        elif method == "last_layer":
-            cam = self.blocks[-1].attn.get_attn_cam()
-            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
-            if is_ablation:
-                grad = self.blocks[-1].attn.get_attn_gradients()
-                grad = grad[0].reshape(-1, grad.shape[-1], grad.shape[-1])
-                cam = grad * cam
-            cam = cam.clamp(min=0).mean(dim=0)
-            cam = cam[0, 1:]
-            return cam
-
-        elif method == "last_layer_attn":
-            cam = self.blocks[-1].attn.get_attn()
-            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
-            cam = cam.clamp(min=0).mean(dim=0)
-            cam = cam[0, 1:]
-            return cam
-
-        elif method == "second_layer":
-            cam = self.blocks[1].attn.get_attn_cam()
-            cam = cam[0].reshape(-1, cam.shape[-1], cam.shape[-1])
-            if is_ablation:
-                grad = self.blocks[1].attn.get_attn_gradients()
-                grad = grad[0].reshape(-1, grad.shape[-1], grad.shape[-1])
-                cam = grad * cam
-            cam = cam.clamp(min=0).mean(dim=0)
-            cam = cam[0, 1:]
-            return cam
-
 
 def create_model(
         model_name: str = None,
@@ -243,7 +212,7 @@ def create_model(
         weights_path: str = None,
         device: str = None,
         **kwargs
-        ):
+):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
