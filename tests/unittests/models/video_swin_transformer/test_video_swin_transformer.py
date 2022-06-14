@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.video_swin_transformer.video_swin_transformer import VideoSwinTransformer
+from towhee.models.video_swin_transformer import video_swin_transformer
 
 
 class VideoSwinTransformerTest(unittest.TestCase):
@@ -25,7 +25,8 @@ class VideoSwinTransformerTest(unittest.TestCase):
         depths = [3, 3, 6, 3]
         num_heads = [8, 16, 32, 64]
         window_size = [2, 2, 2]
-        md = VideoSwinTransformer(embed_dim=embed_dim, depths=depths, num_heads=num_heads, window_size=window_size)
+        md = video_swin_transformer.create_model(embed_dim=embed_dim, depths=depths,
+                                                 num_heads=num_heads, window_size=window_size)
         input_tensor = torch.rand(1, 3, 4, 4, 4)
         # torch.Size([144, 576, 1, 1, 1])
         out = md(input_tensor)
