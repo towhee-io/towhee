@@ -24,7 +24,11 @@ class VectorizedExecution:
 
     def __vcall__(self, *arg, **kws):
         self.__check_init__()
-        return self._op.__vcall__(*arg, **kws)
+        if hasattr(self._op, '__vcall__'):
+            return self._op.__vcall__(*arg, **kws)
+        if len(arg) == 1:
+            return [self._op.__call__(x) for x in arg[0]]
+
         # if bool(self._index):
         #     args = []
         #     if isinstance(self._index[0], tuple):

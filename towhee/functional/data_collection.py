@@ -640,7 +640,7 @@ class DataCollection(Iterable, DCMixins):
         """
 
         if name.startswith('_'):
-            return super().__getattr__(self, name)
+            return super().__getattribute__(name)
         # pylint: disable=protected-access
         with param_scope() as hp:
             dispatcher = hp().dispatcher({})
@@ -846,7 +846,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             super().__init__(DataFrame.from_arrow_talbe(**kws))
             self._mode = self.ModeFlag.COLBASEDFLAG
 
-    def _factory(self, iterable, parent_stream=True):
+    def _factory(self, iterable, parent_stream=True, mode=None):
         """
         Factory method for DataFrame.
 
@@ -859,6 +859,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         Returns:
             DataFrame: DataFrame encapsulating the iterable.
         """
+
+        # pylint: disable=protected-access
         if parent_stream is True:
             if self.is_stream:
                 if not isinstance(iterable, Iterator):
@@ -869,7 +871,10 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
 
         with param_scope() as hp:
             hp().data_collection.parent = self
-            return DataFrame(iterable)
+            df = DataFrame(iterable)
+            if mode is not None:
+                df._mode = self._mode
+            return df
 
     def to_dc(self):
         """
@@ -899,7 +904,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         >>> df = DataFrame(e)
         >>> df.mode
         <ModeFlag.ROWBASEDFLAG: 1>
-        >>> df.to_column()
+        >>> df = df.to_column()
         >>> df.mode
         <ModeFlag.COLBASEDFLAG: 2>
         """
@@ -916,7 +921,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         >>> df = DataFrame(e)
         >>> df.to_list()[0]
         <Entity dict_keys(['a', 'b'])>
-        >>> df.to_column()
+        >>> df = df.to_column()
         >>> df.to_list()[0]
         <EntityView dict_keys(['a', 'b'])>
         """
@@ -929,14 +934,9 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     def map(self, *arg):
         if hasattr(arg[0], '__check_init__'):
             arg[0].__check_init__()
-        # print (self._mode == self.ModeFlag.COLBASEDFLAG, hasattr(arg[0], '__has_vcall__'))
-        if self._mode == self.ModeFlag.COLBASEDFLAG and hasattr(arg[0], '__has_vcall__'):
-            # print('df_vcall')
-            # self._iterable = arg[0].__vcall__(self._iterable)
-            # return self
+        if self._mode == self.ModeFlag.COLBASEDFLAG:# and hasattr(arg[0], '__has_vcall__'):
             return self.cmap(arg[0])
         else:
-            # print('dc_call')
             return super().map(*arg)
 
 if __name__ == '__main__':
