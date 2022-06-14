@@ -24,7 +24,7 @@ class TestPretrained(unittest.TestCase):
     """
     video = torch.ones(1, 8, 3, 224, 224)
     text = ["a", "b"]
-    model = action_clip.create_model(clip_model="clip_vit_b32", pretrained=True, jit=True)
+    model = action_clip.create_model(clip_model="clip_vit_b32", pretrained=False, jit=True)
 
     # Test video encoder
     def test_pretrained(self):

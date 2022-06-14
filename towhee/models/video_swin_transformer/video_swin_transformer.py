@@ -8,8 +8,9 @@ from einops import rearrange
 from towhee.models.layers.patch_embed3d import PatchEmbed3D
 from towhee.models.layers.patch_merging3d import PatchMerging3D
 from towhee.models.video_swin_transformer.video_swin_transformer_block import VideoSwinTransformerBlock
-from collections import OrderedDict
+from towhee.models.video_swin_transformer import get_configs
 from towhee.models.utils.init_vit_weights import init_vit_weights
+from collections import OrderedDict
 import logging
 
 
@@ -341,3 +342,25 @@ class VideoSwinTransformer(nn.Module):
         cls_score = self.fc_cls(x)
         return cls_score
 
+
+def create_model(model_name: str = None, pretrained: bool = False,
+                 device: str = None, **kwargs):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if pretrained:
+        if model_name is None:
+            raise AssertionError("Fail to load pretrained model: no model name is specified.")
+        model_configs = get_configs.configs(model_name)
+        model = VideoSwinTransformer(pretrained=model_configs["pretrained"],
+                                     num_classes=model_configs["num_classes"],
+                                     embed_dim=model_configs["embed_dim"],
+                                     depths=model_configs["depths"],
+                                     num_heads=model_configs["num_heads"],
+                                     patch_size=model_configs["patch_size"],
+                                     window_size=model_configs["window_size"],
+                                     drop_path_rate=model_configs["drop_path_rate"],
+                                     patch_norm=model_configs["patch_norm"],
+                                     device=device)
+    else:
+        model = VideoSwinTransformer(**kwargs)
+    return model
