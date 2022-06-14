@@ -19,7 +19,7 @@ from towhee._types import Image
 from towhee.types import AudioFrame
 from towhee.hparam import param_scope
 from towhee.functional.entity import Entity
-
+from towhee.functional.entity_view import EntityView
 # pylint: disable=dangerous-default-value
 
 
@@ -151,11 +151,15 @@ class DisplayMixin:
                 The format of the output, support html, plain, grid.
         """
 
+        # pylint: disable=protected-access
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
             header = tuple(contents[0].__dict__) if not header else header
             data = [list(x.__dict__.values()) for x in contents]
+        elif all(isinstance(x, EntityView) for x in contents):
+            header = tuple(contents[0]._table.column_names) if not header else header
+            data = [[getattr(x, n) for n in header] for x in contents]
         else:
             data = [[x] for x in contents]
 
