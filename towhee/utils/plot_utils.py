@@ -18,6 +18,8 @@ from pathlib import PosixPath
 from towhee.types import Image
 from towhee.utils.log import engine_log
 from towhee.utils.ndarray_utils import from_src
+from towhee.types.image_utils import to_image_color
+
 
 try:
     # pylint: disable=unused-import,ungrouped-imports
@@ -52,7 +54,7 @@ def plot_img(img: Union[str, PosixPath, Image, list], title: str = None):
         try:
             ax.imshow(img.to_ndarray())
         except: # pylint: disable=bare-except
-            ax.imshow(img.cv2_to_rgb())
+            ax.imshow(to_image_color(img, 'RGB'))
         ax.axis('off')
         if title:
             ax.set_title(f'{title:.04f}\n')
@@ -78,7 +80,7 @@ def plot_img_list(data: list, titles: list = None):
         try:
             ax.imshow(img.to_ndarray())
         except: # pylint: disable=bare-except
-            ax.imshow(img.cv2_to_rgb())
+            ax.imshow(to_image_color(img, 'RGB'))
         ax.axis('off')
         if titles and titles[i]:
             ax.set_title(f'{titles[i]:.04f}\n')
