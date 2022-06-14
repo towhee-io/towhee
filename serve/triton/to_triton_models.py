@@ -13,9 +13,39 @@
 # limitations under the License.
 
 from abc import ABC
+from path import Pathlib
 import logging
 
 logger = logging.getLogger()
+
+
+class TritonFiles:
+    def __init__(self, root, model_name):
+        self._root = Pathlib(root) / model_name
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def config_file(self):
+        return self._root / 'config.pbtxt'
+
+    @property
+    def model_path(self):
+        return self._root / 1
+
+    @property
+    def python_model_file(self):
+        return self.model_path / 'model.py'
+
+    @property
+    def trt_model_file(self):
+        return self.model_path / 'model.plan'
+
+    @property
+    def onnx_model_file(self):
+        return self.model_path / 'model.onnx'
 
 
 class ToTritonModel(ABC):
@@ -24,8 +54,8 @@ class ToTritonModel(ABC):
     '''
     def __init__(self, op_meta, model_dir, op_dir):
         self._op_meta = op_meta
-        self._model_dir = model_dir
         self._op_dir = op_dir
+        self._triton_files = TritonFiles(model_dir, op_meta.model_name)
 
     def _prepare_config(self):
         pass
@@ -52,18 +82,30 @@ class EnsembleTritionModel:
     def __init__(self, dag):
         pass
 
+    def _prepare_config(self):
+        pass
+
+    def _prepare_model(self):
+        return True
+
 
 class PythonTritonModel(ToTritonModel):
     def __init__(self, op_meta, model_dir, op_dir):
         super().__init__(op_meta, model_dir)
 
-    def prepare_config(self):
+    def _prepare_config(self):
         pass
 
-    def prepare_model(self):
+    def _prepare_model(self):
         pass
 
 
-class TensorRTTritonModel(ToTritonModel):
+class TorchTensorRTTritonModel(ToTritonModel):
     def __init__(self, op_meta, model_dir, op_dir):
         super().__init__(op_meta, model_dir)
+
+    def _prepare_config(self):
+        pass
+
+    def _prepare_model(self):
+        pass
