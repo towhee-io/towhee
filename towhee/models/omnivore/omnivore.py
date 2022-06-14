@@ -65,23 +65,31 @@ class OmnivoreModel(nn.Module):
             self.multimodal_model = True
             assert [n in heads for n in self.types], "All heads must be provided"
 
+    def head(self, features: torch.Tensor, input_type: Optional[str] = None):
+        head_in = self.heads
+        if self.multimodal_model:
+            assert input_type in self.types, "unsupported input type"
+            head_in = head_in[input_type]
+        return head_in(features)
+
+    def forward_features(self, x: torch.Tensor):
+        assert x.ndim == 5
+        x = self.trunk(x)
+        features = [torch.mean(x, [-3, -2, -1])][0]
+        return features
+
     def forward(self, x: torch.Tensor, input_type: Optional[str] = None):
         """
         Args:
             x: input to the model of shape 1 x C x T x H x W
             input_type: Optional[str] one of ["image", "video", "rgbd"]
-                if self.multimodal_model is True
+                if self.multimodal_model iss True
         Returns:
             preds: tensor of shape (1, num_classes)
         """
-        assert x.ndim == 5
-        x = self.trunk(x)
-        features = [torch.mean(x, [-3, -2, -1])][0]
-        head = self.heads
-        if self.multimodal_model:
-            assert input_type in self.types, "unsupported input type"
-            head = head[input_type]
-        return head(features)
+        features = self.forward_features(x)
+        return self.head(features, input_type = input_type)
+
 
 
 CHECKPOINT_PATHS = {
@@ -129,6 +137,7 @@ def _omnivore_base(
         checkpoint = load_state_dict_from_url(
             path, progress=progress, map_location="cpu"
         )
+        trunk.fc_cls=nn.Sequential()
         trunk.load_state_dict(checkpoint["trunk"])
 
         if load_heads:
@@ -454,3 +463,26 @@ def omnivore_swinl_kinetics600(
         **kwargs,
     )
 
+def create_model(
+        model_name: str = None,
+        pretrained: bool = True,
+        device: str = "cpu",
+        ):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if model_name == "omnivore_swinT":
+        model = omnivore_swint(pretrained = pretrained)
+    elif model_name == "omnivore_swinS":
+        model = omnivore_swins(pretrained = pretrained)
+    elif model_name == "omnivore_swinB":
+        model = omnivore_swinb(pretrained = pretrained)
+    elif model_name == "omnivore_swinB_in21k":
+        model = omnivore_swinb_imagenet21k(pretrained = pretrained)
+    elif model_name == "omnivore_swinL_in21k":
+        model = omnivore_swinl_imagenet21k(pretrained = pretrained)
+    elif model_name == "omnivore_swinB_epic":
+        model = omnivore_swinb_epic(pretrained = pretrained)
+    else:
+        raise AttributeError(f"Invalid model_name {model_name}.")
+    model.to(device)
+    return model
