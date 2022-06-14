@@ -297,6 +297,8 @@ def create_model(
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if model_name == 'tsm_k400_r50_seg8':
         model_config = _C.MODEL.TSMK400R50
+    elif model_name == 'tsm_k400_r50_seg16':
+        model_config  = _C.MODEL.TSMK400R50S16
     elif model_name == 'tsm_some_r50_seg8':
         model_config  = _C.MODEL.TSMSOMER50
     elif model_name == 'tsm_somev2_r50_seg16':
