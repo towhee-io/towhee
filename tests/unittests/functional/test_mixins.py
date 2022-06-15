@@ -30,7 +30,7 @@ import towhee.functional.mixins.state
 import towhee.functional.mixins.serve
 
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
-from towhee import DataCollection, DataFrame
+from towhee import DataCollection, DataFrame, dc
 from towhee import Entity
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -88,15 +88,16 @@ class TestSaveMixin(unittest.TestCase):
         out_3.unlink()
         out_4.unlink()
 
+
 class TestMetricMixin(unittest.TestCase):
     """
     Unittest for MetricMixin.
     """
     def test_hit_ratio(self):
-        true = [[1,2,3,4,5,6,7,8,9,10]]
-        pred_1 = [[0,1,2,3,4,5,6,7,8,9,10]]
-        pred_2 = [[0,1,2,3,4,5,6,7,8]]
-        pred_3 = [[0,11,12]]
+        true = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+        pred_1 = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+        pred_2 = [[0, 1, 2, 3, 4, 5, 6, 7, 8]]
+        pred_3 = [[0, 11, 12]]
 
         mhr = towhee.functional.mixins.metric.mean_hit_ratio
         self.assertEqual(1, mhr(true, pred_1))
@@ -104,22 +105,19 @@ class TestMetricMixin(unittest.TestCase):
         self.assertEqual(0, mhr(true, pred_3))
 
     def test_average_precision(self):
-        true = [[1,2,3,4,5]]
-        pred_1 = [[1,6,2,7,8,3,9,10,4,5]]
-        pred_2 = [[0,1,6,7,2,8,3,9,10]]
-        pred_3 = [[0,11,12]]
+        true = [[1, 2, 3, 4, 5]]
+        pred_1 = [[1, 6, 2, 7, 8, 3, 9, 10, 4, 5]]
+        pred_2 = [[0, 1, 6, 7, 2, 8, 3, 9, 10]]
+        pred_3 = [[0, 11, 12]]
 
-        trues = [[1,2,3,4,5], [1,2,3,4,5]]
-        pred_4 = [[1,6,2,7,8,3,9,10,4,5], [0,1,6,7,2,8,3,9,10]]
+        trues = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
+        pred_4 = [[1, 6, 2, 7, 8, 3, 9, 10, 4, 5], [0, 1, 6, 7, 2, 8, 3, 9, 10]]
 
         mean_ap = towhee.functional.mixins.metric.mean_average_precision
         self.assertEqual(0.62, round(mean_ap(true, pred_1), 2))
         self.assertEqual(0.44, round(mean_ap(true, pred_2), 2))
         self.assertEqual(0, mean_ap(true, pred_3))
         self.assertEqual(0.53, round(mean_ap(trues, pred_4), 2))
-
-
-
 
 
 class TestDisplayMixin(unittest.TestCase):
@@ -132,12 +130,12 @@ class TestDisplayMixin(unittest.TestCase):
         self.assertEqual(_ndarray_brief(arr, 3), '[1.1, 2.2, 3.3, ...] shape=(3, 2)')
 
     def test_to_printable_table(self):
-        dc = DataCollection([[1.1, 2.2], [3.3, 4.4]])
+        dc_1 = DataCollection([[1.1, 2.2], [3.3, 4.4]])
         # pylint: disable=protected-access
-        plain_tbl = to_printable_table(dc._iterable, tablefmt='plain')
+        plain_tbl = to_printable_table(dc_1._iterable, tablefmt='plain')
         self.assertEqual(plain_tbl, '1.1  2.2\n3.3  4.4')
 
-        html_tbl = to_printable_table(dc._iterable, tablefmt='html')
+        html_tbl = to_printable_table(dc_1._iterable, tablefmt='html')
         html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
                    '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
                    'border-left: solid 1px #D3D3D3; ">1.1</td> '\
@@ -149,11 +147,11 @@ class TestDisplayMixin(unittest.TestCase):
                    'border-left: solid 1px #D3D3D3; ">4.4</td></tr></table>'
         self.assertEqual(html_tbl, html_str)
 
-        dc = DataCollection([['hello'], ['world']])
-        plain_tbl = to_printable_table(dc._iterable, tablefmt='plain')
+        dc_1 = DataCollection([['hello'], ['world']])
+        plain_tbl = to_printable_table(dc_1._iterable, tablefmt='plain')
         self.assertEqual(plain_tbl, 'hello\nworld')
 
-        html_tbl = to_printable_table(dc._iterable, tablefmt='html')
+        html_tbl = to_printable_table(dc_1._iterable, tablefmt='html')
         html_str = '<table style="border-collapse: collapse;"><tr></tr> '\
                    '<tr><td style="text-align: center; vertical-align: center; border-right: solid 1px #D3D3D3; '\
                    'border-left: solid 1px #D3D3D3; ">hello</td></tr> '\
@@ -165,10 +163,43 @@ class TestDisplayMixin(unittest.TestCase):
         logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
         img = cv2.imread(logo_path)
         towhee_img = Image(img, 'BGR')
-        dc = DataCollection([[1, img, towhee_img], [2, img, towhee_img]])
-        dc.show(tablefmt='plain')
-        dc.show(tablefmt='html')
+        dc_1 = DataCollection([[1, img, towhee_img], [2, img, towhee_img]])
+        dc_1.show(tablefmt='plain')
+        dc_1.show(tablefmt='html')
 
+
+class TestColumnComputing(unittest.TestCase):
+    """
+    Unit test for column-based computing.
+    """
+    def test_siso(self):
+        df = dc['a'](range(10))\
+            .to_column()\
+            .runas_op['a', 'b'](func=lambda x: x+1)
+
+        self.assertTrue(all(map(lambda x: x.a == x.b - 1, df)))
+
+    def test_simo(self):
+        df = dc['a'](range(10))\
+            .to_column()\
+            .runas_op['a', ('b', 'c')](func=lambda x: (x+1, x-1))
+
+        self.assertTrue(all(map(lambda x: x.a == x.b - 1, df)))
+        self.assertTrue(all(map(lambda x: x.a == x.c + 1, df)))
+
+    def test_miso(self):
+        df = dc['a', 'b']([range(10), range(10)])\
+            .to_column()\
+            .runas_op[('a', 'b'), 'c'](func=lambda x, y: x + y)
+
+        self.assertTrue(all(map(lambda x: x.c == x.a + x.b, df)))
+
+    def test_mimo(self):
+        df = dc['a', 'b']([range(10), range(10)])\
+            .to_column()\
+            .runas_op[('a', 'b'), ('c', 'd')](func=lambda x, y: (x+1, y-1))
+
+        self.assertTrue(all(map(lambda x: x.a == x.c - 1 and x.b == x.d + 1, df)))
 
 if __name__ == '__main__':
     unittest.main()
