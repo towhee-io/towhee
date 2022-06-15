@@ -51,24 +51,12 @@ class ColumnMixin:
         10
         >>> len(dc._iterable._chunks)
         2
-        >>> dc2._iterable
-        [pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[0,1,2,3,4,5,6,7,8,9]]
-        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[10,11,12,13,14,15,16,17,18,19]]
-        b: [[11,12,13,14,15,16,17,18,19,20]]]
         """
 
         # pylint: disable=protected-access
 
         self._chunksize = chunksize
-        chunked_table = ChunkedTable(chunksize, stream=False)
+        chunked_table = ChunkedTable(chunksize=chunksize, stream=False)
         for element in self:
             chunked_table.feed(element)
         chunked_table.feed(None, eos=True)
@@ -196,7 +184,7 @@ class ColumnMixin:
         # pylint: disable=protected-access
         if isinstance(self._iterable, ChunkedTable):
             tables = [self.__table_apply__(chunk, unary_op) for chunk in self._iterable.chunks()]
-            return self._factory([WritableTable(table) for table in tables])
+            return self._factory(ChunkedTable([WritableTable(table) for table in tables]))
         table = self.__table_apply__(self._iterable, unary_op)
         return self._factory(WritableTable(table))
 
@@ -227,7 +215,7 @@ class ColumnMixin:
             for col in unary_op._index[0]:
                 args.append(args.append(data[col].chunks[0].to_numpy()))
         else:
-            args.append(data[unary_op._index[0]].chunks[0].to_numpy())
+            args.append(data[unary_op._index[0]].chunks[0].to_numpy(zero_copy_only=False))
         return unary_op.__vcall__(*args)
 
 
