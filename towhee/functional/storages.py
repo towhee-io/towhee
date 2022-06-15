@@ -80,28 +80,35 @@ class ChunkedTable:
         self._chunks = [] if stream is False else None
         self._buffer = []
 
-    def feed(self, element):
-        self._buffer.append(element)
-        header = None
-        cols = None
-        if len(self._buffer) >= self._chunksize:
+    def feed(self, element, eos=False):
+        if not eos:
+            self._buffer.append(element)
+
+        if len(self._buffer) >= self._chunksize or eos is True:
+            if len(self._buffer) == 0: return
+            header = None
+            cols = None
             for entity in self._buffer:
-                header = [*entity.__dict__] if not header else header
-                cols = [[] for _ in header] if not cols else cols
+                header = [*entity.__dict__] if header is None else header
+                cols = [[] for _ in header] if cols is None else cols
                 for col, name in zip(cols, header):
                     col.append(getattr(entity, name))
-        else:
-            return
-        arrays = []
-        for col in cols:
-            try:
-                arrays.append(pa.array(col))
-            # pylint: disable=bare-except
-            except:
-                arrays.append(TensorArray.from_numpy(col))
+            arrays = []
+            for col in cols:
+                try:
+                    arrays.append(pa.array(col))
+                # pylint: disable=bare-except
+                except:
+                    arrays.append(TensorArray.from_numpy(col))
 
-        res = pa.Table.from_arrays(arrays, names=header)
-        self._chunks.append(res)
+            res = pa.Table.from_arrays(arrays, names=header)
+            self._chunks.append(WritableTable(res))
+            self._buffer = []
+        return
+
+
+    def chunks(self):
+        return self._chunks
 
     def __iter__(self):
 
