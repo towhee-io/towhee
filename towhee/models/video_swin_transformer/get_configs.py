@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-def configs(model_name='swin_b_w877_k400_1k'):
+def configs(model_name='swin_b_k400_1k'):
     args = {
         'swin_b_k400_1k':
             {'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics400_1k.pth',
