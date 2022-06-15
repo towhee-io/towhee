@@ -17,7 +17,7 @@ import torch
 from towhee.models.frozen_in_time import FrozenInTime
 
 
-class ForzenInTimeTest(unittest.TestCase):
+class BridgeFormerTest(unittest.TestCase):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # (batch，frames，channels，height， width)
     image_size = 28
@@ -38,7 +38,7 @@ class ForzenInTimeTest(unittest.TestCase):
 
         model = FrozenInTime(img_size=self.image_size, patch_size=self.patch_size,
                              in_chans=self.in_chans,
-                             attention_style='frozen_in_time',
+                             attention_style='bridge_former',
                              is_pretrained=False,
                              projection_dim=256,
                              video_is_load_pretrained=False,
