@@ -18,13 +18,12 @@ from towhee.types.tensor_array import TensorArray
 from towhee.hparam.hyperparameter import param_scope
 
 from towhee.functional.storages import ChunkedTable, WritableTable
-
-
+# pylint: disable=import-outside-toplevel
+# pylint: disable=bare-except
 class ColumnMixin:
     """
     Mixins to support column-based storage.
     """
-
     class ModeFlag(Flag):
         ROWBASEDFLAG = auto()
         COLBASEDFLAG = auto()
@@ -118,7 +117,7 @@ class ColumnMixin:
         return pa.Table.from_arrays(arrays, names=header)
 
     @classmethod
-    def from_arrow_talbe(cls, **kws):
+    def from_arrow_table(cls, **kws):
         arrays = []
         names = []
         for k, v in kws.items():
@@ -208,16 +207,54 @@ class ColumnMixin:
         table = pa.Table.from_arrays(arrays, names=names)
         return table
 
-    def __col_apply__(self, data, unary_op):
+    def __col_apply__(self, cols, unary_op):
         # pylint: disable=protected-access
+        import numpy as np
         args = []
+        # Multi inputs.
         if isinstance(unary_op._index[0], tuple):
-            for col in unary_op._index[0]:
-                args.append(args.append(data[col].chunks[0].to_numpy()))
-        else:
-            args.append(data[unary_op._index[0]].chunks[0].to_numpy(zero_copy_only=False))
-        return unary_op.__vcall__(*args)
+            for name in unary_op._index[0]:
+                try:
+                    data = cols[name].combine_chunks()
+                except:
+                    data = cols[name].chunk(0)
 
+                buffer = data.buffers()[-1]
+                dtype = data.type
+                if isinstance(data, TensorArray):
+                    dtype = dtype.storage_type.value_type
+                elif hasattr(data.type, 'value_type'):
+                    while hasattr(dtype, 'value_type'):
+                        dtype = dtype.value_type
+                dtype = dtype.to_pandas_dtype()
+                shape = [-1, *data.type.shape] if isinstance(data, TensorArray)\
+                    else [len(data), -1] if isinstance(data, pa.lib.ListArray)\
+                    else [len(data)]
+                args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+                # args.append(data.to_numpy(zero_copy_only=False).reshape(shape))
+
+        # Single input.
+        else:
+            try:
+                data = cols[unary_op._index[0]].combine_chunks()
+            except:
+                data = cols[unary_op._index[0]].chunk(0)
+
+            buffer = data.buffers()[-1]
+            dtype = data.type
+            if isinstance(data, TensorArray):
+                dtype = dtype.storage_type.value_type
+            elif hasattr(data.type, 'value_type'):
+                while hasattr(dtype, 'value_type'):
+                    dtype = dtype.value_type
+            dtype = dtype.to_pandas_dtype()
+            shape = [-1, *data.type.shape] if isinstance(data, TensorArray)\
+                else [len(data), -1] if isinstance(data, pa.lib.ListArray)\
+                else [len(data)]
+            args.append(np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+            # args.append(data.to_numpy(zero_copy_only=False).reshape(shape))
+
+        return unary_op.__vcall__(*args)
 
 if __name__ == '__main__':
     import doctest
