@@ -86,4 +86,3 @@ def configs(model_name='swin_b_k400_1k'):
                 'patch_norm': True},
     }
     return args[model_name]
-
