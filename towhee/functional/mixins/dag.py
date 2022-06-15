@@ -148,32 +148,3 @@ class ControlPlane:
     @property
     def dag(self):
         return self._dag
-
-
-if __name__ == '__main__':
-    from towhee import DataCollection
-
-    def function():
-        return 2
-
-    dc = DataCollection.range(10).stream().set_parallel(num_worker=2).map(lambda x: x+1)
-    a, b, anull, bnull, cnull, dnull, enull, fnull = dc.map(lambda x: function() + x+1, lambda x: function() + x*2, lambda x: function() + x*2, lambda x: function() + x*2,  lambda x: function() + x*2,  lambda x: function() + x*2,  lambda x: function() + x*2,  lambda x: function() + x*2)
-    e = b.map(lambda x: function() + x+1)
-    e = e.map(lambda x : function() + x+1)
-    f = anull.map(lambda x : function() + x+1)
-    g = bnull.map(lambda x : function() + x+1)
-    h = cnull.map(lambda x : function() + x+1)
-    j = dnull.map(lambda x : function() + x+1)
-    l = enull.map(lambda x : function() + x+1)
-    k = fnull.map(lambda x : function() + x+1)
-    f = f.map(lambda x : function() + x+1)
-    g = g.map(lambda x : function() + x+1)
-    h = h.map(lambda x : function() + x+1)
-    j = j.map(lambda x : function() + x+1)
-    l = l.map(lambda x : function() + x+1)
-    k = k.map(lambda x : function() + x+1)
-    a = a + e
-    a = a.unstream().shuffle().stream()
-    i = h.zip(a, f, g, j, l, k)
-    x = i.netx()
-    # x = i.to_list()

@@ -7,7 +7,6 @@ from towhee.hub.file_manager import FileManagerConfig
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.functional.mixins.parallel import EOS
-from towhee.engine.factory import ops
 
 
 def _map_task_ray(unary_op): # pragma: no cover
