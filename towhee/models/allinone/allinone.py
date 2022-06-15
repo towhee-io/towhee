@@ -1,17 +1,20 @@
 # modified from https://github.com/showlab/all-in-one/blob/main/AllInOne/modules/allinone_module.py
 # Pytorch implementation of All in One: Exploring Unified Video-Language Pre-training
 
+from torch import nn
 import torch
-import torch.nn as nn
 import math
 
 
 class VCOPHeader(torch.nn.Module):
+    """
+    VCOPHeader module
+    """
     def __init__(self, tuple_len=3, feature_size=768):
         """
         VCOPHeader for all-in-one
         """
-        super(VCOPHeader, self).__init__()
+        super().__init__()
         self.feature_size = feature_size
         self.fc7 = nn.Linear(self.feature_size * 2, 512)
         self.tuple_len = tuple_len
