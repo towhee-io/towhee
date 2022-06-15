@@ -872,8 +872,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         with param_scope() as hp:
             hp().data_collection.parent = self
             df = DataFrame(iterable)
-            if mode is not None:
-                df._mode = self._mode
+            df._mode = self._mode if mode is None else mode
             return df
 
     def to_dc(self):

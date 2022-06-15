@@ -75,10 +75,14 @@ class ChunkedTable:
     Chunked arrow table
     """
 
-    def __init__(self, chunksize=128, stream=False) -> None:
+    def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
+
         self._chunksize = chunksize
-        self._chunks = [] if stream is False else None
         self._buffer = []
+        if chunks is not None:
+            self._chunks = chunks
+        else:
+            self._chunks = [] if stream is False else None
 
     def feed(self, element, eos=False):
         if not eos:
