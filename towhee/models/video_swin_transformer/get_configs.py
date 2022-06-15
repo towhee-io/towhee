@@ -15,9 +15,9 @@
 # limitations under the License.
 
 
-def configs(model_name='swin_b_w877_k400_1k'):
+def configs(model_name='swin_b_k400_1k'):
     args = {
-        'swin_b_w877_k400_1k':
+        'swin_b_k400_1k':
             {'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics400_1k.pth',
              'num_classes': 400,
              'labels_file_name': 'kinetics_400.json',
@@ -26,7 +26,7 @@ def configs(model_name='swin_b_w877_k400_1k'):
              'num_heads': [4, 8, 16, 32],
              'patch_size': (2, 4, 4),
              'window_size': (8, 7, 7), 'drop_path_rate': 0.4, 'patch_norm': True},
-        'swin_s_w877_k400_1k':
+        'swin_s_k400_1k':
             {
                 'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_small_patch244_window877_kinetics400_1k.pth',
                 'num_classes': 400,
@@ -38,7 +38,7 @@ def configs(model_name='swin_b_w877_k400_1k'):
                 'window_size': (8, 7, 7),
                 'drop_path_rate': 0.4,
                 'patch_norm': True},
-        'swin_t_w877_k400_1k':
+        'swin_t_k400_1k':
             {
                 'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_tiny_patch244_window877_kinetics400_1k.pth',
                 'num_classes': 400,
@@ -50,7 +50,7 @@ def configs(model_name='swin_b_w877_k400_1k'):
                 'window_size': (8, 7, 7),
                 'drop_path_rate': 0.1,
                 'patch_norm': True},
-        'swin_b_w877_k400_22k':
+        'swin_b_k400_22k':
             {
                 'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics400_22k.pth',
                 'num_classes': 400,
@@ -62,7 +62,7 @@ def configs(model_name='swin_b_w877_k400_1k'):
                 'window_size': (8, 7, 7),
                 'drop_path_rate': 0.4,
                 'patch_norm': True},
-        'swin_b_w877_k600_22k':
+        'swin_b_k600_22k':
             {
                 'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics600_22k.pth',
                 'num_classes': 600,
@@ -72,7 +72,7 @@ def configs(model_name='swin_b_w877_k400_1k'):
                 'num_heads': [4, 8, 16, 32],
                 'patch_size': (2, 4, 4),
                 'window_size': (8, 7, 7), 'drop_path_rate': 0.4, 'patch_norm': True},
-        'swin_b_w1677_sthv2':
+        'swin_b_sthv2':
             {
                 'pretrained': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window1677_sthv2.pth',
                 'num_classes': 174,

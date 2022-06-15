@@ -41,20 +41,40 @@ class ColumnMixin:
         """
         Set chunk size for arrow
 
-        # Examples:
+        Examples:
 
-        # >>> import towhee
-        # >>> dc = towhee.dc['a'](range(10))
-        # >>> dc = dc.set_chunksize(10)
-        # >>> dc = dc.runas_op['a', 'b'](func=lambda x: x+1)
-        # >>> dc.get_chunksize()
-        # 10
+        >>> import towhee
+        >>> dc = towhee.dc['a'](range(20))
+        >>> dc = dc.set_chunksize(10)
+        >>> dc2 = dc.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc2.get_chunksize()
+        10
+        >>> len(dc._iterable._chunks)
+        2
+        >>> dc2._iterable
+        [pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[10,11,12,13,14,15,16,17,18,19]]
+        b: [[11,12,13,14,15,16,17,18,19,20]]]
         """
+
+        # pylint: disable=protected-access
+
         self._chunksize = chunksize
         chunked_table = ChunkedTable(chunksize, stream=False)
         for element in self:
             chunked_table.feed(element)
-        return self._factory(chunked_table)
+        chunked_table.feed(None, eos=True)
+        df = self._factory(chunked_table)
+        df._mode = self.ModeFlag.COLBASEDFLAG
+        return df
 
     def get_chunksize(self):
         return self._chunksize
@@ -172,10 +192,19 @@ class ColumnMixin:
         >>> len(dc._iterable)
         10
         """
+
         # pylint: disable=protected-access
-        res = self.__col_apply__(self._iterable, unary_op)
-        arrays = [self._iterable[name] for name in self._iterable.column_names]
-        names = self._iterable.column_names
+        if isinstance(self._iterable, ChunkedTable):
+            tables = [self.__table_apply__(chunk, unary_op) for chunk in self._iterable.chunks()]
+            return self._factory([WritableTable(table) for table in tables])
+        table = self.__table_apply__(self._iterable, unary_op)
+        return self._factory(WritableTable(table))
+
+    def __table_apply__(self, table, unary_op):
+        # pylint: disable=protected-access
+        res = self.__col_apply__(table, unary_op)
+        arrays = [table[name] for name in table.column_names]
+        names = table.column_names
         if isinstance(res, tuple):
             for x in res:
                 arrays.append(TensorArray.from_numpy(x))
@@ -189,7 +218,7 @@ class ColumnMixin:
                 arrays.append(TensorArray.from_numpy(res))
             names.append(unary_op._index[1])
         table = pa.Table.from_arrays(arrays, names=names)
-        return self._factory(WritableTable(table))
+        return table
 
     def __col_apply__(self, data, unary_op):
         # pylint: disable=protected-access
