@@ -2,3 +2,4 @@ prune tests/
 prune docs/
 prune tutorials/
 prune towhee/doc/
+include towhee/models/clip/bpe_simple_vocab_16e6.txt.gz
