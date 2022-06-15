@@ -120,6 +120,15 @@ class NNOperator(Operator):
         self._framework = framework
 
     def save_model(self):
+        """
+        Save model to local.
+        """
+        raise NotImplementedError
+
+    def supported_model_names(self):
+        """
+        Return a list of supported model names.
+        """
         raise NotImplementedError
 
     def train(self,
