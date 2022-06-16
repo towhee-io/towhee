@@ -17,7 +17,11 @@ from towhee.utils.thirdparty.pyarrow import pa
 from towhee.types.tensor_array import TensorArray
 from towhee.hparam.hyperparameter import param_scope
 
+from towhee.functional.storages import ChunkedTable, WritableTable
 
+
+# pylint: disable=import-outside-toplevel
+# pylint: disable=bare-except
 class ColumnMixin:
     """
     Mixins to support column-based storage.
@@ -42,13 +46,21 @@ class ColumnMixin:
         Examples:
 
         >>> import towhee
-        >>> dc = towhee.dc['a'](range(100))
-        >>> dc.set_chunksize(10)
-        >>> dc = dc.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc.get_chunksize()
+        >>> dc = towhee.dc['a'](range(20))
+        >>> dc = dc.set_chunksize(10)
+        >>> dc2 = dc.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc2.get_chunksize()
         10
+        >>> len(dc._iterable._chunks)
+        2
         """
+
         self._chunksize = chunksize
+        chunked_table = ChunkedTable(chunksize=chunksize, stream=False)
+        for element in self:
+            chunked_table.feed(element)
+        chunked_table.feed(None, eos=True)
+        return self._factory(chunked_table, mode=self.ModeFlag.COLBASEDFLAG)
 
     def get_chunksize(self):
         return self._chunksize
@@ -101,11 +113,10 @@ class ColumnMixin:
             except:
                 arrays.append(TensorArray.from_numpy(col))
 
-        res = pa.Table.from_arrays(arrays, names=header)
-        return res
+        return pa.Table.from_arrays(arrays, names=header)
 
     @classmethod
-    def from_arrow_talbe(cls, **kws):
+    def from_arrow_table(cls, **kws):
         arrays = []
         names = []
         for k, v in kws.items():
@@ -125,7 +136,6 @@ class ColumnMixin:
         >>> df
         [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         >>> df.to_column()
-        >>> df
         pyarrow.Table
         a: string
         b: int64
@@ -133,34 +143,112 @@ class ColumnMixin:
         a: [["abc","def","ghi"]]
         b: [[1,2,3]]
         """
-        res = self._create_col_table()
-        self._iterable = res
-        self._mode = self.ModeFlag.COLBASEDFLAG
+
+        # pylint: disable=protected-access
+        df = self.to_df()
+        res = df._create_col_table()
+        df._iterable = WritableTable(res)
+        df._mode = self.ModeFlag.COLBASEDFLAG
+        return df
 
     def cmap(self, unary_op):
-        # pylint: disable=protected-access
-        res = self.__col_apply__(self._iterable, unary_op)
-        arrays = [self._iterable[name] for name in self._iterable.column_names]
-        names = self._iterable.column_names
-        if isinstance(res, tuple):
-            for x in res:
-                arrays.append(TensorArray.from_numpy(x))
-            for name in unary_op._index[1]:
-                names.append(name)
-        else:
-            arrays.append(TensorArray.from_numpy(res))
-            names.append(unary_op._index[1])
-        table = pa.Table.from_arrays(arrays, names=names)
-        return self._factory(table)
+        """
+        chunked map
 
-    def __col_apply__(self, data, unary_op):
+        Examples:
+
+        >>> import towhee
+        >>> dc = towhee.dc['a'](range(10))
+        >>> dc = dc.to_column()
+        >>> dc = dc.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc.show(limit=5, tablefmt='plain')
+          a    b
+          0    1
+          1    2
+          2    3
+          3    4
+          4    5
+        >>> dc._iterable
+        pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]]
+        >>> len(dc._iterable)
+        10
+        """
+
         # pylint: disable=protected-access
+        if isinstance(self._iterable, ChunkedTable):
+            tables = [
+                WritableTable(self.__table_apply__(chunk, unary_op))
+                for chunk in self._iterable.chunks()
+            ]
+            return self._factory(ChunkedTable(tables))
+        return self._factory(self.__table_apply__(self._iterable, unary_op))
+
+    def __table_apply__(self, table, unary_op):
+        # pylint: disable=protected-access
+        return table.write_many(unary_op._index[1],
+                                self.__col_apply__(table, unary_op))
+        # res = self.__col_apply__(table, unary_op)
+        # if isinstance(res, tuple):
+        #     for col, name in zip(res, unary_op._index[1]):
+        #         table = table.append_column(name, [col])
+        # else:
+        #     table = table.append_column(unary_op._index[1], [res])
+        # return table
+
+    def __col_apply__(self, cols, unary_op):
+        # pylint: disable=protected-access
+        import numpy as np
         args = []
+        # Multi inputs.
         if isinstance(unary_op._index[0], tuple):
-            for col in unary_op._index[0]:
-                args.append(args.append(data[col].chunks[0].as_numpy()))
+            for name in unary_op._index[0]:
+                try:
+                    data = cols[name].combine_chunks()
+                except:
+                    data = cols[name].chunk(0)
+
+                buffer = data.buffers()[-1]
+                dtype = data.type
+                if isinstance(data, TensorArray):
+                    dtype = dtype.storage_type.value_type
+                elif hasattr(data.type, 'value_type'):
+                    while hasattr(dtype, 'value_type'):
+                        dtype = dtype.value_type
+                dtype = dtype.to_pandas_dtype()
+                shape = [-1, *data.type.shape] if isinstance(data, TensorArray)\
+                    else [len(data), -1] if isinstance(data, pa.lib.ListArray)\
+                    else [len(data)]
+                args.append(
+                    np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+                # args.append(data.to_numpy(zero_copy_only=False).reshape(shape))
+
+        # Single input.
         else:
-            args.append(data[unary_op._index[0]].chunks[0].as_numpy())
+            try:
+                data = cols[unary_op._index[0]].combine_chunks()
+            except:
+                data = cols[unary_op._index[0]].chunk(0)
+
+            buffer = data.buffers()[-1]
+            dtype = data.type
+            if isinstance(data, TensorArray):
+                dtype = dtype.storage_type.value_type
+            elif hasattr(data.type, 'value_type'):
+                while hasattr(dtype, 'value_type'):
+                    dtype = dtype.value_type
+            dtype = dtype.to_pandas_dtype()
+            shape = [-1, *data.type.shape] if isinstance(data, TensorArray)\
+                else [len(data), -1] if isinstance(data, pa.lib.ListArray)\
+                else [len(data)]
+            args.append(
+                np.frombuffer(buffer=buffer, dtype=dtype).reshape(shape))
+            # args.append(data.to_numpy(zero_copy_only=False).reshape(shape))
+
         return unary_op.__vcall__(*args)
 
 

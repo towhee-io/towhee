@@ -12,21 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 
-class PandasExecution:
-    """
-    Execute operator on pandas DataFrame
-    """
-    def __dataframe_apply__(self, df):
-        self.__check_init__()
-        if isinstance(self._index[1], tuple):
-            df[list(self._index[1])] = df.apply(self.__apply__,
-                                                axis=1,
-                                                result_type='expand')
-        else:
-            df[self._index[1]] = df.apply(self.__apply__, axis=1)
-        return df
 
-    def __dataframe_filter__(self, df):
-        self.__check_init__()
-        return df[self.__apply__(df)]
+def intend(lines: List[str], num_space=4):
+    return [' ' * num_space + l for l in lines]

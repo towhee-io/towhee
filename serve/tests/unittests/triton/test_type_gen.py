@@ -16,31 +16,31 @@ import unittest
 from typing import List
 import numpy as np
 
-from serve.triton.type_gen import gen_from_type_annotations
+from serve.triton.type_gen import handle_type_annotations
 from towhee.types import VideoFrame, AudioFrame
 
 
-class TestGenFromTypeAnnotations(unittest.TestCase):
+class TestHandlingTypeAnnotations(unittest.TestCase):
     """
     Unit test for gen_from_type_annotations.
     """
 
     def test_type_checking(self):
         funcs = {
-            np.ndarray: lambda t, s: 'ndarray',
-            str: lambda t, s: 'str',
-            int: lambda t, s: 'int',
-            VideoFrame: lambda t, s: 'VideoFrame',
-            AudioFrame: lambda t, s: 'AudioFrame',
+            np.int16: lambda t, s, is_list: 'ndarray',
+            str: lambda t, s, is_list: 'str',
+            int: lambda t, s, is_list: 'int',
+            VideoFrame: lambda t, s, is_list: 'VideoFrame',
+            AudioFrame: lambda t, s, is_list: 'AudioFrame',
         }
 
         annotations = [
-            (np.ndarray, (4, 4)),
+            (np.int16, (4, 4)),
             (str, (-1)),
             (int, ()),
             (VideoFrame, (-1, 512, 512)),
             (AudioFrame, (-1, 512, 512)),
-            (List[np.ndarray], (-1, 512, 512)),
+            (List[np.int16], (512, 512)),
         ]
 
         expected_results = [
@@ -52,7 +52,7 @@ class TestGenFromTypeAnnotations(unittest.TestCase):
             'ndarray',
         ]
 
-        results = gen_from_type_annotations(annotations, funcs)
+        results = handle_type_annotations(annotations, funcs)
 
         self.assertListEqual(expected_results, results)
 

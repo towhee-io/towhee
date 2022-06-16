@@ -21,7 +21,7 @@ from towhee.connectors import Connectors as connectors
 
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
-from towhee.functional import read_video, to_video
+from towhee.functional import read_video, to_video, read_audio
 from towhee.functional import from_zip, from_df
 from towhee.functional import dc, api, dummy_input
 

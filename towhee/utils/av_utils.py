@@ -13,20 +13,10 @@
 # limitations under the License.
 
 
-class PandasExecution:
-    """
-    Execute operator on pandas DataFrame
-    """
-    def __dataframe_apply__(self, df):
-        self.__check_init__()
-        if isinstance(self._index[1], tuple):
-            df[list(self._index[1])] = df.apply(self.__apply__,
-                                                axis=1,
-                                                result_type='expand')
-        else:
-            df[self._index[1]] = df.apply(self.__apply__, axis=1)
-        return df
-
-    def __dataframe_filter__(self, df):
-        self.__check_init__()
-        return df[self.__apply__(df)]
+try:
+    # pylint: disable=unused-import
+    import av
+except ModuleNotFoundError as e:
+    from towhee.utils.dependency_control import prompt_install
+    prompt_install('av')
+    import av # pylint: disable=ungrouped-imports

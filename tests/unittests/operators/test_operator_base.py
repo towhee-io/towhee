@@ -46,6 +46,11 @@ class TestOperator(unittest.TestCase):
         except NotImplementedError:
             pass
 
+        try:
+            pt_op.supported_model_names()
+        except NotImplementedError:
+            pass
+
         pt_op.framework = 'tensorflow'
         self.assertEqual(pt_op.framework, tf_op.framework)
 
