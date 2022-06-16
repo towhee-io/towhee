@@ -16,6 +16,7 @@ from queue import Queue
 import asyncio
 import threading
 import time
+from towhee.functional.mixins.dag import register_dag
 
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
@@ -139,6 +140,7 @@ class ParallelMixin:
         self._executor = None
         return self
 
+    @register_dag
     def split(self, count):
         """
         Split a dataframe into multiple dataframes.

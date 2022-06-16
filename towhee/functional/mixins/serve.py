@@ -16,6 +16,7 @@ import queue
 import threading
 import concurrent.futures
 from towhee.functional.entity import Entity
+from towhee.functional.mixins.dag import DagMixin
 from towhee.functional.option import Some
 # pylint: disable=import-outside-toplevel
 

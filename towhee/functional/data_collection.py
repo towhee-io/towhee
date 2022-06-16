@@ -470,29 +470,22 @@ class DataCollection(Iterable, DCMixins):
     def batch(self, size, drop_tail=False, raw=True):
         """
         Create small batches from data collections.
-
         Args:
             size (int): window size;
             drop_tail (bool): drop tailing windows that not full, defaults to False;
             raw (bool): whether to return raw data instead of DataCollection, defaults to True
-
         Returns:
             DataCollection of batched windows or batch raw data
-
         Examples:
-
         >>> dc = DataCollection(range(10))
         >>> [list(batch) for batch in dc.batch(2, raw=False)]
         [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
-
         >>> dc = DataCollection(range(10))
         >>> dc.batch(3)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
-
         >>> dc = DataCollection(range(10))
         >>> dc.batch(3, drop_tail=True)
         [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-
         >>> from towhee import Entity
         >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
         >>> dc.batch(2)
@@ -887,7 +880,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         with param_scope() as hp:
             hp().data_collection.parent = self
             df = DataFrame(iterable)
-            df._mode = self._mode if mode is None else mode
+            if mode is not None:
+                df._mode = self._mode
             return df
 
     def to_dc(self):
