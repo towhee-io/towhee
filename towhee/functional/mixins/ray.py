@@ -69,7 +69,7 @@ class RayMixin: # pragma: no cover
 
         #TODO: Make local functions work with ray
         if path in call_mapping:
-            return map(call_mapping[path](*arg, **kws))
+            return self.map(call_mapping[path](*arg, **kws))
 
         @ray.remote
         class OperatorActor:
