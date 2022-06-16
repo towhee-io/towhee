@@ -12,11 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
+import os
 import numpy as np
 
 import serve.triton.type_gen as tygen
-from serve.triton.python_model_builder import PyModelBuilder, PickledCallablePyModelBuilder
+from serve.triton.python_model_builder import PyModelBuilder, gen_model_from_pickled_callable
 from towhee._types import Image
+from pathlib import Path
+
+expected_file_path = str(Path(__file__).parent.resolve()) + '/expected_files/'
+gen_file_path = str(Path(__file__).parent.resolve()) + '/gen_files/'
+
+if not os.path.isdir(gen_file_path):
+    os.mkdir(gen_file_path)
 
 
 class TestPythonModelBuilder(unittest.TestCase):
@@ -60,7 +68,8 @@ class TestPythonModelBuilder(unittest.TestCase):
         self.assertListEqual(expected_results, lines)
 
     def test_pickle_callable_pymodel_builder(self):
-        builder = PickledCallablePyModelBuilder(
+        gen_model_from_pickled_callable(
+            save_path=gen_file_path + 'model.py',
             module_name='clip',
             callable_name='Preprocess',
             python_file_path='clip.py',
@@ -68,7 +77,9 @@ class TestPythonModelBuilder(unittest.TestCase):
             input_annotations=[(Image, (512, 512, 3))],
             output_annotations=[(np.float32, (1, 3, 224, 224))]
         )
-        builder.build()
+
+        with open(gen_file_path + 'model.py', 'rt') as gen_f, open(expected_file_path + 'clip_preprocess_model_expect.py') as expected_f:
+            self.assertListEqual(list(gen_f), list(expected_f))
 
 
 if __name__ == '__main__':

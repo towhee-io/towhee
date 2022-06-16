@@ -34,6 +34,9 @@ class PyModelBuilder:
     def gen_execute(self):
         raise NotImplementedError('gen_execute not implemented')
 
+    def gen_finalize(self):
+        raise NotImplementedError('gen_execute not implemented')
+
     def build(self, save_path: str = './model.py'):
         with open(save_path, 'wt') as f:
             f.writelines(self.gen_imports())
@@ -41,6 +44,10 @@ class PyModelBuilder:
             f.writelines(self.gen_class_name())
             f.writelines(self.gen_blank_lines(1))
             f.writelines(fmt.intend(self.gen_initialize()))
+            f.writelines(self.gen_blank_lines(1))
+            f.writelines(fmt.intend(self.gen_execute()))
+            f.writelines(self.gen_blank_lines(1))
+            f.writelines(fmt.intend(self.gen_finalize()))
 
     @staticmethod
     def gen_class_name():
@@ -67,7 +74,7 @@ class PyModelBuilder:
         # check existence of placeholders
         for tr in trs_placeholders:
             if obj_init_code.find(tr) == -1:
-                raise ValueError('Can not match placeholder %s with init function %s.' % (tr, trs_placeholders))
+                raise ValueError('Can not match placeholder %s with init function %s.' % (tr, obj_init_code))
 
         if type_info.is_list:
             init_args = ['arg' + str(i) for i in range(len(trs_placeholders))]
@@ -130,6 +137,8 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
 
     def gen_imports(self):
         lines = []
+        lines.append('import towhee')
+        lines.append('import numpy')
         lines.append('import inspect')
         lines.append('import pickle')
         lines.append('import importlib')
@@ -156,28 +165,105 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
 
-#    def gen_execute(self):
-#        lines = []
-#        lines.append('def execute(self, requests):')
-#        lines.append('')
-#        lines.append('responses = []')
-#
-#        taskloop = []
-#        taskloop.append('for request in requests:')
-#        taskloop.append('# get inputs from request')
-#        attrs = []
-#        for type_info in self.input_annotations:
-#            attrs = attrs + type_info.
-#
-#        return fmt.add_line_separator(lines)
+    def gen_execute(self):
+        lines = []
+        lines.append('def execute(self, requests):')
+        lines.append('')
+        lines.append('responses = []')
+        lines.append('')
+
+        taskloop = []
+        taskloop.append('for request in requests:')
+        taskloop.append('# get input tensors from request')
+
+        input_type_info = tygen.get_type_info(self.input_annotations)
+        input_arg_init_code = tygen.get_init_code(self.input_annotations)
+
+        tr_idx = 0
+        callable_input_args = []
+
+        for arg_idx, type_info in enumerate(input_type_info):
+            arg = 'arg' + str(arg_idx)
+            callable_input_args.append(arg)
+            num_attrs = len(type_info.attr_info)
+
+            tr_vars = ['in' + str(tr_idx + i) for i in range(num_attrs)]
+            for tr in tr_vars:
+                taskloop.append(tr + ' = pb_utils.get_input_tensor_by_name(request, \'INPUT' + str(tr_idx) + '\')')
+                tr_idx = tr_idx + 1
+
+            taskloop.append('')
+            taskloop.append('# create input args from tensors')
+
+            l = self._from_tensor_to_obj(type_info, input_arg_init_code[arg_idx], arg, tr_vars)
+            taskloop = taskloop + l
+
+        taskloop.append('')
+        taskloop.append('# call callable object')
+        callable_results = ['result' + str(i) for i in range(len(self.output_annotations))]
+        taskloop.append(', '.join(callable_results) + ' = self.callable_obj(' + ' ,'.join(callable_input_args) + ')')
+
+        taskloop.append('')
+        taskloop.append('# convert results to tensors')
+
+        output_type_info = tygen.get_type_info(self.output_annotations)
+
+        tr_idx = 0
+        tr_out = []
+
+        for result_idx, type_info in enumerate(output_type_info):
+            num_attrs = len(type_info.attr_info)
+            tr_vars = ['out' + str(tr_idx + i) for i in range(num_attrs)]
+            tr_out = tr_out + tr_vars
+            outputs = ['OUTPUT' + str(tr_idx + i) for i in range(num_attrs)]
+            l = self._from_obj_to_tensor(type_info, callable_results[result_idx], tr_vars, outputs)
+            taskloop = taskloop + l
+
+        taskloop.append('')
+        taskloop.append('# organize response')
+        taskloop.append('response = pb_utils.InferenceResponse(output_tensors=[' + ', '.join(tr_out) + '])')
+        taskloop.append('responses.append(response)')
+
+        taskloop = taskloop[:1] + fmt.intend(taskloop[1:])
+        lines = lines + taskloop
+
+        lines.append('')
+        lines.append('return responses')
+
+        lines = lines[:1] + fmt.intend(lines[1:])
+
+        return fmt.add_line_separator(lines)
+
+    def gen_finalize(self):
+        lines = []
+        lines.append('def finalize(self):')
+        lines.append(fmt.intend('pass'))
+        return fmt.add_line_separator(lines)
 
 
 class OpPyModelBuilder:
     pass
 
 
-def gen_model_from_pickled_callable():
-    pass
+def gen_model_from_pickled_callable(
+    save_path: str,
+    module_name: str,
+    callable_name: str,
+    python_file_path: str,
+    pickle_file_path: str,
+    input_annotations: List[Tuple[Any, Tuple]],
+    output_annotations: List[Tuple[Any, Tuple]]
+):
+    builder = PickledCallablePyModelBuilder(
+        module_name,
+        callable_name,
+        python_file_path,
+        pickle_file_path,
+        input_annotations,
+        output_annotations
+    )
+
+    return builder.build(save_path)
 
 
 def gen_model_from_op():

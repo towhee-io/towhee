@@ -200,7 +200,7 @@ class NpUint16Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT16', 'numpy.uint16', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT16', 'numpy.uint16')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -218,7 +218,7 @@ class NpUint32Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT32', 'numpy.uint32', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT32', 'numpy.uint32')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -236,7 +236,7 @@ class NpUint64Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT64', 'numpy.uint64', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT64', 'numpy.uint64')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -254,7 +254,7 @@ class NpInt8Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -272,7 +272,7 @@ class NpInt16Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT16', 'numpy.int16', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT16', 'numpy.int16')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -290,7 +290,7 @@ class NpInt32Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT32', 'numpy.int32', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT32', 'numpy.int32')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -308,7 +308,7 @@ class NpInt64Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -326,7 +326,7 @@ class NpFloat16Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP16', 'numpy.float16', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP16', 'numpy.float16')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -344,7 +344,7 @@ class NpFloat32Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP32', 'numpy.float32', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP32', 'numpy.float32')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -362,7 +362,7 @@ class NpFloat64Type:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
@@ -380,7 +380,7 @@ class IntType:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
@@ -396,7 +396,7 @@ class FloatType:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
@@ -412,7 +412,7 @@ class BoolType:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_BOOL', 'bool', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_BOOL', 'bool')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
@@ -428,7 +428,7 @@ class StringType:
 
     @ staticmethod
     def type_info(t, shape, is_list):
-        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_STRING', 'numpy.object_', is_list)]
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_STRING', 'numpy.object_')]
         return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
@@ -458,6 +458,32 @@ def get_type_info(type_annotations: List[Tuple[Any, Tuple]]) -> List[TypeInfo]:
         int: IntType.type_info,
         float: FloatType.type_info,
         str: StringType.type_info,
+    }
+
+    return handle_type_annotations(type_annotations, callbacks)
+
+
+def get_init_code(type_annotations: List[Tuple[Any, Tuple]]) -> List[str]:
+    # pylint: disable=protected-access
+    callbacks = {
+        towhee._types.Image: lambda t, shape, is_list: ImageType.init_code(shape),
+        towhee.types.VideoFrame: lambda t, shape, is_list: VideoFrameType.init_code(shape),
+        towhee.types.AudioFrame: lambda t, shape, is_list: AudioFrameType.init_code(shape),
+        numpy.uint8: lambda t, shape, is_list: NpUint8Type.init_code(shape),
+        numpy.uint16: lambda t, shape, is_list: NpUint16Type.init_code(shape),
+        numpy.uint32: lambda t, shape, is_list: NpUint32Type.init_code(shape),
+        numpy.uint64: lambda t, shape, is_list: NpUint64Type.init_code(shape),
+        numpy.int8: lambda t, shape, is_list: NpInt8Type.init_code(shape),
+        numpy.int16: lambda t, shape, is_list: NpInt16Type.init_code(shape),
+        numpy.int32: lambda t, shape, is_list: NpInt32Type.init_code(shape),
+        numpy.int64: lambda t, shape, is_list: NpInt64Type.init_code(shape),
+        numpy.float16: lambda t, shape, is_list: NpFloat16Type.init_code(shape),
+        numpy.float32: lambda t, shape, is_list: NpFloat32Type.init_code(shape),
+        numpy.float64: lambda t, shape, is_list: NpFloat64Type.init_code(shape),
+        bool: lambda t, shape, is_list: BoolType.init_code(shape),
+        int: lambda t, shape, is_list: IntType.init_code(shape),
+        float: lambda t, shape, is_list: FloatType.init_code(shape),
+        str: lambda t, shape, is_list: StringType.init_code(shape),
     }
 
     return handle_type_annotations(type_annotations, callbacks)
