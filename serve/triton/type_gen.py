@@ -15,6 +15,9 @@
 from collections import namedtuple
 from typing import List, Tuple, Dict, Any, Callable, get_args, get_origin
 
+import towhee
+import numpy
+
 
 def handle_type_annotations(type_annotations: List[Tuple[Any, Tuple]], callbacks: Dict[Any, Callable]):
     """
@@ -432,3 +435,29 @@ class StringType:
     @staticmethod
     def init_code(shape, data_placeholder='$t_data'):
         return tensor2str(data_placeholder)
+
+
+def get_type_info(type_annotations: List[Tuple[Any, Tuple]]) -> List[TypeInfo]:
+    # pylint: disable=protected-access
+    callbacks = {
+        towhee._types.Image: ImageType.type_info,
+        towhee.types.VideoFrame: VideoFrameType.type_info,
+        towhee.types.AudioFrame: AudioFrameType.type_info,
+        numpy.uint8: NpUint8Type.type_info,
+        numpy.uint16: NpUint16Type.type_info,
+        numpy.uint32: NpUint32Type.type_info,
+        numpy.uint64: NpUint64Type.type_info,
+        numpy.int8: NpInt8Type.type_info,
+        numpy.int16: NpInt16Type.type_info,
+        numpy.int32: NpInt32Type.type_info,
+        numpy.int64: NpInt64Type.type_info,
+        numpy.float16: NpFloat16Type.type_info,
+        numpy.float32: NpFloat32Type.type_info,
+        numpy.float64: NpFloat64Type.type_info,
+        bool: BoolType.type_info,
+        int: IntType.type_info,
+        float: FloatType.type_info,
+        str: StringType.type_info,
+    }
+
+    return handle_type_annotations(type_annotations, callbacks)
