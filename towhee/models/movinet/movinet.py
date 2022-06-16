@@ -27,6 +27,7 @@ from towhee.models.movinet.movinet_block import ConvBlock3D, BasicBneck
 from towhee.models.utils.causal_module import CausalModule
 from towhee.models.layers.activations import Swish
 from towhee.models.layers.temporal_cg_avgpool3d import TemporalCGAvgPool3D
+from towhee.models.movinet.config import _C
 
 class MoViNet(nn.Module):
     """
@@ -157,13 +158,21 @@ class MoViNet(nn.Module):
             nn.init.normal_(m.weight, 0, 0.01)
             nn.init.zeros_(m.bias)
 
-    def _forward_impl(self, x: Tensor) -> Tensor:
+    def forward_features(self, x: Tensor) -> Tensor:
         x = self.conv1(x)
         x = self.blocks(x)
         x = self.conv7(x)
         x = self.avg(x)
+        return x
+
+    def head(self, x: Tensor) -> Tensor:
         x = self.classifier(x)
         x = x.flatten(1)
+        return x
+
+    def _forward_impl(self, x: Tensor) -> Tensor:
+        x = self.forward_features(x)
+        x = self.head(x)
 
         return x
 
@@ -177,3 +186,36 @@ class MoViNet(nn.Module):
 
     def clean_activation_buffers(self) -> None:
         self.apply(self._clean_activation_buffers)
+
+def create_model(
+        model_name: str = "movineta0",
+        pretrained: bool = False,
+        causal: bool = False,
+        device: str = None,
+        ):
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if model_name == "movineta0":
+        model_config = _C.MODEL.MoViNetA0
+    elif model_name == "movineta1":
+        model_config = _C.MODEL.MoViNetA1
+    elif model_name == "movineta2":
+        model_config = _C.MODEL.MoViNetA2
+    elif model_name == "movineta3":
+        model_config = _C.MODEL.MoViNetA3
+    elif model_name == "movineta4":
+        model_config = _C.MODEL.MoViNetA4
+    elif model_name == "movineta5":
+        model_config = _C.MODEL.MoViNetA5
+    else:
+        raise AttributeError(f"Invalid model_name {model_name}.")
+    model = MoViNet(
+                    cfg = model_config,
+                    causal = causal,
+                    pretrained = pretrained,
+                    num_classes = 600,
+                    conv_type = "3d",
+                    tf_like = False
+                    )
+    model.to(device)
+    return model

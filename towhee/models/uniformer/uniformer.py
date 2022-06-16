@@ -26,6 +26,7 @@ from towhee.models.utils.weight_init import trunc_normal_
 from towhee.models.layers.droppath import DropPath
 from towhee.models.layers.mlp import Mlp
 from towhee.models.layers.multi_head_attention import MultiHeadAttention
+from towhee.models.uniformer.config import _C
 import os
 
 model_path = 'path_to_models'
@@ -299,12 +300,10 @@ class Uniformer(nn.Module):
                 std = False,
                 use_checkpoint = False,
                 checkpoint_num = (0, 0, 0, 0),
-                pretrain_name = None,
                 ):
         super().__init__()
         self.use_checkpoint = use_checkpoint
         self.checkpoint_num = checkpoint_num
-        self.pretrain_name = pretrain_name
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
@@ -413,31 +412,6 @@ class Uniformer(nn.Module):
             weight_3d = weight_3d / time_dim
         return weight_3d
 
-    def get_pretrained_model(self):
-        if self.pretrain_name:
-            model_checkpoint = torch.load(model_path[self.pretrain_name], map_location='cpu')
-            if 'model' in model_checkpoint:
-                model_checkpoint = model_checkpoint['model']
-            elif 'model_state' in model_checkpoint:
-                model_checkpoint = model_checkpoint['model_state']
-            # pylint: disable=E1136
-            state_dict_3d = self.state_dict()
-            for k in model_checkpoint.keys():
-                # pylint: disable=E1136
-                if model_checkpoint[k].shape != state_dict_3d[k].shape:
-                    if len(state_dict_3d[k].shape) <= 2:
-                        continue
-                    # pylint: disable=E1136
-                    time_dim = state_dict_3d[k].shape[2]
-                    model_checkpoint[k] = self.inflate_weight(model_checkpoint[k], time_dim)
-
-            if self.num_classes != model_checkpoint['head.weight'].shape[0]:
-                del model_checkpoint['head.weight']
-                del model_checkpoint['head.bias']
-            return model_checkpoint
-        else:
-            return None
-
     def forward_features(self, x):
         x = self.patch_embed1(x)
         x = self.pos_drop(x)
@@ -469,8 +443,70 @@ class Uniformer(nn.Module):
         return x
 
     def forward(self, x):
-        x = x[0]
         x = self.forward_features(x)
         x = x.flatten(2).mean(-1)
         x = self.head(x)
         return x
+
+def create_model(
+        model_name: str = 'uniformer_k400_s8',
+        pretrained: bool = False,
+        weights_path: str = None,
+        device: str = None,
+        ):
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if model_name == 'uniformer_k400_s8':
+        config = _C.MODEL.UniFormerS8
+    elif model_name == 'uniformer_k400_s16':
+        config  = _C.MODEL.UniFormerS16
+    elif model_name == 'uniformer_k400_b8':
+        config  = _C.MODEL.UniFormerB8
+    elif model_name == 'uniformer_k400_b16':
+        config = _C.MODEL.UniFormerB16
+    else:
+        raise AttributeError(f'Invalid model_name {model_name}.')
+
+    model=Uniformer(
+                    depth = config.depth,
+                    num_classes = config.num_classes,
+                    img_size = config.img_size,
+                    in_chans = config.in_chans,
+                    embed_dim = config.embed_dim,
+                    head_dim = config.head_dim,
+                    mlp_ratio = config.mlp_ratio,
+                    qkv_bias = config.qkv_bias,
+                    qk_scale = config.qk_scale,
+                    representation_size = config.representation_size,
+                    drop_rate = config.drop_rate,
+                    attn_drop_rate = config.attn_drop_rate,
+                    drop_path_rate = config.drop_path_rate,
+                    split = config.split,
+                    std = config.std,
+                    use_checkpoint = config.use_checkpoint,
+                    checkpoint_num = config.checkpoint_num,
+                    )
+    if pretrained:
+        model_checkpoint = torch.load(weights_path, map_location=device)
+        if 'model' in model_checkpoint:
+            model_checkpoint = model_checkpoint['model']
+        elif 'model_state' in model_checkpoint:
+            model_checkpoint = model_checkpoint['model_state']
+        # pylint: disable=E1136
+        state_dict_3d = model.state_dict()
+        for k in model_checkpoint.keys():
+            # pylint: disable=E1136
+            if model_checkpoint[k].shape != state_dict_3d[k].shape:
+                if len(state_dict_3d[k].shape) <= 2:
+                    continue
+                # pylint: disable=E1136
+                time_dim = state_dict_3d[k].shape[2]
+                model_checkpoint[k] = model.inflate_weight(model_checkpoint[k], time_dim)
+
+        if model.num_classes != model_checkpoint['head.weight'].shape[0]:
+            del model_checkpoint['head.weight']
+            del model_checkpoint['head.bias']
+        model.load_state_dict(model_checkpoint)
+
+    model.to(device)
+    return model

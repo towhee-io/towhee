@@ -206,7 +206,9 @@ class ResidualAttentionBlock(nn.Module):
     ResidualAttentuonBlock
     """
 
-    def __init__(self, d_model: int, n_head: int, attn_mask: Union[torch.Tensor, Callable] = None, vis=False):
+    def __init__(self, d_model: int, n_head: int,
+                 attn_mask: Union[torch.Tensor, Callable] = None, vis=False, patch_nums=None,
+                 is_bridge_former_video=False):
         super().__init__()
         self.vis = vis
         self.attn = nn.MultiheadAttention(d_model, n_head)
@@ -220,7 +222,8 @@ class ResidualAttentionBlock(nn.Module):
         ]))
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
-
+        self.patch_nums = patch_nums
+        self.is_bridge_former_video = is_bridge_former_video
         self.attn_probs = None
         self.attn_grad = None
 
@@ -243,18 +246,52 @@ class ResidualAttentionBlock(nn.Module):
         else:
             return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
 
+    def attention_frames(self, x: torch.Tensor):
+        self.attn_mask = None
+        bz = x.shape[1]
+        # print(x.shape)
+        cls_x = x[0:1,:]
+        cls_out = self.attn(cls_x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
+        x_ = x[1:,:].permute(1, 0, 2)
+
+        x_ = x_.reshape(-1, self.patch_nums, x_.shape[-1])
+        n_f = int(x_.shape[0] / bz)  # num frames
+        cls_x_tile = cls_x.permute(1, 0, 2).repeat_interleave(n_f,0)
+        cls_x_cat = torch.cat([cls_x_tile,x_],1)
+        x_ = x_.permute(1, 0, 2)
+        cls_x_cat = cls_x_cat.permute(1, 0, 2)
+        out_ = self.attn(x_, cls_x_cat, cls_x_cat, need_weights=False, attn_mask=self.attn_mask)[0]
+        out_ = out_.permute(1, 0, 2)
+        out_ = out_.reshape(bz, -1, out_.shape[-1])
+        out_ = out_.permute(1, 0, 2)
+        out = torch.cat([cls_out,out_],0)
+        return out
+
     def forward(self, x: torch.Tensor):
-        x = x + self.attention(self.ln_1(x))
+
+        ## text transformer or visual transformer for a single frame
+        if not self.is_bridge_former_video:
+            x = x + self.attention(self.ln_1(x))
+        ## visual transformer for multiple frames
+        else:
+            x = x + self.attention_frames(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
 
 
 class Transformer(nn.Module):
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: Union[torch.Tensor, Callable] = None, vis: bool = False):
+    """
+    Transformer
+    """
+    def __init__(self, width: int, layers: int, heads: int,
+                 attn_mask: Union[torch.Tensor, Callable] = None, vis: bool = False,
+                 patch_nums: int = None, is_bridge_former_video: bool = False):
         super().__init__()
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask, vis) for _ in range(layers)])
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask, vis,
+                                                                patch_nums=patch_nums,
+                                                                is_bridge_former_video=is_bridge_former_video) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
@@ -265,29 +302,61 @@ class VisionTransformer(nn.Module):
     ViT
     """
 
-    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int, vis: bool = False):
+    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int,
+                 output_dim: int, vis: bool = False, is_bridgeformer: bool = False,
+                 is_bridge_former_video: bool = False):
         super().__init__()
         self.input_resolution = input_resolution
         self.output_dim = output_dim
+        self.is_bridgeformer = is_bridgeformer
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=width, kernel_size=patch_size, stride=patch_size, bias=False)
 
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
-        self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
+        self.patch_nums = (input_resolution // patch_size) ** 2
+        self.positional_embedding = nn.Parameter(scale * torch.randn(self.patch_nums+1, width))
         self.ln_pre = LayerNorm(width)
 
-        self.transformer = Transformer(width, layers, heads, vis=vis)
+        self.transformer = Transformer(width, layers, heads, vis=vis, patch_nums=self.patch_nums,
+                                       is_bridge_former_video=is_bridge_former_video)
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
 
     def forward(self, x: torch.Tensor):
-        x = self.conv1(x)  # shape = [*, width, grid, grid]
-        x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
-        x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(
+        if self.is_bridgeformer:
+            bz = x.shape[0]
+            n_frames = x.shape[1]
+            c = x.shape[2]
+            h = x.shape[3]
+            w = x.shape[4]
+            x = x.contiguous().view(-1, c, h, w)
+
+            x = self.conv1(x)  # shape = [bz*n_frames, width, grid, grid]
+
+            x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [bz*n_frames, width, grid*grid]
+
+            x = x.permute(0, 2, 1)  # shape = [bz*n_frames, grid*grid, width]
+
+            x = x.reshape(bz, -1, x.shape[-1])  # shape = [bz, n_frames*grid*grid, width]
+
+            cls = self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype,
+                                                                 device=x.device)   # shape = [bz, 1, width]
+
+            x = torch.cat([cls, x], dim=1)  # shape = [bz, n_frames*grid*grid + 1, width]
+            cls_embed = self.positional_embedding[0:1, :]  # shape = [1, width]
+            tile_pos_embed = self.positional_embedding[1:, :].repeat(n_frames, 1)  # shape = [n_frames*grid*grid, width]
+            # temporal embed needs to be repeated within each frame (this does [1,2,3] --> [1,1,1,2,2,2,3,3,3]...)
+            total_pos_embed = torch.cat([cls_embed, tile_pos_embed], dim=0)  # shape = [n_frames*grid*grid+1, width]
+            x = x + total_pos_embed.to(x.dtype)  # shape = [bz,n_frames*grid*grid+1, width]
+        else:
+            x = self.conv1(x)  # shape = [*, width, grid, grid]
+            x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
+            x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+            x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(
             x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
-        x = x + self.positional_embedding.to(x.dtype)
+
+            x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
 
         x = x.permute(1, 0, 2)  # NLD -> LND
@@ -323,12 +392,15 @@ class CLIP(nn.Module):
                  # whether used for CLIP4Clip model
                  clip4clip: bool = False,
                  # whether be able to visualize
-                 vis: bool = False
+                 vis: bool = False,
+                 # whether is the BridgeFormer model
+                 is_bridge_former: bool = False,
+                 is_bridge_former_video: bool = False
                  ):
         super().__init__()
 
         self.context_length = context_length
-
+        self.is_bridge_former = is_bridge_former
         if isinstance(vision_layers, (tuple, list)):
             vision_heads = vision_width * 32 // 64
             self.visual = ModifiedResNet(
@@ -348,7 +420,9 @@ class CLIP(nn.Module):
                 layers=vision_layers,
                 heads=vision_heads,
                 output_dim=embed_dim,
-                vis=vis
+                vis=vis,
+                is_bridgeformer=self.is_bridge_former,
+                is_bridge_former_video=is_bridge_former_video
             )
         if clip4clip:
             self.transformer = Transformer(
@@ -427,6 +501,7 @@ class CLIP(nn.Module):
         return self.visual(image.type(self.dtype))
 
     def encode_text(self, text, clip4clip=False, return_hidden=False):
+
         if clip4clip:
             x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
 
@@ -460,16 +535,13 @@ class CLIP(nn.Module):
     def forward(self, image, text):
         image_features = self.encode_image(image)
         text_features = self.encode_text(text)
-
         # normalized features
         image_features = image_features / image_features.norm(dim=1, keepdim=True)
         text_features = text_features / text_features.norm(dim=1, keepdim=True)
-
         # cosine similarity as logits
         logit_scale = self.logit_scale.exp()
         logits_per_image = logit_scale * image_features @ text_features.t()
         logits_per_text = logits_per_image.t()
-
         # shape = [global_batch_size, global_batch_size]
         return logits_per_image, logits_per_text
 
