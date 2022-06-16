@@ -192,6 +192,13 @@ class ColumnMixin:
         # pylint: disable=protected-access
         return table.write_many(unary_op._index[1],
                                 self.__col_apply__(table, unary_op))
+        # res = self.__col_apply__(table, unary_op)
+        # if isinstance(res, tuple):
+        #     for col, name in zip(res, unary_op._index[1]):
+        #         table = table.append_column(name, [col])
+        # else:
+        #     table = table.append_column(unary_op._index[1], [res])
+        # return table
 
     def __col_apply__(self, cols, unary_op):
         # pylint: disable=protected-access
