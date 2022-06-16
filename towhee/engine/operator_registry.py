@@ -159,7 +159,7 @@ class OperatorRegistry:
             output_schema = namedtuple('Output', 'col0')
         if isinstance(output_schema, str):  # string schema 'col0 col1'
             output_schema = output_schema.split()
-        if isinstance(output_schema, List):  # list schema ['col0', 'col1']
+        if isinstance(output_schema, List) and isinstance(output_schema[0], str):  # list schema ['col0', 'col1']
             output_schema = namedtuple('Output', output_schema)
 
         def wrapper(cls):

@@ -78,6 +78,10 @@ class _OperatorLazyWrapper(  #
         self._op = None
         self._lock = threading.Lock()
 
+    def get_op(self):
+        self.__check_init__()
+        return self._op
+
     def __check_init__(self):
         with self._lock:
             if self._op is None:

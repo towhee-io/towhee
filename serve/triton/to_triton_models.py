@@ -13,15 +13,23 @@
 # limitations under the License.
 
 from abc import ABC
-from path import Pathlib
+from pathlib import Path
+import inspect
+import pickle
 import logging
+
+from util import create_modelconfig
 
 logger = logging.getLogger()
 
 
+def to_triton_schema(op_schema):
+    return []
+
+
 class TritonFiles:
     def __init__(self, root, model_name):
-        self._root = Pathlib(root) / model_name
+        self._root = Path(root) / model_name
 
     @property
     def root(self):
@@ -48,64 +56,75 @@ class TritonFiles:
         return self.model_path / 'model.onnx'
 
 
-class ToTritonModel(ABC):
-    '''
-    Convert a towhee operator to tirton models.
-    '''
-    def __init__(self, op_meta, model_dir, op_dir):
-        self._op_meta = op_meta
-        self._op_dir = op_dir
-        self._triton_files = TritonFiles(model_dir, op_meta.model_name)
+class PyOpToTriton:
+    def __init__(self, op, model_root, model_name):
+        self._op = op
+        # self._op_root = Path(inspect.getmodule(op).__file__).parent
+        # self._trtion_files = TritonFiles(model_root, model_name)
 
-    def _prepare_config(self):
-        pass
-
-    def _prepare_model(self):
-        pass
-
-    def _create_workspace(self):
-        pass
+    @property
+    def op(self):
+        return self._op
 
     def to_triton(self):
-        if not self._create_workspace():
-            return False
-
-        if not self._prepare_config():
-            return False
-
-        if not self._prepare_model():
-            return False
-        return True
-
-
-class EnsembleTritionModel:
-    def __init__(self, dag):
+        # create triton_model.py
+        # create config.pbtxt
         pass
+
+
+class ProcessToTriton:
+    def __init__(self, processor, model_root, model_name, process_type):
+        self._processer = processor
+        self._trtion_files = TritonFiles(model_root, model_name)
+        self._model_name = model_name
+        self._processer_type = process_type
+        self._process_file = inspect.getmodule(self._processer).__file__
 
     def _prepare_config(self):
-        pass
+        '''
+        example of input_schema & output_schema:
+            [(np.float32, (-1, -1, 3), (int, ()))]
+        '''
+        inputs = to_triton_schema(self._processer.metainfo.input_schema)
+        outputs = to_triton_schema(self._processer.metainfo.output_schema)
+        
+        config_str = create_modelconfig(
+            self._model_name,
+            128,
+            inputs,
+            outputs
+        )
+        with open(self._triton_files.config_file, 'wt') as f:
+            f.write(config_str)
+
+    def _preprocess(self):
+        # create model.py
+        # create pickle file
+        with open(self._triton_files.preprocess_pickel, 'wb') as f:
+            pickle.dump(self._processer, f)
+
+    def _postprocess(self):
+        # create model.py
+        # create pickle file
+        with open(self._triton_files.postprocess_pickel, 'wb') as f:
+            pickle.dump(self._processer, f)
 
     def _prepare_model(self):
-        return True
+        if self._processer_type == 'preprocess':
+            self._preprocess()
+        else:
+            self._postprocess()
+
+    def to_triton(self):
+        if self._prepare_config() and self._prepare_model():
+            return True
+        return False
 
 
-class PythonTritonModel(ToTritonModel):
-    def __init__(self, op_meta, model_dir, op_dir):
-        super().__init__(op_meta, model_dir)
+class NNOpToTriton:
+    def __init__(self, op, model_root, model_name):
+        self._op = op
+        self._trtion_files = TritonFiles(model_root, model_name)
 
-    def _prepare_config(self):
-        pass
-
-    def _prepare_model(self):
-        pass
-
-
-class TorchTensorRTTritonModel(ToTritonModel):
-    def __init__(self, op_meta, model_dir, op_dir):
-        super().__init__(op_meta, model_dir)
-
-    def _prepare_config(self):
-        pass
-
-    def _prepare_model(self):
-        pass
+    def to_triton(self):
+        return False
