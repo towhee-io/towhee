@@ -102,11 +102,11 @@ class TensorArray(pa.ExtensionArray):
         storage = retval.value.values
         return storage.to_numpy().reshape(self.type.shape)
 
-    def as_numpy(self):
-        return self.storage.flatten().to_numpy().reshape(self.type.ext_shape)
+    def to_numpy(self, zero_copy_only=True):
+        return self.storage.flatten().to_numpy(zero_copy_only=zero_copy_only).reshape(self.type.ext_shape)
 
     def chunks(self, chunk_size=None):
-        view = self.as_numpy()
+        view = self.to_numpy()
         for i in range(0, len(self), chunk_size):
             yield view[i:i + chunk_size]
 

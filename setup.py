@@ -50,6 +50,7 @@ if '--models' in sys.argv:
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(include=['towhee.models*']),#['towhee.models'],
           package_data={'towhee.tests.test_util': ['*.yaml']},
+          include_package_data=True,
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': ['towhee=towhee.command.cmdline:main'],

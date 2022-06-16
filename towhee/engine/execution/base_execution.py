@@ -17,6 +17,14 @@ class BaseExecution:
     """
     Execute an operator
     """
+    def __apply__(self, *arg, **kws):
+        # Multi inputs.
+        if isinstance(self._index[0], tuple):
+            args = [getattr(arg[0], x) for x in self._index[0]]
+        # Single input.
+        else:
+            args = [getattr(arg[0], self._index[0])]
+        return self._op(*args, **kws)
 
     def __call__(self, *arg, **kws):
         self.__check_init__()

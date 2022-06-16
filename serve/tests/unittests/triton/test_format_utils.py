@@ -12,21 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import unittest
 
-class PandasExecution:
-    """
-    Execute operator on pandas DataFrame
-    """
-    def __dataframe_apply__(self, df):
-        self.__check_init__()
-        if isinstance(self._index[1], tuple):
-            df[list(self._index[1])] = df.apply(self.__apply__,
-                                                axis=1,
-                                                result_type='expand')
-        else:
-            df[self._index[1]] = df.apply(self.__apply__, axis=1)
-        return df
 
-    def __dataframe_filter__(self, df):
-        self.__check_init__()
-        return df[self.__apply__(df)]
+import serve.triton.format_utils as fmt
+
+
+class TestFormatUtils(unittest.TestCase):
+    """
+    Unit test for format utils.
+    """
+
+    def test_intend(self):
+        a = 'a = np.array([1,2,3])'
+        expected_results = '   a = np.array([1,2,3])'
+
+        self.assertListEqual(fmt.intend([a], 3), [expected_results])
+
+
+if __name__ == '__main__':
+    unittest.main()

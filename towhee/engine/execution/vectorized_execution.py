@@ -24,10 +24,13 @@ class VectorizedExecution:
 
     def __vcall__(self, *arg, **kws):
         self.__check_init__()
+        # col-based computing supported
         if hasattr(self._op, '__vcall__'):
             return self._op.__vcall__(*arg, **kws)
-        if len(arg) == 1:
-            return [self._op.__call__(x) for x in arg[0]]
+        elif len(arg) == 1:
+            return [self._op(x) for x in arg[0]]
+        else:
+            return [self._op(*x) for x in zip(*arg)]
 
         # if bool(self._index):
         #     args = []
