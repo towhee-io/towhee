@@ -23,7 +23,9 @@ from torch.utils import model_zoo
 from transformers import AutoModel, AutoConfig
 from towhee.models.frozen_in_time.frozen_video_transformer import SpaceTimeTransformer
 from towhee.models import vit
-from towhee.models.frozen_in_time.frozen_utils import sim_matrix, state_dict_data_parallel_fix
+from towhee.models.frozen_in_time.frozen_utils import sim_matrix, state_dict_data_parallel_fix, \
+    remove_bridge_module_state_dic
+import logging
 # if load frozen pretrained model , must import this package
 # beacause this pretrained model is base on  https://github.com/victoresque/pytorch-template
 # from towhee.models.frozen_in_time.parse_config import ConfigParser
@@ -49,7 +51,7 @@ class FrozenInTime(nn.Module):
             the frozen pretrained model path, if is_pretrained is true, and this not None, then load from this path,
             otherwise, will load the frozen model from an url.
         attention_style (str):
-            default is "frozen_in_time"
+            default is "frozen_in_time", if is "bridge_former", then is the BridgeFormer model
         projection_dim (int):
             the output dim
         video_pretrained_model (str):
@@ -97,6 +99,7 @@ class FrozenInTime(nn.Module):
         self.video_model_type = video_model_type
         self.num_frames = num_frames
         self.load_temporal_fix = load_temporal_fix
+        self.attention_style = attention_style
         if text_is_load_pretrained:
             # load text pretrained model
             self.text_model = AutoModel.from_pretrained(self.text_pretrained_model)
@@ -129,7 +132,8 @@ class FrozenInTime(nn.Module):
             self.video_model = model
         else:
             raise NotImplementedError(f'{video_model_type} not implemented')
-
+        if self.attention_style == 'bridge_former':
+            self.video_model.fc = nn.Identity()
         # Project to a common embedding
         if projection == 'minimal':
             txt_proj = nn.Sequential(nn.ReLU(),
@@ -144,7 +148,10 @@ class FrozenInTime(nn.Module):
             vid_proj = nn.Identity()
         else:
             raise NotImplementedError
-        self.txt_proj = txt_proj
+        if self.attention_style == 'bridge_former':
+            self.text_proj = txt_proj
+        else:
+            self.txt_proj = txt_proj
         self.vid_proj = vid_proj
 
         if is_pretrained:
@@ -153,15 +160,21 @@ class FrozenInTime(nn.Module):
                 checkpoint = torch.load(weights_path, map_location=device)
                 state_dict = checkpoint['state_dict']
             else:
+                if self.attention_style == 'bridge_former':
+                    raise NotImplementedError(f'{self.attention_style} not have the weights url, '
+                                              f'need give the weights path')
+
                 checkpoint = model_zoo.load_url(pretrained_url, map_location=torch.device(device))
                 state_dict = checkpoint['state_dict']
 
             new_state_dict = state_dict_data_parallel_fix(state_dict, self.state_dict())
+            if self.attention_style == 'bridge_former':
+                new_state_dict = remove_bridge_module_state_dic(new_state_dict, self.state_dict())
             new_state_dict = self._inflate_positional_embeds(new_state_dict)
             self.load_state_dict(new_state_dict, strict=True)
 
     def forward(self, text, video, return_embeds=True):
-        # video shape (batch x channels x frames x height x width) type is tensor
+        # video shape (batch x frames x channels x height x width) type is tensor
         # text shape [bs, seq_len,embedding_dim] type is dic {'input_ids': tensor, 'attention_mask': tensor}
         text_data = text
         video_data = video
@@ -184,7 +197,10 @@ class FrozenInTime(nn.Module):
                 'pooler_output']
         else:
             raise NotImplementedError
-        text_embeddings = self.txt_proj(text_embeddings)
+        if self.attention_style == 'bridge_former':
+            text_embeddings = self.text_proj(text_embeddings)
+        else:
+            text_embeddings = self.txt_proj(text_embeddings)
         return text_embeddings
 
     def compute_video(self, video_data):
@@ -203,12 +219,14 @@ class FrozenInTime(nn.Module):
 
             if load_num_frames != curr_num_frames:
                 if load_num_frames > curr_num_frames:
-                    print(f'### loaded {self.video_model_type} model has MORE frames than current...'
-                          f'### loading weights, filling in the extras via {self.load_temporal_fix}')
+                    logging.info('### loaded %s model has MORE frames than current... '
+                                 '### loading weights, filling in the extras via %s',
+                                 self.video_model_type, self.load_temporal_fix)
                     new_temporal_embed = load_temporal_embed[:, :curr_num_frames, :]
                 else:
-                    print(f'### loaded {self.video_model_type} model has FEWER frames than current...'
-                          f'### loading weights, filling in the extras via {self.load_temporal_fix}')
+                    logging.info('### loaded %s model has FEWER frames than current...'
+                          '### loading weights, filling in the extras via %s',
+                                 self.video_model_type, self.load_temporal_fix)
                     if self.load_temporal_fix == 'zeros':
                         new_temporal_embed = torch.zeros([load_temporal_embed.shape[0], curr_num_frames, embed_dim])
                         new_temporal_embed[:, :load_num_frames] = load_temporal_embed
@@ -242,11 +260,12 @@ class FrozenInTime(nn.Module):
 #     device = "cuda" if torch.cuda.is_available() else "cpu"
 #     text_pretrained_model_or_path = '/Users/zilliz/PycharmProjects/pretrain/distilbert-base-uncased'
 #     frozen_in_time_pretrained_model_path = None
+#     path = '/Users/zilliz/PycharmProjects/pretrain/BridgeFormer/MCQ.pth'
 #     # frozen-in-time frozen_in_time
 #     model = FrozenInTime(
-#                          attention_style='frozen_in_time',
+#                          attention_style='bridge_former',
 #                          is_pretrained=True,
-#                          weights_path='',
+#                          weights_path=path,
 #                          projection_dim=256,
 #                          text_pretrained_model=text_pretrained_model_or_path,
 #                          video_pretrained_model='vit_base_16x224',

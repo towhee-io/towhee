@@ -25,6 +25,7 @@ from torch import einsum, nn
 from towhee.models.layers.mlp import Mlp
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from towhee.models.utils.init_vit_weights import init_vit_weights
+import logging
 
 
 def attn(q, k, v):
@@ -121,31 +122,33 @@ class SpaceTimeBlock(nn.Module):
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, time_init='zeros',
                  attention_style='frozen_in_time'):
         super().__init__()
+        self.attention_style = attention_style
         self.norm1 = norm_layer(dim)
         self.attn = VarAttention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
-
-        self.timeattn = VarAttention(
-            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop,
-            initialize=time_init)
+        if self.attention_style != 'bridge_former':
+            self.timeattn = VarAttention(
+                dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop,
+                initialize=time_init)
 
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
-        self.norm3 = norm_layer(dim)
-
-        self.attention_style = attention_style
+        if self.attention_style != 'bridge_former':
+            self.norm3 = norm_layer(dim)
 
     def forward(self, x, einops_from_space, einops_to_space, einops_from_time, einops_to_time,
                 time_n, space_f):
-
-        time_output = self.timeattn(self.norm3(x), einops_from_time, einops_to_time, n=time_n)
-        time_residual = x + time_output
+        if self.attention_style != 'bridge_former':
+            time_output = self.timeattn(self.norm3(x), einops_from_time, einops_to_time, n=time_n)
+            time_residual = x + time_output
+        else:
+            time_residual = x
         space_output = self.attn(self.norm1(time_residual), einops_from_space,
                                  einops_to_space, f=space_f)
-        if self.attention_style == 'frozen_in_time':
+        if self.attention_style in ['frozen_in_time', 'bridge_former']:
             space_residual = x + self.drop_path(space_output)
         else:
             raise NotImplementedError
@@ -203,8 +206,9 @@ class SpaceTimeTransformer(nn.Module):
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.num_frames = num_frames
         self.embed_dim = embed_dim
+        self.attention_style = attention_style
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
-        print('######USING ATTENTION STYLE: ', attention_style)
+        logging.info('######USING ATTENTION STYLE: %s', self.attention_style)
         if hybrid_backbone is not None:
             raise NotImplementedError('hybrid backbone not implemented')
         else:
@@ -221,7 +225,8 @@ class SpaceTimeTransformer(nn.Module):
         self.pos_embed = nn.Parameter(
             torch.zeros(1, self.patches_per_frame + 1,
                         embed_dim))  # remember to take pos_embed[1:] for tiling over time
-        self.temporal_embed = nn.Parameter(torch.zeros(1, num_frames, embed_dim))
+        if self.attention_style != 'bridge_former':
+            self.temporal_embed = nn.Parameter(torch.zeros(1, num_frames, embed_dim))
 
         self.pos_drop = nn.Dropout(p=drop_rate)
 
@@ -232,7 +237,10 @@ class SpaceTimeTransformer(nn.Module):
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer, time_init=time_init,
                 attention_style=attention_style)
             for i in range(depth)])
-        self.norm = norm_layer(embed_dim)
+        if self.attention_style == 'bridge_former':
+            self.norm1 = norm_layer(embed_dim)
+        else:
+            self.norm = norm_layer(embed_dim)
 
         # Representation layer
         if representation_size:
@@ -282,9 +290,12 @@ class SpaceTimeTransformer(nn.Module):
         # positional embed needs to be tiled for each frame (this does [1,2,3] --> [1,2,3,1,2,3]...)
         cls_embed = self.pos_embed[:, 0, :].unsqueeze(1)
         tile_pos_embed = self.pos_embed[:, 1:, :].repeat(1, self.num_frames, 1)
-        # temporal embed needs to be repeated within each frame (this does [1,2,3] --> [1,1,1,2,2,2,3,3,3]...)
-        tile_temporal_embed = self.temporal_embed.repeat_interleave(self.patches_per_frame, 1)
-        total_pos_embed = tile_pos_embed + tile_temporal_embed
+        if self.attention_style != 'bridge_former':
+            # temporal embed needs to be repeated within each frame (this does [1,2,3] --> [1,1,1,2,2,2,3,3,3]...)
+            tile_temporal_embed = self.temporal_embed.repeat_interleave(self.patches_per_frame, 1)
+            total_pos_embed = tile_pos_embed + tile_temporal_embed
+        else:
+            total_pos_embed = tile_pos_embed
         total_pos_embed = torch.cat([cls_embed, total_pos_embed], dim=1)
 
         curr_patches = x.shape[1]
@@ -297,8 +308,10 @@ class SpaceTimeTransformer(nn.Module):
             x = blk(x, self.einops_from_space, self.einops_to_space, self.einops_from_time,
                     self.einops_to_time,
                     time_n=n, space_f=f)
-
-        x = self.norm(x)[:, 0]
+        if self.attention_style == 'bridge_former':
+            x = self.norm1(x)[:, 0]
+        else:
+            x = self.norm(x)[:, 0]
         x = self.pre_logits(x)
 
         return x
