@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import namedtuple
 from typing import List, Tuple, Dict, Any, Callable, get_args, get_origin
 
 
@@ -23,7 +24,7 @@ def handle_type_annotations(type_annotations: List[Tuple[Any, Tuple]], callbacks
         type_annotations (List[Tuple[Any, Tuple]]): a list of type annotations,
         each annotation corresponds to an input or output, containing a pair of
         type class and shape. The supported type classes are typing.List,
-        numpy numerical types (numpy.bool_, numpy.uint8, numpy.uint16, numpy.uint32,
+        numpy numerical types (numpy.uint8, numpy.uint16, numpy.uint32,
         numpy.uint64, numpy.int8, numpy.int16, numpy.int32, numpy.int64,
         numpy.float16, numpy.float32, numpy.float64),
         python numerical types (str, bool, int, float),
@@ -70,30 +71,41 @@ def tensor2ndarray(placehoder: str):
     return placehoder + '.as_numpy()'
 
 
+AttrInfo = namedtuple('AttrInfo', ['tensor_placeholder', 'obj_placeholder', 'shape', 'triton_dtype', 'numpy_dtype'])
+
+
+class TypeInfo:
+    def __init__(self, attr_info, t, shape, is_list=False):
+        self.attr_info = attr_info
+        self.type = t
+        self.shape = shape
+        self.is_list = is_list
+
+
 class ImageType:
     """
     A collection of type handling function of `towhee.types.Image`
     """
 
     @staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            data_part = ('$obj', (-1, ) + shape, 'TYPE_INT8', is_list)
-            mode_part = ('$obj.mode', (-1, ), 'TYPE_STRING', is_list)
-        else:
-            data_part = ('$obj', shape, 'TYPE_INT8', is_list)
-            mode_part = ('$obj.mode', (), 'TYPE_STRING', is_list)
+    def type_info(t, shape, is_list):
+        data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8')
+        mode_part = AttrInfo('$t_mode', '$obj.mode', (), 'TYPE_STRING', 'numpy.object_')
 
-        return [data_part, mode_part]
+        return TypeInfo([data_part, mode_part], t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
+    def init_code(
+            shape,
+            data_placehoder='$t_data',
+            mode_placehoder='$t_mode'
+    ):
         init_args = [
-            tensor2ndarray('$t_data'),
-            tensor2str('$t_mode')
+            tensor2ndarray(data_placehoder),
+            tensor2str(mode_placehoder)
         ]
-        return 'towhee._types.Image(' + ','.join(init_args) + ')'
+        return 'towhee._types.Image(' + ', '.join(init_args) + ')'
 
 
 class VideoFrameType:
@@ -102,30 +114,30 @@ class VideoFrameType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            data_part = ('$obj', (-1, ) + shape, 'TYPE_INT8', is_list)
-            mode_part = ('$obj.mode', (-1, -1), 'TYPE_STRING', is_list)
-            timestamp_part = ('$obj.timestamp', (-1, ), 'TYPE_INT64', is_list)
-            key_frame_part = ('$obj.key_frame', (-1, ), 'TYPE_INT8', is_list)
-        else:
-            data_part = ('$obj', shape, 'TYPE_INT8', is_list)
-            mode_part = ('$obj.mode', (-1, ), 'TYPE_STRING', is_list)
-            timestamp_part = ('$obj.timestamp', (), 'TYPE_INT64', is_list)
-            key_frame_part = ('$obj.key_frame', (), 'TYPE_INT8', is_list)
+    def type_info(t, shape, is_list):
+        data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8')
+        mode_part = AttrInfo('$t_mode', '$obj.mode', (-1, ), 'TYPE_STRING', 'numpy.object_')
+        timestamp_part = AttrInfo('$t_timestamp', '$obj.timestamp', (), 'TYPE_INT64', 'numpy.int64')
+        key_frame_part = AttrInfo('$t_key_frame', '$obj.key_frame', (), 'TYPE_INT8', 'numpy.int8')
 
-        return [data_part, mode_part, timestamp_part, key_frame_part]
+        return TypeInfo([data_part, mode_part, timestamp_part, key_frame_part], t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
+    def init_code(
+            shape,
+            data_placeholder='$t_data',
+            mode_placeholder='$t_mode',
+            timestamp_placeholder='$t_timestamp',
+            key_frame_placeholder='$t_key_frame'
+    ):
         init_args = [
-            tensor2ndarray('$t_data'),
-            tensor2str('$t_mode'),
-            tensor2int('$t_timestamp'),
-            tensor2int('$t_key_frame')
+            tensor2ndarray(data_placeholder),
+            tensor2str(mode_placeholder),
+            tensor2int(timestamp_placeholder),
+            tensor2int(key_frame_placeholder)
         ]
-        return 'towhee.types.VideoFrame(' + ','.join(init_args) + ')'
+        return 'towhee.types.VideoFrame(' + ', '.join(init_args) + ')'
 
 
 class AudioFrameType:
@@ -134,50 +146,30 @@ class AudioFrameType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            data_part = ('$obj', (-1, ) + shape, 'TYPE_INT32', is_list)
-            sample_rate_part = ('$obj.sample_rate', (-1, ), 'TYPE_INT32', is_list)
-            timestamp_part = ('$obj.timestamp', (-1, ), 'TYPE_INT64', is_list)
-            layout_part = ('$obj.layout', (-1, -1), 'TYPE_STRING', is_list)
-        else:
-            data_part = ('$obj', shape, 'TYPE_INT32', is_list)
-            sample_rate_part = ('$obj.sample_rate', (), 'TYPE_INT32', is_list)
-            timestamp_part = ('$obj.timestamp', (), 'TYPE_INT64', is_list)
-            layout_part = ('$obj.layout', (-1, ), 'TYPE_STRING', is_list)
+    def type_info(t, shape, is_list):
+        data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT32', 'numpy.int32')
+        sample_rate_part = AttrInfo('$t_sample_rate', '$obj.sample_rate', (), 'TYPE_INT32', 'numpy.int32')
+        timestamp_part = AttrInfo('$obj.timestamp', (), 'TYPE_INT64', 'numpy.int64')
+        layout_part = AttrInfo('$t_layout', '$obj.layout', (-1, ), 'TYPE_STRING', 'numpy.object_')
 
-        return [data_part, sample_rate_part, timestamp_part, layout_part]
+        return TypeInfo([data_part, sample_rate_part, timestamp_part, layout_part], t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
+    def init_code(
+        shape,
+        data_placeholder='$t_data',
+        sample_rate_placeholder='$t_sample_rate',
+        timestamp_placeholder='$t_timestamp',
+        layout_placeholder='$t_layout'
+    ):
         init_args = [
             tensor2ndarray('$t_data'),
             tensor2int('$t_sample_rate'),
             tensor2int('$t_timestamp'),
             tensor2str('$t_layout')
         ]
-        return 'towhee.types.AudioFrame(' + ','.join(init_args) + ')'
-
-
-class NpBoolType:
-    """
-    A collection of type handling function of `numpy.bool_`
-    """
-
-    @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_BOOL', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_BOOL', is_list)]
-
-    @staticmethod
-    def init_obj(shape):
-        if len(shape) == 0:
-            return tensor2bool('$t')
-        else:
-            return tensor2ndarray('$t')
+        return 'towhee.types.AudioFrame(' + ', '.join(init_args) + ')'
 
 
 class NpUint8Type:
@@ -186,18 +178,16 @@ class NpUint8Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_UINT8', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_UINT8', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT8', 'numpy.uint8')]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpUint16Type:
@@ -206,18 +196,16 @@ class NpUint16Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_UINT16', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_UINT16', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT16', 'numpy.uint16', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpUint32Type:
@@ -226,18 +214,16 @@ class NpUint32Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_UINT32', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_UINT32', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT32', 'numpy.uint32', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpUint64Type:
@@ -246,18 +232,16 @@ class NpUint64Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_UINT64', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_UINT64', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_UINT64', 'numpy.uint64', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpInt8Type:
@@ -266,18 +250,16 @@ class NpInt8Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_INT8', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_INT8', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpInt16Type:
@@ -286,18 +268,16 @@ class NpInt16Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_INT16', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_INT16', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT16', 'numpy.int16', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpInt32Type:
@@ -306,18 +286,16 @@ class NpInt32Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_INT32', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_INT32', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT32', 'numpy.int32', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpInt64Type:
@@ -326,18 +304,16 @@ class NpInt64Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_INT64', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_INT64', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2int('$t')
+            return tensor2int(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpFloat16Type:
@@ -346,18 +322,16 @@ class NpFloat16Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_FP16', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_FP16', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP16', 'numpy.float16', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2float('$t')
+            return tensor2float(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpFloat32Type:
@@ -366,18 +340,16 @@ class NpFloat32Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_FP32', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_FP32', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP32', 'numpy.float32', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2float('$t')
+            return tensor2float(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class NpFloat64Type:
@@ -386,18 +358,16 @@ class NpFloat64Type:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_FP64', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_FP64', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     @staticmethod
-    def init_obj(shape):
+    def init_code(shape, data_placeholder='$t_data'):
         if len(shape) == 0:
-            return tensor2float('$t')
+            return tensor2float(data_placeholder)
         else:
-            return tensor2ndarray('$t')
+            return tensor2ndarray(data_placeholder)
 
 
 class IntType:
@@ -406,16 +376,14 @@ class IntType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_INT64', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_INT64', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_INT64', 'numpy.int64', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
-        return tensor2int('$t')
+    def init_code(shape, data_placeholder='$t_data'):
+        return tensor2int(data_placeholder)
 
 
 class FloatType:
@@ -424,16 +392,14 @@ class FloatType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_FP64', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_FP64', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_FP64', 'numpy.float64', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
-        return tensor2float('$t')
+    def init_code(shape, data_placeholder='$t_data'):
+        return tensor2float(data_placeholder)
 
 
 class BoolType:
@@ -442,16 +408,14 @@ class BoolType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_BOOL', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_BOOL', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_BOOL', 'bool', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
-        return tensor2bool('$t')
+    def init_code(shape, data_placeholder='$t_data'):
+        return tensor2bool(data_placeholder)
 
 
 class StringType:
@@ -460,13 +424,11 @@ class StringType:
     """
 
     @ staticmethod
-    def unpack_attrs(shape, is_list):
-        if is_list:
-            return [('$obj', (-1, ) + shape, 'TYPE_STRING', is_list)]
-        else:
-            return [('$obj', shape, 'TYPE_STRING', is_list)]
+    def type_info(t, shape, is_list):
+        attr_info = [AttrInfo('$t_data', '$obj', shape, 'TYPE_STRING', 'numpy.object_', is_list)]
+        return TypeInfo(attr_info, t, shape, is_list)
 
     # pylint: disable=unused-argument
     @staticmethod
-    def init_obj(shape):
-        return tensor2str('$t')
+    def init_code(shape, data_placeholder='$t_data'):
+        return tensor2str(data_placeholder)
