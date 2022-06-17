@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import unittest
 import torch
 from towhee.models.bridgeformer import create_model
@@ -24,12 +23,15 @@ class BridgeFormerTest(unittest.TestCase):
     patch_size = 16
     in_chans = 3
     text_len = 4
-    dummy_video = torch.randn(1, 4, in_chans, image_size, image_size)
+    num_frames = 4
+    dummy_video = torch.randn(1, num_frames, in_chans, image_size, image_size)
     dummy_text = {}
     input_ids = torch.randint(1, 10, size=(1, text_len))
     attention_mask = torch.ones(1, text_len, dtype=torch.int)
     dummy_text["input_ids"] = input_ids
     dummy_text["attention_mask"] = attention_mask
+    dummy_ans = {"input_ids": input_ids, "attention_mask": attention_mask}
+    dummy_question = {"input_ids": input_ids, "attention_mask": attention_mask}
 
     def test_without_all_pretrained(self):
         '''
@@ -61,6 +63,21 @@ class BridgeFormerTest(unittest.TestCase):
         self.assertEqual(video_embeddings.shape, (1, 512))
         text_with_video_sim = sim_matrix(text_embeddings, video_embeddings)
         self.assertEqual(text_with_video_sim.shape, (1, 1))
+
+    def test_without_all_pretrained_for_bridge_former_training(self):
+        model = create_model(pretrained=False, model_name="bridge_former_training",
+                             img_size=self.image_size, patch_size=self.patch_size,
+                             in_chans=self.in_chans,
+                             projection_dim=256,
+                             )
+        text_cls_embeddings, answer_cls_embeddings, \
+        bridge_cls_embeddings, video_cls_embeddings = model(text=self.dummy_text, answer_data=self.dummy_ans,
+                                                            question_data=self.dummy_question, video=self.dummy_video)
+
+        self.assertEqual(text_cls_embeddings.shape, (1, 256))
+        self.assertEqual(answer_cls_embeddings.shape, (1, 256))
+        self.assertEqual(bridge_cls_embeddings.shape, (1, 256))
+        self.assertEqual(video_cls_embeddings.shape, (1, 256))
 
 
 if __name__ == "__main__":
