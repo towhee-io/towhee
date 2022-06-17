@@ -15,7 +15,6 @@
 from typing import Any, Iterable, Iterator, Callable
 import random
 import reprlib
-from towhee.functional.mixins.dag import register_dag
 
 from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.entity import Entity
@@ -105,7 +104,6 @@ class DataCollection(Iterable, DCMixins):
             return (x[1] for x in self._iterable.iterrows())
         return iter(self._iterable)
 
-    @register_dag
     def stream(self):
         """
         Create a stream data collection.
@@ -125,7 +123,6 @@ class DataCollection(Iterable, DCMixins):
         iterable = iter(self._iterable) if not self.is_stream else self._iterable
         return self._factory(iterable, parent_stream=False)
 
-    @register_dag
     def unstream(self):
         """
         Create a unstream data collection.
@@ -205,7 +202,6 @@ class DataCollection(Iterable, DCMixins):
             hp().data_collection.parent = self
             return DataCollection(iterable)
 
-    @register_dag
     def exception_safe(self):
         """
         Making the data collection exception-safe by warp elements with `Option`.
@@ -239,7 +235,6 @@ class DataCollection(Iterable, DCMixins):
         """
         return self.exception_safe()
 
-    @register_dag
     def select_from(self, other):
         """
         Select data from dc with list(self).
@@ -264,7 +259,6 @@ class DataCollection(Iterable, DCMixins):
         result = map(inner, self._iterable)
         return self._factory(result)
 
-    @register_dag
     def fill_empty(self, default: Any = None) -> 'DataCollection':
         """
         Unbox `Option` values and fill `Empty` with default values.
@@ -284,7 +278,6 @@ class DataCollection(Iterable, DCMixins):
         result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
         return self._factory(result)
 
-    @register_dag
     def drop_empty(self, callback: Callable = None) -> 'DataCollection':
         """
         Unbox `Option` values and drop `Empty`.
@@ -328,7 +321,6 @@ class DataCollection(Iterable, DCMixins):
             result = inner(self._iterable)
         return self._factory(result)
 
-    @register_dag
     def map(self, *arg):
         """
         Apply operator to data collection.
@@ -377,7 +369,6 @@ class DataCollection(Iterable, DCMixins):
 
         return child
 
-    @register_dag
     def zip(self, *others) -> 'DataCollection':
         """
         Combine two data collections.
@@ -403,7 +394,6 @@ class DataCollection(Iterable, DCMixins):
 
         return self._factory(zip(self, *others))
 
-    @register_dag
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
         """
         Filter data collection with `unary_op`.
@@ -433,7 +423,6 @@ class DataCollection(Iterable, DCMixins):
             child = self._factory(filter(inner, self._iterable))
         return child
 
-    @register_dag
     def sample(self, ratio=1.0) -> 'DataCollection':
         """
         Sample the data collection.
@@ -455,7 +444,6 @@ class DataCollection(Iterable, DCMixins):
         return self._factory(filter(lambda _: random.random() < ratio, self))
 
     @staticmethod
-    @register_dag
     def range(*arg, **kws):
         """
         Generate data collection with ranged numbers.
@@ -467,7 +455,6 @@ class DataCollection(Iterable, DCMixins):
         """
         return DataCollection(range(*arg, **kws))
 
-    @register_dag
     def batch(self, size, drop_tail=False, raw=True):
         """
         Create small batches from data collections.
@@ -531,7 +518,6 @@ class DataCollection(Iterable, DCMixins):
 
         return self._factory(inner())
 
-    @register_dag
     def rolling(self, size: int, drop_head=True, drop_tail=True):
         """
         Create rolling windows from data collections.
@@ -572,7 +558,6 @@ class DataCollection(Iterable, DCMixins):
 
         return self._factory(inner())
 
-    @register_dag
     def flatten(self) -> 'DataCollection':
         """
         Flatten nested data collections.
@@ -597,7 +582,6 @@ class DataCollection(Iterable, DCMixins):
 
         return self._factory(inner())
 
-    @register_dag
     def shuffle(self) -> 'DataCollection':
         """
         Shuffle an unstreamed data collection in place.
@@ -762,7 +746,6 @@ class DataCollection(Iterable, DCMixins):
     def __or__(self, unary_op):
         return self.map(unary_op)
 
-    @register_dag
     def __add__(self, other):
         """
         Concat two data collections:
@@ -804,7 +787,6 @@ class DataCollection(Iterable, DCMixins):
             return repr(self._iterable)
         return super().__repr__()
 
-    @register_dag
     def head(self, n: int = 5):
         """
         Get the first n lines of a DataCollection.
