@@ -232,6 +232,7 @@ class ServeMixin:
                 if rsp.is_empty():
                     return rsp.get()
                 return rsp.get()
+
         return _Wrapper()
 
     @classmethod
