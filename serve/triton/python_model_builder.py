@@ -241,24 +241,28 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         return fmt.add_line_separator(lines)
 
 
-class OpPyModelBuilder:
+class OpPyModelBuilder(PyModelBuilder):
     """
     Build python model from operator
     """
 
     def __init__(
         self,
+        task_name: str,
         op_name: str,
+        op_init_args: List[str],
         input_annotations: List[Tuple[Any, Tuple]],
         output_annotations: List[Tuple[Any, Tuple]]
     ):
+        self.task_name = task_name
         self.op_name = op_name
+        self.op_init_args = op_init_args
         self.input_annotations = input_annotations
         self.output_annotations = output_annotations
 
     def gen_imports(self):
         lines = []
-        lines.append('import towhee')
+        lines.append('from towhee import ops')
         lines.append('import triton_python_backend_utils as pb_utils')
 
         return fmt.add_line_separator(lines)
@@ -267,16 +271,9 @@ class OpPyModelBuilder:
         lines = []
         lines.append('def initialize(self, args):')
         lines.append('')
-        lines.append('# load module')
-        lines.append('spec = importlib.util.spec_from_file_location(\'' + self.module_name + '\', \'' + self.python_file_path + '\')')
-        lines.append('module = importlib.util.module_from_spec(spec)')
-        lines.append('sys.modules[\'' + self.module_name + '\'] = module')
-        lines.append('spec.loader.exec_module(module)')
-        lines.append('')
-        lines.append('# create callable object')
-        lines.append('callable_cls = ' + self.module_name + '.' + self.callable_name)
-        lines.append('with open(\'' + self.pickle_file_path + '\', \'rb\') as f:')
-        lines.append(fmt.intend('self.callable_obj = pickle.load(f)'))
+        lines.append('# create op instance')
+        lines.append('task = getattr(ops, \'' + self.task_name + '\')')
+        lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + ', '.join(self.op_init_args) + ')')
 
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
@@ -296,11 +293,11 @@ class OpPyModelBuilder:
         input_arg_init_code = tygen.get_init_code(self.input_annotations)
 
         tr_idx = 0
-        callable_input_args = []
+        op_input_args = []
 
         for arg_idx, type_info in enumerate(input_type_info):
             arg = 'arg' + str(arg_idx)
-            callable_input_args.append(arg)
+            op_input_args.append(arg)
             num_attrs = len(type_info.attr_info)
 
             tr_vars = ['in' + str(tr_idx + i) for i in range(num_attrs)]
@@ -316,8 +313,8 @@ class OpPyModelBuilder:
 
         taskloop.append('')
         taskloop.append('# call callable object')
-        callable_results = ['result' + str(i) for i in range(len(self.output_annotations))]
-        taskloop.append(', '.join(callable_results) + ' = self.callable_obj(' + ' ,'.join(callable_input_args) + ')')
+        op_results = ['result' + str(i) for i in range(len(self.output_annotations))]
+        taskloop.append(', '.join(op_results) + ' = self.op(' + ' ,'.join(op_input_args) + ')')
 
         taskloop.append('')
         taskloop.append('# convert results to tensors')
@@ -332,7 +329,7 @@ class OpPyModelBuilder:
             tr_vars = ['out' + str(tr_idx + i) for i in range(num_attrs)]
             tr_out = tr_out + tr_vars
             outputs = ['OUTPUT' + str(tr_idx + i) for i in range(num_attrs)]
-            l = self._from_obj_to_tensor(type_info, callable_results[result_idx], tr_vars, outputs)
+            l = self._from_obj_to_tensor(type_info, op_results[result_idx], tr_vars, outputs)
             taskloop = taskloop + l
 
         taskloop.append('')
@@ -378,5 +375,20 @@ def gen_model_from_pickled_callable(
     return builder.build(save_path)
 
 
-def gen_model_from_op():
-    pass
+def gen_model_from_op(
+    save_path: str,
+    task_name: str,
+    op_name: str,
+    op_init_args: List[str],
+    input_annotations: List[Tuple[Any, Tuple]],
+    output_annotations: List[Tuple[Any, Tuple]]
+):
+    builder = OpPyModelBuilder(
+        task_name,
+        op_name,
+        op_init_args,
+        input_annotations,
+        output_annotations
+    )
+
+    return builder.build(save_path)
