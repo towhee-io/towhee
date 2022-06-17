@@ -49,7 +49,6 @@ class ForzenInTimeTest(unittest.TestCase):
         self.assertEqual(text_embeddings.shape, (1, 256))
         self.assertEqual(video_embeddings.shape, (1, 256))
         text_with_video_sim = model(text=self.dummy_text, video=self.dummy_video, return_embeds=False)
-        print(text_with_video_sim)
         self.assertEqual(text_with_video_sim.shape, (1, 1))
 
 

@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import numpy as np
-
-# from towhee.types.tensor_array import TensorArray
-
+# pylint: disable=bare-except
 
 class VectorizedExecution:
     """
@@ -28,9 +25,17 @@ class VectorizedExecution:
         if hasattr(self._op, '__vcall__'):
             return self._op.__vcall__(*arg, **kws)
         elif len(arg) == 1:
-            return [self._op(x) for x in arg[0]]
+            res = [self._op(x) for x in arg[0]]
+            if isinstance(self._index[1], tuple):
+                return tuple(list(i) for i in zip(*res))
+            else:
+                return res
         else:
-            return [self._op(*x) for x in zip(*arg)]
+            res = [self._op(*x) for x in zip(*arg)]
+            if isinstance(self._index[1], tuple):
+                return tuple(list(i) for i in zip(*res))
+            else:
+                return res
 
         # if bool(self._index):
         #     args = []

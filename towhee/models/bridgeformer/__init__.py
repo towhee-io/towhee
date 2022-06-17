@@ -12,20 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-def intend(text, num_space=4):
-    if isinstance(text, str):
-        return ' ' * num_space + text
-    elif isinstance(text, list):
-        return [' ' * num_space + l for l in text]
-    else:
-        raise ValueError('unrecognized text format')
-
-
-def add_line_separator(text):
-    if isinstance(text, str):
-        return text + '\n'
-    elif isinstance(text, list):
-        return [l + '\n' for l in text]
-    else:
-        raise ValueError('unrecognized text format')
+from .bridge_former import *
