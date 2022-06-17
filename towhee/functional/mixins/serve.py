@@ -223,7 +223,7 @@ class ServeMixin:
         as_function_self = self
         pipeline = _PipeWrapper(self._iterable, api)
 
-        class _wrapper:
+        class _Wrapper:
             def __init__(self):
                 self.dag_info = as_function_self.compile_dag()
 
@@ -233,7 +233,7 @@ class ServeMixin:
                     return rsp.get()
                 return rsp.get()
 
-        return _wrapper()
+        return _Wrapper()
 
     @classmethod
     def api(cls, index=None):
