@@ -24,10 +24,16 @@ logger = logging.getLogger()
 
 
 class Builder:
+    '''
+    Build triton models from towhee pipeline.
+
+    In V1, we only support a chain graph for we have not traced the input and output map.
+    '''
     def __init__(self, dag, model_root):
         self.dag = dag
         self._runtime_dag = None
         self._model_root = model_root
+        self._ensemble_config = {}
 
     def _create_node_config(self, node_id, node):
         op_name = node['op_name']
@@ -78,7 +84,7 @@ class Builder:
         return True
 
     def _build(self):
-        for node in self._runtime_dag:
+        for node_id, info in self._runtime_dag.items():
             pass
         return True
 
@@ -89,9 +95,8 @@ class Builder:
         return self._build()
 
 
-if __name__ == '__main__':
-    test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'towhee/image-decode', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'towhee/clip_image', 'is_stream': True, 'init_args': {'model_name': 'clip_vit_b32'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
-    builer = Builder(test_dag, './')
-    assert builer.load() is True
-    print(builer._runtime_dag)
-
+# if __name__ == '__main__':
+#     test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'towhee/image-decode', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'towhee/clip_image', 'is_stream': True, 'init_args': {'model_name': 'clip_vit_b32'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
+#     builer = Builder(test_dag, './')
+#     assert builer.load() is True
+#     print(builer._runtime_dag)
