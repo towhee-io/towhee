@@ -27,15 +27,15 @@ class TestTritonModelConfigBuilder(unittest.TestCase):
     # pylint: disable=protected-access
 
     def test_get_triton_schema(self):
-        input_annotations = [(Image, (512, 512, 3)), (int, ()), (str, (-1,))]
+        input_annotations = [(Image, (512, 512, 3)), (int, (1,)), (str, (-1,))]
         output_annotations = [(np.float32, (1, 3, 224, 224))]
 
         input_schema = TritonModelConfigBuilder.get_input_schema(input_annotations)
         output_schema = TritonModelConfigBuilder.get_output_schema(output_annotations)
         expected_input_schema = {
             'INPUT0': ('TYPE_INT8', [512, 512, 3]),
-            'INPUT1': ('TYPE_STRING', []),
-            'INPUT2': ('TYPE_INT64', []),
+            'INPUT1': ('TYPE_STRING', [-1]),
+            'INPUT2': ('TYPE_INT64', [1]),
             'INPUT3': ('TYPE_STRING', [-1])
         }
         expected_output_schema = {'OUTPUT0': ('TYPE_FP32', [1, 3, 224, 224])}

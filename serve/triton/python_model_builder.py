@@ -107,7 +107,12 @@ class PyModelBuilder:
         for attr, tr_name, tr_var in zip(type_info.attr_info, tensor_names, tensor_vars):
             data = attr.obj_placeholder.replace(obj_placeholder, obj_var)
             dtype = attr.numpy_dtype
-            ndarray = 'numpy.array(' + data + ', ' + dtype + ')'
+
+            if tygen.is_scalar(attr):
+                ndarray = 'numpy.array([' + data + '], ' + dtype + ')'
+            else:
+                ndarray = 'numpy.array(' + data + ', ' + dtype + ')'
+
             line = tr_var + ' = pb_utils.Tensor(\'' + tr_name + '\', ' + ndarray + ')'
             lines.append(line)
 
