@@ -16,7 +16,6 @@ from typing import Union
 from pathlib import Path
 
 from towhee.functional.entity import Entity
-from towhee.functional.mixins.dag import register_dag
 
 
 class DatasetMixin:
@@ -26,7 +25,6 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
-    @register_dag
     def from_glob(cls, *args): # pragma: no cover
         """
         generate a file list with `pattern`
@@ -38,7 +36,6 @@ class DatasetMixin:
         return cls(files).stream()
 
     @classmethod
-    @register_dag
     def from_zip(cls, url, pattern, mode='r'): # pragma: no cover
         """load files from url/path.
 
@@ -76,7 +73,6 @@ class DatasetMixin:
         return cls(inner()).stream()
 
     @classmethod
-    @register_dag
     def from_camera(cls, device_id=0, limit=-1): # pragma: no cover
         """
         read images from a camera.
@@ -96,7 +92,6 @@ class DatasetMixin:
         return cls(inner()).stream()
 
     @classmethod
-    @register_dag
     def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
         import json
 
@@ -111,7 +106,6 @@ class DatasetMixin:
         return cls(inner()).stream()
 
     @classmethod
-    @register_dag
     def from_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
         import csv
 
