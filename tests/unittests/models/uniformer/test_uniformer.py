@@ -19,7 +19,7 @@ from towhee.models.uniformer.uniformer import Uniformer
 class TestUniFormer(unittest.TestCase):
     def test_uniformer(self):
         model=Uniformer()
-        x=torch.randn(1,1,3,3,224,224)
+        x=torch.randn(1,3,3,32,32)
         out=model(x)
         self.assertTrue(out.shape == (1, 400))
 

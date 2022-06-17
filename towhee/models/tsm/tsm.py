@@ -277,7 +277,7 @@ def create_model(
         model_name: str = 'tsm_k400_r50_seg8',
         pretrained: bool = False,
         weights_path: str = None,
-        device: str = 'cpu',
+        device: str = None,
         ):
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
