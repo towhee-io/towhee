@@ -16,7 +16,6 @@ import queue
 import threading
 import concurrent.futures
 from towhee.functional.entity import Entity
-from towhee.functional.mixins.dag import DagMixin
 from towhee.functional.option import Some
 # pylint: disable=import-outside-toplevel
 
@@ -233,7 +232,6 @@ class ServeMixin:
                 if rsp.is_empty():
                     return rsp.get()
                 return rsp.get()
-
         return _Wrapper()
 
     @classmethod

@@ -53,7 +53,6 @@ def register_dag(f):
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
                 x.get_control_plane().dag['start'] = info
-
             return children
 
     return wrapper
