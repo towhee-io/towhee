@@ -94,6 +94,61 @@ output [
 def create_ensemble(dag: Dict, name='pipeline', max_batch_size=128):
     '''
     Create triton enseble config.
+
+    input dag:
+    {
+    0: {
+        'id': 0,
+        'mode_name': 'image_decode',
+        'model_version': 1,
+        'inputs': {
+            'INPUT0': ('TYPE_STRING', []),
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_INT8', [-1, -1, 3]),
+            'OUTPUT1': ('TYPE_STRING', []),
+        },
+        'child_ids': [1]
+    },
+    1: {
+        'id': 1,
+        'mode_name': 'clip_preprocess',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_INT8', [-1, -1, 3]),
+            'IUTPUT1': ('TYPE_STRING', []),            
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [-1, 3, 224, 224])
+        },
+        'child_ids': [2]
+    },
+    2: {
+        'id': 2,
+        'mode_name': 'clip_model',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_FP32', [-1, 3, 224, 224])
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [-1, 512])
+        },
+        'child_ids': [3]        
+    },
+    3: {
+        'id': 3,
+        'mode_name': 'clip_postprocess',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_FP32', [-1, 512])
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [512])
+        },
+        'child_ids': []
+    }
+}
+
     '''
     return ''
 
