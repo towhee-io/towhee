@@ -27,7 +27,7 @@ def register_dag(f):
                     'call_args': self.call_args,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
-            self._control_plane.dag[self.id] = info
+            self.get_control_plain().dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.
         else:
@@ -52,7 +52,7 @@ def register_dag(f):
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
-                x._control_plane.dag['start'] = info
+                x.get_control_plain().dag['start'] = info
 
             return children
 
@@ -144,13 +144,13 @@ class DagMixin:
 
     def _add_op_name_and_init_args(self, dag):
         for key, val in dag.items():
-            if val['call_args'] != None:
+            if val['call_args'] is not None:
                 if val['call_args']['*arg'] != ():
-                    dag[key]['init_args'] = val['call_args']['*arg'][0]._kws
-                    if len(val['call_args']['*arg'][0]._name.split("/")) > 1:
-                        dag[key]['op_name'] = val['call_args']['*arg'][0]._name
+                    dag[key]['init_args'] = val['call_args']['*arg'][0].init_args()
+                    if len(val['call_args']['*arg'][0].function().split('/')) > 1:
+                        dag[key]['op_name'] = val['call_args']['*arg'][0].function()
                     else:
-                        dag[key]['op_name'] = "towhee/" + val['call_args']['*arg'][0]._name
+                        dag[key]['op_name'] = 'towhee/' + val['call_args']['*arg'][0].function()
                 else:
                     dag[key]['op_name'] = 'dummy_input'
             else:
@@ -160,6 +160,9 @@ class DagMixin:
 
     def _clean_streams(self, dag):
         raise NotImplementedError
+
+    def get_control_plain(self):
+        return self._control_plane
 
 class ControlPlane:
     def __init__(self) -> None:

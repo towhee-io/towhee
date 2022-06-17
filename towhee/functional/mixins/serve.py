@@ -16,7 +16,6 @@ import queue
 import threading
 import concurrent.futures
 from towhee.functional.entity import Entity
-from towhee.functional.mixins.dag import DagMixin
 from towhee.functional.option import Some
 # pylint: disable=import-outside-toplevel
 
@@ -224,7 +223,7 @@ class ServeMixin:
         as_function_self = self
         pipeline = _PipeWrapper(self._iterable, api)
 
-        class wrapper:
+        class _wrapper:
             def __init__(self):
                 self.dag_info = as_function_self.compile_dag()
 
@@ -234,7 +233,7 @@ class ServeMixin:
                     return rsp.get()
                 return rsp.get()
 
-        return wrapper()
+        return _wrapper()
 
     @classmethod
     def api(cls, index=None):
