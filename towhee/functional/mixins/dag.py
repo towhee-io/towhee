@@ -27,7 +27,7 @@ def register_dag(f):
                     'call_args': self.call_args,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
-            self.control_plane.dag[self.id] = info
+            self._control_plane.dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.
         else:
@@ -52,7 +52,7 @@ def register_dag(f):
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
-                x.control_plane.dag['start'] = info
+                x._control_plane.dag['start'] = info
 
             return children
 
@@ -72,10 +72,10 @@ class DagMixin:
             parent = hp().data_collection.parent(None)
         if parent is None:
             self.parent_ids = ['start']
-            self.control_plane = ControlPlane()
+            self._control_plane = ControlPlane()
         else:
             self.parent_ids = [parent.id]
-            self.control_plane = parent.control_plane
+            self._control_plane = parent._control_plane
         self.op = None
         self.op_name = None
         self.init_args = None
@@ -95,20 +95,20 @@ class DagMixin:
                 'call_args': self.call_args,
                 'parent_ids': self.parent_ids,
                 'child_ids':  self.child_ids}
-        self.control_plane.dag[self.id] = info
+        self._control_plane.dag[self.id] = info
         return children
 
     def notify_consumed(self, new_id):
         info = {'op': 'nop', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  [new_id]}
-        self.control_plane.dag[self.id] = info
+        self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
         info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
-        self.control_plane.dag[self.id] = info
+        self._control_plane.dag[self.id] = info
         info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': [self.id], 'child_ids':  []}
-        self.control_plane.dag['end'] = info
-        # return self.control_plane.dag
-        return self._clean_nops(self.control_plane.dag)
+        self._control_plane.dag['end'] = info
+        # return self._control_plane.dag
+        return self._clean_nops(self._control_plane.dag)
 
     def netx(self):
         import networkx as nx
