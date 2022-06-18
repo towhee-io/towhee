@@ -34,9 +34,10 @@ def to_triton_schema(op_schema: List[Tuple], prefix: str):
         ]
     '''
     triton_schema = []
-    for item in op_schema:
-        # op type to triton type
-        pass
+    for i in range(len(op_schema)):
+        triton_schema.append({
+            prefix + str(i): ('TYPE_INT8', [-1, -1, 3])
+        })
     return triton_schema
 
 

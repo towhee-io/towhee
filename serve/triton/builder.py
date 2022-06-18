@@ -35,6 +35,62 @@ class Builder:
         self._model_root = model_root
         self._ensemble_config = {}
 
+    def _nnoperator_config(self, op, op_name, node_id, node):
+        '''
+        preprocess -> model -> postprocess
+        '''
+        models = []
+        if hasattr(op, constant.PREPROCESS):
+            model_name = '_'.join([node_id, op_name, 'preprocess'])
+            converter = ProcessToTriton(op.preprocess, self._model_root,
+                                        model_name, constant.PREPROCESS)            
+            models.append({
+                'model_name': model_name,
+                'converter': converter,
+                'inputs': converter.inputs,
+                'outputs': converter.outputs
+            })
+
+        model_name = '_'.join([node_id, op_name, 'model'])
+        converter = NNOpToTriton(op, self._model_root,
+                                 model_name)
+        models.append({
+            'model_name': model_name,
+            'converter': converter,
+            'inputs': converter.inputs,
+            'outputs': converter.outputs
+        })
+        if hasattr(op, constant.POSTPROCESS):
+            model_name = '_'.join([node_id, op_name, 'postprocess'])
+            converter = ProcessToTriton(op.postprocess, self._model_root,
+                                        model_name, constant.POSTPROCESS)
+            models.append({
+                'model_name': model_name,
+                'converter': converter,
+                'inputs': converter.inputs,
+                'outputs': converter.outputs
+            })
+        models[0]['id'] = node_id
+        for i in range(1, len(models)):
+            models[i]['id'] = models[i]['model_name']
+        models[-1]['child_ids'] = node['child_ids']
+        for i in range(len(models) - 1):
+            models[i]['child_ids'] = [models[i + 1]['id']]
+        return dict((model['id'], model) for model in models)
+
+    def _pyop_config(self, op, node_id, node):
+        model_name = node_id + '_' + node['op_name']
+        converter = PyOpToTriton(op, self._model_root, model_name)
+        config = {node_id: {
+            'id': node_id,
+            'model_name': model_name,
+            'model_version': 1,
+            'inputs': converter.inputs,
+            'outputs': converter.outputs,
+            'child_ids': node['child_ids']
+        }}
+        return config
+
     def _create_node_config(self, node_id, node):
         op_name = node['op_name']
         init_args = node['init_args']
@@ -42,21 +98,10 @@ class Builder:
         if op is None:
             return None
 
-        new_id = op_name + '_' + node_id
-        converter = {}
         if isinstance(op, NNOperator):
-            converter['model'] = NNOpToTriton(op, self._model_root, new_id + '_model')
-            if hasattr(op, constant.PREPROCESS):
-                converter['preprocess'] = ProcessToTriton(op.preprocess, self._model_root, new_id + '_preprocess', constant.PREPROCESS)
-            if hasattr(op, constant.POSTPROCESS):
-                converter['postprocess'] = ProcessToTriton(op.postprocess, self._model_root, new_id + '_postprocess', constant.POSTPROCESS)
+            return self._nnoperator_config(op, op_name, node_id, node)
         else:
-            converter['model'] = PyOpToTriton(op, self._model_root, new_id + '_model')
-        config = {}
-        config['op_name'] = op_name
-        config['child_ids'] = node['child_ids']
-        config['converter'] = converter
-        return config
+            return self._pyop_config(op, node_id, node)
 
     @staticmethod
     def _load_op(op_name, init_args) -> 'Operator':
@@ -80,7 +125,7 @@ class Builder:
             config = self._create_node_config(node_id, node)
             if config is None:
                 return False
-            self._runtime_dag[node_id] = config
+            self._runtime_dag.update(config)
         return True
 
     def _build(self):
@@ -95,8 +140,8 @@ class Builder:
         return self._build()
 
 
-# if __name__ == '__main__':
-#     test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'towhee/image-decode', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'towhee/clip_image', 'is_stream': True, 'init_args': {'model_name': 'clip_vit_b32'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
-#     builer = Builder(test_dag, './')
-#     assert builer.load() is True
-#     print(builer._runtime_dag)
+if __name__ == '__main__':
+    test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'towhee/image-decode', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'towhee/clip_image', 'is_stream': True, 'init_args': {'model_name': 'clip_vit_b32'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
+    builer = Builder(test_dag, './')
+    assert builer.load() is True
+    print(builer._runtime_dag)

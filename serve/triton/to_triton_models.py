@@ -60,6 +60,16 @@ class PyOpToTriton:
     '''
     def __init__(self, op, model_root, model_name):
         self._op = op
+        self._inputs = to_triton_schema(self._op.metainfo['input_schema'], 'INPUT')
+        self._outputs = to_triton_schema(self._op.metainfo['output_schema'], 'OUTPUT')        
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs                
 
     def to_triton(self):
         pass
@@ -75,8 +85,16 @@ class ProcessToTriton:
         self._model_name = model_name
         self._processer_type = process_type
         self._process_file = inspect.getmodule(self._processer).__file__
-        self._inputs = to_triton_schema(self._processer.metainfo['input_schema'])
-        self._outputs = to_triton_schema(self._processer.metainfo['output_schema'])
+        self._inputs = to_triton_schema(self._processer.metainfo['input_schema'], 'INPUT')
+        self._outputs = to_triton_schema(self._processer.metainfo['output_schema'], 'OUTPUT')
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs
 
     def _prepare_config(self):
         '''
@@ -125,6 +143,16 @@ class NNOpToTriton:
     def __init__(self, op, model_root, model_name):
         self._op = op
         self._trtion_files = TritonFiles(model_root, model_name)
+        self._inputs = to_triton_schema(self._op.metainfo['input_schema'], 'INPUT')
+        self._outputs = to_triton_schema(self._op.metainfo['output_schema'], 'OUTPUT')
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs        
 
     def to_triton(self):
         return False
