@@ -17,7 +17,7 @@ import inspect
 import pickle
 import logging
 
-from util import create_modelconfig, to_triton_schema
+from .util import create_modelconfig, to_triton_schema
 
 logger = logging.getLogger()
 

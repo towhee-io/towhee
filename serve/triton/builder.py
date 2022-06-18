@@ -138,10 +138,3 @@ class Builder:
             if not self.load():
                 return False
         return self._build()
-
-
-if __name__ == '__main__':
-    test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'towhee/image-decode', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'towhee/clip_image', 'is_stream': True, 'init_args': {'model_name': 'clip_vit_b32'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
-    builer = Builder(test_dag, './')
-    assert builer.load() is True
-    print(builer._runtime_dag)
