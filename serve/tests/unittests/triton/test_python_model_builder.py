@@ -89,13 +89,16 @@ class TestPythonModelBuilder(unittest.TestCase):
             save_path=gen_file_path + pyfile_name,
             task_name='image_embedding',
             op_name='timm',
-            op_init_args=['model_name=\'resnet50\''],
+            op_init_args={'model_name': 'resnet50'},
             input_annotations=[(Image, (512, 512, 3))],
             output_annotations=[(np.float32, (1, 3, 224, 224))]
         )
 
         with open(gen_file_path + pyfile_name, 'rt') as gen_f, open(expected_file_path + pyfile_name) as expected_f:
-            self.assertListEqual(list(gen_f), list(expected_f))
+            a = list(gen_f)
+            b = list(expected_f)
+            for i in range(len(a)):
+                self.assertEqual(a[i].strip(), b[i].strip())
 
 
 if __name__ == '__main__':

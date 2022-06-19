@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Any
+
+import json
+from typing import List, Tuple, Any, Dict
 
 import serve.triton.type_gen as tygen
 import serve.triton.format_utils as fmt
@@ -255,7 +257,7 @@ class OpPyModelBuilder(PyModelBuilder):
         self,
         task_name: str,
         op_name: str,
-        op_init_args: List[str],
+        op_init_args: Dict,
         input_annotations: List[Tuple[Any, Tuple]],
         output_annotations: List[Tuple[Any, Tuple]]
     ):
@@ -267,6 +269,8 @@ class OpPyModelBuilder(PyModelBuilder):
 
     def gen_imports(self):
         lines = []
+        lines.append('import towhee')
+        lines.append('import numpy')
         lines.append('from towhee import ops')
         lines.append('import triton_python_backend_utils as pb_utils')
 
@@ -278,7 +282,8 @@ class OpPyModelBuilder(PyModelBuilder):
         lines.append('')
         lines.append('# create op instance')
         lines.append('task = getattr(ops, \'' + self.task_name + '\')')
-        lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + ', '.join(self.op_init_args) + ')')
+        lines.append('init_args = ' + json.dumps(self.op_init_args))
+        lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + '**init_args' + ')')
 
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
@@ -384,7 +389,7 @@ def gen_model_from_op(
     save_path: str,
     task_name: str,
     op_name: str,
-    op_init_args: List[str],
+    op_init_args: Dict,
     input_annotations: List[Tuple[Any, Tuple]],
     output_annotations: List[Tuple[Any, Tuple]]
 ):
