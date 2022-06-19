@@ -4,6 +4,7 @@
 from collections import OrderedDict
 from types import SimpleNamespace
 import torch
+import logging
 from torch import nn
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 from towhee.models import clip
@@ -15,17 +16,19 @@ from towhee.models.drl.until_module import LayerNorm, AllGather, AllGather2, Cro
 allgather = AllGather.apply
 allgather2 = AllGather2.apply
 
+logger = logging.getLogger(__name__)
+
 
 class DRL(nn.Module):
     """
     This is a PyTorch implementation of the paper Disentangled Representation Learning for Text-Video Retrieval.
     Args:
         base_encoder (`str`):
-            CLIP encoder backbone. default: 'clip_vit_b32'
+            CLIP encoder backbone. default: `clip_vit_b32`
         agg_module (`str`):
-            Feature aggregation module for video. default: 'seqTransf', choices=["ndone", "seqLSTM", "seqTransf"]
+            Feature aggregation module for video. default: `seqTransf`, choices=[`ndone`, `seqLSTM`, `seqTransf`]
         interaction (`str`):
-            Interaction type for retrieval. default: 'wti'.
+            Interaction type for retrieval. default: `wti`.
         wti_arch (`int)`:
             Select a architecture for weight branch. default: 2.
         cdcr (`int`):
@@ -36,7 +39,7 @@ class DRL(nn.Module):
             Coefficient 2 for channel decorrelation regularization. default: 0.06.
         cdcr_lambda (`float`):
             Coefficient for channel decorrelation regularization. default: 0.001.
-        cross_num_hidden_layers ('int'):
+        cross_num_hidden_layers (`int`):
             Number of hidden layers for cross transformer interaction.
     """
 
@@ -50,6 +53,7 @@ class DRL(nn.Module):
                  cdcr_alpha2=0.06,
                  cdcr_lambda=0.001,
                  cross_num_hidden_layers=None,
+                 backbone_pretrained=False
                  ):
         super().__init__()
         self.base_encoder = base_encoder
@@ -64,7 +68,7 @@ class DRL(nn.Module):
         self.agg_module = agg_module
         backbone = base_encoder
 
-        self.clip = clip.create_model(model_name=backbone, pretrained=True, jit=True)
+        self.clip = clip.create_model(model_name=backbone, pretrained=backbone_pretrained, jit=False, clip4clip=True)
 
         state_dict = self.clip.state_dict()
         context_length = state_dict["positional_embedding"].shape[0]
@@ -119,7 +123,7 @@ class DRL(nn.Module):
             self.frame_position_embeddings = nn.Embedding(cross_config.max_position_embeddings,
                                                           cross_config.hidden_size)
             if self.agg_module == "seqTransf":
-                self.transformerclip = TransformerClip(width=transformer_width,
+                self.transformerClip = TransformerClip(width=transformer_width,  # pylint: disable=invalid-name
                                                        layers=cross_config.num_hidden_layers,
                                                        heads=transformer_heads)
             if self.agg_module == "seqLSTM":
@@ -180,7 +184,7 @@ class DRL(nn.Module):
         b, n_v, d, h, w = video.shape
         video = video.view(b * n_v, d, h, w)
 
-        text_feat, video_feat = self.get_textvideo_feat(text_ids, text_mask, video, video_mask, shaped=True)
+        text_feat, video_feat = self.get_text_video_feat(text_ids, video, video_mask, shaped=True)
 
         if self.training:
             sim_matrix1, sim_matrix2, cdcr_loss = self.get_similarity_logits(text_feat, video_feat,
@@ -192,18 +196,17 @@ class DRL(nn.Module):
         else:
             return None
 
-    def gettext_feat(self, text_ids, text_mask, shaped=False):
+    def get_text_feat(self, text_ids, shaped=False):
         if shaped is False:
             text_ids = text_ids.view(-1, text_ids.shape[-1])
-            text_mask = text_mask.view(-1, text_mask.shape[-1])
 
         bs_pair = text_ids.size(0)
-        text_feat = self.clip.encode_text(text_ids, return_hidden=True)[1].float()
+        text_feat = self.clip.encode_text(text_ids, clip4clip=True, return_hidden=True)[1].float()
         text_feat = text_feat.view(bs_pair, -1, text_feat.size(-1))
 
         return text_feat
 
-    def getvideo_feat(self, video, video_mask, shaped=False):
+    def get_video_feat(self, video, video_mask, shaped=False):
         if shaped is False:
             video_mask = video_mask.view(-1, video_mask.shape[-1])
             video = torch.as_tensor(video).float()
@@ -217,17 +220,17 @@ class DRL(nn.Module):
         video_feat = self.aggvideo_feat(video_feat, video_mask, self.agg_module)
         return video_feat
 
-    def get_textvideo_feat(self, text_ids, text_mask, video, video_mask, shaped=False):
+    def get_text_video_feat(self, text_ids, video, video_mask, shaped=False):
         if shaped is False:
             text_ids = text_ids.view(-1, text_ids.shape[-1])
-            text_mask = text_mask.view(-1, text_mask.shape[-1])
+            # text_mask = text_mask.view(-1, text_mask.shape[-1])
             video_mask = video_mask.view(-1, video_mask.shape[-1])
             video = torch.as_tensor(video).float()
             b, n_v, d, h, w = video.shape
             video = video.view(b * n_v, d, h, w)
 
-        text_feat = self.gettext_feat(text_ids, text_mask, shaped=True)
-        video_feat = self.getvideo_feat(video, video_mask, shaped=True)
+        text_feat = self.get_text_feat(text_ids, shaped=True)
+        video_feat = self.get_video_feat(video, video_mask, shaped=True)
 
         return text_feat, video_feat
 
@@ -273,7 +276,7 @@ class DRL(nn.Module):
             extended_video_mask = (1.0 - video_mask.unsqueeze(1)) * -1000000.0
             extended_video_mask = extended_video_mask.expand(-1, video_mask.size(1), -1)
             video_feat = video_feat.permute(1, 0, 2)  # ndLdd -> Lnddd
-            video_feat = self.transformerclip(video_feat, extended_video_mask)
+            video_feat = self.transformerClip(video_feat, extended_video_mask)
             video_feat = video_feat.permute(1, 0, 2)  # Lnddd -> ndLdd
             video_feat = video_feat + video_feat_original
         return video_feat
@@ -404,11 +407,13 @@ class DRL(nn.Module):
 
         if self.config.interaction == "wti":
             text_weight = self.text_weight_fc(text_feat).squeeze(2)  # bd x nd_t x dd -> bd x nd_t
-            text_weight.masked_fill_(torch.tensor((1 - text_mask), dtype=torch.bool), float("-inf")) # pylint: disable=not-callable
+            text_weight.masked_fill_(torch.tensor((1 - text_mask), dtype=torch.bool),
+                                     float("-inf"))  # pylint: disable=not-callable
             text_weight = torch.softmax(text_weight, dim=-1)  # bd x nd_t
 
             video_weight = self.video_weight_fc(video_feat).squeeze(2)  # bd x nd_v x dd -> bd x nd_v
-            video_weight.masked_fill_(torch.tensor((1 - video_mask), dtype=torch.bool), float("-inf")) # pylint: disable=not-callable
+            video_weight.masked_fill_(torch.tensor((1 - video_mask), dtype=torch.bool),
+                                      float("-inf"))  # pylint: disable=not-callable
             video_weight = torch.softmax(video_weight, dim=-1)  # bd x nd_v
 
         text_feat = text_feat / text_feat.norm(dim=-1, keepdim=True)
@@ -442,8 +447,10 @@ class DRL(nn.Module):
 
             if self.config.cdcr == 1:
                 # simple random
-                text_feat = text_feat[torch.arange(text_feat.shape[0]), torch.randint_like(text_sum, 0, 10000) % text_sum, :]
-                video_feat = video_feat[torch.arange(video_feat.shape[0]), torch.randint_like(video_sum, 0, 10000) % video_sum, :]
+                text_feat = text_feat[torch.arange(text_feat.shape[0]),
+                            torch.randint_like(text_sum, 0, 10000) % text_sum, :]
+                video_feat = video_feat[torch.arange(video_feat.shape[0]),
+                             torch.randint_like(video_sum, 0, 10000) % video_sum, :]
                 z_a_norm = (text_feat - text_feat.mean(0)) / text_feat.std(0)  # ndxnd_sxdd
                 z_b_norm = (video_feat - video_feat.mean(0)) / video_feat.std(0)  # ndxnd_txdd
 
@@ -585,3 +592,64 @@ class DRL(nn.Module):
                 module.weight.data.fill_(1.0)
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
+
+
+def create_model(
+        base_encoder="clip_vit_b32",
+        agg_module="seqTransf",
+        interaction="wti",
+        wti_arch=2,
+        cdcr=3,
+        cdcr_alpha1=1.0,
+        cdcr_alpha2=0.06,
+        cdcr_lambda=0.001,
+        cross_num_hidden_layers=None,
+        pretrained=False,
+        weights_path=None,
+        device=None
+) -> DRL:
+    model = DRL(base_encoder=base_encoder,
+                agg_module=agg_module,
+                interaction=interaction,
+                wti_arch=wti_arch,
+                cdcr=cdcr,
+                cdcr_alpha1=cdcr_alpha1,
+                cdcr_alpha2=cdcr_alpha2,
+                cdcr_lambda=cdcr_lambda,
+                cross_num_hidden_layers=cross_num_hidden_layers)
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+    if pretrained and weights_path is not None:
+        state_dict = torch.load(weights_path, map_location=device)
+        missing_keys = []
+        unexpected_keys = []
+        error_msgs = []
+        metadata = getattr(state_dict, "_metadata", None)
+        state_dict = state_dict.copy()
+        if metadata is not None:
+            state_dict._metadata = metadata  # pylint: disable=protected-access
+
+        def load(module, prefix=""):
+            local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
+            module._load_from_state_dict(  # pylint: disable=protected-access
+                state_dict, prefix, local_metadata, True, missing_keys, unexpected_keys, error_msgs)
+            for name, child in module._modules.items():  # pylint: disable=protected-access
+                if child is not None:
+                    load(child, prefix + name + ".")
+
+        load(model, prefix="")
+
+        if len(missing_keys) > 0:
+            logger.info("Weights of %s not initialized from pretrained model: %s", model.__class__.__name__,
+                        "\n   " + "\n   ".join(missing_keys))
+        if len(unexpected_keys) > 0:
+            logger.info("Weights from pretrained model not used in %s: %s", model.__class__.__name__,
+                        "\n   " + "\n   ".join(unexpected_keys))
+        if len(error_msgs) > 0:
+            logger.error("Weights from pretrained model cause errors in %s: %s", model.__class__.__name__,
+                         "\n   " + "\n   ".join(error_msgs))
+
+    if pretrained and weights_path is None:
+        raise ValueError("weights_path is None")
+    return model
