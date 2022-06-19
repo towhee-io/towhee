@@ -69,7 +69,6 @@ dynamic_batching {
         config += '''
 }\n'''
     for input_name in inputs.keys():
-        print(input_name)
         data_type, shape = inputs[input_name]
         config += '''
 input [
@@ -161,4 +160,3 @@ if __name__ == '__main__':
                               {'output0': ('INT8', [-1, -1, 3]),
                                'output1': ('FL16', [-1, -1, 3])}
                               )
-    print(data)

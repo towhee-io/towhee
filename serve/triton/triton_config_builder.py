@@ -15,7 +15,6 @@
 from typing import Dict, List, Tuple, Any
 
 import serve.triton.type_gen as tygen
-import serve.triton.format_utils as fmt
 
 
 class TritonModelConfigBuilder:

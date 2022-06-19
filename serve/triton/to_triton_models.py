@@ -15,9 +15,11 @@
 from pathlib import Path
 import inspect
 import pickle
+from abc import ABC
 import logging
 
-from .util import create_modelconfig, to_triton_schema
+from .util import create_modelconfig
+from serve.triton.triton_config_builder import TritonModelConfigBuilder
 
 logger = logging.getLogger()
 
@@ -60,8 +62,8 @@ class PyOpToTriton:
     '''
     def __init__(self, op, model_root, model_name):
         self._op = op
-        self._inputs = to_triton_schema(self._op.metainfo['input_schema'], 'INPUT')
-        self._outputs = to_triton_schema(self._op.metainfo['output_schema'], 'OUTPUT')        
+        self._inputs = TritonModelConfigBuilder.get_input_schema(self._op.metainfo['input_schema'])
+        self._outputs = TritonModelConfigBuilder.get_output_schema(self._op.metainfo['output_schema'])
 
     @property
     def inputs(self):
@@ -85,8 +87,8 @@ class ProcessToTriton:
         self._model_name = model_name
         self._processer_type = process_type
         self._process_file = inspect.getmodule(self._processer).__file__
-        self._inputs = to_triton_schema(self._processer.metainfo['input_schema'], 'INPUT')
-        self._outputs = to_triton_schema(self._processer.metainfo['output_schema'], 'OUTPUT')
+        self._inputs = TritonModelConfigBuilder.get_input_schema(self._processer.metainfo['input_schema'])
+        self._outputs = TritonModelConfigBuilder.get_output_schema(self._processer.metainfo['output_schema'])
 
     @property
     def inputs(self):
@@ -107,7 +109,7 @@ class ProcessToTriton:
             self._inputs,
             self._outputs
         )
-        with open(self._triton_files.config_file, 'wt') as f:
+        with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
 
     def _preprocess(self):
@@ -137,14 +139,14 @@ class ProcessToTriton:
 class NNOpToTriton:
     '''
     NNOp to triton model.
-    
+
     Convert model to trt, torchscript or onnx.
     '''
     def __init__(self, op, model_root, model_name):
         self._op = op
         self._trtion_files = TritonFiles(model_root, model_name)
-        self._inputs = to_triton_schema(self._op.metainfo['input_schema'], 'INPUT')
-        self._outputs = to_triton_schema(self._op.metainfo['output_schema'], 'OUTPUT')
+        self._inputs = TritonModelConfigBuilder.get_input_schema(self._op.metainfo['input_schema'])
+        self._outputs = TritonModelConfigBuilder.get_output_schema(self._op.metainfo['output_schema'])
 
     @property
     def inputs(self):
@@ -152,7 +154,7 @@ class NNOpToTriton:
 
     @property
     def outputs(self):
-        return self._outputs        
+        return self._outputs
 
     def to_triton(self):
         return False

@@ -20,7 +20,7 @@ from towhee import register
 
 @register(
     input_schema=[(np.float32, (-1, 512))],
-    output_schema=[(np.float32, (512))]
+    output_schema=[(np.float32, (512, ))]
 )
 class Postprocess:
     def __call__(self, data):

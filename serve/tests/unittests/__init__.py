@@ -25,10 +25,8 @@ CACHE_PATH = Path(__file__).parent.parent.parent.parent / 'tests' / 'unittests'
 
 new_cache = (CACHE_PATH / 'test_cache')
 operator_cache = (CACHE_PATH / 'mock_operators')
-print(operator_cache, '---------')
 fmc = FileManagerConfig()
 fmc.update_default_cache(new_cache)
 operators = [f for f in operator_cache.iterdir() if f.is_dir()]
-print(operators)
 fmc.cache_local_operator(operators)
 FileManager(fmc)

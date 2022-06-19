@@ -14,7 +14,7 @@
 
 import numpy as np
 from towhee import register
-from towhee.types import Image
+from towhee._types import Image
 
 
 @register(

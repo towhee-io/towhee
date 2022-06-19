@@ -15,7 +15,7 @@
 
 import numpy as np
 from towhee import register
-from towhee.types import Image
+from towhee._types import Image
 from towhee.operator import NNOperator
 
 from .model import Model
@@ -25,7 +25,7 @@ from .postprocess import Postprocess
 
 @register(
     input_schema=[(Image, (-1, -1, 3))],
-    output_schema=[(np.float32, (512))]
+    output_schema=[(np.float32, (512, ))]
 )
 class TritonNnop(NNOperator):
     '''
