@@ -23,7 +23,7 @@ class TritonPythonModel:
             in1 = pb_utils.get_input_tensor_by_name(request, 'INPUT1')
 
             # create input args from tensors
-            arg0 = towhee._types.Image(in0.as_numpy(), str(in1.as_numpy()).decode('utf-8'))
+            arg0 = towhee._types.Image(in0.as_numpy(), in1.as_numpy()[0].decode('utf-8'))
 
             # call callable object
             result0 = self.op(arg0)

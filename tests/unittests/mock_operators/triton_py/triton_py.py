@@ -5,7 +5,7 @@ from towhee import register
 
 
 @register(
-    input_schema=[(str, (-1,))],
+    input_schema=[(str, (1,))],
     output_schema=[(Image, (-1, -1, 3))]
 )
 class TritonPy(PyOperator):

@@ -57,11 +57,11 @@ class TritonFiles:
         return self.model_path / 'model.onnx'
 
     @property    
-    def postprocess_pickel(self):
+    def postprocess_pickle(self):
         return self.model_path / 'postprocess'
 
     @property
-    def preprocess_pickel(self):
+    def preprocess_pickle(self):
         return self.model_path / 'preprocess'
 
 
@@ -138,13 +138,13 @@ class ProcessToTriton(ToTriton):
     def __init__(self, processor, model_root, model_name, process_type):
         super().__init__(processor, model_root, model_name)
         self._processer_type = process_type
-        self._process_file = inspect.getmodule(self._processer).__file__
+        self._process_file = inspect.getmodule(self._obj).__file__
 
     def _preprocess(self):
         gen_model_from_pickled_callable(self._triton_files.python_model_file,
                                         'Preprocess',
                                         self._process_file,
-                                        self._triton_files.self._triton_files.preprocess_pickle,
+                                        self._triton_files.preprocess_pickle,
                                         self.inputs,
                                         self.outputs
                                         )
@@ -157,12 +157,12 @@ class ProcessToTriton(ToTriton):
         gen_model_from_pickled_callable(self._triton_files.python_model_file,
                                         'Postprocess',
                                         self._process_file,
-                                        self._triton_files.self._triton_files.postprocess_pickle,
+                                        self._triton_files.postprocess_pickle,
                                         self.inputs,
                                         self.outputs
                                         )
         # create pickle file
-        with open(self._triton_files.postprocess_pickel, 'wb') as f:
+        with open(self._triton_files.postprocess_pickle, 'wb') as f:
             pickle.dump(self._processer, f)
 
     def _prepare_model(self):

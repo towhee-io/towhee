@@ -165,7 +165,7 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines.append('spec.loader.exec_module(module)')
         lines.append('')
         lines.append('# create callable object')
-        lines.append('callable_cls = ' + self.module_name + '.' + self.callable_name)
+        lines.append('self.callable_cls = ' + self.module_name + '.' + self.callable_name)
         lines.append('with open(\'' + self.pickle_file_path + '\', \'rb\') as f:')
         lines.append(fmt.intend('self.callable_obj = pickle.load(f)'))
 
