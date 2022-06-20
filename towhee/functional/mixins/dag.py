@@ -144,7 +144,7 @@ class DagMixin:
 
     def _add_op_name_and_init_args(self, dag):
         for key, val in dag.items():
-            if val['call_args'] is not None:
+            if (val['op'] == 'map' or val['op'] == 'filter') and val['call_args'] is not None:
                 if val['call_args']['*arg'] != ():
                     print(val['call_args']['*arg'][0])
                     dag[key]['init_args'] = val['call_args']['*arg'][0].init_args
