@@ -14,6 +14,7 @@
 from towhee.models.clip import CLIP
 from towhee.models.frozen_in_time import FrozenInTime
 from towhee.models.bridgeformer.bridge_former_utils import clip_initialized_model_configs
+from towhee.models.bridgeformer.bridge_former_training import BridgeFormerTraining
 from towhee.models.frozen_in_time.frozen_utils import state_dict_data_parallel_fix
 from towhee.models.clip.clip_utils import convert_weights
 import torch
@@ -28,7 +29,10 @@ def create_model(
 ):
     """
     create the bridgeformer model
-    model_name: if use the clip_initialized_model then set "clip_initialized_model"
+    model_name:
+        if "clip_initialized_model": use the clip_initialized_model
+        elif "bridge_former_training": use the bridge former training model Architecture
+        else: use the default inference bridge former model Architecture
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -54,6 +58,12 @@ def create_model(
             model = CLIP(
                 is_bridge_former=True, is_bridge_former_video=True, **kwargs
             )
+    elif model_name == "bridge_former_training":
+        model = BridgeFormerTraining(weights_path=weights_path,
+                                     is_pretrained=pretrained,
+                                     device=device,
+                                     **kwargs)
+
     else:
         model = FrozenInTime(weights_path=weights_path,
                              is_pretrained=pretrained,
