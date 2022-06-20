@@ -13,7 +13,20 @@
 # limitations under the License.
 
 
-from pathlib import Path
+import unittest
+from towhee import ops
+from serve.triton.to_triton_models import PyOpToTriton
 
-EXPECTED_FILE_PATH = str(Path(__file__).parent.resolve()) + '/expected_files/'
-# GEN_FILE_PATH = str(Path(__file__).parent.resolve())
+
+class TestPyOpToTriton(unittest.TestCase):
+    def _test_case(self, root_dir):
+        op = ops.local.triton_py().get_op()
+        to_triton = PyOpToTriton(op, root_dir, 'py_to_triton_test', 'local', 'triton_py', {})
+        to_triton.to_triton()
+    
+    def test_py_to_triton(self):
+        self._test_case('./')
+        pass
+
+
+

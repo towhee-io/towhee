@@ -16,31 +16,6 @@
 from typing import List, Dict, Tuple
 
 
-def to_triton_schema(op_schema: List[Tuple], prefix: str):
-    '''
-    prefix:
-       INPUT OR OUTPUT.
-       triton_schema key = prefix + index
-
-    Op schema into to triton schema info
-      op schema:
-        [(Image, (-1, -1, 3)), (int, ())]
-
-      triton_schema:
-        [
-            INPUT0': ('INT8', [-1, -1, 3]),
-            INPUT1': ('STR', []),
-            INPUT2': ('INT32', [])
-        ]
-    '''
-    triton_schema = []
-    for i in range(len(op_schema)):
-        triton_schema.append({
-            prefix + str(i): ('TYPE_INT8', [-1, -1, 3])
-        })
-    return triton_schema
-
-
 def create_modelconfig(model_name, max_batch_size, inputs, outputs,
                        enable_dynamic_batching=None, preferred_batch_size=None,
                        max_queue_delay_microseconds=None):

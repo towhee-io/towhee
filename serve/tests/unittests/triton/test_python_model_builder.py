@@ -13,19 +13,15 @@
 # limitations under the License.
 
 import unittest
-import os
 import numpy as np
 
 import serve.triton.type_gen as tygen
 from serve.triton.python_model_builder import PyModelBuilder, gen_model_from_pickled_callable, gen_model_from_op
 from towhee._types import Image
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-expected_file_path = str(Path(__file__).parent.resolve()) + '/expected_files/'
-gen_file_path = str(Path(__file__).parent.resolve()) + '/gen_files/'
-
-if not os.path.isdir(gen_file_path):
-    os.mkdir(gen_file_path)
+from . import EXPECTED_FILE_PATH
 
 
 class TestPythonModelBuilder(unittest.TestCase):
@@ -69,36 +65,40 @@ class TestPythonModelBuilder(unittest.TestCase):
         self.assertListEqual(expected_results, lines)
 
     def test_pickle_callable_pymodel_builder(self):
-        pyfile_name = 'clip_preprocess_model.py'
-        gen_model_from_pickled_callable(
-            save_path=gen_file_path + pyfile_name,
-            module_name='clip',
-            callable_name='Preprocess',
-            python_file_path='clip.py',
-            pickle_file_path='preprocess.pickle',
-            input_annotations=[(Image, (512, 512, 3))],
-            output_annotations=[(np.float32, (1, 3, 224, 224))]
-        )
+        with TemporaryDirectory(dir='./') as gen_file_path:
+            pyfile_name = 'clip_preprocess_model.py'
+            save_path = gen_file_path + '/' + pyfile_name
+            gen_model_from_pickled_callable(
+                save_path= save_path,
+                module_name='clip',
+                callable_name='Preprocess',
+                python_file_path='clip.py',
+                pickle_file_path='preprocess.pickle',
+                input_annotations=[(Image, (512, 512, 3))],
+                output_annotations=[(np.float32, (1, 3, 224, 224))]
+            )
 
-        with open(gen_file_path + pyfile_name, 'rt') as gen_f, open(expected_file_path + pyfile_name) as expected_f:
-            self.assertListEqual(list(gen_f), list(expected_f))
+            with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
+                self.assertListEqual(list(gen_f), list(expected_f))
 
     def test_op_pymodel_builder(self):
-        pyfile_name = 'resnet50_model.py'
-        gen_model_from_op(
-            save_path=gen_file_path + pyfile_name,
-            task_name='image_embedding',
-            op_name='timm',
-            op_init_args={'model_name': 'resnet50'},
-            input_annotations=[(Image, (512, 512, 3))],
-            output_annotations=[(np.float32, (1, 3, 224, 224))]
-        )
+        with TemporaryDirectory(dir='./') as gen_file_path:        
+            pyfile_name = 'resnet50_model.py'
+            save_path = gen_file_path + '/' + pyfile_name
+            gen_model_from_op(
+                save_path=save_path,
+                task_name='image_embedding',
+                op_name='timm',
+                op_init_args={'model_name': 'resnet50'},
+                input_annotations=[(Image, (512, 512, 3))],
+                output_annotations=[(np.float32, (1, 3, 224, 224))]
+            )
 
-        with open(gen_file_path + pyfile_name, 'rt') as gen_f, open(expected_file_path + pyfile_name) as expected_f:
-            a = list(gen_f)
-            b = list(expected_f)
-            for i in range(len(a)):
-                self.assertEqual(a[i].strip(), b[i].strip())
+            with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
+                a = list(gen_f)
+                b = list(expected_f)
+                for i in range(len(a)):
+                    self.assertEqual(a[i].strip(), b[i].strip())
 
 
 if __name__ == '__main__':

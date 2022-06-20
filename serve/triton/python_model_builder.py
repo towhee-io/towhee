@@ -39,8 +39,8 @@ class PyModelBuilder:
     def gen_finalize(self):
         raise NotImplementedError('gen_execute not implemented')
 
-    def build(self, save_path: str = './model.py'):
-        with open(save_path, 'wt') as f:
+    def build(self, save_path: str):
+        with open(save_path, 'wt', encoding='utf-8') as f:
             f.writelines(self.gen_imports())
             f.writelines(self.gen_blank_lines(2))
             f.writelines(self.gen_class_name())

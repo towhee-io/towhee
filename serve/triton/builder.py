@@ -80,7 +80,9 @@ class Builder:
 
     def _pyop_config(self, op, node_id, node):
         model_name = node_id + '_' + node['op_name']
-        converter = PyOpToTriton(op, self._model_root, model_name)
+        hub, name = node['op_name'].split('/')
+        converter = PyOpToTriton(op, self._model_root, model_name,
+                                 hub, name, node['init_args'])
         config = {node_id: {
             'id': node_id,
             'model_name': model_name,
