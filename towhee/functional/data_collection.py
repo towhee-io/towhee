@@ -716,8 +716,9 @@ class DataCollection(Iterable, DCMixins):
         [0, 1, 2, 3, 4]
         """
         if hasattr(self._iterable, 'append'):
-            self._iterable.append(item)
-            return self
+            data = self._iterable.copy()
+            data.append(item)
+            return self._factory(data)
         raise TypeError('appending is only supported for ' 'data collection created from list.')
 
     def __rshift__(self, unary_op):
