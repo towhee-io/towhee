@@ -145,11 +145,11 @@ class ColumnMixin:
         """
 
         # pylint: disable=protected-access
-        df = self.to_df()
-        res = df._create_col_table()
-        df._iterable = WritableTable(res)
-        df._mode = self.ModeFlag.COLBASEDFLAG
-        return df
+        self.to_df()
+        res = self._create_col_table()
+        self._iterable = WritableTable(res)
+        self._mode = self.ModeFlag.COLBASEDFLAG
+        return self
 
     def cmap(self, unary_op):
         """

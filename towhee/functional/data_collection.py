@@ -818,7 +818,8 @@ class DataCollection(Iterable, DCMixins):
         >>> type(dc.to_df())
         <class 'towhee.functional.data_collection.DataFrame'>
         """
-        return DataFrame(self._iterable)
+        self.__class__ = DataFrame
+        return self
 
 
 class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
