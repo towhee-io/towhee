@@ -117,6 +117,42 @@ class DatasetMixin:
 
         return cls(inner()).stream()
 
+    def to_csv(self, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
+        """
+        Save dc as a csv file.
+
+        Args:
+            csv_path (`Union[str, Path]`):
+                The path to save the dc to.
+            encoding (str):
+                The encoding to use in the output file.
+        """
+        import csv
+        from towhee.utils.pandas_utils import pandas as pd
+
+        if isinstance(self._iterable, pd.DataFrame):
+            self._iterable.to_csv(csv_path, index=False)
+        else:
+            with open(csv_path, 'w', encoding=encoding) as f:
+                header = None
+                writer = None
+
+                def inner(row):
+                    nonlocal header
+                    nonlocal writer
+                    if isinstance(row, Entity):
+                        if not header:
+                            header = row.__dict__.keys()
+                            writer = csv.DictWriter(f, fieldnames=header)
+                            writer.writeheader()
+                        writer.writerow(row.__dict__)
+                    else:
+                        writer = writer if writer else csv.writer(f)
+                        writer.writerow(row)
+
+                for row in self._iterable:
+                    inner(row)
+
     def random_sample(self):
         # core API already exists
         pass
@@ -147,5 +183,8 @@ class DatasetMixin:
         from towhee.utils import sklearn_utils
         train_size = size[0]
         test_size = size[1]
-        train, test = sklearn_utils.train_test_split(self._iterable, train_size=train_size, test_size=test_size, **kws)
+        train, test = sklearn_utils.train_test_split(self._iterable,
+                                                     train_size=train_size,
+                                                     test_size=test_size,
+                                                     **kws)
         return self._factory(train), self._factory(test)
