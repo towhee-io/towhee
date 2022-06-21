@@ -90,6 +90,12 @@ class OperatorLoader:
         path = Path(path)
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
+
+        if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
+            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
+                reqs = f.read().split('\n')
+            pkg_resources.require(reqs)
+
         try:
             # support for ver1 operator API
             spec = importlib.util.spec_from_file_location(modname, path.resolve())
@@ -111,10 +117,6 @@ class OperatorLoader:
             sys.modules[modname] = module
             spec.loader.exec_module(module)
             op = getattr(module, fname)
-        if op and 'requirements.txt' in (i.name for i in path.parent.iterdir()):
-            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
-                reqs = f.read().split('\n')
-            pkg_resources.require(reqs)
 
         return self.instance_operator(op, args) if op is not None else None
 
