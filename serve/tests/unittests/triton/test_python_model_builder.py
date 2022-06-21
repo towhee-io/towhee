@@ -65,21 +65,21 @@ class TestPythonModelBuilder(unittest.TestCase):
         self.assertListEqual(expected_results, lines)
 
     def test_pickle_callable_pymodel_builder(self):
-        with TemporaryDirectory(dir='./') as gen_file_path:
-            pyfile_name = 'clip_preprocess_model.py'
-            save_path = gen_file_path + '/' + pyfile_name
-            gen_model_from_pickled_callable(
-                save_path= save_path,
-                module_name='clip',
-                callable_name='Preprocess',
-                python_file_path='clip.py',
-                pickle_file_path='preprocess.pickle',
-                input_annotations=[(Image, (512, 512, 3))],
-                output_annotations=[(np.float32, (1, 3, 224, 224))]
-            )
+        # with TemporaryDirectory(dir='./') as gen_file_path:
+        gen_file_path = './'
+        pyfile_name = 'clip_preprocess_model.py'
+        save_path = gen_file_path + '/' + pyfile_name
+        gen_model_from_pickled_callable(
+            save_path= save_path,
+            module_name='towhee.operator.triton_nnop',
+            python_file_path='triton_nnop/__init__.py',
+            pickle_file_name='preprocess.pickle',
+            input_annotations=[(Image, (512, 512, 3))],
+            output_annotations=[(np.float32, (1, 3, 224, 224))]
+        )
 
-            with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
-                self.assertListEqual(list(gen_f), list(expected_f))
+        with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
+            self.assertListEqual(list(gen_f), list(expected_f))
 
     def test_op_pymodel_builder(self):
         with TemporaryDirectory(dir='./') as gen_file_path:        

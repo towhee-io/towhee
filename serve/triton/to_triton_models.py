@@ -56,13 +56,21 @@ class TritonFiles:
     def onnx_model_file(self):
         return self.model_path / 'model.onnx'
 
-    @property    
-    def postprocess_pickle(self):
-        return self.model_path / 'postprocess'
-
     @property
     def preprocess_pickle(self):
-        return self.model_path / 'preprocess'
+        return 'preprocess.pickle'
+
+    @property
+    def postprocess_pickle(self):
+        return 'postprocess.pickle'
+
+    @property
+    def postprocess_pickle_path(self):
+        return self.model_path / self.postprocess_pickle
+
+    @property
+    def preprocess_pickle_path(self):
+        return self.model_path / self.preprocess_pickle
 
 
 class ToTriton(ABC):
@@ -135,46 +143,52 @@ class ProcessToTriton(ToTriton):
     '''
     Preprocess and Postprocess to triton model.
     '''
-    def __init__(self, processor, model_root, model_name, process_type):
-        super().__init__(processor, model_root, model_name)
-        self._processer_type = process_type
-        self._process_file = inspect.getmodule(self._obj).__file__
+    def __init__(self, op, model_root, model_name, process_name, op_name):
+        
+        super().__init__(getattr(op, process_name), model_root, model_name)
+        self._processer_name = process_name
+        self._init_file = Path(inspect.getmodule(op).__file__).parent / '__init__.py'
+        self._module_name = 'towhee.operator.' + op_name
+
 
     def _preprocess(self):
-        gen_model_from_pickled_callable(self._triton_files.python_model_file,
-                                        'Preprocess',
-                                        self._process_file,
-                                        self._triton_files.preprocess_pickle,
-                                        self.inputs,
-                                        self.outputs
+        gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
+                                        self._module_name,
+                                        str(self._init_file),
+                                        str(self._triton_files.preprocess_pickle),
+                                        self._obj.metainfo['input_schema'],
+                                        self._obj.metainfo['output_schema']
                                         )
         # create pickle file
-        with open(self._triton_files.preprocess_pickle, 'wb') as f:
-            pickle.dump(self._processer, f)
+        with open(self._triton_files.preprocess_pickle_path, 'wb') as f:
+            pickle.dump(self._obj, f)
+        return True
 
     def _postprocess(self):
         # create model.py
-        gen_model_from_pickled_callable(self._triton_files.python_model_file,
+        gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
+                                        self._module_name,                                        
                                         'Postprocess',
-                                        self._process_file,
-                                        self._triton_files.postprocess_pickle,
-                                        self.inputs,
-                                        self.outputs
+                                        str(self._init_file),
+                                        str(self._triton_files.postprocess_pickle),
+                                        self._obj.metainfo['input_schema'],
+                                        self._obj.metainfo['output_schema']
                                         )
         # create pickle file
-        with open(self._triton_files.postprocess_pickle, 'wb') as f:
-            pickle.dump(self._processer, f)
+        with open(self._triton_files.postprocess_pickle_path, 'wb') as f:
+            pickle.dump(self._obj, f)
+        return True
 
     def _prepare_model(self):
-        if self._processer_type == 'preprocess':
-            self._preprocess()
+        if self._processer_name == 'preprocess':
+            return self._preprocess()
         else:
-            self._postprocess()
+            return self._postprocess()
 
-    def to_triton(self):
-        if self._prepare_config() and self._prepare_model():
-            return True
-        return False
+    # def to_triton(self):
+    #     if self._prepare_config() and self._prepare_model():
+    #         return True
+    #     return False
 
 
 class NNOpToTriton(ToTriton):

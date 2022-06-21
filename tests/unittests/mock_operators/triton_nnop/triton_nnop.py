@@ -35,7 +35,7 @@ class TritonNnop(NNOperator):
         super().__init__()
         self.device = 'cpu'
         self.model = Model(model_name, self.device)
-        self.preprocessor = Preprocess()
+        self.preprocess = Preprocess()
         self.postprocess = Postprocess()
 
     def __call__(self, image: 'Image'):

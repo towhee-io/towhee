@@ -15,7 +15,7 @@
 
 import unittest
 from towhee import ops
-from serve.triton.to_triton_models import PyOpToTriton
+from serve.triton.to_triton_models import PyOpToTriton, ProcessToTriton
 
 
 class TestPyOpToTriton(unittest.TestCase):
@@ -26,7 +26,10 @@ class TestPyOpToTriton(unittest.TestCase):
     
     def test_py_to_triton(self):
         self._test_case('./')
-        pass
 
 
-
+class TestProcessor(unittest.TestCase):
+    def test_processor(self):
+        op = ops.local.triton_nnop(model_name='test').get_op()
+        to_triton = ProcessToTriton(op, './', 'preprocess', 'preprocess', 'triton_nnop')
+        to_triton.to_triton()

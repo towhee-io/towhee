@@ -129,16 +129,14 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
     def __init__(
         self,
         module_name: str,
-        callable_name: str,
         python_file_path: str,
-        pickle_file_path: str,
+        pickle_file_name: str,
         input_annotations: List[Tuple[Any, Tuple]],
         output_annotations: List[Tuple[Any, Tuple]]
     ):
         self.module_name = module_name
-        self.callable_name = callable_name
         self.python_file_path = python_file_path
-        self.pickle_file_path = pickle_file_path
+        self.pickle_file_name = pickle_file_name
         self.input_annotations = input_annotations
         self.output_annotations = output_annotations
 
@@ -146,7 +144,7 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines = []
         lines.append('import towhee')
         lines.append('import numpy')
-        lines.append('import inspect')
+        lines.append('from pathlib import Path')
         lines.append('import pickle')
         lines.append('import importlib')
         lines.append('import sys')
@@ -159,14 +157,16 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines.append('def initialize(self, args):')
         lines.append('')
         lines.append('# load module')
-        lines.append('spec = importlib.util.spec_from_file_location(\'' + self.module_name + '\', \'' + self.python_file_path + '\')')
+        lines.append(f'module_name = "{self.module_name}"')
+        lines.append(f'path = "{self.python_file_path}"')
+        lines.append('spec = importlib.util.spec_from_file_location(module_name, path)')
         lines.append('module = importlib.util.module_from_spec(spec)')
-        lines.append('sys.modules[\'' + self.module_name + '\'] = module')
+        lines.append('sys.modules[module_name] = module')
         lines.append('spec.loader.exec_module(module)')
         lines.append('')
         lines.append('# create callable object')
-        lines.append('self.callable_cls = ' + self.module_name + '.' + self.callable_name)
-        lines.append('with open(\'' + self.pickle_file_path + '\', \'rb\') as f:')
+        lines.append(f'pickle_file_path = Path(__file__).parent / "{self.pickle_file_name}"')
+        lines.append('with open(pickle_file_path, \'rb\') as f:')
         lines.append(fmt.intend('self.callable_obj = pickle.load(f)'))
 
         lines = lines[:1] + fmt.intend(lines[1:])
@@ -367,17 +367,15 @@ class OpPyModelBuilder(PyModelBuilder):
 def gen_model_from_pickled_callable(
     save_path: str,
     module_name: str,
-    callable_name: str,
     python_file_path: str,
-    pickle_file_path: str,
+    pickle_file_name: str,
     input_annotations: List[Tuple[Any, Tuple]],
     output_annotations: List[Tuple[Any, Tuple]]
 ):
     builder = PickledCallablePyModelBuilder(
         module_name,
-        callable_name,
         python_file_path,
-        pickle_file_path,
+        pickle_file_name,
         input_annotations,
         output_annotations
     )
