@@ -38,7 +38,7 @@ class ConfigMixin:
     >>> t1 = time.time()
     >>> dc1 = (
     ...     towhee.dc['a']([numpy.random.random((10000, 128)) for _ in range(10)])
-    ...     .set_config(enable_jit=False)
+    ...     .config(enable_jit=False)
     ...     .runas_op['a', 'b'](func=lambda x: numpy.random.random(128))
     ...     .inner_distance[('b', 'a'), 'c']()
     ... )
@@ -67,7 +67,7 @@ class ConfigMixin:
         if parent is not None and hasattr(parent, '_enable_jit'):
             self._enable_jit = parent._enable_jit
 
-    def set_config(self, enable_jit: bool):
+    def config(self, enable_jit: bool):
         """
         Set the parameters in DC.
 
