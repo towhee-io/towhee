@@ -345,37 +345,35 @@ class DataCollection(Iterable, DCMixins):
         >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
         [4, 6, 8, 10]
         """
-        unary_op = arg[0]
 
         # mmap
         if len(arg) > 1:
-            child = self.mmap(list(arg))
+            return self.mmap(list(arg))
+        unary_op = arg[0]
 
         # smap map for stateful operator
-        elif hasattr(unary_op, 'is_stateful') and unary_op.is_stateful:
-            child =  self.smap(unary_op)
+        if hasattr(unary_op, 'is_stateful') and unary_op.is_stateful:
+            return self.smap(unary_op)
 
         # pmap
-        elif self.get_executor() is not None:
-            child = self.pmap(unary_op)
+        if self.get_executor() is not None:
+            return self.pmap(unary_op)
 
-        elif hasattr(self._iterable, 'map'):
-            child = self._factory(self._iterable.map(unary_op))
+        if hasattr(self._iterable, 'map'):
+            return self._factory(self._iterable.map(unary_op))
 
-        elif hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_apply__'):
-            child = self._factory(unary_op.__dataframe_apply__(self._iterable))
+        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_apply__'):
+            return self._factory(unary_op.__dataframe_apply__(self._iterable))
 
-        else:
-            def inner(x):
-                if isinstance(x, Option):
-                    return x.map(unary_op)
-                else:
-                    return unary_op(x)
+        # map
+        def inner(x):
+            if isinstance(x, Option):
+                return x.map(unary_op)
+            else:
+                return unary_op(x)
 
-            result = map(inner, self._iterable)
-            child = self._factory(result)
-
-        return child
+        result = map(inner, self._iterable)
+        return self._factory(result)
 
     @register_dag
     def zip(self, *others) -> 'DataCollection':
@@ -417,6 +415,7 @@ class DataCollection(Iterable, DCMixins):
         Returns:
             DataCollection: filtered data collection
         """
+
         # return filter(unary_op, self)
         def inner(x):
             if isinstance(x, Option):
@@ -426,12 +425,12 @@ class DataCollection(Iterable, DCMixins):
             return unary_op(x)
 
         if hasattr(self._iterable, 'filter'):
-            child = self._factory(self._iterable.filter(unary_op))
-        elif hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_filter__'):
-            child = DataCollection(unary_op.__dataframe_apply__(self._iterable))
-        else:
-            child = self._factory(filter(inner, self._iterable))
-        return child
+            return self._factory(self._iterable.filter(unary_op))
+
+        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_filter__'):
+            return DataCollection(unary_op.__dataframe_apply__(self._iterable))
+
+        return self._factory(filter(inner, self._iterable))
 
     @register_dag
     def sample(self, ratio=1.0) -> 'DataCollection':
