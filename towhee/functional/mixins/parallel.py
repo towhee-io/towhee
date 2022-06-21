@@ -16,6 +16,7 @@ from queue import Queue
 import asyncio
 import threading
 import time
+
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.hparam.hyperparameter import param_scope
