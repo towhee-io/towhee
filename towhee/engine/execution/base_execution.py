@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from towhee.hparam import param_scope
 from towhee.utils.log import engine_log
 
 
@@ -21,11 +22,12 @@ class BaseExecution:
     """
 
     def __call__(self, *arg, **kws):
-        if self._func is not None:
-            try:
-                return self._func(*arg)
-            except Exception as e: # pylint: disable=broad-except
-                engine_log.info('%s cannot compile with numba with error: %s', self._name, e)
+        with param_scope() as hp:
+            if hp().towhee.enable_jit(True) and self._func is not None:
+                try:
+                    return self._func(*arg)
+                except Exception as e: # pylint: disable=broad-except
+                    engine_log.info('%s cannot compile with numba with error: %s', self._name, e)
         self.__check_init__()
         if bool(self._index):
             res = self.__apply__(*arg, **kws)
