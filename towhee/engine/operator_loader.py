@@ -117,13 +117,6 @@ class OperatorLoader:
             sys.modules[modname] = module
             spec.loader.exec_module(module)
             op = getattr(module, fname)
-<<<<<<< HEAD
-=======
-        if op and 'requirements.txt' in (i.name for i in path.parent.iterdir()):
-            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
-                reqs = f.read().split('\n')
-            pkg_resources.require(reqs)
->>>>>>> 944bd7d (Add dependency version check before executing operators (#1421))
 
         return self.instance_operator(op, args) if op is not None else None
 
