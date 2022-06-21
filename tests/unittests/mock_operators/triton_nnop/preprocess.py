@@ -25,5 +25,5 @@ class Preprocess:
     def __init__(self):
         pass
 
-    def __call__(self, img: 'ndarray', mode: str) -> 'ndarray':
-        return np.random.rand((1, 3, 224, 224))
+    def __call__(self, img: 'ndarray') -> 'ndarray':
+        return np.random.rand(1, 3, 224, 224)
