@@ -45,7 +45,3 @@ class runas_op:
 
 
 # __test__ = {'run': run.__doc__}
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

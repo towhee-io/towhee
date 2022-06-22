@@ -258,7 +258,3 @@ class save_image:
 
 
 __test__ = {'image_load': image_load.__doc__}
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)
