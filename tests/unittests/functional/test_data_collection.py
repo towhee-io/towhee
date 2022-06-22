@@ -19,10 +19,8 @@ from collections import namedtuple
 import towhee.functional.data_collection
 import towhee.functional.option
 
-from towhee import ops
 from towhee import register
 from towhee import DataCollection
-from towhee import param_scope
 from towhee import Entity
 
 import towhee
@@ -53,9 +51,6 @@ class MyMul:
         return x * self.val
 
 
-dispatcher = {'add': MyAdd, 'mul': MyMul}
-
-
 class TestDataCollection(unittest.TestCase):
     """
     tests for data collection
@@ -64,21 +59,6 @@ class TestDataCollection(unittest.TestCase):
         dc = towhee.dc(range(10))
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
         self.assertListEqual(list(result), [1, 2])
-
-    def test_example_for_dispatch_op(self):
-        with param_scope(dispatcher=dispatcher):
-            dc = DataCollection(range(5))
-            result = dc.add(1)
-            self.assertListEqual(list(result), [1, 2, 3, 4, 5])
-
-    def test_example_for_chained_towhee_op(self):
-        dc = DataCollection(range(5))
-        result = (  #
-            dc  #
-            >> ops.myop.add(val=1)  #
-            >> ops.myop.mul(val=2)  #
-        )
-        self.assertListEqual(list(result), [2, 4, 6, 8, 10])
 
     def test_example_for_multiple_line_statement(self):
         dc = DataCollection(range(5))
@@ -118,8 +98,6 @@ class TestDataCollection(unittest.TestCase):
         res = dc.runas_op['a', 'b'](func=add)
         for i in res:
             self.assertTrue(i.a == i.b - 1)
-
-        self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
 
     def test_head(self):
         entities = [Entity(a=i, b=i + 1) for i in range(5)]
