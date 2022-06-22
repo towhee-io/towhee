@@ -21,6 +21,7 @@ class Entity:
 
     Users can create an Entity with free schema, which means there is no limit on attribute name and type.
     """
+
     @overload
     def __init__(self):
         """
@@ -67,3 +68,63 @@ class Entity:
         '{"a": 1, "b": 2}'
         """
         return json.dumps({k: getattr(self, k) for k in self.__dict__})
+
+
+class EntityView:
+    """
+    The view to iterate DataFrames.
+
+    Args:
+        offset (`int`):
+            The offset of an Entity in the table.
+
+    Examples:
+
+    >>> from towhee import Entity, DataFrame
+    >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
+    >>> df = DataFrame(e)
+    >>> df = df.to_column()
+    >>> df.to_list()[0]
+    <EntityView dict_keys(['a', 'b'])>
+    >>> df.to_list()[0].a
+    0
+    >>> df.to_list()[0].b
+    0
+    """
+
+    def __init__(self, offset: int, table):
+        self._offset = offset
+        self._table = table
+
+    def __getattr__(self, name):
+        value = self._table[name][self._offset]
+        try:
+            return value.as_py()
+        # pylint: disable=bare-except
+        except:
+            return value
+
+    def __setattr__(self, name, value):
+        if name in ('_table', '_offset'):
+            self.__dict__[name] = value
+            return
+        self._table.write(name, self._offset, value)
+
+        if self._offset == len(self._table) - 1:
+            self._table.seal()
+        self._table = self._table.prepare()
+
+    def __repr__(self):
+        """
+        Define the representation of the EntityView.
+
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
+        >>> df = DataFrame(e)
+        >>> df = df.to_column()
+        >>> df.to_list()[0]
+        <EntityView dict_keys(['a', 'b'])>
+        """
+        return f'<{self.__class__.__name__} dict_keys({self._table.column_names})>'

@@ -31,9 +31,5 @@ class DispatcherMixin:
     <map object at ...>
     """
 
-    def resolve(self, call_mapping, path, index, *arg, **kws):
-        # pylint: disable=protected-access
-        if path in call_mapping:
-            return call_mapping[path](*arg, **kws)
-        else:
-            return getattr(ops,path)[index](*arg, **kws)
+    def resolve(self, path, index, *arg, **kws):
+        return getattr(ops,path)[index](*arg, **kws)

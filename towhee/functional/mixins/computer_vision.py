@@ -46,15 +46,6 @@ class ComputerVisionMixin:
         images = (frame.to_rgb().to_ndarray(format=format) for frame in frames)
 
         return cls(images)
-        # acontainer = av.open(path)
-        # audio_stream = acontainer.streams.audio[0]
-
-        # dc._template = video_stream
-        # dc._codec = video_stream.name
-        # dc._rate = video_stream.average_rate
-        # dc._width = video_stream.width
-        # dc._height = video_stream.height
-        # return cls([Entity(video = video_stream, audio = audio_stream)])
 
     @classmethod
     def read_audio(cls, path):
@@ -135,56 +126,3 @@ class ComputerVisionMixin:
                 output_container.mux(apacket)
 
         output_container.close()
-
-    # def video_encode(self, video_stream, audio_stream, output_path):
-    #     import itertools
-    #     from towhee.utils.av_utils import av
-
-    #     output_container = av.open(output_path, 'w')
-    #     output_audio = output_container.add_stream(codec_name=audio_stream.name, rate=audio_stream.rate)
-    #     output_video = output_container.add_stream(
-    #         codec_name=video_stream.name, rate=video_stream.average_rate, width=video_stream.width, height=video_stream.height
-    #     )
-
-    #     for vframe, aframe in itertools.zip_longest(video_stream.decode(), audio_stream.decode()):
-    #         if vframe:
-    #             array = vframe.to_ndarray(format=video_stream.format.name)
-    #             vframe = av.VideoFrame.from_ndarray(array, format=video_stream.format.name)
-    #             vpacket = output_video.encode(vframe)
-    #             output_container.mux(vpacket)
-
-    #         if aframe:
-    #             apacket = output_audio.encode(aframe)
-    #             output_container.mux(apacket)
-
-    #     for vpacket, apacket in itertools.zip_longest(output_video.encode(), output_audio.encode()):
-    #         if vpacket:
-    #             output_container.mux(vpacket)
-    #         if apacket:
-    #             output_container.mux(apacket)
-
-    #     output_container.close()
-
-    # @classmethod
-    # def read_video(cls, path):
-    #     def inner():
-    #         from towhee.utils.cv2_utils import cv2
-
-    #         cap = cv2.VideoCapture(path)
-    #         while cap.isOpened():
-    #             ret, frame = cap.read()
-    #             if ret is True:
-    #                 yield frame
-    #             else:
-    #                 cap.release()
-
-    #     return cls(inner())
-
-    # def to_video(self, path, fmt='MJPG', fps=15):
-    #     from towhee.utils.cv2_utils import cv2
-
-    #     out = None
-    #     for frame in self:
-    #         if out is None:
-    #             out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fmt), fps, (frame.shape[1], frame.shape[0]))
-    #         out.write(frame)
