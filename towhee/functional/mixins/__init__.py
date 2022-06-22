@@ -24,7 +24,6 @@ from .serve import ServeMixin
 from .milvus import MilvusMixin
 from .dag import DagMixin
 
-
 class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                 ComputerVisionMixin, StateMixin, MetricMixin, RayMixin, 
                ServeMixin, MilvusMixin, DagMixin):
