@@ -16,10 +16,12 @@ import doctest
 import unittest
 import os
 import cv2
+import faiss
 import numpy as np
 from pathlib import Path
 from towhee._types.image import Image
 
+import towhee
 import towhee.functional.mixins.computer_vision
 import towhee.functional.mixins.dataset
 import towhee.functional.mixins.display
@@ -200,6 +202,40 @@ class TestColumnComputing(unittest.TestCase):
             .runas_op[('a', 'b'), ('c', 'd')](func=lambda x, y: (x+1, y-1))
 
         self.assertTrue(all(map(lambda x: x.a == x.c - 1 and x.b == x.d + 1, df)))
+
+
+class TestFaissMixin(unittest.TestCase):
+    """
+    Unittest for MetricMixin.
+    """
+    def test_faiss(self):
+        nb = 100
+        d = 128
+        x = np.random.random((nb, d)).astype('float32')
+        x1 = list(v for v in x)
+        x2 = x1[0:3]
+        ids = list(i for i in range(nb))
+        index_path = public_path / 'index.bin'
+
+        (
+            towhee.dc['id'](ids)
+            .runas_op['id', 'vec'](func=lambda x: x1[x])
+            .to_faiss['id', 'vec'](findex=str(index_path))
+        )
+        index = faiss.read_index(str(index_path))
+        self.assertTrue(Path(index_path).exists())
+        self.assertEqual(index.ntotal, nb)
+
+        res = (
+            towhee.dc(x2)
+            .faiss_search(findex=str(index_path))
+            .to_list()
+        )
+        self.assertEqual(res[0][0].score, 0)
+        self.assertEqual(res[1][0].score, 0)
+        self.assertEqual(res[2][0].score, 0)
+        Path(index_path).unlink()
+
 
 if __name__ == '__main__':
     unittest.main()

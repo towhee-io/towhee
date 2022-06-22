@@ -23,3 +23,4 @@ pyarrow
 transformers>=4.19.2
 einops>=0.4.1
 timm>=0.4.12
+faiss-cpu
