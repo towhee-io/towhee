@@ -19,11 +19,31 @@ class ComputerVisionMixin:
     """
     Mixin for computer vision problems.
     """
+
     def image_imshow(self, title='image'):  # pragma: no cover
         from towhee.utils.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)
             cv2.waitKey(1)
+
+    @classmethod
+    def read_camera(cls, device_id=0, limit=-1):  # pragma: no cover
+        """
+        read images from a camera.
+        """
+        from towhee.utils.cv2_utils import cv2
+        cnt = limit
+
+        def inner():
+            nonlocal cnt
+            cap = cv2.VideoCapture(device_id)
+            while cnt != 0:
+                retval, im = cap.read()
+                if retval:
+                    yield im
+                    cnt -= 1
+
+        return cls(inner())
 
     # pylint: disable=redefined-builtin
     @classmethod
@@ -57,7 +77,15 @@ class ComputerVisionMixin:
 
         return cls(acontainer.decode(audio_stream))
 
-    def to_video(self, output_path, codec=None, rate=None, width=None, height=None, format=None, template=None, audio_src=None):
+    def to_video(self,
+                 output_path,
+                 codec=None,
+                 rate=None,
+                 width=None,
+                 height=None,
+                 format=None,
+                 template=None,
+                 audio_src=None):
         """
         Encode a video with audio if provided.
 
@@ -83,10 +111,14 @@ class ComputerVisionMixin:
         import itertools
 
         output_container = av.open(output_path, 'w')
-        codec = codec if codec else template.name if isinstance(template, av.video.stream.VideoStream) else None
-        rate = rate if rate else template.average_rate if isinstance(template, av.video.stream.VideoStream) else None
-        width = width if width else template.width if isinstance(template, av.video.stream.VideoStream) else None
-        height = height if height else template.height if isinstance(template, av.video.stream.VideoStream) else None
+        codec = codec if codec else template.name if isinstance(
+            template, av.video.stream.VideoStream) else None
+        rate = rate if rate else template.average_rate if isinstance(
+            template, av.video.stream.VideoStream) else None
+        width = width if width else template.width if isinstance(
+            template, av.video.stream.VideoStream) else None
+        height = height if height else template.height if isinstance(
+            template, av.video.stream.VideoStream) else None
         format = format if format else 'rgb24'
 
         output_video = None
@@ -95,13 +127,19 @@ class ComputerVisionMixin:
         if audio_src:
             acontainer = av.open(audio_src)
             audio_stream = acontainer.streams.audio[0]
-            output_audio = output_container.add_stream(codec_name=audio_stream.name, rate=audio_stream.rate)
-            for aframe, array in itertools.zip_longest(acontainer.decode(audio_stream), self):
+            output_audio = output_container.add_stream(
+                codec_name=audio_stream.name, rate=audio_stream.rate)
+            for aframe, array in itertools.zip_longest(
+                    acontainer.decode(audio_stream), self):
                 if array is not None:
                     if not output_video:
                         height = height if height else array.shape[0]
                         width = width if width else array.shape[1]
-                        output_video = output_container.add_stream(codec_name=codec, rate=rate, width=width, height=height)
+                        output_video = output_container.add_stream(
+                            codec_name=codec,
+                            rate=rate,
+                            width=width,
+                            height=height)
                     vframe = av.VideoFrame.from_ndarray(array, format=format)
                     vpacket = output_video.encode(vframe)
                     output_container.mux(vpacket)
@@ -113,7 +151,11 @@ class ComputerVisionMixin:
                 if not output_video:
                     height = height if height else array.shape[0]
                     width = width if width else array.shape[1]
-                    output_video = output_container.add_stream(codec_name=codec, rate=rate, width=width, height=height)
+                    output_video = output_container.add_stream(
+                        codec_name=codec,
+                        rate=rate,
+                        width=width,
+                        height=height)
                 vframe = av.VideoFrame.from_ndarray(array, format=format)
                 vpacket = output_video.encode(vframe)
                 output_container.mux(vpacket)

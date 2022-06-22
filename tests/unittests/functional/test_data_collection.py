@@ -19,10 +19,8 @@ from collections import namedtuple
 import towhee.functional.data_collection
 import towhee.functional.option
 
-from towhee import ops
 from towhee import register
 from towhee import DataCollection
-from towhee import param_scope
 from towhee import Entity
 
 import towhee
@@ -53,9 +51,6 @@ class MyMul:
         return x * self.val
 
 
-dispatcher = {'add': MyAdd, 'mul': MyMul}
-
-
 class TestDataCollection(unittest.TestCase):
     """
     tests for data collection
@@ -65,21 +60,6 @@ class TestDataCollection(unittest.TestCase):
         result = dc.map(lambda x: x + 1).filter(lambda x: x < 3)
         self.assertListEqual(list(result), [1, 2])
 
-    def test_example_for_dispatch_op(self):
-        with param_scope(dispatcher=dispatcher):
-            dc = DataCollection(range(5))
-            result = dc.add(1)
-            self.assertListEqual(list(result), [1, 2, 3, 4, 5])
-
-    def test_example_for_chained_towhee_op(self):
-        dc = DataCollection(range(5))
-        result = (  #
-            dc  #
-            >> ops.myop.add(val=1)  #
-            >> ops.myop.mul(val=2)  #
-        )
-        self.assertListEqual(list(result), [2, 4, 6, 8, 10])
-
     def test_example_for_multiple_line_statement(self):
         dc = DataCollection(range(5))
         result = dc \
@@ -88,9 +68,9 @@ class TestDataCollection(unittest.TestCase):
             .to_list()
         self.assertListEqual(result, [2, 4, 6, 8, 10])
 
-    def test_from_json(self):
+    def test_read_json(self):
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
-        res = DataCollection.from_json(json_path)
+        res = DataCollection.read_json(json_path)
 
         self.assertTrue(isinstance(res, DataCollection))
         for i in res:
@@ -98,7 +78,7 @@ class TestDataCollection(unittest.TestCase):
 
     def test_from_csv(self):
         csv_path = public_path / 'test_util' / 'test_mixins' / 'test.csv'
-        res = DataCollection.from_csv(csv_path)
+        res = DataCollection.read_csv(csv_path)
 
         self.assertTrue(isinstance(res, DataCollection))
         for i in res:
@@ -119,8 +99,6 @@ class TestDataCollection(unittest.TestCase):
         for i in res:
             self.assertTrue(i.a == i.b - 1)
 
-        self.assertRaises(ValueError, dc.runas_op['a', 'b'], add)
-
     def test_head(self):
         entities = [Entity(a=i, b=i + 1) for i in range(5)]
         dc = DataCollection(entities)
@@ -128,13 +106,13 @@ class TestDataCollection(unittest.TestCase):
         dc.head(1)
 
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
-        res = DataCollection.from_json(json_path)
+        res = DataCollection.read_json(json_path)
 
         res.head(1)
 
     def test_classifier_procedure(self):
         csv_path = public_path / 'test_util' / 'data.csv'
-        out = DataCollection.from_csv(csv_path=csv_path).unstream()
+        out = DataCollection.read_csv(csv_path=csv_path).unstream()
 
         # pylint: disable=unnecessary-lambda
         out = (
