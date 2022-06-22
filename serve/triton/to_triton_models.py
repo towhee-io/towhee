@@ -83,6 +83,7 @@ class ToTriton(ABC):
         self._triton_files = TritonFiles(model_root, model_name)
         self._inputs = TritonModelConfigBuilder.get_input_schema(self._obj.metainfo['input_schema'])
         self._outputs = TritonModelConfigBuilder.get_output_schema(self._obj.metainfo['output_schema'])
+        self._backend = 'python'
 
     @property
     def inputs(self):
@@ -103,16 +104,17 @@ class ToTriton(ABC):
     def _prepare_config(self):
         config_str = create_modelconfig(
             self._model_name,
-            128,
+            0,
             self._inputs,
-            self._outputs
+            self._outputs,
+            self._backend
         )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
         return True
 
     def to_triton(self):
-        if self._create_model_dir() and self._prepare_config() and self._prepare_model():
+        if self._create_model_dir() and self._prepare_model() and self._prepare_config():
             return True
         return False
 
@@ -185,11 +187,6 @@ class ProcessToTriton(ToTriton):
         else:
             return self._postprocess()
 
-    # def to_triton(self):
-    #     if self._prepare_config() and self._prepare_model():
-    #         return True
-    #     return False
-
 
 class NNOpToTriton(ToTriton):
     '''
@@ -197,7 +194,6 @@ class NNOpToTriton(ToTriton):
 
     Convert model to trt, torchscript or onnx.
     '''
-    def to_triton(self):
-        if not self._prepare_config():
-            pass
-        return False
+    def _prepare_model(self):
+        self._backend = 'tensorrt'
+        return True
