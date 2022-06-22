@@ -145,7 +145,6 @@ class DagMixin:
         for key, val in dag.items():
             if (val['op'] == 'map' or val['op'] == 'filter') and val['call_args'] is not None:
                 if val['call_args']['*arg'] != () and hasattr(val['call_args']['*arg'][0], '_kws'):
-                    
                     dag[key]['init_args'] = val['call_args']['*arg'][0].init_args
                     if len(val['call_args']['*arg'][0].function.split('/')) > 1:
                         dag[key]['op_name'] = val['call_args']['*arg'][0].function
