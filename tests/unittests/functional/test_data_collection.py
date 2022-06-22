@@ -68,9 +68,9 @@ class TestDataCollection(unittest.TestCase):
             .to_list()
         self.assertListEqual(result, [2, 4, 6, 8, 10])
 
-    def test_from_json(self):
+    def test_read_json(self):
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
-        res = DataCollection.from_json(json_path)
+        res = DataCollection.read_json(json_path)
 
         self.assertTrue(isinstance(res, DataCollection))
         for i in res:
@@ -78,7 +78,7 @@ class TestDataCollection(unittest.TestCase):
 
     def test_from_csv(self):
         csv_path = public_path / 'test_util' / 'test_mixins' / 'test.csv'
-        res = DataCollection.from_csv(csv_path)
+        res = DataCollection.read_csv(csv_path)
 
         self.assertTrue(isinstance(res, DataCollection))
         for i in res:
@@ -106,13 +106,13 @@ class TestDataCollection(unittest.TestCase):
         dc.head(1)
 
         json_path = public_path / 'test_util' / 'test_mixins' / 'test.json'
-        res = DataCollection.from_json(json_path)
+        res = DataCollection.read_json(json_path)
 
         res.head(1)
 
     def test_classifier_procedure(self):
         csv_path = public_path / 'test_util' / 'data.csv'
-        out = DataCollection.from_csv(csv_path=csv_path).unstream()
+        out = DataCollection.read_csv(csv_path=csv_path).unstream()
 
         # pylint: disable=unnecessary-lambda
         out = (
