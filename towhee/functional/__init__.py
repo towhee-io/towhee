@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from multiprocessing import dummy
+
 from .data_collection import DataCollection, DataFrame
 from .entity import Entity
 from .option import Option, Some, Empty
@@ -20,12 +20,6 @@ from towhee.hparam import HyperParameter as State
 from towhee.hparam import param_scope
 from towhee.hparam import dynamic_dispatch
 # pylint: disable=protected-access
-
-# def stream(iterable):
-#     return DataCollection.stream(iterable)
-
-# def unstream(iterable):
-#     return DataCollection.unstream(iterable)
 
 read_csv = DataFrame.from_csv
 

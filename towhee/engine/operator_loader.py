@@ -17,16 +17,15 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Union
 
+import pkg_resources
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
 from towhee.engine import LOCAL_OPERATOR_CACHE
-
-from .operator_registry import OperatorRegistry
 from towhee.hub.file_manager import FileManager
-
 from towhee.hparam import param_scope
 
+from .operator_registry import OperatorRegistry
 
 class OperatorLoader:
     """Wrapper class used to load operators from either local cache or a remote
@@ -91,6 +90,12 @@ class OperatorLoader:
         path = Path(path)
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
+
+        if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
+            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
+                reqs = f.read().split('\n')
+            pkg_resources.require(reqs)
+
         try:
             # support for ver1 operator API
             spec = importlib.util.spec_from_file_location(modname, path.resolve())
@@ -112,6 +117,7 @@ class OperatorLoader:
             sys.modules[modname] = module
             spec.loader.exec_module(module)
             op = getattr(module, fname)
+
         return self.instance_operator(op, args) if op is not None else None
 
     def load_operator_from_cache(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument

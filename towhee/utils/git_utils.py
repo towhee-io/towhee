@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import sys
 import subprocess
+import pkg_resources
 from pathlib import Path
 from typing import Union, List
 from requests.exceptions import HTTPError
+from shutil import rmtree
 
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.log import engine_log
@@ -107,7 +108,9 @@ class GitUtils:
             ) from e
 
         try:
+            print(f'Cloning the repo: {self._author}/{self._repo}... Be patient and waiting printing \'Successfully\'.')
             subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+            print(f'Successfully clone the repo: {self._author}/{self._repo}.')
         except FileNotFoundError as e:
             engine_log.warning(
                 '\'git\' not found, execute download instead of clone. ' \
@@ -117,10 +120,16 @@ class GitUtils:
                 '\'git\' not found, execute download instead of clone. ' \
                 'If you want to check updates every time you run the pipeline, please install \'git\' and remove current local cache.'
             ) from e
+        except Exception as e: # pylint: disable=broad-except
+            rmtree(local_repo_path)
+            engine_log.error('Error when clone repo: %s/%s, will delete the local cache. Please check you network', self._author, self._repo)
+            raise e
 
-        if install_reqs:
-            if 'requirements.txt' in os.listdir(local_repo_path):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
+        if install_reqs and 'requirements.txt' in (i.name for i in local_repo_path.iterdir()):
+            with open(local_repo_path / 'requirements.txt', 'r', encoding='utf-8') as f:
+                reqs = f.read().split('\n')
+            pkg_resources.require(reqs)
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
 
     def status(self):
         """
@@ -193,7 +202,7 @@ class GitUtils:
                 The remote branch.
         """
         try:
-            res =  subprocess.check_call(['git', 'pull', remote, branch])
+            res = subprocess.check_call(['git', 'pull', remote, branch])
         except subprocess.CalledProcessError as e:
             engine_log.error(e.output)
             raise e

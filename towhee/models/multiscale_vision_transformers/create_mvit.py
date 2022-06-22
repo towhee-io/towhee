@@ -50,7 +50,7 @@ def create_mvit_model(
                 new_key = ".".join(
                     [key_word_list[0], key_word_list[1], "attn", "atn_pool_" + kqv, norm_pool,
                      key_word_list[-1]])
-                print(f"old_key: {key}\t new_key: {new_key}")
+                # print(f"old_key: {key}\t new_key: {new_key}")
                 model_state[new_key] = model_state.pop(key)
         return model_state
 

@@ -11,17 +11,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import doctest
-import unittest
 
-import towhee.functional.entity_view
-
-
-def load_tests(loader, tests, ignore):
-    #pylint: disable=unused-argument
-    tests.addTests(doctest.DocTestSuite(towhee.functional.entity_view))
-    return tests
-
-
-if __name__ == '__main__':
-    unittest.main()
+from .bridge_former import *

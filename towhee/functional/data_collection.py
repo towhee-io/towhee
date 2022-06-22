@@ -18,8 +18,7 @@ import reprlib
 from towhee.functional.mixins.dag import register_dag
 
 from towhee.hparam import param_scope, dynamic_dispatch
-from towhee.functional.entity import Entity
-from towhee.functional.entity_view import EntityView
+from towhee.functional.entity import Entity, EntityView
 from towhee.functional.option import Option, Some, Empty
 from towhee.functional.mixins import DCMixins
 from towhee.functional.mixins.dataframe import DataFrameMixin
@@ -91,6 +90,7 @@ class DataCollection(Iterable, DCMixins):
         b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
 
     """
+
     def __init__(self, iterable: Iterable) -> None:
         """Initializes a new DataCollection instance.
 
@@ -498,6 +498,7 @@ class DataCollection(Iterable, DCMixins):
         >>> dc.batch(2)
         [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
+
         def inner():
             buff = []
             count = 0
@@ -557,6 +558,7 @@ class DataCollection(Iterable, DCMixins):
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
         """
+
         def inner():
             buff = []
             for ele in self._iterable:
@@ -586,6 +588,7 @@ class DataCollection(Iterable, DCMixins):
         >>> nested_dc.flatten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         """
+
         def inner():
             for ele in self._iterable:
                 if isinstance(ele, Iterable):
@@ -638,13 +641,16 @@ class DataCollection(Iterable, DCMixins):
 
         1. Define two operators:
 
-        >>> class my_add:
+        >>> from towhee import register
+        >>> @register
+        ... class myadd:
         ...     def __init__(self, val):
         ...         self.val = val
         ...     def __call__(self, x):
         ...         return x+self.val
 
-        >>> class my_mul:
+        >>> @register
+        ... class mymul:
         ...     def __init__(self, val):
         ...         self.val = val
         ...     def __call__(self, x):
@@ -652,31 +658,24 @@ class DataCollection(Iterable, DCMixins):
 
         2. Register the operators to `DataCollection`'s execution context with `param_scope`:
 
-        >>> from towhee import param_scope
-        >>> with param_scope(dispatcher={
-        ...         'add': my_add, # register `my_add` as `dc.add`
-        ...         'mul': my_mul  # register `my_mul` as `dc.mul`
-        ... }):
-        ...     dc = DataCollection([1,2,3,4])
-        ...     dc.add(1).mul(2).to_list() # call registered operator
+        >>> dc = DataCollection([1,2,3,4])
+        >>> dc.myadd(val=1).mymul(val=2).to_list() # call registered operator
         [4, 6, 8, 10]
         """
 
         if name.startswith('_'):
             return super().__getattribute__(name)
-        # pylint: disable=protected-access
-        with param_scope() as hp:
-            dispatcher = hp().dispatcher({})
 
-            @dynamic_dispatch
-            def wrapper(*arg, **kws):
-                with param_scope() as hp:
-                    path = hp._name
-                    index = hp._index
-                if self.get_backend() == 'ray':
-                    return self.ray_resolve(dispatcher, path, index, *arg, **kws)
-                op = self.resolve(dispatcher, path, index, *arg, **kws)
-                return self.map(op)
+        @dynamic_dispatch
+        def wrapper(*arg, **kws):
+            with param_scope() as hp:
+                # pylint: disable=protected-access
+                path = hp._name
+                index = hp._index
+            if self.get_backend() == 'ray':
+                return self.ray_resolve({}, path, index, *arg, **kws)
+            op = self.resolve(path, index, *arg, **kws)
+            return self.map(op)
 
         return getattr(wrapper, name)
 
@@ -695,7 +694,9 @@ class DataCollection(Iterable, DCMixins):
         TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
         if not hasattr(self._iterable, '__getitem__'):
-            raise TypeError('indexing is only supported for ' 'data collection created from list or pandas DataFrame.')
+            raise TypeError(
+                'indexing is only supported for '
+                'data collection created from list or pandas DataFrame.')
         if isinstance(index, int):
             return self._iterable[index]
         return DataCollection(self._iterable[index])
@@ -719,7 +720,9 @@ class DataCollection(Iterable, DCMixins):
         TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
         """
         if not hasattr(self._iterable, '__setitem__'):
-            raise TypeError('indexing is only supported for ' 'data collection created from list or pandas DataFrame.')
+            raise TypeError(
+                'indexing is only supported for '
+                'data collection created from list or pandas DataFrame.')
         self._iterable[index] = value
 
     def append(self, item: Any) -> 'DataCollection':
@@ -741,25 +744,8 @@ class DataCollection(Iterable, DCMixins):
         if hasattr(self._iterable, 'append'):
             self._iterable.append(item)
             return self
-        raise TypeError('appending is only supported for ' 'data collection created from list.')
-
-    def __rshift__(self, unary_op):
-        """
-        Chain the operators with `>>`.
-
-        Examples:
-
-        >>> dc = DataCollection([1,2,3,4])
-        >>> (dc
-        ...     >> (lambda x: x+1)
-        ...     >> (lambda x: x*2)
-        ... ).to_list()
-        [4, 6, 8, 10]
-        """
-        return self.map(unary_op)
-
-    def __or__(self, unary_op):
-        return self.map(unary_op)
+        raise TypeError('appending is only supported for '
+                        'data collection created from list.')
 
     @register_dag
     def __add__(self, other):
@@ -817,6 +803,7 @@ class DataCollection(Iterable, DCMixins):
         >>> DataCollection.range(10).head(3).to_list()
         [0, 1, 2]
         """
+
         def inner():
             for i, x in enumerate(self._iterable):
                 if i >= n:
@@ -861,7 +848,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
     """
 
-    def __init__(self, iterable: Iterable=None, **kws) -> None:
+    def __init__(self, iterable: Iterable = None, **kws) -> None:
         """Initializes a new DataCollection instance.
 
         Args:
@@ -961,11 +948,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     def map(self, *arg):
         if hasattr(arg[0], '__check_init__'):
             arg[0].__check_init__()
-        if self._mode == self.ModeFlag.COLBASEDFLAG:# and hasattr(arg[0], '__has_vcall__'):
+        if self._mode == self.ModeFlag.COLBASEDFLAG:
             return self.cmap(arg[0])
         else:
             return super().map(*arg)
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()

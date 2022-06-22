@@ -207,6 +207,11 @@ class RepoManager:
                 local_file.write(chunk)
                 progress_bar.update(len(chunk))
         progress_bar.close()
+        if progress_bar.total > progress_bar.n:
+            engine_log.error('Error when downloading file: %s, will delete the local cache. Please check you network, or make sure you have '
+                             'install `git-lfs`.', file_name)
+            raise HTTPError(f'Error when downloading {file_name}, will delete the local cache. Please check you network, or make sure you have '
+                            f'install `git-lfs`.')
 
     def download_files(self, tag: str, file_list: List[str], lfs_files: List[str], local_repo_path: Union[str, Path], install_reqs: bool) -> None:
         """
@@ -268,6 +273,7 @@ class RepoManager:
         commit = self.latest_commit(tag)
         file_list = self.get_file_list(commit)
         self.download_files(tag=tag, file_list=file_list, lfs_files=lfs_files, local_repo_path=local_repo_path, install_reqs=install_reqs)
+        engine_log.info('Successfully download the repo: %s/%s.', self._author, self._repo)
 
     def get_repo_type(self):
         """
