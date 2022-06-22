@@ -94,7 +94,6 @@ class BridgeFormerTest(unittest.TestCase):
         self.assertEqual(bridge_cls_embeddings.shape, (1, 256))
         self.assertEqual(video_cls_embeddings.shape, (1, 256))
 
->>>>>>> 9959900 (add bridgeformer training module to bridge former (#1422))
 
 if __name__ == "__main__":
     unittest.main()
