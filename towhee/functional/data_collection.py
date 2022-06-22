@@ -637,7 +637,7 @@ class DataCollection(Iterable, DCMixins):
         2. Register the operators to `DataCollection`'s execution context with `param_scope`:
 
         >>> dc = DataCollection([1,2,3,4])
-        >>> dc.myadd(val=1).mymul(val=2).to_list() # call registered operator
+        >>> dc.myadd(1).mymul(val=2).to_list() # call registered operator
         [4, 6, 8, 10]
         """
 

@@ -11,9 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=unused-import
+# pylint: disable=dangerous-default-value
+
 import os
 import threading
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from towhee.dataframe import DataFrame
 from towhee.pipeline_format import OutputFormat
@@ -22,7 +26,6 @@ from towhee.engine.engine import Engine, start_engine
 from towhee.engine.operator_loader import OperatorLoader
 from towhee.hub.file_manager import FileManager
 from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
-# pylint: disable=unused-import
 from towhee.hub import preclude
 
 from .execution.base_execution import BaseExecution
@@ -31,7 +34,10 @@ from .execution.stateful_execution import StatefulExecution
 from .execution.vectorized_execution import VectorizedExecution
 
 
-def op(operator_src: str, tag: str = 'main', **kwargs):
+def op(operator_src: str,
+       tag: str = 'main',
+       arg: List[Any] = [],
+       kwargs: Dict[str, Any] = {}):
     """
     Entry method which takes either operator tasks or paths to python files or class in notebook.
     An `Operator` object is created with the init args(kwargs).
@@ -50,11 +56,9 @@ def op(operator_src: str, tag: str = 'main', **kwargs):
 
     loader = OperatorLoader()
     if os.path.isfile(operator_src):
-        op_obj = loader.load_operator_from_path(operator_src, kwargs)
+        return loader.load_operator_from_path(operator_src, arg, kwargs)
     else:
-        op_obj = loader.load_operator(operator_src, kwargs, tag)
-
-    return op_obj
+        return loader.load_operator(operator_src, arg, kwargs, tag)
 
 
 class _OperatorLazyWrapper(  #
@@ -70,10 +74,12 @@ class _OperatorLazyWrapper(  #
                  real_name: str,
                  index: Tuple[str],
                  tag: str = 'main',
-                 **kws) -> None:
+                 arg: List[Any] = [],
+                 kws: Dict[str, Any] = {}) -> None:
         self._name = real_name.replace('.', '/').replace('_', '-')
         self._index = index
         self._tag = tag
+        self._arg = arg
         self._kws = kws
         self._op = None
         self._lock = threading.Lock()
@@ -82,8 +88,10 @@ class _OperatorLazyWrapper(  #
         with self._lock:
             if self._op is None:
                 with param_scope(index=self._index):
-                    self._op = op(self._name, self._tag, **self._kws)
-                    # print('has vcall', hasattr(self._op, '__vcall__'))
+                    self._op = op(self._name,
+                                  self._tag,
+                                  arg=self._arg,
+                                  kwargs=self._kws)
                     if hasattr(self._op, '__vcall__'):
                         self.__has_vcall__ = True
 
@@ -97,14 +105,7 @@ class _OperatorLazyWrapper(  #
 
     @staticmethod
     def callback(real_name: str, index: Tuple[str], *arg, **kws):
-        if arg and not kws:
-            raise ValueError(
-                'The init args should be passed in the form of kwargs(i.e. You should specify the keywords of your init arguments.)'
-            )
-        if len(arg) == 0:
-            return _OperatorLazyWrapper(real_name, index, **kws)
-        else:
-            return _OperatorLazyWrapper(real_name, index, arg[0], **kws)
+        return _OperatorLazyWrapper(real_name, index, arg=arg, kws=kws)
 
 
 DEFAULT_PIPELINES = {

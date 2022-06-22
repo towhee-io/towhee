@@ -109,3 +109,5 @@ venv.bak/
 .idea
 .try
 .vscode/
+*.JPEG
+*.jpg
