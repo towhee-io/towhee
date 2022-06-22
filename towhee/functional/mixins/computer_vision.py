@@ -19,11 +19,31 @@ class ComputerVisionMixin:
     """
     Mixin for computer vision problems.
     """
+
     def image_imshow(self, title='image'):  # pragma: no cover
         from towhee.utils.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)
             cv2.waitKey(1)
+
+    @classmethod
+    def read_camera(cls, device_id=0, limit=-1):  # pragma: no cover
+        """
+        read images from a camera.
+        """
+        from towhee.utils.cv2_utils import cv2
+        cnt = limit
+
+        def inner():
+            nonlocal cnt
+            cap = cv2.VideoCapture(device_id)
+            while cnt != 0:
+                retval, im = cap.read()
+                if retval:
+                    yield im
+                    cnt -= 1
+
+        return cls(inner())
 
     # pylint: disable=redefined-builtin
     @classmethod
@@ -46,15 +66,6 @@ class ComputerVisionMixin:
         images = (frame.to_rgb().to_ndarray(format=format) for frame in frames)
 
         return cls(images)
-        # acontainer = av.open(path)
-        # audio_stream = acontainer.streams.audio[0]
-
-        # dc._template = video_stream
-        # dc._codec = video_stream.name
-        # dc._rate = video_stream.average_rate
-        # dc._width = video_stream.width
-        # dc._height = video_stream.height
-        # return cls([Entity(video = video_stream, audio = audio_stream)])
 
     @classmethod
     def read_audio(cls, path):
@@ -66,7 +77,15 @@ class ComputerVisionMixin:
 
         return cls(acontainer.decode(audio_stream))
 
-    def to_video(self, output_path, codec=None, rate=None, width=None, height=None, format=None, template=None, audio_src=None):
+    def to_video(self,
+                 output_path,
+                 codec=None,
+                 rate=None,
+                 width=None,
+                 height=None,
+                 format=None,
+                 template=None,
+                 audio_src=None):
         """
         Encode a video with audio if provided.
 
@@ -92,10 +111,14 @@ class ComputerVisionMixin:
         import itertools
 
         output_container = av.open(output_path, 'w')
-        codec = codec if codec else template.name if isinstance(template, av.video.stream.VideoStream) else None
-        rate = rate if rate else template.average_rate if isinstance(template, av.video.stream.VideoStream) else None
-        width = width if width else template.width if isinstance(template, av.video.stream.VideoStream) else None
-        height = height if height else template.height if isinstance(template, av.video.stream.VideoStream) else None
+        codec = codec if codec else template.name if isinstance(
+            template, av.video.stream.VideoStream) else None
+        rate = rate if rate else template.average_rate if isinstance(
+            template, av.video.stream.VideoStream) else None
+        width = width if width else template.width if isinstance(
+            template, av.video.stream.VideoStream) else None
+        height = height if height else template.height if isinstance(
+            template, av.video.stream.VideoStream) else None
         format = format if format else 'rgb24'
 
         output_video = None
@@ -104,13 +127,19 @@ class ComputerVisionMixin:
         if audio_src:
             acontainer = av.open(audio_src)
             audio_stream = acontainer.streams.audio[0]
-            output_audio = output_container.add_stream(codec_name=audio_stream.name, rate=audio_stream.rate)
-            for aframe, array in itertools.zip_longest(acontainer.decode(audio_stream), self):
+            output_audio = output_container.add_stream(
+                codec_name=audio_stream.name, rate=audio_stream.rate)
+            for aframe, array in itertools.zip_longest(
+                    acontainer.decode(audio_stream), self):
                 if array is not None:
                     if not output_video:
                         height = height if height else array.shape[0]
                         width = width if width else array.shape[1]
-                        output_video = output_container.add_stream(codec_name=codec, rate=rate, width=width, height=height)
+                        output_video = output_container.add_stream(
+                            codec_name=codec,
+                            rate=rate,
+                            width=width,
+                            height=height)
                     vframe = av.VideoFrame.from_ndarray(array, format=format)
                     vpacket = output_video.encode(vframe)
                     output_container.mux(vpacket)
@@ -122,7 +151,11 @@ class ComputerVisionMixin:
                 if not output_video:
                     height = height if height else array.shape[0]
                     width = width if width else array.shape[1]
-                    output_video = output_container.add_stream(codec_name=codec, rate=rate, width=width, height=height)
+                    output_video = output_container.add_stream(
+                        codec_name=codec,
+                        rate=rate,
+                        width=width,
+                        height=height)
                 vframe = av.VideoFrame.from_ndarray(array, format=format)
                 vpacket = output_video.encode(vframe)
                 output_container.mux(vpacket)
@@ -135,56 +168,3 @@ class ComputerVisionMixin:
                 output_container.mux(apacket)
 
         output_container.close()
-
-    # def video_encode(self, video_stream, audio_stream, output_path):
-    #     import itertools
-    #     from towhee.utils.av_utils import av
-
-    #     output_container = av.open(output_path, 'w')
-    #     output_audio = output_container.add_stream(codec_name=audio_stream.name, rate=audio_stream.rate)
-    #     output_video = output_container.add_stream(
-    #         codec_name=video_stream.name, rate=video_stream.average_rate, width=video_stream.width, height=video_stream.height
-    #     )
-
-    #     for vframe, aframe in itertools.zip_longest(video_stream.decode(), audio_stream.decode()):
-    #         if vframe:
-    #             array = vframe.to_ndarray(format=video_stream.format.name)
-    #             vframe = av.VideoFrame.from_ndarray(array, format=video_stream.format.name)
-    #             vpacket = output_video.encode(vframe)
-    #             output_container.mux(vpacket)
-
-    #         if aframe:
-    #             apacket = output_audio.encode(aframe)
-    #             output_container.mux(apacket)
-
-    #     for vpacket, apacket in itertools.zip_longest(output_video.encode(), output_audio.encode()):
-    #         if vpacket:
-    #             output_container.mux(vpacket)
-    #         if apacket:
-    #             output_container.mux(apacket)
-
-    #     output_container.close()
-
-    # @classmethod
-    # def read_video(cls, path):
-    #     def inner():
-    #         from towhee.utils.cv2_utils import cv2
-
-    #         cap = cv2.VideoCapture(path)
-    #         while cap.isOpened():
-    #             ret, frame = cap.read()
-    #             if ret is True:
-    #                 yield frame
-    #             else:
-    #                 cap.release()
-
-    #     return cls(inner())
-
-    # def to_video(self, path, fmt='MJPG', fps=15):
-    #     from towhee.utils.cv2_utils import cv2
-
-    #     out = None
-    #     for frame in self:
-    #         if out is None:
-    #             out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fmt), fps, (frame.shape[1], frame.shape[0]))
-    #         out.write(frame)

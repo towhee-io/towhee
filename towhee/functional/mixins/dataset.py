@@ -25,7 +25,7 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
-    def from_glob(cls, *args): # pragma: no cover
+    def from_glob(cls, *args):  # pragma: no cover
         """
         generate a file list with `pattern`
         """
@@ -33,10 +33,10 @@ class DatasetMixin:
         files = []
         for path in args:
             files.extend(glob(path))
-        return cls(files).stream()
+        return cls(files)
 
     @classmethod
-    def from_zip(cls, url, pattern, mode='r'): # pragma: no cover
+    def read_zip(cls, url, pattern, mode='r'):  # pragma: no cover
         """load files from url/path.
 
         Args:
@@ -70,29 +70,10 @@ class DatasetMixin:
                     with zfile.open(path, mode=mode) as f:
                         yield f.read()
 
-        return cls(inner()).stream()
+        return cls(inner())
 
     @classmethod
-    def from_camera(cls, device_id=0, limit=-1): # pragma: no cover
-        """
-        read images from a camera.
-        """
-        from towhee.utils.cv2_utils import cv2
-        cnt = limit
-
-        def inner():
-            nonlocal cnt
-            cap = cv2.VideoCapture(device_id)
-            while cnt != 0:
-                retval, im = cap.read()
-                if retval:
-                    yield im
-                    cnt -= 1
-
-        return cls(inner()).stream()
-
-    @classmethod
-    def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
+    def read_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
         import json
 
         def inner():
@@ -103,10 +84,10 @@ class DatasetMixin:
                     string = f.readline()
                     yield Entity(**data)
 
-        return cls(inner()).stream()
+        return cls(inner())
 
     @classmethod
-    def from_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
+    def read_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
         import csv
 
         def inner():
@@ -115,7 +96,43 @@ class DatasetMixin:
                 for line in data:
                     yield Entity(**line)
 
-        return cls(inner()).stream()
+        return cls(inner())
+
+    def to_csv(self, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
+        """
+        Save dc as a csv file.
+
+        Args:
+            csv_path (`Union[str, Path]`):
+                The path to save the dc to.
+            encoding (str):
+                The encoding to use in the output file.
+        """
+        import csv
+        from towhee.utils.pandas_utils import pandas as pd
+
+        if isinstance(self._iterable, pd.DataFrame):
+            self._iterable.to_csv(csv_path, index=False)
+        else:
+            with open(csv_path, 'w', encoding=encoding) as f:
+                header = None
+                writer = None
+
+                def inner(row):
+                    nonlocal header
+                    nonlocal writer
+                    if isinstance(row, Entity):
+                        if not header:
+                            header = row.__dict__.keys()
+                            writer = csv.DictWriter(f, fieldnames=header)
+                            writer.writeheader()
+                        writer.writerow(row.__dict__)
+                    else:
+                        writer = writer if writer else csv.writer(f)
+                        writer.writerow(row)
+
+                for row in self._iterable:
+                    inner(row)
 
     def random_sample(self):
         # core API already exists
@@ -147,5 +164,8 @@ class DatasetMixin:
         from towhee.utils import sklearn_utils
         train_size = size[0]
         test_size = size[1]
-        train, test = sklearn_utils.train_test_split(self._iterable, train_size=train_size, test_size=test_size, **kws)
+        train, test = sklearn_utils.train_test_split(self._iterable,
+                                                     train_size=train_size,
+                                                     test_size=test_size,
+                                                     **kws)
         return self._factory(train), self._factory(test)
