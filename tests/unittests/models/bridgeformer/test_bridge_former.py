@@ -64,21 +64,6 @@ class BridgeFormerTest(unittest.TestCase):
         text_with_video_sim = sim_matrix(text_embeddings, video_embeddings)
         self.assertEqual(text_with_video_sim.shape, (1, 1))
 
-<<<<<<< HEAD
-    def test_without_all_pretrained_with_clip_initialized_model(self):
-        model = create_model(pretrained=False, model_name="clip_initialized_model", embed_dim=512,
-                             image_resolution=self.image_size, vision_layers=12, vision_width=768,
-                             vision_patch_size=self.patch_size,
-                             context_length=self.text_len, vocab_size=49408, transformer_width=512, transformer_heads=8,
-                             transformer_layers=12,
-                             )
-        text_embeddings = model.encode_text(self.input_ids)
-        video_embeddings = model.encode_image(self.dummy_video)
-        self.assertEqual(text_embeddings.shape, (1, 512))
-        self.assertEqual(video_embeddings.shape, (1, 512))
-        text_with_video_sim = sim_matrix(text_embeddings, video_embeddings)
-        self.assertEqual(text_with_video_sim.shape, (1, 1))
-=======
     def test_without_all_pretrained_for_bridge_former_training(self):
         model = create_model(pretrained=False, model_name="bridge_former_training",
                              img_size=self.image_size, patch_size=self.patch_size,
