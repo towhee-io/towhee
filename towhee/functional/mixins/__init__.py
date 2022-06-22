@@ -25,8 +25,8 @@ from .milvus import MilvusMixin
 from .dag import DagMixin
 
 class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, StateMixin, MetricMixin, RayMixin, 
-               ServeMixin, MilvusMixin, DagMixin):
+                ComputerVisionMixin, StateMixin, MetricMixin, RayMixin,
+                ServeMixin, MilvusMixin, DagMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
