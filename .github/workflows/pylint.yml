@@ -12,4 +12,4 @@ jobs:
     - name: Python pylint
       run: |
         pip install pylint==2.10.2
-        pylint --rcfile=pylint.conf --output-format=colorized towhee && pylint --rcfile=pylint.conf --output-format=colorized tests.unittests
+        pylint --rcfile=pylint.conf --output-format=colorized towhee && pylint --rcfile=pylint.conf --output-format=colorized tests.unittests && pylint --rcfile=pylint.conf --output-format=colorized serve
