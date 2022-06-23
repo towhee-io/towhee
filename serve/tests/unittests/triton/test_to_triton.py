@@ -14,16 +14,20 @@
 
 
 import unittest
+from tempfile import TemporaryDirectory
+
 from towhee import ops
-from serve.triton.to_triton_models import PyOpToTriton, ProcessToTriton
+from serve.triton.to_triton_models import PyOpToTriton, ProcessToTriton, NNOpToTriton
+
 
 
 class TestPyOpToTriton(unittest.TestCase):
     def _test_case(self, root_dir):
-        op = ops.local.triton_py().get_op()
-        to_triton = PyOpToTriton(op, root_dir, 'py_to_triton_test', 'local', 'triton_py', {})
-        to_triton.to_triton()
-    
+        with TemporaryDirectory(dir='./') as root:
+            op = ops.local.triton_py().get_op()
+            to_triton = PyOpToTriton(op, root, 'py_to_triton_test', 'local', 'triton_py', {})
+            to_triton.to_triton()
+
     def test_py_to_triton(self):
         self._test_case('./')
 
@@ -32,4 +36,11 @@ class TestProcessor(unittest.TestCase):
     def test_processor(self):
         op = ops.local.triton_nnop(model_name='test').get_op()
         to_triton = ProcessToTriton(op, './', 'preprocess', 'preprocess', 'triton_nnop')
+        to_triton.to_triton()
+
+
+class TestToModel(unittest.TestCase):
+    def test_to_model(self):
+        op = ops.local.triton_nnop(model_name='test').get_op()
+        to_triton = NNOpToTriton(op.model, './', 'nnop')
         to_triton.to_triton()

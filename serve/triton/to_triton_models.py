@@ -146,12 +146,10 @@ class ProcessToTriton(ToTriton):
     Preprocess and Postprocess to triton model.
     '''
     def __init__(self, op, model_root, model_name, process_name, op_name):
-        
         super().__init__(getattr(op, process_name), model_root, model_name)
         self._processer_name = process_name
         self._init_file = Path(inspect.getmodule(op).__file__).parent / '__init__.py'
         self._module_name = 'towhee.operator.' + op_name
-
 
     def _preprocess(self):
         gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
@@ -169,7 +167,7 @@ class ProcessToTriton(ToTriton):
     def _postprocess(self):
         # create model.py
         gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
-                                        self._module_name,                                        
+                                        self._module_name,
                                         'Postprocess',
                                         str(self._init_file),
                                         str(self._triton_files.postprocess_pickle),
