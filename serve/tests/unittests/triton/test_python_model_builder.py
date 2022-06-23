@@ -76,7 +76,8 @@ class TestPythonModelBuilder(unittest.TestCase):
                 output_annotations=[(np.float32, (1, 3, 224, 224))]
             )
 
-            with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
+            with open(save_path, 'rt', encoding='utf-8') as gen_f, \
+                 open(EXPECTED_FILE_PATH + pyfile_name, 'rt', encoding='utf-8') as expected_f:
                 self.assertListEqual(list(gen_f), list(expected_f))
 
     def test_op_pymodel_builder(self):
@@ -92,7 +93,8 @@ class TestPythonModelBuilder(unittest.TestCase):
                 output_annotations=[(np.float32, (1, 3, 224, 224))]
             )
 
-            with open(save_path, 'rt') as gen_f, open(EXPECTED_FILE_PATH + pyfile_name) as expected_f:
+            with open(save_path, 'rt', encoding='utf-8') as gen_f, \
+                 open(EXPECTED_FILE_PATH + pyfile_name, 'rt', encoding='utf-8') as expected_f:
                 a = list(gen_f)
                 b = list(expected_f)
                 for i in range(len(a)):
