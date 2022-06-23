@@ -1,6 +1,6 @@
 import numpy as np
 from towhee._types import Image
-from towhee.operator import PyOperator, SharedType
+from towhee.operator import PyOperator
 from towhee import register
 
 
@@ -9,8 +9,6 @@ from towhee import register
     output_schema=[(Image, (-1, -1, 3))]
 )
 class TritonPy(PyOperator):
-    def __init__(self):
-        super().__init__()
 
     def __call__(self, image_path: str):
         return Image(np.random.rand((300, 300, 3), 'BGR'))

@@ -13,14 +13,10 @@
 # limitations under the License.
 
 
-import numpy as np
-from towhee import register
+EMPTY_OPS = ['dummy_input', 'end']
+NNOPERATOR = 'NNOperator'
+PYOPERATOR = 'PyOperator'
 
 
-@register(
-    input_schema=[(np.float32, (-1, 512))],
-    output_schema=[(np.float32, (512, ))]
-)
-class Postprocess:
-    def __call__(self, data):
-        return data.flatten()
+PREPROCESS = 'preprocess'
+POSTPROCESS = 'postprocess'

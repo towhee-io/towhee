@@ -45,5 +45,5 @@ class Model:
         return self.model(image)
 
     def save_model(self, model_type, output_file, args):
-        logger.info(f'{model_type}, {output_file}, {args}')
+        logger.info(f'{model_type}, {output_file}, {args}') # pylint: disable=logging-fstring-interpolation
         return True
