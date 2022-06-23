@@ -95,6 +95,10 @@ class _OperatorLazyWrapper(  #
                     if hasattr(self._op, '__vcall__'):
                         self.__has_vcall__ = True
 
+    def get_op(self):
+        self.__check_init__()
+        return self._op
+
     @property
     def function(self):
         return self._name
