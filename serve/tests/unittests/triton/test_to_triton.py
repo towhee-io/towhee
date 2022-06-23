@@ -24,17 +24,7 @@ from serve.triton.to_triton_models import PyOpToTriton, ProcessToTriton, NNOpToT
 from . import EXPECTED_FILE_PATH
 
 
-class TestToTriton(unittest.TestCase):
-    '''
-    Test base, support files cmp.
-    '''
-
-    def _cmp(self, expect_root, dst):
-        self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
-        self.assertTrue(filecmp.cmp(expect_root / '1' / 'model.py', dst / '1' / 'model.py'))
-
-
-class TestPyOpToTriton(TestToTriton):
+class TestPyOpToTriton(unittest.TestCase):
     '''
     Test pyop to triton.
     '''
@@ -46,10 +36,11 @@ class TestPyOpToTriton(TestToTriton):
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'py_to_triton_test'
             dst = Path(root) / 'py_to_triton_test'
-            self._cmp(expect_root, dst)
+            self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
+            self.assertTrue(filecmp.cmp(expect_root / '1' / 'model.py', dst / '1' / 'model.py'))
 
 
-class TestProcessor(TestToTriton):
+class TestProcessor(unittest.TestCase):
     '''
     Test nnop process to triton
     '''
@@ -62,9 +53,11 @@ class TestProcessor(TestToTriton):
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'preprocess'
             dst = Path(root) / 'preprocess'
-            self._cmp(expect_root, dst)
+            self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
             pk = dst / '1' / 'preprocess.pickle'
+            m_file = dst / '1' / 'model.py'
             self.assertTrue(pk.is_file())
+            self.assertTrue(m_file.is_file())
 
 
 class TestToModel(unittest.TestCase):

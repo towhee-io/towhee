@@ -13,7 +13,8 @@ class TritonPythonModel:
         
         # load module
         module_name = "towhee.operator.triton_nnop"
-        path = "/Users/jiangjunjie/WorkSpace/dev/towhee_dev/towhee/tests/unittests/test_cache/hub/local/triton_nnop/main/__init__.py"
+        # path is different in envs.
+        path = "{}/local/triton_nnop/main/__init__.py"
         spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
