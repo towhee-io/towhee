@@ -30,6 +30,7 @@ import towhee.functional.mixins.metric
 import towhee.functional.mixins.parallel
 import towhee.functional.mixins.state
 import towhee.functional.mixins.serve
+import towhee.functional.mixins.config
 
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection, DataFrame, dc
@@ -50,6 +51,7 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.state,
             towhee.functional.mixins.serve,
             towhee.functional.mixins.column,
+            towhee.functional.mixins.config,
     ]:
         tests.addTests(doctest.DocTestSuite(mod))
 
@@ -206,7 +208,7 @@ class TestColumnComputing(unittest.TestCase):
 
 class TestFaissMixin(unittest.TestCase):
     """
-    Unittest for MetricMixin.
+    Unittest for FaissMixin.
     """
     def test_faiss(self):
         nb = 100
@@ -235,6 +237,77 @@ class TestFaissMixin(unittest.TestCase):
         self.assertEqual(res[1][0].score, 0)
         self.assertEqual(res[2][0].score, 0)
         Path(index_path).unlink()
+
+
+class TestCompileMixin(unittest.TestCase):
+    """
+    Unittest for FaissMixin.
+    """
+    def test_compile(self):
+        import time
+        from towhee import register
+        @register(name='inner_distance')
+        def inner_distance(query, data):
+            dists = []
+            for vec in data:
+                dist = 0
+                for i in range(len(vec)):
+                    dist += vec[i] * query[i]
+                dists.append(dist)
+            return dists
+
+        data = [np.random.random((10000, 128)) for _ in range(10)]
+        query = np.random.random(128)
+
+        t1 = time.time()
+        _ = (
+            towhee.dc['a'](data)
+                .runas_op['a', 'b'](func=lambda _: query)
+                .inner_distance[('b', 'a'), 'c']()
+        )
+        t2 = time.time()
+        _ = (
+            towhee.dc['a'](data)
+                .config(jit='numba')
+                .runas_op['a', 'b'](func=lambda _: query)
+                .inner_distance[('b', 'a'), 'c']()
+        )
+        t3 = time.time()
+        self.assertTrue(t3 - t2 < t2 - t1)
+
+    def test_failed_compile(self):
+        import time
+        from towhee import register
+        @register(name='inner_distance1')
+        def inner_distance1(query, data):
+            data = np.array(data) # numba does not support np.array(data)
+            dists = []
+            for vec in data:
+                dist = 0
+                for i in range(len(vec)):
+
+                    dist += vec[i] * query[i]
+                dists.append(dist)
+            return dists
+
+        data = [np.random.random((10000, 128)) for _ in range(10)]
+        query = np.random.random(128)
+
+        t1 = time.time()
+        _ = (
+            towhee.dc['a'](data)
+                .runas_op['a', 'b'](func=lambda _: query)
+                .inner_distance1[('b', 'a'), 'c']()
+        )
+        t2 = time.time()
+        _ = (
+            towhee.dc['a'](data)
+                .config(jit='numba')
+                .runas_op['a', 'b'](func=lambda _: query)
+                .inner_distance1[('b', 'a'), 'c']()
+        )
+        t3 = time.time()
+        self.assertTrue(t3 - t2 > t2 - t1)
 
 
 if __name__ == '__main__':
