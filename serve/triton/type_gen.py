@@ -55,19 +55,19 @@ def handle_type_annotations(type_annotations: List[Tuple[Any, Tuple]], callbacks
 
 
 def tensor2str(placehoder: str):
-    return 'str(' + placehoder + '.as_numpy()).decode(\'utf-8\')'
+    return placehoder + '.as_numpy()[0].decode(\'utf-8\')'
 
 
 def tensor2bool(placehoder: str):
-    return 'bool(' + placehoder + '.as_numpy())'
+    return 'bool(' + placehoder + '.as_numpy()[0])'
 
 
 def tensor2int(placehoder: str):
-    return 'int(' + placehoder + '.as_numpy())'
+    return 'int(' + placehoder + '.as_numpy()[0])'
 
 
 def tensor2float(placehoder: str):
-    return 'float(' + placehoder + '.as_numpy())'
+    return 'float(' + placehoder + '.as_numpy()[0])'
 
 
 def tensor2ndarray(placehoder: str):
@@ -97,7 +97,7 @@ class ImageType:
     @staticmethod
     def type_info(t, shape, is_list):
         data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8')
-        mode_part = AttrInfo('$t_mode', '$obj.mode', (-1,), 'TYPE_STRING', 'numpy.object_')
+        mode_part = AttrInfo('$t_mode', '$obj.mode', (1,), 'TYPE_STRING', 'numpy.object_')
 
         return TypeInfo([data_part, mode_part], t, shape, is_list)
 
@@ -123,7 +123,7 @@ class VideoFrameType:
     @ staticmethod
     def type_info(t, shape, is_list):
         data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT8', 'numpy.int8')
-        mode_part = AttrInfo('$t_mode', '$obj.mode', (-1,), 'TYPE_STRING', 'numpy.object_')
+        mode_part = AttrInfo('$t_mode', '$obj.mode', (1,), 'TYPE_STRING', 'numpy.object_')
         timestamp_part = AttrInfo('$t_timestamp', '$obj.timestamp', (1,), 'TYPE_INT64', 'numpy.int64')
         key_frame_part = AttrInfo('$t_key_frame', '$obj.key_frame', (1,), 'TYPE_INT8', 'numpy.int8')
 
@@ -157,7 +157,7 @@ class AudioFrameType:
         data_part = AttrInfo('$t_data', '$obj', shape, 'TYPE_INT32', 'numpy.int32')
         sample_rate_part = AttrInfo('$t_sample_rate', '$obj.sample_rate', (1,), 'TYPE_INT32', 'numpy.int32')
         timestamp_part = AttrInfo('$obj.timestamp', (1,), 'TYPE_INT64', 'numpy.int64')
-        layout_part = AttrInfo('$t_layout', '$obj.layout', (-1,), 'TYPE_STRING', 'numpy.object_')
+        layout_part = AttrInfo('$t_layout', '$obj.layout', (1,), 'TYPE_STRING', 'numpy.object_')
 
         return TypeInfo([data_part, sample_rate_part, timestamp_part, layout_part], t, shape, is_list)
 

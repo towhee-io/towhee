@@ -36,8 +36,8 @@ class TestHandlingTypeAnnotations(unittest.TestCase):
 
         annotations = [
             (np.int16, (4, 4)),
-            (str, (-1)),
-            (int, ()),
+            (str, (1,)),
+            (int, (1,)),
             (VideoFrame, (-1, 512, 512)),
             (AudioFrame, (-1, 512, 512)),
             (List[np.int16], (512, 512)),

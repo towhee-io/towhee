@@ -1,6 +1,6 @@
 import towhee
 import numpy
-import inspect
+from pathlib import Path
 import pickle
 import importlib
 import sys
@@ -12,14 +12,16 @@ class TritonPythonModel:
     def initialize(self, args):
         
         # load module
-        spec = importlib.util.spec_from_file_location('clip', 'clip.py')
+        module_name = "towhee.operator.triton_nnop"
+        path = "triton_nnop/__init__.py"
+        spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
-        sys.modules['clip'] = module
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
         
         # create callable object
-        callable_cls = clip.Preprocess
-        with open('preprocess.pickle', 'rb') as f:
+        pickle_file_path = Path(__file__).parent / "preprocess.pickle"
+        with open(pickle_file_path, 'rb') as f:
             self.callable_obj = pickle.load(f)
 
     def execute(self, requests):
@@ -32,7 +34,7 @@ class TritonPythonModel:
             in1 = pb_utils.get_input_tensor_by_name(request, 'INPUT1')
             
             # create input args from tensors
-            arg0 = towhee._types.Image(in0.as_numpy(), str(in1.as_numpy()).decode('utf-8'))
+            arg0 = towhee._types.Image(in0.as_numpy(), in1.as_numpy()[0].decode('utf-8'))
             
             # call callable object
             result0 = self.callable_obj(arg0)
