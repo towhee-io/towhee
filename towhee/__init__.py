@@ -21,8 +21,8 @@ from towhee.connectors import Connectors as connectors
 
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
-from towhee.functional import read_video, to_video, read_audio
-from towhee.functional import from_zip, from_df
+from towhee.functional import read_video, read_audio
+from towhee.functional import read_zip, from_df
 from towhee.functional import dc, api, dummy_input
 
 __all__ = [
@@ -43,13 +43,13 @@ __all__ = [
     #
     'glob',
     'glob_zip',
+    'from_df',
+    'read_audio',
+    'read_camera',
     'read_csv',
     'read_json',
-    'read_camera',
-    'from_zip',
-    'from_df',
     'read_video',
-    'to_video',
+    'read_zip',
     'dc',
     'api',
     'dummy_input'

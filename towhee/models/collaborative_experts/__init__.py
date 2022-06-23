@@ -1,4 +1,4 @@
-# Copyright 2021 Zilliz. All rights reserved.
+# Copyright 2022 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import towhee.hub.builtin.operators.computer_vision
-import towhee.hub.builtin.operators.tensor_like
-import towhee.hub.builtin.operators.runas_op
-import towhee.hub.builtin.operators.feature_engineer
-import towhee.hub.builtin.operators.sklearn
-import towhee.hub.builtin.operators.milvus_search
-import towhee.hub.builtin.operators.faiss_search
+from .collaborative_experts import *

@@ -21,19 +21,12 @@ from towhee.hparam import param_scope
 from towhee.hparam import dynamic_dispatch
 # pylint: disable=protected-access
 
-read_csv = DataFrame.from_csv
-
-read_json = DataFrame.from_json
-
-read_camera = DataCollection.from_camera
-
-read_video = DataCollection.read_video
-
-from_zip = DataCollection.from_zip
-
-to_video = DataCollection.to_video
-
 read_audio = DataCollection.read_audio
+read_camera = DataCollection.read_camera
+read_csv = DataFrame.read_csv
+read_json = DataFrame.read_json
+read_video = DataCollection.read_video
+read_zip = DataCollection.read_zip
 
 
 def from_df(dataframe, as_stream=False):
@@ -87,8 +80,8 @@ def glob_zip(uri, pattern):  # pragma: no cover
 
     index = param_scope()._index
     if index is None:
-        return DataCollection.from_zip(uri, pattern)
-    return DataFrame.from_zip(uri, pattern).map(lambda x: Entity(**{index: x}))
+        return DataCollection.read_zip(uri, pattern)
+    return DataFrame.read_zip(uri, pattern).map(lambda x: Entity(**{index: x}))
 
 
 def _api():

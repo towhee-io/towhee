@@ -25,7 +25,7 @@ class DatasetMixin:
 
     # pylint: disable=import-outside-toplevel
     @classmethod
-    def from_glob(cls, *args): # pragma: no cover
+    def from_glob(cls, *args):  # pragma: no cover
         """
         generate a file list with `pattern`
         """
@@ -33,10 +33,10 @@ class DatasetMixin:
         files = []
         for path in args:
             files.extend(glob(path))
-        return cls(files).stream()
+        return cls(files)
 
     @classmethod
-    def from_zip(cls, url, pattern, mode='r'): # pragma: no cover
+    def read_zip(cls, url, pattern, mode='r'):  # pragma: no cover
         """load files from url/path.
 
         Args:
@@ -70,29 +70,10 @@ class DatasetMixin:
                     with zfile.open(path, mode=mode) as f:
                         yield f.read()
 
-        return cls(inner()).stream()
+        return cls(inner())
 
     @classmethod
-    def from_camera(cls, device_id=0, limit=-1): # pragma: no cover
-        """
-        read images from a camera.
-        """
-        from towhee.utils.cv2_utils import cv2
-        cnt = limit
-
-        def inner():
-            nonlocal cnt
-            cap = cv2.VideoCapture(device_id)
-            while cnt != 0:
-                retval, im = cap.read()
-                if retval:
-                    yield im
-                    cnt -= 1
-
-        return cls(inner()).stream()
-
-    @classmethod
-    def from_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
+    def read_json(cls, json_path: Union[str, Path], encoding: str = 'utf-8'):
         import json
 
         def inner():
@@ -103,10 +84,10 @@ class DatasetMixin:
                     string = f.readline()
                     yield Entity(**data)
 
-        return cls(inner()).stream()
+        return cls(inner())
 
     @classmethod
-    def from_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
+    def read_csv(cls, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
         import csv
 
         def inner():
@@ -115,7 +96,7 @@ class DatasetMixin:
                 for line in data:
                     yield Entity(**line)
 
-        return cls(inner()).stream()
+        return cls(inner())
 
     def to_csv(self, csv_path: Union[str, Path], encoding: str = 'utf-8-sig'):
         """
