@@ -17,14 +17,6 @@ class PandasExecution:
     """
     Execute operator on pandas DataFrame
     """
-
-    def __apply__(self, *arg, **kws):
-        if isinstance(self._index[0], tuple):  # Multi inputs.
-            args = [getattr(arg[0], x) for x in self._index[0]]
-        else:  # Single input.
-            args = [getattr(arg[0], self._index[0])]
-        return self._op(*args, **kws)
-
     def __dataframe_apply__(self, df):
         self.__check_init__()
         if isinstance(self._index[1], tuple):

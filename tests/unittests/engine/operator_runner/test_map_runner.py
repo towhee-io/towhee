@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-import threading
 
 
 from towhee.dataframe import DataFrame, iterators
@@ -22,9 +21,7 @@ from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.map_runner import MapRunner
 from tests.unittests.mock_operators.add_operator import add_operator
 
-
-def run(runner):
-    runner.process()
+from . import start_runner
 
 
 class TestMapRunner(unittest.TestCase):
@@ -45,8 +42,7 @@ class TestMapRunner(unittest.TestCase):
         input_df, out_df, runner = self._create_test_obj()
 
         runner.set_op(add_operator.AddOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         input_df.put({'num': 1})
         input_df.put({'num': 2})
@@ -62,16 +58,18 @@ class TestMapRunner(unittest.TestCase):
             self.assertEqual(item[0][0], res)
             res += 1
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
+        t.join()
 
     def test_map_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()
 
         runner.set_op(add_operator.AddOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+        t.join()
+
 
 if __name__ == '__main__':
     unittest.main()

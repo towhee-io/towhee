@@ -14,7 +14,8 @@
 
 import unittest
 import torch
-from towhee.models.frozen_in_time.frozen_utils import sim_matrix, state_dict_data_parallel_fix
+from towhee.models.frozen_in_time.frozen_utils import sim_matrix, state_dict_data_parallel_fix, \
+    remove_bridge_module_state_dic
 
 
 class ForzenUtilsTest(unittest.TestCase):
@@ -40,6 +41,19 @@ class ForzenUtilsTest(unittest.TestCase):
              'text_model.embeddings.position_embeddings.weight': torch.randn(2, 4)}
         out = state_dict_data_parallel_fix(x, y)
         self.assertEqual(y.keys(), out.keys())
+
+    def test_remove_bridge_module_state_dic(self):
+        '''
+        for remove BridgeFormer module parameters
+        '''
+        x = {'text_model.embeddings.word_embeddings.weight': torch.randn(2, 4),
+             'text_model.embeddings.position_embeddings.weight': torch.randn(2, 4)}
+        y = {'text_model.embeddings.word_embeddings.weight': torch.randn(2, 4),
+             'text_model.embeddings.position_embeddings.weight': torch.randn(2, 4),
+             'bridge.text_model.embeddings.position_embeddings.weight': torch.randn(2, 4),
+             'video_model.blocks.0.crossattn.proj.bias': torch.randn(2, 4)}
+        out = remove_bridge_module_state_dic(y, x)
+        self.assertEqual(x.keys(), out.keys())
 
 
 if __name__ == '__main__':

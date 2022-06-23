@@ -67,6 +67,7 @@ def load_pretrained(
     patch_size = cfg['patch_size']
     filter_fn = cfg['filter_fn']
     num_frames = cfg['num_frames']
+    model_name = cfg['model_name']
     # attention_type = cfg['attention_type']
 
     if checkpoint_path is None:
@@ -90,6 +91,11 @@ def load_pretrained(
     state_dict = torch.load(checkpoint_path, map_location=device)
     if 'model' in state_dict.keys():
         state_dict = torch.load(checkpoint_path, map_location=device)['model']
+
+    if model_name.startswith('svt'):
+        renamed_checkpoint = {x[len('backbone.'):]: y for x, y in state_dict.items() if x.startswith('backbone.')}
+        state_dict = renamed_checkpoint
+        print(state_dict.keys())
     state_dict = map_state_dict(checkpoint=state_dict)
 
     if filter_fn is not None:
@@ -130,16 +136,17 @@ def load_pretrained(
             state_dict[conv1_name + '.weight'] = conv1_weight
 
     classifier_name = cfg['classifier']
-    if num_classes == 1000 and cfg['num_classes'] == 1001:
-        # special case for imagenet trained models with extra background class in pretrained weights
-        classifier_weight = state_dict[classifier_name + '.weight']
-        state_dict[classifier_name + '.weight'] = classifier_weight[1:]
-        classifier_bias = state_dict[classifier_name + '.bias']
-        state_dict[classifier_name + '.bias'] = classifier_bias[1:]
-    elif num_classes != state_dict[classifier_name + '.weight'].size(0):
-        del state_dict[classifier_name + '.weight']
-        del state_dict[classifier_name + '.bias']
-        strict = False
+    if model_name.startswith('timesformer'):
+        if num_classes == 1000 and cfg['num_classes'] == 1001:
+            # special case for imagenet trained models with extra background class in pretrained weights
+            classifier_weight = state_dict[classifier_name + '.weight']
+            state_dict[classifier_name + '.weight'] = classifier_weight[1:]
+            classifier_bias = state_dict[classifier_name + '.bias']
+            state_dict[classifier_name + '.bias'] = classifier_bias[1:]
+        elif num_classes != state_dict[classifier_name + '.weight'].size(0):
+            del state_dict[classifier_name + '.weight']
+            del state_dict[classifier_name + '.bias']
+            strict = False
 
     # Resize the positional embeddings in case they don't match
     num_patches = (img_size // patch_size) * (img_size // patch_size)
@@ -185,6 +192,7 @@ def get_configs(model_name: str = None):
     if model_name == 'timesformer_k400_8x224':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
+            model_name='timesformer_k400_8x224',
             url='https://www.dropbox.com/s/g5t24we9gl5yk88/TimeSformer_divST_8x32_224_K400.pyth?dl=0',
             num_frames=8,
             attention_type='divided_space_time',
@@ -198,8 +206,23 @@ def get_configs(model_name: str = None):
     elif model_name == 'timesformer_k400_96x224':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
+            model_name='timesformer_k400_96x224',
             url='https://www.dropbox.com/s/r1iuxahif3sgimo/TimeSformer_divST_96x4_224_K400.pyth?dl=0',
             num_frames=96,
+            attention_type='divided_space_time',
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=400,
+            dropout=0.,
+            first_conv='patch_embed.proj',
+            classifier='head',
+            filter_fn=None,
+        ))
+    elif model_name == 'svt_vitb_k400':
+        configs = vit_configs('vit_base_16x224')
+        configs.update(dict(
+            model_name='svt_vitb_k400',
+            url='https://github.com/kahnchana/svt/releases/download/v1.0/kinetics400_vitb_ssl.pth',
+            num_frames=8,
             attention_type='divided_space_time',
             norm_layer=partial(nn.LayerNorm, eps=1e-6),
             num_classes=400,

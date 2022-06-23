@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .entity_view import EntityView
+from .entity import EntityView
 from towhee.utils.thirdparty.pyarrow import pa
 from towhee.types.tensor_array import TensorArray
 
@@ -25,6 +25,14 @@ class WritableTable:
     def __init__(self, table):
         self._table = table
         self._buffer = {}
+
+    def write_many(self, names, arrays):
+        self.prepare()
+        if isinstance(arrays, tuple):
+            self._buffer = dict(zip(names, arrays))
+        else:
+            self._buffer[names] = arrays
+        return self.seal()
 
     def write(self, name, offset, value):
         if name not in self._buffer:
@@ -52,6 +60,7 @@ class WritableTable:
         for name, arr in zip(names, arrays):
             new_table = new_table.append_column(name, arr)
         self._sealed._table = new_table
+        return self._sealed
 
     def __iter__(self):
         for i in range(self._table.shape[0]):
@@ -75,10 +84,14 @@ class ChunkedTable:
     Chunked arrow table
     """
 
-    def __init__(self, chunksize=128, stream=False) -> None:
+    def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
+
         self._chunksize = chunksize
-        self._chunks = [] if stream is False else None
         self._buffer = []
+        if chunks is not None:
+            self._chunks = chunks
+        else:
+            self._chunks = [] if stream is False else None
 
     def feed(self, element, eos=False):
         if not eos:

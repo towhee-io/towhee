@@ -121,8 +121,3 @@ class cate_one_hot_encoder(StatefulOperator):
         import numpy as np
         data = np.array([x]).reshape([-1, 1])
         return self._state.model.transform(data)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

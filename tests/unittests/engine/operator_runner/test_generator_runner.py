@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
@@ -21,10 +20,7 @@ from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.generator_runner import GeneratorRunner
 from tests.unittests.mock_operators.generator_operator import generator_operator
-
-
-def run(runner):
-    runner.process()
+from . import start_runner
 
 
 class TestGeneratorRunner(unittest.TestCase):
@@ -44,8 +40,8 @@ class TestGeneratorRunner(unittest.TestCase):
     def test_generator_runner(self):
         input_df, out_df, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
+
         input_df.put({'num': 10})
         input_df.seal()
         t.join()
@@ -62,8 +58,7 @@ class TestGeneratorRunner(unittest.TestCase):
     def test_generator_runner_with_multidata(self):
         input_df, out_df, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         input_df.put({'num': 10})
         input_df.put({'num': 5})
         input_df.seal()
@@ -82,12 +77,9 @@ class TestGeneratorRunner(unittest.TestCase):
                                    'mock_operators', {'num': 1}, [reader], writer)
 
         runner_1.set_op(generator_operator.GeneratorOperator())
-        t1 = threading.Thread(target=run, args=(runner_1, ))
-        t1.start()
-
+        t1 = start_runner(runner_1)
         runner_2.set_op(generator_operator.GeneratorOperator())
-        t2 = threading.Thread(target=run, args=(runner_2, ))
-        t2.start()
+        t2 = start_runner(runner_2)
 
         input_df_1.put({'num': 1})
         input_df_1.put({'num': 2})
@@ -115,11 +107,11 @@ class TestGeneratorRunner(unittest.TestCase):
     def test_generator_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()
         runner.set_op(generator_operator.GeneratorOperator())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+        t.join()
 
 
 if __name__ == '__main__':

@@ -14,12 +14,13 @@
 
 import unittest
 from typing import Dict
-import threading
 from queue import Queue
 
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.concat_runner import ConcatRunner
 from towhee.operator.concat_operator import ConcatOperator
+
+from . import start_runner
 
 DATA_QUEUE = Queue()
 
@@ -52,10 +53,6 @@ class MockWriter:
         self.res.append(data)
 
 
-def run(runner):
-    runner.process()
-
-
 class TestConcatRunner(unittest.TestCase):
     """
     Concat runner test
@@ -74,8 +71,7 @@ class TestConcatRunner(unittest.TestCase):
             writer
         )
         runner.set_op(ConcatOperator('row'))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         res = []
         for i in range(3):
@@ -96,6 +92,8 @@ class TestConcatRunner(unittest.TestCase):
         for i in range(len(writer.res)):
             self.assertEqual(writer.res[i], res[i])
             self.assertEqual(runner.status, RunnerStatus.FINISHED)
+        t.join()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
@@ -21,10 +20,7 @@ from towhee.engine.operator_io import create_reader, create_writer
 from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.window_runner import WindowRunner
 from tests.unittests.mock_operators.sum_operator.sum_operator import SumOperator
-
-
-def run(runner):
-    runner.process()
+from . import start_runner
 
 
 class TestRunner(unittest.TestCase):
@@ -47,8 +43,7 @@ class TestRunner(unittest.TestCase):
         df_in, out_df, runner = self._create_test_obj()
 
         runner.set_op(SumOperator())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         it = MapIterator(df_in, True)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         for _ in range(100):
@@ -69,17 +64,18 @@ class TestRunner(unittest.TestCase):
             else:
                 self.assertEqual(item[0][0], 1)
             count += 1
+        t.join()
 
     def test_window_runner_with_error(self):
         df_in, _, runner = self._create_test_obj()
         runner.set_op(SumOperator())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         df_in.put({'num': 'error_data'})
         df_in.seal()
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+        t.join()
 
 
 if __name__ == '__main__':

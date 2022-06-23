@@ -228,6 +228,8 @@ def create_model(
             attention_type=configs['attention_type'],
             dropout=configs['dropout']
         )
+        if model_name.startswith('svt'):
+            model.head = None
 
     model.to(device)
     if pretrained:
@@ -238,22 +240,9 @@ def create_model(
 
 
 # if __name__ == '__main__':
-#     import torch
-#     import random
-#     import numpy as np
-#
-#     def setup_seed(seed):
-#         torch.manual_seed(seed)
-#         torch.cuda.manual_seed_all(seed)
-#         np.random.seed(seed)
-#         random.seed(seed)
-#         torch.backends.cudnn.deterministic = True
-#
-#     setup_seed(24)
-#     dummy_video = torch.randn(1, 3, 8, 224, 224)  # (batch x channels x frames x height x width)
-#
-#     model = TimeSformer(img_size=224, num_classes=400, num_frames=8, attention_type='frozen_in_time')
-#     pred = model(dummy_video)
-#     assert(pred.shape == (1, 400))
-#     model = create_model(model_name='timesformer_k400_8x224')
-#     print(model(dummy_video))
+#     path = '/Users/zilliz/PycharmProjects/pretrain/SVT/kinetics400_vitb_ssl.pth'
+#     model = create_model(model_name='svt_vitb_k400', checkpoint_path=path, pretrained=True)
+#     sample = torch.randn(1, 3, 8, 224, 224)
+#     # out1 = model(sample)
+#     out1 = model.forward_features(sample)
+#     print(out1.shape)

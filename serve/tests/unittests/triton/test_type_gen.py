@@ -27,7 +27,7 @@ class TestHandlingTypeAnnotations(unittest.TestCase):
 
     def test_type_checking(self):
         funcs = {
-            np.ndarray: lambda t, s, is_list: 'ndarray',
+            np.int16: lambda t, s, is_list: 'ndarray',
             str: lambda t, s, is_list: 'str',
             int: lambda t, s, is_list: 'int',
             VideoFrame: lambda t, s, is_list: 'VideoFrame',
@@ -35,12 +35,12 @@ class TestHandlingTypeAnnotations(unittest.TestCase):
         }
 
         annotations = [
-            (np.ndarray, (4, 4)),
+            (np.int16, (4, 4)),
             (str, (-1)),
             (int, ()),
             (VideoFrame, (-1, 512, 512)),
             (AudioFrame, (-1, 512, 512)),
-            (List[np.ndarray], (-1, 512, 512)),
+            (List[np.int16], (512, 512)),
         ]
 
         expected_results = [

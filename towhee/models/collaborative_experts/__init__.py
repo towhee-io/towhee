@@ -1,4 +1,4 @@
-# Copyright 2021 Zilliz. All rights reserved.
+# Copyright 2022 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,17 +11,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import doctest
-import unittest
 
-import towhee.functional.entity_view
-
-
-def load_tests(loader, tests, ignore):
-    #pylint: disable=unused-argument
-    tests.addTests(doctest.DocTestSuite(towhee.functional.entity_view))
-    return tests
-
-
-if __name__ == '__main__':
-    unittest.main()
+from .collaborative_experts import *

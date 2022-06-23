@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
@@ -22,9 +21,7 @@ from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.filter_runner import FilterRunner
 from tests.unittests.mock_operators.zero_drop import zero_drop
 
-
-def run(runner):
-    runner.process()
+from . import start_runner
 
 
 class TestFilterRunner(unittest.TestCase):
@@ -45,8 +42,7 @@ class TestFilterRunner(unittest.TestCase):
     def test_filter_runner(self):
         input_df, out_df, runner = self._create_test_obj()
         runner.set_op(zero_drop.ZeroDrop())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         input_df.put({'num': 0})
         input_df.put({'num': 1})
@@ -65,15 +61,17 @@ class TestFilterRunner(unittest.TestCase):
             res += 1
 
         self.assertEqual(runner.status, RunnerStatus.FINISHED)
+        t.join()
 
     def test_map_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()
         runner.set_op(zero_drop.ZeroDrop())
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         input_df.put({'num': 'error_data'})
         runner.join()
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+        t.join()
+
 
 if __name__ == '__main__':
     unittest.main()
