@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Union, List
 from requests.exceptions import HTTPError
 from shutil import rmtree
+from pkg_resources import DistributionNotFound
 
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.log import engine_log
@@ -128,7 +129,10 @@ class GitUtils:
         if install_reqs and 'requirements.txt' in (i.name for i in local_repo_path.iterdir()):
             with open(local_repo_path / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
-            pkg_resources.require(reqs)
+            try:
+                pkg_resources.require(reqs)
+            except DistributionNotFound:
+                pass
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
 
     def status(self):
