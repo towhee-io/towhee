@@ -68,7 +68,6 @@ class TestCreateEnsemble(unittest.TestCase):
     '''
     Test create ensenble
     '''
-    
     def test_create_ensemblle(self):
         input_dag = {
             0: {
@@ -112,6 +111,5 @@ class TestCreateEnsemble(unittest.TestCase):
         res =  create_ensemble(input_dag, 'mix_nobatch_batch_float32_float32_float32', 8)
         e_f = EXPECTED_FILE_PATH + '/test_create_ensemble.pbtxt'
         with open(e_f, 'rt', encoding='utf-8') as f:
-                expect = f.read()
-                self.assertEqual(res, expect)
-                
+            expect = f.read()
+            self.assertEqual(res, expect)
