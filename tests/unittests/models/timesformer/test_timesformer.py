@@ -70,6 +70,15 @@ class TestTimesformer(unittest.TestCase):
         self.assertTrue(pred.shape == (1, 400))
         self.assertTrue(feats.shape == (1, 768))
 
+    def test_svt(self):
+        video = torch.randn(1, 3, 8, 32, 32)
+        model = timesformer.create_model(
+            model_name='svt_vitb_k400',
+            pretrained=False,
+            img_size=32)
+        feats = model.forward_features(video)
+        self.assertTrue(feats.shape == (1, 768))
+
 
 if __name__ == '__main__':
     unittest.main()

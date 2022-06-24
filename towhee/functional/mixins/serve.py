@@ -220,15 +220,20 @@ class ServeMixin:
 
         api = _APIWrapper.tls.place_holder
 
+        as_function_self = self
         pipeline = _PipeWrapper(self._iterable, api)
 
-        def wrapper(req):
-            rsp = pipeline.execute(req)
-            if rsp.is_empty():
-                return rsp.get()
-            return rsp.get()
+        class _Wrapper:
+            def __init__(self):
+                self.dag_info = as_function_self.compile_dag()
 
-        return wrapper
+            def __call__(self, req):
+                rsp = pipeline.execute(req)
+                if rsp.is_empty():
+                    return rsp.get()
+                return rsp.get()
+
+        return _Wrapper()
 
     @classmethod
     def api(cls, index=None):

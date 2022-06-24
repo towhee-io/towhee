@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Any
+
+import json
+from typing import List, Tuple, Any, Dict
 
 import serve.triton.type_gen as tygen
 import serve.triton.format_utils as fmt
@@ -37,8 +39,8 @@ class PyModelBuilder:
     def gen_finalize(self):
         raise NotImplementedError('gen_execute not implemented')
 
-    def build(self, save_path: str = './model.py'):
-        with open(save_path, 'wt') as f:
+    def build(self, save_path: str):
+        with open(save_path, 'wt', encoding='utf-8') as f:
             f.writelines(self.gen_imports())
             f.writelines(self.gen_blank_lines(2))
             f.writelines(self.gen_class_name())
@@ -107,7 +109,12 @@ class PyModelBuilder:
         for attr, tr_name, tr_var in zip(type_info.attr_info, tensor_names, tensor_vars):
             data = attr.obj_placeholder.replace(obj_placeholder, obj_var)
             dtype = attr.numpy_dtype
-            ndarray = 'numpy.array(' + data + ', ' + dtype + ')'
+
+            if tygen.is_scalar(attr):
+                ndarray = 'numpy.array([' + data + '], ' + dtype + ')'
+            else:
+                ndarray = 'numpy.array(' + data + ', ' + dtype + ')'
+
             line = tr_var + ' = pb_utils.Tensor(\'' + tr_name + '\', ' + ndarray + ')'
             lines.append(line)
 
@@ -122,16 +129,14 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
     def __init__(
         self,
         module_name: str,
-        callable_name: str,
         python_file_path: str,
-        pickle_file_path: str,
+        pickle_file_name: str,
         input_annotations: List[Tuple[Any, Tuple]],
         output_annotations: List[Tuple[Any, Tuple]]
     ):
         self.module_name = module_name
-        self.callable_name = callable_name
         self.python_file_path = python_file_path
-        self.pickle_file_path = pickle_file_path
+        self.pickle_file_name = pickle_file_name
         self.input_annotations = input_annotations
         self.output_annotations = output_annotations
 
@@ -139,7 +144,7 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines = []
         lines.append('import towhee')
         lines.append('import numpy')
-        lines.append('import inspect')
+        lines.append('from pathlib import Path')
         lines.append('import pickle')
         lines.append('import importlib')
         lines.append('import sys')
@@ -152,14 +157,16 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines.append('def initialize(self, args):')
         lines.append('')
         lines.append('# load module')
-        lines.append('spec = importlib.util.spec_from_file_location(\'' + self.module_name + '\', \'' + self.python_file_path + '\')')
+        lines.append(f'module_name = "{self.module_name}"')
+        lines.append(f'path = "{self.python_file_path}"')
+        lines.append('spec = importlib.util.spec_from_file_location(module_name, path)')
         lines.append('module = importlib.util.module_from_spec(spec)')
-        lines.append('sys.modules[\'' + self.module_name + '\'] = module')
+        lines.append('sys.modules[module_name] = module')
         lines.append('spec.loader.exec_module(module)')
         lines.append('')
         lines.append('# create callable object')
-        lines.append('callable_cls = ' + self.module_name + '.' + self.callable_name)
-        lines.append('with open(\'' + self.pickle_file_path + '\', \'rb\') as f:')
+        lines.append(f'pickle_file_path = Path(__file__).parent / "{self.pickle_file_name}"')
+        lines.append('with open(pickle_file_path, \'rb\') as f:')
         lines.append(fmt.intend('self.callable_obj = pickle.load(f)'))
 
         lines = lines[:1] + fmt.intend(lines[1:])
@@ -250,7 +257,7 @@ class OpPyModelBuilder(PyModelBuilder):
         self,
         task_name: str,
         op_name: str,
-        op_init_args: List[str],
+        op_init_args: Dict,
         input_annotations: List[Tuple[Any, Tuple]],
         output_annotations: List[Tuple[Any, Tuple]]
     ):
@@ -262,6 +269,8 @@ class OpPyModelBuilder(PyModelBuilder):
 
     def gen_imports(self):
         lines = []
+        lines.append('import towhee')
+        lines.append('import numpy')
         lines.append('from towhee import ops')
         lines.append('import triton_python_backend_utils as pb_utils')
 
@@ -273,7 +282,8 @@ class OpPyModelBuilder(PyModelBuilder):
         lines.append('')
         lines.append('# create op instance')
         lines.append('task = getattr(ops, \'' + self.task_name + '\')')
-        lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + ', '.join(self.op_init_args) + ')')
+        lines.append('init_args = ' + json.dumps(self.op_init_args))
+        lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + '**init_args' + ')')
 
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
@@ -357,17 +367,15 @@ class OpPyModelBuilder(PyModelBuilder):
 def gen_model_from_pickled_callable(
     save_path: str,
     module_name: str,
-    callable_name: str,
     python_file_path: str,
-    pickle_file_path: str,
+    pickle_file_name: str,
     input_annotations: List[Tuple[Any, Tuple]],
     output_annotations: List[Tuple[Any, Tuple]]
 ):
     builder = PickledCallablePyModelBuilder(
         module_name,
-        callable_name,
         python_file_path,
-        pickle_file_path,
+        pickle_file_name,
         input_annotations,
         output_annotations
     )
@@ -379,7 +387,7 @@ def gen_model_from_op(
     save_path: str,
     task_name: str,
     op_name: str,
-    op_init_args: List[str],
+    op_init_args: Dict,
     input_annotations: List[Tuple[Any, Tuple]],
     output_annotations: List[Tuple[Any, Tuple]]
 ):

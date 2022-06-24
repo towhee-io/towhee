@@ -110,8 +110,3 @@ class milvus_search:
                     dicts.update(hit.entity._row_data)
                 result.append(Entity(**dicts))
         return result
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=False)

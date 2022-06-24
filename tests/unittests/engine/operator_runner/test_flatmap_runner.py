@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-import threading
 
 from towhee.dataframe import DataFrame
 from towhee.dataframe.iterators import MapIterator
@@ -21,10 +20,7 @@ from towhee.engine.operator_runner.runner_base import RunnerStatus
 from towhee.engine.operator_runner.flatmap_runner import FlatMapRunner
 from towhee.engine.operator_io import create_reader, create_writer
 from tests.unittests.mock_operators.repeat_operator.repeat_operator import RepeatOperator
-
-
-def run(runner):
-    runner.process()
+from . import start_runner
 
 
 class TestFlatmapRunner(unittest.TestCase):
@@ -46,8 +42,7 @@ class TestFlatmapRunner(unittest.TestCase):
         input_df, out_df, runner = self._create_test_obj()
 
         runner.set_op(RepeatOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         self.assertEqual(runner.status, RunnerStatus.RUNNING)
         input_df.put({'num': 1})
         input_df.put({'num': 2})
@@ -64,6 +59,7 @@ class TestFlatmapRunner(unittest.TestCase):
             self.assertEqual(item[0][-1].parent_path, str(count // 3))
             count += 1
         self.assertEqual(out_df.size, 9)
+        t.join()
 
     def test_multi_flatmap(self):
         input_df_1, out_df_1, runner_1 = self._create_test_obj()
@@ -75,12 +71,10 @@ class TestFlatmapRunner(unittest.TestCase):
                                  [reader], writer)
 
         runner_1.set_op(RepeatOperator(3))
-        t1 = threading.Thread(target=run, args=(runner_1, ))
-        t1.start()
+        t1 = start_runner(runner_1)
 
         runner_2.set_op(RepeatOperator(4))
-        t2 = threading.Thread(target=run, args=(runner_2, ))
-        t2.start()
+        t2 = start_runner(runner_2)
 
         input_df_1.put({'num': 1})
         input_df_1.put({'num': 2})
@@ -116,12 +110,12 @@ class TestFlatmapRunner(unittest.TestCase):
     def test_flatmap_runner_with_error(self):
         input_df, _, runner = self._create_test_obj()
         runner.set_op(RepeatOperator(3))
-        t = threading.Thread(target=run, args=(runner, ))
-        t.start()
+        t = start_runner(runner)
         input_df.put(('errdata', ))
         runner.join()
         self.assertTrue('Input is not int type' in runner.msg)
         self.assertEqual(runner.status, RunnerStatus.FAILED)
+        t.join()
 
 
 if __name__ == '__main__':

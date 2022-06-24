@@ -292,8 +292,3 @@ class tensor_matmul:
         if y is None and self._trans is not None:
             return np.matmul(x, self._trans)
         return np.matmul(x, y)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod(verbose=True)

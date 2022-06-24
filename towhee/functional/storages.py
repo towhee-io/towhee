@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .entity_view import EntityView
+from .entity import EntityView
 from towhee.utils.thirdparty.pyarrow import pa
 from towhee.types.tensor_array import TensorArray
 

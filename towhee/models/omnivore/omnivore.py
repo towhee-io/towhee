@@ -466,7 +466,7 @@ def omnivore_swinl_kinetics600(
 def create_model(
         model_name: str = None,
         pretrained: bool = True,
-        device: str = "cpu",
+        device: str = None,
         ):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"

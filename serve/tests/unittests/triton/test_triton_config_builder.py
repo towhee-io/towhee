@@ -16,7 +16,9 @@ import unittest
 import numpy as np
 
 from towhee._types.image import Image
-from serve.triton.triton_config_builder import TritonModelConfigBuilder
+from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig
+
+from . import EXPECTED_FILE_PATH
 
 
 class TestTritonModelConfigBuilder(unittest.TestCase):
@@ -27,17 +29,37 @@ class TestTritonModelConfigBuilder(unittest.TestCase):
     # pylint: disable=protected-access
 
     def test_get_triton_schema(self):
-        input_annotations = [(Image, (512, 512, 3)), (int, ()), (str, (-1,))]
+        input_annotations = [(Image, (512, 512, 3)), (int, (1,)), (str, (1,))]
         output_annotations = [(np.float32, (1, 3, 224, 224))]
 
         input_schema = TritonModelConfigBuilder.get_input_schema(input_annotations)
         output_schema = TritonModelConfigBuilder.get_output_schema(output_annotations)
         expected_input_schema = {
             'INPUT0': ('TYPE_INT8', [512, 512, 3]),
-            'INPUT1': ('TYPE_STRING', []),
-            'INPUT2': ('TYPE_INT64', []),
-            'INPUT3': ('TYPE_STRING', [-1])
+            'INPUT1': ('TYPE_STRING', [1]),
+            'INPUT2': ('TYPE_INT64', [1]),
+            'INPUT3': ('TYPE_STRING', [1])
         }
         expected_output_schema = {'OUTPUT0': ('TYPE_FP32', [1, 3, 224, 224])}
         self.assertDictEqual(input_schema, expected_input_schema)
         self.assertDictEqual(output_schema, expected_output_schema)
+
+
+class TestModelConfig(unittest.TestCase):
+    '''
+    Test to triton config.pbtxt
+    '''
+
+    def test_config(self):
+        config = create_modelconfig('test_model', 128,
+                                    {
+                                        'INPUT0': ('TYPE_INT8', [-1, -1, 3]),
+                                        'INPUT1': ('TYPE_FP32', [3, -1, -1]),
+                                    }, {
+                                        'OUTPUT0': ('TYPE_FP32', [-1, 512])
+                                    }, 'python')
+
+        e_f = EXPECTED_FILE_PATH + '/test_model.pbtxt'
+        with open(e_f, 'rt', encoding='utf-8') as f:
+            expect = f.read()
+            self.assertEqual(config, expect)
