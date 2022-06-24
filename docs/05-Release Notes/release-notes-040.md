@@ -59,10 +59,10 @@ New pages
 - ["Overview"](https://docs.towhee.io/)
 - ["Getting started / Quick start"](https://docs.towhee.io/get-started/quick-start)
 - ["Getting started / Installation"](https://docs.towhee.io/get-started/install)
-- ["Tutorials / Reverse image search"](https://docs.towhee.io/tutorials/reverse-image-search)
-- ["Tutorials / Image deduplication"](https://docs.towhee.io/tutorials/image-deduplication)
-- ["Tutorials / Music recognition"](https://docs.towhee.io/tutorials/music-recognition-system)
-- ["Supported pipelines / Image embedding pipelines"](https://docs.towhee.io/tutorials/music-recognition-system)
+- "Tutorials / Reverse image search"
+- "Tutorials / Image deduplication"
+- "Tutorials / Music recognition"
+- "Supported pipelines / Image embedding pipelines"
 - ["Supported pipelines / Music embedding pipelines"](https://docs.towhee.io/pipelines/music-embedding)
 - ["Developer guides / Contributing / Contributing guide"](https://docs.towhee.io/developer-guides/contributing/contributing-guide)
 
