@@ -124,7 +124,7 @@ def create_ensemble(dag, name='pipeline', max_batch_size=128):
                 dim_len_list.append(len(v[1]))
         else:
             continue
-        
+
     # add name/paltform/max_batch_size
     res_dict = dict()
     res_dict['name'] = name
@@ -243,7 +243,7 @@ def move_mark(data, dim_lens):
             res_data.append(y)
             res_data.append(s[1])
             change = s[2].replace('\n       ', '', 1)
-            res = change.replace('\n       ', '', dim_lens[dim])
+            res = change.replace('\n       ', '', dim_lens[dim]-1)
             res = res.replace('\n     ', '', 1)
             dim = dim + 1
 
