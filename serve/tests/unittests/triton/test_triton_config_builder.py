@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 
 from towhee._types.image import Image
-from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig
+from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_ensemble, create_modelconfig
 
 from . import EXPECTED_FILE_PATH
 
@@ -63,3 +63,55 @@ class TestModelConfig(unittest.TestCase):
         with open(e_f, 'rt', encoding='utf-8') as f:
             expect = f.read()
             self.assertEqual(config, expect)
+
+class TestCreateEnsemble(unittest.TestCase):
+    '''
+    Test create ensenble
+    '''
+    
+    def test_create_ensemblle(self):
+        input_dag = {
+            0: {
+                'id': 0,
+                'model_name': 'custom_zero_1_float32',
+                'model_version': -1,
+                'input': {
+                    'INPUT0': ('TYPE_FP32', [16,1,2])
+                },
+                'output': {
+                    'OUTPUT0': ('TYPE_FP32', [16])
+                },
+                'child_ids': [1]
+            },
+            1: {
+                'id': 1,
+                'model_name': 'custom_nobatch_zero_1_float32',
+                'model_version': -1,
+                'input': {
+                    'INPUT0': ('TYPE_FP32', [16])
+                },
+                'output': {
+                    'OUTPUT0': ('TYPE_FP32', [16])
+                },
+                'child_ids': [2]
+            },
+            2: {
+                'id': 2,
+                'model_name': 'graphdef_float32_float32_float32',
+                'model_version': 1,
+                'input': {
+                    'INPUT0': ('TYPE_FP32', [16])
+                },
+                'output': {
+                    'OUTPUT0': ('TYPE_FP32', [16,2,3,4]),
+                    'OUTPUT1': ('TYPE_FP32', [16])
+                },
+                'child_ids': []
+            }
+        }
+        res =  create_ensemble(input_dag, 'mix_nobatch_batch_float32_float32_float32', 8)
+        e_f = EXPECTED_FILE_PATH + '/test_create_ensemble.pbtxt'
+        with open(e_f, 'rt', encoding='utf-8') as f:
+                expect = f.read()
+                self.assertEqual(res, expect)
+                
