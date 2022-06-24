@@ -140,17 +140,17 @@ class PyOpToTriton(ToTriton):
         return True
 
 
-class ProcessToTriton(ToTriton):
+class PreprocessToTriton(ToTriton):
     '''
-    Preprocess and Postprocess to triton model.
+    Preprocess to triton model.
     '''
-    def __init__(self, op, model_root, model_name, process_name, op_name):
-        super().__init__(getattr(op, process_name), model_root, model_name)
-        self._processer_name = process_name
-        self._init_file = Path(inspect.getmodule(op).__file__).parent / '__init__.py'
-        self._module_name = 'towhee.operator.' + op_name
+    def __init__(self, op, model_root, model_name):
+        super().__init__(op.preprocess, model_root, model_name)
+        op_module_info = inspect.getmodule(op)
+        self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
+        self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
 
-    def _preprocess(self):
+    def _prepare_model(self):
         gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
                                         self._module_name,
                                         str(self._init_file),
@@ -163,11 +163,20 @@ class ProcessToTriton(ToTriton):
             pickle.dump(self._obj, f)
         return True
 
-    def _postprocess(self):
-        # create model.py
+
+class PostprocessToTriton(ToTriton):
+    '''
+    Preprocess and Postprocess to triton model.
+    '''
+    def __init__(self, op, model_root, model_name):
+        super().__init__(op.postprocess, model_root, model_name)
+        op_module_info = inspect.getmodule(op)
+        self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
+        self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])        
+
+    def _prepare_model(self):
         gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
                                         self._module_name,
-                                        'Postprocess',
                                         str(self._init_file),
                                         str(self._triton_files.postprocess_pickle),
                                         self._obj.metainfo['input_schema'],
@@ -178,14 +187,8 @@ class ProcessToTriton(ToTriton):
             pickle.dump(self._obj, f)
         return True
 
-    def _prepare_model(self):
-        if self._processer_name == 'preprocess':
-            return self._preprocess()
-        else:
-            return self._postprocess()
 
-
-class NNOpToTriton(ToTriton):
+class ModelToTriton(ToTriton):
     '''
     NNOp to triton model.
 

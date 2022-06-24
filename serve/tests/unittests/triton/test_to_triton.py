@@ -19,7 +19,7 @@ from pathlib import Path
 import filecmp
 
 from towhee import ops
-from serve.triton.to_triton_models import PyOpToTriton, ProcessToTriton, NNOpToTriton
+from serve.triton.to_triton_models import PyOpToTriton, PreprocessToTriton, PostprocessToTriton,ModelToTriton
 
 from . import EXPECTED_FILE_PATH
 
@@ -40,7 +40,7 @@ class TestPyOpToTriton(unittest.TestCase):
             self.assertTrue(filecmp.cmp(expect_root / '1' / 'model.py', dst / '1' / 'model.py'))
 
 
-class TestProcessor(unittest.TestCase):
+class TestPreprocessor(unittest.TestCase):
     '''
     Test nnop process to triton
     '''
@@ -48,13 +48,33 @@ class TestProcessor(unittest.TestCase):
     def test_processor(self):
         with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
-            to_triton = ProcessToTriton(op, root, 'preprocess', 'preprocess', 'triton_nnop')
+            to_triton = PreprocessToTriton(op, root, 'preprocess')
             to_triton.to_triton()
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'preprocess'
             dst = Path(root) / 'preprocess'
             self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
             pk = dst / '1' / 'preprocess.pickle'
+            m_file = dst / '1' / 'model.py'
+            self.assertTrue(pk.is_file())
+            self.assertTrue(m_file.is_file())
+
+
+class TestPostprocessor(unittest.TestCase):
+    '''
+    Test nnop process to triton
+    '''
+
+    def test_processor(self):
+        with TemporaryDirectory(dir='./') as root:
+            op = ops.local.triton_nnop(model_name='test').get_op()
+            to_triton = PostprocessToTriton(op, root, 'postprocess')
+            to_triton.to_triton()
+
+            expect_root = Path(EXPECTED_FILE_PATH) / 'postprocess'
+            dst = Path(root) / 'postprocess'
+            self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
+            pk = dst / '1' / 'postprocess.pickle'
             m_file = dst / '1' / 'model.py'
             self.assertTrue(pk.is_file())
             self.assertTrue(m_file.is_file())
@@ -68,7 +88,7 @@ class TestToModel(unittest.TestCase):
     def test_to_model(self):
         with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
-            to_triton = NNOpToTriton(op.model, root, 'nnop')
+            to_triton = ModelToTriton(op.model, root, 'nnop')
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'nnop'
             dst = Path(root) / 'nnop'
