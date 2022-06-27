@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.utils.numba import njit
 from towhee.utils.log import engine_log
 from towhee.hparam import param_scope
 from towhee.engine.factory import ops
@@ -24,6 +23,7 @@ class NumbaCompiler:
     The just-in-time Compiler with numba.
     """
     def __init__(self, name, index, *arg, **kws):
+        from towhee.utils.numba_utils import njit  # pylint: disable=import-outside-toplevel
         name_func = [name + '_func', name.replace('_', '-') + '_func']
         for n in name_func:
             func = OperatorRegistry.resolve(n)
