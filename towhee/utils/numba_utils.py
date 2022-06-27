@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 try:
     # pylint: disable=unused-import
     from numba import njit
-except ModuleNotFoundError as e:
-    from towhee.utils.dependency_control import prompt_install
-    prompt_install('numba')
-    from numba import njit # pylint: disable=ungrouped-imports
+except (ModuleNotFoundError, ImportError) as e:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('numba')
+        # pylint: disable=unused-import,ungrouped-imports
+        import numba
+        from numba import njit
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('numba not found, you can install via `pip install numba`.')
+        raise ModuleNotFoundError('numba not found, you can install via `pip install numba`.') from e
