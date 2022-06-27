@@ -55,3 +55,12 @@ def sim_matrix(a, b, eps=1e-8):
     b_norm = b / torch.max(b_n, eps * torch.ones_like(b_n))
     sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
     return sim_mt
+
+
+def remove_bridge_module_state_dic(load_state_dict, curr_state_dict):
+    curr_keys = list(curr_state_dict.keys())
+    new_state_dict = OrderedDict()
+    for k, v in load_state_dict.items():
+        if k in curr_keys:
+            new_state_dict[k] = v
+    return new_state_dict
