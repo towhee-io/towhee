@@ -674,7 +674,10 @@ class DataCollection(Iterable, DCMixins):
                 index = hp._index
             if self.get_backend() == 'ray':
                 return self.ray_resolve({}, path, index, *arg, **kws)
-            op = self.resolve(path, index, *arg, **kws)
+            if self._jit is not None:
+                op = self.jit_resolve(path, index, *arg, **kws)
+            else:
+                op = self.resolve(path, index, *arg, **kws)
             return self.map(op)
 
         return getattr(wrapper, name)
