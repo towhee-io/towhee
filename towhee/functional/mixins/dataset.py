@@ -33,6 +33,8 @@ class DatasetMixin:
         files = []
         for path in args:
             files.extend(glob(path))
+        if len(files) == 0:
+            raise FileNotFoundError(f'There is no files with {args}.')
         return cls(files)
 
     @classmethod
