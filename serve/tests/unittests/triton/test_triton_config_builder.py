@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 
 from towhee._types.image import Image
-from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_ensemble, create_modelconfig
+from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
 
 from . import EXPECTED_FILE_PATH
 
@@ -64,6 +64,7 @@ class TestModelConfig(unittest.TestCase):
             expect = f.read()
             self.assertEqual(config, expect)
 
+
 class TestCreateEnsemble(unittest.TestCase):
     '''
     Test create ensenble
@@ -108,7 +109,9 @@ class TestCreateEnsemble(unittest.TestCase):
                 'child_ids': []
             }
         }
-        res =  create_ensemble(input_dag, 'mix_nobatch_batch_float32_float32_float32', 8)
+        res = EnsembleConfigBuilder (input_dag, 'mix_nobatch_batch_float32_float32_float32', 8).gen_config()
+        with open('./ensemble.pbtxt', 'wt', encoding='utf-8') as f:
+            f.write(res)
         e_f = EXPECTED_FILE_PATH + '/test_create_ensemble.pbtxt'
         with open(e_f, 'rt', encoding='utf-8') as f:
             expect = f.read()
