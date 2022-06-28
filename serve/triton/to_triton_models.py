@@ -194,22 +194,23 @@ class ModelToTriton(ToTriton):
 
     Convert model to trt, torchscript or onnx.
     '''
-    def __init__(self, op, model_root, model_name, model_optimize):
+    def __init__(self, op, model_root, model_name, model_format_priority):
         super().__init__(op.model, model_root, model_name)
-        self._model_optimize = model_optimize
+        self._model_format_priority = model_format_priority
 
     def _prepare_model(self):
         succ = False
-        for optimize in self._model_optimize:
-            if optimize in self._obj.model.optimizes:
+        for optimize in self._model_format_priority:
+            if optimize in self._obj.supported_formats:
                 if optimize == 'onnx':
                     succ = self._obj.save_model(optimize, self._triton_files.onnx_model_file)
+                    self._backend = 'onnxruntime'                    
                 elif optimize == 'tensorrt':
                     succ = self._obj.save_model(optimize, self._triton_files.trt_model_file)
+                    self._backend = 'tensorrt'
                 else:
                     logger.error('Unkown optimize %s' % optimize)
                     continue
-                self._backend = optimize
         return succ
 
 

@@ -45,5 +45,5 @@ class Model:
         return self.model(image)
 
     @property
-    def optimizes(self):
+    def supported_formats(self):
         return []

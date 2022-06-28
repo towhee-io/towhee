@@ -29,12 +29,12 @@ class Builder:
 
     In V1, we only support a chain graph for we have not traced the input and output map.
     '''
-    def __init__(self, dag, model_root, model_optimize):
+    def __init__(self, dag, model_root, model_format_priority):
         self.dag = dag
         self._runtime_dag = None
         self._model_root = model_root
         self._ensemble_config = None
-        self._model_optimize = model_optimize 
+        self._model_format_priority = model_format_priority
 
     def _nnoperator_config(self, op, op_name, node_id, node):
         '''
@@ -56,7 +56,7 @@ class Builder:
 
         model_name = '_'.join([node_id, op_name, 'model']).replace('/', '_')
         converter = ModelToTriton(op, self._model_root,
-                                  model_name, self._model_optimize)
+                                  model_name, self._model_format_priority)
         models.append({
             'model_name': model_name,
             'converter': converter,
@@ -108,7 +108,7 @@ class Builder:
         if op is None:
             return None
 
-        if isinstance(op, NNOperator) and op.model.optimizes:
+        if isinstance(op, NNOperator) and op.model.supported_formats:
             return self._nnoperator_config(op, op_name, node_id, node)
         else:
             return self._pyop_config(op, node_id, node)
