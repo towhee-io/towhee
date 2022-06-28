@@ -19,7 +19,7 @@ from pathlib import Path
 import filecmp
 
 from towhee import ops
-from serve.triton.to_triton_models import PyOpToTriton, PreprocessToTriton, PostprocessToTriton,ModelToTriton
+from serve.triton.to_triton_models import PyOpToTriton, PreprocessToTriton, PostprocessToTriton, ModelToTriton, EnsembleToTriton
 
 from . import EXPECTED_FILE_PATH
 
@@ -88,8 +88,51 @@ class TestToModel(unittest.TestCase):
     def test_to_model(self):
         with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
-            to_triton = ModelToTriton(op.model, root, 'nnop')
+            to_triton = ModelToTriton(op, root, 'nnop', ['tensorrt'])
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'nnop'
             dst = Path(root) / 'nnop'
             filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')
+
+
+class TestToEnsemble(unittest.TestCase):
+    '''
+    Test create ensemble config.
+    '''
+    test_data = {
+        'cb2876f3': {
+            'id': 'cb2876f3', 'model_name': 'cb2876f3_local_triton_py', 'model_version': 1,
+            'input': {'INPUT0': ('TYPE_STRING', [1])},
+            'output': {'OUTPUT0': ('TYPE_INT8', [-1, -1, 3]), 'OUTPUT1': ('TYPE_STRING', [1])},
+            'child_ids': ['fae9ba13']
+        },
+        'fae9ba13': {
+            'id': 'fae9ba13',
+            'model_name': 'fae9ba13_local_triton_nnop_preprocess', 'model_version': 1,
+            'input': {'INPUT0': ('TYPE_INT8', [-1, -1, 3]), 'INPUT1': ('TYPE_STRING', [1])},
+            'output': {'OUTPUT0': ('TYPE_FP32', [1, 3, 224, 224])}, 
+            'child_ids': ['fae9ba13_local_triton_nnop_model']
+        },
+        'fae9ba13_local_triton_nnop_model': {
+            'id': 'fae9ba13_local_triton_nnop_model',
+            'model_name': 'fae9ba13_local_triton_nnop_model', 'model_version': 1,
+            'input': {'INPUT0': ('TYPE_FP32', [-1, 3, 224, 224])},
+            'output': {'OUTPUT0': ('TYPE_FP32', [-1, 512])},
+            'child_ids': ['fae9ba13_local_triton_nnop_postprocess']
+        },
+        'fae9ba13_local_triton_nnop_postprocess': {
+            'id': 'fae9ba13_local_triton_nnop_postprocess',
+            'model_name': 'fae9ba13_local_triton_nnop_postprocess', 'model_version': 1,
+            'input': {'INPUT0': ('TYPE_FP32', [-1, 512])},
+            'output': {'OUTPUT0': ('TYPE_FP32', [512])},
+            'child_ids': []
+        }
+    }
+    
+    def test_to_ensemble(self):
+        with TemporaryDirectory(dir='./') as root:        
+            to_triton = EnsembleToTriton(TestToEnsemble.test_data, root, 'pipeline', 128)
+            to_triton.to_triton()
+            expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
+            dst = Path(root) / 'pipeline'
+            filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')            

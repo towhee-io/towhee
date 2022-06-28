@@ -188,7 +188,7 @@ class PostprocessToTriton(ToTriton):
         return True
 
 
-class ModelToTriton(ToTriton):
+class ModelToTriton (ToTriton):
     '''
     NNOp to triton model.
 
@@ -200,21 +200,24 @@ class ModelToTriton(ToTriton):
 
     def _prepare_model(self):
         succ = False
-        for optimize in self._model_format_priority:
-            if optimize in self._obj.supported_formats:
-                if optimize == 'onnx':
-                    succ = self._obj.save_model(optimize, self._triton_files.onnx_model_file)
+        for fmt in self._model_format_priority:
+            if fmt in self._obj.supported_formats:
+                if fmt == 'onnx':
+                    succ = self._obj.save_model(fmt, self._triton_files.onnx_model_file)
                     self._backend = 'onnxruntime'                    
-                elif optimize == 'tensorrt':
-                    succ = self._obj.save_model(optimize, self._triton_files.trt_model_file)
+                elif fmt == 'tensorrt':
+                    succ = self._obj.save_model(fmt, self._triton_files.trt_model_file)
                     self._backend = 'tensorrt'
                 else:
-                    logger.error('Unkown optimize %s' % optimize)
+                    logger.error('Unkown optimize %s' % fmt)
                     continue
         return succ
 
 
 class EnsembleToTriton:
+    '''
+    Create triton ensemble config
+    '''
     def __init__(self, dag, model_root, model_name, batch_size):
         self._dag = dag
         self._model_name = model_name
@@ -223,7 +226,7 @@ class EnsembleToTriton:
 
     def to_triton(self):
         self._triton_files.root.mkdir(parents=True, exist_ok=True)
-        self._triton_files.model_path.mkdir(parents=True, exist_ok=True)        
+        self._triton_files.model_path.mkdir(parents=True, exist_ok=True)
         config_str = EnsembleConfigBuilder(self._dag, self._model_name, self._batch_size).gen_config()
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
