@@ -28,6 +28,31 @@ class Builder:
     Build triton models from towhee pipeline.
 
     In V1, we only support a chain graph for we have not traced the input and output map.
+
+    Args:
+        dag (`dict`): 
+            Output of dc.compile_dag()
+
+            example:  Only remain the info which is used in the TritonBuilder.
+                {
+                    'start': {
+                         'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
+                    }, 
+                    'cb2876f3': {
+                         'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13']
+                    }, 
+                    'fae9ba13': {
+                         'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end']
+                    }, 
+                    'end': {
+                         'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
+                    }
+                }
+        model_root (`str`):
+            Triton models root.
+        
+        model_format_priority (`List(str)`): 
+            Try to converter nnoperator's model, support tensorrt, onnx, libtorch
     '''
     def __init__(self, dag, model_root, model_format_priority):
         self.dag = dag
