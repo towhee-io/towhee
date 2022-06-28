@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 from collections import namedtuple
 from typing import Any, Dict, List
 
@@ -174,6 +175,9 @@ class OperatorRegistry:
             nonlocal name
             name = URI(cls.__name__ if name is None else name).resolve_repo(
                 _get_default_namespace())
+
+            if isinstance(cls, types.FunctionType):
+                OperatorRegistry.REGISTRY[name + '_func'] = cls
 
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):

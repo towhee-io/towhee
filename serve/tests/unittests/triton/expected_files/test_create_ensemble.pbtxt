@@ -1,0 +1,66 @@
+name: "mix_nobatch_batch_float32_float32_float32"
+platform: "ensemble"
+max_batch_size: 8
+input [
+  {
+    name: "INPUT0"
+    data_type: "TYPE_FP32"
+    dims: [ 16, 1, 2 ]
+  }
+]
+output [
+  {
+    name: "OUTPUT0"
+    data_type: "TYPE_FP32"
+    dims: [ 16, 2, 3, 4 ]
+  }
+  {
+    name: "OUTPUT1"
+    data_type: "TYPE_FP32"
+    dims: [ 16 ]
+  }
+]
+ensemble_scheduling: {
+  step [
+    {
+      model_name: "custom_zero_1_float32"
+      model_version: -1
+      input_map {
+        key: "INPUT0"
+        value: "INPUT0"
+      }
+      output_map {
+        key: "OUTPUT0"
+        value: "custom_zero_1_float32_0"
+      }
+    }
+    {
+      model_name: "custom_nobatch_zero_1_float32"
+      model_version: -1
+      input_map {
+        key: "INPUT0"
+        value: "custom_zero_1_float32_0"
+      }
+      output_map {
+        key: "OUTPUT0"
+        value: "custom_nobatch_zero_1_float32_1"
+      }
+    }
+    {
+      model_name: "graphdef_float32_float32_float32"
+      model_version: 1
+      input_map {
+        key: "INPUT0"
+        value: "custom_nobatch_zero_1_float32_1"
+      }
+      output_map {
+        key: "OUTPUT0"
+        value: "OUTPUT0"
+      }
+      output_map {
+        key: "OUTPUT1"
+        value: "OUTPUT1"
+      }
+    }
+  ]
+}

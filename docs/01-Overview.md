@@ -46,9 +46,9 @@ For more information, take a look at our [quick start](/02-Getting%20Started/01-
 
 ### Tutorials:
 
-- [Reverse image search](/05-Tutorials/02-Computer%20Vision/01-reverse-image-search.md): search for similar or related images.
-- [Image deduplication](/05-Tutorials/02-Computer%20Vision/02-image-deduplication.md): detect and remove identical or near-identical photos.
-- [Music recognition](/05-Tutorials/03-Audio/01-music-recognition-system.md): music identification with full-length song or a snippet.
+- [Reverse image search](https://github.com/towhee-io/examples): search for similar or related images.
+- [Image deduplication](https://github.com/towhee-io/examples): detect and remove identical or near-identical photos.
+- [Music recognition](https://github.com/towhee-io/examples): music identification with full-length song or a snippet.
 
 ### Community:
 
