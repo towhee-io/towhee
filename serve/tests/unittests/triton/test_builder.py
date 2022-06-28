@@ -27,7 +27,20 @@ class TestBuilder(unittest.TestCase):
     Test triton buidler.
     '''
     def test_builder(self):
-        test_dag = {'start': {'op': 'stream', 'op_name': 'dummy_input', 'is_stream': False, 'init_args': None, 'call_args': {'*arg': (), '*kws': {}}, 'parent_ids': [], 'child_ids': ['cb2876f3']}, 'cb2876f3': {'op': 'map', 'op_name': 'local/triton_py', 'is_stream': True, 'init_args': {}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['start'], 'child_ids': ['fae9ba13']}, 'fae9ba13': {'op': 'map', 'op_name': 'local/triton_nnop', 'is_stream': True, 'init_args': {'model_name': 'test'}, 'call_args': {'*arg': None, '*kws': {}}, 'parent_ids': ['cb2876f3'], 'child_ids': ['end']}, 'end': {'op': 'end', 'op_name': 'end', 'init_args': None, 'call_args': None, 'parent_ids': ['fae9ba13'], 'child_ids': []}}
+        test_dag = {
+            'start': {
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
+            },
+            'cb2876f3': {
+                'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13']
+            },
+            'fae9ba13': {
+                'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end']
+            },
+            'end': {
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
+            }
+        }
         with TemporaryDirectory(dir='./') as root:
             builer = Builder(test_dag, root, ['tensorrt'])
             assert builer.load() is True
@@ -48,7 +61,7 @@ class TestBuilder(unittest.TestCase):
             pk = dst / '1' / 'preprocess.pickle'
             m_file = dst / '1' / 'model.py'
             self.assertTrue(pk.is_file())
-            self.assertTrue(m_file.is_file())            
+            self.assertTrue(m_file.is_file())
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'postprocess'
             dst = Path(root) / 'fae9ba13_local_triton_nnop_postprocess'
@@ -64,4 +77,4 @@ class TestBuilder(unittest.TestCase):
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
             dst = Path(root) / 'pipeline'
-            filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')                        
+            filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')

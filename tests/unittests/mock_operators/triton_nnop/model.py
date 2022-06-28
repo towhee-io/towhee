@@ -41,6 +41,7 @@ class Model:
         return self._model(image)
 
     def save_model(self, model_type, output_file):
+        logger.info(model_type, output_file)
         return True
 
     @property

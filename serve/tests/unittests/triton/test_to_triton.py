@@ -110,7 +110,7 @@ class TestToEnsemble(unittest.TestCase):
             'id': 'fae9ba13',
             'model_name': 'fae9ba13_local_triton_nnop_preprocess', 'model_version': 1,
             'input': {'INPUT0': ('TYPE_INT8', [-1, -1, 3]), 'INPUT1': ('TYPE_STRING', [1])},
-            'output': {'OUTPUT0': ('TYPE_FP32', [1, 3, 224, 224])}, 
+            'output': {'OUTPUT0': ('TYPE_FP32', [1, 3, 224, 224])},
             'child_ids': ['fae9ba13_local_triton_nnop_model']
         },
         'fae9ba13_local_triton_nnop_model': {
@@ -128,11 +128,11 @@ class TestToEnsemble(unittest.TestCase):
             'child_ids': []
         }
     }
-    
+
     def test_to_ensemble(self):
-        with TemporaryDirectory(dir='./') as root:        
+        with TemporaryDirectory(dir='./') as root:
             to_triton = EnsembleToTriton(TestToEnsemble.test_data, root, 'pipeline', 128)
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
             dst = Path(root) / 'pipeline'
-            filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')            
+            filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')
