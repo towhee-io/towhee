@@ -25,7 +25,6 @@ class MockHttpClient():
 
     def get_model_config(self, model_name):
         res = {}
-
         res['name'] = model_name
         res['platform'] = 'ensemble'
         res['max_batch_size'] = 1
