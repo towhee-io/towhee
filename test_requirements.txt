@@ -25,3 +25,4 @@ einops>=0.4.1
 timm>=0.4.12
 faiss-cpu
 numba
+tritonclient
