@@ -13,21 +13,23 @@
 # limitations under the License.
 
 import unittest
-import serve.triton.client as client
+from serve.triton import client
 
-model_name = 'pipeline'
-class mockHttpClient():
-    def __init__(self, url):
+class MockHttpClient():
+    """
+    mock http client
+    """
+    def __init__(self, url, model_name='pipeline'):
         self.url = url
         self._model_name = model_name
-    
+
     def get_model_config(self, model_name):
-        res = dict()
+        res = {}
         res['name'] = model_name
         res['platform'] = 'ensemble'
         res['max_batch_size'] = 1
         res['input'] = []
-        input0 = dict()
+        input0 = {}
         input0['name'] = 'INPUT0'
         input0['shape'] = [1]
         input0['datatype'] = 'BYTES'
@@ -35,17 +37,17 @@ class mockHttpClient():
         return res
 
     def get_model_metadata(self, model_name):
-        res = dict()
+        res = {}
         res['name'] = model_name
         inputs = []
-        input0 = dict()
+        input0 = {}
         input0['name'] = 'INPUT0'
         input0['datatype'] = 'BYTES'
         input0['shape'] = [1]
         inputs.append(input0)
         res['inputs'] =inputs
         outputs = []
-        output0 = dict()
+        output0 = {}
         output0['name'] = 'OUTPUT0'
         output0['datatype'] = 'FP32'
         output0['shape'] = [512]
@@ -54,80 +56,96 @@ class mockHttpClient():
         return res
 
     def infer(self, model_name, inputs, outputs):
-        return mockRes(model_name, inputs, outputs)
+        return MockRes(model_name, inputs, outputs)
 
-class mockGrpcClient():
+class MockGrpcClient():
+    """
+    mock grpc client
+    """
     def __init__(self, url):
         self.url = url
-        self.model_name = model_name
-        
+
     def get_model_config(self, model_name):
-        return grpcConfig(model_name)
-    
+        return GrpcConfig(model_name)
+
     def get_model_metadata(self, model_name):
+        self.name = model_name
         inputs = []
-        inputs.append(grpcMetadataInputs())
+        inputs.append(GrpcMetadataInputs())
         self.inputs = inputs
         outputs = []
-        outputs.append(grpcMetadataOutputs())
+        outputs.append(GrpcMetadataOutputs())
         self.outputs = outputs
         return self
-    
+
     def infer(self, model_name, inputs, outputs):
-        return mockRes(model_name, inputs, outputs)
+        return MockRes(model_name, inputs, outputs)
 
-class grpcConfig():
+class GrpcConfig():
+    """
+    grpc config class
+    """
     def __init__(self, model_name):
-        self.config = grpcConfigConfig(model_name)
+        self.config = GrpcConfigConfig(model_name)
 
-class grpcConfigConfig():
+class GrpcConfigConfig():
+    """
+    grpc config adapt to triton grpc client
+    """
     def __init__(self, model_name):
         self.name = model_name
         self.max_batch_size = 0
 
-class grpcMetadataInputs():
+class GrpcMetadataInputs():
+    """
+    grpc metadata inputs
+    """
     def __init__(self):
         self.name = 'INPUT0'
         self.datatype = 'BYTES'
         self.shape = [1]
 
-class grpcMetadataOutputs():
+class GrpcMetadataOutputs():
+    """
+    grpc metadata outputs
+    """
     def __init__(self):
         self.name = 'OUTPUT0'
         self.datatype = 'FP32'
         self.shape = [512]
 
-class mockRes:
+class MockRes:
+    """
+    mock response class for triton client
+    """
     def __init__(self, model_name, inputs, outputs):
         self.name = model_name
         self.inputs = inputs
         self.outputs = outputs
 
     def as_numpy(self, name):
+        _ = name
         return [1, 2, 3]
 
 class TestTritonClient(unittest.TestCase):
     """
     Unit test for triton client.
     """
-    
 
     def test_http_client(self):
         tclient = client.Client('http', '127.0.0.1:8001')
-        tclient.client = mockHttpClient('127.0.0.1:80001')
+        tclient.client = MockHttpClient('127.0.0.1:80001')
         res = tclient.serve('/test.jpg')
 
-        expect = dict()
+        expect = {}
         expect['OUTPUT0'] = [1, 2, 3]
         self.assertEqual(res, expect)
-    
+
     def test_grpc_client(self):
         tclient = client.Client('grpc', '127.0.0.1:8002')
-        tclient.client = mockGrpcClient('127.0.0.1:8002')
+        tclient.client = MockGrpcClient('127.0.0.1:8002')
         res = tclient.serve('/test.jpg')
-        expect = dict()
+        expect = {}
         expect['OUTPUT0'] = [1, 2, 3]
         self.assertEqual(res, expect)
-
-
     
