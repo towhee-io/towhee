@@ -52,7 +52,7 @@ class Builder:
             Triton models root.
         
         model_format_priority (`List(str)`): 
-            Try to converter nnoperator's model, support tensorrt, onnx, libtorch
+            Try to converter nnoperator's model, support tensorrt, onnx, torchscript.
     '''
     def __init__(self, dag, model_root, model_format_priority):
         self.dag = dag

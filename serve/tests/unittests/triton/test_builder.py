@@ -43,7 +43,6 @@ class TestBuilder(unittest.TestCase):
         }
         with TemporaryDirectory(dir='./') as root:
             builer = Builder(test_dag, root, ['tensorrt'])
-            assert builer.load() is True
             self.assertTrue(builer.build())
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'

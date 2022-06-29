@@ -204,7 +204,7 @@ class ModelToTriton (ToTriton):
             if fmt in self._obj.supported_formats:
                 if fmt == 'onnx':
                     succ = self._obj.save_model(fmt, self._triton_files.onnx_model_file)
-                    self._backend = 'onnxruntime'                    
+                    self._backend = 'onnxruntime'
                 elif fmt == 'tensorrt':
                     succ = self._obj.save_model(fmt, self._triton_files.trt_model_file)
                     self._backend = 'tensorrt'
