@@ -56,10 +56,8 @@ class ColumnMixin:
         """
 
         self._chunksize = chunksize
-        chunked_table = ChunkedTable(chunksize=chunksize, stream=False)
-        for element in self:
-            chunked_table.feed(element)
-        chunked_table.feed(None, eos=True)
+        chunked_table = ChunkedTable(chunksize=chunksize, stream=self.is_stream)
+        chunked_table.feed(self._iterable)
         return self._factory(chunked_table, mode=self.ModeFlag.COLBASEDFLAG)
 
     def get_chunksize(self):
@@ -181,10 +179,7 @@ class ColumnMixin:
 
         # pylint: disable=protected-access
         if isinstance(self._iterable, ChunkedTable):
-            tables = [
-                WritableTable(self.__table_apply__(chunk, unary_op))
-                for chunk in self._iterable.chunks()
-            ]
+            tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
             return self._factory(ChunkedTable(tables))
         return self._factory(self.__table_apply__(self._iterable, unary_op))
 
