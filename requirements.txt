@@ -3,3 +3,4 @@ tqdm>=4.59.0
 ruamel.yaml<=0.16.6
 tabulate
 numpy
+tritonclient
