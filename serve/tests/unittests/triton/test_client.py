@@ -25,6 +25,7 @@ class MockHttpClient():
 
     def get_model_config(self, model_name):
         res = {}
+
         res['name'] = model_name
         res['platform'] = 'ensemble'
         res['max_batch_size'] = 1
@@ -131,7 +132,6 @@ class TestTritonClient(unittest.TestCase):
     """
     Unit test for triton client.
     """
-
     def test_http_client(self):
         tclient = client.Client('127.0.0.1:8001', protocol='http')
         tclient.client = MockHttpClient('127.0.0.1:80001')
@@ -148,4 +148,3 @@ class TestTritonClient(unittest.TestCase):
         expect = {}
         expect['OUTPUT0'] = [1, 2, 3]
         self.assertEqual(res, expect)
-    
