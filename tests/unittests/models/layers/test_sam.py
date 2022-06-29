@@ -33,4 +33,4 @@ class TestOperator(unittest.TestCase):
         param_num = len(optimizer.base_optimizer.param_groups[0])
         if param_num == 9:
             print(torch.__version__)
-        self.assertIn(param_num, (8, 9))
+        self.assertIn(param_num, (8, 9, 10))
