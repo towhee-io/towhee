@@ -23,6 +23,7 @@ from towhee.hparam.hyperparameter import param_scope
 
 
 def _map_task(x, unary_op):
+
     def map_wrapper():
         try:
             if isinstance(x, Option):
@@ -58,35 +59,22 @@ class ParallelMixin:
         super().__init__()
         with param_scope() as hp:
             parent = hp().data_collection.parent(None)
-        if parent is not None and hasattr(parent, '_executor') and isinstance(parent._executor, concurrent.futures.ThreadPoolExecutor):
+        if parent is not None and hasattr(parent, '_executor'):
             self._backend = parent._backend
             self._executor = parent._executor
             self._num_worker = parent._num_worker
-            if hasattr(parent, '_backend_started'):
-                self._backend_started = parent._backend_started
 
     def get_executor(self):
-        if hasattr(self, '_executor') and isinstance(self._executor, concurrent.futures.ThreadPoolExecutor):
+        if hasattr(self, '_executor'):
             return self._executor
         return None
 
     def get_backend(self):
-        if hasattr(self, '_backend')  and isinstance(self._backend, str):
+        if hasattr(self, '_backend') and isinstance(self._backend, str):
             return self._backend
         return None
 
-    def get_num_worker(self):
-        if hasattr(self, '_num_worker')  and isinstance(self._num_worker, int):
-            return self._num_worker
-        return None
-
-    def get_backend_started(self):
-        if hasattr(self, '_backend_started')  and isinstance(self._backend_started, bool):
-            return self._backend_started
-        return None
-
-
-    def set_parallel(self, num_worker = 2, backend = 'thread'):
+    def set_parallel(self, num_worker=2, backend='thread'):
         """
         Set parallel execution for following calls.
 
@@ -105,38 +93,15 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)>1
         True
         """
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker)
+
         self._backend = backend
         self._num_worker = num_worker
-        # if backend == 'ray':
-        #     self.ray_start()
-        return self
 
-    def unset_parallel(self):
-        """
-        Unset parallel execution for following calls.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> import threading
-        >>> stage_1_thread_set = {threading.current_thread().ident}
-        >>> stage_2_thread_set = {threading.current_thread().ident}
-        >>> result = (
-        ...     DataCollection.range(1000).stream().set_parallel(4)
-        ...     .map(lambda x: stage_1_thread_set.add(threading.current_thread().ident))
-        ...     .unset_parallel()
-        ...     .map(lambda x: stage_2_thread_set.add(threading.current_thread().ident)).to_list()
-        ... )
-
-        >>> len(stage_1_thread_set)>1
-        True
-        >>> len(stage_2_thread_set)>1
-        False
-        """
-        self._backend = None
-        self._num_wokrker = None
-        self._executor = None
+        if self._backend == 'thread' and self._num_worker is not None:
+            self._executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=num_worker)
+        else:  # clear executor
+            self._executor = None
         return self
 
     def split(self, count):
@@ -201,7 +166,8 @@ class ParallelMixin:
                     if len(cached_values[x]) == 0:
                         del cached_values[x]
                     else:
-                        while not queues[x].full() and len(cached_values[x]) > 0:
+                        while not queues[x].full() and len(
+                                cached_values[x]) > 0:
                             queues[x].put(cached_values[x].pop(0))
 
         def worker_wrapper():
@@ -213,7 +179,7 @@ class ParallelMixin:
         retval = [inner(queue) for queue in queues]
         return [self._factory(x) for x in retval]
 
-    def pmap(self, unary_op, num_worker = None, backend = None):
+    def pmap(self, unary_op, num_worker=None, backend=None):
         """
         Apply `unary_op` with parallel execution.
         Currently supports two backends, `ray` and `thread`.
@@ -239,32 +205,21 @@ class ParallelMixin:
         >>> len(stage_2_thread_set) > 1
         True
         """
-        if backend is None:
-            if self.get_backend() == 'ray':
-                return self._ray_pmap(unary_op, num_worker)
-            else:
-                return self._thread_pmap(unary_op, num_worker)
-        elif backend == 'thread':
-            return self._thread_pmap(unary_op, num_worker)
-        elif backend == 'ray':
+        backend = self.get_backend()
+        if backend == 'ray':
             return self._ray_pmap(unary_op, num_worker)
+        return self._thread_pmap(unary_op, num_worker)
 
     def _thread_pmap(self, unary_op, num_worker=None):
+        if num_worker is None and self._num_worker is None:
+            num_worker = 2
         if num_worker is not None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
         elif self.get_executor() is not None:
             executor = self._executor
             num_worker = self._num_worker
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(2)
-            num_worker = 2
 
-        #If not streamed, we need to be able to hold all values within queue
-        if self.is_stream:
-            queue = Queue(num_worker)
-        else:
-            queue = Queue()
-
+        queue = Queue(num_worker)
         loop = asyncio.new_event_loop()
 
         def inner():
@@ -281,7 +236,8 @@ class ParallelMixin:
             for x in self:
                 if len(buff) == num_worker:
                     queue.put(await buff.pop(0))
-                buff.append(loop.run_in_executor(executor, _map_task(x, unary_op)))
+                buff.append(
+                    loop.run_in_executor(executor, _map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
             queue.put(EOS())
@@ -295,7 +251,7 @@ class ParallelMixin:
 
         return self._factory(inner())
 
-    def mmap(self, ops: list, num_worker = None, backend = None):
+    def mmap(self, ops: list, num_worker=None, backend=None):
         """
         Apply multiple unary_op to data collection.
         Currently supports two backends, `ray` and `thread`.
@@ -335,15 +291,20 @@ class ParallelMixin:
         # [2, 5, 9, 12, 16]
         """
         if len(ops) == 1:
-            return self._pmap(unary_op=ops[0], num_worker=num_worker, backend=backend)
+            return self._pmap(unary_op=ops[0],
+                              num_worker=num_worker,
+                              backend=backend)
 
         next_vals = []
         next_vals = self.split(len(ops))
 
         ret = []
         for i, x in enumerate(ops):
-            ret.append(next_vals[i].pmap(x, num_worker=num_worker, backend=backend))
+            ret.append(next_vals[i].pmap(x,
+                                         num_worker=num_worker,
+                                         backend=backend))
         return ret
+
 
 class EOS():
     '''

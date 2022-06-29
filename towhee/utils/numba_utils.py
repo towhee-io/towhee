@@ -12,25 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-import torch
-import torchvision
-
-from towhee.models.layers.sam import SAM
-
-
-class TestOperator(unittest.TestCase):
-    """
-    A test for SAM.
-    """
-
-    def setUp(self):
-        self.model = torchvision.models.resnet50(pretrained=True)
-        self.base_optimizer = torch.optim.SGD
-
-    def test_sam(self):
-        optimizer = SAM(self.model.parameters(), self.base_optimizer, lr=0.1, momentum=0.9)
-        param_num = len(optimizer.base_optimizer.param_groups[0])
-        if param_num == 9:
-            print(torch.__version__)
-        self.assertIn(param_num, (8, 9, 10))
+try:
+    # pylint: disable=unused-import
+    from numba import njit
+except (ModuleNotFoundError, ImportError) as e:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('numba')
+        # pylint: disable=unused-import,ungrouped-imports
+        import numba
+        from numba import njit
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('numba not found, you can install via `pip install numba`.')
+        raise ModuleNotFoundError('numba not found, you can install via `pip install numba`.') from e
