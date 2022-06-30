@@ -20,7 +20,7 @@ import tritonclient.http as httpclient
 model_name = 'pipeline'
 
 class Client():
-	def __init__(self, protocol, url, model_name=model_name):
+	def __init__(self, url, model_name=model_name, protocol='grpc'):
 		self._model_name = model_name
 		if protocol == 'grpc':
 			self.protocol = 'grpc'

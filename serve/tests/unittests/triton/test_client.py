@@ -133,7 +133,7 @@ class TestTritonClient(unittest.TestCase):
     """
 
     def test_http_client(self):
-        tclient = client.Client('http', '127.0.0.1:8001')
+        tclient = client.Client('127.0.0.1:8001', protocol='http')
         tclient.client = MockHttpClient('127.0.0.1:80001')
         res = tclient.serve('/test.jpg')
 
@@ -142,7 +142,7 @@ class TestTritonClient(unittest.TestCase):
         self.assertEqual(res, expect)
 
     def test_grpc_client(self):
-        tclient = client.Client('grpc', '127.0.0.1:8002')
+        tclient = client.Client('127.0.0.1:8002')
         tclient.client = MockGrpcClient('127.0.0.1:8002')
         res = tclient.serve('/test.jpg')
         expect = {}
