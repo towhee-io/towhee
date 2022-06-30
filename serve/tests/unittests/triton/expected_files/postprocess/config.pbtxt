@@ -1,4 +1,4 @@
-name: "postprocess"
+name: "fae9ba13_local_triton_nnop_postprocess"
 backend: "python"
 max_batch_size: 0
 
