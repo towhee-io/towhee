@@ -595,19 +595,54 @@ class DRL(nn.Module):
 
 
 def create_model(
-        base_encoder="clip_vit_b32",
-        agg_module="seqTransf",
-        interaction="wti",
-        wti_arch=2,
-        cdcr=3,
-        cdcr_alpha1=1.0,
-        cdcr_alpha2=0.06,
-        cdcr_lambda=0.001,
-        cross_num_hidden_layers=None,
-        pretrained=False,
-        weights_path=None,
-        device=None
+        base_encoder: str = "clip_vit_b32",
+        agg_module: str = "seqTransf",
+        interaction: str = "wti",
+        wti_arch: int = 2,
+        cdcr: int = 3,
+        cdcr_alpha1: float = 1.0,
+        cdcr_alpha2: float = 0.06,
+        cdcr_lambda: float = 0.001,
+        cross_num_hidden_layers: int = None,
+        pretrained: bool = False,
+        weights_path: str = None,
+        device: str = None
 ) -> DRL:
+    """
+    Build a DRL model.
+    Args:
+        base_encoder (`str`):
+            Base_encoder in DRL model, `clip_vit_b32` or `clip_vit_b16`.
+        agg_module (`str`):
+            Feature aggregation module for video. default: `seqTransf`, choices=[`ndone`, `seqLSTM`, `seqTransf`]
+        interaction (`str`):
+            Interaction type for retrieval. default: `wti`.
+        wti_arch (`int`):
+            Select an architecture for weight branch. default: 2.
+        cdcr (`int`):
+            Channel decorrelation regularization. default: 3.
+        cdcr_alpha1 (`float`):
+            Coefficient 1 for channel decorrelation regularization. default: 1.0.
+        cdcr_alpha2 (`float`):
+            Coefficient 2 for channel decorrelation regularization. default: 0.06.
+        cdcr_lambda (`float`):
+            Coefficient for channel decorrelation regularization. default: 0.001.
+        cross_num_hidden_layers (`int`):
+            Number of hidden layers for cross transformer interaction.
+        pretrained (`bool`):
+            Whether model is pretrained, default if False.
+        weights_path (`str`):
+            Pretrained model local path, default if None.
+        device (`str`):
+            Model device. `cpu` or `cuda`.
+    Returns:
+
+    >>> from towhee.models import drl
+    >>> model = drl.create_model("clip_vit_b32")
+    >>> model.__class__.__name__
+    'DRL'
+
+    """
     model = DRL(base_encoder=base_encoder,
                 agg_module=agg_module,
                 interaction=interaction,

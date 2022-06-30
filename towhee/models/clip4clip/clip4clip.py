@@ -147,6 +147,29 @@ def create_model(
         weights_path: str = None,
         device: Union[str, torch.device] = None,
 ) -> CLIP4Clip:
+    """
+    Create a CLIP4Clip model.
+    Args:
+        model_name (`str`):
+            Model name, `clip_vit_b16` or `clip_vit_b32`.
+        context_length (`int`):
+            Length of context sequence, default is 77, the same as these in CLIP.
+        pretrained (`bool`):
+            Whether pretained model.
+        weights_path (`str`):
+            Your local trained weights path. default is None.
+        device (`str`):
+            Model device, `cpu` or `cuda`.
+
+    Returns:
+        (`CLIP4Clip`):
+            CLIP4Clip model.
+    >>> from towhee.models import clip4clip
+    >>> model = clip4clip.create_model(model_name="clip_vit_b32", context_length=32, pretrained=False, device='cpu')
+    >>> model.__class__.__name__
+    'CLIP4Clip'
+
+    """
     configs = get_configs(model_name)
     if "url" in configs:
         configs.pop("url")

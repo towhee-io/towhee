@@ -45,35 +45,6 @@ url_dict = {
 }
 
 
-def create_model(
-        model_name: str = None,
-        num_classes: int = 1000,
-        pretrained: bool = False,
-        weights_path: str = None,
-        device: str = None,
-):
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    if model_name is None:
-        raise AssertionError("no model name is specified.")
-    else:
-        current_module = sys.modules[__name__]
-        model_func = getattr(current_module, model_name)
-        model = model_func(num_classes=num_classes)
-        if pretrained:
-            if weights_path:
-                checkpoint = torch.load(weights_path, map_location="cpu")
-            else:
-                url = url_dict[model_name]
-                checkpoint = torch.hub.load_state_dict_from_url(
-                    url, map_location="cpu", check_hash=True
-                )
-            model.load_state_dict(checkpoint["model"])
-        model.to(device)
-        model.eval()
-    return model
-
-
 def _cfg_mpvit(url="", **kwargs):
     """configuration of mpvit."""
     return {
@@ -867,4 +838,56 @@ def mpvit_base(**kwargs):
         **kwargs,
     )
     model.default_cfg = _cfg_mpvit()
+    return model
+
+
+def create_model(
+        model_name: str = None,
+        num_classes: int = 1000,
+        pretrained: bool = False,
+        weights_path: str = None,
+        device: str = None,
+) -> MPViT:
+    """
+    Create MViT model.
+    Args:
+        model_name (`str`):
+            Name of MPViT model, it can be `mpvit_tiny`, `mpvit_xsmall`, `mpvit_small` or `mpvit_base`.
+        num_classes (`int`):
+            Classification head in the model, default is 1000, for the default pretrained model is pretrained in ImageNet1k.
+        pretrained (`bool`):
+            Whether the model using pretrained weights, default is None.
+        weights_path (`str`):
+            Local weights path.
+        device (`str`):
+            Model device, `cpu` or `cuda`
+
+    Returns:
+        (`MPViT`)
+            MPViT model.
+
+    >>> from towhee.models import mpvit
+    >>> model = mpvit.create_model('mpvit_tiny')
+    >>> model.__class__.__name__
+    'MPViT'
+    """
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if model_name is None:
+        raise AssertionError("no model name is specified.")
+    else:
+        current_module = sys.modules[__name__]
+        model_func = getattr(current_module, model_name)
+        model = model_func(num_classes=num_classes)
+        if pretrained:
+            if weights_path:
+                checkpoint = torch.load(weights_path, map_location="cpu")
+            else:
+                url = url_dict[model_name]
+                checkpoint = torch.hub.load_state_dict_from_url(
+                    url, map_location="cpu", check_hash=True
+                )
+            model.load_state_dict(checkpoint["model"])
+        model.to(device)
+        model.eval()
     return model
