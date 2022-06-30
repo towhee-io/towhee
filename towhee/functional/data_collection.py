@@ -871,8 +871,10 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         This factory method has been wrapped into a `param_scope()` which contains parent information.
 
         Args:
-            iterable: An iterable object, the data being stored in the DC
-            parent_stream: Whether to copy the parents format (streamed vs unstreamed)
+            iterable:
+                An iterable object, the data being stored in the DC
+            parent_stream:
+                Whether to copy the parents format (streamed vs unstreamed)
 
         Returns:
             DataFrame: DataFrame encapsulating the iterable.
