@@ -17,7 +17,7 @@ from typing import Union
 import numpy as np
 
 from towhee.utils.log import engine_log
-from towhee.types import Image
+from towhee.types.image import Image
 
 try:
     # pylint: disable=unused-import,ungrouped-imports
