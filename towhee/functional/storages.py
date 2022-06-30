@@ -81,7 +81,7 @@ class ChunkedTable:
     """
     Chunked arrow table
     """
-    def __init__(self, chunks=None, chunksize=128, stream=False, chunknum=1) -> None:
+    def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
         """
         A chunked pyarrow table.
 
@@ -92,13 +92,9 @@ class ChunkedTable:
                 The size of the chunk.
             stream (`bool`):
                 If the data is streamed.
-            chunknum (`int`):
-                The number of chunks that co-exsist in stream mode.
         """
         self._chunksize = chunksize
-        self._chunk = []
         self._is_stream = stream
-        self._chunknum = chunknum
         if chunks is not None:
             self._chunks = chunks
         else:
@@ -112,19 +108,14 @@ class ChunkedTable:
     def chunksize(self):
         return self._chunksize
 
-    @property
-    def chunknum(self):
-        return self._chunk
-
-    def _create_table(self):
+    def _create_table(self, chunk):
         header = None
         cols = None
-        for entity in self._chunk:
+        for entity in chunk:
             header = [*entity.__dict__] if header is None else header
             cols = [[] for _ in header] if cols is None else cols
             for col, name in zip(cols, header):
                 col.append(getattr(entity, name))
-        self._chunk = []
         arrays = []
         for col in cols:
             try:
@@ -139,24 +130,29 @@ class ChunkedTable:
 
     def _pack_unstream_chunk(self, data):
         res = []
+        chunk = []
         for element in data:
-            self._chunk.append(element)
-            if len(self._chunk) >= self._chunksize:
-                res.append(WritableTable(self._create_table()))
+            chunk.append(element)
+            if len(chunk) >= self._chunksize:
+                res.append(WritableTable(self._create_table(chunk)))
+                chunk = []
 
-        if len(self._chunk) != 0:
-            res.append(WritableTable(self._create_table()))
+        if len(chunk) != 0:
+            res.append(WritableTable(self._create_table(chunk)))
+
         return res
 
 
     def _pack_stream_chunk(self, data):
+        chunk = []
         for element in data:
-            self._chunk.append(element)
-            if len(self._chunk) >= self._chunksize:
-                yield WritableTable(self._create_table())
+            chunk.append(element)
+            if len(chunk) >= self._chunksize:
+                yield WritableTable(self._create_table(chunk))
+                chunk = []
 
-        if len(self._chunk) != 0:
-            yield WritableTable(self._create_table())
+        if len(chunk) != 0:
+            yield WritableTable(self._create_table(chunk))
 
 
     def feed(self, data):
@@ -185,7 +181,6 @@ class ChunkedTable:
             self._chunks = self._pack_unstream_chunk(data)
         else:
             self._chunks = self._pack_stream_chunk(data)
-
 
     def chunks(self):
         return self._chunks
