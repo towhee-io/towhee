@@ -46,13 +46,39 @@ class ColumnMixin:
         Examples:
 
         >>> import towhee
-        >>> dc = towhee.dc['a'](range(20))
-        >>> dc = dc.set_chunksize(10)
-        >>> dc2 = dc.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc2.get_chunksize()
-        10
-        >>> len(dc._iterable._chunks)
-        2
+        >>> dc_1 = towhee.dc['a'](range(20))
+        >>> dc_1 = dc_1.set_chunksize(10)
+        >>> dc_2 = dc_1.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc_1.get_chunksize(), dc_2.get_chunksize()
+        (10, 10)
+        >>> dc_2._iterable.chunks()
+        [pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[10,11,12,13,14,15,16,17,18,19]]
+        b: [[11,12,13,14,15,16,17,18,19,20]]]
+
+        >>> dc_3 = towhee.dc['a'](range(20)).stream()
+        >>> dc_3 = dc_3.set_chunksize(10)
+        >>> dc_4 = dc_3.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc_4._iterable.chunks()
+        [pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[10,11,12,13,14,15,16,17,18,19]]
+        b: [[11,12,13,14,15,16,17,18,19,20]]]
         """
 
         self._chunksize = chunksize
