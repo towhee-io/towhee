@@ -58,3 +58,15 @@ class Image(np.ndarray):
     @property
     def mode(self):
         return self._mode
+
+    @property
+    def width(self):
+        return self.shape[1]
+
+    @property
+    def height(self):
+        return self.shape[0]
+
+    @property
+    def channel(self):
+        return self.shape[2] if len(self.shape) >= 3 else 1
