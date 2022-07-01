@@ -15,10 +15,10 @@
 from typing import Union
 from pathlib import PosixPath
 
-from towhee.types.image import Image
+from towhee.types import Image
 from towhee.utils.log import engine_log
 from towhee.utils.ndarray_utils import from_src
-from towhee.types.image_utils import to_image_color
+from towhee.utils.image_utils import to_image_color
 
 
 try:

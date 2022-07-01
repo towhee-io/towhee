@@ -12,76 +12,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import numpy as np
 
 
-class Image:
+class Image(np.ndarray):
     """
-    The unified form of images defined in Towhee.
+    This class represents an image object. The image data is a numpy.ndarray.
 
     Agrs:
-        image (`bytes`):
-            The bytes of the image.
-        width (`int`):
-            The width of the image.
-        height (`int`):
-            The height of the image.
-        channel (`int`):
-            The channel of the image.
         mode (`str`):
-            The mode of the image(i.e. 'RGB', 'RGBA', 'HSV', etc.).
-        array (`np.ndarray`):
-            The image in the form of ndarray.
+            The mode of the image(i.e. 'RGB', 'BGR', 'RGBA', 'HSV', etc.).
     """
 
-    def __init__(self, image: bytes, width: int, height: int, channel: int, mode: str, array: np.ndarray = None, key_frame: bool = False):
-        self._image = image
-        self._width = width
-        self._height = height
-        self._channel = channel
-        self._mode = mode
-        self._array = array
-        self._key_frame = key_frame
+    def __new__(cls, data: np.ndarray, mode: str = None):
+        # Cast `np.ndarray` to be `Image`.
+        # See https://numpy.org/doc/stable/user/basics.subclassing.html for details.
+        obj = np.asarray(data).view(cls)
+        obj._mode = mode
+        return obj
+
+    def __array_finalize__(self, obj):
+        # `self` is a new object resulting from super().__new__(cls, ...), therefore it
+        # only has attributes that the ndarray.__new__ constructor gave it -
+        # i.e. those of a standard ndarray.
+        if obj is None:
+            return
+        self._mode = getattr(obj, '_mode', None)
+
+    def __str__(self):
+        return 'Image' + ' shape=' + str(self.shape) + ' mode=' + self.mode
+
+    def __reduce__(self):
+        # Get numpy pickle
+        pickled_state = super(Image, self).__reduce__() #pylint: disable=super-with-arguments
+        # Attach the attributes to the numpy pickle
+        new_state = pickled_state[2] + (self.__dict__,)
+        return (pickled_state[0], pickled_state[1], new_state)
+
+    def __setstate__(self, state):
+        # Set attributes from the pickle
+        self.__dict__.update(state[-1])
+        # Call the parent's __setstate__ with the other tuple elements.
+        super(Image, self).__setstate__(state[0:-1]) #pylint: disable=super-with-arguments
 
     @property
-    def image(self) -> bytes:
-        return self._image
-
-    @property
-    def width(self) -> int:
-        return self._width
-
-    @property
-    def height(self) -> int:
-        return self._height
-
-    @property
-    def channel(self) -> int:
-        return self._channel
-
-    @property
-    def mode(self) -> str:
+    def mode(self):
         return self._mode
 
     @property
-    def key_frame(self):
-        return self._key_frame
+    def width(self):
+        return self.shape[1]
 
     @property
-    def array(self) -> np.ndarray:
-        if not isinstance(self._array, np.ndarray):
-            raise AttributeError('The array of image is not given, please call `Image.to_ndarray()` function to get the ndarray.')
-        else:
-            return copy.deepcopy(self._array)
+    def height(self):
+        return self.shape[0]
 
-    def to_ndarray(self) -> np.ndarray:
-        """
-        Load the np.ndarray form of the image.
-        """
-        if not isinstance(self._array, np.ndarray):
-            shape = (self._height, self._width, self._channel)
-            self._array = np.ndarray(shape, np.uint8, self._image)
-            # self._array = np.frombuffer(self._image, dtype=np.uint8).reshape(self._height, self._width, self._channel)
-
-        return copy.deepcopy(self._array)
+    @property
+    def channel(self):
+        return self.shape[2] if len(self.shape) >= 3 else 1

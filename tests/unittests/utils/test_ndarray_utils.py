@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-from towhee.types.image import Image
+from towhee.types import Image
 from towhee.utils.ndarray_utils import from_ndarray, from_src, to_ndarray, rgb2bgr
 
 logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
@@ -34,12 +34,11 @@ class TestPilUtils(unittest.TestCase):
 
         self.assertIsInstance(img_1, Image)
         self.assertIsInstance(img_2, Image)
-        self.assertEqual(img_1.image, img_2.image)
         self.assertEqual(img_1.width, img_2.width)
         self.assertEqual(img_1.height, img_2.height)
         self.assertEqual(img_1.channel, img_2.channel)
         self.assertEqual(img_1.mode, img_2.mode)
-        self.assertTrue((img_1.array == img_2.array).all())
+        self.assertTrue((img_1 == img_2).all())
 
     def test_from_ndarray(self):
         ndarray_img = cv2.imread(logo_path)
@@ -51,18 +50,18 @@ class TestPilUtils(unittest.TestCase):
         self.assertEqual(ndarray_img.shape[1], towhee_img.width)
         self.assertEqual(ndarray_img.shape[2], towhee_img.channel)
         self.assertEqual('BGR', towhee_img.mode)
-        self.assertTrue((np.array(ndarray_img) == towhee_img.array).all())
+        self.assertTrue((np.array(ndarray_img) == towhee_img).all())
 
     def test_to_ndarray(self):
         ndarray_img = cv2.imread(logo_path)
-        img_bytes = ndarray_img.tobytes()
-        img_width = ndarray_img.shape[1]
-        img_height = ndarray_img.shape[0]
-        img_channel = len(cv2.split(ndarray_img))
+        # img_bytes = ndarray_img.tobytes()
+        # img_width = ndarray_img.shape[1]
+        # img_height = ndarray_img.shape[0]
+        # img_channel = len(cv2.split(ndarray_img))
         img_mode = 'BGR'
         img_array = ndarray_img
 
-        towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
+        towhee_img = Image(img_array, img_mode)
         ndarray_img = to_ndarray(towhee_img)
 
         self.assertIsInstance(ndarray_img, np.ndarray)
@@ -71,20 +70,20 @@ class TestPilUtils(unittest.TestCase):
         self.assertEqual(ndarray_img.shape[1], towhee_img.width)
         self.assertEqual(ndarray_img.shape[2], towhee_img.channel)
         self.assertEqual('BGR', towhee_img.mode)
-        self.assertTrue((ndarray_img == towhee_img.array).all())
+        self.assertTrue((ndarray_img == towhee_img).all())
 
     def test_rgb2bgr(self):
         ndarray_img = cv2.imread(logo_path)
         ndarray_img = cv2.cvtColor(ndarray_img, cv2.COLOR_BGR2RGB)
 
-        img_bytes = ndarray_img.tobytes()
-        img_width = ndarray_img.shape[1]
-        img_height = ndarray_img.shape[0]
-        img_channel = len(cv2.split(ndarray_img))
+        # img_bytes = ndarray_img.tobytes()
+        # img_width = ndarray_img.shape[1]
+        # img_height = ndarray_img.shape[0]
+        # img_channel = len(cv2.split(ndarray_img))
         img_mode = 'RGB'
         img_array = ndarray_img
 
-        towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
+        towhee_img = Image(img_array, img_mode)
 
         towhee_bgr = rgb2bgr(towhee_img)
         ndarray_bgr = rgb2bgr(ndarray_img)
