@@ -64,6 +64,10 @@ def _faiss_insert(iterable: Iterable, column: Tuple[str], findex, string, metric
             vid = getattr(it, column[0])
         ids.append(vid)
 
+    if first:
+        engine_log.error('There is no data to insert into Faiss.')
+        raise KeyError('There is no data to insert into Faiss.')
+
     faiss_index.add_with_ids(np.array(vecs), np.array(ids).astype(np.int64))
     if not isinstance(findex, Path):
         findex = Path('./index.bin')
