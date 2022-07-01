@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 from typing import overload
 
 
@@ -47,7 +46,7 @@ class Entity:
         >>> e
         <Entity dict_keys(['a', 'b'])>
         """
-        content = str(self.__dict__.keys())
+        content = repr(self.__dict__.keys())
         return f'<{self.__class__.__name__} {content.strip()}>'
 
     def __str__(self) -> str:
@@ -59,9 +58,9 @@ class Entity:
         >>> from towhee import Entity
         >>> e = Entity(a = 1, b = 2)
         >>> str(e)
-        '{"a": 1, "b": 2}'
+        "{'a': 1, 'b': 2}"
         """
-        return json.dumps({k: getattr(self, k) for k in self.__dict__})
+        return str(self.__dict__)
 
 
 class EntityView:
