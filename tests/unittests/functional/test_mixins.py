@@ -211,13 +211,15 @@ class TestFaissMixin(unittest.TestCase):
     Unittest for FaissMixin.
     """
     def test_faiss(self):
-        nb = 100
+        nb = 500
         d = 128
         x = np.random.random((nb, d)).astype('float32')
         x1 = list(v for v in x)
         x2 = x1[0:3]
         ids = list(i for i in range(nb))
         index_path = public_path / 'index.bin'
+        if index_path.exists():
+            index_path.unlink()
 
         (
             towhee.dc['id'](ids)
@@ -236,7 +238,8 @@ class TestFaissMixin(unittest.TestCase):
         self.assertEqual(res[0][0].score, 0)
         self.assertEqual(res[1][0].score, 0)
         self.assertEqual(res[2][0].score, 0)
-        Path(index_path).unlink()
+
+        index_path.unlink()
 
 
 class TestCompileMixin(unittest.TestCase):

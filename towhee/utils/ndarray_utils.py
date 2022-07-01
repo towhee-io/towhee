@@ -20,7 +20,7 @@ from io import BytesIO
 from zipfile import ZipFile
 from urllib.request import urlopen
 
-from towhee.types import Image
+from towhee.types.image import Image
 from towhee.utils.log import engine_log
 from towhee.utils.repo_normalize import RepoNormalize
 

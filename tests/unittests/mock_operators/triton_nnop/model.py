@@ -37,13 +37,13 @@ class Model:
         self._device = device
         self._model = MockModel()
 
-    @property
-    def model(self):
-        return self._model
-
     def __call__(self, image):
-        return self.model(image)
+        return self._model(image)
 
-    def save_model(self, model_type, output_file, args):
-        logger.info(f'{model_type}, {output_file}, {args}') # pylint: disable=logging-fstring-interpolation
+    def save_model(self, model_type, output_file):
+        logger.info(model_type, output_file)
         return True
+
+    @property
+    def supported_formats(self):
+        return ['tensorrt']

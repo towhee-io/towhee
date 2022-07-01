@@ -100,163 +100,193 @@ output [
 ]\n'''.format(output_name, data_type, shape)
     return config
 
-def create_ensemble(dag, name='pipeline', max_batch_size=128):
-    # add parent_ids
-    dag_dict = copy.deepcopy(dag)
-    for i, j in dag_dict.items():
-        dag_dict[i]['parent_ids'] = []
-    for key, value in dag.items():
-        if value['child_ids'] == []:
-            for k, v in dag.items():
-                if key in v['child_ids']:
-                    dag_dict[key]['parent_ids'].append(k)
-        else:
-            for a, b in dag.items():
-                if key in b['child_ids']:
-                    dag_dict[key]['parent_ids'].append(a)
-    dim_len_list = []
-    for y, z in dag_dict.items():
-        if z['parent_ids'] == []:
-            for w, x in z['input'].items():
-                dim_len_list.append(len(x[1]))
-        elif z['child_ids'] == []:
-            for u, v in z['output'].items():
-                dim_len_list.append(len(v[1]))
-        else:
-            continue
 
-    # add name/paltform/max_batch_size
-    res_dict = dict()
-    res_dict['name'] = name
-    res_dict['platform'] = 'ensemble'
-    res_dict['max_batch_size'] = max_batch_size
+class EnsembleConfigBuilder:
+    '''
+    Create ensemble config. Currently, we just support a chain struct graph.
 
-    # add input/output
-    for m, n in dag_dict.items():
-        if n['parent_ids'] == []:
-            res_dict['input'] = []
-            for x, y in n['input'].items():
-                input = dict()
-                input['name'] = x
-                input['data_type'] = y[0]
-                input['dims'] = y[1]
-                res_dict['input'].append(input)
-        elif n['child_ids'] == []:
-            res_dict['output'] = []
-            for p, q in n['output'].items():
-                output = dict()
-                output['name'] = p
-                output['data_type'] = q[0]
-                output['dims'] =q[1]
-                res_dict['output'].append(output)
+    Example of input dag:
+    triton_dag = {
+    0: {
+        'id': 0,
+        'mode_name': 'image_decode',
+        'model_version': 1,
+        'inputs': {
+            'INPUT0': ('TYPE_STRING', []),
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_INT8', [-1, -1, 3]),
+            'OUTPUT1': ('TYPE_STRING', []),
+        },
+        'child_ids': [1]
+    },
+    1: {
+        'id': 1,
+        'mode_name': 'clip_preprocess',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_INT8', [-1, -1, 3]),
+            'IUTPUT1': ('TYPE_STRING', []),            
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [-1, 3, 224, 224])
+        },
+        'child_ids': [2]
+    },
+    2: {
+        'id': 2,
+        'mode_name': 'clip_model',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_FP32', [-1, 3, 224, 224])
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [-1, 512])
+        },
+        'child_ids': [3]        
+    },
+    3: {
+        'id': 3,
+        'mode_name': 'clip_postprocess',
+        'model_version': 1,
+        'inputs': {
+            'IUTPUT0': ('TYPE_FP32', [-1, 512])
+        },
+        'outputs': {
+            'OUTPUT0': ('TYPE_FP32', [512])
+        },
+        'child_ids': []
+    }
+}
+    '''
+    def __init__(self, dag, model_name, max_batch_size):
+        self._dag = dag
+        self._model_name = model_name
+        self._max_batch_size = max_batch_size
+        self._head = None
+        self._tail = None
 
-    # add ensemble_scheduling step
-    # only allowed sequence ensemble scheduling
-    res_dict['ensemble_scheduling'] = dict()
-    res_dict['ensemble_scheduling']['step'] = []
-    
-    parent_id = []
-    make_step(parent_id, dag_dict, res_dict)
-
-    res_json = json.dumps(res_dict, sort_keys=False, indent=2, separators=(',', ': '))
-    res_str = str(res_json)
-    for i in range(10):
-        input_mapk = 'input_map'+str(i)
-        output_mapk = 'output_map'+str(i)
-        res1 = res_str.replace(input_mapk, "input_map")
-        res = res1.replace(output_mapk, 'output_map')
-        res_str = res
-    return move_mark(res, dim_len_list)
-
-def make_step(parent_id, dag_dict, res_dict):
-    for c, d in dag_dict.items():
-        if d['parent_ids'] == parent_id:
-            input_count = 0
-            output_count = 0
-            step = dict()
-            step['model_name'] = d['model_name']
-            step['model_version'] = d['model_version']
-
-            for e, f in d['input'].items():
-                input_map_name = 'input_map'+str(input_count)
-                step[input_map_name] = dict()
-                step[input_map_name]['key'] = e
-                if d['parent_ids'] == []:
-                    step[input_map_name]['value'] = e
-                else:
-                    parent_key = d['parent_ids'][0]
-                    step[input_map_name]['value'] = str(dag_dict[parent_key]['model_name'])+'_'+str(d['parent_ids'][0])
-                input_count = input_count + 1
-
-            for g, h in d['output'].items():
-                output_map_name = 'output_map'+str(output_count)
-                step[output_map_name] = dict()
-                step[output_map_name]['key'] = g
-                if d['child_ids'] == []:
-                    step[output_map_name]['value'] = g
-                else:
-                    step[output_map_name]['value'] = str(d['model_name'])+'_'+str(c)
-                output_count = output_count + 1
-            nlist = []
-            nlist.append(d['id'])
-            parent_id = nlist
-            res_dict['ensemble_scheduling']['step'].append(step)
-            del step
-            if parent_id == []:
-                return
+    def _process_dag(self):
+        '''
+        Find out head and tail.
+        Add input_map and output_map for every node.
+        '''
+        all_keys = list(self._dag.keys())
+        no_root = []
+        for k, v in self._dag.items():
+            if v['child_ids']:
+                no_root.extend(v['child_ids'])
+                for name in v['child_ids']:
+                    if self._dag[name].get('parent_ids') is None:
+                        self._dag[name]['parent_ids'] = []
+                    self._dag[name]['parent_ids'].append(k)
             else:
-                make_step(parent_id, dag_dict, res_dict)
+                self._tail = v
+        head = set(all_keys) - set(no_root)
+        assert len(head) == 1
+        self._head = self._dag[list(head)[0]]
+        self._dag[list(head)[0]]['parent_ids'] = []
+        self._head['input_map'] = [(input, input) for input in self._head['input'].keys()]
+        self._tail['output_map'] = [(output, output) for output in self._tail['output'].keys()]
+
+        # add output_map
+        for name, v in self._dag.items():
+            if name == self._tail['id']:
+                continue
+            output_map = []
+            for output in v['output']:
+                output_map.append((output, '_'.join([str(name), output])))
+            v['output_map'] = output_map
+
+        # add input_map
+        for name, v in self._dag.items():
+            if len(v['parent_ids']) == 0:
+                continue
+            input_map = []
+            assert len(v['parent_ids']) == 1
+            parent_id = v['parent_ids'][0]
+            parent_outputs = self._dag[parent_id]['output_map']
+            inputs = list(v['input'].keys())
+            assert len(parent_outputs) == len(inputs)
+            for i in range(len(parent_outputs)):
+                input_map.append((inputs[i], parent_outputs[i][1]))
+            v['input_map'] = input_map
+
+    def _gen_header(self):
+        config = 'name: "{}"\n'.format(self._model_name)
+        config += 'platform: "ensemble"\n'
+        config += 'max_batch_size: {}\n'.format(self._max_batch_size)
+        for input_name in self._head['input'].keys():
+            data_type, shape = self._head['input'][input_name]
+            config += '''
+input [
+  {{
+    name: \"{}\"
+    data_type: {}
+    dims: {}
+  }}
+]\n'''.format(input_name, data_type, shape)
+        for output_name in self._tail['output'].keys():
+            data_type, shape = self._tail['output'][output_name]
+            config += '''
+output [
+  {{
+    name: \"{}\"
+    data_type: {}
+    dims: {}
+  }}
+]\n'''.format(output_name, data_type, shape)
+        return config
+
+    def _gen_single_step(self, model_name, inputs, outputs, is_tail):
+        config = '''    {{
+      model_name: \"{}\"
+      model_version: {}
+'''.format(model_name, 1)
+
+        for data in inputs:
+            config += '''
+      input_map {{
+        key: \"{}\"
+        value: \"{}\"
+      }}
+'''.format(data[0], data[1])
+
+        for output in outputs:
+            config += '''
+      output_map {{
+        key: \"{}\"
+        value: \"{}\"
+      }}
+'''.format(output[0], output[1])
+
+        config += '    }'
+        if not is_tail:
+            config += ',\n'
         else:
-            break
+            config += '\n'
+        return config
 
-def move_mark(data, dim_lens):
-    data_copy = copy.copy(data)
-    res = []
-    while True:
-        index = data_copy.partition(":")
-        x = index[0]
-        if x == data_copy:
-            res.append(x)
-            res = ''.join(res)
-            break
-        for i in range(2):
-            a = x.rfind('"')
-            b = []
-            b.append(x[:a])
-            b.append(x[a+1:])
-            x = ''.join(b)
-        res.append(x)
-        res.append(index[1])
-        data_copy = index[2]
+    def _gen_steps(self):
+        config = '''
+  step [\n'''
+        items = list(self._dag.values())
+        size = len(items)
+        for i in range(size):
+            step = items[i]
+            config += self._gen_single_step(step['model_name'], step['input_map'], step['output_map'], i == size - 1 )
+        config += '  ]\n'
+        return config
 
-    # solve dims
-    res_data = []
-    dim = 0
-    while True:
-        s = res.partition("dims: ")
-        y = s[0]
-        if y == res:
-            res_data.append(y)
-            res_data = ''.join(res_data)
-            break
-        else:
-            res_data.append(y)
-            res_data.append(s[1])
-            change = s[2].replace('\n       ', '', 1)
-            res = change.replace('\n       ', '', dim_lens[dim]-1)
-            res = res.replace('\n     ', '', 1)
-            dim = dim + 1
+    def _gen_ensemble_scheduling(self):
+        config = '''
+ensemble_scheduling: {\n'''
+        config += self._gen_steps()
+        config += '}'
+        return config
 
-    # solve :
-    res_data = res_data.replace('input:', 'input')
-    res_data = res_data.replace('output:', 'output')
-    res_data = res_data.replace('step:', 'step')
-    res_data = res_data.replace('map:', 'map')
-
-    # solve comma
-    res_data = res_data.replace(',\n', '\n')
-    res_data = res_data.replace('{\n','', 1)
-    res_data = res_data.replace('  ', '', 1)
-    res_data = res_data.replace('\n}', '\n')
-    res_data = res_data.replace('\n  ','\n')
-    return res_data
+    def gen_config(self):
+        self._process_dag()
+        config = self._gen_header()
+        config += self._gen_ensemble_scheduling()
+        return config

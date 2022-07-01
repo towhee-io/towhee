@@ -1,4 +1,4 @@
-name: "py_to_triton_test"
+name: "cb2876f3_local_triton_py"
 backend: "python"
 max_batch_size: 0
 
