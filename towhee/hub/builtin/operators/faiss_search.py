@@ -62,10 +62,10 @@ class faiss_search:
         from towhee.functional.entity import Entity
 
         if 'k' not in self.kwargs:
-            self.k = 10
+            self.kwargs['k'] = 10
 
         query = np.array([query])
-        scores, ids = self.faiss_index.search(query, self.k)
+        scores, ids = self.faiss_index.search(query, **self.kwargs)
 
         ids = ids[0].tolist()
         result = []
