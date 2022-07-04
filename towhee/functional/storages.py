@@ -68,7 +68,10 @@ class WritableTable:
         return self._table.num_rows
 
     def __getattr__(self, name):
-        return getattr(self._table, name)
+        if name in self._table.column_names:
+            return self._table.__getitem__(name)
+        else:
+            return getattr(self._table, name)
 
     def __getitem__(self, index):
         return self._table.__getitem__(index)
@@ -81,7 +84,7 @@ class ChunkedTable:
     """
     Chunked arrow table
     """
-    def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
+    def __init__(self, chunks=None, chunksize=128, stream=False, column_names=None) -> None:
         """
         A chunked pyarrow table.
 
@@ -99,6 +102,7 @@ class ChunkedTable:
             self._chunks = chunks
         else:
             self._chunks = [] if not stream else None
+        self._column_names = column_names
 
     @property
     def is_stream(self):
@@ -108,13 +112,22 @@ class ChunkedTable:
     def chunksize(self):
         return self._chunksize
 
-    def _create_table(self, chunk):
-        header = None
+    @property
+    def column_names(self):
+        return self._column_names
+
+    def chunks(self):
+        return self._chunks
+
+
+    def _create_table(self, chunk, head):
+        # head = []
         cols = None
         for entity in chunk:
-            header = [*entity.__dict__] if header is None else header
-            cols = [[] for _ in header] if cols is None else cols
-            for col, name in zip(cols, header):
+            # head = [*entity.__dict__] if not head else head
+            # self._column_names = [*entity.__dict__] if not self._column_names else self._column_names
+            cols = [[] for _ in head] if cols is None else cols
+            for col, name in zip(cols, head):
                 col.append(getattr(entity, name))
         arrays = []
         for col in cols:
@@ -124,35 +137,42 @@ class ChunkedTable:
             except:
                 arrays.append(TensorArray.from_numpy(col))
 
-        res = pa.Table.from_arrays(arrays, names=header)
+        res = pa.Table.from_arrays(arrays, names=head)
 
         return res
 
     def _pack_unstream_chunk(self, data):
+        head = []
         res = []
         chunk = []
+        # if not self._column_names:
+        #     self._column_names = [*data[0].__dict__]
         for element in data:
+            if not head:
+                head = [*element.__dict__]
             chunk.append(element)
             if len(chunk) >= self._chunksize:
-                res.append(WritableTable(self._create_table(chunk)))
+                res.append(WritableTable(self._create_table(chunk, head)))
                 chunk = []
 
         if len(chunk) != 0:
-            res.append(WritableTable(self._create_table(chunk)))
+            res.append(WritableTable(self._create_table(chunk, head)))
 
         return res
 
-
     def _pack_stream_chunk(self, data):
         chunk = []
+        head = []
         for element in data:
+            if not head:
+                head = [*element.__dict__]
             chunk.append(element)
             if len(chunk) >= self._chunksize:
-                yield WritableTable(self._create_table(chunk))
+                yield WritableTable(self._create_table(chunk, head))
                 chunk = []
 
         if len(chunk) != 0:
-            yield WritableTable(self._create_table(chunk))
+            yield WritableTable(self._create_table(chunk, head))
 
 
     def feed(self, data):
@@ -182,13 +202,10 @@ class ChunkedTable:
         else:
             self._chunks = self._pack_stream_chunk(data)
 
-    def chunks(self):
-        return self._chunks
-
     def __iter__(self):
         def inner():
             for chunk in self._chunks:
-                # chunk = _WritableTable(chunk)
+                # yield chunk
                 for i in range(len(chunk)):
                     yield EntityView(i, chunk)
 
