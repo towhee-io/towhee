@@ -1111,7 +1111,7 @@ def sharded_single_view_inner_product(embds, subspaces, text_weights=None,
     return sims
 
 
-def create_model(config: Dict = None, weights_path: str = None, device: str = None):
+def create_model(config: Dict = None, weights_path: str = None, device: str = None) -> CENet:
     """
     Create CENet model.
     Args:
@@ -1125,7 +1125,13 @@ def create_model(config: Dict = None, weights_path: str = None, device: str = No
     Returns:
         (`CENet`):
             CENet model.
+    >>> from towhee.models import collaborative_experts
+    >>> ce_model = collaborative_experts.create_model()
+    >>> ce_model.__class__.__name__
+    'CENet'
+
     """
+
     if config is None:
         config = {
             "task": "retrieval",

@@ -20,7 +20,7 @@ from io import BytesIO
 from zipfile import ZipFile
 from urllib.request import urlopen
 
-from towhee.types.image import Image
+from towhee.types import Image
 from towhee.utils.log import engine_log
 from towhee.utils.repo_normalize import RepoNormalize
 
@@ -36,8 +36,6 @@ except ModuleNotFoundError as moduleNotFound:
     except:
         engine_log.error('cv2 not found, you can install via `pip install opencv-python`.')
         raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from moduleNotFound
-
-
 
 
 def from_src(src: Union[str, PosixPath]) -> Image:
@@ -92,50 +90,52 @@ def from_zip(zip_src: Union[str, Path], pattern: str = '*.JPEG') -> Image:
     return img_list
 
 
-def from_ndarray(ndarray_img: np.ndarray, mode: str) -> Image:
+def from_ndarray(img: np.ndarray, mode: str) -> Image:
     """
     Convert an image loaded by cv2 as ndarray into towhee.types.Image.
 
     Args:
-        ndarray_img (`np.ndarray`):
+        img (`np.ndarray`):
             A image loaed by cv2 as ndarray.
+        mode (`str`):
+            The mode of the image.
 
     Returns:
         (`towhee.types.Image`)
             The image wrapepd as towhee Image.
     """
-    img_bytes = ndarray_img.tobytes()
-    img_width = ndarray_img.shape[1]
-    img_height = ndarray_img.shape[0]
-    img_channel = len(cv2.split(ndarray_img))
-    img_mode = mode
-    img_array = ndarray_img
+    # img_bytes = ndarray_img.tobytes()
+    # img_width = ndarray_img.shape[1]
+    # img_height = ndarray_img.shape[0]
+    # img_channel = len(cv2.split(ndarray_img))
 
-    towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
+    t_img= Image(img, mode)
 
-    return towhee_img
+    return t_img
 
 
-def to_ndarray(towhee_img: Image) -> np.ndarray:
+def to_ndarray(t_img: Image, dtype=None) -> np.ndarray:
     """
     Convert a towhee.types.Image into ndarray.
 
     The mode is same as `towhee_img`, use `towhee_img.mode` to get the information.
 
     Args:
-        towhee_img (`towhee.types.Image`):
+        t_img (`towhee.types.Image`):
             A towhee image.
+        dtype:
+            The type of the narray.
 
     Returns:
         (`np.ndarray`)
             The ndarray of the image, the mode is same as the `towhee_img`.
     """
-    shape = (towhee_img.height, towhee_img.width, towhee_img.channel)
-    data = towhee_img.image
+    shape = t_img.shape
+    dtype = np.uint8 if not dtype else dtype
 
-    ndarray_img = np.ndarray(shape, np.uint8, data)
+    arr = np.ndarray(shape, dtype, t_img)
 
-    return ndarray_img
+    return arr
 
 
 def rgb2bgr(img: Union[np.ndarray, Image]) -> np.ndarray:
@@ -154,7 +154,7 @@ def rgb2bgr(img: Union[np.ndarray, Image]) -> np.ndarray:
         if not img.mode.upper() == 'RGB':
             raise ValueError('The input image should be RGB mode.')
         else:
-            rgb_img = img.array if isinstance(img.array, np.ndarray) else to_ndarray(img)
+            rgb_img = to_ndarray(img)
 
     elif isinstance(img, np.ndarray):
         rgb_img = img

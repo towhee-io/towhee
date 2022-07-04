@@ -79,9 +79,9 @@ class TestCollaborativeExperts(unittest.TestCase):
                    "speech": torch.rand(batch_size, 32, 300)
                    }
         ind = {
-            "audio": torch.randint(low=0, high=2, size=(batch_size,)),
-            "speech": torch.randint(low=0, high=2, size=(batch_size,)),
-            "ocr": torch.randint(low=0, high=2, size=(batch_size,)),
+            "audio": torch.ones(batch_size, ),
+            "speech": torch.ones(batch_size, ),
+            "ocr": torch.ones(batch_size, ),
         }
         text = torch.randn(batch_size, 1, 37, self.text_dim)
         out = self.ce_net(experts, ind, text)

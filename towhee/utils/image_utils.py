@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee._types import Image
+from towhee.types import Image
 
 
 def to_image_color(img: Image, target_mode: str):

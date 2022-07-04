@@ -574,6 +574,10 @@ def create_model(
         model (`CLIP`):
             The CLIP model.
 
+    >>> from towhee.models import clip
+    >>> model = clip.create_model("clip_resnet_r50")
+    >>> model.__class__.__name__
+    'CLIP'
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
