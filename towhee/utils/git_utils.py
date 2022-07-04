@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import sys
 import subprocess
+import pkg_resources
 from pathlib import Path
 from typing import Union, List
 from requests.exceptions import HTTPError
 from shutil import rmtree
+from pkg_resources import DistributionNotFound
 
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.log import engine_log
@@ -125,9 +126,14 @@ class GitUtils:
             engine_log.error('Error when clone repo: %s/%s, will delete the local cache. Please check you network', self._author, self._repo)
             raise e
 
-        if install_reqs:
-            if 'requirements.txt' in os.listdir(local_repo_path):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
+        if install_reqs and 'requirements.txt' in (i.name for i in local_repo_path.iterdir()):
+            with open(local_repo_path / 'requirements.txt', 'r', encoding='utf-8') as f:
+                reqs = f.read().split('\n')
+            try:
+                pkg_resources.require(reqs)
+            except DistributionNotFound:
+                pass
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
 
     def status(self):
         """

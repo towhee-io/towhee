@@ -15,7 +15,7 @@
 import importlib
 import sys
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, List, Dict, Union
 
 import pkg_resources
 from towhee.operator import Operator
@@ -42,23 +42,23 @@ class OperatorLoader:
         else:
             self._cache_path = Path(cache_path)
 
-    def _load_interal_op(self, op_name: str, args: Dict[str, any]):
+    def _load_interal_op(self, op_name: str, arg: List[Any], kws: Dict[str, Any]):
         if op_name in ['_start_op', '_end_op']:
             return NOPOperator()
         elif op_name == '_concat':
-            return ConcatOperator(**args)
+            return ConcatOperator(*arg, **kws)
         else:
             # Not a interal operator
             return None
 
-    def load_operator_from_internal(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
-        return self._load_interal_op(function, args)
+    def load_operator_from_internal(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+        return self._load_interal_op(function, arg, kws)
 
-    def load_operator_from_registry(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+    def load_operator_from_registry(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
         op = OperatorRegistry.resolve(function)
-        return self.instance_operator(op, args) if op is not None else None
+        return self.instance_operator(op, arg, kws) if op is not None else None
 
-    def load_operator_from_packages(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+    def load_operator_from_packages(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
         try:
             module, fname = function.split('/')
             fname = fname.replace('-', '_')
@@ -67,7 +67,7 @@ class OperatorLoader:
             # module = '.'.join([module, fname, fname])
             module = '.'.join(['towheeoperator', '{}_{}'.format(module, fname), fname])
             op = getattr(importlib.import_module(module), op_cls)
-            return self.instance_operator(op, args) if op is not None else None
+            return self.instance_operator(op, arg, kws) if op is not None else None
         except Exception:  # pylint: disable=broad-except
             with param_scope() as hp:
                 if hp().towhee.hub.use_pip(False):
@@ -75,7 +75,7 @@ class OperatorLoader:
                 else:
                     return None
 
-    def load_operator_from_path(self, path: Union[str, Path], args: Dict[str, Any]) -> Operator:
+    def load_operator_from_path(self, path: Union[str, Path], arg: List[Any], kws: Dict[str, Any]) -> Operator:
         """
         Load operator form local path.
         Args:
@@ -90,6 +90,12 @@ class OperatorLoader:
         path = Path(path)
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
+
+        if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
+            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
+                reqs = f.read().split('\n')
+            pkg_resources.require(reqs)
+
         try:
             # support for ver1 operator API
             spec = importlib.util.spec_from_file_location(modname, path.resolve())
@@ -111,14 +117,10 @@ class OperatorLoader:
             sys.modules[modname] = module
             spec.loader.exec_module(module)
             op = getattr(module, fname)
-        if op and 'requirements.txt' in (i.name for i in path.parent.iterdir()):
-            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
-                reqs = f.read().split('\n')
-            pkg_resources.require(reqs)
 
-        return self.instance_operator(op, args) if op is not None else None
+        return self.instance_operator(op, arg, kws) if op is not None else None
 
-    def load_operator_from_cache(self, function: str, args: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+    def load_operator_from_cache(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
         if '/' not in function:
             function = 'towhee/'+function
         try:
@@ -130,9 +132,9 @@ class OperatorLoader:
         if path is None:
             raise FileExistsError('Cannot find operator.')
 
-        return self.load_operator_from_path(path, args)
+        return self.load_operator_from_path(path, arg, kws)
 
-    def load_operator(self, function: str, args: Dict[str, Any], tag: str) -> Operator:
+    def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:
         """Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
@@ -151,14 +153,14 @@ class OperatorLoader:
                         self.load_operator_from_registry,
                         self.load_operator_from_packages,
                         self.load_operator_from_cache]:
-            op = factory(function, args, tag)
+            op = factory(function, arg, kws, tag)
             if op is not None:
                 return op
         return None
 
-    def instance_operator(self, op, args: Dict[str, Any]) -> Operator:
+    def instance_operator(self, op, arg: List[Any], kws: Dict[str, Any]) -> Operator:
         with param_scope() as hp:
             if hp().towhee.dry_run(False):
                 return NOPOperator()
             else:
-                return op(**args) if args is not None else op()
+                return op(*arg, **kws) if kws is not None else op()

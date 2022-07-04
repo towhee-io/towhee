@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from .entity_view import EntityView
+from .entity import EntityView
 from towhee.utils.thirdparty.pyarrow import pa
 from towhee.types.tensor_array import TensorArray
 
@@ -21,7 +20,6 @@ class WritableTable:
     """
     A wrapper that make arrow table writable.
     """
-
     def __init__(self, table):
         self._table = table
         self._buffer = {}
@@ -83,48 +81,111 @@ class ChunkedTable:
     """
     Chunked arrow table
     """
-
     def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
+        """
+        A chunked pyarrow table.
 
+        Args:
+            chunks:
+                The list or queue of chunks.
+            chunksize (`int`):
+                The size of the chunk.
+            stream (`bool`):
+                If the data is streamed.
+        """
         self._chunksize = chunksize
-        self._buffer = []
+        self._is_stream = stream
         if chunks is not None:
             self._chunks = chunks
         else:
-            self._chunks = [] if stream is False else None
+            self._chunks = [] if not stream else None
 
-    def feed(self, element, eos=False):
-        if not eos:
-            self._buffer.append(element)
+    @property
+    def is_stream(self):
+        return self._is_stream
 
-        if len(self._buffer) >= self._chunksize or eos is True:
-            if len(self._buffer) == 0: return
-            header = None
-            cols = None
-            for entity in self._buffer:
-                header = [*entity.__dict__] if header is None else header
-                cols = [[] for _ in header] if cols is None else cols
-                for col, name in zip(cols, header):
-                    col.append(getattr(entity, name))
-            arrays = []
-            for col in cols:
-                try:
-                    arrays.append(pa.array(col))
-                # pylint: disable=bare-except
-                except:
-                    arrays.append(TensorArray.from_numpy(col))
+    @property
+    def chunksize(self):
+        return self._chunksize
 
-            res = pa.Table.from_arrays(arrays, names=header)
-            self._chunks.append(WritableTable(res))
-            self._buffer = []
-        return
+    def _create_table(self, chunk):
+        header = None
+        cols = None
+        for entity in chunk:
+            header = [*entity.__dict__] if header is None else header
+            cols = [[] for _ in header] if cols is None else cols
+            for col, name in zip(cols, header):
+                col.append(getattr(entity, name))
+        arrays = []
+        for col in cols:
+            try:
+                arrays.append(pa.array(col))
+            # pylint: disable=bare-except
+            except:
+                arrays.append(TensorArray.from_numpy(col))
 
+        res = pa.Table.from_arrays(arrays, names=header)
+
+        return res
+
+    def _pack_unstream_chunk(self, data):
+        res = []
+        chunk = []
+        for element in data:
+            chunk.append(element)
+            if len(chunk) >= self._chunksize:
+                res.append(WritableTable(self._create_table(chunk)))
+                chunk = []
+
+        if len(chunk) != 0:
+            res.append(WritableTable(self._create_table(chunk)))
+
+        return res
+
+
+    def _pack_stream_chunk(self, data):
+        chunk = []
+        for element in data:
+            chunk.append(element)
+            if len(chunk) >= self._chunksize:
+                yield WritableTable(self._create_table(chunk))
+                chunk = []
+
+        if len(chunk) != 0:
+            yield WritableTable(self._create_table(chunk))
+
+
+    def feed(self, data):
+        # if not eos:
+        #     self._chunk.append(element)
+
+        # if len(self._chunk) >= self._chunksize or eos is True:
+        #     if len(self._chunk) == 0: return
+        #     header = None
+        #     cols = None
+        #     for entity in self._chunk:
+        #         header = [*entity.__dict__] if header is None else header
+        #         cols = [[] for _ in header] if cols is None else cols
+        #         for col, name in zip(cols, header):
+        #             col.append(getattr(entity, name))
+        #     arrays = []
+        #     for col in cols:
+        #         try:
+        #             arrays.append(pa.array(col))
+        #         # pylint: disable=bare-except
+        #         except:
+        #             arrays.append(TensorArray.from_numpy(col))
+
+        #     res = pa.Table.from_arrays(arrays, names=header)
+        if not self._is_stream:
+            self._chunks = self._pack_unstream_chunk(data)
+        else:
+            self._chunks = self._pack_stream_chunk(data)
 
     def chunks(self):
         return self._chunks
 
     def __iter__(self):
-
         def inner():
             for chunk in self._chunks:
                 # chunk = _WritableTable(chunk)

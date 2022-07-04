@@ -21,7 +21,7 @@ from towhee.hub.file_manager import FileManagerConfig, FileManager
 
 UNITTESTS_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-CACHE_PATH = Path(__file__).parent.parent.resolve()
+CACHE_PATH = Path(__file__).parent.parent.parent.parent / 'tests' / 'unittests'
 
 new_cache = (CACHE_PATH / 'test_cache')
 operator_cache = (CACHE_PATH / 'mock_operators')

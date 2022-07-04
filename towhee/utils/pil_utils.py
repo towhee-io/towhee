@@ -63,34 +63,32 @@ def from_pil(pil_img: PILImage.Image) -> Image:
         (`towhee.types.Image`)
             The image wrapepd as towhee Image.
     '''
-    img_bytes = pil_img.tobytes()
-    img_width = pil_img.width
-    img_height = pil_img.height
-    img_channel = len(pil_img.split())
-    img_mode = pil_img.mode
-    img_array = np.array(pil_img)
+    # img_bytes = pil_img.tobytes()
+    # img_width = pil_img.width
+    # img_height = pil_img.height
+    # img_channel = len(pil_img.split())
+    mode = pil_img.mode
+    array = np.array(pil_img)
 
-    towhee_img = Image(img_bytes, img_width, img_height, img_channel, img_mode, img_array)
+    t_img = Image(array, mode)
 
-    return towhee_img
+    return t_img
 
 
-def to_pil(towhee_img: Image) -> PILImage.Image:
+def to_pil(t_img: Image) -> PILImage.Image:
     """
     Convert a towhee.types.Image into PIL.Image.Image.
 
     Args:
-        towhee_img (`towhee.types.Image`):
+        t_img (`towhee.types.Image`):
             A towhee image.
 
     Returns:
         (`PIL.Image.Image`)
             A PIL image.
     """
-    mode = towhee_img.mode
-    size = (towhee_img.width, towhee_img.height)
-    data = towhee_img.image
+    mode = t_img.mode
 
-    pil_img = PILImage.frombytes(mode, size, data)
+    pil_img = PILImage.fromarray(t_img, mode)
 
     return pil_img

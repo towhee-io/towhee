@@ -44,7 +44,7 @@ class DataFrameMixin:
     ...         .as_str()
     ...         .to_list()
     ... )
-    ['{"a": 1, "b": 2, "c": 2}', '{"a": 2, "b": 3, "c": 3}']
+    ["{'a': 1, 'b': 2, 'c': 2}", "{'a': 2, 'b': 3, 'c': 3}"]
 
     Select the entity on the specified fields.
 
@@ -166,7 +166,7 @@ class DataFrameMixin:
         ...         .as_str()
         ...         .to_list()
         ... )
-        ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
+        ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
 
         2. convert tuples into entities:
 
@@ -177,7 +177,7 @@ class DataFrameMixin:
         ...         .as_str()
         ...         .to_list()
         ... )
-        ['{"a": 1, "b": 2}', '{"a": 2, "b": 3}']
+        ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
 
         3. convert single value into entities:
 
@@ -188,7 +188,7 @@ class DataFrameMixin:
         ...         .as_str()
         ...         .to_list()
         ... )
-        ['{"a": 1}', '{"a": 2}']
+        ["{'a': 1}", "{'a': 2}"]
         """
 
         if schema is None:

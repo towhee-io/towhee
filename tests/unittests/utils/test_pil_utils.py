@@ -35,12 +35,11 @@ class TestPilUtils(unittest.TestCase):
 
         self.assertIsInstance(img_1, Image)
         self.assertIsInstance(img_2, Image)
-        self.assertEqual(img_1.image, img_2.image)
         self.assertEqual(img_1.width, img_2.width)
         self.assertEqual(img_1.height, img_2.height)
         self.assertEqual(img_1.channel, img_2.channel)
         self.assertEqual(img_1.mode, img_2.mode)
-        self.assertTrue((img_1.array == img_2.array).all())
+        self.assertTrue((img_1 == img_2).all())
 
     def test_from_pil(self):
         pil_img = PILImage.open(logo_path)
@@ -52,7 +51,7 @@ class TestPilUtils(unittest.TestCase):
         self.assertEqual(pil_img.height, towhee_img.height)
         self.assertEqual(len(pil_img.split()), towhee_img.channel)
         self.assertEqual(pil_img.mode, towhee_img.mode)
-        self.assertTrue((np.array(pil_img) == towhee_img.array).all())
+        self.assertTrue((np.array(pil_img) == towhee_img).all())
 
     def test_to_pil(self):
         towhee_img = from_src(logo_path)
@@ -64,4 +63,4 @@ class TestPilUtils(unittest.TestCase):
         self.assertEqual(pil_img.height, towhee_img.height)
         self.assertEqual(len(pil_img.split()), towhee_img.channel)
         self.assertEqual(pil_img.mode, towhee_img.mode)
-        self.assertTrue((np.array(pil_img) == towhee_img.array).all())
+        self.assertTrue((np.array(pil_img) == towhee_img).all())

@@ -18,8 +18,7 @@ from typing import Tuple
 from towhee._types import Image
 from towhee.types import AudioFrame
 from towhee.hparam import param_scope
-from towhee.functional.entity import Entity
-from towhee.functional.entity_view import EntityView
+from towhee.functional.entity import Entity, EntityView
 # pylint: disable=dangerous-default-value
 
 

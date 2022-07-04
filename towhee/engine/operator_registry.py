@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 from collections import namedtuple
 from typing import Any, Dict, List
 
@@ -159,8 +160,12 @@ class OperatorRegistry:
             output_schema = namedtuple('Output', 'col0')
         if isinstance(output_schema, str):  # string schema 'col0 col1'
             output_schema = output_schema.split()
-        if isinstance(output_schema, List):  # list schema ['col0', 'col1']
-            output_schema = namedtuple('Output', output_schema)
+
+        # list schema ['col0', 'col1']
+        if isinstance(output_schema, List):
+            if len(output_schema) == 0 or isinstance(output_schema[0], str):
+                output_schema = namedtuple('Output', output_schema)
+        # list schema [(int, (1, )), (np.float32, (-1, -1, 3))] is for triton, do nothing.
 
         def wrapper(cls):
             metainfo = dict(input_schema=input_schema,
@@ -170,6 +175,9 @@ class OperatorRegistry:
             nonlocal name
             name = URI(cls.__name__ if name is None else name).resolve_repo(
                 _get_default_namespace())
+
+            if isinstance(cls, types.FunctionType):
+                OperatorRegistry.REGISTRY[name + '_func'] = cls
 
             # wrap a callable to a class
             if not isinstance(cls, type) and callable(cls):

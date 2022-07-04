@@ -46,21 +46,45 @@ class ColumnMixin:
         Examples:
 
         >>> import towhee
-        >>> dc = towhee.dc['a'](range(20))
-        >>> dc = dc.set_chunksize(10)
-        >>> dc2 = dc.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc2.get_chunksize()
-        10
-        >>> len(dc._iterable._chunks)
-        2
+        >>> dc_1 = towhee.dc['a'](range(20))
+        >>> dc_1 = dc_1.set_chunksize(10)
+        >>> dc_2 = dc_1.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc_1.get_chunksize(), dc_2.get_chunksize()
+        (10, 10)
+        >>> dc_2._iterable.chunks()
+        [pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[10,11,12,13,14,15,16,17,18,19]]
+        b: [[11,12,13,14,15,16,17,18,19,20]]]
+
+        >>> dc_3 = towhee.dc['a'](range(20)).stream()
+        >>> dc_3 = dc_3.set_chunksize(10)
+        >>> dc_4 = dc_3.runas_op['a', 'b'](func=lambda x: x+1)
+        >>> dc_4._iterable.chunks()
+        [pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[0,1,2,3,4,5,6,7,8,9]]
+        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+        a: int64
+        b: int64
+        ----
+        a: [[10,11,12,13,14,15,16,17,18,19]]
+        b: [[11,12,13,14,15,16,17,18,19,20]]]
         """
 
         self._chunksize = chunksize
-        chunked_table = ChunkedTable(chunksize=chunksize, stream=False)
-        for element in self:
-            chunked_table.feed(element)
-        chunked_table.feed(None, eos=True)
-        return self._factory(chunked_table, mode=self.ModeFlag.COLBASEDFLAG)
+        chunked_table = ChunkedTable(chunksize=chunksize, stream=self.is_stream)
+        chunked_table.feed(self._iterable)
+        return self._factory(chunked_table, parent_stream=False, mode=self.ModeFlag.COLBASEDFLAG)
 
     def get_chunksize(self):
         return self._chunksize
@@ -181,10 +205,10 @@ class ColumnMixin:
 
         # pylint: disable=protected-access
         if isinstance(self._iterable, ChunkedTable):
-            tables = [
-                WritableTable(self.__table_apply__(chunk, unary_op))
-                for chunk in self._iterable.chunks()
-            ]
+            if not self.is_stream:
+                tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
+            else:
+                tables = (WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks())
             return self._factory(ChunkedTable(tables))
         return self._factory(self.__table_apply__(self._iterable, unary_op))
 
@@ -192,13 +216,6 @@ class ColumnMixin:
         # pylint: disable=protected-access
         return table.write_many(unary_op._index[1],
                                 self.__col_apply__(table, unary_op))
-        # res = self.__col_apply__(table, unary_op)
-        # if isinstance(res, tuple):
-        #     for col, name in zip(res, unary_op._index[1]):
-        #         table = table.append_column(name, [col])
-        # else:
-        #     table = table.append_column(unary_op._index[1], [res])
-        # return table
 
     def __col_apply__(self, cols, unary_op):
         # pylint: disable=protected-access
@@ -250,8 +267,3 @@ class ColumnMixin:
             # args.append(data.to_numpy(zero_copy_only=False).reshape(shape))
 
         return unary_op.__vcall__(*args)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()

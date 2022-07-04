@@ -21,13 +21,17 @@ from .state import StateMixin
 from .metric import MetricMixin
 from .ray import RayMixin
 from .serve import ServeMixin
-from .milvus_mixin import MilvusMixin
-from .save import SaveMixin
+from .milvus import MilvusMixin
+from .faiss import FaissMixin
+from .dag import DagMixin
+from .config import ConfigMixin
+from .compile import CompileMixin
 
 
 class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
-                ComputerVisionMixin, StateMixin, MetricMixin,
-                RayMixin, ServeMixin, MilvusMixin, SaveMixin):
+               ComputerVisionMixin, StateMixin, MetricMixin, RayMixin,
+               ServeMixin, MilvusMixin, DagMixin, FaissMixin, ConfigMixin,
+               CompileMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
