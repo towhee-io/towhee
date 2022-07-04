@@ -98,6 +98,10 @@ Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and
 
 For a deeper dive into Towhee and its architecture, check out the [Towhee docs](https://docs.towhee.io).
 
+## Examples
+
+Towhee [Examples](https://github.com/towhee-io/examples) is designed to expose users how to use towhee to analyze the unstructured data, such as reverse image search, reverse video search, audio classification, question and answer systems, molecular search, etc.
+
 ## Contributing
 
 Remember that writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) for more information.
