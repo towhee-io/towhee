@@ -228,8 +228,6 @@ def create_model(
             attention_type=configs['attention_type'],
             dropout=configs['dropout']
         )
-        if model_name.startswith('svt'):
-            model.head = None
 
     model.to(device)
     if pretrained:
@@ -238,11 +236,3 @@ def create_model(
     model.eval()
     return model
 
-
-# if __name__ == '__main__':
-#     path = '/Users/zilliz/PycharmProjects/pretrain/SVT/kinetics400_vitb_ssl.pth'
-#     model = create_model(model_name='svt_vitb_k400', checkpoint_path=path, pretrained=True)
-#     sample = torch.randn(1, 3, 8, 224, 224)
-#     # out1 = model(sample)
-#     out1 = model.forward_features(sample)
-#     print(out1.shape)
