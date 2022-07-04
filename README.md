@@ -1,5 +1,8 @@
-![https://towhee.io](towhee_logo.png#gh-light-mode-only)
-![https://towhee.io](towhee_logo_dark.png#gh-dark-mode-only)
+<p align="center">
+    <img src="towhee_logo.png#gh-light-mode-only" width="60%"/>
+    <img src="towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
+</p>
+
 
 <h3 align="center">
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
