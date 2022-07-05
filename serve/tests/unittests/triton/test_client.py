@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from re import L
 import unittest
-from urllib import request
 from serve.triton import client
 
 class MockHttpClient():

@@ -176,3 +176,4 @@ class Client():
 
 	def stop_stream(self):
 		self.client.stop_stream()
+
