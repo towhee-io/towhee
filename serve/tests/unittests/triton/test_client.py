@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from re import L
 import unittest
+from urllib import request
 from serve.triton import client
 
 class MockHttpClient():
@@ -55,8 +57,8 @@ class MockHttpClient():
         res['outputs'] = outputs
         return res
 
-    def infer(self, model_name, inputs, outputs):
-        return MockRes(model_name, inputs, outputs)
+    def infer(self, model_name, inputs, request_id, outputs):
+        return MockRes(model_name, inputs, request_id, outputs)
 
 class MockGrpcClient():
     """
@@ -64,6 +66,7 @@ class MockGrpcClient():
     """
     def __init__(self, url):
         self.url = url
+        self.user_data = client.UserData()
 
     def get_model_config(self, model_name):
         return GrpcConfig(model_name)
@@ -78,8 +81,21 @@ class MockGrpcClient():
         self.outputs = outputs
         return self
 
-    def infer(self, model_name, inputs, outputs):
-        return MockRes(model_name, inputs, outputs)
+    def infer(self, model_name, inputs, request_id, outputs):
+        return MockRes(model_name, inputs, request_id, outputs)
+
+    def async_stream_infer(self, model_name, inputs, request_id, outputs):
+        return MockRes(model_name, inputs, request_id, outputs)
+    
+    def async_infer(self, model_name, inputs, request_id, outputs):
+        return MockRes(model_name, inputs, request_id, outputs)
+
+    def start_stream(self):
+        pass
+
+    def stop_stream(self):
+        pass
+
 
 class GrpcConfig():
     """
@@ -118,9 +134,10 @@ class MockRes:
     """
     mock response class for triton client
     """
-    def __init__(self, model_name, inputs, outputs):
+    def __init__(self, model_name, inputs, request_id, outputs):
         self.name = model_name
         self.inputs = inputs
+        self.request_id = request_id
         self.outputs = outputs
 
     def as_numpy(self, name):
@@ -133,17 +150,21 @@ class TestTritonClient(unittest.TestCase):
     """
     def test_http_client(self):
         tclient = client.Client('127.0.0.1:8001', protocol='http')
-        tclient.client = MockHttpClient('127.0.0.1:80001')
+        tclient.client = MockHttpClient('127.0.0.1:8001')
         res = tclient.serve('/test.jpg')
 
-        expect = {}
-        expect['OUTPUT0'] = [1, 2, 3]
+        expect = []
+        exp = {}
+        exp['OUTPUT0'] = [1, 2, 3]
+        expect.append(exp)
         self.assertEqual(res, expect)
 
     def test_grpc_client(self):
         tclient = client.Client('127.0.0.1:8002')
         tclient.client = MockGrpcClient('127.0.0.1:8002')
         res = tclient.serve('/test.jpg')
-        expect = {}
-        expect['OUTPUT0'] = [1, 2, 3]
+        expect = []
+        exp = {}
+        exp['OUTPUT0'] = [1, 2, 3]
+        expect.append(exp)
         self.assertEqual(res, expect)
