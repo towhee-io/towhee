@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import queue
 import numpy as np
 import tritonclient.grpc as grpcclient
 import tritonclient.http as httpclient
@@ -20,11 +21,6 @@ from tritonclient.utils import InferenceServerException
 from functools import partial
 
 model_name = 'pipeline'
-
-if sys.version_info >= (3, 0):
-	import queue
-else:
-	import Queue as queue
 
 class UserData:
 	def __init__(self):
