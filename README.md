@@ -8,11 +8,23 @@
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
 </h3>
 
-[![Slack](https://img.shields.io/badge/join-slack-orange?style=for-the-badge)](https://slack.towhee.io)
-[![Twitter](https://img.shields.io/badge/follow-twitter-blue?style=for-the-badge)](https://twitter.com/towheeio)
-[![License](https://img.shields.io/badge/license-apache2.0-green?style=for-the-badge)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Github Actions](https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=for-the-badge)](https://github.com/towhee-io/towhee/actions/workflows/pylint.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/towhee-io/towhee?style=for-the-badge)](https://app.codecov.io/gh/towhee-io/towhee)
+<div class="column" align="middle">
+  <a href="https://slack.towhee.io">
+    <img src="https://img.shields.io/badge/join-slack-orange?style=flat" alt="join-slack"/>
+  </a>
+  <a href="https://twitter.com/towheeio">
+    <img src="https://img.shields.io/badge/follow-twitter-blue?style=flat" alt="twitter"/>
+  </a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0">
+    <img src="https://img.shields.io/badge/license-apache2.0-green?style=flat" alt="license"/>
+  </a>
+  <a href="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml">
+    <img src="https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=flat" alt="github actions"/>
+  </a>
+  <a href="https://app.codecov.io/gh/towhee-io/towhee">
+    <img src="https://img.shields.io/codecov/c/github/towhee-io/towhee?style=flat" alt="coverage"/>
+  </a>
+</div>
 
 ## What is Towhee?
 
