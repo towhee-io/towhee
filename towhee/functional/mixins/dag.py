@@ -152,6 +152,7 @@ class DagMixin:
                         dag[key]['op_name'] = 'towhee/' + val['call_args']['*arg'][0].function
                 else:
                     dag[key]['op_name'] = 'dummy_input'
+                    dag[key]['parent_ids'] = []
                     start = key
             else:
                 dag[key]['op_name'] = 'end'
