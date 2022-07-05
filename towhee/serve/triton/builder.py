@@ -157,6 +157,8 @@ class Builder:
         for node_id, node in self.dag.items():
             if node_id in ['start', 'end']:
                 continue
+            if node['op_name'] in ['start', 'end']:
+                continue
             if 'end' in node['child_ids']:
                 node['child_ids'].remove('end')
             config = self._create_node_config(node_id, node)
@@ -178,16 +180,20 @@ class Builder:
         return self._build()
 
 
-def main(dag_file, model_root, model_format_priority_str):
+def main():
     import json
+    import sys
+    if len(sys.argv) != 4:
+        sys.exit(-1)
+
+    dag_file, model_root, model_format_priority_str = sys.argv[1], sys.argv[2], sys.argv[3]
     with open(dag_file, 'rt', encoding='utf-8') as f:
         dag = json.load(f)
         model_format_priority = model_format_priority_str.split(',')
-        Builder(dag, model_root, model_format_priority).build()
+        if not Builder(dag, model_root, model_format_priority).build():
+            sys.exit(-1)
+    sys.exit(0)
 
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.args) != 4:
-        print('ERROR')
-    main(sys.args[1], sys.args[2], sys.args[3])
+    main()

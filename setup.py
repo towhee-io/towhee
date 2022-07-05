@@ -68,7 +68,10 @@ else:
           package_data={'towhee.tests.test_util': ['*.yaml']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
-              'console_scripts': ['towhee=towhee.command.cmdline:main'],
+              'console_scripts': [
+                  'towhee=towhee.command.cmdline:main',
+                  'triton_builder=towhee.serve.triton.builder:main',
+              ],
           },
           long_description_content_type='text/markdown'
           )

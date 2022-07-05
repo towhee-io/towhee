@@ -1,7 +1,8 @@
 ARG TRITON_VERSION=21.10
 ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver:${TRITON_VERSION}-py3
-ARG MODEL_FORMAT_PRIORITY=trt,onnx
 FROM ${BASE_IMAGE} as builder
+
+ARG MODEL_FORMAT_PRIORITY
 
 RUN apt-key adv --fetch-keys \
     https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub && \
@@ -35,4 +36,4 @@ RUN mkdir -p /workspace/models
 COPY ./dag.json /workspace/dag.json
 
 RUN triton_builder /workspace/dag.json /workspace/models ${MODEL_FORMAT_PRIORITY}
-
+ 
