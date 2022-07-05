@@ -16,16 +16,25 @@
 import unittest
 import torch
 
-from towhee.models.allinone.allinone import VCOPHeader
+from towhee.models.layers.position_encoding import build_position_encoding
 
 
-class AllinoneTest(unittest.TestCase):
-    def test_allinone(self):
-        vcoph = VCOPHeader(feature_size=4)
-        x = torch.rand(2, 3, 4)
-        out = vcoph(x)
-        self.assertTrue(out.shape == torch.Size([2, 6]))
+class TestPositionEncoding(unittest.TestCase):
+    """
+    Test Transformer Encoder
+    """
+    x = torch.rand(1, 2)
+
+    def test_sine(self):
+        pos_embed = build_position_encoding(hidden_dim=2*2, max_len=4, position_embedding='sine')
+        out = pos_embed(self.x)
+        self.assertTrue(out.shape == (1, 1, 2))
+
+    def test_learned(self):
+        pos_embed = build_position_encoding(hidden_dim=2*2, position_embedding='learned')
+        out = pos_embed(self.x)
+        self.assertTrue(out.shape == (1, 4, 1, 2))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

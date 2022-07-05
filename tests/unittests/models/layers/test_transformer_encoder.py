@@ -16,17 +16,19 @@
 import unittest
 import torch
 
-from towhee.models.layers.multi_head_attention import MultiHeadAttention
+from towhee.models.layers.transformer_encoder import TransformerEncoder
 
 
-class MHATest(unittest.TestCase):
-    def test_mha_with_lrp(self):
-        seq_len = 21
-        c_dim = 10
-        mod = MultiHeadAttention(c_dim, num_heads=2)
-        fake_input = torch.rand(8, seq_len, c_dim)
-        out1 = mod(fake_input)
-        kwargs = {'alpha': 1}
-        # torch.Size([8, 21, 10])
-        out2 = mod.relprop(out1, **kwargs)
-        self.assertTrue(out2.shape == torch.Size([8, 21, 10]))
+class TransformerEncoderTest(unittest.TestCase):
+    """
+    Test Transformer Encoder
+    """
+    def test_transformer_encoder(self):
+        dummy_x = torch.rand(2, 4)
+        mode = TransformerEncoder(d_model=4, n_head=1, dim_ff=1, dropout=0.0, num_layers=1, num_frames=2)
+        out = mode(dummy_x)
+        self.assertTrue(out.shape == (2, 2, 4))
+
+
+if __name__ == '__main__':
+    unittest.main()

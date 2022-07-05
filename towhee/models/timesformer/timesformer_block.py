@@ -26,7 +26,7 @@ except ModuleNotFoundError:
     os.system('pip install einops')
     from einops import rearrange
 
-from towhee.models.layers.multi_head_attention import MultiHeadAttention
+from towhee.models.layers.attention import MultiHeadAttention
 from towhee.models.layers.droppath import DropPath
 from towhee.models.layers.mlp import Mlp
 

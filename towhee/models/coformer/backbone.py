@@ -25,6 +25,7 @@ from typing import Dict, List
 from towhee.models.coformer.utils import NestedTensor, is_main_process
 from towhee.models.layers.position_encoding import build_position_encoding
 
+
 class BackboneBase(nn.Module):
     """
     Args:
@@ -111,14 +112,15 @@ class Joiner(nn.Sequential):
 
         return out, pos
 
+
 def build_backbone(
-                    hidden_dim = 512,
-                    position_embedding = "learned",
-                    backbone = "resnet50",
+                    hidden_dim=512,
+                    position_embedding="learned",
+                    backbone="resnet50",
                   ):
     position_embedding = build_position_encoding(
-                                                 hidden_dim = hidden_dim,
-                                                 position_embedding = "learned",
+                                                 hidden_dim=hidden_dim,
+                                                 position_embedding=position_embedding,
                                                 )
     train_backbone = False
     return_interm_layers = False
