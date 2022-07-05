@@ -22,6 +22,8 @@ class TestDagInfo(unittest.TestCase):
         for key, val in dc.dag_info.items():
             if val['op'] == 'stream':
                 self.assertEqual(val['op_name'], 'dummy_input')
+            if val['parent_ids'] == ['start']:
+                self.assertEqual(key, 'start')
 
 if __name__ == '__main__':
     unittest.main()
