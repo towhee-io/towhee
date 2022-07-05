@@ -1,3 +1,5 @@
+&nbsp;
+
 <p align="center">
     <img src="towhee_logo.png#gh-light-mode-only" width="60%"/>
     <img src="towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
@@ -26,7 +28,17 @@
   </a>
 </div>
 
-## What is Towhee?
+&nbsp;
+
+Towhee is a machine learning framework that is dedicated to making unstructured data processing pipelines simple and fast. Website: https://towhee.io/
+
+:art:&emsp;**Various Modalities:** Support data processing on different modalities, such as image, video, text, audio, molecular structure specification.
+
+:mortar_board:&emsp;**SOTA Models:** Cover five fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. You can find hot and novel models here, including BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc. [Explore models](https://towhee.io/tasks/operator)
+
+:package:&emsp;**Not only Models:** Towhee also provides traditional data processing methods that can be used together with neural network models, so that help you create pipelines close to practice. For example, video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, database operations, etc. 
+
+:snake:&emsp;**Pythonic API:**  A pythonic and method-chaining style API that for describing custom data processing pipelines. Schema is also supported, which makes processing unstructured data as easy as handling tabular data.
 
 Towhee is a flexible, application-oriented framework for generating embedding vectors via a pipeline of ML models and other operations. It aims to make democratize `x2vec`, allowing everyone - from beginner developers to large organizations - to generate dense embeddings with just a few lines of code.
 
