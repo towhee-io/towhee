@@ -30,7 +30,7 @@ class TestPyOpToTriton(unittest.TestCase):
     '''
 
     def test_py_to_triton(self):
-        with TemporaryDirectory(dir='/') as root:
+        with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_py().get_op()
             to_triton = PyOpToTriton(op, root, 'cb2876f3_local_triton_py', 'local', 'triton_py', {})
             to_triton.to_triton()
@@ -46,7 +46,7 @@ class TestPreprocessor(unittest.TestCase):
     '''
 
     def test_processor(self):
-        with TemporaryDirectory(dir='/') as root:
+        with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
             to_triton = PreprocessToTriton(op, root, 'fae9ba13_local_triton_nnop_preprocess')
             to_triton.to_triton()
@@ -66,7 +66,7 @@ class TestPostprocessor(unittest.TestCase):
     '''
 
     def test_processor(self):
-        with TemporaryDirectory(dir='/') as root:
+        with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
             to_triton = PostprocessToTriton(op, root, 'fae9ba13_local_triton_nnop_postprocess')
             to_triton.to_triton()
@@ -86,7 +86,7 @@ class TestToModel(unittest.TestCase):
     '''
 
     def test_to_model(self):
-        with TemporaryDirectory(dir='/') as root:
+        with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
             to_triton = ModelToTriton(op, root, 'fae9ba13_local_triton_nnop_model', ['tensorrt'])
             to_triton.to_triton()
@@ -130,7 +130,7 @@ class TestToEnsemble(unittest.TestCase):
     }
 
     def test_to_ensemble(self):
-        with TemporaryDirectory(dir='/') as root:
+        with TemporaryDirectory(dir='./') as root:
             to_triton = EnsembleToTriton(TestToEnsemble.test_data, root, 'pipeline', 128)
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'

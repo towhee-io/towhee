@@ -64,7 +64,7 @@ class TestPythonModelBuilder(unittest.TestCase):
         self.assertListEqual(expected_results, lines)
 
     def test_pickle_callable_pymodel_builder(self):
-        with TemporaryDirectory(dir='/') as gen_file_path:
+        with TemporaryDirectory(dir='./') as gen_file_path:
             pyfile_name = 'clip_preprocess_model.py'
             save_path = gen_file_path + '/' + pyfile_name
             gen_model_from_pickled_callable(
@@ -81,7 +81,7 @@ class TestPythonModelBuilder(unittest.TestCase):
                 self.assertListEqual(list(gen_f), list(expected_f))
 
     def test_op_pymodel_builder(self):
-        with TemporaryDirectory(dir='/') as gen_file_path:
+        with TemporaryDirectory(dir='./') as gen_file_path:
             pyfile_name = 'resnet50_model.py'
             save_path = gen_file_path + '/' + pyfile_name
             gen_model_from_op(
