@@ -176,3 +176,18 @@ class Builder:
             if not self.load():
                 return False
         return self._build()
+
+
+def main(dag_file, model_root, model_format_priority_str):
+    import json
+    with open(dag_file, 'rt', encoding='utf-8') as f:
+        dag = json.load(f)
+        model_format_priority = model_format_priority_str.split(',')
+        Builder(dag, model_root, model_format_priority).build()
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.args) != 4:
+        print('ERROR')
+    main(sys.args[1], sys.args[2], sys.args[3])

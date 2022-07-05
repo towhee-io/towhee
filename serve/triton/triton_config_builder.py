@@ -14,8 +14,6 @@
 
 from typing import Dict, List, Tuple, Any
 
-import copy
-import json
 import serve.triton.type_gen as tygen
 
 
