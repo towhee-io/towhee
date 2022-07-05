@@ -84,7 +84,7 @@ class MockGrpcClient():
 
     def async_stream_infer(self, model_name, inputs, request_id, outputs):
         return MockRes(model_name, inputs, request_id, outputs)
-    
+
     def async_infer(self, model_name, inputs, request_id, outputs):
         return MockRes(model_name, inputs, request_id, outputs)
 
