@@ -24,8 +24,10 @@ from towhee.models.coformer.backbone import build_backbone
 from towhee.models.coformer.transformer import build_transformer
 from towhee.models.coformer.config import _C
 
+
 class CoFormer(nn.Module):
     """CoFormer model for Grounded Situation Recognition"""
+
     def __init__(self, backbone, transformer, num_noun_classes, vidx_ridx):
         """ Initialize the model.
         Parameters:
@@ -57,26 +59,25 @@ class CoFormer(nn.Module):
         # classifiers & predictors (for grounded noun prediction)
         self.noun_1_classifier = nn.Linear(hidden_dim, self.num_noun_classes)
         self.noun_2_classifier = nn.Linear(hidden_dim, self.num_noun_classes)
-        self.noun_3_classifier = nn.Sequential(nn.Linear(hidden_dim, hidden_dim*2),
-                                             nn.ReLU(),
-                                             nn.Dropout(0.3),
-                                             nn.Linear(hidden_dim*2, self.num_noun_classes))
-        self.bbox_predictor = nn.Sequential(nn.Linear(hidden_dim, hidden_dim*2),
-                                             nn.ReLU(),
-                                             nn.Dropout(0.2),
-                                             nn.Linear(hidden_dim*2, hidden_dim*2),
-                                             nn.ReLU(),
-                                             nn.Dropout(0.2),
-                                             nn.Linear(hidden_dim*2, 4))
-        self.bbox_conf_predictor = nn.Sequential(nn.Linear(hidden_dim, hidden_dim*2),
-                                             nn.ReLU(),
-                                             nn.Dropout(0.2),
-                                             nn.Linear(hidden_dim*2, 1))
+        self.noun_3_classifier = nn.Sequential(nn.Linear(hidden_dim, hidden_dim * 2),
+                                               nn.ReLU(),
+                                               nn.Dropout(0.3),
+                                               nn.Linear(hidden_dim * 2, self.num_noun_classes))
+        self.bbox_predictor = nn.Sequential(nn.Linear(hidden_dim, hidden_dim * 2),
+                                            nn.ReLU(),
+                                            nn.Dropout(0.2),
+                                            nn.Linear(hidden_dim * 2, hidden_dim * 2),
+                                            nn.ReLU(),
+                                            nn.Dropout(0.2),
+                                            nn.Linear(hidden_dim * 2, 4))
+        self.bbox_conf_predictor = nn.Sequential(nn.Linear(hidden_dim, hidden_dim * 2),
+                                                 nn.ReLU(),
+                                                 nn.Dropout(0.2),
+                                                 nn.Linear(hidden_dim * 2, 1))
 
         # layer norms
         self.ln1 = nn.LayerNorm(hidden_dim)
         self.ln2 = nn.LayerNorm(hidden_dim)
-
 
     def forward(self, samples, targets=None, inference=False):
         """
@@ -100,32 +101,34 @@ class CoFormer(nn.Module):
         # model prediction
         for i in range(batch_size):
             if not inference:
-                outs = self.transformer(self.input_proj(src[i:i+1]),
-                                        mask[i:i+1], self.il_token_embed.weight, self.rl_token_embed.weight,
+                outs = self.transformer(self.input_proj(src[i:i + 1]),
+                                        mask[i:i + 1], self.il_token_embed.weight, self.rl_token_embed.weight,
                                         self.verb_token_embed.weight, self.role_token_embed.weight,
-                                        pos[-1][i:i+1], self.vidx_ridx, targets=targets[i], inference=inference)
+                                        pos[-1][i:i + 1], self.vidx_ridx, targets=targets[i], inference=inference)
             else:
-                outs = self.transformer(self.input_proj(src[i:i+1]),
-                                       mask[i:i+1], self.il_token_embed.weight, self.rl_token_embed.weight,
-                                       self.verb_token_embed.weight, self.role_token_embed.weight,
-                                       pos[-1][i:i+1], self.vidx_ridx, inference=inference)
+                outs = self.transformer(self.input_proj(src[i:i + 1]),
+                                        mask[i:i + 1], self.il_token_embed.weight, self.rl_token_embed.weight,
+                                        self.verb_token_embed.weight, self.role_token_embed.weight,
+                                        pos[-1][i:i + 1], self.vidx_ridx, inference=inference)
 
             # output features & predictions
-            verb_pred, extracted_rhs, aggregated_rhs, final_rhs, selected_roles = outs[0], outs[1], outs[2], outs[3], outs[4]
+            verb_pred, extracted_rhs, aggregated_rhs, final_rhs, selected_roles = outs[0], outs[1], outs[2], outs[3], \
+                                                                                  outs[4]
             num_selected_roles = len(selected_roles)
-            ## auxiliary classifiers
+            # auxiliary classifiers
             if not inference:
                 extracted_rhs = self.ln1(extracted_rhs[:, :, selected_roles, :])
                 noun_1_pred = self.noun_1_classifier(extracted_rhs)
                 noun_1_pred = F.pad(noun_1_pred,
-                                    (0,0,0,max_num_roles-num_selected_roles),
+                                    (0, 0, 0, max_num_roles - num_selected_roles),
                                     mode='constant',
                                     value=0,
-                                    )[-1].view(1,max_num_roles,self.num_noun_classes)
-                aggregated_rhs = self.ln2(aggregated_rhs[selected_roles].permute(1,0,2).view(1, 1, num_selected_roles, -1))
+                                    )[-1].view(1, max_num_roles, self.num_noun_classes)
+                aggregated_rhs = self.ln2(
+                    aggregated_rhs[selected_roles].permute(1, 0, 2).view(1, 1, num_selected_roles, -1))
                 noun_2_pred = self.noun_2_classifier(aggregated_rhs)
                 noun_2_pred = F.pad(noun_2_pred,
-                                    (0,0,0,max_num_roles-num_selected_roles),
+                                    (0, 0, 0, max_num_roles - num_selected_roles),
                                     mode='constant',
                                     value=0,
                                     )[-1].view(1, max_num_roles, self.num_noun_classes)
@@ -134,14 +137,19 @@ class CoFormer(nn.Module):
                 noun_2_pred = None
             noun_3_pred = self.noun_3_classifier(final_rhs)
             noun_3_pred = F.pad(noun_3_pred,
-                                (0,0,0,max_num_roles-num_selected_roles),
+                                (0, 0, 0, max_num_roles - num_selected_roles),
                                 mode='constant',
                                 value=0,
                                 )[-1].view(1, max_num_roles, self.num_noun_classes)
             bbox_pred = self.bbox_predictor(final_rhs).sigmoid()
-            bbox_pred = F.pad(bbox_pred, (0,0,0,max_num_roles-num_selected_roles), mode='constant', value=0)[-1].view(1, max_num_roles, 4)
+            bbox_pred = F.pad(bbox_pred, (0, 0, 0, max_num_roles - num_selected_roles), mode='constant', value=0)[
+                -1].view(1, max_num_roles, 4)
             bbox_conf_pred = self.bbox_conf_predictor(final_rhs)
-            bbox_conf_pred = F.pad(bbox_conf_pred, (0,0,0,max_num_roles-num_selected_roles), mode='constant', value=0)[-1].view(1, max_num_roles, 1)
+            bbox_conf_pred = \
+                F.pad(bbox_conf_pred, (0, 0, 0, max_num_roles - num_selected_roles), mode='constant', value=0)[-1].view(
+                    1,
+                    max_num_roles,
+                    1)
 
             batch_verb.append(verb_pred)
             batch_noun_1.append(noun_1_pred)
@@ -162,11 +170,12 @@ class CoFormer(nn.Module):
 
         return out
 
+
 def create_model(
-                model_name: str = None,
-                vidx_ridx = None,
-                device = None,
-                ):
+        model_name: str = None,
+        vidx_ridx=None,
+        device=None,
+):
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if model_name == 'coformer':
@@ -174,25 +183,25 @@ def create_model(
     else:
         raise AttributeError(f'Invalid model_name {model_name}.')
     backbone = build_backbone(
-                                hidden_dim = model_config.hidden_dim,
-                                position_embedding = model_config.position_embedding,
-                                backbone = model_config.backbone,
-                             )
+        hidden_dim=model_config.hidden_dim,
+        position_embedding=model_config.position_embedding,
+        backbone=model_config.backbone,
+    )
     transformer = build_transformer(
-                                    d_model = model_config.hidden_dim,
-                                    dropout = model_config.dropout,
-                                    nhead = model_config.nhead,
-                                    num_glance_enc_layers = model_config.num_glance_enc_layers,
-                                    num_gaze_s1_dec_layers = model_config.num_gaze_s1_dec_layers,
-                                    num_gaze_s1_enc_layers = model_config.num_gaze_s1_enc_layers,
-                                    num_gaze_s2_dec_layers = model_config.num_gaze_s2_dec_layers,
-                                    dim_feedforward = model_config.dim_feedforward,
-                                   )
+        d_model=model_config.hidden_dim,
+        dropout=model_config.dropout,
+        nhead=model_config.nhead,
+        num_glance_enc_layers=model_config.num_glance_enc_layers,
+        num_gaze_s1_dec_layers=model_config.num_gaze_s1_dec_layers,
+        num_gaze_s1_enc_layers=model_config.num_gaze_s1_enc_layers,
+        num_gaze_s2_dec_layers=model_config.num_gaze_s2_dec_layers,
+        dim_feedforward=model_config.dim_feedforward,
+    )
     model = CoFormer(
-                     backbone,
-                     transformer,
-                     num_noun_classes = model_config.num_noun_classes,
-                     vidx_ridx = vidx_ridx,
-                     )
+        backbone,
+        transformer,
+        num_noun_classes=model_config.num_noun_classes,
+        vidx_ridx=vidx_ridx,
+    )
     model.to(device)
     return model
