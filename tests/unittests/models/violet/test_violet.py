@@ -26,7 +26,7 @@ class VioletTest(unittest.TestCase):
     """
     def test_violet(self):
         img = torch.rand(1, 5, 3, 32, 32)
-        txt = torch.randint(20230, size=(1, 5,))
+        txt = torch.randint(10, size=(1, 5,))
         mask_i = [[1, 1, 1, 0, 0]]
         mask = []
         for i in range(0, 1):

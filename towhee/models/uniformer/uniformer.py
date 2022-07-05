@@ -25,7 +25,7 @@ from towhee.models.utils.general_utils import to_2tuple
 from towhee.models.utils.weight_init import trunc_normal_
 from towhee.models.layers.droppath import DropPath
 from towhee.models.layers.mlp import Mlp
-from towhee.models.layers.multi_head_attention import MultiHeadAttention
+from towhee.models.layers.attention import MultiHeadAttention
 from towhee.models.uniformer.config import _C
 import os
 
