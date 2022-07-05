@@ -18,7 +18,7 @@ from pathlib import Path
 import filecmp
 from tempfile import TemporaryDirectory
 
-from serve.triton.builder import Builder
+from towhee.serve.triton.builder import Builder
 from . import EXPECTED_FILE_PATH
 
 
@@ -41,7 +41,7 @@ class TestBuilder(unittest.TestCase):
                 'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
             }
         }
-        with TemporaryDirectory(dir='./') as root:
+        with TemporaryDirectory(dir='/') as root:
             builer = Builder(test_dag, root, ['tensorrt'])
             self.assertTrue(builer.build())
 

@@ -18,8 +18,8 @@ import pickle
 from abc import ABC
 import logging
 
-from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
-from serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
+from towhee.serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
+from towhee.serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
 
 logger = logging.getLogger()
 

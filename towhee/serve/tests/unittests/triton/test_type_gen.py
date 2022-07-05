@@ -16,7 +16,7 @@ import unittest
 from typing import List
 import numpy as np
 
-from serve.triton.type_gen import handle_type_annotations
+from towhee.serve.triton.type_gen import handle_type_annotations
 from towhee.types import VideoFrame, AudioFrame
 
 

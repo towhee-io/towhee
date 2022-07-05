@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 
 from towhee._types.image import Image
-from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
+from towhee.serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
 
 from . import EXPECTED_FILE_PATH
 

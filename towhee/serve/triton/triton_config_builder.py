@@ -14,7 +14,7 @@
 
 from typing import Dict, List, Tuple, Any
 
-import serve.triton.type_gen as tygen
+import towhee.serve.triton.type_gen as tygen
 
 
 class TritonModelConfigBuilder:

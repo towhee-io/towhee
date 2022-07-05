@@ -17,8 +17,8 @@ import logging
 
 from towhee import ops
 from towhee.operator import NNOperator
-from serve.triton import constant
-from serve.triton.to_triton_models import PreprocessToTriton, PostprocessToTriton, ModelToTriton, PyOpToTriton, EnsembleToTriton
+from towhee.serve.triton import constant
+from towhee.serve.triton.to_triton_models import PreprocessToTriton, PostprocessToTriton, ModelToTriton, PyOpToTriton, EnsembleToTriton
 
 logger = logging.getLogger()
 
