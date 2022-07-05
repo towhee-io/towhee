@@ -19,5 +19,9 @@ class TestDagInfo(unittest.TestCase):
 
         self.assertEqual(dc.dag_info[a]['init_args'] ,b)
 
+        for key, val in dc.dag_info.items():
+            if val['op'] == 'stream':
+                self.assertEqual(val['op_name'], 'dummy_input')
+
 if __name__ == '__main__':
     unittest.main()
