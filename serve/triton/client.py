@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import queue
 import numpy as np
 import tritonclient.grpc as grpcclient
@@ -32,104 +31,121 @@ def completion_callback(user_data, result, error):
 	user_data._completed_requests.put((result, error))
 
 class Client():
-	def __init__(self, url, model_name=model_name, protocol='grpc'):
-		self._model_name = model_name
-		self.user_data = UserData()
-		if protocol == 'grpc':
-			self.protocol = 'grpc'
-			self.client = grpcclient.InferenceServerClient(url)
-			self.client.start_stream(partial(completion_callback, self.user_data))
+	@staticmethod
+	def init(url, model_name=model_name, stream=False, protocol='grpc'):
+		if protocol == 'http':
+			return HttpClient(url, model_name)
 		else:
-			self.protocol = 'http'
-			self.client = httpclient.InferenceServerClient(url)
+			if stream == True:
+				return GrpcStreamClient(url, model_name)
+			else:
+				return GrpcClient(url, model_name)		
 
-	def __del__(self):
-		if self.protocol == 'grpc':
-			self.stop_stream()
+class HttpClient():
+	def __init__(self, url, model_name):
+		self.client = httpclient.InferenceServerClient(url)
+		self._model_name = model_name
 
 	def get_model_name(self):
 		return self._model_name
 
-	def async_set(self, iterator):
-		if self.protocol != 'grpc':
-			raise Exception('Streaming is only allowed with gRPC protocol')
-		inputs, outputs = self._solve_inputs_outputs(iterator)
+	def infer(self, arg):
+		if type(arg) != type([]):
+			arg = [arg]
+		inputs, outputs = self._solve_inputs_outputs(arg)
 
 		sent_count = 0
 		responses = []
-		for i in range(len(iterator)):
+		for i in range(len(arg)):
 			sent_count += 1
-			if self.protocol == 'grpc':
-				self.client.async_infer(self.get_model_name(), inputs, partial(completion_callback, self.user_data), request_id=str(sent_count), outputs=outputs)
-		
+			responses.append(self.client.infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs=outputs))
+		return self._solve_responses(outputs, responses)
+
+	def _solve_inputs_outputs(self, arg):
+		model_metadata = self.client.get_model_metadata(model_name=self.get_model_name())
+		inputs = []
+		inputs_list = model_metadata['inputs']
+		outputs_list = model_metadata['outputs']
+		for i in inputs_list:
+			inputs.append(httpclient.InferInput(i['name'], i['shape'], i['datatype']))
+
+		image_data = []
+		for idx in range(len(arg)):
+			image_data.append(np.array(arg[idx].encode('utf-8'), dtype=np.object_))
+		if len(arg) > 1:
+			batch_image_data = np.stack([image_data[0]], axis=0)
+		else:
+			batch_image_data = np.stack(image_data, axis=0)
+		inputs[0].set_data_from_numpy(batch_image_data, binary_data=True)
+
+		output_names = [
+			output['name']
+			for output in outputs_list
+		]
+
+		outputs = []
+		for output_name in output_names:
+			outputs.append(httpclient.InferRequestedOutput(output_name, binary_data=True))
+		return inputs, outputs
+
+	def _solve_responses(self, outputs, responses):
+		res = []
+		for i in range(len(responses)):
+			res_dict = {}
+			for j in range(len(outputs)):
+				output_name = outputs[j].name()
+				res_dict[output_name] = responses[i].as_numpy(output_name)
+			res.append(res_dict)
+		return res
+
+class GrpcClient():
+	def __init__(self, url, model_name):
+		self.client = grpcclient.InferenceServerClient(url)
+		self.user_data = UserData()
+		self._model_name = model_name
+
+	def get_model_name(self):
+		return self._model_name
+
+	def async_infer(self, list_arg):
+		inputs, outputs = self._solve_inputs_outputs(list_arg)
+		sent_count = 0
+		responses = []
+		for _ in range(len(list_arg)):
+			sent_count += 1
+			self.client.async_infer(self.get_model_name(), inputs, partial(completion_callback, self.user_data), request_id=str(sent_count), outputs=outputs)
+
 		processed_count = 0
 		while processed_count < sent_count:
 			(results, error) = self.user_data._completed_requests.get()
 			processed_count += 1
+			err_dict = {}
 			if error is not None:
-				sys.exit(1)
-			if processed_count <= len(iterator):
+				err_dict[processed_count] = error
+			if processed_count <= len(list_arg):
 				responses.append(results)
-		
-		return self._solve_responses(outputs, responses)
 
-	def stream(self, iterator):
-		if self.protocol != 'grpc':
-			raise Exception('Streaming is only allowed with gRPC protocol')
-		inputs, outputs = self._solve_inputs_outputs(iterator)
+		return self._solve_responses(outputs, responses, error_dict=err_dict)
+
+	def infer(self, arg):
+		if type(arg) != type([]):
+			arg = [arg]
+		inputs, outputs = self._solve_inputs_outputs(arg)
 
 		sent_count = 0
 		responses = []
-		try:
-			for i in range(len(iterator)):
-				sent_count += 1
-				self.client.async_stream_infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs=outputs)
-		except InferenceServerException as e:
-			self.stop_stream()
-			sys.exit(1)
-
-		processed_count = 0
-		while processed_count < sent_count:
-			(results, error) = self.user_data._completed_requests.get()
-			processed_count += 1
-			if error is not None:
-				sys.exit(1)
-			if processed_count <= len(iterator):
-				responses.append(results)
-		return self._solve_responses(outputs, responses)
-
-	def serve(self, iterator):
-		if type(iterator) != type([]):
-			iterator = [iterator]
-		inputs, outputs = self._solve_inputs_outputs(iterator)
-
-		sent_count = 0
-		responses = []
-		for i in range(len(iterator)):
+		for i in range(len(arg)):
 			sent_count += 1
 			responses.append(self.client.infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs=outputs))
 		return self._solve_responses(outputs, responses)
 
 	def _solve_inputs_outputs(self, iterator):
-		model_config = self.client.get_model_config(model_name=self.get_model_name())
 		model_metadata = self.client.get_model_metadata(model_name=self.get_model_name())
 		inputs = []
-		if self.protocol == 'grpc':
-			batch_size = model_config.config.max_batch_size
-			inputs_list = model_metadata.inputs
-			outputs_list = model_metadata.outputs
-		else:
-			batch_size = model_config['max_batch_size']
-			inputs_list = model_metadata['inputs']
-			outputs_list = model_metadata['outputs']
+		inputs_list = model_metadata.inputs
+		outputs_list = model_metadata.outputs
 		for i in inputs_list:
-			if self.protocol == 'grpc':
-				inputs.append(grpcclient.InferInput(i.name, i.shape, i.datatype))
-			else:
-				inputs.append(httpclient.InferInput(i['name'], i['shape'], i['datatype']))
-
-		if batch_size == 0 or len(iterator) <= batch_size:
-			batch_size = 1
+			inputs.append(grpcclient.InferInput(i.name, i.shape, i.datatype))
 
 		image_data = []
 		for idx in range(len(iterator)):
@@ -138,38 +154,102 @@ class Client():
 			batch_image_data = np.stack([image_data[0]], axis=0)
 		else:
 			batch_image_data = np.stack(image_data, axis=0)
-		if self.protocol == 'grpc':
-			inputs[0].set_data_from_numpy(batch_image_data)
-		else:
-			inputs[0].set_data_from_numpy(batch_image_data, binary_data=True)
+		inputs[0].set_data_from_numpy(batch_image_data)
 
-		output_names = [
-        	output.name if self.protocol == "grpc" else output['name']
-        	for output in outputs_list
-    	]
+		output_names = []
+		for output in outputs_list:
+			output_names.append(output.name)
 
 		outputs = []
-		
 		for output_name in output_names:
-			if self.protocol == 'grpc':
-				outputs.append(grpcclient.InferRequestedOutput(output_name))
-			else:
-				outputs.append(httpclient.InferRequestedOutput(output_name, binary_data=True))
+			outputs.append(grpcclient.InferRequestedOutput(output_name))
 		return inputs, outputs
 
-	def _solve_responses(self, outputs, responses):
+	def _solve_responses(self, outputs, responses, error_dict={}):
 		res = []
 		for i in range(len(responses)):
 			res_dict = {}
 			for j in range(len(outputs)):
-				if self.protocol == 'grpc':
-					output_name = outputs[j].name()
-				else:
-					output_name = outputs[j].name()
+				output_name = outputs[j].name()
 				res_dict[output_name] = responses[i].as_numpy(output_name)
 			res.append(res_dict)
-		return res
+		return res, error_dict
+
+class GrpcStreamClient():
+	def __init__(self, url, model_name):
+		self.client = grpcclient.InferenceServerClient(url)
+		self.user_data = UserData()
+		self.client.start_stream(partial(completion_callback, self.user_data))
+		self._model_name = model_name
+
+	def __del__(self):
+		self.stop_stream()
+
+	def get_model_name(self):
+		return self._model_name
+
+	def stream(self, iterator):
+		sent_count = 0
+		responses = []
+		err_dict = {}
+		while True:
+			sent_count += 1
+			try:
+				info = next(iterator)
+				if type(info) != type([]):
+					info = [info]
+				inputs, outputs = self._solve_inputs_outputs(info)
+				self.client.async_stream_infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs= outputs)
+			except InferenceServerException as e:
+				err_dict[sent_count] = e
+			except StopIteration:
+				break
+
+		processed_count = 0
+		server_error_count = len(err_dict)
+		while processed_count < sent_count - server_error_count - 1:
+			(results, error) = self.user_data._completed_requests.get()
+			processed_count += 1
+			if error is not None:
+				err_dict[processed_count+server_error_count] = error	
+			responses.append(results)
+		return self._solve_responses(outputs, responses, error_dict=err_dict)
+
+	def _solve_inputs_outputs(self, item):
+		model_metadata = self.client.get_model_metadata(model_name=self.get_model_name())
+		inputs = []
+		inputs_list = model_metadata.inputs
+		outputs_list = model_metadata.outputs
+		for i in inputs_list:
+			inputs.append(grpcclient.InferInput(i.name, i.shape, i.datatype))
+
+		image_data = []
+		for idx in range(len(item)):
+			image_data.append(np.array(item[idx].encode('utf-8'), dtype=np.object_))
+		if len(item) > 1:
+			batch_image_data = np.stack([image_data[0]], axis=0)
+		else:
+			batch_image_data = np.stack(image_data, axis=0)
+		inputs[0].set_data_from_numpy(batch_image_data)
+
+		output_names = []
+		for output in outputs_list:
+			output_names.append(output.name)
+
+		outputs = []
+		for output_name in output_names:
+			outputs.append(grpcclient.InferRequestedOutput(output_name))
+		return inputs, outputs
+
+	def _solve_responses(self, outputs, responses, error_dict={}):
+		res = []
+		for i in range(len(responses)):
+			res_dict = {}
+			for j in range(len(outputs)):
+				output_name = outputs[j].name()
+				res_dict[output_name] = responses[i].as_numpy(output_name)
+			res.append(res_dict)
+		return res, error_dict
 
 	def stop_stream(self):
 		self.client.stop_stream()
-
