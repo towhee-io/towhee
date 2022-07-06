@@ -50,5 +50,4 @@ class DockerImageBuilder:
         with TemporaryDirectory(dir='./') as workspace:
             self.prepare_dag(Path(workspace))
             shutil.copy(DOCKERFILE, workspace)
-            shutil.copy('./dist/towhee-0.1.dev764-py3-none-any.whl', workspace)
             self.build_image(workspace)
