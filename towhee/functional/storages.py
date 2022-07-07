@@ -84,7 +84,7 @@ class ChunkedTable:
     """
     Chunked arrow table
     """
-    def __init__(self, chunks=None, chunksize=128, stream=False, column_names=None) -> None:
+    def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
         """
         A chunked pyarrow table.
 
@@ -102,7 +102,6 @@ class ChunkedTable:
             self._chunks = chunks
         else:
             self._chunks = [] if not stream else None
-        self._column_names = column_names
 
     @property
     def is_stream(self):
@@ -112,20 +111,13 @@ class ChunkedTable:
     def chunksize(self):
         return self._chunksize
 
-    @property
-    def column_names(self):
-        return self._column_names
-
     def chunks(self):
         return self._chunks
-
 
     def _create_table(self, chunk, head):
         # head = []
         cols = None
         for entity in chunk:
-            # head = [*entity.__dict__] if not head else head
-            # self._column_names = [*entity.__dict__] if not self._column_names else self._column_names
             cols = [[] for _ in head] if cols is None else cols
             for col, name in zip(cols, head):
                 col.append(getattr(entity, name))
@@ -176,27 +168,6 @@ class ChunkedTable:
 
 
     def feed(self, data):
-        # if not eos:
-        #     self._chunk.append(element)
-
-        # if len(self._chunk) >= self._chunksize or eos is True:
-        #     if len(self._chunk) == 0: return
-        #     header = None
-        #     cols = None
-        #     for entity in self._chunk:
-        #         header = [*entity.__dict__] if header is None else header
-        #         cols = [[] for _ in header] if cols is None else cols
-        #         for col, name in zip(cols, header):
-        #             col.append(getattr(entity, name))
-        #     arrays = []
-        #     for col in cols:
-        #         try:
-        #             arrays.append(pa.array(col))
-        #         # pylint: disable=bare-except
-        #         except:
-        #             arrays.append(TensorArray.from_numpy(col))
-
-        #     res = pa.Table.from_arrays(arrays, names=header)
         if not self._is_stream:
             self._chunks = self._pack_unstream_chunk(data)
         else:

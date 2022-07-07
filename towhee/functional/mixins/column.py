@@ -204,12 +204,10 @@ class ColumnMixin:
         """
         # pylint: disable=protected-access
         if isinstance(self._iterable, ChunkedTable):
-            # cols = self._iterable.column_names
             if not self.is_stream:
                 tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
             else:
                 tables = (WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks())
-            # cols.append(unary_op._index[1])
             return self._factory(ChunkedTable(chunks = tables))
         return self._factory(self.__table_apply__(self._iterable, unary_op))
 

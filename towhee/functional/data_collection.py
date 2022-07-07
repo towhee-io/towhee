@@ -950,21 +950,12 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         <EntityView dict_keys(['a', 'b'])>
         """
         if hasattr(self._iterable, 'iterrows'):
-            # for i in self._iterable.iterrows():
-            #     yield i[i]
             return (x[1] for x in self._iterable.iterrows())
         if self._mode == self.ModeFlag.ROWBASEDFLAG:
-            # for i in self._iterable:
-            #     yield i
             return iter(self._iterable)
         if self._mode == self.ModeFlag.COLBASEDFLAG:
-            # for i in range(len(self._iterable)):
-            #     yield EntityView(i, self._iterable)
             return (EntityView(i, self._iterable) for i in range(len((self._iterable))))
         if self._mode == self.ModeFlag.CHUNKBASEDFLAG:
-            # for wtable in self._iterable.chunks():
-            #     for ev in wtable:
-            #         yield ev
             return (ev for wtable in self._iterable.chunks() for ev in wtable)
 
     def map(self, *arg):
