@@ -18,7 +18,7 @@ from pathlib import PosixPath
 from towhee.types import Image
 from towhee.utils.log import engine_log
 from towhee.utils.ndarray_utils import from_src
-from towhee.utils.image_utils import to_image_color
+from towhee.types.image_utils import to_image_color
 
 
 try:
