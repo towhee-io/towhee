@@ -17,7 +17,7 @@ import numpy as np
 
 from towhee.engine import register
 from towhee.types.image import Image
-from towhee.utils.image_utils import to_image_color
+from towhee.types.image_utils import to_image_color
 
 # pylint: disable=import-outside-toplevel
 # pylint: disable=invalid-name
