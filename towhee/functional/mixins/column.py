@@ -30,7 +30,7 @@ class ColumnMixin:
     class ModeFlag(Flag):
         ROWBASEDFLAG = auto()
         COLBASEDFLAG = auto()
-        HASCHUNKFLAG = auto()
+        CHUNKBASEDFLAG = auto()
 
     def __init__(self) -> None:
         super().__init__()
@@ -84,7 +84,7 @@ class ColumnMixin:
         self._chunksize = chunksize
         chunked_table = ChunkedTable(chunksize=chunksize, stream=self.is_stream)
         chunked_table.feed(self._iterable)
-        return self._factory(chunked_table, parent_stream=False, mode=self.ModeFlag.COLBASEDFLAG)
+        return self._factory(chunked_table, parent_stream=False, mode=self.ModeFlag.CHUNKBASEDFLAG)
 
     def get_chunksize(self):
         return self._chunksize
@@ -202,14 +202,13 @@ class ColumnMixin:
         >>> len(dc._iterable)
         10
         """
-
         # pylint: disable=protected-access
         if isinstance(self._iterable, ChunkedTable):
             if not self.is_stream:
                 tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
             else:
                 tables = (WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks())
-            return self._factory(ChunkedTable(tables))
+            return self._factory(ChunkedTable(chunks = tables))
         return self._factory(self.__table_apply__(self._iterable, unary_op))
 
     def __table_apply__(self, table, unary_op):

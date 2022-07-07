@@ -119,5 +119,11 @@ class EntityView:
         >>> df = df.to_column()
         >>> df.to_list()[0]
         <EntityView dict_keys(['a', 'b'])>
+
+        >>> df = DataFrame(e)
+        >>> df = df.set_chunksize(2)
+        >>> df.to_list()[0]
+        <EntityView dict_keys(['a', 'b'])>
         """
         return f'<{self.__class__.__name__} dict_keys({self._table.column_names})>'
+
