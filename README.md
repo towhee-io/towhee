@@ -30,7 +30,7 @@
 
 &nbsp;
 
-Towhee is a machine learning framework that is dedicated to making unstructured data processing pipelines simple and fast. Website: https://towhee.io/
+Towhee is a framework that is dedicated to making unstructured data processing pipelines simple and fast. Website: https://towhee.io/
 
 :art:&emsp;**Various Modalities:** Support data processing on different modalities, such as image, video, text, audio, molecular structure specification.
 
@@ -40,9 +40,46 @@ Towhee is a machine learning framework that is dedicated to making unstructured 
 
 :snake:&emsp;**Pythonic API:**  A pythonic and method-chaining style API that for describing custom data processing pipelines. Schema is also supported, which makes processing unstructured data as easy as handling tabular data.
 
-Towhee is a flexible, application-oriented framework for generating embedding vectors via a pipeline of ML models and other operations. It aims to make democratize `x2vec`, allowing everyone - from beginner developers to large organizations - to generate dense embeddings with just a few lines of code.
+## What's New
 
-To accomplish this, we provide pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://towhee.io). Although our initial focus is on generating embeddings, Towhee can also be used to create and share generic machine learning pipelines such as this [image animation pipeline](https://towhee.io/towhee/anime-transfer).
+**v0.7.1 Jul.1,2022**
+* Add one image embedding model:
+[*MPViT*](https://towhee.io/image-embedding/mpvit).
+* Add two video retrieval models:
+[*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
+[*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
+* Add FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
+
+**v0.7.0 Jun.24,2022**
+
+* Add six video understanding/classification models:
+[*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
+[*TSM*](https://towhee.io/action-classification/tsm), 
+[*Uniformer*](https://towhee.io/action-classification/uniformer), 
+[*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
+[*TimeSformer*](https://towhee.io/action-classification/timesformer), 
+[*MoViNets*](https://towhee.io/action-classification/movinet).
+* Add four video retrieval models:
+[*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
+[*DRL*](https://towhee.io/video-text-embedding/drl), 
+[*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
+[*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
+
+
+**v0.6.1  May.13,2022**
+
+* Add three text-image retrieval models:
+[*CLIP*](https://towhee.io/image-text-embedding/clip),
+[*BLIP*](https://towhee.io/image-text-embedding/blip),
+[*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
+* Add six video understanding/classification models from PyTorchVideo:
+[*I3D*](https://towhee.io/action-classification/pytorchvideo),
+[*C2D*](https://towhee.io/action-classification/pytorchvideo),
+[*Slow*](https://towhee.io/action-classification/pytorchvideo),
+[*SlowFast*](https://towhee.io/action-classification/pytorchvideo),
+[*X3D*](https://towhee.io/action-classification/pytorchvideo),
+[*MViT*](https://towhee.io/action-classification/pytorchvideo).
+
 
 ## Key features
 
