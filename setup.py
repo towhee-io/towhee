@@ -37,7 +37,7 @@ def parse_requirements(file_name: str) -> List[str]:
 if '--models' in sys.argv:
     sys.argv.remove('--models')
     setup(name='towhee.models',
-          version='0.7.1',
+          version='0.7.2',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
