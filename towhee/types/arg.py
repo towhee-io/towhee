@@ -70,6 +70,6 @@ class to_image_color:
 
     def __call__(self, img):
         # pylint: disable=import-outside-toplevel
-        from towhee.utils import image_utils
+        from towhee.types import image_utils
 
         return image_utils.to_image_color(img, self._mode)
