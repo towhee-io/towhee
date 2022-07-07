@@ -30,15 +30,18 @@
 
 &nbsp;
 
-Towhee is a framework that is dedicated to making unstructured data processing pipelines simple and fast. Website: https://towhee.io/
+[Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
+We provide several hundred models, algorithms, and transformations as standard pipeline building blocks.
+You can prototype your pipeline with our Pythonic API, and use Towhee to
+automatically optimize it for production-ready environments.
 
-:art:&emsp;**Various Modalities:** Support data processing on different modalities, such as image, video, text, audio, molecular structure specification.
+:art:&emsp;**Various Modalities:** We support data processing on different modalities, such as images, videos, text, audio, molecular structures, etc.
 
-:mortar_board:&emsp;**SOTA Models:** Cover five fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. You can find hot and novel models here, including BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc. [Explore models](https://towhee.io/tasks/operator)
+:mortar_board:&emsp;**SOTA Models:** We provide SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. These include BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc.
 
-:package:&emsp;**Not only Models:** Towhee also provides traditional data processing methods that can be used together with neural network models, so that help you create pipelines close to practice. For example, video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, database operations, etc. 
+:package:&emsp;**Data Processing:** Towhee also provides traditional data processing methods that can be used together with neural network models to help you build practical data processing pipelines. Video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, and database operations are a small sample of the different operators we provide.
 
-:snake:&emsp;**Pythonic API:**  A pythonic and method-chaining style API that for describing custom data processing pipelines. Schema is also supported, which makes processing unstructured data as easy as handling tabular data.
+:snake:&emsp;**Pythonic API:** Towhee includes a pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, making processing unstructured data as easy as handling tabular data.
 
 ## What's New
 
@@ -80,24 +83,7 @@ Towhee is a framework that is dedicated to making unstructured data processing p
 [*X3D*](https://towhee.io/action-classification/pytorchvideo),
 [*MViT*](https://towhee.io/action-classification/pytorchvideo).
 
-
-## Key features
-
-- __Easy embedding for everyone__: Run a local embedding pipeline with as little as three lines of code.
-
-- __Rich operators and pipelines__: No more reinventing the wheel! Collaborate and share pipelines with the open source community.
-
-- __Automatic versioning__: Our versioning mechanism for pipelines and operators ensures that you never run into [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell).
-
-- __Support for fine-tuning models__: Feed your dataset into our `Trainer` and get a new model in just a few easy steps.
-
-- __Deploy to cloud__*: Ready-made pipelines can be deployed to the cloud with minimal effort.
-
-Features marked with a star (\*) are on our roadmap and have not yet been implemented. Help is always appreciated, so come join our [Slack](https://slack.towhee.io) or check out our [docs](https://docs.towhee.io) for more information.
-
 ## Getting started
-
-[Run in Colab](https://colab.research.google.com/github/towhee-io/towhee/blob/main/docs/02-Getting%20Started/quick-start.ipynb)
 
 Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 
@@ -106,49 +92,32 @@ Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 % pip install towhee
 ```
 
-Towhee provides a variety of pre-built pipelines. For example, generating an image embedding can be done in as little as five lines of code:
-
-```python
->>> from towhee import pipeline
-
-# Our built-in image embedding pipeline takes
->>> embedding_pipeline = pipeline('image-embedding')
->>> embedding = embedding_pipeline('https://docs.towhee.io/img/logo.png')
-```
-
-Your image embedding is now stored in `embedding`. It's that simple.
-
-For image datasets, the users can also build their own pipeline with the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API:
+Try your first Towhee pipeline. In this example, we show how to create a CLIP-based cross modal retrieval pipeline within 15 lines of code.
 
 ```python
 import towhee
 
-towhee.glob('./*.jpg') \
-      .image_decode() \
-      .image_embedding.timm(model_name='resnet50') \
-      .to_list()
+# create image embeddings and build index
+(
+    towhee.glob['file_name']('./*.png')
+          .image_decode['file_name', 'img']()
+          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_b32', modality='image')
+          .tensor_normalize['vec','vec']()
+          .to_faiss[('file_name', 'vec')](findex='./index.bin')
+)
+
+# search image by text
+results = (
+    towhee.dc['text'](['puppy Corgi'])
+          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
+          .tensor_normalize['vec', 'vec']()
+          .faiss_search['vec', 'results'](findex='./index.bin')
+          .select['results']()
+)
 ```
+<img src="towhee_example.png" style="width: 60%; height: 60%">
 
-where [`image_decode`](https://towhee.io/towhee/image-decode) and [`image_embedding.timm`](https://towhee.io/image-embedding/timm) are operators from [towhee hub](https://towhee.io). The method-chaining style programming interface also support [parallel execution](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#parallel-execution) and [exception handling](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#exception-handling).
-
-## Dive deeper
-
-If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
-
-```python
->>> embedding_pipeline = pipeline('towhee/image-embedding-convnext-base')
-```
-
-For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
-
-Custom machine learning pipelines can be defined in a YAML file or via the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API. The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
-
-```python
-# This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/my-embedding-pipeline.yaml
->>> embedding_pipeline = pipeline('fzliu/my-embedding-pipeline')
-```
-
-### Architecture overview
+## Core Concepts
 
 Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and a singleton `Engine`.
 
