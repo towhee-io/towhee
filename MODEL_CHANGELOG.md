@@ -8,7 +8,25 @@ All notable updates to Towhee models will be documented in this file.
 
 
 
+### [0.7.2]  Jul. 01, 2022
 
+Add 1 vision transformer backbone, 1 text-image retrieval model, 2 video retrieval models
+
+* **MPViT**
+  * page: [*image-embedding/mpvit*](https://towhee.io/image-embedding/mpvit)
+  * paper: [*MPViT : Multi-Path Vision Transformer for Dense Prediction*](https://arxiv.org/pdf/2112.11010.pdf)
+
+* **LightningDOT**
+  * page: [*image-text-embedding/lightningdot*](https://towhee.io/image-text-embedding/lightningdot)
+  * paper: [*LightningDOT: Pre-training Visual-Semantic Embeddings for Real-Time Image-Text Retrieval*](https://arxiv.org/pdf/2103.08784.pdf)
+
+* **BridgeFormer**
+  * page: [*video-text-embedding/bridge-former*](https://towhee.io/video-text-embedding/bridge-former)
+  * paper: [*Bridging Video-text Retrieval with Multiple Choice Questions*](https://arxiv.org/pdf/2201.04850.pdf)
+
+* **collaborative-experts**
+  * page: [*video-text-embedding/collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts)
+  * paper: [*TEACHTEXT: CrossModal Generalized Distillation for Text-Video Retrieval*](https://arxiv.org/pdf/2104.08271.pdf)
 
 ### [0.7.0]  Jun. 24, 2022
 
