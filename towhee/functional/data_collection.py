@@ -15,8 +15,8 @@
 from typing import Any, Iterable, Iterator, Callable
 import random
 import reprlib
-from towhee.functional.mixins.dag import register_dag
 
+from towhee.functional.mixins.dag import register_dag
 from towhee.hparam import param_scope, dynamic_dispatch
 from towhee.functional.entity import Entity, EntityView
 from towhee.functional.option import Option, Some, Empty
@@ -820,7 +820,7 @@ class DataCollection(Iterable, DCMixins):
             pass
 
     def to_list(self):
-        return self._iterable if isinstance(self._iterable, list) else list(self)
+        return self._iterable if isinstance(self._iterable, list) else list(self._iterable)
 
     def to_df(self):
         """
@@ -863,6 +863,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         else:
             super().__init__(DataFrame.from_arrow_talbe(**kws))
             self._mode = self.ModeFlag.COLBASEDFLAG
+
 
     def _factory(self, iterable, parent_stream=True, mode=None):
         """
@@ -943,17 +944,24 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         >>> df = df.to_column()
         >>> df.to_list()[0]
         <EntityView dict_keys(['a', 'b'])>
+        >>> df = DataFrame(e)
+        >>> df = df.set_chunksize(2)
+        >>> df.to_list()[0]
+        <EntityView dict_keys(['a', 'b'])>
         """
         if hasattr(self._iterable, 'iterrows'):
             return (x[1] for x in self._iterable.iterrows())
         if self._mode == self.ModeFlag.ROWBASEDFLAG:
             return iter(self._iterable)
-        return (EntityView(i, self._iterable) for i in range(self._iterable.shape[0]))
+        if self._mode == self.ModeFlag.COLBASEDFLAG:
+            return (EntityView(i, self._iterable) for i in range(len((self._iterable))))
+        if self._mode == self.ModeFlag.CHUNKBASEDFLAG:
+            return (ev for wtable in self._iterable.chunks() for ev in wtable)
 
     def map(self, *arg):
         if hasattr(arg[0], '__check_init__'):
             arg[0].__check_init__()
-        if self._mode == self.ModeFlag.COLBASEDFLAG:
+        if self._mode == self.ModeFlag.COLBASEDFLAG or self._mode == self.ModeFlag.CHUNKBASEDFLAG:
             return self.cmap(arg[0])
         else:
             return super().map(*arg)
