@@ -15,4 +15,19 @@
 
 from pathlib import Path
 
-DOCKERFILE = Path(__file__).absolute().parent / 'Dockerfile'
+import logging
+
+logger = logging.getLogger()
+
+
+def get_dockerfile(cuda_version: str) -> Path:
+    if cuda_version == '11.3':
+        file_name = 'DockerfileCuda113'
+    elif cuda_version == '11.4':
+        file_name = 'DockerfileCuda114'
+    elif cuda_version == '11.6':
+        file_name = 'DockerfileCuda116'
+    else:
+        logger.error("Towhee serve doesn't support cuda %s, the support cuda: 11.3, 11.4, 11.6", cuda_version)
+        return None
+    return Path(__file__).absolute().parent / file_name

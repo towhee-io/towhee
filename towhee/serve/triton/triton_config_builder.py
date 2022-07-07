@@ -124,7 +124,7 @@ class EnsembleConfigBuilder:
         'model_version': 1,
         'inputs': {
             'IUTPUT0': ('TYPE_INT8', [-1, -1, 3]),
-            'IUTPUT1': ('TYPE_STRING', []),            
+            'IUTPUT1': ('TYPE_STRING', []),
         },
         'outputs': {
             'OUTPUT0': ('TYPE_FP32', [-1, 3, 224, 224])
@@ -141,7 +141,7 @@ class EnsembleConfigBuilder:
         'outputs': {
             'OUTPUT0': ('TYPE_FP32', [-1, 512])
         },
-        'child_ids': [3]        
+        'child_ids': [3]
     },
     3: {
         'id': 3,
@@ -272,7 +272,7 @@ output [
         size = len(items)
         for i in range(size):
             step = items[i]
-            config += self._gen_single_step(step['model_name'], step['input_map'], step['output_map'], i == size - 1 )
+            config += self._gen_single_step(step['model_name'], step['input_map'], step['output_map'], i == size - 1)
         config += '  ]\n'
         return config
 

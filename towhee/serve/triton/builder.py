@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict, List
 import traceback
 import logging
 
@@ -30,31 +31,31 @@ class Builder:
     In V1, we only support a chain graph for we have not traced the input and output map.
 
     Args:
-        dag (`dict`): 
+        dag (`dict`):
             Output of dc.compile_dag()
 
             example:  Only remain the info which is used in the TritonBuilder.
                 {
                     'start': {
                          'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
-                    }, 
+                    },
                     'cb2876f3': {
                          'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13']
-                    }, 
+                    },
                     'fae9ba13': {
                          'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end']
-                    }, 
+                    },
                     'end': {
                          'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
                     }
                 }
         model_root (`str`):
             Triton models root.
-        
-        model_format_priority (`List(str)`): 
+
+        model_format_priority (`List(str)`):
             Try to converter nnoperator's model, support tensorrt, onnx, torchscript.
     '''
-    def __init__(self, dag, model_root, model_format_priority):
+    def __init__(self, dag: Dict, model_root: str, model_format_priority: List[str]):
         self.dag = dag
         self._runtime_dag = None
         self._model_root = model_root
@@ -72,7 +73,6 @@ class Builder:
                                            model_name)
             models.append({
                 'model_name': model_name,
-                'converter': converter,
                 'model_version': 1,
                 'converter': converter,
                 'input': converter.inputs,
@@ -84,9 +84,8 @@ class Builder:
                                   model_name, self._model_format_priority)
         models.append({
             'model_name': model_name,
-            'converter': converter,
             'model_version': 1,
-            'converter': converter,            
+            'converter': converter,
             'input': converter.inputs,
             'output': converter.outputs
         })
@@ -96,9 +95,8 @@ class Builder:
                                             model_name)
             models.append({
                 'model_name': model_name,
-                'converter': converter,
                 'model_version': 1,
-                'converter': converter,                
+                'converter': converter,
                 'input': converter.inputs,
                 'output': converter.outputs
             })
@@ -110,7 +108,7 @@ class Builder:
             models[i]['child_ids'] = [models[i + 1]['id']]
         return dict((model['id'], model) for model in models)
 
-    def _pyop_config(self, op, node_id, node):
+    def _pyop_config(self, op: 'Operator', node_id: str, node: Dict) -> Dict:
         model_name = node_id + '_' + node['op_name'].replace('/', '_')
         hub, name = node['op_name'].split('/')
         converter = PyOpToTriton(op, self._model_root, model_name,
@@ -119,14 +117,14 @@ class Builder:
             'id': node_id,
             'model_name': model_name,
             'model_version': 1,
-            'converter': converter,            
+            'converter': converter,
             'input': converter.inputs,
             'output': converter.outputs,
             'child_ids': node['child_ids']
         }}
         return config
 
-    def _create_node_config(self, node_id, node):
+    def _create_node_config(self, node_id: str, node: Dict):
         op_name = node['op_name']
         init_args = node['init_args']
         op = Builder._load_op(op_name, init_args)
@@ -139,7 +137,11 @@ class Builder:
             return self._pyop_config(op, node_id, node)
 
     @staticmethod
-    def _load_op(op_name, init_args) -> 'Operator':
+    def _load_op(op_name: str, init_args: Dict) -> 'Operator':
+        '''
+        op_name:
+            {hub_id}/{name}
+        '''
         try:
             hub_id, name = op_name.split('/')
             hub = getattr(ops, hub_id)
@@ -147,7 +149,7 @@ class Builder:
                 return getattr(hub, name)().get_op()
             else:
                 return getattr(hub, name)(**init_args).get_op()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             err = f'Load operator: [{op_name}] failed, errs {e}, {traceback.format_exc()}'
             logger.error(err)
             return None
@@ -167,9 +169,9 @@ class Builder:
             self._runtime_dag.update(config)
         return True
 
-    def _build(self):
+    def _build(self) -> bool:
         EnsembleToTriton(self._runtime_dag, self._model_root, 'pipeline', 0).to_triton()
-        for node_id, info in self._runtime_dag.items():
+        for _, info in self._runtime_dag.items():
             info['converter'].to_triton()
         return True
 
@@ -181,8 +183,8 @@ class Builder:
 
 
 def main():
-    import json
-    import sys
+    import json  # pylint: disable=import-outside-toplevel
+    import sys  # pylint: disable=import-outside-toplevel
     if len(sys.argv) != 4:
         sys.exit(-1)
 

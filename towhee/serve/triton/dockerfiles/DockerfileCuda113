@@ -1,6 +1,4 @@
-ARG TRITON_VERSION=21.10
-ARG BASE_IMAGE=nvcr.io/nvidia/tritonserver:${TRITON_VERSION}-py3
-FROM ${BASE_IMAGE} as builder
+FROM nvcr.io/nvidia/tritonserver:21.06.1-py3
 
 ARG MODEL_FORMAT_PRIORITY
 
