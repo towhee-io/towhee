@@ -15,6 +15,7 @@
 import torch
 from torch import nn
 
+
 class PatchMerging(nn.Module):
     r""" Patch Merging Layer.
     Args:
@@ -23,12 +24,16 @@ class PatchMerging(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
     """
 
-    def __init__(self, input_resolution, dim, norm_layer=nn.LayerNorm):
+    def __init__(self, input_resolution, dim, norm_layer=nn.LayerNorm, is_v2=False):
         super().__init__()
         self.input_resolution = input_resolution
         self.dim = dim
         self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
-        self.norm = norm_layer(4 * dim)
+        self.is_v2 = is_v2
+        if self.is_v2:
+            self.norm = norm_layer(2 * dim)
+        else:
+            self.norm = norm_layer(4 * dim)
 
     def forward(self, x):
         """
@@ -47,9 +52,12 @@ class PatchMerging(nn.Module):
         x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
         x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
         x = x.view(b, -1, 4 * c)  # B H/2*W/2 4*C
-
-        x = self.norm(x)
-        x = self.reduction(x)
+        if self.is_v2:
+            x = self.reduction(x)
+            x = self.norm(x)
+        else:
+            x = self.norm(x)
+            x = self.reduction(x)
 
         return x
 

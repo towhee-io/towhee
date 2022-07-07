@@ -14,10 +14,6 @@
 # This code is modified by Zilliz.
 
 
-from torch import nn
-from towhee.models.utils.weight_init import trunc_normal_, lecun_normal_
-
-
 def window_partition(x, window_size: int):
     """
     Args:
@@ -47,36 +43,5 @@ def window_reverse(windows, window_size: int, h: int, w: int):
     x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(b, h, w, -1)
     return x
 
-def init_vit_weights(module: nn.Module, name: str = '', head_bias: float = 0., jax_impl: bool = False):
-    """ ViT weight initialization
-    * When called without n, head_bias, jax_impl args it will behave exactly the same
-      as my original init for compatibility with prev hparam / downstream use cases (ie DeiT).
-    * When called w/ valid n (module name) and jax_impl=True, will (hopefully) match JAX impl
-    """
-    if isinstance(module, nn.Linear):
-        if name.startswith('head'):
-            nn.init.zeros_(module.weight)
-            nn.init.constant_(module.bias, head_bias)
-        elif name.startswith('pre_logits'):
-            lecun_normal_(module.weight)
-            nn.init.zeros_(module.bias)
-        else:
-            if jax_impl:
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    if 'mlp' in name:
-                        nn.init.normal_(module.bias, std=1e-6)
-                    else:
-                        nn.init.zeros_(module.bias)
-            else:
-                trunc_normal_(module.weight, std=.02)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-    elif jax_impl and isinstance(module, nn.Conv2d):
-        # NOTE conv was left to pytorch default in my original init
-        lecun_normal_(module.weight)
-        if module.bias is not None:
-            nn.init.zeros_(module.bias)
-    elif isinstance(module, (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm2d)):
-        nn.init.zeros_(module.bias)
-        nn.init.ones_(module.weight)
+
+
