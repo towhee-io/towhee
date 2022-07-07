@@ -20,7 +20,7 @@
 # limitations under the License.
 
 from torch import nn
-from towhee.models.layers.multi_head_attention import MultiHeadAttention
+from towhee.models.layers.attention import MultiHeadAttention
 from towhee.models.layers.droppath import DropPath
 from towhee.models.layers.mlp import Mlp
 from towhee.models.layers.layers_with_relprop import GELU, LayerNorm, Add, Clone

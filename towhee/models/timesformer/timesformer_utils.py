@@ -68,7 +68,6 @@ def load_pretrained(
     filter_fn = cfg['filter_fn']
     num_frames = cfg['num_frames']
     model_name = cfg['model_name']
-    # attention_type = cfg['attention_type']
 
     if checkpoint_path is None:
         if 'url' not in cfg or cfg['url'] is None:
@@ -92,10 +91,6 @@ def load_pretrained(
     if 'model' in state_dict.keys():
         state_dict = torch.load(checkpoint_path, map_location=device)['model']
 
-    if model_name.startswith('svt'):
-        renamed_checkpoint = {x[len('backbone.'):]: y for x, y in state_dict.items() if x.startswith('backbone.')}
-        state_dict = renamed_checkpoint
-        print(state_dict.keys())
     state_dict = map_state_dict(checkpoint=state_dict)
 
     if filter_fn is not None:

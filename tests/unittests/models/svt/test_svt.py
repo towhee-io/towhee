@@ -11,21 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import unittest
 import torch
-
-from towhee.models.allinone.allinone import VCOPHeader
-
-
-class AllinoneTest(unittest.TestCase):
-    def test_allinone(self):
-        vcoph = VCOPHeader(feature_size=4)
-        x = torch.rand(2, 3, 4)
-        out = vcoph(x)
-        self.assertTrue(out.shape == torch.Size([2, 6]))
+from towhee.models import svt
 
 
-if __name__ == "__main__":
+class TestSVT(unittest.TestCase):
+    """
+    Test svt model
+    """
+    def test_svt(self):
+        video = torch.randn(1, 3, 8, 32, 32)
+        model = svt.create_model(
+            model_name='svt_vitb_k400',
+            pretrained=False,
+            img_size=32)
+        feats = model.forward_features(video)
+        output = model(video)
+        self.assertTrue(feats.shape == (1, 768))
+        self.assertTrue(output.shape == (1, 400))
+
+
+if __name__ == '__main__':
     unittest.main()

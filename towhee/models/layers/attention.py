@@ -4,6 +4,8 @@
 # 'How to train your ViT? Data, Augmentation, and Regularization in Vision Transformers'
 #       - https://arxiv.org/abs/2106.10270
 #
+# Inspired by https://github.com/SvipRepetitionCounting/TransRAC/blob/main/models/TransRAC.py
+#
 # Built on top of codes from / Copyright 2020, Ross Wightman & Facebook, Inc. and its affiliates.
 # Modifications & additions by / Copyright 2021 Zilliz. All rights reserved.
 #
@@ -20,16 +22,17 @@
 # limitations under the License.
 
 import os
-
-try:
-    # pylint: disable=unused-import
-    import einops
-except ImportError:
-    os.system('pip install einops')
-
+import math
+import numpy
+import torch
 from torch import nn
 
-from einops import rearrange
+try:
+    from einops import rearrange
+except ImportError:
+    os.system('pip install einops')
+    from einops import rearrange
+
 from towhee.models.layers.layers_with_relprop import Einsum, Linear, Dropout, Softmax
 
 
@@ -55,7 +58,7 @@ class MultiHeadAttention(nn.Module):
 
     Example:
         >>> import torch
-        >>> from towhee.models.layers.multi_head_attention import MultiHeadAttention
+        >>> from towhee.models.layers.attention import MultiHeadAttention
         >>>
         >>> test_shape = (1, 196+1, 768)  # shape of output from patch_embed
         >>> input_x = torch.rand(test_shape)
@@ -71,7 +74,8 @@ class MultiHeadAttention(nn.Module):
                  qk_scale=None,
                  attn_drop_ratio=0.,
                  proj_drop_ratio=0.,
-                 with_qkv=True):
+                 with_qkv=True,
+                 ):
         super().__init__()
         _ = with_qkv
         self.num_heads = num_heads
@@ -177,6 +181,27 @@ class MultiHeadAttention(nn.Module):
 
         return self.qkv.relprop(cam_qkv, **kwargs)
 
+
+class Attention(nn.Module):
+    """
+    Scaled dot-product attention mechanism.
+    """
+
+    def __init__(self, scale=64, att_dropout=0.):
+        super().__init__()
+        self.softmax = nn.Softmax(dim=-1)
+        self.dropout = nn.Dropout(att_dropout)
+        self.scale = scale
+
+    def forward(self, q, k, v, attn_mask=None):
+        # q: [B, head, F, model_dim]
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.scale)  # [B,Head, F, F]
+        if attn_mask:
+            scores = scores.masked_fill_(attn_mask, -numpy.inf)
+        scores = self.softmax(scores)
+        scores = self.dropout(scores)  # [B,head, F, F]
+        context = torch.matmul(scores, v)  # output
+        return scores, context  # [B,head,F, F]
 
 # if __name__ == '__main__':
 #     import torch

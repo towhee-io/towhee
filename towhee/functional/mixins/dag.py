@@ -143,7 +143,7 @@ class DagMixin:
 
     def _add_op_name_and_init_args(self, dag):
         for key, val in dag.items():
-            if (val['op'] == 'map' or val['op'] == 'filter') and val['call_args'] is not None:
+            if (val['op'] == 'map' or val['op'] == 'filter') or val['call_args'] is not None:
                 if val['call_args']['*arg'] != () and hasattr(val['call_args']['*arg'][0], '_kws'):
                     dag[key]['init_args'] = val['call_args']['*arg'][0].init_args
                     if len(val['call_args']['*arg'][0].function.split('/')) > 1:
@@ -152,8 +152,12 @@ class DagMixin:
                         dag[key]['op_name'] = 'towhee/' + val['call_args']['*arg'][0].function
                 else:
                     dag[key]['op_name'] = 'dummy_input'
+                    dag[key]['parent_ids'] = []
+                    start = key
             else:
                 dag[key]['op_name'] = 'end'
+        dag['start'] = dag[start]
+        del dag[start]
         return dag
 
 
