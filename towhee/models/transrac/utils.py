@@ -19,6 +19,7 @@
 # limitations under the License.
 
 from torch import nn
+from towhee.models.layers.attention import Attention
 
 
 class DenseMap(nn.Module):
@@ -51,3 +52,40 @@ class DenseMap(nn.Module):
     def forward(self, x):
         x = self.layers(x)
         return x
+
+
+class SimilarityMatrix(nn.Module):
+    """
+    Build similarity matrix for TransRAC
+    """
+
+    def __init__(self, num_heads=4, input_dim=512, model_dim=512):
+        super().__init__()
+
+        # self.dim_per_head = model_dim // num_heads
+        self.num_heads = num_heads
+        self.model_dim = model_dim
+        self.input_size = input_dim
+        self.linear_q = nn.Linear(self.input_size, model_dim)
+        self.linear_k = nn.Linear(self.input_size, model_dim)
+        self.linear_v = nn.Linear(self.input_size, model_dim)
+
+        self.attention = Attention(att_dropout=0.)
+        # self.out = nn.Linear(model_dim, model_dim)
+        # self.layer_norm = nn.LayerNorm(model_dim)
+
+    def forward(self, query, key, value, attn_mask=None):
+        batch_size = query.size(0)
+        num_heads = self.num_heads
+        # linear projection
+        query = self.linear_q(query)
+        key = self.linear_k(key)
+        value = self.linear_v(value)
+        # split by heads
+        query = query.reshape(batch_size, -1, num_heads, self.model_dim // self.num_heads).transpose(1, 2)
+        key = key.reshape(batch_size, -1, num_heads, self.model_dim // self.num_heads).transpose(1, 2)
+        value = value.reshape(batch_size, -1, num_heads, self.model_dim // self.num_heads).transpose(1, 2)
+        # similar_matrix :[B,H,F,F ]
+        matrix, _ = self.attention(query, key, value, attn_mask)
+
+        return matrix
