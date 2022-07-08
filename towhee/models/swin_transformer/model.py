@@ -18,8 +18,9 @@ from torch import nn
 from towhee.models.utils.weight_init import trunc_normal_
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from towhee.models.layers.patch_merging import PatchMerging
-from .basic_layer import BasicLayer
-from .utils import init_vit_weights
+from towhee.models.utils.init_vit_weights import init_vit_weights
+from towhee.models.swin_transformer.basic_layer import BasicLayer
+
 
 class SwinTransformer(nn.Module):
     r""" Swin Transformer
