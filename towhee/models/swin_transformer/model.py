@@ -44,6 +44,7 @@ class SwinTransformer(nn.Module):
         ape (bool): If True, add absolute position embedding to the patch embedding. Default: False
         patch_norm (bool): If True, add normalization after patch embedding. Default: True
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False
+        pretrained_window_sizes (tuple(int)): Pretrained window sizes of each layer.
     """
 
     def __init__(self, img_size=224, patch_size=4, in_chans=3, num_classes=1000,
@@ -51,9 +52,11 @@ class SwinTransformer(nn.Module):
                  window_size=7, mlp_ratio=4., qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
-                 use_checkpoint=False, weight_init=''):
+                 use_checkpoint=False, weight_init='', is_v2=False, pretrained_window_sizes=None):
         super().__init__()
 
+        if pretrained_window_sizes is None:
+            pretrained_window_sizes = [0, 0, 0, 0]
         self.num_classes = num_classes
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
@@ -97,7 +100,9 @@ class SwinTransformer(nn.Module):
                 drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
                 norm_layer=norm_layer,
                 downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
-                use_checkpoint=use_checkpoint)
+                use_checkpoint=use_checkpoint,
+                is_v2=is_v2,
+                pretrained_window_size=pretrained_window_sizes[i_layer])
             ]
         self.layers = nn.Sequential(*layers)
 
@@ -143,3 +148,19 @@ class SwinTransformer(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+
+# if __name__ == '__main__':
+#     from towhee.models.swin_transformer.configs import build_configs
+#     from towhee.models.utils.pretrained_utils import load_pretrained_weights
+#     img = torch.randn(1, 3, 224, 224)
+#     name = 'swin_tiny_patch4_window7_224'
+#
+#     arch, model_cfg = build_configs(name)
+#     model = SwinTransformer(**arch)
+#
+#     load_pretrained_weights(model, name, model_cfg)
+#     out = model(img)
+#     print(out.shape)
+#     pass
+
