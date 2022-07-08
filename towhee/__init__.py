@@ -130,3 +130,8 @@ def plot(img1: Union[str, list], img2: list = None):
         for i in range(len(img1)):
             plot_img(img1[i])
             plot_img(img2[i])
+
+
+def build_docker_image(dc_pipeline, image_name, format_priority, cuda):
+    from towhee.serve.triton.docker_image_builder import DockerImageBuilder  # pylint: disable=import-outside-toplevel
+    DockerImageBuilder(dc_pipeline, image_name, format_priority, cuda).build()
