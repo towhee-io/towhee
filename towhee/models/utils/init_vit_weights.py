@@ -15,29 +15,44 @@
 
 
 from torch import nn
-
+from towhee.models.utils.weight_init import trunc_normal_, lecun_normal_
 from towhee.models.layers.spatial_temporal_cls_positional_encoding import SpatialTemporalClsPositionalEncoding
 
 
-def init_vit_weights(model, trunc_normal_std=0.02) -> None:
+def init_vit_weights(module: nn.Module,trunc_normal_std=0.02, name: str = '', head_bias: float = 0., jax_impl: bool = False):
+    """ ViT weight initialization
+    * When called without n, head_bias, jax_impl args it will behave exactly the same
+      as my original init for compatibility with prev hparam / downstream use cases (ie DeiT).
+    * When called w/ valid n (module name) and jax_impl=True, will (hopefully) match JAX impl
     """
-    Weight initialization for vision transformers.
-    Args:
-        model(nn.Module):
-            Model to be initialized.
-        trunc_normal_std(float):
-            The expected standard deviation for fully-connected layer and ClsPositionalEncoding.
-    """
-    for m in model.modules():
-        if isinstance(m, nn.Linear):
-            nn.init.trunc_normal_(m.weight, std=trunc_normal_std)
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, SpatialTemporalClsPositionalEncoding):
-            for weights in m.parameters():
-                nn.init.trunc_normal_(weights, std=trunc_normal_std)
 
-
+    if isinstance(module, nn.Linear):
+        if name.startswith('head'):
+            nn.init.zeros_(module.weight)
+            nn.init.constant_(module.bias, head_bias)
+        elif name.startswith('pre_logits'):
+            lecun_normal_(module.weight)
+            nn.init.zeros_(module.bias)
+        else:
+            if jax_impl:
+                nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    if 'mlp' in name:
+                        nn.init.normal_(module.bias, std=trunc_normal_std)
+                    else:
+                        nn.init.zeros_(module.bias)
+            else:
+                trunc_normal_(module.weight, std=trunc_normal_std)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+    elif jax_impl and isinstance(module, nn.Conv2d):
+        # NOTE conv was left to pytorch default in my original init
+        lecun_normal_(module.weight)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm2d)):
+        nn.init.zeros_(module.bias)
+        nn.init.ones_(module.weight)
+    elif isinstance(module, SpatialTemporalClsPositionalEncoding):
+        for weights in module.parameters():
+            nn.init.trunc_normal_(weights, std=trunc_normal_std)
