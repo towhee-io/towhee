@@ -16,8 +16,8 @@
 import json
 from typing import List, Tuple, Any, Dict
 
-import serve.triton.type_gen as tygen
-import serve.triton.format_utils as fmt
+import towhee.serve.triton.type_gen as tygen
+from towhee.serve.triton import format_utils as fmt
 
 
 class PyModelBuilder:

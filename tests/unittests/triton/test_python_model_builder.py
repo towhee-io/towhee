@@ -15,8 +15,8 @@
 import unittest
 import numpy as np
 
-import serve.triton.type_gen as tygen
-from serve.triton.python_model_builder import PyModelBuilder, gen_model_from_pickled_callable, gen_model_from_op
+import towhee.serve.triton.type_gen as tygen
+from towhee.serve.triton.python_model_builder import PyModelBuilder, gen_model_from_pickled_callable, gen_model_from_op
 from towhee._types import Image
 from tempfile import TemporaryDirectory
 

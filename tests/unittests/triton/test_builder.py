@@ -18,7 +18,7 @@ from pathlib import Path
 import filecmp
 from tempfile import TemporaryDirectory
 
-from serve.triton.builder import Builder
+from towhee.serve.triton.builder import Builder
 from . import EXPECTED_FILE_PATH
 
 

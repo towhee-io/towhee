@@ -14,8 +14,7 @@
 
 import unittest
 
-
-import serve.triton.format_utils as fmt
+from towhee.serve.triton import format_utils as fmt
 
 
 class TestFormatUtils(unittest.TestCase):
