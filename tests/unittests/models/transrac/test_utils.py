@@ -15,7 +15,7 @@
 import unittest
 import torch
 
-from towhee.models.transrac import DenseMap
+from towhee.models.transrac import DenseMap, SimilarityMatrix
 
 
 class TestUtils(unittest.TestCase):
@@ -28,6 +28,14 @@ class TestUtils(unittest.TestCase):
         dense_map = DenseMap(input_dim=3, hidden_dim_1=8, hidden_dim_2=8, out_dim=5)
         out = dense_map(dummy_x)
         self.assertTrue(out.shape == torch.Size([5]))
+
+    def test_similarity_matrix(self):
+        q = torch.rand(1, 3)
+        k = torch.rand(1, 3)
+        v = torch.rand(1, 3)
+        get_sim = SimilarityMatrix(input_dim=3)
+        sim = get_sim(q, k, v)
+        self.assertTrue(sim.shape == (1, 4, 1, 1))
 
 
 if __name__ == "__main__":

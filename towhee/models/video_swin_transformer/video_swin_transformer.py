@@ -350,17 +350,22 @@ def create_model(model_name: str = None, pretrained: bool = False,
     if pretrained:
         if model_name is None:
             raise AssertionError("Fail to load pretrained model: no model name is specified.")
+    if model_name:
         model_configs = get_configs.configs(model_name)
-        model = VideoSwinTransformer(pretrained=model_configs["pretrained"],
-                                     num_classes=model_configs["num_classes"],
-                                     embed_dim=model_configs["embed_dim"],
-                                     depths=model_configs["depths"],
-                                     num_heads=model_configs["num_heads"],
-                                     patch_size=model_configs["patch_size"],
-                                     window_size=model_configs["window_size"],
-                                     drop_path_rate=model_configs["drop_path_rate"],
-                                     patch_norm=model_configs["patch_norm"],
-                                     device=device)
+        model_configs = dict(pretrained=model_configs["pretrained"],
+                             num_classes=model_configs["num_classes"],
+                             embed_dim=model_configs["embed_dim"],
+                             depths=model_configs["depths"],
+                             num_heads=model_configs["num_heads"],
+                             patch_size=model_configs["patch_size"],
+                             window_size=model_configs["window_size"],
+                             drop_path_rate=model_configs["drop_path_rate"],
+                             patch_norm=model_configs["patch_norm"],
+                             device=device)
+        if not pretrained:
+            model_configs["pretrained"] = None
+        model = VideoSwinTransformer(**model_configs)
     else:
         model = VideoSwinTransformer(**kwargs)
+
     return model
