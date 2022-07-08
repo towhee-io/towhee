@@ -18,3 +18,7 @@ try:
     import einops
 except ModuleNotFoundError:
     os.system('pip install einops')
+
+from .video_swin_transformer import *
+from .get_configs import *
+from .video_swin_transformer_block import *
