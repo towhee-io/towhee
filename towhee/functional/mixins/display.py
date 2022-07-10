@@ -310,7 +310,7 @@ def _to_html_td(data, callback=None):  # pragma: no cover
 
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
-            return wrap_td_tag(_list_brief(data, _text_brief))
+            return wrap_td_tag(_text_list_brief(data))
         elif all(isinstance(x, Image) for x in data):
             return wrap_td_tag(_images_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, AudioFrame) for x in data):
@@ -392,11 +392,18 @@ def _audio_frame_brief(frame):  # pragma: no cover
     return str(frame)
 
 
-def _text_brief(text, maxlen=32):  # pragma: no cover
+def _text_brief(text, maxlen=128):  # pragma: no cover
     if len(text) > maxlen:
         return text[:maxlen] + '...'
     else:
         return text
+
+
+def _text_list_brief(data, maxlen=16):  # pragma: no cover
+    head_vals = ['<br>' + _text_brief(x) + '</br>' for i, x in enumerate(data) if i < maxlen]
+    if len(data) > maxlen:
+        head_vals.append('<br>...</br>')
+    return ' '.join(head_vals)
 
 
 def _list_brief(data, str_method, maxlen=4):  # pragma: no cover
