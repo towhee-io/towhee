@@ -155,7 +155,7 @@ class TestTritonClient(unittest.TestCase):
         exp = {}
         exp['OUTPUT0'] = [1, 2, 3]
         expect.append(exp)
-        self.assertEqual(res, expect)
+        self.assertEqual(res[0], expect)
 
     def test_grpc_client(self):
         tclient = client.Client.init('127.0.0.1:8002')
