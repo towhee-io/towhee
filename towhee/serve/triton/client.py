@@ -19,29 +19,30 @@ import tritonclient.http as httpclient
 from tritonclient.utils import InferenceServerException
 from functools import partial
 
-model_name = 'pipeline'
-
 class UserData:
     def __init__(self):
-        self._completed_requests = queue.Queue()
+        self.completed_requests = queue.Queue()
 
 # Callback function used for async_stream_infer()
 def completion_callback(user_data, result, error):
     # passing error raise and handling out
-    user_data._completed_requests.put((result, error))
+    user_data.completed_requests.put((result, error))
 
 class Client():
     @staticmethod
-    def init(url, model_name=model_name, stream=False, protocol='grpc'):
+    def init(url, model_name='pipeline', stream=False, protocol='grpc'):
         if protocol == 'http':
             return HttpClient(url, model_name)
         else:
-            if stream == True:
+            if stream is True:
                 return GrpcStreamClient(url, model_name)
             else:
                 return GrpcClient(url, model_name)
 
 class HttpClient():
+    '''
+    triton HttpClient
+    '''
     def __init__(self, url, model_name):
         self.client = httpclient.InferenceServerClient(url)
         self._model_name = model_name
@@ -50,13 +51,13 @@ class HttpClient():
         return self._model_name
 
     def infer(self, arg):
-        if type(arg) != type([]):
+        if isinstance(arg, list) is False:
             arg = [arg]
         inputs, outputs = self._solve_inputs_outputs(arg)
 
         sent_count = 0
         responses = []
-        for i in range(len(arg)):
+        for _ in range(len(arg)):
             sent_count += 1
             responses.append(self.client.infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs=outputs))
         return self._solve_responses(outputs, responses)
@@ -99,6 +100,9 @@ class HttpClient():
         return res, None
 
 class GrpcClient():
+    '''
+    triton GrpcClient
+    '''
     def __init__(self, url, model_name):
         self.client = grpcclient.InferenceServerClient(url)
         self.user_data = UserData()
@@ -113,11 +117,12 @@ class GrpcClient():
         responses = []
         for _ in range(len(list_arg)):
             sent_count += 1
-            self.client.async_infer(self.get_model_name(), inputs, partial(completion_callback, self.user_data), request_id=str(sent_count), outputs=outputs)
+            self.client.async_infer(self.get_model_name(), inputs,\
+            partial(completion_callback, self.user_data), request_id=str(sent_count), outputs=outputs)
 
         processed_count = 0
         while processed_count < sent_count:
-            (results, error) = self.user_data._completed_requests.get()
+            (results, error) = self.user_data.completed_requests.get()
             processed_count += 1
             err_dict = {}
             if error is not None:
@@ -128,13 +133,13 @@ class GrpcClient():
         return self._solve_responses(outputs, responses, error_dict=err_dict)
 
     def infer(self, arg):
-        if type(arg) != type([]):
+        if isinstance(arg, list) is False:
             arg = [arg]
         inputs, outputs = self._solve_inputs_outputs(arg)
 
         sent_count = 0
         responses = []
-        for i in range(len(arg)):
+        for _ in range(len(arg)):
             sent_count += 1
             responses.append(self.client.infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs=outputs))
         return self._solve_responses(outputs, responses)
@@ -165,7 +170,7 @@ class GrpcClient():
             outputs.append(grpcclient.InferRequestedOutput(output_name))
         return inputs, outputs
 
-    def _solve_responses(self, outputs, responses, error_dict={}):
+    def _solve_responses(self, outputs, responses, error_dict=None):
         res = []
         for i in range(len(responses)):
             res_dict = {}
@@ -176,6 +181,9 @@ class GrpcClient():
         return res, error_dict
 
 class GrpcStreamClient():
+    '''
+    triton streamClient
+    '''
     def __init__(self, url, model_name):
         self.client = grpcclient.InferenceServerClient(url)
         self.user_data = UserData()
@@ -196,7 +204,7 @@ class GrpcStreamClient():
             sent_count += 1
             try:
                 info = next(iterator)
-                if type(info) != type([]):
+                if isinstance(info, list) is False:
                     info = [info]
                 inputs, outputs = self._solve_inputs_outputs(info)
                 self.client.async_stream_infer(self.get_model_name(), inputs, request_id=str(sent_count), outputs= outputs)
@@ -208,10 +216,10 @@ class GrpcStreamClient():
         processed_count = 0
         server_error_count = len(err_dict)
         while processed_count < sent_count - server_error_count - 1:
-            (results, error) = self.user_data._completed_requests.get()
+            (results, error) = self.user_data.completed_requests.get()
             processed_count += 1
             if error is not None:
-                err_dict[processed_count+server_error_count] = error    
+                err_dict[processed_count+server_error_count] = error
             responses.append(results)
         return self._solve_responses(outputs, responses, error_dict=err_dict)
 
@@ -241,7 +249,7 @@ class GrpcStreamClient():
             outputs.append(grpcclient.InferRequestedOutput(output_name))
         return inputs, outputs
 
-    def _solve_responses(self, outputs, responses, error_dict={}):
+    def _solve_responses(self, outputs, responses, error_dict=None):
         res = []
         for i in range(len(responses)):
             res_dict = {}
