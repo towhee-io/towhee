@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import unittest
-from serve.triton import client
+from towhee.serve.triton import client
 
 class MockHttpClient():
     """
