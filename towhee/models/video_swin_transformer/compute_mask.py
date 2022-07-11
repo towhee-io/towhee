@@ -4,7 +4,7 @@
 import torch
 from functools import lru_cache
 
-from towhee.models.utils.window_partition import window_partition
+from towhee.models.utils.window_partition3d import window_partition
 
 
 # cache each stage results

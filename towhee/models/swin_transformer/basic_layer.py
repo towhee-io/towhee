@@ -17,6 +17,7 @@ from torch import nn
 from torch.utils import checkpoint
 from .swin_transformer_block import SwinTransformerBlock
 
+
 class BasicLayer(nn.Module):
     """ A basic Swin Transformer layer for one stage.
     Args:
@@ -33,11 +34,13 @@ class BasicLayer(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
         downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
+        pretrained_window_size (int): Local window size in pre-training.
     """
 
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-                 drop_path=0., norm_layer=nn.LayerNorm, downsample=None, use_checkpoint=False):
+                 drop_path=0., norm_layer=nn.LayerNorm, downsample=None, use_checkpoint=False, is_v2=False,
+                 pretrained_window_size=0):
 
         super().__init__()
         self.dim = dim
@@ -51,12 +54,13 @@ class BasicLayer(nn.Module):
                 dim=dim, input_resolution=input_resolution, num_heads=num_heads, window_size=window_size,
                 shift_size=0 if (i % 2 == 0) else window_size // 2, mlp_ratio=mlp_ratio,
                 qkv_bias=qkv_bias, drop=drop, attn_drop=attn_drop,
-                drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path, norm_layer=norm_layer)
+                drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
+                norm_layer=norm_layer, is_v2=is_v2, pretrained_window_size=pretrained_window_size)
             for i in range(depth)])
 
         # patch merging layer
         if downsample is not None:
-            self.downsample = downsample(input_resolution, dim=dim, norm_layer=norm_layer)
+            self.downsample = downsample(input_resolution, dim=dim, norm_layer=norm_layer, is_v2=is_v2)
         else:
             self.downsample = None
 

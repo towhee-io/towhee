@@ -14,7 +14,8 @@
 
 import unittest
 import torch
-from towhee.models.swin_transformer.utils import window_reverse, window_partition
+from towhee.models.utils.window_partition import window_partition
+from towhee.models.utils.window_reverse import window_reverse
 
 
 class SwinTransformerUtilsTest(unittest.TestCase):
