@@ -50,10 +50,9 @@ def image_class_pipeline_register():
 
     pipeline_names = ["image-embedding", "towhee/image-embedding-efficientnetb5",
                       "towhee/image-embedding-resnet101", "towhee/image-embedding-resnet50",
-                      "towhee/image-embedding-swinbase", "towhee/image-embedding-swinlarge",
-                      "towhee/image-embedding-vitlarge"]
+                      "towhee/image-embedding-swinbase", "towhee/image-embedding-swinlarge"]
 
-    embedding_sizes = [2048, 2048, 2048, 2048, 1024, 1536, 1024]
+    embedding_sizes = [2048, 2048, 2048, 2048, 1024, 1536]
 
     # skip multiple threads tests for memory shortage
     skipped_cases = ["test_embedding_concurrent_multi_threads", "test_embedding_more_times", "test_embedding_avg_time"]
