@@ -19,24 +19,24 @@ class RemoteMixin:
     Mixin for triton
     '''
     def remote(self, url, mode='infer', model_name='pipeline', protocol='grpc'):
-        triton_client = Client.init(url, model_name=model_name)
+        self.triton_client = Client.init(url, model_name=model_name)
         try:
             if protocol == 'grpc' and (mode in ('infer', 'async_infer')):
-                triton_client = Client.init(url, model_name=model_name, stream=False)
+                self.triton_client = Client.init(url, model_name=model_name, stream=False)
                 if mode == 'infer':
-                    res, err = triton_client.infer(list(self))
+                    res, err = self.triton_client.infer(list(self))
                 else:
-                    res, err = triton_client.async_infer(list(self))
+                    res, err = self.triton_client.async_infer(list(self))
             elif protocol == 'grpc' and mode == 'stream':
-                triton_client = Client.init(url, model_name=model_name, stream=True, protocol=protocol)
-                res, err = triton_client.stream(iter(self))
-                triton_client.stop_stream()
+                self.triton_client = Client.init(url, model_name=model_name, stream=True, protocol=protocol)
+                res, err = self.triton_client.stream(iter(self))
+                self.triton_client.stop_stream()
             elif protocol == 'http' and mode == 'infer':
-                triton_client = Client.init(url, model_name=model_name, stream=False, protocol=protocol)
-                res, err = triton_client.infer(list(self))
+                self.triton_client = Client.init(url, model_name=model_name, stream=False, protocol=protocol)
+                res, err = self.triton_client.infer(list(self))
             else:
                 raise TypeError("Http protocol doesn't have this mode")
-        except TypeError as e:
+        except Exception as e:
             return None, e
 
         return res, err

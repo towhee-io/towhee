@@ -14,9 +14,7 @@
 
 import queue
 import numpy as np
-import tritonclient.grpc as grpcclient
-import tritonclient.http as httpclient
-from tritonclient.utils import InferenceServerException
+from towhee.utils.tritonclient_utils import grpcclient, httpclient, InferenceServerException
 from functools import partial
 
 class UserData:
