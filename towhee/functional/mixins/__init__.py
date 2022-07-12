@@ -26,12 +26,13 @@ from .faiss import FaissMixin
 from .dag import DagMixin
 from .config import ConfigMixin
 from .compile import CompileMixin
+from .remote import RemoteMixin
 
 
 class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                ComputerVisionMixin, StateMixin, MetricMixin, RayMixin,
                ServeMixin, MilvusMixin, DagMixin, FaissMixin, ConfigMixin,
-               CompileMixin):
+               CompileMixin, RemoteMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
