@@ -121,7 +121,7 @@ Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
 
 ## Core Concepts
 
-Towhee is composed of three main building blocks - `Operators`, `Pipelines`, and a singleton `Engine`.
+Towhee is composed of three main building blocks - `Operators`, `Pipelines`, and `Engine`.
 
 - __Operator__: An operator is a single building block of neural data processing pipelines. Different implementations of operators are categorized by tasks, with standard task interface. An operator can be a deep learning model, a data processing method, or a Python function.
 
