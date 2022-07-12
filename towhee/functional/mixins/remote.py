@@ -12,28 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.serve.triton.client import *
+from towhee.serve.triton.client import Client
 
 class RemoteMixin:
     '''
     Mixin for triton
     '''
     def remote(self, url, mode='infer', model_name='pipeline', protocol='grpc'):
-        tritonClient = Client.init(url, model_name=model_name)
+        triton_client = Client.init(url, model_name=model_name)
         try:
-            if protocol == 'grpc' and (mode == 'infer' or mode == 'async_infer'):
-                tritonClient = Client.init(url, model_name=model_name, stream=False)
+            if protocol == 'grpc' and (mode in ('infer', 'async_infer')):
+                triton_client = Client.init(url, model_name=model_name, stream=False)
                 if mode == 'infer':
-                    res, err = tritonClient.infer(list(self))
+                    res, err = triton_client.infer(list(self))
                 else:
-                    res, err = tritonClient.async_infer(list(self))
+                    res, err = triton_client.async_infer(list(self))
             elif protocol == 'grpc' and mode == 'stream':
-                tritonClient = Client.init(url, model_name=model_name, stream=True, protocol=protocol)
-                res, err = tritonClient.stream(iter(self))
-                tritonClient.stop_stream()
+                triton_client = Client.init(url, model_name=model_name, stream=True, protocol=protocol)
+                res, err = triton_client.stream(iter(self))
+                triton_client.stop_stream()
             elif protocol == 'http' and mode == 'infer':
-                tritonClient = Client.init(url, model_name=model_name, stream=False, protocol=protocol)
-                res, err = tritonClient.infer(list(self))
+                triton_client = Client.init(url, model_name=model_name, stream=False, protocol=protocol)
+                res, err = triton_client.infer(list(self))
             else:
                 raise TypeError("Http protocol doesn't have this mode")
         except TypeError as e:
