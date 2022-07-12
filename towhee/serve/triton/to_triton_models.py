@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict
 from pathlib import Path
 import inspect
 import pickle
 from abc import ABC
 import logging
 
-from serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
-from serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
+from towhee.serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
+from towhee.serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
 
 logger = logging.getLogger()
 
@@ -28,47 +29,47 @@ class TritonFiles:
     '''
     File path name.
     '''
-    def __init__(self, root, model_name):
+    def __init__(self, root: str, model_name: str):
         self._root = Path(root) / model_name
 
     @property
-    def root(self):
+    def root(self) -> Path:
         return self._root
 
     @property
-    def config_file(self):
+    def config_file(self) -> Path:
         return self._root / 'config.pbtxt'
 
     @property
-    def model_path(self):
+    def model_path(self) -> Path:
         return self._root / '1'
 
     @property
-    def python_model_file(self):
+    def python_model_file(self) -> Path:
         return self.model_path / 'model.py'
 
     @property
-    def trt_model_file(self):
+    def trt_model_file(self) -> Path:
         return self.model_path / 'model.plan'
 
     @property
-    def onnx_model_file(self):
+    def onnx_model_file(self) -> Path:
         return self.model_path / 'model.onnx'
 
     @property
-    def preprocess_pickle(self):
+    def preprocess_pickle(self) -> Path:
         return 'preprocess.pickle'
 
     @property
-    def postprocess_pickle(self):
+    def postprocess_pickle(self) -> Path:
         return 'postprocess.pickle'
 
     @property
-    def postprocess_pickle_path(self):
+    def postprocess_pickle_path(self) -> Path:
         return self.model_path / self.postprocess_pickle
 
     @property
-    def preprocess_pickle_path(self):
+    def preprocess_pickle_path(self) -> Path:
         return self.model_path / self.preprocess_pickle
 
 
@@ -76,7 +77,7 @@ class ToTriton(ABC):
     '''
     ToTriton Base.
     '''
-    def __init__(self, obj, model_root, model_name):
+    def __init__(self, obj: 'Operator', model_root: str, model_name: str):
         self._obj = obj
         self._model_name = model_name
         self._triton_files = TritonFiles(model_root, self._model_name)
@@ -85,22 +86,22 @@ class ToTriton(ABC):
         self._backend = 'python'
 
     @property
-    def inputs(self):
+    def inputs(self) -> Dict:
         return self._inputs
 
     @property
-    def outputs(self):
+    def outputs(self) -> Dict:
         return self._outputs
 
-    def _create_model_dir(self):
+    def _create_model_dir(self) -> bool:
         self._triton_files.root.mkdir(parents=True, exist_ok=True)
         self._triton_files.model_path.mkdir(parents=True, exist_ok=True)
         return True
 
-    def _prepare_model(self):
+    def _prepare_model(self) -> bool:
         return True
 
-    def _prepare_config(self):
+    def _prepare_config(self) -> bool:
         config_str = create_modelconfig(
             self._model_name,
             0,
@@ -112,7 +113,7 @@ class ToTriton(ABC):
             f.write(config_str)
         return True
 
-    def to_triton(self):
+    def to_triton(self) -> bool:
         if self._create_model_dir() and self._prepare_model() and self._prepare_config():
             return True
         return False
@@ -172,7 +173,7 @@ class PostprocessToTriton(ToTriton):
         super().__init__(op.postprocess, model_root, model_name)
         op_module_info = inspect.getmodule(op)
         self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
-        self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])        
+        self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
 
     def _prepare_model(self):
         gen_model_from_pickled_callable(str(self._triton_files.python_model_file),
@@ -209,7 +210,7 @@ class ModelToTriton (ToTriton):
                     succ = self._obj.save_model(fmt, self._triton_files.trt_model_file)
                     self._backend = 'tensorrt'
                 else:
-                    logger.error('Unkown optimize %s' % fmt)
+                    logger.error('Unkown optimize %s', fmt)
                     continue
         return succ
 

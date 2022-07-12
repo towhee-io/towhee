@@ -12,6 +12,7 @@ def _cfg(url='', **kwargs):
         **kwargs
     }
 
+
 model_cfgs = {
     # patch models (my experiments)
     'swin_base_patch4_window12_384': _cfg(
@@ -53,42 +54,138 @@ model_cfgs = {
     'swin_large_patch4_window7_224_in22k': _cfg(
         url='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window7_224_22k.pth',
         num_classes=21841),
-
+    'swinv2_tiny_patch4_window8_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_tiny_patch4_window8_256.pth',
+        num_classes=21841),
+    'swinv2_small_patch4_window8_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_small_patch4_window8_256.pth',
+        num_classes=21841),
+    'swinv2_base_patch4_window8_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window8_256.pth',
+        num_classes=21841),
+    'swinv2_tiny_patch4_window16_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_tiny_patch4_window16_256.pth',
+        num_classes=21841),
+    'swinv2_small_patch4_window16_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_small_patch4_window16_256.pth',
+        num_classes=21841),
+    'swinv2_base_patch4_window16_256': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window16_256.pth',
+        num_classes=21841),
+    'swinv2_base_patch4_window12to16_192to256_22kto1k_ft': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12to16_192to256_22kto1k_ft.pth',
+        num_classes=21841),
+    'swinv2_base_patch4_window12to24_192to384_22kto1k_ft': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12to24_192to384_22kto1k_ft.pth',
+        num_classes=21841),
+    'swinv2_large_patch4_window12to16_192to256_22kto1k_ft': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_large_patch4_window12to16_192to256_22kto1k_ft.pth',
+        num_classes=21841),
+    'swinv2_large_patch4_window12to24_192to384_22kto1k_ft': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_large_patch4_window12to24_192to384_22kto1k_ft.pth',
+        num_classes=21841),
+    'swinv2_base_patch4_window12_192_22k': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_base_patch4_window12_192_22k.pth',
+        num_classes=21841),
+    'swinv2_large_patch4_window12_192_22k': _cfg(
+        url='https://github.com/SwinTransformer/storage/releases/download/v2.0.0/swinv2_large_patch4_window12_192_22k.pth',
+        num_classes=21841),
 }
+
 
 def build_configs(name, **kwargs):
 
     config = model_cfgs[name]
 
     model_architectures = {
-        'swin_base_patch4_window12_384' : dict(
-            patch_size=4, window_size=12, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs),
+        'swin_base_patch4_window12_384': dict(
+            patch_size=4, window_size=12, embed_dim=128, img_size=384, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            **kwargs),
 
         'swin_base_patch4_window7_224' : dict(
-            patch_size=4, window_size=7, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs),
+            patch_size=4, window_size=7, embed_dim=128, img_size=224, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            **kwargs),
 
         'swin_large_patch4_window12_384' : dict(
-            patch_size=4, window_size=12, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs),
+            patch_size=4, window_size=12, embed_dim=192, img_size=384, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            **kwargs),
 
         'swin_large_patch4_window7_224' : dict(
-            patch_size=4, window_size=7, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs),
+            patch_size=4, window_size=7, embed_dim=192, img_size=224, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            **kwargs),
 
         'swin_small_patch4_window7_224' : dict(
-            patch_size=4, window_size=7, embed_dim=96, depths=(2, 2, 18, 2), num_heads=(3, 6, 12, 24), **kwargs),
+            patch_size=4, window_size=7, embed_dim=96, img_size=224, depths=(2, 2, 18, 2), num_heads=(3, 6, 12, 24),
+            **kwargs),
 
         'swin_tiny_patch4_window7_224' : dict(
-            patch_size=4, window_size=7, embed_dim=96, depths=(2, 2, 6, 2), num_heads=(3, 6, 12, 24), **kwargs),
+            patch_size=4, window_size=7, embed_dim=96, img_size=224, depths=(2, 2, 6, 2), num_heads=(3, 6, 12, 24),
+            **kwargs),
 
         'swin_base_patch4_window12_384_in22k' : dict(
-            patch_size=4, window_size=12, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs),
+            patch_size=4, window_size=12, embed_dim=128, img_size=384, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            **kwargs),
 
         'swin_base_patch4_window7_224_in22k' : dict(
-            patch_size=4, window_size=7, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs),
+            patch_size=4, window_size=7, embed_dim=128, img_size=224, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            **kwargs),
 
         'swin_large_patch4_window12_384_in22k' : dict(
-            patch_size=4, window_size=12, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs),
+            patch_size=4, window_size=12, embed_dim=192, img_size=384, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            **kwargs),
 
         'swin_large_patch4_window7_224_in22k' : dict(
-            patch_size=4, window_size=7, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs)
+            patch_size=4, window_size=7, embed_dim=192, img_size=224, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            **kwargs),
+
+        'swinv2_tiny_patch4_window8_256': dict(
+            patch_size=4, window_size=8, embed_dim=96, img_size=256, depths=(2, 2, 6, 2), num_heads=(3, 6, 12, 24),
+            is_v2=True,
+            **kwargs),
+        'swinv2_small_patch4_window8_256': dict(
+            patch_size=4, window_size=8, embed_dim=96, img_size=256, depths=(2, 2, 18, 2), num_heads=(3, 6, 12, 24),
+            is_v2=True,
+            **kwargs),
+        'swinv2_base_patch4_window8_256': dict(
+            patch_size=4, window_size=8, embed_dim=128, img_size=256, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            is_v2=True,
+            **kwargs),
+        'swinv2_tiny_patch4_window16_256': dict(
+            patch_size=4, window_size=16, embed_dim=96, img_size=256, depths=(2, 2, 6, 2), num_heads=(3, 6, 12, 24),
+            is_v2=True,
+            **kwargs),
+        'swinv2_small_patch4_window16_256': dict(
+            patch_size=4, window_size=16, embed_dim=96, img_size=256, depths=(2, 2, 18, 2), num_heads=(3, 6, 12, 24),
+            is_v2=True,
+            **kwargs),
+        'swinv2_base_patch4_window16_256': dict(
+            patch_size=4, window_size=16, embed_dim=128, img_size=256, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            is_v2=True,
+            **kwargs),
+        'swinv2_base_patch4_window12to16_192to256_22kto1k_ft': dict(
+            patch_size=4, window_size=16, embed_dim=128, img_size=256, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            is_v2=True, pretrained_window_sizes=[12, 12, 12, 6],
+            **kwargs),
+        'swinv2_base_patch4_window12to24_192to384_22kto1k_ft': dict(
+            patch_size=4, window_size=24, embed_dim=128, img_size=384, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            is_v2=True, pretrained_window_sizes=[12, 12, 12, 6],
+            **kwargs),
+        'swinv2_large_patch4_window12to16_192to256_22kto1k_ft': dict(
+            patch_size=4, window_size=16, embed_dim=192, img_size=256, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            is_v2=True, pretrained_window_sizes=[12, 12, 12, 6],
+            **kwargs),
+        'swinv2_large_patch4_window12to24_192to384_22kto1k_ft': dict(
+            patch_size=4, window_size=24, embed_dim=192, img_size=384, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            is_v2=True, pretrained_window_sizes=[12, 12, 12, 6],
+            **kwargs),
+        'swinv2_base_patch4_window12_192_22k': dict(
+            patch_size=4, window_size=12, embed_dim=128, img_size=192, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32),
+            is_v2=True,
+            **kwargs),
+        'swinv2_large_patch4_window12_192_22k': dict(
+            patch_size=4, window_size=12, embed_dim=192, img_size=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48),
+            is_v2=True,
+            **kwargs),
+
     }
     return model_architectures[name], config

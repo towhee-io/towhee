@@ -37,7 +37,7 @@ def parse_requirements(file_name: str) -> List[str]:
 if '--models' in sys.argv:
     sys.argv.remove('--models')
     setup(name='towhee.models',
-          version='0.7.1',
+          version='0.7.2',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
@@ -64,11 +64,14 @@ else:
           install_requires=parse_requirements('requirements.txt'),
           extras_require={':python_version<\'3.7\'': 'importlib-resources'},
           tests_require=parse_requirements('test_requirements.txt'),
-          packages=find_packages(exclude=['*test*', 'towhee.models*', 'serve']),
+          packages=find_packages(exclude=['*test*', 'towhee.models*']),
           package_data={'towhee.tests.test_util': ['*.yaml']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
-              'console_scripts': ['towhee=towhee.command.cmdline:main'],
+              'console_scripts': [
+                  'towhee=towhee.command.cmdline:main',
+                  'triton_builder=towhee.serve.triton.builder:main',
+              ],
           },
           long_description_content_type='text/markdown'
           )

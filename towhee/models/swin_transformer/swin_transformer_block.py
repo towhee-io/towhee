@@ -17,8 +17,9 @@ from torch import nn
 from towhee.models.layers.mlp import Mlp
 from towhee.models.layers.droppath import DropPath
 from towhee.models.utils.general_utils import to_2tuple
-from .utils import window_reverse, window_partition
-from .window_attention import WindowAttention
+from towhee.models.utils.window_reverse import window_reverse
+from towhee.models.utils.window_partition import window_partition
+from towhee.models.layers.window_attention import WindowAttention
 
 
 class SwinTransformerBlock(nn.Module):
@@ -36,11 +37,12 @@ class SwinTransformerBlock(nn.Module):
         drop_path (float, optional): Stochastic depth rate. Default: 0.0
         act_layer (nn.Module, optional): Activation layer. Default: nn.GELU
         norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+         pretrained_window_size (int): Window size in pre-training.
     """
 
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0., drop_path=0.,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, is_v2=False, pretrained_window_size=0):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
@@ -48,6 +50,7 @@ class SwinTransformerBlock(nn.Module):
         self.window_size = window_size
         self.shift_size = shift_size
         self.mlp_ratio = mlp_ratio
+        self.is_v2 = is_v2
         if min(self.input_resolution) <= self.window_size:
             # if window size is larger than input resolution, we don't partition windows
             self.shift_size = 0
@@ -57,7 +60,8 @@ class SwinTransformerBlock(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = WindowAttention(
             dim, window_size=to_2tuple(self.window_size), num_heads=num_heads, qkv_bias=qkv_bias,
-            attn_drop=attn_drop, proj_drop=drop)
+            attn_drop=attn_drop, proj_drop=drop, is_v2=self.is_v2,
+            pretrained_window_size=to_2tuple(pretrained_window_size))
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -95,7 +99,8 @@ class SwinTransformerBlock(nn.Module):
         assert l == h * w, 'input feature has wrong size'
 
         shortcut = x
-        x = self.norm1(x)
+        if not self.is_v2:
+            x = self.norm1(x)
         x = x.view(b, h, w, c)
 
         # cyclic shift
@@ -121,9 +126,13 @@ class SwinTransformerBlock(nn.Module):
         else:
             x = shifted_x
         x = x.view(b, h * w, c)
-
+        if self.is_v2:
+            x = self.norm1(x)
         # FFN
         x = shortcut + self.drop_path(x)
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        if self.is_v2:
+            x = x + self.drop_path(self.norm2(self.mlp(x)))
+        else:
+            x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         return x

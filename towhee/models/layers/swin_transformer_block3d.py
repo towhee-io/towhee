@@ -7,8 +7,8 @@ from torch.utils import checkpoint
 import torch.nn.functional as F
 
 from towhee.models.layers.window_attention3d import WindowAttention3D
-from towhee.models.utils.window_partition import window_partition
-from towhee.models.utils.window_reverse import window_reverse
+from towhee.models.utils.window_partition3d import window_partition
+from towhee.models.utils.window_reverse3d import window_reverse
 from towhee.models.layers.mlp import Mlp
 from towhee.models.utils.get_window_size import get_window_size
 from towhee.models.layers.droppath import DropPath

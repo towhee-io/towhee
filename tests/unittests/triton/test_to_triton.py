@@ -19,7 +19,7 @@ from pathlib import Path
 import filecmp
 
 from towhee import ops
-from serve.triton.to_triton_models import PyOpToTriton, PreprocessToTriton, PostprocessToTriton, ModelToTriton, EnsembleToTriton
+from towhee.serve.triton.to_triton_models import PyOpToTriton, PreprocessToTriton, PostprocessToTriton, ModelToTriton, EnsembleToTriton
 
 from . import EXPECTED_FILE_PATH
 

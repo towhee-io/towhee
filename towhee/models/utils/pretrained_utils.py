@@ -2,6 +2,7 @@ from torch.utils import model_zoo
 import torch
 import logging
 
+
 def load_pretrained_weights(
     model,
     model_name=None,
@@ -38,7 +39,7 @@ def load_pretrained_weights(
     else:
         state_dict = torch.load(weights_path)
 
-   # Load state dict
+    # Load state dict
     if 'model' in state_dict:
         ret = model.load_state_dict(state_dict['model'], strict=False)
     else:

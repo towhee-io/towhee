@@ -11,22 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
-
-from pathlib import Path
-
-from towhee.hub.file_manager import FileManagerConfig, FileManager
+import unittest
+import torch
+from towhee.models.layers.relative_self_attention import RelativeSelfAttention
 
 
-UNITTESTS_ROOT = os.path.dirname(os.path.abspath(__file__))
+class RelativeSelfAttentionTest(unittest.TestCase):
 
-CACHE_PATH = Path(__file__).parent.parent.parent.parent / 'tests' / 'unittests'
+    def test_relative_self_attention(self):
+        model = RelativeSelfAttention(in_channels=20, num_heads=4)
+        x = torch.randn(1, 49, 20)
+        out = model(x)
+        self.assertEqual(out.shape, (1, 49, 20))
 
-new_cache = (CACHE_PATH / 'test_cache')
-operator_cache = (CACHE_PATH / 'mock_operators')
-fmc = FileManagerConfig()
-fmc.update_default_cache(new_cache)
-operators = [f for f in operator_cache.iterdir() if f.is_dir()]
-fmc.cache_local_operator(operators)
-FileManager(fmc)
+
+if __name__ == '__main__':
+    unittest.main()

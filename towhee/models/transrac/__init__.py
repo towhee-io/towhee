@@ -12,23 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-
-import serve.triton.format_utils as fmt
-
-
-class TestFormatUtils(unittest.TestCase):
-    """
-    Unit test for format utils.
-    """
-
-    def test_intend(self):
-        a = 'a = np.array([1,2,3])'
-        expected_results = '   a = np.array([1,2,3])'
-
-        self.assertListEqual(fmt.intend([a], 3), [expected_results])
-
-
-if __name__ == '__main__':
-    unittest.main()
+from .transrac import *
+from .utils import *

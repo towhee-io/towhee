@@ -2,10 +2,11 @@
 #pip install -U pip
 #pip cache purge
 Pillow
-towhee==0.6.2.dev48
+towhee==0.7.3.dev9
 pandas 
 scikit-learn 
 opencv-python 
 ipython 
 matplotlib
+timm==0.5.4
 
