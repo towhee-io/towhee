@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from towhee.serve.triton.client import Client
+from towhee.utils.tritonclient_utils import InferenceServerException
 
 class RemoteMixin:
     '''
@@ -36,7 +37,7 @@ class RemoteMixin:
                 res, err = self.triton_client.infer(list(self))
             else:
                 raise TypeError("Http protocol doesn't have this mode")
-        except Exception as e:
+        except (TypeError, InferenceServerException) as e:
             return None, e
 
         return res, err
