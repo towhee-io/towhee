@@ -111,8 +111,8 @@ results = (
     towhee.dc['text'](['puppy Corgi'])
           .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
           .tensor_normalize['vec', 'vec']()
-          .faiss_search['vec', 'results'](findex='./index.bin')
-          .select['results']()
+          .faiss_search['vec', 'results'](findex='./index.bin', k=3)
+          .select['text', 'results']()
 )
 ```
 <img src="towhee_example.png" style="width: 60%; height: 60%">
@@ -121,21 +121,15 @@ Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
 
 ## Core Concepts
 
-Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and a singleton `Engine`.
+Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `DataCollection API` and `Engine`.
 
-- __Pipeline__: A `Pipeline` is a single embedding generation task that is composed of several operators. Operators are connected together within the pipeline via a directed acyclic graph.
+- __Operator__: An operator is a single building block of neural data processing pipelines. Different implementations of operators are categorized by tasks, with standard task interface. An operator can be a deep learning model, a data processing method, or a Python function.
 
-- __Operator__: An `Operator` is a single node within a pipeline. An operator can be a machine learning model, a complex algorithm, or a Python function. All files needed to run the operator are contained within a directory (e.g. code, configs, models, etc...).
+- __Pipeline__: A pipeline is composed of several operators. Operators are connected together as a DAG(directed acyclic graph) to create complex functionalities, such as embedding feature extraction, data tagging, cross modal data understanding, etc.
 
-- __DataCollection__: A pythonic and method-chaining style API that for building custom unstructured data processing pipelines. `DataCollection` is designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most popular data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
+- __DataCollection__: A pythonic and method-chaining style API that for building custom pipelines. Pipelines defined by DataColltion API can be either run on notebook locally for fast prototyping, or converting to image docker with end-to-end optimization for production-ready environments. 
 
-- __Engine__: The `Engine` sits at Towhee's core. Given a `Pipeline`, the `Engine` will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic `Engine` within Towhee to run pipelines on a single-instance machine - K8s and other more complex `Engine` implementations are coming soon.
-
-For a deeper dive into Towhee and its architecture, check out the [Towhee docs](https://docs.towhee.io).
-
-## Examples
-
-Towhee [Examples](https://github.com/towhee-io/examples) is designed to expose users how to use towhee to analyze the unstructured data, such as reverse image search, reverse video search, audio classification, question and answer systems, molecular search, etc.
+- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic engine within Towhee to run pipelines on a single-instance machine, and Triton-based engine to run pipelines in docker containers.
 
 ## Contributing
 
