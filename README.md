@@ -117,6 +117,8 @@ results = (
 ```
 <img src="towhee_example.png" style="width: 60%; height: 60%">
 
+Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
+
 ## Core Concepts
 
 Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and a singleton `Engine`.
