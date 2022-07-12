@@ -256,19 +256,24 @@ def ops(*arg, **kws):
     Entry point for creating operator instances, for example:
 
     >>> op_instance = ops.my_namespace.my_repo_name(init_arg1=xxx, init_arg2=xxx)
-
-    An instance of `my_namespace`/`my_repo_name` is created. It will automatically judge if the repo is an operator or a pipeline in hub,
-    but it will take a little time, you can also specify the `rtype`('pipeline' or 'operator') manually, for example:
-
-    >>> op_instance = ops.my_namespace.my_op_name(init_arg1=xxx, init_arg2=xxx, rtype='operator')
-    >>> pipe_instance = ops.my_namespace.my_pipe_name(init_arg1=xxx, init_arg2=xxx, rtype='pipeline')
     """
 
     # pylint: disable=protected-access
     with param_scope() as hp:
         real_name = hp._name
         index = hp._index
-    try:
-        return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
-    except:  # pylint: disable=bare-except
-        return _PipelineBuilder.callback(real_name, index, *arg, **kws)
+    return _OperatorLazyWrapper.callback(real_name, index, *arg, **kws)
+
+
+@dynamic_dispatch
+def pipes(*arg, **kws):
+    """
+    Entry point for creating pipeline instances, for example:
+
+    >>> pipe_instance = pipes.my_namespace.my_repo_name(init_arg1=xxx, init_arg2=xxx)
+    """
+    # pylint: disable=protected-access
+    with param_scope() as hp:
+        real_name = hp._name
+        index = hp._index
+    return _PipelineBuilder.callback(real_name, index, *arg, **kws)
