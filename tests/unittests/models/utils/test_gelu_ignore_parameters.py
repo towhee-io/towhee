@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import torch
-from towhee.models.layers.mbconv import MBConv
+from torch import nn
+from towhee.models.utils.gelu_ignore_parameters import gelu_ignore_parameters
 
 
-class MbConvTest(unittest.TestCase):
+class GetRelativePositionIndexTest(unittest.TestCase):
 
-    def test_mb_conv(self):
-        model = MBConv(in_channels=30, out_channels=30)
-        x = torch.randn(1, 30, 28, 28)
-        out = model(x)
-        self.assertEqual(out.shape, (1, 30, 28, 28))
+    def test_get_relative_position_index(self):
+        out = gelu_ignore_parameters()
+        self.assertTrue(out, nn.GELU())
 
 
 if __name__ == '__main__':

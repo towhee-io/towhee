@@ -17,7 +17,7 @@
 # limitations under the License.
 from typing import Tuple
 from towhee.models.utils.weight_init import trunc_normal_
-from towhee.models.max_vit.max_vit_utils import get_relative_position_index
+from towhee.models.utils.get_relative_position_index import get_relative_position_index
 from torch import nn
 import torch
 

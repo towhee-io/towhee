@@ -12,17 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import torch
-from towhee.models.layers.mbconv import MBConv
+from towhee.models.utils.get_relative_position_index import get_relative_position_index
 
 
-class MbConvTest(unittest.TestCase):
+class GetRelativePositionIndexTest(unittest.TestCase):
 
-    def test_mb_conv(self):
-        model = MBConv(in_channels=30, out_channels=30)
-        x = torch.randn(1, 30, 28, 28)
-        out = model(x)
-        self.assertEqual(out.shape, (1, 30, 28, 28))
+    def test_get_relative_position_index(self):
+        out = get_relative_position_index(win_h=24, win_w=24)
+        self.assertEqual(out.shape, (576, 576))
 
 
 if __name__ == '__main__':
