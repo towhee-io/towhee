@@ -12,19 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-from torch import nn
 import torch
 from towhee.models.max_vit.max_vit_utils import grid_partition, window_partition, \
-    _gelu_ignore_parameters, get_relative_position_index, window_reverse, grid_reverse
+     window_reverse, grid_reverse
 
 
 class MaxVitUtilsTest(unittest.TestCase):
 
     def test_grid_partition_grid_reverse(self):
-        '''
-        test the grid_partition
-        Returns:None
-        '''
+
         x = torch.randn(1, 3, 28, 28)
         out = grid_partition(x)
         self.assertEqual(out.shape, (16, 7, 7, 3))
@@ -32,21 +28,10 @@ class MaxVitUtilsTest(unittest.TestCase):
         self.assertEqual(origin.shape, (1, 3, 28, 28))
 
     def test_window_partitionn(self):
-        '''
-        test the grid_partition
-        Returns:None
-        '''
+
         x = torch.randn(1, 3, 28, 28)
         out = window_partition(x)
         self.assertEqual(out.shape, (16, 7, 7, 3))
-
-    def test_gelu_ignore_parameters(self):
-        out = _gelu_ignore_parameters()
-        self.assertTrue(out, nn.GELU())
-
-    def test_get_relative_position_index(self):
-        out = get_relative_position_index(win_h=24, win_w=24)
-        self.assertEqual(out.shape, (576, 576))
 
     def test_window_reverse(self):
         x = torch.randn(16, 7, 7, 3)

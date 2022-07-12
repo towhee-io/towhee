@@ -20,7 +20,7 @@ import torch
 from torch import nn
 from timm.models.efficientnet_blocks import SqueezeExcite, DepthwiseSeparableConv
 from towhee.models.layers.droppath import DropPath
-from towhee.models.max_vit.max_vit_utils import _gelu_ignore_parameters
+from towhee.models.utils.gelu_ignore_parameters import gelu_ignore_parameters
 
 
 class MBConv(nn.Module):
@@ -61,7 +61,7 @@ class MBConv(nn.Module):
             assert in_channels == out_channels, "If downscaling is utilized input and output channels must be equal."
         # Ignore inplace parameter if GELU is used
         if act_layer == nn.GELU:
-            act_layer = _gelu_ignore_parameters
+            act_layer = gelu_ignore_parameters
         # Make main path
         self.main_path = nn.Sequential(
             norm_layer(in_channels),
