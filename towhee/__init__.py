@@ -13,7 +13,7 @@
 # limitations under the License.
 from typing import Union
 from towhee.engine import register
-from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
+from towhee.engine.factory import ops, pipes, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.functional import DataCollection, State, Entity, DataFrame

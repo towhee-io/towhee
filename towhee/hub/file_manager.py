@@ -251,7 +251,7 @@ class FileManager():
                 file = pipe['name']
                 cache_path = pipe['cache']
                 old_path = pipe['path']
-                new_path = cache_path / 'hub' / new_dir / file
+                new_path = cache_path / 'pipelines' / new_dir / file
 
                 if pipe['overwrite']:
                     try:
@@ -274,7 +274,7 @@ class FileManager():
                 new_dir = self._cache_name(op['name'], author='local', tag='main')
                 cache_path = op['cache']
                 old_path = op['path']
-                new_path = cache_path / 'hub' / new_dir
+                new_path = cache_path / 'operators' / new_dir
 
                 if op['overwrite'] and new_path.is_dir():
                     rmtree(new_path)
@@ -334,8 +334,8 @@ class FileManager():
 
             found_existing = False
             for path_iter in self._config.cache_paths:
-                # This path leads to 'cache/hub/author/repo/tag/file_name.yaml'
-                path = path_iter / 'hub' / pipeline_path
+                # This path leads to 'cache/pipelines/author/repo/tag/file_name.yaml'
+                path = path_iter / 'pipelines' /pipeline_path
                 if path.is_file():
                     file_path = path
                     found_existing = True
@@ -348,7 +348,7 @@ class FileManager():
                 return file_path
 
             if not found_existing:
-                file_path = self._config.default_cache / 'hub' / pipeline_path
+                file_path = self._config.default_cache / 'pipelines' / pipeline_path
                 repo_path = file_path.parent
 
                 # If yaml file missing but repo exists.
@@ -422,9 +422,9 @@ class FileManager():
 
             found_existing = False
             for path_iter in self._config.cache_paths:
-                # This path leads to 'cache/hub/author/repo/tag/file_name.py'
-                path = path_iter / 'hub' / operator_path
-                path2 = path_iter / 'hub' / init_path
+                # This path leads to 'cache/author/repo/tag/file_name.py'
+                path = path_iter / 'operators' / operator_path
+                path2 = path_iter / 'operators' / init_path
                 if path.is_file() or path2.is_file():
                     file_path = path
                     found_existing = True
@@ -437,7 +437,7 @@ class FileManager():
                 return file_path
 
             if not found_existing:
-                file_path = self._config.default_cache / 'hub' / operator_path
+                file_path = self._config.default_cache / 'operators' / operator_path
                 repo_path = file_path.parent
                 # If py file missing but repo exists.
                 if repo_path.is_dir():
