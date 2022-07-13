@@ -1,39 +1,89 @@
-![https://towhee.io](towhee_logo.png#gh-light-mode-only)
-![https://towhee.io](towhee_logo_dark.png#gh-dark-mode-only)
+&nbsp;
+
+<p align="center">
+    <img src="towhee_logo.png#gh-light-mode-only" width="60%"/>
+    <img src="towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
+</p>
+
 
 <h3 align="center">
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
 </h3>
 
-[![Slack](https://img.shields.io/badge/join-slack-orange?style=for-the-badge)](https://slack.towhee.io)
-[![Twitter](https://img.shields.io/badge/follow-twitter-blue?style=for-the-badge)](https://twitter.com/towheeio)
-[![License](https://img.shields.io/badge/license-apache2.0-green?style=for-the-badge)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Github Actions](https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=for-the-badge)](https://github.com/towhee-io/towhee/actions/workflows/pylint.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/towhee-io/towhee?style=for-the-badge)](https://app.codecov.io/gh/towhee-io/towhee)
+<div class="column" align="middle">
+  <a href="https://slack.towhee.io">
+    <img src="https://img.shields.io/badge/join-slack-orange?style=flat" alt="join-slack"/>
+  </a>
+  <a href="https://twitter.com/towheeio">
+    <img src="https://img.shields.io/badge/follow-twitter-blue?style=flat" alt="twitter"/>
+  </a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0">
+    <img src="https://img.shields.io/badge/license-apache2.0-green?style=flat" alt="license"/>
+  </a>
+  <a href="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml">
+    <img src="https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=flat" alt="github actions"/>
+  </a>
+  <a href="https://app.codecov.io/gh/towhee-io/towhee">
+    <img src="https://img.shields.io/codecov/c/github/towhee-io/towhee?style=flat" alt="coverage"/>
+  </a>
+</div>
 
-## What is Towhee?
+&nbsp;
 
-Towhee is a flexible, application-oriented framework for generating embedding vectors via a pipeline of ML models and other operations. It aims to make democratize `x2vec`, allowing everyone - from beginner developers to large organizations - to generate dense embeddings with just a few lines of code.
+[Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
+We provide several hundred models, algorithms, and transformations as standard pipeline building blocks.
+You can prototype your pipeline with our Pythonic API, and use Towhee to
+automatically optimize it for production-ready environments.
 
-To accomplish this, we provide pre-built pipelines for a variety of tasks, including audio/music embeddings, image embeddings, celebrity recognition, and more. For a full list of pipelines, feel free to visit our [Towhee hub](https://towhee.io). Although our initial focus is on generating embeddings, Towhee can also be used to create and share generic machine learning pipelines such as this [image animation pipeline](https://towhee.io/towhee/anime-transfer).
+:art:&emsp;**Various Modalities:** We support data processing on different modalities, such as images, videos, text, audio, molecular structures, etc.
 
-## Key features
+:mortar_board:&emsp;**SOTA Models:** We provide SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. These include BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc.
 
-- __Easy embedding for everyone__: Run a local embedding pipeline with as little as three lines of code.
+:package:&emsp;**Data Processing:** Towhee also provides traditional data processing methods that can be used together with neural network models to help you build practical data processing pipelines. Video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, and database operations are a small sample of the different operators we provide.
 
-- __Rich operators and pipelines__: No more reinventing the wheel! Collaborate and share pipelines with the open source community.
+:snake:&emsp;**Pythonic API:** Towhee includes a pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, making processing unstructured data as easy as handling tabular data.
 
-- __Automatic versioning__: Our versioning mechanism for pipelines and operators ensures that you never run into [dependency hell](https://en.wikipedia.org/wiki/Dependency_hell).
+## What's New
 
-- __Support for fine-tuning models__: Feed your dataset into our `Trainer` and get a new model in just a few easy steps.
+**v0.7.1 Jul.1,2022**
+* Add one image embedding model:
+[*MPViT*](https://towhee.io/image-embedding/mpvit).
+* Add two video retrieval models:
+[*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
+[*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
+* Add FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
 
-- __Deploy to cloud__*: Ready-made pipelines can be deployed to the cloud with minimal effort.
+**v0.7.0 Jun.24,2022**
 
-Features marked with a star (\*) are on our roadmap and have not yet been implemented. Help is always appreciated, so come join our [Slack](https://slack.towhee.io) or check out our [docs](https://docs.towhee.io) for more information.
+* Add six video understanding/classification models:
+[*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
+[*TSM*](https://towhee.io/action-classification/tsm), 
+[*Uniformer*](https://towhee.io/action-classification/uniformer), 
+[*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
+[*TimeSformer*](https://towhee.io/action-classification/timesformer), 
+[*MoViNets*](https://towhee.io/action-classification/movinet).
+* Add four video retrieval models:
+[*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
+[*DRL*](https://towhee.io/video-text-embedding/drl), 
+[*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
+[*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
+
+
+**v0.6.1  May.13,2022**
+
+* Add three text-image retrieval models:
+[*CLIP*](https://towhee.io/image-text-embedding/clip),
+[*BLIP*](https://towhee.io/image-text-embedding/blip),
+[*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
+* Add six video understanding/classification models from PyTorchVideo:
+[*I3D*](https://towhee.io/action-classification/pytorchvideo),
+[*C2D*](https://towhee.io/action-classification/pytorchvideo),
+[*Slow*](https://towhee.io/action-classification/pytorchvideo),
+[*SlowFast*](https://towhee.io/action-classification/pytorchvideo),
+[*X3D*](https://towhee.io/action-classification/pytorchvideo),
+[*MViT*](https://towhee.io/action-classification/pytorchvideo).
 
 ## Getting started
-
-[Run in Colab](https://colab.research.google.com/github/towhee-io/towhee/blob/main/docs/02-Getting%20Started/quick-start.ipynb)
 
 Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 
@@ -42,65 +92,44 @@ Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 % pip install towhee
 ```
 
-Towhee provides a variety of pre-built pipelines. For example, generating an image embedding can be done in as little as five lines of code:
-
-```python
->>> from towhee import pipeline
-
-# Our built-in image embedding pipeline takes
->>> embedding_pipeline = pipeline('image-embedding')
->>> embedding = embedding_pipeline('https://docs.towhee.io/img/logo.png')
-```
-
-Your image embedding is now stored in `embedding`. It's that simple.
-
-For image datasets, the users can also build their own pipeline with the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API:
+Try your first Towhee pipeline. In this example, we show how to create a CLIP-based cross modal retrieval pipeline within 15 lines of code.
 
 ```python
 import towhee
 
-towhee.glob('./*.jpg') \
-      .image_decode() \
-      .image_embedding.timm(model_name='resnet50') \
-      .to_list()
+# create image embeddings and build index
+(
+    towhee.glob['file_name']('./*.png')
+          .image_decode['file_name', 'img']()
+          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_b32', modality='image')
+          .tensor_normalize['vec','vec']()
+          .to_faiss[('file_name', 'vec')](findex='./index.bin')
+)
+
+# search image by text
+results = (
+    towhee.dc['text'](['puppy Corgi'])
+          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
+          .tensor_normalize['vec', 'vec']()
+          .faiss_search['vec', 'results'](findex='./index.bin', k=3)
+          .select['text', 'results']()
+)
 ```
+<img src="towhee_example.png" style="width: 60%; height: 60%">
 
-where [`image_decode`](https://towhee.io/towhee/image-decode) and [`image_embedding.timm`](https://towhee.io/image-embedding/timm) are operators from [towhee hub](https://towhee.io). The method-chaining style programming interface also support [parallel execution](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#parallel-execution) and [exception handling](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html#exception-handling).
+Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
 
-## Dive deeper
+## Core Concepts
 
-If you find that one of our default embedding pipelines does not suit you, you can also specify a custom pipeline from the hub as follows:
+Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `DataCollection API` and `Engine`.
 
-```python
->>> embedding_pipeline = pipeline('towhee/image-embedding-convnext-base')
-```
+- __Operator__: An operator is a single building block of neural data processing pipelines. Different implementations of operators are categorized by tasks, with standard task interface. An operator can be a deep learning model, a data processing method, or a Python function.
 
-For a full list of supported pipelines, visit our [docs page](https://docs.towhee.io).
+- __Pipeline__: A pipeline is composed of several operators. Operators are connected together as a DAG(directed acyclic graph) to create complex functionalities, such as embedding feature extraction, data tagging, cross modal data understanding, etc.
 
-Custom machine learning pipelines can be defined in a YAML file or via the [`DataCollection`](https://towhee.readthedocs.io/en/branch0.6/data_collection/get_started.html) API. The first time you instantiate and use a pipeline, all Python functions, configuration files, and model weights are automatically downloaded from the Towhee hub. To ease the development process, pipelines which already exist in the local Towhee cache (`/$HOME/.towhee/pipelines`) will be automatically loaded:
+- __DataCollection__: A pythonic and method-chaining style API that for building custom pipelines. Pipelines defined by DataColltion API can be either run on notebook locally for fast prototyping, or converting to image docker with end-to-end optimization for production-ready environments. 
 
-```python
-# This will load the pipeline defined at $HOME/.towhee/pipelines/fzliu/my-embedding-pipeline.yaml
->>> embedding_pipeline = pipeline('fzliu/my-embedding-pipeline')
-```
-
-### Architecture overview
-
-Towhee is composed of three main building blocks - `Pipelines`, `Operators`, and a singleton `Engine`.
-
-- __Pipeline__: A `Pipeline` is a single embedding generation task that is composed of several operators. Operators are connected together within the pipeline via a directed acyclic graph.
-
-- __Operator__: An `Operator` is a single node within a pipeline. An operator can be a machine learning model, a complex algorithm, or a Python function. All files needed to run the operator are contained within a directory (e.g. code, configs, models, etc...).
-
-- __DataCollection__: A pythonic and method-chaining style API that for building custom unstructured data processing pipelines. `DataCollection` is designed to behave as a python list or iterator, DataCollection is easy to understand for python users and is compatible with most popular data science toolkits. Function/Operator invocations can be chained one after another, making your code clean and fluent.
-
-- __Engine__: The `Engine` sits at Towhee's core. Given a `Pipeline`, the `Engine` will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic `Engine` within Towhee to run pipelines on a single-instance machine - K8s and other more complex `Engine` implementations are coming soon.
-
-For a deeper dive into Towhee and its architecture, check out the [Towhee docs](https://docs.towhee.io).
-
-## Examples
-
-Towhee [Examples](https://github.com/towhee-io/examples) is designed to expose users how to use towhee to analyze the unstructured data, such as reverse image search, reverse video search, audio classification, question and answer systems, molecular search, etc.
+- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic engine within Towhee to run pipelines on a single-instance machine, and Triton-based engine to run pipelines in docker containers.
 
 ## Contributing
 
