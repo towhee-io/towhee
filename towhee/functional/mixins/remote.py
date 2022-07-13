@@ -18,6 +18,22 @@ from towhee.utils.tritonclient_utils import InferenceServerException
 class RemoteMixin:
     '''
     Mixin for triton
+
+    Parameters:
+        url: str
+            triton server ip and port.the most likely url will be "127.0.0.1:8001".
+        mode: str
+            The function of inference.
+            'grpc' protocol has 'infer'/'async_set'/'stream' functions.
+            'http' protocol only has 'infer' function.
+            The default value is 'infer'.
+        model_name: str
+            The name of the model to run inference.
+            The default value is 'pipline'.
+        protocol: str
+            Communication protocol between triton server and client.
+            The default value is 'grpc'.
+
     '''
     def remote(self, url, mode='infer', model_name='pipeline', protocol='grpc'):
         self.triton_client = Client.init(url, model_name=model_name)
