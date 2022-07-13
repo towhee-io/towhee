@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.layers.position_encoding import build_position_encoding
+from towhee.models.layers.position_encoding import build_position_encoding, PositionalEncoding
 
 
 class TestPositionEncoding(unittest.TestCase):
@@ -34,6 +34,11 @@ class TestPositionEncoding(unittest.TestCase):
         pos_embed = build_position_encoding(hidden_dim=2*2, position_embedding='learned')
         out = pos_embed(self.x)
         self.assertTrue(out.shape == (1, 4, 1, 2))
+
+    def test_pe(self):
+        pos_embed = PositionalEncoding(2,0.1)
+        out = pos_embed(self.x)
+        self.assertTrue(out.shape == (1, 2, 2))
 
 
 if __name__ == '__main__':
