@@ -225,7 +225,7 @@ class ServeMixin:
 
         class _Wrapper:
             def __init__(self):
-                self.dag_info = as_function_self.compile_dag()
+                self.dag_info, self.schema_dict = as_function_self.compile_dag()
                 self.__name__ = self.__class__.__name__
 
             def __call__(self, req):

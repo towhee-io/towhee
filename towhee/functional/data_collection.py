@@ -1113,7 +1113,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     def map(self, *arg):
         if hasattr(arg[0], '__check_init__'):
             arg[0].__check_init__()
-        if self._mode == self.ModeFlag.COLBASEDFLAG or self._mode == self.ModeFlag.CHUNKBASEDFLAG:
+        if self._mode in (self.ModeFlag.COLBASEDFLAG, self.ModeFlag.CHUNKBASEDFLAG):
             return self.cmap(arg[0])
         else:
             return super().map(*arg)

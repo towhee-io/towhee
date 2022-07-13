@@ -11,6 +11,23 @@ def register_dag(f):
         children = f(self, *arg, **kws)
         # Need the dc type while avoiding circular imports
         dc_type = type(children[0]) if isinstance(children, list) else type(children)
+
+        # Grab the schema index
+        with param_scope() as hp:
+            # pylint: disable=protected-access
+            index = hp._index
+
+        # TODO: Update for schema fix
+        # If tuple, first index is input, second is output
+        if index is None:
+            input_index = None
+            output_index = None
+        elif isinstance(index, tuple):
+            input_index = list(index[0]) if isinstance(index[0], tuple) else [index[0]]
+            output_index = list(index[1]) if isinstance(index[1], tuple) else [index[1]]
+        else:
+            input_index = None
+            output_index = list(index) if isinstance(index, tuple) else [index]
         # If the function is called from an existing dc
         if isinstance(self, dc_type):
             self.op = f.__name__
@@ -26,7 +43,9 @@ def register_dag(f):
                     'init_args': self.init_args,
                     'call_args': self.call_args,
                     'parent_ids': self.parent_ids,
-                    'child_ids':  self.child_ids}
+                    'child_ids':  self.child_ids,
+                    'input_schema': input_index,
+                    'output_schema': output_index}
             self.get_control_plane().dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.
@@ -48,7 +67,9 @@ def register_dag(f):
                     'init_args': None,
                     'call_args': call_args,
                     'parent_ids': [],
-                    'child_ids':  child_ids}
+                    'child_ids':  child_ids,
+                    'input_schema': input_index,
+                    'output_schema': output_index}
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
@@ -87,13 +108,32 @@ class DagMixin:
             self.child_ids = [children.id]
         else:
             self.child_ids = [x.id for x in children]
+
+        # Grab the schema index
+        with param_scope() as hp:
+            # pylint: disable=protected-access
+            index = hp._index
+        # TODO: Update for schema fix
+        # If tuple, first index is input, second is output
+        if index is None:
+            input_index = None
+            output_index = None
+        elif isinstance(index, tuple):
+            input_index = list(index[0]) if isinstance(index[0], tuple) else [index[0]]
+            output_index = list(index[1]) if isinstance(index[1], tuple) else [index[1]]
+        else:
+            input_index = None
+            output_index = list(index) if isinstance(index, tuple) else [index]
+
         info = {'op': self.op,
                 'op_name': self.op_name,
                 'is_stream': self.is_stream,
                 'init_args': self.init_args,
                 'call_args': self.call_args,
                 'parent_ids': self.parent_ids,
-                'child_ids':  self.child_ids}
+                'child_ids':  self.child_ids,
+                'input_schema': input_index,
+                'output_schema': output_index}
         self._control_plane.dag[self.id] = info
         return children
 
@@ -102,21 +142,44 @@ class DagMixin:
         self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
+        """
+        Clean and return the process dag.
+
+        Returns:
+            (dag: dict, schema_dict: dict):
+                Returns both the dag and a dictionary that has the mapping of output to schema.
+                The values in schema_dict are the (node_id, index of its output).
+        Examples:
+
+        >>> import towhee
+        >>> from pprint import pprint
+        >>> dc = towhee.dummy_input['input']()
+        >>> dc = dc.runas_op['input', 'add_one'](lambda x: x+ 1)
+        >>> dag, schema_dict = dc.compile_dag()
+        >>> result = []
+        >>> for x in dag.values():
+        ...     if 'input_schema' in x.keys():
+        ...         result.append((x['op_name'], x['input_schema'], x['output_schema']))
+        >>> result
+        [('towhee/runas-op', ['input'], ['add_one']), ('dummy_input', None, ['input'])]
+        """
         info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
         self._control_plane.dag[self.id] = info
         info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': [self.id], 'child_ids':  []}
         self._control_plane.dag['end'] = info
         # return self._control_plane.dag
-        return self._clean_nops(self._control_plane.dag)
+        dag = self._clean_nops(self._control_plane.dag)
+        dag = self._add_op_name_and_init_args(dag)
+        dag, schema_dict = self._create_schema_dict(dag)
+        return (dag, schema_dict)
 
     def netx(self):
         import networkx as nx
         import matplotlib.pyplot as plt
-        compiled_dag = self.compile_dag()
+        compiled_dag, _ = self.compile_dag()
         new_dict = {}
         label_dict = {}
         for key,value in compiled_dag.items():
-            # print(key, value)
             new_dict[key] = value['child_ids']
             label_dict[key] = value['op']
         label_dict['end'] = 'end'
@@ -139,7 +202,17 @@ class DagMixin:
                     dag_copy[child]['parent_ids'] = list(set(dag_copy[child]['parent_ids'] +val['parent_ids']))
         for x in removals:
             del dag_copy[x]
-        return self._add_op_name_and_init_args(dag_copy)
+        return dag_copy
+
+    def _create_schema_dict(self, dag):
+        ret = {}
+        for key, val in dag.items():
+            schema = val.get('output_schema', None)
+            if schema is not None:
+                for i, x in enumerate(schema):
+                    ret[x] = (key, i)
+        return dag, ret
+    
 
     def _add_op_name_and_init_args(self, dag):
         for key, val in dag.items():
@@ -174,3 +247,7 @@ class ControlPlane:
     @property
     def dag(self):
         return self._dag
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
