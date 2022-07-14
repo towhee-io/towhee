@@ -31,21 +31,21 @@
 &nbsp;
 
 [Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
-We provide several hundred models, algorithms, and transformations as standard pipeline building blocks.
-You can prototype your pipeline with our Pythonic API, and use Towhee to
+We provide several hundred models, algorithms, and transformations that can be used as standard pipeline building blocks.
+You can use Towhee's Pythonic API to build a prototype of your pipeline and
 automatically optimize it for production-ready environments.
 
-:art:&emsp;**Various Modalities:** We support data processing on different modalities, such as images, videos, text, audio, molecular structures, etc.
+:art:&emsp;**Various Modalities:** Towhee supports data processing on a variety of modalities, including images, videos, text, audio, molecular structures, etc.
 
-:mortar_board:&emsp;**SOTA Models:** We provide SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. These include BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc.
+:mortar_board:&emsp;**SOTA Models:** Towhee provides SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, and 140+ model architectures. These include BERT, CLIP, ViT, SwinTransformer, MAE, and data2vec, all pretrained and ready to use.
 
-:package:&emsp;**Data Processing:** Towhee also provides traditional data processing methods that can be used together with neural network models to help you build practical data processing pipelines. Video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, and database operations are a small sample of the different operators we provide.
+:package:&emsp;**Data Processing:** Towhee also provides traditional methods alongside neural network models to help you build practical data processing pipelines. We have a rich pool of operators available, such as video decoding, audio slicing, frame sampling, feature vector dimension reduction, ensembling, and database operations.
 
-:snake:&emsp;**Pythonic API:** Towhee includes a pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, making processing unstructured data as easy as handling tabular data.
+:snake:&emsp;**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
 ## What's New
 
-**v0.7.1 Jul.1,2022**
+**v0.7.1 Jul. 1, 2022**
 * Add one image embedding model:
 [*MPViT*](https://towhee.io/image-embedding/mpvit).
 * Add two video retrieval models:
@@ -53,7 +53,7 @@ automatically optimize it for production-ready environments.
 [*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
 * Add FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
 
-**v0.7.0 Jun.24,2022**
+**v0.7.0 Jun. 24, 2022**
 
 * Add six video understanding/classification models:
 [*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
@@ -68,8 +68,7 @@ automatically optimize it for production-ready environments.
 [*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
 [*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
 
-
-**v0.6.1  May.13,2022**
+**v0.6.1  May. 13, 2022**
 
 * Add three text-image retrieval models:
 [*CLIP*](https://towhee.io/image-text-embedding/clip),
@@ -85,14 +84,14 @@ automatically optimize it for production-ready environments.
 
 ## Getting started
 
-Towhee requires Python 3.6+. Towhee can be installed via `pip`:
+Towhee requires Python 3.6+. You can install Towhee via `pip`:
 
 ```bash
 % pip install -U pip  # if you run into installation issues, try updating pip
 % pip install towhee
 ```
 
-Try your first Towhee pipeline. In this example, we show how to create a CLIP-based cross modal retrieval pipeline within 15 lines of code.
+Try your first Towhee pipeline. For example, create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
 
 ```python
 import towhee
@@ -117,23 +116,23 @@ results = (
 ```
 <img src="towhee_example.png" style="width: 60%; height: 60%">
 
-Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
+Learn more examples from the [Towhee Bootcamp](https://codelabs.towhee.io/).
 
 ## Core Concepts
 
 Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `DataCollection API` and `Engine`.
 
-- __Operator__: An operator is a single building block of neural data processing pipelines. Different implementations of operators are categorized by tasks, with standard task interface. An operator can be a deep learning model, a data processing method, or a Python function.
+- __Operators__: An operator is a single building block of a neural data processing pipeline. Different implementations of operators are categorized by tasks, with each task having a standard interface. An operator can be a deep learning model, a data processing method, or a Python function.
 
-- __Pipeline__: A pipeline is composed of several operators. Operators are connected together as a DAG(directed acyclic graph) to create complex functionalities, such as embedding feature extraction, data tagging, cross modal data understanding, etc.
+- __Pipelines__: A pipeline is composed of several operators interconnected in the form of a DAG (directed acyclic graph). This DAG can direct complex functionalities, such as embedding feature extraction, data tagging, and cross modal data analysis.
 
-- __DataCollection__: A pythonic and method-chaining style API that for building custom pipelines. Pipelines defined by DataColltion API can be either run on notebook locally for fast prototyping, or converting to image docker with end-to-end optimization for production-ready environments. 
+- __DataCollection API__: A Pythonic and method-chaining style API for building custom pipelines. A pipeline defined by the DataColltion API can be run locally on a laptop for fast prototyping and then be converted to a docker image, with end-to-end optimizations, for production-ready environments.
 
-- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic engine within Towhee to run pipelines on a single-instance machine, and Triton-based engine to run pipelines in docker containers.
+- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow among individual operators, schedule tasks, and monitor compute resource usage (CPU/GPU/etc). We provide a basic engine within Towhee to run pipelines on a single-instance machine and a Triton-based engine for docker containers.
 
 ## Contributing
 
-Remember that writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) for more information.
+Writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are just some of the many ways you can help our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) for more information.
 
 Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
 <br><!-- Do not remove start of hero-bot --><br>
