@@ -14,10 +14,12 @@
 
 import importlib
 import sys
+import subprocess
 from pathlib import Path
 from typing import Any, List, Dict, Union
 
 import pkg_resources
+from pkg_resources import DistributionNotFound
 from towhee.operator import Operator
 from towhee.operator.nop import NOPOperator
 from towhee.operator.concat_operator import ConcatOperator
@@ -94,7 +96,11 @@ class OperatorLoader:
         if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
             with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
-            pkg_resources.require(reqs)
+            for req in reqs:
+                try:
+                    pkg_resources.require(req)
+                except DistributionNotFound:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
 
         try:
             # support for ver1 operator API

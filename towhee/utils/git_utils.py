@@ -129,11 +129,11 @@ class GitUtils:
         if install_reqs and 'requirements.txt' in (i.name for i in local_repo_path.iterdir()):
             with open(local_repo_path / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
-            try:
-                pkg_resources.require(reqs)
-            except DistributionNotFound:
-                pass
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', local_repo_path / 'requirements.txt'])
+            for req in reqs:
+                try:
+                    pkg_resources.require(req)
+                except DistributionNotFound:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
 
     def status(self):
         """
