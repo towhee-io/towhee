@@ -89,7 +89,7 @@ Towhee requires Python 3.6+. Towhee can be installed via `pip`:
 
 ```bash
 % pip install -U pip  # if you run into installation issues, try updating pip
-% pip install towhee
+% pip install towhee 
 ```
 
 Try your first Towhee pipeline. In this example, we show how to create a CLIP-based cross modal retrieval pipeline within 15 lines of code.
