@@ -80,9 +80,9 @@ class MaxViT(nn.Module):
         )
         # Init blocks
         drop_path = torch.linspace(0.0, drop_path, sum(depths)).tolist()
-        self.stages = []
+        stages = []
         for index, (depth, channel) in enumerate(zip(depths, channels)):
-            self.stages.append(
+            stages.append(
                 MaxViTStage(
                     depth=depth,
                     in_channels=embed_dim if index == 0 else channels[index - 1],
@@ -98,7 +98,7 @@ class MaxViT(nn.Module):
                     norm_layer_transformer=norm_layer_transformer
                 )
             )
-
+        self.stages = nn.Sequential(*stages)
         self.global_pool: str = global_pool
         self.head = nn.Linear(channels[-1], num_classes)
 
@@ -193,5 +193,5 @@ def create_model(
 # if __name__ == '__main__':
 #     data = torch.rand(1, 3, 224, 224)
 #     model = create_model(model_name='max_vit_tiny')
-#     output = model(data)
-#     print(output.shape)
+#     print(model)
+    # print(output.shape)
