@@ -180,6 +180,7 @@ def create_model(
         model = MaxViT(**kwargs)
     else:
         configs = get_configs(model_name)
+        configs.update(kwargs)
         model = MaxViT(**configs)
         if pretrained:
             state_dic = torch.load(weights_path, map_location=device)["model_state"]
@@ -192,6 +193,4 @@ def create_model(
 
 # if __name__ == '__main__':
 #     data = torch.rand(1, 3, 224, 224)
-#     model = create_model(model_name='max_vit_tiny')
-#     print(model)
-    # print(output.shape)
+#     model = create_model(model_name='max_vit_tiny', drop_path=0.2)
