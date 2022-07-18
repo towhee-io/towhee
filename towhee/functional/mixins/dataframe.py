@@ -105,29 +105,29 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def fill_entity(self):
         """
-            When DataFrame's iterable exists of Entities and some indexes missing, fill default value for those indexes.
+        When DataFrame's iterable exists of Entities and some indexes missing, fill default value for those indexes.
 
-            Args:
-                _ReplaceNoneValue (`bool`):
-                    Whether to replace None in Entity's value.
-                _DefaultKVs (`Dict[str, Any]`):
-                    The key-value pairs stored in a dict.
+        Args:
+            _ReplaceNoneValue (`bool`):
+                Whether to replace None in Entity's value.
+            _DefaultKVs (`Dict[str, Any]`):
+                The key-value pairs stored in a dict.
 
-            Examples:
+        Examples:
 
-            >>> from towhee import Entity, DataFrame
-            >>> entities = [Entity(num=i) for i in range(3)]
-            >>> df = DataFrame(entities)
-            >>> df
-            [<Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>]
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(num=i) for i in range(3)]
+        >>> df = DataFrame(entities)
+        >>> df
+        [<Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>, <Entity dict_keys(['num'])>]
 
-            >>> kvs = {'foo': 'bar'}
-            >>> df.fill_entity(kvs).fill_entity(usage='test').to_list()
-            [<Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>]
+        >>> kvs = {'foo': 'bar'}
+        >>> df.fill_entity(kvs).fill_entity(usage='test').to_list()
+        [<Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>, <Entity dict_keys(['num', 'foo', 'usage'])>]
 
-            >>> kvs = {'FOO': None}
-            >>> df.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs).to_list()[0].FOO
-            0
+        >>> kvs = {'FOO': None}
+        >>> df.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs).to_list()[0].FOO
+        0
         """
         @dynamic_dispatch
         def fill_entity_function(_DefaultKVs: Optional[Dict[str, Any]] = None,
@@ -152,45 +152,45 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def as_entity(self):
         """
-            Convert elements into Entities.
+        Convert elements into Entities.
 
-            Args:
-                schema (Optional[List[str]]):
-                    schema contains field names.
+        Args:
+            schema (Optional[List[str]]):
+                schema contains field names.
 
-            Examples:
-            1. convert dicts into entities:
+        Examples:
+        1. convert dicts into entities:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([dict(a=1, b=2), dict(a=2, b=3)])
-            ...         .as_entity()
-            ...         .as_str()
-            ...         .to_list()
-            ... )
-            ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([dict(a=1, b=2), dict(a=2, b=3)])
+        ...         .as_entity()
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
 
-            2. convert tuples into entities:
+        2. convert tuples into entities:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([(1, 2), (2, 3)])
-            ...         .as_entity(schema=['a', 'b'])
-            ...         .as_str()
-            ...         .to_list()
-            ... )
-            ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ["{'a': 1, 'b': 2}", "{'a': 2, 'b': 3}"]
 
-            3. convert single value into entities:
+        3. convert single value into entities:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([1, 2])
-            ...         .as_entity(schema=['a'])
-            ...         .as_str()
-            ...         .to_list()
-            ... )
-            ["{'a': 1}", "{'a': 2}"]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([1, 2])
+        ...         .as_entity(schema=['a'])
+        ...         .as_str()
+        ...         .to_list()
+        ... )
+        ["{'a': 1}", "{'a': 2}"]
         """
         @dynamic_dispatch
         def as_entity_function(schema: Optional[List[str]] = None):
@@ -213,17 +213,17 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def parse_json(self):
         """
-            Parse string to entities.
+        Parse string to entities.
 
-            Examples:
+        Examples:
 
-            >>> from towhee import DataFrame
-            >>> df = (
-            ...     DataFrame(['{"x": 1}'])
-            ...         .parse_json()
-            ... )
-            >>> df[0].x
-            1
+        >>> from towhee import DataFrame
+        >>> df = (
+        ...     DataFrame(['{"x": 1}'])
+        ...         .parse_json()
+        ... )
+        >>> df[0].x
+        1
         """
         @dynamic_dispatch
         def parse_json_function():
@@ -237,16 +237,16 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def as_json(self):
         """
-            Convert entities to json
+        Convert entities to json
 
-            Examples:
+        Examples:
 
-            >>> from towhee import DataFrame, Entity
-            >>> (
-            ...     DataFrame([Entity(x=1)])
-            ...         .as_json()
-            ... )
-            ['{"x": 1}']
+        >>> from towhee import DataFrame, Entity
+        >>> (
+        ...     DataFrame([Entity(x=1)])
+        ...         .as_json()
+        ... )
+        ['{"x": 1}']
         """
         @dynamic_dispatch
         def as_json_function():
@@ -259,30 +259,30 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def as_raw(self):
         """
-            Convert entitis into raw python values
+        Convert entitis into raw python values
 
-            Examples:
+        Examples:
 
-            1. unpack multiple values from entities:
+        1. unpack multiple values from entities:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([(1, 2), (2, 3)])
-            ...         .as_entity(schema=['a', 'b'])
-            ...         .as_raw()
-            ...         .to_list()
-            ... )
-            [(1, 2), (2, 3)]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .as_raw()
+        ...         .to_list()
+        ... )
+        [(1, 2), (2, 3)]
 
-            2. unpack single value from entities:
+        2. unpack single value from entities:
 
-            >>> (
-            ...     DataFrame([1, 2])
-            ...         .as_entity(schema=['a'])
-            ...         .as_raw()
-            ...         .to_list()
-            ... )
-            [1, 2]
+        >>> (
+        ...     DataFrame([1, 2])
+        ...         .as_entity(schema=['a'])
+        ...         .as_raw()
+        ...         .to_list()
+        ... )
+        [1, 2]
         """
         @dynamic_dispatch
         def as_raw_function():
@@ -297,20 +297,20 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def replace(self):
         """
-            Replace specific attributes with given vlues.
+        Replace specific attributes with given vlues.
 
-            Examples:
+        Examples:
 
-            >>> from towhee import Entity, DataFrame
+        >>> from towhee import Entity, DataFrame
 
-            >>> entities = [Entity(num=i) for i in range(5)]
-            >>> df = DataFrame(entities)
-            >>> [i.num for i in df]
-            [0, 1, 2, 3, 4]
+        >>> entities = [Entity(num=i) for i in range(5)]
+        >>> df = DataFrame(entities)
+        >>> [i.num for i in df]
+        [0, 1, 2, 3, 4]
 
-            >>> df = df.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
-            >>> [i.num for i in df]
-            [1, 2, 3, 4, 5]
+        >>> df = df.replace(num={0: 1, 1: 2, 2: 3, 3: 4, 4: 5})
+        >>> [i.num for i in df]
+        [1, 2, 3, 4, 5]
         """
         @dynamic_dispatch
         def replace_function(**kws):
@@ -327,23 +327,23 @@ class DataFrameMixin:
     #TODO: Add index logic if needed.
     def dropna(self):
         """
-            Drop entities that contain some specific values.
+        Drop entities that contain some specific values.
 
-            Args:
-                na (`Set[str]`):
-                    Those entities contain values in na will be dropped.
+        Args:
+            na (`Set[str]`):
+                Those entities contain values in na will be dropped.
 
-            Examples:
+        Examples:
 
-            >>> from towhee import Entity, DataFrame
-            >>> entities = [Entity(a=i, b=i + 1) for i in range(3)]
-            >>> entities.append(Entity(a=3, b=''))
-            >>> df = DataFrame(entities)
-            >>> df
-            [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(a=i, b=i + 1) for i in range(3)]
+        >>> entities.append(Entity(a=3, b=''))
+        >>> df = DataFrame(entities)
+        >>> df
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
 
-            >>> df.dropna()
-            [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+        >>> df.dropna()
+        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
         @dynamic_dispatch
         def dropna_function(na: Set[str] = {'', None}) -> Union[bool, 'DataFrame']:  # pylint: disable=dangerous-default-value

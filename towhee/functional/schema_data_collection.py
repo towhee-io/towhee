@@ -289,29 +289,29 @@ class DataCollectionSchema(Iterable, DCMixins):
     @property
     def to_list(self):
         """
-            Convert entitis into list.
+        Convert entitis into list.
 
-            Examples:
+        Examples:
 
-            1. turn specific dataframe indexes into list:
+        1. turn specific dataframe indexes into list:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([(1, 2), (2, 3)])
-            ...         .as_entity(schema=['a', 'b'])
-            ...         .to_list['a']()
-            ... )
-            [(1,), (2,)]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .to_list['a']()
+        ... )
+        [(1,), (2,)]
 
-            2. turn entire dataframe indexes into list:
+        2. turn entire dataframe indexes into list:
 
-            >>> from towhee import DataFrame
-            >>> (
-            ...     DataFrame([(1, 2), (2, 3)])
-            ...         .as_entity(schema=['a', 'b'])
-            ...         .to_list()
-            ... )
-            [(1, 2), (2, 3)]
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .to_list()
+        ... )
+        [(1, 2), (2, 3)]
 
         """
         @dynamic_dispatch
