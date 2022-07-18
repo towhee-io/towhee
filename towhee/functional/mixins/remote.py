@@ -33,6 +33,7 @@ class RemoteMixin:
 
     '''
     def remote(self, url, mode='infer', model_name='pipeline', protocol='grpc'):
+        #pylint: disable=import-outside-toplevel
         from towhee.serve.triton.client import Client
         from towhee.utils.tritonclient_utils import InferenceServerException
         self.triton_client = Client.init(url, model_name=model_name)
