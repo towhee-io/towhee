@@ -83,6 +83,8 @@ class _OperatorLazyWrapper(  #
         self._kws = kws
         self._op = None
         self._lock = threading.Lock()
+        self._op_config = self._kws.pop('op_config', None)
+        # TODO: (How to apply such config)
 
     def __check_init__(self):
         with self._lock:
