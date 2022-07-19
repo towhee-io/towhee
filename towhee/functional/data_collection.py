@@ -21,6 +21,7 @@ from towhee.functional.entity import EntityView
 from towhee.functional.mixins import DCMixins
 from towhee.functional.mixins.dataframe import DataFrameMixin
 from towhee.functional.mixins.column import ColumnMixin
+from towhee.functional.entity import Entity
 
 
 class DataCollection(Iterable, DCMixins):
@@ -284,6 +285,47 @@ class DataCollection(Iterable, DCMixins):
         """
         return DataCollection(range(*arg, **kws))
 
+    @property
+    def to_list_schema(self):
+        """
+        Convert entitis into list.
+
+        Examples:
+
+        1. turn specific dataframe indexes into list:
+
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .to_list_schema['a']()
+        ... )
+        [(1,), (2,)]
+
+        2. turn entire dataframe indexes into list:
+
+        >>> from towhee import DataFrame
+        >>> (
+        ...     DataFrame([(1, 2), (2, 3)])
+        ...         .as_entity(schema=['a', 'b'])
+        ...         .to_list_schema()
+        ... )
+        [(1, 2), (2, 3)]
+
+        """
+        @dynamic_dispatch
+        def to_list_function():
+            index = param_scope()._index
+            if isinstance(index, str):
+                index = (index, )
+            def inner(entity: Entity):
+                if index is not None:
+                    return tuple(getattr(entity, col) for col in index)
+                return tuple(getattr(entity, name) for name in entity.__dict__)
+            x = self.map(inner)
+            return list(x._iterable)
+        return to_list_function
+
     def to_list(self):
         return self._iterable if isinstance(self._iterable, list) else list(self._iterable)
 
@@ -516,3 +558,7 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             return self.cmap(arg[0])
         else:
             return super().map(*arg)
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
