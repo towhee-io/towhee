@@ -2,7 +2,7 @@ name: Workflow for codecov
 on: [push, pull_request]
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3.0.0
     - name: Setup Python
@@ -11,8 +11,12 @@ jobs:
         python-version: 3.8
     - name: Generate coverage report
       run: |
+        source /test/miniconda3/etc/profile.d/conda.sh
+        conda create -n towhee-ut python==3.8
+        conda activate towhee-ut
         pip install coverage pytest pytest-xdist
         pip install -r test_requirements.txt
+        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         coverage erase
         coverage run -m pytest
     - name: Generate xml report
