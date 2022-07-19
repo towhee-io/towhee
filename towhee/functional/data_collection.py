@@ -23,6 +23,13 @@ from towhee.functional.mixins.dataframe import DataFrameMixin
 from towhee.functional.mixins.column import ColumnMixin
 from towhee.functional.entity import Entity
 
+# https://stackoverflow.com/questions/1697501/staticmethod-with-property
+# decorator for when you want to do:
+# @staticmethod
+# @property
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
 
 class DataCollection(Iterable, DCMixins):
     """
@@ -284,6 +291,23 @@ class DataCollection(Iterable, DCMixins):
         [0, 1, 2, 3, 4]
         """
         return DataCollection(range(*arg, **kws))
+    
+    @classproperty
+    def range_schema(self):
+        """
+        Generate data collection with ranged numbers.
+
+        Examples:
+
+        >>> DataCollection.range_schema['a'](5).to_list_schema['a']()
+        [0, 1, 2, 3, 4]
+        """
+        @dynamic_dispatch
+        def range_function(*arg, **kws):
+            index = param_scope()._index
+            x = DataCollection(range(*arg, **kws)).map(lambda x: Entity(**{index: x}))
+            return x
+        return range_function
 
     @property
     def to_list_schema(self):
@@ -300,7 +324,7 @@ class DataCollection(Iterable, DCMixins):
         ...         .as_entity(schema=['a', 'b'])
         ...         .to_list_schema['a']()
         ... )
-        [(1,), (2,)]
+        [1, 2]
 
         2. turn entire dataframe indexes into list:
 
@@ -319,11 +343,14 @@ class DataCollection(Iterable, DCMixins):
             if isinstance(index, str):
                 index = (index, )
             def inner(entity: Entity):
-                if index is not None:
+                if index is not None and len(index) == 1:
+                    return getattr(entity, index[0])
+                elif index is not None and index:
                     return tuple(getattr(entity, col) for col in index)
-                return tuple(getattr(entity, name) for name in entity.__dict__)
-            x = self.map(inner)
-            return list(x._iterable)
+                else:
+                    return tuple(getattr(entity, name) for name in entity.__dict__)
+            res = self.map(inner)
+            return list(res._iterable)
         return to_list_function
 
     def to_list(self):
@@ -561,4 +588,4 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=False)
