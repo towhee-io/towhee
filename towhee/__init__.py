@@ -55,6 +55,8 @@ __all__ = [
     'dummy_input'
 ]
 
+__import__('pkg_resources').declare_namespace(__name__)
+
 
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     """
@@ -80,7 +82,9 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     from torchvision import datasets  # pylint: disable=import-outside-toplevel
     from towhee.data.dataset.dataset import TorchDataSet  # pylint: disable=import-outside-toplevel
     dataset_construct_map = {
-        'mnist': datasets.MNIST, 'cifar10': datasets.cifar.CIFAR10, 'fake': datasets.FakeData
+        'mnist': datasets.MNIST,
+        'cifar10': datasets.cifar.CIFAR10,
+        'fake': datasets.FakeData
         # 'imdb': IMDB  # ,()
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
@@ -110,6 +114,7 @@ class Inject:
 
     and the value at the injection point is replace by the `Inject` API.
     """
+
     def __init__(self, **kws) -> None:
         self._injections = {}
         for k, v in kws.items():

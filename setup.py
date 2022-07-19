@@ -50,6 +50,7 @@ if '--models' in sys.argv:
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(include=['towhee.models*']),#['towhee.models'],
           package_data={'towhee.tests.test_util': ['*.yaml']},
+          namespace_package = ['towhee'],
           include_package_data=True,
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
@@ -65,6 +66,7 @@ else:
           extras_require={':python_version<\'3.7\'': 'importlib-resources'},
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(exclude=['*test*', 'towhee.models*']),
+          namespace_package = ['towhee'],
           package_data={'towhee.tests.test_util': ['*.yaml']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
