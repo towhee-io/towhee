@@ -13,6 +13,7 @@
 # limitations under the License.
 from typing import Iterable, Iterator, Callable
 import reprlib
+import uuid
 
 from towhee.functional.mixins.dag import register_dag
 from towhee.hparam import param_scope, dynamic_dispatch
@@ -105,6 +106,7 @@ class DataCollection(Iterable, DCMixins):
         """
         super().__init__()
         self._iterable = iterable
+        self._id = str(uuid.uuid4().hex)
 
     def __iter__(self):
         if hasattr(self._iterable, 'iterrows'):
@@ -224,8 +226,8 @@ class DataCollection(Iterable, DCMixins):
         >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
         [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
         """
-        self.parent_ids.append(other.id)
-        other.notify_consumed(self.id)
+        self.parent_ids.append(other._id)
+        other.notify_consumed(self._id)
 
         def inner():
             for x in self:
@@ -297,15 +299,22 @@ class DataCollection(Iterable, DCMixins):
         """
         Generate data collection with ranged numbers.
 
-        Examples:
+        # Examples:
+        # 1. Work with schema
+        # >>> DataCollection.range_schema['a'](5).to_list_schema['a']()
+        # [0, 1, 2, 3, 4]
 
-        >>> DataCollection.range_schema['a'](5).to_list_schema['a']()
+        2. Work without schema
+        >>> DataCollection.range_schema(5).to_list_schema()
         [0, 1, 2, 3, 4]
         """
         @dynamic_dispatch
         def range_function(*arg, **kws):
             index = param_scope()._index
-            x = DataCollection(range(*arg, **kws)).map(lambda x: Entity(**{index: x}))
+            if index is None:
+                index = (self._id, )
+            print(index)
+            x = DataCollection(range(*arg, **kws))#.map(lambda x: Entity(**{index: x}))
             return x
         return range_function
 
