@@ -299,23 +299,19 @@ class DataCollection(Iterable, DCMixins):
         """
         Generate data collection with ranged numbers.
 
-        # Examples:
-        # 1. Work with schema
-        # >>> DataCollection.range_schema['a'](5).to_list_schema['a']()
-        # [0, 1, 2, 3, 4]
-
-        2. Work without schema
-        >>> DataCollection.range_schema(5).to_list_schema()
+        Examples:
+        1. Work with schema
+        >>> DataCollection.range_schema['a'](5).to_list_schema['a']()
         [0, 1, 2, 3, 4]
+
+        # 2. Work without schema
+        # >>> DataCollection.range_schema(5).to_list_schema()
+        # [0, 1, 2, 3, 4]
         """
         @dynamic_dispatch
         def range_function(*arg, **kws):
             index = param_scope()._index
-            if index is None:
-                index = (self._id, )
-            print(index)
-            x = DataCollection(range(*arg, **kws))#.map(lambda x: Entity(**{index: x}))
-            return x
+            return DataCollection(map((lambda x: Entity(**{index: x})), range(*arg, **kws)))
         return range_function
 
     @property
