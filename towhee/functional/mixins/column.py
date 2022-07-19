@@ -203,13 +203,16 @@ class ColumnMixin:
         10
         """
         # pylint: disable=protected-access
-        if isinstance(self._iterable, ChunkedTable):
-            if not self.is_stream:
-                tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
-            else:
-                tables = (WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks())
-            return self._factory(ChunkedTable(chunks = tables))
-        return self._factory(self.__table_apply__(self._iterable, unary_op))
+        if self.get_executor() is None:
+            if isinstance(self._iterable, ChunkedTable):
+                if not self.is_stream:
+                    tables = [WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks()]
+                else:
+                    tables = (WritableTable(self.__table_apply__(chunk, unary_op)) for chunk in self._iterable.chunks())
+                return self._factory(ChunkedTable(chunks = tables))
+            return self._factory(self.__table_apply__(self._iterable, unary_op))
+        else:
+            return self.pmap(unary_op)
 
     def __table_apply__(self, table, unary_op):
         # pylint: disable=protected-access

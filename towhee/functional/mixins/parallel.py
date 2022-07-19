@@ -20,21 +20,7 @@ import time
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.hparam.hyperparameter import param_scope
-
-
-def _map_task(x, unary_op):
-
-    def map_wrapper():
-        try:
-            if isinstance(x, Option):
-                return x.map(unary_op)
-            else:
-                return unary_op(x)
-        except Exception as e:  # pylint: disable=broad-except
-            engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
-            return Empty(_Reason(x, e))
-
-    return map_wrapper
+from towhee.functional.storages import WritableTable, ChunkedTable
 
 
 class ParallelMixin:
@@ -179,6 +165,22 @@ class ParallelMixin:
         retval = [inner(queue) for queue in queues]
         return [self._factory(x) for x in retval]
 
+    def _map_task(self, x, unary_op):
+
+        def map_wrapper():
+            try:
+                if isinstance(x, Option):
+                    return x.map(unary_op)
+                elif isinstance(x, WritableTable):
+                    return WritableTable(self.__table_apply__(x, unary_op))
+                else:
+                    return unary_op(x)
+            except Exception as e:  # pylint: disable=broad-except
+                engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
+                return Empty(_Reason(x, e))
+
+        return map_wrapper
+
     def pmap(self, unary_op, num_worker=None, backend=None):
         """
         Apply `unary_op` with parallel execution.
@@ -233,11 +235,17 @@ class ParallelMixin:
 
         async def worker():
             buff = []
-            for x in self:
+            iterable = self._iterable.chunks() if isinstance(self._iterable, ChunkedTable) else self
+            for x in iterable:
                 if len(buff) == num_worker:
                     queue.put(await buff.pop(0))
                 buff.append(
-                    loop.run_in_executor(executor, _map_task(x, unary_op)))
+                    loop.run_in_executor(executor, self._map_task(x, unary_op)))
+            # for x in self:
+            #     if len(buff) == num_worker:
+            #         queue.put(await buff.pop(0))
+            #     buff.append(
+            #         loop.run_in_executor(executor, self._map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
             queue.put(EOS())
