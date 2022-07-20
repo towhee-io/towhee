@@ -36,6 +36,28 @@ class ParallelMixin:
     >>> len(result)
     1000
 
+    >>> from towhee import dc
+    >>> dc = dc['a'](range(1000)).set_parallel(5)
+    >>> dc = dc.runas_op['a', 'b'](lambda x: x+1).to_list()
+    >>> len(dc)
+    1000
+
+    >>> from towhee import dc
+    >>> dc = dc['a'](range(1000)).set_parallel(5).set_chunksize(2)
+    >>> dc = dc.runas_op['a', 'b'](lambda x: x+1)
+    >>> dc._iterable[:2]
+    [pyarrow.Table
+    a: int64
+    b: int64
+    ----
+    a: [[0,1]]
+    b: [[1,2]], pyarrow.Table
+    a: int64
+    b: int64
+    ----
+    a: [[2,3]]
+    b: [[3,4]]]
+
     >>> result = DataCollection.range(1000).pmap(add_1, 10).pmap(add_1, 10).to_list()
     >>> result[990:]
     [992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001]
@@ -241,11 +263,6 @@ class ParallelMixin:
                     queue.put(await buff.pop(0))
                 buff.append(
                     loop.run_in_executor(executor, self._map_task(x, unary_op)))
-            # for x in self:
-            #     if len(buff) == num_worker:
-            #         queue.put(await buff.pop(0))
-            #     buff.append(
-            #         loop.run_in_executor(executor, self._map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
             queue.put(EOS())
