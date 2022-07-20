@@ -231,7 +231,7 @@ def create_model(
 
     model.to(device)
     if pretrained:
-        model = load_pretrained(model, configs, checkpoint_path=checkpoint_path, strict=True, device=device)
+        model = load_pretrained(model, model_name, checkpoint_path=checkpoint_path, strict=True, device=device)
 
     model.eval()
     return model

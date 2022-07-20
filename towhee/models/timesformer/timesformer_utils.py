@@ -57,17 +57,17 @@ def map_state_dict(checkpoint, use_ema=False):
 
 def load_pretrained(
         model,
-        cfg,
+        model_name,
         checkpoint_path=None,
         strict=True,
         device='cpu'):
+    cfg = get_configs(model_name)
     num_classes = cfg['num_classes']
     in_c = cfg['in_c']
     img_size = cfg['img_size']
     patch_size = cfg['patch_size']
     filter_fn = cfg['filter_fn']
     num_frames = cfg['num_frames']
-    model_name = cfg['model_name']
 
     if checkpoint_path is None:
         if 'url' not in cfg or cfg['url'] is None:
@@ -187,7 +187,6 @@ def get_configs(model_name: str = None):
     if model_name == 'timesformer_k400_8x224':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
-            model_name='timesformer_k400_8x224',
             url='https://www.dropbox.com/s/g5t24we9gl5yk88/TimeSformer_divST_8x32_224_K400.pyth?dl=0',
             num_frames=8,
             attention_type='divided_space_time',
@@ -201,7 +200,6 @@ def get_configs(model_name: str = None):
     elif model_name == 'timesformer_k400_96x224':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
-            model_name='timesformer_k400_96x224',
             url='https://www.dropbox.com/s/r1iuxahif3sgimo/TimeSformer_divST_96x4_224_K400.pyth?dl=0',
             num_frames=96,
             attention_type='divided_space_time',
@@ -215,7 +213,6 @@ def get_configs(model_name: str = None):
     elif model_name == 'svt_vitb_k400':
         configs = vit_configs('vit_base_16x224')
         configs.update(dict(
-            model_name='svt_vitb_k400',
             url='https://github.com/kahnchana/svt/releases/download/v1.0/kinetics400_vitb_ssl.pth',
             num_frames=8,
             attention_type='divided_space_time',
