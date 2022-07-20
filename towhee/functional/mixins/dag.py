@@ -15,6 +15,9 @@ def register_dag(f):
         if isinstance(self, dc_type):
             self.op = f.__name__
             self.call_args = {'*arg': arg, '*kws': kws}
+            if arg != tuple():
+                if hasattr(arg[0], '_op_config'):
+                    self.op_config = arg[0].get_op_config()
             # check if list of dc or just dc
             if isinstance(children, dc_type):
                 self.child_ids = [children.id]
@@ -25,6 +28,7 @@ def register_dag(f):
                     'is_stream': self.is_stream,
                     'init_args': self.init_args,
                     'call_args': self.call_args,
+                    'op_config': self.op_config,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
             self.get_control_plane().dag[self.id] = info
@@ -47,6 +51,7 @@ def register_dag(f):
                     'is_stream': None,
                     'init_args': None,
                     'call_args': call_args,
+                    'op_config': None,
                     'parent_ids': [],
                     'child_ids':  child_ids}
             # If not called from a dc, it means that it is a start method
@@ -79,6 +84,7 @@ class DagMixin:
         self.op_name = None
         self.init_args = None
         self.call_args = None
+        self.op_config = None
         self.child_ids = []
 
     def register_dag(self, children):
@@ -92,19 +98,20 @@ class DagMixin:
                 'is_stream': self.is_stream,
                 'init_args': self.init_args,
                 'call_args': self.call_args,
+                'op_config': self.op_config,
                 'parent_ids': self.parent_ids,
                 'child_ids':  self.child_ids}
         self._control_plane.dag[self.id] = info
         return children
 
     def notify_consumed(self, new_id):
-        info = {'op': 'nop', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  [new_id]}
+        info = {'op': 'nop', 'op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': self.parent_ids, 'child_ids':  [new_id]}
         self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
-        info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
+        info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
         self._control_plane.dag[self.id] = info
-        info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': [self.id], 'child_ids':  []}
+        info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': [self.id], 'child_ids':  []}
         self._control_plane.dag['end'] = info
         # return self._control_plane.dag
         return self._clean_nops(self._control_plane.dag)

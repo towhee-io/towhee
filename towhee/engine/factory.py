@@ -101,6 +101,10 @@ class _OperatorLazyWrapper(  #
         self.__check_init__()
         return self._op
 
+    def get_op_config(self):
+        self.__check_init__()
+        return self._op_config
+
     @property
     def function(self):
         return self._name

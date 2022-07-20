@@ -322,6 +322,22 @@ class TestCompileMixin(unittest.TestCase):
         t3 = time.time()
         self.assertTrue(t3 - t2 > t2 - t1)
 
+class TestDagMixin(unittest.TestCase):
+    """
+    Unit test for DagMixin
+    """
+    def test_dag(self):
+        dc = towhee.dummy_input() \
+            .image_decode['path', 'img']() \
+            .towhee.clip['img', 'vec'](model_name='clip_vit_b32', modality='image', op_config={'ac':'123', 'asd':'wea'}) \
+            .as_function() 
+        expect = {'ac':'123', 'asd':'wea'}
+        for i in dc.dag_info.values():
+            if i['op_name'] == 'towhee/clip':
+                self.assertEqual(i['op_config'], expect)
+            else:
+                self.assertEqual(i['op_config'], None)
+
 class TestRemoteMixin(unittest.TestCase):
     """
     Unit test for RemoteMixin
