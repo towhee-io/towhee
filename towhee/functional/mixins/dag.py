@@ -105,13 +105,31 @@ class DagMixin:
         return children
 
     def notify_consumed(self, new_id):
-        info = {'op': 'nop', 'op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': self.parent_ids, 'child_ids':  [new_id]}
+        info = {'op': 'nop',
+                'op_name': None,
+                'init_args': None,
+                'call_args': None,
+                'op_config': None,
+                'parent_ids': self.parent_ids,
+                'child_ids': [new_id]}
         self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
-        info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
+        info = {'op': 'nop',
+                'op_name': None,
+                'init_args': None,
+                'call_args': None,
+                'op_config': None,
+                'parent_ids': self.parent_ids,
+                'child_ids': ['end']}
         self._control_plane.dag[self.id] = info
-        info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'op_config': None, 'parent_ids': [self.id], 'child_ids':  []}
+        info = {'op': 'end',
+                'op_name': None,
+                'init_args': None,
+                'call_args': None,
+                'op_config': None,
+                'parent_ids': [self.id],
+                'child_ids': []}
         self._control_plane.dag['end'] = info
         # return self._control_plane.dag
         return self._clean_nops(self._control_plane.dag)
