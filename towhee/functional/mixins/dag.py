@@ -17,7 +17,7 @@ def register_dag(f):
             self.call_args = {'*arg': arg, '*kws': kws}
             if arg != tuple():
                 if hasattr(arg[0], '_op_config'):
-                    self.op_config = arg[0].get_op_config()
+                    self.op_config = arg[0].get_op_config
             # check if list of dc or just dc
             if isinstance(children, dc_type):
                 self.child_ids = [children.id]
