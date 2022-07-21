@@ -27,4 +27,4 @@ class TritonNnop(NNOperator):
         return [(Image, (-1, -1, 3))]
 
     def output_schema(self):
-        return [(int, (1, ))]    
+        return [(int, (1, ))]

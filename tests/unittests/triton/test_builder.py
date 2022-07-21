@@ -95,4 +95,3 @@ class TestBuilder(unittest.TestCase):
             self.assertTrue(builer.build())
             dst = Path(root) / 'cb2876f3_local_trion_nnop_oldversion' / '1' / 'model.py'
             self.assertTrue(dst.is_file())
-            
