@@ -14,13 +14,14 @@
 
 
 import numpy as np
-from towhee import register
 
 
-@register(
-    input_schema=[(np.float32, (-1, 512))],
-    output_schema=[(np.float32, (512, ))]
-)
 class Postprocess:
     def __call__(self, data):
         return data.flatten()
+
+    def input_schema(self):
+        return [(np.float32, (-1, 512))]
+
+    def output_schema(self):
+        return [(np.float32, (512, ))]

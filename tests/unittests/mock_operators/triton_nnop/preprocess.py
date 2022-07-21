@@ -13,17 +13,16 @@
 # limitations under the License.
 
 import numpy as np
-from towhee import register
 from towhee._types import Image
 
 
-@register(
-    input_schema=[(Image, (-1, -1, 3))],
-    output_schema=[(np.float32, (1, 3, 224, 224))]
-)
 class Preprocess:
-    def __init__(self):
-        pass
 
     def __call__(self, img: 'ndarray') -> 'ndarray':
         return np.random.rand(1, 3, 224, 224)
+
+    def input_schema(self):
+        return [(Image, (-1, -1, 3))]
+
+    def output_schema(self):
+        return [(np.float32, (1, 3, 224, 224))]
