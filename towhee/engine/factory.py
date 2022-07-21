@@ -102,7 +102,7 @@ class _OperatorLazyWrapper(  #
         return self._op
 
     @property
-    def get_op_config(self):
+    def op_config(self):
         self.__check_init__()
         return self._op_config
 
