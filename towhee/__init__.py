@@ -11,19 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Union
+from typing import Union, List
+from pathlib import Path
 from towhee.engine import register
 from towhee.engine.factory import ops, pipes, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
-from towhee.functional import DataCollection, State, Entity, DataFrame
 from towhee.connectors import Connectors as connectors
-
+from towhee.hub.file_manager import FileManagerConfig
+from towhee.functional import DataCollection, State, Entity, DataFrame
 from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
 from towhee.functional import read_video, read_audio
 from towhee.functional import read_zip, from_df
 from towhee.functional import dc, api, dummy_input
+
+# pylint: disable=import-outside-toplevel
+
 
 __all__ = [
     'DEFAULT_PIPELINES',
@@ -52,8 +56,13 @@ __all__ = [
     'read_zip',
     'dc',
     'api',
-    'dummy_input'
+    'dummy_input',
+    'update_default_cache',
+    'add_cache_path',
+    'cache_paths',
+    'default_cache'
 ]
+
 
 __import__('pkg_resources').declare_namespace(__name__)
 
@@ -79,8 +88,8 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
         >>> type(dataset('fake', size=10))
         <class 'towhee.data.dataset.dataset.TorchDataSet'>
     """
-    from torchvision import datasets  # pylint: disable=import-outside-toplevel
-    from towhee.data.dataset.dataset import TorchDataSet  # pylint: disable=import-outside-toplevel
+    from torchvision import datasets
+    from towhee.data.dataset.dataset import TorchDataSet
     dataset_construct_map = {
         'mnist': datasets.MNIST,
         'cifar10': datasets.cifar.CIFAR10,
@@ -125,6 +134,49 @@ class Inject:
             hp().injections = self._injections
             return pipeline(*arg, **kws)
 
+def update_default_cache(default_path: Union[str, Path]):
+    """
+    Update default cache.
+
+    Args:
+        default_path (`Union[str, Path]`):
+            The default cache path.
+
+    Examples:
+    >>> import towhee
+    >>> towhee.update_default_cache('mock/path')
+    >>> towhee.default_cache
+    PosixPath('mock/path')
+
+    >>> from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
+    >>> towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
+    """
+    fmc = FileManagerConfig()
+    fmc.update_default_cache(default_path)
+
+
+def add_cache_path(insert_path: Union[str, Path, List[Union[str, Path]]]):
+    """
+    Add a cache location to the front. Most recently added paths will be
+    checked first.
+
+    Args:
+        insert_path (`str` | `Path | `list[str | Path]`):
+            The path that you are trying to add. Accepts multiple inputs at once.
+
+    Examples:
+    >>> import towhee
+    >>> towhee.add_cache_path('mock/path')
+    >>> towhee.cache_paths[0]
+    PosixPath('mock/path')
+    """
+    fmc = FileManagerConfig()
+    fmc.add_cache_path(insert_path)
+
+
+cache_paths = FileManagerConfig().cache_paths
+default_cache = FileManagerConfig().default_cache
+
 
 def plot(img1: Union[str, list], img2: list = None):
     from towhee.utils.plot_utils import plot_img  # pylint: disable=C
@@ -138,5 +190,5 @@ def plot(img1: Union[str, list], img2: list = None):
 
 
 def build_docker_image(dc_pipeline, image_name, format_priority, cuda):
-    from towhee.serve.triton.docker_image_builder import DockerImageBuilder  # pylint: disable=import-outside-toplevel
+    from towhee.serve.triton.docker_image_builder import DockerImageBuilder
     DockerImageBuilder(dc_pipeline, image_name, format_priority, cuda).build()

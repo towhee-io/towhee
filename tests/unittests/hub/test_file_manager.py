@@ -15,7 +15,9 @@
 import unittest
 from pathlib import Path
 
+import towhee
 from towhee.hub.file_manager import FileManagerConfig
+from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
 
 fmc = FileManagerConfig()
 
@@ -25,10 +27,15 @@ class TestFileManager(unittest.TestCase):
     Unit test for FileManager
     """
     def test_add_remove_cache_path(self):
-        fmc.add_cache_path(Path('test_path'))
-        self.assertEqual(fmc.cache_paths[0], Path('test_path'))
+        towhee.add_cache_path(Path('test_path'))
+        self.assertEqual(towhee.cache_paths[0], Path('test_path'))
         fmc.remove_cache_path(Path('test_path'))
-        self.assertNotIn(Path('test_path'), fmc.cache_paths)
+        self.assertNotIn(Path('test_path'), towhee.cache_paths)
+
+    def test_update_default(self):
+        towhee.update_default_cache('test_path')
+        self.assertEqual(towhee.cache_paths[-1], Path('test_path'))
+        towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
 
     def test_reset_cache_path(self):
         fmc.reset_cache_path()
