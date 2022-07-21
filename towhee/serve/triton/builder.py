@@ -129,13 +129,13 @@ class Builder:
         init_args = node['init_args']
         op = Builder._load_op(op_name, init_args)
         if op is None:
-            logger.error("Load operator {} by init args: {} failed", op_name, init_args)
+            logger.error('Load operator: [%s] by init args: [%s] failed', op_name, init_args)
             return None
 
         if isinstance(op, NNOperator):
             if hasattr(op, 'model') and hasattr(op.model, 'supported_formats') and op.model.supported_formats:
                 return self._nnoperator_config(op, op_name, node_id, node)
-            
+
         return self._pyop_config(op, node_id, node)
 
     @staticmethod
@@ -158,7 +158,7 @@ class Builder:
 
     def load(self) -> bool:
         self._runtime_dag = {}
-            
+
         for node_id, node in self.dag.items():
             if node_id in ['start', 'end']:
                 continue
@@ -168,7 +168,7 @@ class Builder:
                 node['child_ids'].remove('end')
             config = self._create_node_config(node_id, node)
             if config is None:
-                logger.error("Create node config failed")
+                logger.error('Create node config failed')
                 return False
             self._runtime_dag.update(config)
         return True
