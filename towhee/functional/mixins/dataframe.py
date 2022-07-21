@@ -15,7 +15,6 @@
 import json
 
 from typing import Dict, Any, Optional, Set, Union, List
-
 from towhee.functional.entity import Entity
 from towhee.hparam import dynamic_dispatch, param_scope
 # pylint: disable=protected-access
@@ -85,7 +84,6 @@ class DataFrameMixin:
 
     @property
     def select(self):
-
         @dynamic_dispatch
         def selector(*arg):
             index = param_scope()._index
@@ -93,23 +91,19 @@ class DataFrameMixin:
                 index = (index, )
             if index is None and arg is not None and len(arg) > 0:
                 index = arg
-
             def inner(entity: Entity):
                 if index is not None:
                     return Entity(
                         **{col: getattr(entity, col)
-                           for col in index})
+                            for col in index})
                 return entity
-
             return self.map(inner)
-
         return selector
 
     # pylint: disable=invalid-name
-    def fill_entity(self,
-                    _DefaultKVs: Optional[Dict[str, Any]] = None,
-                    _ReplaceNoneValue: bool = False,
-                    **kws):
+    @property
+    #TODO: Add index logic if needed.
+    def fill_entity(self):
         """
         When DataFrame's iterable exists of Entities and some indexes missing, fill default value for those indexes.
 
@@ -135,20 +129,28 @@ class DataFrameMixin:
         >>> df.fill_entity(_ReplaceNoneValue=True, _DefaultKVs=kvs).to_list()[0].FOO
         0
         """
-        if _DefaultKVs:
-            kws.update(_DefaultKVs)
+        @dynamic_dispatch
+        def fill_entity_function(_DefaultKVs: Optional[Dict[str, Any]] = None,
+                        _ReplaceNoneValue: bool = False,
+                        **kws):
+            if _DefaultKVs:
+                kws.update(_DefaultKVs)
 
-        def fill(entity: Entity):
-            for k, v in kws.items():
-                if not hasattr(entity, k):
-                    setattr(entity, k, v)
-                if _ReplaceNoneValue and v is None:
-                    setattr(entity, k, 0)
-            return entity
+            def inner(entity: Entity):
+                for k, v in kws.items():
+                    if not hasattr(entity, k):
+                        setattr(entity, k, v)
+                    if _ReplaceNoneValue and v is None:
+                        setattr(entity, k, 0)
+                return entity
 
-        return self._factory(map(fill, self._iterable))
+            return self.map(inner)
 
-    def as_entity(self, schema: Optional[List[str]] = None):
+        return fill_entity_function
+
+    @property
+    #TODO: Add index logic if needed.
+    def as_entity(self):
         """
         Convert elements into Entities.
 
@@ -190,21 +192,25 @@ class DataFrameMixin:
         ... )
         ["{'a': 1}", "{'a': 2}"]
         """
+        @dynamic_dispatch
+        def as_entity_function(schema: Optional[List[str]] = None):
+            if schema is None:
 
-        if schema is None:
+                def inner(x):
+                    return Entity(**x)
+            else:
 
-            def inner(x):
-                return Entity(**x)
-        else:
+                def inner(x):
+                    if len(schema) == 1:
+                        x = (x, )
+                    data = dict(zip(schema, x))
+                    return Entity(**data)
 
-            def inner(x):
-                if len(schema) == 1:
-                    x = (x, )
-                data = dict(zip(schema, x))
-                return Entity(**data)
+            return self.map(inner)
+        return as_entity_function
 
-        return self._factory(map(inner, self._iterable))
-
+    @property
+    #TODO: Add index logic if needed.
     def parse_json(self):
         """
         Parse string to entities.
@@ -219,13 +225,16 @@ class DataFrameMixin:
         >>> df[0].x
         1
         """
+        @dynamic_dispatch
+        def parse_json_function():
+            def inner(x):
+                data = json.loads(x)
+                return Entity(**data)
+            return self.map(inner)
+        return parse_json_function
 
-        def inner(x):
-            data = json.loads(x)
-            return Entity(**data)
-
-        return self.map(inner)
-
+    @property
+    #TODO: Add index logic if needed.
     def as_json(self):
         """
         Convert entities to json
@@ -239,12 +248,15 @@ class DataFrameMixin:
         ... )
         ['{"x": 1}']
         """
+        @dynamic_dispatch
+        def as_json_function():
+            def inner(x):
+                return json.dumps(x.__dict__)
+            return self.map(inner)
+        return as_json_function
 
-        def inner(x):
-            return json.dumps(x.__dict__)
-
-        return self.map(inner)
-
+    @property
+    #TODO: Add index logic if needed.
     def as_raw(self):
         """
         Convert entitis into raw python values
@@ -272,15 +284,18 @@ class DataFrameMixin:
         ... )
         [1, 2]
         """
+        @dynamic_dispatch
+        def as_raw_function():
+            def inner(x):
+                if len(x.__dict__) == 1:
+                    return list(x.__dict__.values())[0]
+                return tuple(getattr(x, name) for name in x.__dict__)
+            return self.map(inner)
+        return as_raw_function
 
-        def inner(x):
-            if len(x.__dict__) == 1:
-                return list(x.__dict__.values())[0]
-            return tuple(getattr(x, name) for name in x.__dict__)
-
-        return self.map(inner)
-
-    def replace(self, **kws):
+    @property
+    #TODO: Add index logic if needed.
+    def replace(self):
         """
         Replace specific attributes with given vlues.
 
@@ -297,18 +312,20 @@ class DataFrameMixin:
         >>> [i.num for i in df]
         [1, 2, 3, 4, 5]
         """
+        @dynamic_dispatch
+        def replace_function(**kws):
+            def inner(entity: Entity):
+                for index, convert_dict in kws.items():
+                    origin_value = getattr(entity, index)
+                    if origin_value in convert_dict:
+                        setattr(entity, index, convert_dict[origin_value])
+                return entity
+            return self.map(inner)
+        return replace_function
 
-        def inner(entity: Entity):
-            for index, convert_dict in kws.items():
-                origin_value = getattr(entity, index)
-                if origin_value in convert_dict:
-                    setattr(entity, index, convert_dict[origin_value])
-
-            return entity
-
-        return self._factory(map(inner, self._iterable))
-
-    def dropna(self, na: Set[str] = {'', None}) -> Union[bool, 'DataFrame']:  # pylint: disable=dangerous-default-value
+    @property
+    #TODO: Add index logic if needed.
+    def dropna(self):
         """
         Drop entities that contain some specific values.
 
@@ -328,17 +345,19 @@ class DataFrameMixin:
         >>> df.dropna()
         [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
+        @dynamic_dispatch
+        def dropna_function(na: Set[str] = {'', None}) -> Union[bool, 'DataFrame']:  # pylint: disable=dangerous-default-value
+            def inner(entity: Entity):
+                for val in entity.__dict__.values():
+                    if val in na:
+                        return False
+                return True
+            return self.filter(inner)
+        return dropna_function
 
-        def inner(entity: Entity):
-            for val in entity.__dict__.values():
-                if val in na:
-                    return False
-
-            return True
-
-        return self._factory(filter(inner, self._iterable))
-
-    def rename(self, column: Dict[str, str]):
+    @property
+    #TODO: Add index logic if needed.
+    def rename(self):
         """
         Rename an column in DataFrame.
 
@@ -357,13 +376,15 @@ class DataFrameMixin:
         >>> df.rename(column={'a': 'A', 'b': 'B'})
         [<Entity dict_keys(['A', 'B'])>, <Entity dict_keys(['A', 'B'])>, <Entity dict_keys(['A', 'B'])>]
         """
+        @dynamic_dispatch
+        def rename_function(column: Dict[str, str]):
+            def inner(x):
+                for key in column:
+                    x.__dict__[column[key]] = x.__dict__.pop(key)
+                return x
+            return self.map(inner)
+        return rename_function
 
-        def inner(x):
-            for key in column:
-                x.__dict__[column[key]] = x.__dict__.pop(key)
-            return x
-
-        return self._factory(map(inner, self._iterable))
 
     @property
     def df(self):
@@ -374,3 +395,7 @@ class DataFrameMixin:
         else:
             raise TypeError(
                 'data collection is not created from pandas DataFrame.')
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

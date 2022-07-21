@@ -1,4 +1,5 @@
 from functools import wraps
+from unittest import result
 from uuid import uuid4
 from abc import ABCMeta
 
@@ -17,9 +18,9 @@ def register_dag(f):
             self.call_args = {'*arg': arg, '*kws': kws}
             # check if list of dc or just dc
             if isinstance(children, dc_type):
-                self.child_ids = [children.id]
+                self.child_ids = [children._id]
             else:
-                self.child_ids = [x.id for x in children]
+                self.child_ids = [x._id for x in children]
             info = {'op': self.op,
                     'op_name': self.op_name,
                     'is_stream': self.is_stream,
@@ -27,7 +28,7 @@ def register_dag(f):
                     'call_args': self.call_args,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
-            self.get_control_plane().dag[self.id] = info
+            self.get_control_plane().dag[self._id] = info
             return children
         # If not called from a dc, think static or class method.
         else:
@@ -39,9 +40,9 @@ def register_dag(f):
                 pass_args = (self,) + arg
             call_args = {'*arg': pass_args, '*kws': kws}
             if isinstance(children, dc_type):
-                child_ids = [children.id]
+                child_ids = [children._id]
             else:
-                child_ids = [x.id for x in children]
+                child_ids = [x._id for x in children]
             info = {'op': op,
                     'op_name': None,
                     'is_stream': None,
@@ -66,14 +67,13 @@ class DagMixin:
     def __init__(self) -> None:
         super().__init__()
         # Unique id for current dc
-        self.id = str(uuid4().hex[:8])
         with param_scope() as hp:
             parent = hp().data_collection.parent(None)
         if parent is None:
             self.parent_ids = ['start']
             self._control_plane = ControlPlane()
         else:
-            self.parent_ids = [parent.id]
+            self.parent_ids = [parent._id]
             self._control_plane = parent._control_plane
         self.op = None
         self.op_name = None
@@ -84,9 +84,9 @@ class DagMixin:
     def register_dag(self, children):
         # check if list of dc or just dc
         if isinstance(children, type(self)):
-            self.child_ids = [children.id]
+            self.child_ids = [children._id]
         else:
-            self.child_ids = [x.id for x in children]
+            self.child_ids = [x._id for x in children]
         info = {'op': self.op,
                 'op_name': self.op_name,
                 'is_stream': self.is_stream,
@@ -94,17 +94,17 @@ class DagMixin:
                 'call_args': self.call_args,
                 'parent_ids': self.parent_ids,
                 'child_ids':  self.child_ids}
-        self._control_plane.dag[self.id] = info
+        self._control_plane.dag[self._id] = info
         return children
 
     def notify_consumed(self, new_id):
         info = {'op': 'nop', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  [new_id]}
-        self._control_plane.dag[self.id] = info
+        self._control_plane.dag[self._id] = info
 
     def compile_dag(self):
         info = {'op': 'nop','op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': self.parent_ids, 'child_ids':  ['end']}
-        self._control_plane.dag[self.id] = info
-        info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': [self.id], 'child_ids':  []}
+        self._control_plane.dag[self._id] = info
+        info = {'op': 'end', 'op_name': None, 'init_args': None, 'call_args': None, 'parent_ids': [self._id], 'child_ids':  []}
         self._control_plane.dag['end'] = info
         # return self._control_plane.dag
         return self._clean_nops(self._control_plane.dag)
