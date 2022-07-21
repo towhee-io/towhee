@@ -13,7 +13,8 @@
 # limitations under the License.
 import torch
 from towhee.models.timesformer import TimeSformer
-from towhee.models.timesformer.timesformer_utils import map_state_dict, get_configs
+from towhee.models.timesformer.timesformer_utils import map_state_dict
+from towhee.models.svt.svt_utils import get_configs
 
 
 def create_model(

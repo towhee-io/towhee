@@ -210,19 +210,6 @@ def get_configs(model_name: str = None):
             classifier='head',
             filter_fn=None,
         ))
-    elif model_name == 'svt_vitb_k400':
-        configs = vit_configs('vit_base_16x224')
-        configs.update(dict(
-            url='https://github.com/kahnchana/svt/releases/download/v1.0/kinetics400_vitb_ssl.pth',
-            num_frames=8,
-            attention_type='divided_space_time',
-            norm_layer=partial(nn.LayerNorm, eps=1e-6),
-            num_classes=400,
-            dropout=0.,
-            first_conv='patch_embed.proj',
-            classifier='head',
-            filter_fn=None,
-        ))
     else:
         raise AttributeError(f'Invalid model_name {model_name}.')
     return configs
