@@ -20,21 +20,7 @@ import time
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.hparam.hyperparameter import param_scope
-
-
-def _map_task(x, unary_op):
-
-    def map_wrapper():
-        try:
-            if isinstance(x, Option):
-                return x.map(unary_op)
-            else:
-                return unary_op(x)
-        except Exception as e:  # pylint: disable=broad-except
-            engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
-            return Empty(_Reason(x, e))
-
-    return map_wrapper
+from towhee.functional.storages import WritableTable, ChunkedTable
 
 
 class ParallelMixin:
@@ -50,11 +36,32 @@ class ParallelMixin:
     >>> len(result)
     1000
 
+    >>> from towhee import dc
+    >>> dc = dc['a'](range(1000)).set_parallel(5)
+    >>> dc = dc.runas_op['a', 'b'](lambda x: x+1).to_list()
+    >>> len(dc)
+    1000
+
+    >>> from towhee import dc
+    >>> dc = dc['a'](range(1000)).set_parallel(5).set_chunksize(2)
+    >>> dc = dc.runas_op['a', 'b'](lambda x: x+1)
+    >>> dc._iterable.chunks()[:2]
+    [pyarrow.Table
+    a: int64
+    b: int64
+    ----
+    a: [[0,1]]
+    b: [[1,2]], pyarrow.Table
+    a: int64
+    b: int64
+    ----
+    a: [[2,3]]
+    b: [[3,4]]]
+
     >>> result = DataCollection.range(1000).pmap(add_1, 10).pmap(add_1, 10).to_list()
     >>> result[990:]
     [992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001]
     """
-
     def __init__(self) -> None:
         super().__init__()
         with param_scope() as hp:
@@ -98,8 +105,7 @@ class ParallelMixin:
         self._num_worker = num_worker
 
         if self._backend == 'thread' and self._num_worker is not None:
-            self._executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=num_worker)
+            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker)
         else:  # clear executor
             self._executor = None
         return self
@@ -166,8 +172,7 @@ class ParallelMixin:
                     if len(cached_values[x]) == 0:
                         del cached_values[x]
                     else:
-                        while not queues[x].full() and len(
-                                cached_values[x]) > 0:
+                        while not queues[x].full() and len(cached_values[x]) > 0:
                             queues[x].put(cached_values[x].pop(0))
 
         def worker_wrapper():
@@ -178,6 +183,21 @@ class ParallelMixin:
         t.start()
         retval = [inner(queue) for queue in queues]
         return [self._factory(x) for x in retval]
+
+    def _map_task(self, x, unary_op):
+        def map_wrapper():
+            try:
+                if isinstance(x, Option):
+                    return x.map(unary_op)
+                elif isinstance(x, WritableTable):
+                    return WritableTable(self.__table_apply__(x, unary_op))
+                else:
+                    return unary_op(x)
+            except Exception as e:  # pylint: disable=broad-except
+                engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
+                return Empty(_Reason(x, e))
+
+        return map_wrapper
 
     def pmap(self, unary_op, num_worker=None, backend=None):
         """
@@ -233,11 +253,11 @@ class ParallelMixin:
 
         async def worker():
             buff = []
-            for x in self:
+            iterable = self._iterable.chunks() if isinstance(self._iterable, ChunkedTable) else self
+            for x in iterable:
                 if len(buff) == num_worker:
                     queue.put(await buff.pop(0))
-                buff.append(
-                    loop.run_in_executor(executor, _map_task(x, unary_op)))
+                buff.append(loop.run_in_executor(executor, self._map_task(x, unary_op)))
             while len(buff) > 0:
                 queue.put(await buff.pop(0))
             queue.put(EOS())
@@ -249,7 +269,14 @@ class ParallelMixin:
         t = threading.Thread(target=worker_wrapper, daemon=True)
         t.start()
 
-        return self._factory(inner())
+        res = inner()
+
+        if isinstance(self._iterable, ChunkedTable):
+            if not self.is_stream:
+                res = list(res)
+            res = ChunkedTable(chunks=res)
+
+        return self._factory(res)
 
     def mmap(self, ops: list, num_worker=None, backend=None):
         """
@@ -291,18 +318,14 @@ class ParallelMixin:
         # [2, 5, 9, 12, 16]
         """
         if len(ops) == 1:
-            return self._pmap(unary_op=ops[0],
-                              num_worker=num_worker,
-                              backend=backend)
+            return self._pmap(unary_op=ops[0], num_worker=num_worker, backend=backend)
 
         next_vals = []
         next_vals = self.split(len(ops))
 
         ret = []
         for i, x in enumerate(ops):
-            ret.append(next_vals[i].pmap(x,
-                                         num_worker=num_worker,
-                                         backend=backend))
+            ret.append(next_vals[i].pmap(x, num_worker=num_worker, backend=backend))
         return ret
 
 

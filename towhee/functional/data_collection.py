@@ -304,6 +304,8 @@ class DataCollection(Iterable, DCMixins):
         >>> dc = DataCollection([1,2,3,4])
         >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
         [4, 6, 8, 10]
+        >>> dc.set_parallel(2).map(lambda x: x+1).map(lambda x: x*2).to_list()
+        [4, 6, 8, 10]
         """
 
         # mmap
