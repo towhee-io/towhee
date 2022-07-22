@@ -31,13 +31,14 @@ from .list import ListMixin
 from .data_processing import DataProcessingMixin
 from .stream import StreamMixin
 from .safe import SafeMixin
+from .format_priority import FormatPriorityMixin
 
 
 class DCMixins(DatasetMixin, DispatcherMixin, DisplayMixin, ParallelMixin,
                ComputerVisionMixin, StateMixin, MetricMixin, RayMixin,
                ServeMixin, MilvusMixin, DagMixin, FaissMixin, ConfigMixin,
                CompileMixin, RemoteMixin, ListMixin, DataProcessingMixin,
-               SafeMixin, StreamMixin):
+               SafeMixin, StreamMixin, FormatPriorityMixin):
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
