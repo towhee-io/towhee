@@ -13,8 +13,6 @@
 # limitations under the License.
 from enum import Flag, auto
 
-from towhee.utils.thirdparty.pyarrow import pa
-from towhee.types.tensor_array import TensorArray
 from towhee.hparam.hyperparameter import param_scope
 
 from towhee.functional.storages import ChunkedTable, WritableTable
@@ -115,6 +113,9 @@ class ColumnMixin:
         a: [["abc","def","ghi"]]
         b: [[1,2,3]]
         """
+        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.types.tensor_array import TensorArray
+
         header = None
         cols = None
 
@@ -141,6 +142,8 @@ class ColumnMixin:
 
     @classmethod
     def from_arrow_table(cls, **kws):
+        from towhee.utils.thirdparty.pyarrow import pa
+
         arrays = []
         names = []
         for k, v in kws.items():
@@ -221,6 +224,9 @@ class ColumnMixin:
 
     def __col_apply__(self, cols, unary_op):
         # pylint: disable=protected-access
+        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.types.tensor_array import TensorArray
+
         import numpy as np
         args = []
         # Multi inputs.
