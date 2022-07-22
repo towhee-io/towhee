@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .entity import EntityView
-from towhee.utils.thirdparty.pyarrow import pa
-from towhee.types.tensor_array import TensorArray
+# pylint: disable=import-outside-toplevel
 
 
 class WritableTable:
@@ -46,6 +45,9 @@ class WritableTable:
 
     def seal(self):
         # pylint: disable=protected-access
+        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.types.tensor_array import TensorArray
+
         names = list(self._buffer)
         arrays = []
         for name in names:
@@ -115,6 +117,9 @@ class ChunkedTable:
         return self._chunks
 
     def _create_table(self, chunk, head):
+        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.types.tensor_array import TensorArray
+
         # head = []
         cols = None
         for entity in chunk:
