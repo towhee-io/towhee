@@ -16,10 +16,9 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15]
         python: [ 3.8, 3.7, 3.6 ]
     steps:
     - uses: actions/checkout@master
