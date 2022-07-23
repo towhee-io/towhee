@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee import register
 import numpy as np
 import logging
 
@@ -24,10 +23,6 @@ class MockModel:
         return np.random.rand((1, 512))
 
 
-@register(
-    input_schema=[(np.float32, (-1, 3, 224, 224))],
-    output_schema=[(np.float32, (-1, 512))]
-)
 class Model:
     """
     Mock model
@@ -47,3 +42,9 @@ class Model:
     @property
     def supported_formats(self):
         return ['tensorrt']
+
+    def input_schema(self):
+        return [(np.float32, (-1, 3, 224, 224))]
+
+    def output_schema(self):
+        return [(np.float32, (-1, 512))]

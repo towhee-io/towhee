@@ -77,3 +77,21 @@ class TestBuilder(unittest.TestCase):
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
             dst = Path(root) / 'pipeline'
             filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')
+
+    def test_old_version_nnop(self):
+        test_dag = {
+            'start': {
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
+            },
+            'cb2876f3': {
+                'op_name': 'local/trion_nnop_oldversion', 'init_args': {}, 'child_ids': ['end']
+            },
+            'end': {
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
+            }
+        }
+        with TemporaryDirectory(dir='./') as root:
+            builer = Builder(test_dag, root, ['tensorrt'])
+            self.assertTrue(builer.build())
+            dst = Path(root) / 'cb2876f3_local_trion_nnop_oldversion' / '1' / 'model.py'
+            self.assertTrue(dst.is_file())

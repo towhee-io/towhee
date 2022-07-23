@@ -13,15 +13,8 @@
 # limitations under the License.
 
 
-import numpy as np
+from .triton_nnop import TritonNnop
 
 
-class Postprocess:
-    def __call__(self, data):
-        return data.flatten()
-
-    def input_schema(self):
-        return [(np.float32, (-1, 512))]
-
-    def output_schema(self):
-        return [(np.float32, (512, ))]
+def trion_nnop_oldversion(**kwargs):
+    return TritonNnop(**kwargs)
