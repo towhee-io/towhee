@@ -81,6 +81,11 @@ class ParallelMixin:
             return self._backend
         return None
 
+    def get_num_worker(self):
+        if hasattr(self, '_num_worker'):
+            return self._num_worker
+        return None
+
     def set_parallel(self, num_worker=2, backend='thread'):
         """
         Set parallel execution for following calls.
@@ -231,7 +236,7 @@ class ParallelMixin:
         return self._thread_pmap(unary_op, num_worker)
 
     def _thread_pmap(self, unary_op, num_worker=None):
-        if num_worker is None and self._num_worker is None:
+        if num_worker is None and self.get_num_worker() is None:
             num_worker = 2
         if num_worker is not None:
             executor = concurrent.futures.ThreadPoolExecutor(num_worker)
