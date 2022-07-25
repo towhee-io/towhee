@@ -27,3 +27,4 @@ faiss-cpu
 numba
 tritonclient
 geventhttpclient
+protobuf==3.19.0
