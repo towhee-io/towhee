@@ -13,15 +13,18 @@
 # limitations under the License.
 
 
-import numpy as np
+from towhee._types import Image
+from towhee.operator import NNOperator
 
-
-class Postprocess:
-    def __call__(self, data):
-        return data.flatten()
+class TritonNnop(NNOperator):
+    '''
+    Mock nnoperator to test triton tools.
+    '''
+    def __call__(self, image: 'Image'):
+        return 0
 
     def input_schema(self):
-        return [(np.float32, (-1, 512))]
+        return [(Image, (-1, -1, 3))]
 
     def output_schema(self):
-        return [(np.float32, (512, ))]
+        return [(int, (1, ))]

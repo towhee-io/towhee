@@ -81,8 +81,8 @@ class ToTriton(ABC):
         self._obj = obj
         self._model_name = model_name
         self._triton_files = TritonFiles(model_root, self._model_name)
-        self._inputs = TritonModelConfigBuilder.get_input_schema(self._obj.metainfo['input_schema'])
-        self._outputs = TritonModelConfigBuilder.get_output_schema(self._obj.metainfo['output_schema'])
+        self._inputs = TritonModelConfigBuilder.get_input_schema(self._obj.input_schema())
+        self._outputs = TritonModelConfigBuilder.get_output_schema(self._obj.output_schema())
         self._backend = 'python'
 
     @property
@@ -135,8 +135,8 @@ class PyOpToTriton(ToTriton):
                           self._op_hub,
                           self._op_name,
                           self._init_args,
-                          self._obj.metainfo['input_schema'],
-                          self._obj.metainfo['output_schema']
+                          self._obj.input_schema(),
+                          self._obj.output_schema()
                           )
         return True
 
@@ -156,8 +156,8 @@ class PreprocessToTriton(ToTriton):
                                         self._module_name,
                                         str(self._init_file),
                                         str(self._triton_files.preprocess_pickle),
-                                        self._obj.metainfo['input_schema'],
-                                        self._obj.metainfo['output_schema']
+                                        self._obj.input_schema(),
+                                        self._obj.output_schema()
                                         )
         # create pickle file
         with open(self._triton_files.preprocess_pickle_path, 'wb') as f:
@@ -180,8 +180,8 @@ class PostprocessToTriton(ToTriton):
                                         self._module_name,
                                         str(self._init_file),
                                         str(self._triton_files.postprocess_pickle),
-                                        self._obj.metainfo['input_schema'],
-                                        self._obj.metainfo['output_schema']
+                                        self._obj.input_schema(),
+                                        self._obj.output_schema()
                                         )
         # create pickle file
         with open(self._triton_files.postprocess_pickle_path, 'wb') as f:

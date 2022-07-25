@@ -14,7 +14,6 @@
 
 
 import numpy as np
-from towhee import register
 from towhee._types import Image
 from towhee.operator import NNOperator
 
@@ -23,10 +22,6 @@ from .preprocess import Preprocess
 from .postprocess import Postprocess
 
 
-@register(
-    input_schema=[(Image, (-1, -1, 3))],
-    output_schema=[(np.float32, (512, ))]
-)
 class TritonNnop(NNOperator):
     '''
     Mock nnoperator to test triton tools.
@@ -45,3 +40,9 @@ class TritonNnop(NNOperator):
 
     def save_model(self, model_type, output_file, args):
         self.model(model_type, output_file, args)
+
+    def input_schema(self):
+        return [(Image, (-1, -1, 3))]
+
+    def output_schema(self):
+        return [(np.float32, (512, ))]
