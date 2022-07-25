@@ -1,5 +1,4 @@
 from functools import wraps
-from operator import index
 from uuid import uuid4
 from abc import ABCMeta
 
@@ -13,7 +12,7 @@ def register_dag(f):
         # Need the dc type while avoiding circular imports
         dc_type = type(children[0]) if isinstance(children, list) else type(children)
         # If the function is called from an existing dc
-        index_info = param_scope()._index
+        index_info = param_scope()._index # pylint: disable=protected-access
         if index_info is None:
             input_info = None
             output_info = None
