@@ -11,12 +11,14 @@ jobs:
         python-version: 3.8
     - name: Generate coverage report
       run: |
+        ulimit -c unlimited
         source /test/miniconda3/etc/profile.d/conda.sh
-        conda create -n towhee-ut python==3.8
+        conda env remove -n towhee-ut
+        conda create -n towhee-ut python=3.8
         conda activate towhee-ut
+        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         pip install coverage pytest pytest-xdist
         pip install -r test_requirements.txt
-        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         coverage erase
         coverage run -m pytest
     - name: Generate xml report
