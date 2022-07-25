@@ -32,5 +32,12 @@ class TestDagInfo(unittest.TestCase):
             else:
                 self.assertEqual(i['op_config'], None)
 
+        expect_input = 'img'
+        expect_output = ['vec']
+        for j in dc.dag_info.values():
+            if j['op_name'] == 'towhee/clip':
+                self.assertEqual(j['input_info'][0][1], expect_input)
+                self.assertEqual(j['output_info'], expect_output)
+                
 if __name__ == '__main__':
     unittest.main()
