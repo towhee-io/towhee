@@ -17,3 +17,10 @@ output [
     dims: [512]
   }
 ]
+
+instance_group [
+    {
+        kind: KIND_CPU
+        count: 1
+    }
+]
