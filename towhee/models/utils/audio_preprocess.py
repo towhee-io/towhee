@@ -15,8 +15,11 @@
 # limitations under the License.
 # This code is modified by Zilliz.
 
+import numpy
 import torch
 import torchaudio
+
+from towhee.utils.log import models_log
 
 
 class MelSpec(torch.nn.Module):
@@ -91,15 +94,40 @@ class MelSpec(torch.nn.Module):
         return x
 
 
-def build_mel_spec(params):
-    return MelSpec(
-        sample_rate=params['sample_rate'],
-        window_length=params['window_length'],
-        hop_length=params['hop_length'],
-        f_min=params['f_min'],
-        f_max=params['f_max'],
-        n_mels=params['n_mels'],
-        naf_mode=params.get('naf_mode', False),
-        mel_log=params.get('mel_log', 'log'),
-        spec_norm=params.get('spec_norm', 'l2')
-    )
+def preprocess_wav(wav, segment_size: int = 8000, hop_size: int = 8000, frame_shift_mul: int = 1):
+    """
+    Preprocess waveform with hop & frame shift
+    """
+    if isinstance(wav, numpy.ndarray):
+        wav = torch.from_numpy(wav)
+    if len(wav.shape) != 2:
+        models_log.warning('Invalid input shape: %s.', wav.shape)
+        if len(wav.shape) == 1:
+            wav = wav.unsqueeze(0)
+            models_log.warning('Converted input shape to %s.', wav.shape)
+        else:
+            models_log.error('Fail to auto-fix input size. Exit.')
+    if wav.shape[0] not in [1, 2]:
+        models_log.warning('Invalid value at dim 0 of input shape (expect 1 or 2 but got %s). Using transpose.',
+                           wav.shape[0])
+        wav = torch.transpose(wav, 0, 1)
+
+    if wav.shape[0] == 2:
+        pow1 = ((wav[0] - wav[1]) ** 2).mean()
+        pow2 = ((wav[0] + wav[1]) ** 2).mean()
+        # Check for fake stereo
+        if pow1 > pow2 * 1000:
+            models_log.warning('Fake stereo with opposite phase detected.')
+            wav[1] *= -1
+    wav = wav.mean(dim=0)
+
+    if wav.shape[0] < segment_size:
+        # too short and need to be extended, padding to minimum length
+        models_log.warning('Input waveform is too short (%s), padding to segment size (%s).',
+                           wav.shape[0], segment_size)
+        wav = torch.nn.functional.pad(wav, (0, segment_size - wav.shape[0]))
+
+    # slice overlapping segments
+    wav = wav.unfold(0, segment_size, hop_size // frame_shift_mul)
+    wav = wav - wav.mean(dim=1).unsqueeze(1)
+    return wav
