@@ -116,10 +116,10 @@ class ToTriton(ABC):
             None,
             instance_count,
             device_ids
-        )            
+        )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
-            return True        
+            return True
 
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
@@ -236,7 +236,7 @@ class ModelToTriton (ToTriton):
             enable_dynamic_batching = True
             preferred_batch_size = dynamic_batching.get('preferred_batch_size', None)
             preferred_max_queue_delay_microseconds = dynamic_batching.get('preferred_max_queue_delay_microseconds', None)
-        
+
             config_str = create_modelconfig(
                 self._model_name,
                 max_batch_size,
@@ -261,7 +261,7 @@ class ModelToTriton (ToTriton):
                 None,
                 instance_count,
                 device_ids
-            )            
+            )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
             return True

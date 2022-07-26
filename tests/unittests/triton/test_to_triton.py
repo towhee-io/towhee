@@ -75,7 +75,15 @@ class TestPostprocessor(unittest.TestCase):
     def test_processor(self):
         with TemporaryDirectory(dir='./') as root:
             op = ops.local.triton_nnop(model_name='test').get_op()
-            to_triton = PostprocessToTriton(op, root, 'fae9ba13_local_triton_nnop_postprocess', {})
+            to_triton = PostprocessToTriton(op, root, 'fae9ba13_local_triton_nnop_postprocess',
+                                            {
+                                               'dynamic_batching': {
+                                                   'max_batch_size': 128,
+                                                   'preferred_batch_size': [1, 2],
+                                                   'preferred_max_queue_delay_microseconds': 10000
+                                               },
+                                               'device_ids': [1, 2]
+                                            })
             to_triton.to_triton()
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'postprocess'
@@ -98,11 +106,12 @@ class TestToModel(unittest.TestCase):
             to_triton = ModelToTriton(op, root, 'fae9ba13_local_triton_nnop_model', ['tensorrt'],
                                            {
                                                'device_ids': [1, 2],
+                                               'instance_count': 2,
                                                'dynamic_batching': {
                                                    'max_batch_size': 128,
                                                    'preferred_batch_size': [1, 2],
                                                    'preferred_max_queue_delay_microseconds': 10000
-                                               }                                               
+                                               }
                                            })
             to_triton.to_triton()
             expect_root = Path(EXPECTED_FILE_PATH) / 'nnop'

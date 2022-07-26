@@ -67,10 +67,13 @@ class Builder:
         preprocess -> model -> postprocess
         '''
         models = []
+        os_config = node.get(constant.OS_CONFIG, None)
+        if os_config is None:
+            os_config = {}
         if hasattr(op, constant.PREPROCESS):
             model_name = '_'.join([node_id, op_name, 'preprocess']).replace('/', '_')
             converter = PreprocessToTriton(op, self._model_root,
-                                           model_name)
+                                           model_name, os_config)
             models.append({
                 'model_name': model_name,
                 'model_version': 1,
@@ -81,7 +84,7 @@ class Builder:
 
         model_name = '_'.join([node_id, op_name, 'model']).replace('/', '_')
         converter = ModelToTriton(op, self._model_root,
-                                  model_name, self._model_format_priority)
+                                  model_name, self._model_format_priority, os_config)
         models.append({
             'model_name': model_name,
             'model_version': 1,
@@ -92,7 +95,7 @@ class Builder:
         if hasattr(op, constant.POSTPROCESS):
             model_name = '_'.join([node_id, op_name, 'postprocess']).replace('/', '_')
             converter = PostprocessToTriton(op, self._model_root,
-                                            model_name)
+                                            model_name, os_config)
             models.append({
                 'model_name': model_name,
                 'model_version': 1,
@@ -109,10 +112,13 @@ class Builder:
         return dict((model['id'], model) for model in models)
 
     def _pyop_config(self, op: 'Operator', node_id: str, node: Dict) -> Dict:
+        os_config = node.get(constant.OS_CONFIG, None)
+        if os_config is None:
+            os_config = {}
         model_name = node_id + '_' + node['op_name'].replace('/', '_')
         hub, name = node['op_name'].split('/')
         converter = PyOpToTriton(op, self._model_root, model_name,
-                                 hub, name, node['init_args'])
+                                 hub, name, node['init_args'], os_config)
         config = {node_id: {
             'id': node_id,
             'model_name': model_name,
