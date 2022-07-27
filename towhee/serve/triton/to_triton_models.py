@@ -77,9 +77,10 @@ class ToTriton(ABC):
     '''
     ToTriton Base.
     '''
-    def __init__(self, obj: 'Operator', model_root: str, model_name: str):
+    def __init__(self, obj: 'Operator', model_root: str, model_name: str, op_config: Dict):
         self._obj = obj
         self._model_name = model_name
+        self._op_config = op_config
         self._triton_files = TritonFiles(model_root, self._model_name)
         self._inputs = TritonModelConfigBuilder.get_input_schema(self._obj.input_schema())
         self._outputs = TritonModelConfigBuilder.get_output_schema(self._obj.output_schema())
@@ -102,13 +103,24 @@ class ToTriton(ABC):
         return True
 
     def _prepare_config(self) -> bool:
+        device_ids = self._op_config.get('device_ids')
+        instance_count = self._op_config.get('instance_count', 1)
         config_str = create_modelconfig(
             self._model_name,
             0,
             self._inputs,
             self._outputs,
-            self._backend
+            self._backend,
+            False,
+            None,
+            None,
+            instance_count,
+            device_ids
         )
+        with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
+            f.write(config_str)
+            return True
+
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.write(config_str)
         return True
@@ -124,8 +136,8 @@ class PyOpToTriton(ToTriton):
     PyOp to triton model.
     '''
     def __init__(self, op, model_root, model_name,
-                 op_hub, op_name, init_args):
-        super().__init__(op, model_root, model_name)
+                 op_hub, op_name, init_args, op_config):
+        super().__init__(op, model_root, model_name, op_config)
         self._op_hub = op_hub
         self._op_name = op_name
         self._init_args = init_args
@@ -145,8 +157,8 @@ class PreprocessToTriton(ToTriton):
     '''
     Preprocess to triton model.
     '''
-    def __init__(self, op, model_root, model_name):
-        super().__init__(op.preprocess, model_root, model_name)
+    def __init__(self, op, model_root, model_name, op_config):
+        super().__init__(op.preprocess, model_root, model_name, op_config)
         op_module_info = inspect.getmodule(op)
         self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
         self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
@@ -169,8 +181,8 @@ class PostprocessToTriton(ToTriton):
     '''
     Preprocess and Postprocess to triton model.
     '''
-    def __init__(self, op, model_root, model_name):
-        super().__init__(op.postprocess, model_root, model_name)
+    def __init__(self, op, model_root, model_name, op_config):
+        super().__init__(op.postprocess, model_root, model_name, op_config)
         op_module_info = inspect.getmodule(op)
         self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
         self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
@@ -195,9 +207,64 @@ class ModelToTriton (ToTriton):
 
     Convert model to trt, torchscript or onnx.
     '''
-    def __init__(self, op, model_root, model_name, model_format_priority):
-        super().__init__(op.model, model_root, model_name)
+    def __init__(self, op, model_root, model_name, model_format_priority, op_config):
+        super().__init__(op.model, model_root, model_name, op_config)
         self._model_format_priority = model_format_priority
+
+    def _prepare_config(self) -> bool:
+        '''
+        All model open dynamic_batching.
+        After towhee.dc supports config the batch info, we use the config.
+        example of input and output:
+        {
+            INPUT0': ('TYPE_INT8', [-1, -1, 3]),
+            INPUT1': ('TYPE_FP32', [-1, -1, 3])
+        }
+        '''
+        dynamic_batching = self._op_config.get('dynamic_batching', {})
+        device_ids = self._op_config.get('device_ids')
+        instance_count = self._op_config.get('instance_count', 1)
+        if dynamic_batching:
+            # remove the batch dim
+            inputs = {}
+            for k, v in self._inputs.items():
+                inputs[k] = (v[0], v[1][1:])
+                outputs = {}
+            for k, v in self._outputs.items():
+                outputs[k] = (v[0], v[1][1:])
+            max_batch_size = dynamic_batching.get('max_batch_size', 1)
+            enable_dynamic_batching = True
+            preferred_batch_size = dynamic_batching.get('preferred_batch_size', None)
+            preferred_max_queue_delay_microseconds = dynamic_batching.get('preferred_max_queue_delay_microseconds', None)
+
+            config_str = create_modelconfig(
+                self._model_name,
+                max_batch_size,
+                inputs,
+                outputs,
+                self._backend,
+                enable_dynamic_batching,
+                preferred_batch_size,
+                preferred_max_queue_delay_microseconds,
+                instance_count,
+                device_ids
+            )
+        else:
+            config_str = create_modelconfig(
+                self._model_name,
+                0,
+                self._inputs,
+                self._outputs,
+                self._backend,
+                False,
+                None,
+                None,
+                instance_count,
+                device_ids
+            )
+        with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
+            f.write(config_str)
+            return True
 
     def _prepare_model(self):
         succ = False

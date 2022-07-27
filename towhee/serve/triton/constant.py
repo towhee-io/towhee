@@ -20,3 +20,6 @@ PYOPERATOR = 'PyOperator'
 
 PREPROCESS = 'preprocess'
 POSTPROCESS = 'postprocess'
+
+
+OP_CONFIG = 'op_config'
