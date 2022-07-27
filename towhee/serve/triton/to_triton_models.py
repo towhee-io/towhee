@@ -77,10 +77,10 @@ class ToTriton(ABC):
     '''
     ToTriton Base.
     '''
-    def __init__(self, obj: 'Operator', model_root: str, model_name: str, os_config: Dict):
+    def __init__(self, obj: 'Operator', model_root: str, model_name: str, op_config: Dict):
         self._obj = obj
         self._model_name = model_name
-        self._os_config = os_config
+        self._op_config = op_config
         self._triton_files = TritonFiles(model_root, self._model_name)
         self._inputs = TritonModelConfigBuilder.get_input_schema(self._obj.input_schema())
         self._outputs = TritonModelConfigBuilder.get_output_schema(self._obj.output_schema())
@@ -103,8 +103,8 @@ class ToTriton(ABC):
         return True
 
     def _prepare_config(self) -> bool:
-        device_ids = self._os_config.get('device_ids')
-        instance_count = self._os_config.get('instance_count', 1)
+        device_ids = self._op_config.get('device_ids')
+        instance_count = self._op_config.get('instance_count', 1)
         config_str = create_modelconfig(
             self._model_name,
             0,
@@ -136,8 +136,8 @@ class PyOpToTriton(ToTriton):
     PyOp to triton model.
     '''
     def __init__(self, op, model_root, model_name,
-                 op_hub, op_name, init_args, os_config):
-        super().__init__(op, model_root, model_name, os_config)
+                 op_hub, op_name, init_args, op_config):
+        super().__init__(op, model_root, model_name, op_config)
         self._op_hub = op_hub
         self._op_name = op_name
         self._init_args = init_args
@@ -157,8 +157,8 @@ class PreprocessToTriton(ToTriton):
     '''
     Preprocess to triton model.
     '''
-    def __init__(self, op, model_root, model_name, os_config):
-        super().__init__(op.preprocess, model_root, model_name, os_config)
+    def __init__(self, op, model_root, model_name, op_config):
+        super().__init__(op.preprocess, model_root, model_name, op_config)
         op_module_info = inspect.getmodule(op)
         self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
         self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
@@ -181,8 +181,8 @@ class PostprocessToTriton(ToTriton):
     '''
     Preprocess and Postprocess to triton model.
     '''
-    def __init__(self, op, model_root, model_name, os_config):
-        super().__init__(op.postprocess, model_root, model_name, os_config)
+    def __init__(self, op, model_root, model_name, op_config):
+        super().__init__(op.postprocess, model_root, model_name, op_config)
         op_module_info = inspect.getmodule(op)
         self._init_file = Path(op_module_info.__file__).parent / '__init__.py'
         self._module_name = '.'.join(op_module_info.__name__.split('.')[:-1])
@@ -207,8 +207,8 @@ class ModelToTriton (ToTriton):
 
     Convert model to trt, torchscript or onnx.
     '''
-    def __init__(self, op, model_root, model_name, model_format_priority, os_config):
-        super().__init__(op.model, model_root, model_name, os_config)
+    def __init__(self, op, model_root, model_name, model_format_priority, op_config):
+        super().__init__(op.model, model_root, model_name, op_config)
         self._model_format_priority = model_format_priority
 
     def _prepare_config(self) -> bool:
@@ -221,9 +221,9 @@ class ModelToTriton (ToTriton):
             INPUT1': ('TYPE_FP32', [-1, -1, 3])
         }
         '''
-        dynamic_batching = self._os_config.get('dynamic_batching', {})
-        device_ids = self._os_config.get('device_ids')
-        instance_count = self._os_config.get('instance_count', 1)
+        dynamic_batching = self._op_config.get('dynamic_batching', {})
+        device_ids = self._op_config.get('device_ids')
+        instance_count = self._op_config.get('instance_count', 1)
         if dynamic_batching:
             # remove the batch dim
             inputs = {}

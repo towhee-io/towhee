@@ -22,4 +22,4 @@ PREPROCESS = 'preprocess'
 POSTPROCESS = 'postprocess'
 
 
-OS_CONFIG = 'os_config'
+OP_CONFIG = 'op_config'

@@ -29,14 +29,14 @@ class TestBuilder(unittest.TestCase):
     def test_builder(self):
         test_dag = {
             'start': {
-                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3'], 'os_config': None
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3'], 'op_config': None
             },
             'cb2876f3': {
-                'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13'], 'os_config': {'device_ids': [1]}
+                'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13'], 'op_config': {'device_ids': [1]}
             },
             'fae9ba13': {
                 'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end'],
-                'os_config': {
+                'op_config': {
                     'device_ids': [1, 2],
                     'dynamic_batching': {
                         'max_batch_size': 128,
@@ -46,7 +46,7 @@ class TestBuilder(unittest.TestCase):
                 }
             },
             'end': {
-                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': [], 'os_config': None
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': [], 'op_config': None
             }
         }
         with TemporaryDirectory(dir='./') as root:
