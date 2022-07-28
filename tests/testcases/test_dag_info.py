@@ -92,9 +92,17 @@ class TestDagInfo(unittest.TestCase):
                 self.assertEqual(key, 'start')
 
         expect = {'ac': '123', 'asd': 'wea', 'parallel': None, 'chunksize': None, 'jit': 'numba', 'format_priority': None}
+        expect_no_config = {'parallel': None, 'chunksize': None, 'jit': None, 'format_priority': None}
+        print(dc.dag_info)
         for i in dc.dag_info.values():
             if i['op_name'] == 'towhee/clip':
                 self.assertEqual(i['op_config'], expect)
+            elif i['op_name'] == 'dummy_input':
+                self.assertEqual(i['op_config'], expect_no_config)
+            elif i['op_name'] == 'end':
+                self.assertEqual(i['op_config'], None)
+            else:
+                self.assertEqual(i['op_config']['format_priority'], None)
 
         expect_input = 'img'
         expect_output = ['vec']
