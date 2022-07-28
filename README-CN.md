@@ -10,6 +10,12 @@
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
 </h3>
 
+<h3 align="center">
+  <p style="text-align: center;">
+  <a href="https://github.com/towhee-io/towhee/blob/main/README.md" target="_blank">ENGLISH</a> | <a href="https://github.com/towhee-io/towhee/blob/main/README-CN.md">中文文档</a>
+  </p>
+</h3>
+
 <div class="column" align="middle">
   <a href="https://slack.towhee.io">
     <img src="https://img.shields.io/badge/join-slack-orange?style=flat" alt="join-slack"/>
