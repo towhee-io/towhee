@@ -25,7 +25,14 @@ jobs:
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
+      id: upload_cov
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        fail_ci_if_error: false
+    - name: Retry upload coverage to Codecov
+      uses: codecov/codecov-action@v3.1.0
+      id: retry_upload_cov
+      with:
         files: ./coverage.xml
         fail_ci_if_error: true
+
