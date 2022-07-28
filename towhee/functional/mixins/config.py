@@ -104,12 +104,16 @@ class ConfigMixin:
         """
         Return the config in DC, such as `parallel`, `chunksize`, `jit` and `format_priority`.
         """
-        self._config = {
-            'parallel': self._num_worker,
-            'chunksize': self._chunksize,
-            'jit': self._jit,
-            'format_priority': self._format_priority
-        }
+        self._config = {}
+
+        if hasattr(self, '_num_worker'):
+            self._config['parallel'] = self._num_worker
+        if hasattr(self, '_chunksize'):
+            self._config['chunksize'] = self._chunksize
+        if hasattr(self, '_jit'):
+            self._config['jit'] = self._jit
+        if hasattr(self, '_format_priority'):
+            self._config['format_priority'] = self._format_priority
         return self._config
 
     def pipeline_config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None, format_priority: List[str] = None):
@@ -142,10 +146,14 @@ class ConfigMixin:
         """
         Return the config in DC, such as `parallel`, `chunksize`, `jit` and `format_priority`.
         """
-        self._pipeline_config = {
-            'parallel': self._num_worker,
-            'chunksize': self._chunksize,
-            'jit': self._jit,
-            'format_priority': self._format_priority
-        }
+        self._pipeline_config = {}
+
+        if hasattr(self, '_num_worker'):
+            self._pipeline_config['parallel'] = self._num_worker
+        if hasattr(self, '_chunksize'):
+            self._pipeline_config['chunksize'] = self._chunksize
+        if hasattr(self, '_jit'):
+            self._pipeline_config['jit'] = self._jit
+        if hasattr(self, '_format_priority'):
+            self._pipeline_config['format_priority'] = self._format_priority
         return self._pipeline_config

@@ -43,6 +43,10 @@ def register_dag(f):
                     'output_info': output_info,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
+            if info['op_config'] is None:
+                info['op_config'] = self.get_pipeline_config()
+            else:
+                info['op_config'].update(self.get_pipeline_config())
             self.get_control_plane().dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.

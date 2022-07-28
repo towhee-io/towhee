@@ -77,12 +77,12 @@ class TestDagInfo(unittest.TestCase):
         """
         dc = towhee.dummy_input() \
                 .image_decode['path', 'img']() \
+                .set_jit('numba')\
                 .towhee.clip['img', 'vec'](model_name='clip_vit_b32', modality='image', op_config={'ac':'123', 'asd':'wea'}) \
                 .as_function() 
         
         a = dc.dag_info['end']['parent_ids'][0]
         b = {'model_name': 'clip_vit_b32', 'modality': 'image'}
-
         self.assertEqual(dc.dag_info[a]['init_args'] ,b)
 
         for key, val in dc.dag_info.items():
@@ -91,12 +91,18 @@ class TestDagInfo(unittest.TestCase):
             if val['parent_ids'] == []:
                 self.assertEqual(key, 'start')
 
-        expect = {'ac':'123', 'asd':'wea'}
+        expect = {'ac': '123', 'asd': 'wea', 'parallel': None, 'chunksize': None, 'jit': 'numba', 'format_priority': None}
+        expect_no_config = {'parallel': None, 'chunksize': None, 'jit': None, 'format_priority': None}
+        print(dc.dag_info)
         for i in dc.dag_info.values():
             if i['op_name'] == 'towhee/clip':
                 self.assertEqual(i['op_config'], expect)
-            else:
+            elif i['op_name'] == 'dummy_input':
+                self.assertEqual(i['op_config'], expect_no_config)
+            elif i['op_name'] == 'end':
                 self.assertEqual(i['op_config'], None)
+            else:
+                self.assertEqual(i['op_config']['format_priority'], None)
 
         expect_input = 'img'
         expect_output = ['vec']
