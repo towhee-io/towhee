@@ -45,7 +45,7 @@ def register_dag(f):
                     'child_ids':  self.child_ids}
             if info['op_config'] is None:
                 info['op_config'] = self.get_pipeline_config()
-            elif info['op_config'] is not None:
+            else:
                 info['op_config'].update(self.get_pipeline_config())
             self.get_control_plane().dag[self.id] = info
             return children
