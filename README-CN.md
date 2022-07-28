@@ -36,52 +36,55 @@
 
 &nbsp;
 
-[Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
-We provide several hundred models, algorithms, and transformations as standard pipeline building blocks.
-You can prototype your pipeline with our Pythonic API, and use Towhee to
-automatically optimize it for production-ready environments.
+[Towhee](https://towhee.io) 可以让用户像搭积木一样，轻松地完成 AI 应用程序的构建和落地。
 
-:art:&emsp;**Various Modalities:** We support data processing on different modalities, such as images, videos, text, audio, molecular structures, etc.
+通过使用神经网络数据处理流水线(neural data processing pipeline)的方式，我们可以将 Towhee 社区中数百个现成的模型、算法组合为标准的 AI 流水线。不仅如此，你还可以使用 Towhee 提供的 Pythonic API 来完成各种 AI 流水线和 AI 应用的原型设计，享受自动代码优化，低成本实现生产环境的应用性能优化。
 
-:mortar_board:&emsp;**SOTA Models:** We provide SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, 140+ model architectures, 700+ pretrained models. These include BERT, CLIP, ViT, SwinTransformer, MAE, data2vec, etc.
 
-:package:&emsp;**Data Processing:** Towhee also provides traditional data processing methods that can be used together with neural network models to help you build practical data processing pipelines. Video decoding, audio slicing, frame sampling, feature vector dimension reduction, model ensemble, and database operations are a small sample of the different operators we provide.
+## ✨ 项目特点
 
-:snake:&emsp;**Pythonic API:** Towhee includes a pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, making processing unstructured data as easy as handling tabular data.
+:art:&emsp;**多模态数据支持**：支持不同模态的数据处理，包括：图像、视频、文本、音频、分子结构等。
 
-## What's New
+:mortar_board:&emsp;**SOTA 模型** 提供跨 5 个领域（CV、NLP、多模态、音频、医学）、15 种任务、140 个模型架构、700 个预训练的 SOTA 模型（例如：BERT、CLIP、ViT、SwinTransformer、MAE、data2vec 等）。
 
-**v0.7.1 Jul.1,2022**
-* Add one image embedding model:
+:package:&emsp;**数据处理** 除了神经网络模型，Towhee 同时提供了丰富的传统数据处理算子，包括：视频解码（Video decoding）、音频切片（audio slicing）、帧采样（frame sampling）、特征向量降维（feature vector dimension reduction）、模型融合（model ensemble）、数据库操作（database operations）等。配合各种模型、算法、数据处理方法，用户可以构建端到端的数据处理流水线。
+
+:snake:&emsp;**Pythonic API:** 恪守 “Pythonic”，提供简洁、优雅、地道的 Python API。支持链式调用，能够快速定义富有表现力的数据处理流水线，让你处理非结构化数据和像处理表格数据一样简单。
+
+
+## 📰 近期动态
+
+**v0.7.1 2022年7月1日**
+* 新增一个图片嵌入模型（image embedding）:
 [*MPViT*](https://towhee.io/image-embedding/mpvit).
-* Add two video retrieval models:
+* 添加两个视频检索模型（video retrieval）:
 [*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
 [*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
-* Add FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
+* 添加 FAISS-based ANNSearch 算子: *to_faiss*, *faiss_search*.
 
-**v0.7.0 Jun.24,2022**
+**v0.7.0 2022年6月24日**
 
-* Add six video understanding/classification models:
+* 添加六个视频理解/分类模型（video understanding/classification）
 [*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
 [*TSM*](https://towhee.io/action-classification/tsm), 
 [*Uniformer*](https://towhee.io/action-classification/uniformer), 
 [*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
 [*TimeSformer*](https://towhee.io/action-classification/timesformer), 
 [*MoViNets*](https://towhee.io/action-classification/movinet).
-* Add four video retrieval models:
+* 添加四个视频检索模型（video retrieval）
 [*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
 [*DRL*](https://towhee.io/video-text-embedding/drl), 
 [*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
 [*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
 
 
-**v0.6.1  May.13,2022**
+**v0.6.1 2022年5月13日**
 
-* Add three text-image retrieval models:
+* 添加三个文本图像检索模型（text-image retrieval）：
 [*CLIP*](https://towhee.io/image-text-embedding/clip),
 [*BLIP*](https://towhee.io/image-text-embedding/blip),
 [*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
-* Add six video understanding/classification models from PyTorchVideo:
+* 从 PyTorchVideo 添加六个视频理解/分类模型（video understanding/classification）：
 [*I3D*](https://towhee.io/action-classification/pytorchvideo),
 [*C2D*](https://towhee.io/action-classification/pytorchvideo),
 [*Slow*](https://towhee.io/action-classification/pytorchvideo),
@@ -89,21 +92,20 @@ automatically optimize it for production-ready environments.
 [*X3D*](https://towhee.io/action-classification/pytorchvideo),
 [*MViT*](https://towhee.io/action-classification/pytorchvideo).
 
-## Getting started
+## 🎓 快速入门
 
-Towhee requires Python 3.6+. Towhee can be installed via `pip`:
+Towhee 需要 Python 3.6 及以上的运行环境，可以通过 `pip` 来完成快速安装：
 
 ```bash
-% pip install -U pip  # if you run into installation issues, try updating pip
-% pip install towhee towhee.models
+pip install towhee towhee.models
 ```
 
-Try your first Towhee pipeline. In this example, we show how to create a CLIP-based cross modal retrieval pipeline within 15 lines of code.
+安装就绪后，就能够创建你的第一个 AI 流水线啦。下面示例中，我们使用 15 行左右的代码，来创建一个基于 CLIP 的跨模态检索流水线。
 
 ```python
 import towhee
 
-# create image embeddings and build index
+# 创建 image embeddings 并构建索引
 (
     towhee.glob['file_name']('./*.png')
           .image_decode['file_name', 'img']()
@@ -112,7 +114,7 @@ import towhee
           .to_faiss[('file_name', 'vec')](findex='./index.bin')
 )
 
-# search image by text
+# 通过指定文本进行内容检索
 results = (
     towhee.dc['text'](['puppy Corgi'])
           .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
@@ -121,27 +123,37 @@ results = (
           .select['text', 'results']()
 )
 ```
+
+程序执行完毕，结果如下：
+
 <img src="towhee_example.png" style="width: 60%; height: 60%">
 
-Learn more examples from [Towhee bootcamp](https://codelabs.towhee.io/)
+不够过瘾，想要了解更多例子吗？那么来👉 [Towhee 训练营](https://codelabs.towhee.io/) 👈 看看吧！
 
-## Core Concepts
+## 🚀 核心概念
 
-Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `DataCollection API` and `Engine`.
+Towhee 由四个主要模块组成：“算子（Operators）”、“流水线（Pipelines）”、“数据处理 API（DataCollection API）”和“执行引擎（Engine）”。
 
-- __Operator__: An operator is a single building block of neural data processing pipelines. Different implementations of operators are categorized by tasks, with standard task interface. An operator can be a deep learning model, a data processing method, or a Python function.
+- __算子（Operator）__：算子是构成神经网络数据处理水流线(neural data processing pipeline)的“积木块”（基础组件）。这些基础组件按照任务类型进行组织，每种任务类型都具有标准的调用接口。一个算子可以是某种神经网络模型，某种数据处理方法，或是某个 Python 函数。
 
-- __Pipeline__: A pipeline is composed of several operators. Operators are connected together as a DAG(directed acyclic graph) to create complex functionalities, such as embedding feature extraction, data tagging, cross modal data understanding, etc.
+- __流水线（Pipeline）__：流水线是由若干个算子组成的 DAG（有向无环图）。流水线可以实现比单个算子更复杂的功能，诸如特征向量提取、数据标记、跨模态数据理解等。
 
-- __DataCollection__: A pythonic and method-chaining style API that for building custom pipelines. Pipelines defined by DataColltion API can be either run on notebook locally for fast prototyping, or converting to image docker with end-to-end optimization for production-ready environments. 
+- __数据处理 API（DataCollection）__: DataCollection API 是用于描述流水线的编程接口。基于 DataCollection 定义的流水线，既可以在 Jupyter Notebook 中本地运行，支持快速原型设计，也可以通过自动优化，一键构建出满足生产需要的高性能流水线服务，以及对应的 Docker 镜像。
 
-- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow between individual operators, schedule tasks, and monitor compute resource (CPU/GPU/etc) usage. We provide a basic engine within Towhee to run pipelines on a single-instance machine, and Triton-based engine to run pipelines in docker containers.
+- __执行引擎（Engine）__: 执行引擎负责实例化流水线、任务调度、资源管理，以及运行期性能优化。面向快速原型构建，Towhee 提供了轻量级的本地执行引擎；面向生产环境需求，Towhee 提供了基于 Nvidia Triton 的高性能执行引擎。
 
-## Contributing
+## 🏠 了解 & 加入社区
 
-Remember that writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are some of the many ways you can join our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) for more information.
+**编写代码并不是参与项目的唯一方式！**
 
-Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
+你可以通过很多方式来参与 Towhee 社区：提交问题、回答问题、改进文档、加入社群讨论、参加线下 Meetup 活动等。
+
+你的参与对于项目的持续健康发展至关重要。欢迎查阅🎁[贡献页面](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) 的文档内容，了解更多详细信息。
+
+### 💥 致谢
+
+特别感谢下面的同学为 Towhee 社区做出的贡献 🌹：
+
 <br><!-- Do not remove start of hero-bot --><br>
 <img src="https://img.shields.io/badge/all--contributors-27-orange"><br>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
@@ -173,4 +185,4 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/zhujiming"><img src="https://avatars.githubusercontent.com/u/18031320?v=4" width="30px" /></a>
 <br><!-- Do not remove end of hero-bot --><br>
 
-Looking for a database to store and index your embedding vectors? Check out [Milvus](https://github.com/milvus-io/milvus).
+如果你正在寻找用于存储和检索向量的数据库，不妨看看[Milvus](https://github.com/milvus-io/milvus)。
