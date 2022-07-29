@@ -52,15 +52,12 @@ class Builder:
         model_root (`str`):
             Triton models root.
 
-        model_format_priority (`List(str)`):
-            Try to converter nnoperator's model, support tensorrt, onnx, torchscript.
     '''
-    def __init__(self, dag: Dict, model_root: str, model_format_priority: List[str]):
+    def __init__(self, dag: Dict, model_root: str):
         self.dag = dag
         self._runtime_dag = None
         self._model_root = model_root
         self._ensemble_config = None
-        self._model_format_priority = model_format_priority
 
     def _nnoperator_config(self, op, op_name, node_id, node):
         '''
@@ -84,7 +81,7 @@ class Builder:
 
         model_name = '_'.join([node_id, op_name, 'model']).replace('/', '_')
         converter = ModelToTriton(op, self._model_root,
-                                  model_name, self._model_format_priority, op_config)
+                                  model_name, op_config)
         models.append({
             'model_name': model_name,
             'model_version': 1,
@@ -139,9 +136,10 @@ class Builder:
             return None
 
         if isinstance(op, NNOperator):
-            if hasattr(op, 'model') and hasattr(op.model, 'supported_formats') and op.model.supported_formats:
+            format_priority = node.get(constant.OP_CONFIG, {}).get(constant.FORMAT_PRIORITY, [])
+            op_support_format = op.model.supported_formats if hasattr(op, 'model') and hasattr(op.model, 'supported_formats') else []
+            if set(format_priority) & set(op_support_format):
                 return self._nnoperator_config(op, op_name, node_id, node)
-
         return self._pyop_config(op, node_id, node)
 
     @staticmethod
@@ -198,11 +196,10 @@ def main():
     if len(sys.argv) != 4:
         sys.exit(-1)
 
-    dag_file, model_root, model_format_priority_str = sys.argv[1], sys.argv[2], sys.argv[3]
+    dag_file, model_root = sys.argv[1], sys.argv[2]
     with open(dag_file, 'rt', encoding='utf-8') as f:
         dag = json.load(f)
-        model_format_priority = model_format_priority_str.split(',')
-        if not Builder(dag, model_root, model_format_priority).build():
+        if not Builder(dag, model_root).build():
             sys.exit(-1)
     sys.exit(0)
 
