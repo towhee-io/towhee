@@ -21,7 +21,7 @@ import logging
 
 from towhee.serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
 from towhee.serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
-import towhee.serve.triton.constant as constant
+from towhee.serve.triton import constant
 
 logger = logging.getLogger()
 

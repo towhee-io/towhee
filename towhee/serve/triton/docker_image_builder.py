@@ -41,9 +41,8 @@ class DockerImageBuilder:
             json.dump(dag, f)
 
     def build_image(self, workspace: Path):
-        cmd = 'cd {} && docker build -t {} --build-arg MODEL_FORMAT_PRIORITY={} .'.format(workspace,
-                                                                                          self._image_name,
-                                                                                          ','.join(self._model_format_priority))
+        cmd = 'cd {} && docker build -t {} .'.format(workspace,
+                                                     self._image_name)
         subprocess.run(cmd, shell=True, check=True)
 
     def docker_file(self) -> Path:
