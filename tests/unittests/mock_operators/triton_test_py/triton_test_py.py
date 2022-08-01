@@ -3,13 +3,13 @@ from towhee._types import Image
 from towhee.operator import PyOperator
 
 
-class TritonPy(PyOperator):
+class TritonTestPy(PyOperator):
 
     def __call__(self, image_path: str):
-        return Image(np.random.rand((300, 300, 3), 'BGR'))
+        return Image(np.random.rand((200, 300, 3), 'BGR'))
 
     def input_schema(self):
-        return [(str, (1, 2))]
+        return [(str, (1, 2)), (np.float32, (512, ))]
 
     def output_schema(self):
-        return [(Image, (-1, -1, 3))]
+        return [(Image, (-1, -1, 4))]

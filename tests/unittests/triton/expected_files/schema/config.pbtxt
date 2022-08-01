@@ -1,0 +1,155 @@
+name: "pipeline"
+platform: "ensemble"
+max_batch_size: 0
+
+input [
+  {
+    name: "INPUT0"
+    data_type: TYPE_STRING
+    dims: [1, 2]
+  }
+]
+
+output [
+  {
+    name: "OUTPUT0"
+    data_type: TYPE_INT8
+    dims: [-1, -1, 5]
+  }
+]
+
+output [
+  {
+    name: "OUTPUT1"
+    data_type: TYPE_STRING
+    dims: [1]
+  }
+]
+
+output [
+  {
+    name: "OUTPUT2"
+    data_type: TYPE_FP32
+    dims: [-1, 512]
+  }
+]
+
+ensemble_scheduling: {
+
+  step [
+    {
+      model_name: "e4b074eb_local_triton_py"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "INPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "e4b074eb_OUTPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT1"
+        value: "e4b074eb_OUTPUT1"
+      }
+    },
+    {
+      model_name: "db5377c3_local_triton_nnop_preprocess"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "e4b074eb_OUTPUT0"
+      }
+
+      input_map {
+        key: "INPUT1"
+        value: "e4b074eb_OUTPUT1"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "db5377c3_OUTPUT0"
+      }
+    },
+    {
+      model_name: "db5377c3_local_triton_nnop_model"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "db5377c3_OUTPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "db5377c3_local_triton_nnop_model_OUTPUT0"
+      }
+    },
+    {
+      model_name: "db5377c3_local_triton_nnop_postprocess"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "db5377c3_local_triton_nnop_model_OUTPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "OUTPUT2"
+      }
+    },
+    {
+      model_name: "a5c012ac_local_triton_test_py"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "INPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "a5c012ac_OUTPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT1"
+        value: "a5c012ac_OUTPUT1"
+      }
+    },
+    {
+      model_name: "qf0239us_local_triton_test2_py"
+      model_version: 1
+
+      input_map {
+        key: "INPUT0"
+        value: "a5c012ac_OUTPUT0"
+      }
+
+      input_map {
+        key: "INPUT1"
+        value: "a5c012ac_OUTPUT1"
+      }
+
+      output_map {
+        key: "OUTPUT0"
+        value: "OUTPUT0"
+      }
+
+      output_map {
+        key: "OUTPUT1"
+        value: "OUTPUT1"
+      }
+
+      output_map {
+        key: "OUTPUT2"
+        value: "OUTPUT2"
+      }
+    }
+  ]
+}

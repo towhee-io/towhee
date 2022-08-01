@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Dict, List, Tuple, Any
+import copy
 
 import towhee.serve.triton.type_gen as tygen
 
@@ -185,27 +186,19 @@ class EnsembleConfigBuilder:
         self._max_batch_size = max_batch_size
         self._head = None
         self._tail = None
+        self._ready_node = set(['start'])
 
     def _process_dag(self):
         '''
-        Find out head and tail.
-        Add input_map and output_map for every node.
+        Find out head and tail
+        add input_map and output_map for every node.
         '''
-        all_keys = list(self._dag.keys())
-        no_root = []
-        for k, v in self._dag.items():
-            if v['child_ids']:
-                no_root.extend(v['child_ids'])
-                for name in v['child_ids']:
-                    if self._dag[name].get('parent_ids') is None:
-                        self._dag[name]['parent_ids'] = []
-                    self._dag[name]['parent_ids'].append(k)
-            else:
+        for v in self._dag.values():
+            if v['child_ids'] == []:
                 self._tail = v
-        head = set(all_keys) - set(no_root)
-        assert len(head) == 1
-        self._head = self._dag[list(head)[0]]
-        self._dag[list(head)[0]]['parent_ids'] = []
+            if v['parent_ids'] == ['start']:
+                self._head = v 
+                self._ready_node.add(v['id'])
         self._head['input_map'] = [(input, input) for input in self._head['input'].keys()]
         self._tail['output_map'] = [(output, output) for output in self._tail['output'].keys()]
 
@@ -219,18 +212,63 @@ class EnsembleConfigBuilder:
             v['output_map'] = output_map
 
         # add input_map
-        for name, v in self._dag.items():
-            if len(v['parent_ids']) == 0:
-                continue
-            input_map = []
-            assert len(v['parent_ids']) == 1
-            parent_id = v['parent_ids'][0]
-            parent_outputs = self._dag[parent_id]['output_map']
-            inputs = list(v['input'].keys())
-            assert len(parent_outputs) == len(inputs)
-            for i in range(len(parent_outputs)):
-                input_map.append((inputs[i], parent_outputs[i][1]))
-            v['input_map'] = input_map
+        all_keys = set(list(self._dag.keys()))
+        all_keys.add('start')
+        while True:
+            for i, j in self._dag.items():
+                if len(j['parent_ids']) == 0:
+                    continue
+                if 'input_map' in j:
+                    continue
+                if set(j['parent_ids']) < (self._ready_node):
+                    input_map = []
+                    if 'input_map' not in j:
+                        if  'input_info' in j:
+                            for input, value in j['input'].items():
+                                for pid in j['parent_ids']:
+                                    if pid == 'start':
+                                        for output_id, output_value in self._head['input'].items():
+                                            if value == output_value:
+                                                input_map.append((input, output_id))
+                                                break
+                                    else:
+                                        for output_id, output_value in self._dag[pid]['output'].items():
+                                            if value == output_value:
+                                                input_map.append((input, '_'.join([str(pid), output_id])))
+                                                break
+                            j['input_map'] = input_map
+                            self._ready_node.add(i)
+                        else:
+                            for input, value in j['input'].items():
+                                pid = j['parent_ids'][0]
+                                for output_id, output_value in self._dag[pid]['output'].items():
+                                    if value == output_value:
+                                        input_map.append((input, '_'.join([str(pid), output_id])))
+                                        break
+                            j['input_map'] = input_map
+                            self._ready_node.add(i)
+            if self._ready_node == all_keys:
+                break
+        
+        # change final output
+        dag_value = copy.deepcopy(self._dag)
+        for k, v in dag_value.items():
+            for i in v['output_map']:
+                sign_has_output = False
+                for j in v['child_ids']:
+                    for a in dag_value[j]['input_map']:
+                        if a[1] == i[1]:
+                            sign_has_output = True
+                            real_value = v['output'][i[0]]
+                            break
+                if sign_has_output:
+                    continue
+                elif i[0] != i[1]:
+                    m = len(self._tail['output_map'])
+                    self._dag[k]['output_map'].append((i[0], 'OUTPUT'+str(m)))
+                    self._dag[k]['output_map'].remove(i)
+                    self._tail['output']['OUTPUT'+str(m)] = real_value
+                    self._tail['output_map'].append(('OUTPUT'+str(m), 'OUTPUT'+str(m)))
 
     def _gen_header(self):
         config = 'name: "{}"\n'.format(self._model_name)
