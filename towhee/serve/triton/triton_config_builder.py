@@ -197,7 +197,7 @@ class EnsembleConfigBuilder:
             if v['child_ids'] == []:
                 self._tail = v
             if v['parent_ids'] == ['start']:
-                self._head = v 
+                self._head = v
                 self._ready_node.add(v['id'])
         self._head['input_map'] = [(input, input) for input in self._head['input'].keys()]
         self._tail['output_map'] = [(output, output) for output in self._tail['output'].keys()]
@@ -224,32 +224,32 @@ class EnsembleConfigBuilder:
                     input_map = []
                     if 'input_map' not in j:
                         if  'input_info' in j:
-                            for input, value in j['input'].items():
+                            for key, value in j['input'].items():
                                 for pid in j['parent_ids']:
                                     if pid == 'start':
                                         for output_id, output_value in self._head['input'].items():
                                             if value == output_value:
-                                                input_map.append((input, output_id))
+                                                input_map.append((key, output_id))
                                                 break
                                     else:
                                         for output_id, output_value in self._dag[pid]['output'].items():
                                             if value == output_value:
-                                                input_map.append((input, '_'.join([str(pid), output_id])))
+                                                input_map.append((key, '_'.join([str(pid), output_id])))
                                                 break
                             j['input_map'] = input_map
                             self._ready_node.add(i)
                         else:
-                            for input, value in j['input'].items():
+                            for key, value in j['input'].items():
                                 pid = j['parent_ids'][0]
                                 for output_id, output_value in self._dag[pid]['output'].items():
                                     if value == output_value:
-                                        input_map.append((input, '_'.join([str(pid), output_id])))
+                                        input_map.append((key, '_'.join([str(pid), output_id])))
                                         break
                             j['input_map'] = input_map
                             self._ready_node.add(i)
             if self._ready_node == all_keys:
                 break
-        
+
         # change final output
         dag_value = copy.deepcopy(self._dag)
         for k, v in dag_value.items():
