@@ -134,13 +134,16 @@ class TestBuilder(unittest.TestCase):
     def test_old_version_nnop(self):
         test_dag = {
             'start': {
-                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3'], 'input_info': None, 'output_info': None, 'parent_ids': []
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3'],
+                'input_info': None, 'output_info': None, 'parent_ids': []
             },
             'cb2876f3': {
-                'op_name': 'local/trion_nnop_oldversion', 'init_args': {}, 'child_ids': ['end'], 'input_info': None, 'output_info': None, 'parent_ids':['start']
+                'op_name': 'local/trion_nnop_oldversion', 'init_args': {}, 'child_ids': ['end'],
+                'input_info': None, 'output_info': None, 'parent_ids':['start']
             },
             'end': {
-                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': [], 'input_info': None, 'output_info': None, 'parent_ids':['cb2876f3']
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': [],
+                'input_info': None, 'output_info': None, 'parent_ids':['cb2876f3']
             }
         }
         with TemporaryDirectory(dir='./') as root:
@@ -245,7 +248,7 @@ class TestBuilder(unittest.TestCase):
                     'output_info': None,
                     'parent_ids': ['qf0239us'],
                     'child_ids': []
-                }      
+                }
             }
         with TemporaryDirectory(dir='./') as root:
             builer = Builder(test_dag, root, ['tensorrt'])
