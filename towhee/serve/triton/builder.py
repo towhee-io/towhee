@@ -193,7 +193,7 @@ class Builder:
 def main():
     import json  # pylint: disable=import-outside-toplevel
     import sys  # pylint: disable=import-outside-toplevel
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 3:
         sys.exit(-1)
 
     dag_file, model_root = sys.argv[1], sys.argv[2]
