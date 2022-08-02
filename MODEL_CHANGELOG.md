@@ -8,6 +8,25 @@ All notable updates to Towhee models will be documented in this file.
 
 
 
+### [0.7.3]  Jul. 27, 2022
+
+Add 5 SOTA models
+
+* **CoCa**
+  * paper: [*CoCa*](https://arxiv.org/pdf/2205.01917.pdf)
+
+* **CoFormer**
+  * paper: [*CoFormer*](https://arxiv.org/pdf/2203.16518.pdf)
+
+* **TransRAC**
+  * paper: [*TransRAC*](https://arxiv.org/pdf/2204.01018.pdf)
+
+* **CVNet**
+  * paper: [*CVNet*](https://arxiv.org/pdf/2204.01458.pdf)
+
+* **MaxViT**
+  * paper: [*MaxViT*](https://arxiv.org/pdf/2204.01697.pdf)
+
 ### [0.7.1]  Jul. 01, 2022
 
 Add 1 vision transformer backbone, 1 text-image retrieval model, 2 video retrieval models
