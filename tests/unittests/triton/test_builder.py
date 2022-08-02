@@ -37,6 +37,7 @@ class TestBuilder(unittest.TestCase):
             'fae9ba13': {
                 'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end'],
                 'op_config': {
+                    'format_priority': ['tensorrt'],
                     'device_ids': [1, 2],
                     'dynamic_batching': {
                         'max_batch_size': 128,
@@ -50,7 +51,7 @@ class TestBuilder(unittest.TestCase):
             }
         }
         with TemporaryDirectory(dir='./') as root:
-            builer = Builder(test_dag, root, ['tensorrt'])
+            builer = Builder(test_dag, root)
             self.assertTrue(builer.build())
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
@@ -99,7 +100,7 @@ class TestBuilder(unittest.TestCase):
             }
         }
         with TemporaryDirectory(dir='./') as root:
-            builer = Builder(test_dag, root, ['tensorrt'])
+            builer = Builder(test_dag, root)
             self.assertTrue(builer.build())
             dst = Path(root) / 'cb2876f3_local_trion_nnop_oldversion' / '1' / 'model.py'
             self.assertTrue(dst.is_file())

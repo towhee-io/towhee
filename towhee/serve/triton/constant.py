@@ -23,3 +23,4 @@ POSTPROCESS = 'postprocess'
 
 
 OP_CONFIG = 'op_config'
+FORMAT_PRIORITY = 'format_priority'

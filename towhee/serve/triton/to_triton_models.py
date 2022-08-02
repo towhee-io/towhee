@@ -21,6 +21,7 @@ import logging
 
 from towhee.serve.triton.triton_config_builder import TritonModelConfigBuilder, create_modelconfig, EnsembleConfigBuilder
 from towhee.serve.triton.python_model_builder import gen_model_from_op, gen_model_from_pickled_callable
+from towhee.serve.triton import constant
 
 logger = logging.getLogger()
 
@@ -207,9 +208,9 @@ class ModelToTriton (ToTriton):
 
     Convert model to trt, torchscript or onnx.
     '''
-    def __init__(self, op, model_root, model_name, model_format_priority, op_config):
+    def __init__(self, op, model_root, model_name, op_config):
         super().__init__(op.model, model_root, model_name, op_config)
-        self._model_format_priority = model_format_priority
+        self._model_format_priority = op_config.get(constant.FORMAT_PRIORITY, [])
 
     def _prepare_config(self) -> bool:
         '''

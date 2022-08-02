@@ -189,6 +189,6 @@ def plot(img1: Union[str, list], img2: list = None):
             plot_img(img2[i])
 
 
-def build_docker_image(dc_pipeline, image_name, format_priority, cuda):
+def build_docker_image(dc_pipeline, image_name, cuda, inference_server='triton'):  # pylint: disable=unused-argument
     from towhee.serve.triton.docker_image_builder import DockerImageBuilder
-    DockerImageBuilder(dc_pipeline, image_name, format_priority, cuda).build()
+    DockerImageBuilder(dc_pipeline, image_name, cuda).build()
