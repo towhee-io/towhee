@@ -26,11 +26,9 @@ class DockerImageBuilder:
     '''
     Build triton image
     '''
-    def __init__(self, towhee_pipeline: 'towhee.dc', image_name: str,
-                 model_format_priority: List[str], cuda: str):
+    def __init__(self, towhee_pipeline: 'towhee.dc', image_name: str, cuda: str):
         self._towhee_pipeline = towhee_pipeline
         self._image_name = image_name
-        self._model_format_priority = model_format_priority
         self._cuda = cuda
 
     def prepare_dag(self, workspace: Path):
