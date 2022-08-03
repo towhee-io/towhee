@@ -136,8 +136,14 @@ class Builder:
             return None
 
         if isinstance(op, NNOperator):
-            format_priority = node.get(constant.OP_CONFIG, {}).get(constant.FORMAT_PRIORITY, [])
+            config = node.get(constant.OP_CONFIG, {})
+            if config is None:
+                config = {}
+            format_priority = config.get(constant.FORMAT_PRIORITY, [])
+            if format_priority is None:
+                format_priority = []
             op_support_format = op.model.supported_formats if hasattr(op, 'model') and hasattr(op.model, 'supported_formats') else []
+
             if set(format_priority) & set(op_support_format):
                 return self._nnoperator_config(op, op_name, node_id, node)
         return self._pyop_config(op, node_id, node)
