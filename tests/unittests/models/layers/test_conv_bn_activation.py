@@ -13,38 +13,47 @@
 # limitations under the License.
 
 import torch
+from torch import nn
 import unittest
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation, Conv3DBNActivation
+
 
 class ConvBNActivationTest(unittest.TestCase):
     def test_conv2d_bn_activation(self):
         """
         Test conv2d bn activation  layer.
         """
-        x=torch.randn(1,3,4,4)
+        x = torch.randn(1, 3, 4, 4)
         model = Conv2dBNActivation(
-                                   in_planes = 3,
-                                   out_planes = 3,
-                                   kernel_size = (2, 2),
-                                   padding = (1, 1),
-                                   stride = (1, 1),
-                                   )
-        y=model(x)
-        print(y.shape)
-        self.assertTrue(y.shape == torch.Size([1,3,5,5]))
+            in_planes=3,
+            out_planes=3,
+            kernel_size=(2, 2),
+            padding=(1, 1),
+            stride=(1, 1),
+            norm_layer=nn.BatchNorm2d,
+            activation_layer=nn.ReLU)
+        y = model(x)
+        # print(y.shape)
+        self.assertTrue(y.shape == torch.Size([1, 3, 5, 5]))
 
     def test_conv3d_bn_activation(self):
         """
         Test conv2d bn activation  layer.
         """
-        x=torch.randn(1,3,3,4,4)
+        x = torch.randn(1, 3, 3, 4, 4)
         model = Conv3DBNActivation(
-                                   in_planes = 3,
-                                   out_planes = 3,
-                                   kernel_size = (2, 2, 2),
-                                   padding = (1, 1, 1),
-                                   stride = (1, 1, 1),
-                                   )
-        y=model(x)
-        print(y.shape)
+            in_planes=3,
+            out_planes=3,
+            kernel_size=(2, 2, 2),
+            padding=(1, 1, 1),
+            stride=(1, 1, 1),
+            norm_layer=nn.BatchNorm3d,
+            activation_layer=nn.ReLU
+        )
+        y = model(x)
+        # print(y.shape)
         self.assertTrue(y.shape == torch.Size([1, 3, 4, 5, 5]))
+
+
+if __name__ == "__main__":
+    unittest.main()
