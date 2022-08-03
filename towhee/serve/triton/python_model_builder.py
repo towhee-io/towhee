@@ -158,6 +158,9 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines.append('')
         lines.append('# load module')
         lines.append(f'module_name = "{self.module_name}"')
+        lines.append('device = "cpu"')
+        lines.append('if args["model_instance_kind"] == "GPU":')
+        lines.append(fmt.intend('device = int(args["model_instance_device_id"])'))
         lines.append(f'path = "{self.python_file_path}"')
         lines.append('spec = importlib.util.spec_from_file_location(module_name, path)')
         lines.append('module = importlib.util.module_from_spec(spec)')
@@ -168,6 +171,10 @@ class PickledCallablePyModelBuilder(PyModelBuilder):
         lines.append(f'pickle_file_path = Path(__file__).parent / "{self.pickle_file_name}"')
         lines.append('with open(pickle_file_path, \'rb\') as f:')
         lines.append(fmt.intend('self.callable_obj = pickle.load(f)'))
+        lines.append(fmt.intend('self.callable_obj._device = device'))
+        lines.append('')
+        lines.append('if hasattr(self.callable_obj, "to_device"):')
+        lines.append(fmt.intend('self.callable_obj.to_device()'))
 
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
@@ -280,11 +287,16 @@ class OpPyModelBuilder(PyModelBuilder):
         lines = []
         lines.append('def initialize(self, args):')
         lines.append('')
+        lines.append('device = "cpu"')
+        lines.append('if args["model_instance_kind"] == "GPU":')
+        lines.append(fmt.intend('device = int(args["model_instance_device_id"])'))
         lines.append('# create op instance')
         lines.append('task = getattr(ops, \'' + self.task_name + '\')')
         lines.append('init_args = ' + json.dumps(self.op_init_args))
         lines.append('self.op = getattr(task, \'' + self.op_name + '\')(' + '**init_args' + ')')
-
+        lines.append('self.op._device = device')
+        lines.append('if hasattr(self.op, "to_device"):')
+        lines.append(fmt.intend('self.op.to_device()'))
         lines = lines[:1] + fmt.intend(lines[1:])
         return fmt.add_line_separator(lines)
 

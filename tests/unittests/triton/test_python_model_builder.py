@@ -78,7 +78,11 @@ class TestPythonModelBuilder(unittest.TestCase):
 
             with open(save_path, 'rt', encoding='utf-8') as gen_f, \
                  open(EXPECTED_FILE_PATH + pyfile_name, 'rt', encoding='utf-8') as expected_f:
-                self.assertListEqual(list(gen_f), list(expected_f))
+                l1 = list(gen_f)
+                l2 = list(expected_f)
+                self.assertTrue(len(l1) == len(l2))
+                for i in range(len(l1)):
+                    self.assertEqual(l1[i].strip(), l2[i].strip())
 
     def test_op_pymodel_builder(self):
         with TemporaryDirectory(dir='./') as gen_file_path:

@@ -10,19 +10,26 @@ import triton_python_backend_utils as pb_utils
 class TritonPythonModel:
 
     def initialize(self, args):
-        
+
         # load module
         module_name = "towhee.operator.triton_nnop"
+        device = "cpu"
+        if args["model_instance_kind"] == "GPU":
+            device = int(args["model_instance_device_id"])
         path = "triton_nnop/__init__.py"
         spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
-        
+
         # create callable object
         pickle_file_path = Path(__file__).parent / "preprocess.pickle"
         with open(pickle_file_path, 'rb') as f:
             self.callable_obj = pickle.load(f)
+            self.callable_obj._device = device
+
+        if hasattr(self.callable_obj, "to_device"):
+            self.callable_obj.to_device()
 
     def execute(self, requests):
         
