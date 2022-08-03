@@ -111,5 +111,16 @@ class TestDagInfo(unittest.TestCase):
                 self.assertEqual(j['input_info'][0][1], expect_input)
                 self.assertEqual(j['output_info'], expect_output)
                 
+    def test_op_config(self):
+        dc = towhee.dummy_input() \
+                .image_decode['path', 'img']() \
+                .set_jit('numba')\
+                .towhee.clip['img', 'vec'](model_name='clip_vit_b32', modality='image', op_config={'format_priority': ['onnx'],
+                                                                                            'ac':'123', 'asd':'wea'}) \
+                .as_function()
+        expect = {'parallel': None, 'chunksize': None, 'jit': 'numba', 'format_priority': ['onnx'], 'ac': '123', 'asd': 'wea'}
+        for i in dc.dag_info.values():
+            if i['op_name'] == 'towhee/clip':
+                self.assertEqual(i['op_config'], expect)
 if __name__ == '__main__':
     unittest.main()
