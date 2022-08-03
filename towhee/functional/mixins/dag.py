@@ -38,15 +38,14 @@ def register_dag(f):
                     'is_stream': self.is_stream,
                     'init_args': self.init_args,
                     'call_args': self.call_args,
-                    'op_config': self.op_config,
+                    'op_config': self.get_pipeline_config(),
                     'input_info': input_info,
                     'output_info': output_info,
                     'parent_ids': self.parent_ids,
                     'child_ids':  self.child_ids}
-            if info['op_config'] is None:
-                info['op_config'] = self.get_pipeline_config()
-            else:
-                info['op_config'].update(self.get_pipeline_config())
+            # if has op_config, update op_config
+            if self.op_config is not None:
+                info['op_config'].update(self.op_config)
             self.get_control_plane().dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.
