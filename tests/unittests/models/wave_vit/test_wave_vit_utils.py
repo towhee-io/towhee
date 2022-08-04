@@ -18,7 +18,7 @@ from towhee.models.wave_vit.wave_vit_utils import IDWT2D, DWT2D
 
 class TestWaveVitUtils(unittest.TestCase):
     """
-    Test svt model
+    Test WaveVitUtils model
     """
 
     def test_IDWT2D(self):
