@@ -14,7 +14,7 @@
 
 from towhee.utils.log import engine_log
 from towhee.hparam import param_scope
-from towhee.engine.factory import ops
+from towhee.engine.factory import ops, op
 from towhee.engine.operator_registry import OperatorRegistry
 
 
@@ -102,10 +102,13 @@ class TowheeCompiler:
 
     def __init__(self, name, index, *arg, **kws):
         from towhee.compiler import jit_compile  # pylint: disable=import-outside-toplevel
-        self._op = getattr(ops, name)[index](*arg, **kws)
+        # self._op = getattr(ops, name)[index](*arg, **kws)
         self._name = name
         self._index = index
         self._compiler = jit_compile()
+        op_name = self._name.replace('_', '-')
+        with param_scope(index=self._index):
+            self._op = op(op_name, 'main', arg, kws)
 
     def set_compiler(self, compiler):
         self._compiler = compiler
@@ -121,8 +124,26 @@ class TowheeCompiler:
             return self._op(*args)
 
     def __call__(self, *arg, **kws):
-        with self._compiler:
-            return self._op.__call__(*arg, **kws)
+        if bool(self._index):
+            res = self.__apply__(*arg)
+
+            # Multi outputs.
+            if isinstance(res, tuple):
+                if not isinstance(self._index[1],
+                                  tuple) or len(self._index[1]) != len(res):
+                    raise IndexError(
+                        f'Op has {len(res)} outputs, but {len(self._index[1])} indices are given.'
+                    )
+                for i, j in zip(self._index[1], res):
+                    setattr(arg[0], i, j)
+            # Single output.
+            else:
+                setattr(arg[0], self._index[1], res)
+
+            return arg[0]
+        else:
+            with self._compiler:
+                return self._op.__call__(*arg, **kws)
 
 
 class CompileMixin:
