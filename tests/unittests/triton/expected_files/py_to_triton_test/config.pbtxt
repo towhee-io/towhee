@@ -1,4 +1,4 @@
-name: "cb2876f3_local_triton_py"
+name: "e4b074eb_local_triton_py"
 backend: "python"
 max_batch_size: 0
 
@@ -6,7 +6,7 @@ input [
   {
     name: "INPUT0"
     data_type: TYPE_STRING
-    dims: [1]
+    dims: [1, 2]
   }
 ]
 

@@ -81,7 +81,8 @@ class TestCreateEnsemble(unittest.TestCase):
                 'output': {
                     'OUTPUT0': ('TYPE_FP32', [16])
                 },
-                'child_ids': [1]
+                'child_ids': [1],
+                'parent_ids':['start']
             },
             1: {
                 'id': 1,
@@ -93,7 +94,8 @@ class TestCreateEnsemble(unittest.TestCase):
                 'output': {
                     'OUTPUT0': ('TYPE_FP32', [16])
                 },
-                'child_ids': [2]
+                'child_ids': [2],
+                'parent_ids':[0]
             },
             2: {
                 'id': 2,
@@ -106,7 +108,8 @@ class TestCreateEnsemble(unittest.TestCase):
                     'OUTPUT0': ('TYPE_FP32', [16,2,3,4]),
                     'OUTPUT1': ('TYPE_FP32', [16])
                 },
-                'child_ids': []
+                'child_ids': [],
+                'parent_ids':[1]
             }
         }
         res = EnsembleConfigBuilder (input_dag, 'mix_nobatch_batch_float32_float32_float32', 8).gen_config()
