@@ -48,11 +48,11 @@ class DWConv(nn.Module):
     DWConv
     """
     def __init__(self, dim=768):
-        super(DWConv, self).__init__()
+        super().__init__()
         self.dw_conv = nn.Conv2d(dim, dim, 3, 1, 1, bias=True, groups=dim)
 
     def forward(self, x, h, w):
-        b, n, c = x.shape
+        b, _, c = x.shape
         x = x.transpose(1, 2).view(b, c, h, w)
         x = self.dw_conv(x)
         x = x.flatten(2).transpose(1, 2)
@@ -75,7 +75,7 @@ class ClassAttention(nn.Module):
         self.apply(init_vit_weights)
 
     def forward(self, x):
-        b, n, c = x.shape
+        b, n, _ = x.shape
         kv = self.kv(x).reshape(b, n, 2, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         k, v = kv[0], kv[1]
         q = self.q(x[:, :1, :]).reshape(b, self.num_heads, 1, self.head_dim)
