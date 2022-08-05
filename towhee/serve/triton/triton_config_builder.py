@@ -18,10 +18,11 @@ import copy
 import towhee
 import towhee.serve.triton.type_gen as tygen
 
-def find_output_index(schemaList: List[Tuple[Any, Tuple]], schema: Tuple[Any, Tuple]) -> List:
+def find_output_index(schema_list: List[Tuple[Any, Tuple]], schema: Tuple[Any, Tuple]) -> List:
+    # pylint: disable=protected-access
     index = 0
     res = []
-    for i in schemaList:
+    for i in schema_list:
         if i[0] == towhee._types.Image:
             add = 2
         elif i[0] == towhee.types.VideoFrame or i[0] == towhee.types.AudioFrame:
