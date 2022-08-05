@@ -67,7 +67,7 @@ else:
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(exclude=['*test*', 'towhee.models*']),
           namespace_package = ['towhee'],
-          package_data={'towhee.tests.test_util': ['*.yaml']},
+          package_data={'towhee.tests.test_util': ['*.yaml'], 'towhee.serve.triton.dockerfiles': ['*']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': [
