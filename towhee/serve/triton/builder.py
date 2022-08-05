@@ -15,6 +15,7 @@
 from typing import Dict
 import traceback
 import logging
+import copy
 
 from towhee import ops
 from towhee.operator import NNOperator
