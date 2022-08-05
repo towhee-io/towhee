@@ -1,4 +1,4 @@
-name: "fae9ba13_local_triton_nnop_model"
+name: "db5377c3_local_triton_nnop_model"
 backend: "tensorrt"
 max_batch_size: 128
 
