@@ -99,8 +99,6 @@ output [
 ]\n'''.format(output_name, data_type, shape)
 
     if device_ids is not None:
-        if instance_count <= len(device_ids):
-            instance_count = len(device_ids)
         config += '''
 instance_group [
     {{
