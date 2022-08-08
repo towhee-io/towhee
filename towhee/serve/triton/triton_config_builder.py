@@ -251,7 +251,7 @@ class EnsembleConfigBuilder:
                             for v in j['input_info']:
                                 pid = v[0]
                                 if pid == 'start':
-                                    assert len(j['input']) != len(self._head['input'])
+                                    assert len(j['input']) == len(self._head['input'])
                                     input_map = [(input, input) for input in self._head['input'].keys()]
                                 else:
                                     schema_list = self._dag[pid]['output_schema']
