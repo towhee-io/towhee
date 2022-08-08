@@ -9,7 +9,7 @@ class TritonTestPy(PyOperator):
         return Image(np.random.rand((200, 300, 3), 'BGR'))
 
     def input_schema(self):
-        return [(str, (1, 2)), (np.float32, (512, ))]
+        return [(str, (1,))]
 
     def output_schema(self):
-        return [(Image, (-1, -1, 4))]
+        return [(Image, (-1, -1, 3))]
