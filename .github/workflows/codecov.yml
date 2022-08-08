@@ -15,6 +15,7 @@ jobs:
         conda env remove -n towhee-ut
         conda create -n towhee-ut python=3.8
         conda activate towhee-ut
+        pip list
         conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         pip install coverage pytest pytest-xdist
         pip install -r test_requirements.txt
