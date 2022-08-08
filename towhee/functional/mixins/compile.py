@@ -105,8 +105,8 @@ class TowheeCompiler:
         # self._op = getattr(ops, name)[index](*arg, **kws)
         self._name = name
         self._index = index
-        self._compiler = jit_compile()
-        op_name = self._name.replace('_', '-')
+        self._compiler = jit_compile(feature=True)
+        op_name = self._name.replace('.', '/').replace('_', '-')
         with param_scope(index=self._index):
             self._op = op(op_name, 'main', arg, kws)
 
