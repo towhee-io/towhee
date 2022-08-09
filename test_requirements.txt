@@ -27,4 +27,5 @@ faiss-cpu
 numba
 tritonclient
 geventhttpclient
+protobuf<=3.20.0
 PyWavelets
