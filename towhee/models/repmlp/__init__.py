@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from .blocks import *
+from .repmlp import *
