@@ -16,14 +16,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import torch.cuda
+
 from torch import nn
 import torch.utils.checkpoint as torch_checkpoint
 
 from towhee.models.layers.ffn import FFNBlock
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from .blocks import RepMLPBlock
-from .configs import get_configs
+from towhee.models.repmlp import RepMLPBlock
 
 
 class RepMLPNetUnit(nn.Module):
@@ -179,24 +178,3 @@ class RepMLPNet(nn.Module):
             if hasattr(m, 'local_inject'):
                 m.local_inject()
 
-
-def create_model(
-        model_name: str,
-        pretrained: bool = False,
-        checkpoint_path: str = None,
-        device: str = None,
-        **kwargs
-):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    cfg = get_configs(model_name)
-    cfg.update(**kwargs)
-    model = RepMLPNet(**cfg).to(device)
-
-    if pretrained:
-        assert checkpoint_path, 'Checkpoint path is mandatory for pretrained model.'
-        state_dict = torch.load(checkpoint_path, map_location=device)
-        model.load_state_dict(state_dict)
-
-    model.eval()
-    return model
