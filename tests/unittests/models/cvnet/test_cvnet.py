@@ -24,7 +24,9 @@ class TestCVNet(unittest.TestCase):
     key_image = torch.randn(1, 3, 24, 24)
 
     def test_cvnet_r101(self):
-
+        if torch.cuda.is_available() is True:
+            self.query_image = self.query_image.cuda()
+            self.key_image = self.key_image.cuda()
         model = cvnet.create_model(
             model_name='CVNet_R101',
             pretrained=False, reset_depth=101, reduction_dim=2048)
@@ -40,6 +42,9 @@ class TestCVNet(unittest.TestCase):
         self.assertTrue(final_score.shape == (1, 1))
 
     def test_cvnet_r50(self):
+        if torch.cuda.is_available() is True:
+            self.query_image = self.query_image.cuda()
+            self.key_image = self.key_image.cuda()
         model = cvnet.create_model(
             model_name='CVNet_R50',
             pretrained=False, reset_depth=50, reduction_dim=2048)

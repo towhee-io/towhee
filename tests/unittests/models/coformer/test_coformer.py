@@ -24,10 +24,11 @@ class CoFormertTest(unittest.TestCase):
         """
         Test CoFormer model.
         """
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         model = create_model(model_name = 'coformer', vidx_ridx = vidx_ridx)
-        x = torch.randn(1,3,40,40)
+        x = torch.randn(1,3,40,40).to(device)
         x = nested_tensor_from_tensor_list(x)
-        output = model(x,inference=True)
+        output = model(x, inference=True)
         pred_verb = output['pred_verb'][0]
         pred_noun = output['pred_noun_3'][0]
         pred_bbox = output['pred_bbox'][0]
@@ -36,3 +37,7 @@ class CoFormertTest(unittest.TestCase):
         self.assertTrue(pred_noun.shape == torch.Size([6, 9929]))
         self.assertTrue(pred_bbox.shape == torch.Size([6, 4]))
         self.assertTrue(pred_bbox_conf.shape == torch.Size([6, 1]))
+
+
+if __name__ == '__main__':
+    unittest.main()

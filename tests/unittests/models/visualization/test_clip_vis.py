@@ -38,7 +38,7 @@ class TestCLIPAttention(unittest.TestCase):
         )
         mock_img = Image.new(mode="RGB", size=(20, 20))
         text_list = ["This is a mock text."]
-        show_attention_for_clip(model, mock_img, text_list)
+        show_attention_for_clip(model, mock_img, text_list, device="cpu")
 
 
 if __name__ == "__main__":
