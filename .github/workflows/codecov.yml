@@ -16,6 +16,7 @@ jobs:
         conda create -n towhee-ut python=3.8
         conda activate towhee-ut
         conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+        conda run -n towhee-ut pip install torch==1.8.0+cu101 -f https://download.pytorch.org/whl/cu101/torch_stable.html
         conda run -n towhee-ut pip install coverage pytest pytest-xdist
         conda run -n towhee-ut pip install -r test_requirements.txt
         conda run -n towhee-ut coverage erase
