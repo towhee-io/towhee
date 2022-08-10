@@ -13,6 +13,7 @@
 # limitations under the License.
 import unittest
 import matplotlib
+import torch
 
 from pathlib import Path
 from PIL import Image
@@ -28,17 +29,19 @@ class TestCLIPAttention(unittest.TestCase):
     test CLIP attention visualization
     """
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     def test_attention(self):
         model = clip.create_model(
             model_name="clip_vit_b32",
             pretrained=False,  # Use True in practice
-            device="cpu",
+            device=self.device,
             jit=False,
             vis=True
         )
         mock_img = Image.new(mode="RGB", size=(20, 20))
         text_list = ["This is a mock text."]
-        show_attention_for_clip(model, mock_img, text_list, device="cpu")
+        print(model)
+        show_attention_for_clip(model, mock_img, text_list, device=self.device)
 
 
 if __name__ == "__main__":
