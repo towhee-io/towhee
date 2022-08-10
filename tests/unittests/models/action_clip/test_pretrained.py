@@ -22,7 +22,8 @@ class TestPretrained(unittest.TestCase):
     """
     Test ActionClip model with pretrained clip
     """
-    video = torch.ones(1, 8, 3, 224, 224)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    video = torch.ones(1, 8, 3, 224, 224).to(device)
     text = ["a", "b"]
     model = action_clip.create_model(clip_model="clip_vit_b32", pretrained=False, jit=True)
 

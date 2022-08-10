@@ -501,7 +501,9 @@ class CLIP(nn.Module):
     def encode_image(self, image):
         return self.visual(image.type(self.dtype))
 
-    def encode_text(self, text, clip4clip=False, return_hidden=False, multilingual=False):
+    def encode_text(self, text, clip4clip=False, return_hidden=False, multilingual=False, device=None):
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
         if multilingual:
             assert self.multilingual_model is not None, "Multilingual is not supported yet."
             assert isinstance(text[0], str), "Multilingual is only supported for inputs in text or list of texts."
@@ -520,7 +522,9 @@ class CLIP(nn.Module):
             return x
         else:
             if isinstance(text[0], str):
-                text = tokenize(text)
+                text = tokenize(text).to(device)
+            else:
+                text = text.to(device)
             if clip4clip:
                 x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
 
@@ -551,9 +555,9 @@ class CLIP(nn.Module):
 
             return x
 
-    def forward(self, image, text, multilingual=False):
+    def forward(self, image, text, multilingual=False, device=None):
         image_features = self.encode_image(image)
-        text_features = self.encode_text(text, multilingual=multilingual)
+        text_features = self.encode_text(text, multilingual=multilingual, device=device)
         # normalized features
         image_features = image_features / image_features.norm(dim=1, keepdim=True)
         text_features = text_features / text_features.norm(dim=1, keepdim=True)
@@ -604,14 +608,14 @@ def create_model(
     if model_name is None:
         if pretrained:
             raise AttributeError("Fail to load pretrained model: no model name is specified.")
-        model = CLIP(**kwargs)
+        model = CLIP(**kwargs).to(device)
     else:
         configs = get_configs(model_name)
         configs.update(**kwargs)
         if "url" in configs:
             url = configs["url"]
             configs.pop("url")
-        model = CLIP(**configs)
+        model = CLIP(**configs).to(device)
 
         if pretrained:
             if weights_path:
@@ -639,7 +643,7 @@ def create_model(
                 state_dict = torch.load(local_path, map_location="cpu")
 
             if not jit:
-                clip_model = CLIP(**configs)
+                clip_model = CLIP(**configs).to(device)
                 for key in ["input_resolution", "context_length", "vocab_size"]:
                     if key in state_dict:
                         del state_dict[key]

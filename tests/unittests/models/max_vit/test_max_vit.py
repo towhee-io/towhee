@@ -21,6 +21,9 @@ class MaxVitUtilsTest(unittest.TestCase):
     def test_max_vit(self):
 
         data = torch.rand(1, 3, 224, 224)
+        if torch.cuda.is_available():
+            data = data.cuda()
+
         model = create_model(model_name='max_vit_tiny')
         output = model(data)
         self.assertEqual(output.shape, (1, 1000))

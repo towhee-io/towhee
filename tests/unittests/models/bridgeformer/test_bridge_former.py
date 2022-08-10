@@ -19,15 +19,16 @@ from towhee.models.frozen_in_time.frozen_utils import sim_matrix
 
 class BridgeFormerTest(unittest.TestCase):
     # (batch，frames，channels，height， width)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     image_size = 32
     patch_size = 16
     in_chans = 3
     text_len = 4
     num_frames = 4
-    dummy_video = torch.randn(1, num_frames, in_chans, image_size, image_size)
+    dummy_video = torch.randn(1, num_frames, in_chans, image_size, image_size).to(device)
     dummy_text = {}
-    input_ids = torch.randint(1, 10, size=(1, text_len))
-    attention_mask = torch.ones(1, text_len, dtype=torch.int)
+    input_ids = torch.randint(1, 10, size=(1, text_len)).to(device)
+    attention_mask = torch.ones(1, text_len, dtype=torch.int).to(device)
     dummy_text["input_ids"] = input_ids
     dummy_text["attention_mask"] = attention_mask
     dummy_ans = {"input_ids": input_ids, "attention_mask": attention_mask}

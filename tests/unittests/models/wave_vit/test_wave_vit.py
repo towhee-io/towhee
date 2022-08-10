@@ -20,12 +20,14 @@ class TestWaveVit(unittest.TestCase):
     """
     Test WaveVit model
     """
-    query_image = torch.randn(1, 3, 224, 224)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    query_image = torch.randn(1, 3, 224, 224).to(device)
 
     def test_forward_feature(self):
         model = create_model(model_name="wave_vit_s",
                              pretrained=False,
-                             token_label=False)
+                             token_label=False,
+                             device=self.device)
 
         out = model(self.query_image)
         self.assertTrue(out.shape, (1, 1000))
@@ -33,7 +35,8 @@ class TestWaveVit(unittest.TestCase):
     def test_forward(self):
         model = create_model(model_name="wave_vit_s",
                              pretrained=False,
-                             token_label=True)
+                             token_label=True,
+                             device=self.device)
         out = model(self.query_image)
         self.assertTrue(out.shape, (1, 1000))
 

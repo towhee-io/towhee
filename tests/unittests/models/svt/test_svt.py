@@ -20,8 +20,9 @@ class TestSVT(unittest.TestCase):
     """
     Test svt model
     """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     def test_svt(self):
-        video = torch.randn(1, 3, 8, 32, 32)
+        video = torch.randn(1, 3, 8, 32, 32).to(self.device)
         model = svt.create_model(
             model_name='svt_vitb_k400',
             pretrained=False,

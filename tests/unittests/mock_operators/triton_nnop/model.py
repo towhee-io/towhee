@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-import logging
 
-logger = logging.getLogger()
 
 
 class MockModel:
@@ -36,7 +34,7 @@ class Model:
         return self._model(image)
 
     def save_model(self, model_type, output_file):
-        logger.info(model_type, output_file)
+        # pylint: disable=unused-argument
         return True
 
     @property
