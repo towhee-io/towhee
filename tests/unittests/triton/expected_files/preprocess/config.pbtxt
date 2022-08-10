@@ -1,4 +1,4 @@
-name: "fae9ba13_local_triton_nnop_preprocess"
+name: "db5377c3_local_triton_nnop_preprocess"
 backend: "python"
 max_batch_size: 0
 
@@ -22,7 +22,7 @@ output [
   {
     name: "OUTPUT0"
     data_type: TYPE_FP32
-    dims: [1, 3, 224, 224]
+    dims: [-1, 3, 224, 224]
   }
 ]
 

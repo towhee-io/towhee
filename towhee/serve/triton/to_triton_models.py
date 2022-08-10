@@ -95,6 +95,14 @@ class ToTriton(ABC):
     def outputs(self) -> Dict:
         return self._outputs
 
+    @property
+    def input_schema(self) -> Dict:
+        return self._obj.input_schema()
+
+    @property
+    def output_schema(self) -> Dict:
+        return self._obj.output_schema()
+
     def _create_model_dir(self) -> bool:
         self._triton_files.root.mkdir(parents=True, exist_ok=True)
         self._triton_files.model_path.mkdir(parents=True, exist_ok=True)

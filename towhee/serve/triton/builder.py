@@ -15,6 +15,7 @@
 from typing import Dict
 import traceback
 import logging
+import copy
 
 from towhee import ops
 from towhee.operator import NNOperator
@@ -76,7 +77,9 @@ class Builder:
                 'model_version': 1,
                 'converter': converter,
                 'input': converter.inputs,
-                'output': converter.outputs
+                'output': converter.outputs,
+                'input_schema': converter.input_schema,
+                'output_schema': converter.output_schema
             })
 
         model_name = '_'.join([node_id, op_name, 'model']).replace('/', '_')
@@ -87,7 +90,9 @@ class Builder:
             'model_version': 1,
             'converter': converter,
             'input': converter.inputs,
-            'output': converter.outputs
+            'output': converter.outputs,
+            'input_schema': converter.input_schema,
+            'output_schema': converter.output_schema
         })
         if hasattr(op, constant.POSTPROCESS):
             model_name = '_'.join([node_id, op_name, 'postprocess']).replace('/', '_')
@@ -98,7 +103,9 @@ class Builder:
                 'model_version': 1,
                 'converter': converter,
                 'input': converter.inputs,
-                'output': converter.outputs
+                'output': converter.outputs,
+                'input_schema': converter.input_schema,
+                'output_schema': converter.output_schema
             })
         models[0]['id'] = node_id
         for i in range(1, len(models)):
@@ -106,6 +113,22 @@ class Builder:
         models[-1]['child_ids'] = node['child_ids']
         for i in range(len(models) - 1):
             models[i]['child_ids'] = [models[i + 1]['id']]
+        models[0]['parent_ids'] = node['parent_ids']
+        for i in range(1, len(models)):
+            models[i]['parent_ids'] = [models[i-1]['id']]
+        models[0]['input_info'] = node['input_info']
+        models[-1]['output_info'] = node['output_info']
+
+        # fix child_node's parent_ids and input_info
+        for i in node['child_ids']:
+            self._runtime_dag[i]['parent_ids'].remove(node['id'])
+            self._runtime_dag[i]['parent_ids'].append(models[-1]['id'])
+            copy_node = copy.deepcopy(self._runtime_dag[i])
+            for j in copy_node['input_info']:
+                if j[0] == node['id']:
+                    self._runtime_dag[i].remove(j)
+                    self._runtime_dag[i].append(tuple([models[-1]['id'],j[1]]))
+
         return dict((model['id'], model) for model in models)
 
     def _pyop_config(self, op: 'Operator', node_id: str, node: Dict) -> Dict:
@@ -123,7 +146,12 @@ class Builder:
             'converter': converter,
             'input': converter.inputs,
             'output': converter.outputs,
-            'child_ids': node['child_ids']
+            'input_info': node['input_info'],
+            'output_info': node['output_info'],
+            'input_schema': converter.input_schema,
+            'output_schema': converter.output_schema,
+            'child_ids': node['child_ids'],
+            'parent_ids': node['parent_ids']
         }}
         return config
 
@@ -183,6 +211,10 @@ class Builder:
             self._runtime_dag.update(config)
         return True
 
+    def _check(self) -> bool:
+        #TODO: Check preprocess input and postprocess output
+        return True
+
     def _build(self) -> bool:
         EnsembleToTriton(self._runtime_dag, self._model_root, 'pipeline', 0).to_triton()
         for _, info in self._runtime_dag.items():
@@ -192,6 +224,8 @@ class Builder:
     def build(self):
         if self._runtime_dag is None:
             if not self.load():
+                return False
+            if not self._check():
                 return False
         return self._build()
 
