@@ -85,7 +85,6 @@ class TestPostprocessor(unittest.TestCase):
                                                'device_ids': [1, 2]
                                             })
             to_triton.to_triton()
-
             expect_root = Path(EXPECTED_FILE_PATH) / 'postprocess'
             dst = Path(root) / 'db5377c3_local_triton_nnop_postprocess'
             self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))

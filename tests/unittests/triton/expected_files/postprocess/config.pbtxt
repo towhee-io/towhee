@@ -18,14 +18,6 @@ output [
   }
 ]
 
-output [
-  {
-    name: "OUTPUT1"
-    data_type: TYPE_STRING
-    dims: [1]
-  }
-]
-
 instance_group [
     {
         kind: KIND_GPU
