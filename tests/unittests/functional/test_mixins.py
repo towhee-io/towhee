@@ -327,12 +327,12 @@ class TestRemoteMixin(unittest.TestCase):
     Unit test for RemoteMixin
     """
     def test_remote(self):
-        dc_1 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
+        dc_1 = DataCollection([[1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7]])
         remote = dc_1.remote('127.0.0.1:8001', mode='infer', protocol='grpc')
         self.assertEqual(remote[0], None)
 
     def test_remote_error(self):
-        dc_2 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
+        dc_2 = DataCollection([[1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7]])
         remote = dc_2.remote('127.0.0.1:8000', mode='async_infer', protocol='http')
         self.assertEqual(remote[0], None)
 
