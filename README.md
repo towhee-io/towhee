@@ -51,6 +51,16 @@ automatically optimize it for production-ready environments.
 
 ## What's New
 
+**v0.7.3 Jul.27,2022**
+* Add one multimodal (text/image) model:
+[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
+* Add two video models for grounded situation recognition & repetitive action counting:
+[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
+[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
+* Add two SoTA models for image tasks (image retrieval, image classification, etc.):
+[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
+[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
+
 **v0.7.1 Jul.1,2022**
 * Add one image embedding model:
 [*MPViT*](https://towhee.io/image-embedding/mpvit).
