@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Optional
+import logging
 
 import numpy
 
 from towhee.serve.triton.python_backend_wrapper import pb_utils
 from towhee.types import Image, AudioFrame, VideoFrame
+
+logger = logging.getLogger()
 
 
 NUMPY_TYPES = [numpy.uint8, numpy.uint16, numpy.uint32, numpy.uint64,
@@ -35,7 +39,7 @@ class ToTowheeData:
         self._r = r
         self._schema = schema
 
-    def get_towhee_data(self):
+    def get_towhee_data(self) -> Optional[List[any]]:
         input_count = 0
         outputs = []
         for (towhee_type, shape) in self._schema:
@@ -45,7 +49,11 @@ class ToTowheeData:
                 input_key = 'INPUT' + str(input_count)
                 input_count = input_count + 1
                 data.append(pb_utils.get_input_tensor_by_name(self._r, input_key))
-            outputs.append(ToTowheeData.to_towhee_data(data, towhee_type))
+
+            data = ToTowheeData.to_towhee_data(data, towhee_type)
+            if data is None:
+                return None
+            outputs.append(data)
         return outputs
 
     @staticmethod
@@ -83,4 +91,52 @@ class ToTowheeData:
         elif towhee_type in NUMPY_TYPES:
             return triton_data[0].as_numpy()
         else:
+            logger.error('Unsupport type %s' % towhee_type)
+            return None
+
+
+class ToTritonData:
+    '''
+    Convert Towhee data to triton data
+    '''
+    def __init__(self, towhee_datas):
+        self._towhee_datas = towhee_datas
+
+    def get_triton_tensor(self):
+        count = 0
+        outputs = []
+        for data in self._towhee_datas:
+            np_datas = ToTritonData.to_numpy_data(data)
+            if np_datas is None:
+                return None
+            for np_data in np_datas:
+                tensor = pb_utils.Tensor('INPUT' + str(count), np_data)
+                count += 1
+                outputs.append(tensor)
+        return outputs
+
+    @staticmethod
+    def to_numpy_data(towhee_data):
+        if isinstance(towhee_data, Image):
+            return [towhee_data.data, numpy.array([towhee_data.mode.encode('utf-8')], dtype=numpy.object_)]
+        elif isinstance(towhee_data, VideoFrame):
+            return [towhee_data.data,
+                    numpy.array([towhee_data.mode.encode('utf-8')], dtype=numpy.object_),
+                    numpy.array([towhee_data.timestamp]),
+                    numpy.array([towhee_data.key_frame])]
+        elif isinstance(towhee_data, AudioFrame):
+            return [towhee_data.data,
+                    numpy.array([towhee_data.sample_rate]),
+                    numpy.array([towhee_data.timestamp]),
+                    numpy.array([towhee_data.layout.encode('utf-8')], dtype=numpy.object_)]
+        elif isinstance(towhee_data, int):
+            return [numpy.array([towhee_data])]
+        elif isinstance(towhee_data, float):
+            return [numpy.array([towhee_data])]
+        elif isinstance(towhee_data, str):
+            return [numpy.array([towhee_data.encode('utf-8')], dtype=numpy.object_)]
+        elif isinstance(towhee_data, numpy.ndarray):
+            return [towhee_data]
+        else:
+            logger.error('Unsupport type %s' % type(towhee_data))
             return None

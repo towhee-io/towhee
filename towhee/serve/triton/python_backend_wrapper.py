@@ -28,13 +28,20 @@ class MockTritonPythonBackendUtils:
         '''
         return r.get(input_key)
 
+    def Tensor(name, np_data):
+        return MockTritonPythonBackendTensor(name, np_data)
+
 
 class MockTritonPythonBackendTensor:
     '''
     Mock python_backend tensor object.
     '''
-    def __init__(self, data: 'ndarray'):
+    def __init__(self, name:str, data: 'ndarray'):
+        self._name = name
         self._data = data
+
+    def name(self):
+        return self._name
 
     def as_numpy(self):
         return self._data
