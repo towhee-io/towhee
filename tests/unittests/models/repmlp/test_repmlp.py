@@ -15,7 +15,7 @@
 import unittest
 import torch
 
-from towhee.models.repmlp import RepMLPNetUnit, RepMLPNet
+from towhee.models.repmlp import RepMLPNetUnit, RepMLPNet, create_model
 
 class TestRepMLP(unittest.TestCase):
     """
@@ -55,5 +55,16 @@ class TestRepMLP(unittest.TestCase):
         # print(outs.shape)
         self.assertTrue(outs.shape == (1, 10))
 
+<<<<<<< HEAD
+=======
+    def test_create_model(self):
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        data = torch.rand(1, 3, 224, 224).to(device)
+        model = create_model('repmlp_t224', pretrained=False, device=device, num_class=10)
+        outs = model(data)
+        self.assertTrue(outs.shape == (1, 10))
+
+
+>>>>>>> 020f862 (RepMLP: add configs for different model names (#1687))
 if __name__ == '__main__':
     unittest.main()
