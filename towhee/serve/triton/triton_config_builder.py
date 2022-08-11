@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from typing import Dict, List, Tuple, Any
-import copy
 
 import towhee
 import towhee.serve.triton.type_gen as tygen
