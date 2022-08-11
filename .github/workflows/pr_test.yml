@@ -4,7 +4,12 @@ on:
   pull_request:
     branches:
       - main
-
+      # file paths to consider in the event
+    paths:
+      - 'towhee/**'
+      - '!**.md'
+      - 'tests/**'
+      - '.github/workflows/pr_test.yml'
 jobs:
   test:
     name: Test

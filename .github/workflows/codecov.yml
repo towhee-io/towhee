@@ -1,5 +1,16 @@
 name: Workflow for codecov
-on: [push, pull_request]
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    # file paths to consider in the event
+    paths:
+      - 'towhee/**'
+      - '!**.md'
+      - 'tests/**'
+      - '.github/workflows/codecov.yml'
+
 jobs:
   run:
     runs-on: self-hosted
