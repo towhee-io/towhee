@@ -273,26 +273,6 @@ class EnsembleConfigBuilder:
             if self._ready_node == all_keys:
                 break
 
-        # change final output
-        dag_value = copy.deepcopy(self._dag)
-        for k, v in dag_value.items():
-            for i in v['output_map']:
-                sign_has_output = False
-                for j in v['child_ids']:
-                    for a in dag_value[j]['input_map']:
-                        if a[1] == i[1]:
-                            sign_has_output = True
-                            real_value = v['output'][i[0]]
-                            break
-                if sign_has_output:
-                    continue
-                elif i[0] != i[1]:
-                    m = len(self._tail['output_map'])
-                    self._dag[k]['output_map'].append((i[0], 'OUTPUT'+str(m)))
-                    self._dag[k]['output_map'].remove(i)
-                    self._tail['output']['OUTPUT'+str(m)] = real_value
-                    self._tail['output_map'].append(('OUTPUT'+str(m), 'OUTPUT'+str(m)))
-
     def _gen_header(self):
         config = 'name: "{}"\n'.format(self._model_name)
         config += 'platform: "ensemble"\n'
