@@ -20,13 +20,12 @@ try:
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
-        prompt_install('tritonclient')
-        prompt_install('geventhttpclient')
+        prompt_install('tritonclient[all]')
         # pylint: disable=unused-import,ungrouped-imports
         import tritonclient.grpc as grpcclient
         import tritonclient.http as httpclient
         from tritonclient.utils import InferenceServerException
     except:
         from towhee.utils.log import engine_log
-        engine_log.error('tritonclient not found, you can install via `pip install tritonclient`.')
-        raise ModuleNotFoundError('tritonclient not found, you can install via `pip install tritonclient`.') from moduleNotFound
+        engine_log.error('tritonclient not found, you can install via `pip install tritonclient[all]`.')
+        raise ModuleNotFoundError('tritonclient not found, you can install via `pip install tritonclient[all]`.') from moduleNotFound
