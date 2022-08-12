@@ -27,5 +27,5 @@ except ModuleNotFoundError as moduleNotFound:
         from tritonclient.utils import InferenceServerException
     except:
         from towhee.utils.log import engine_log
-        engine_log.error('tritonclient not found, you can install via `pip install tritonclient`.')
-        raise ModuleNotFoundError('tritonclient not found, you can install via `pip install tritonclient`.') from moduleNotFound
+        engine_log.error('tritonclient not found, you can install via `pip install tritonclient[all]`.')
+        raise ModuleNotFoundError('tritonclient not found, you can install via `pip install tritonclient[all]`.') from moduleNotFound
