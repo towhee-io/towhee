@@ -121,7 +121,7 @@ class DataProcessingMixin:
         return self._factory(filter(lambda _: random.random() < ratio, self))
 
     @register_dag
-    def batch(self, size, drop_tail=False, raw=True):
+    def batch(self, size, drop_tail=False):
         """
         Create small batches from data collections.
 
@@ -130,8 +130,7 @@ class DataProcessingMixin:
                 Window size;
             drop_tail (`bool`):
                 Drop tailing windows that not full, defaults to False;
-            raw (`bool`):
-                Whether to return raw data instead of DataCollection, defaults to True
+
 
         Returns:
             DataCollection of batched windows or batch raw data
@@ -140,7 +139,7 @@ class DataProcessingMixin:
 
         >>> from towhee import DataCollection
         >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(2, raw=False)]
+        >>> [list(batch) for batch in dc.batch(2)]
         [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
 
         >>> dc = DataCollection(range(10))
@@ -156,7 +155,7 @@ class DataProcessingMixin:
         >>> dc.batch(2)
         [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
-        def inner():
+        def stream():
             buff = []
             count = 0
             for ele in self._iterable:
@@ -174,19 +173,42 @@ class DataProcessingMixin:
                 count += 1
 
                 if count == size:
-                    if raw:
-                        yield buff
-                    else:
-                        yield buff if isinstance(buff, list) else [buff]
+                    yield buff
                     buff = []
                     count = 0
-            if not drop_tail and count > 0:
-                if raw:
-                    yield buff
-                else:
-                    yield buff if isinstance(buff, list) else [buff]
 
-        return self._factory(inner())
+            if not drop_tail and count > 0:
+                yield buff
+
+        def unstream():
+            res = []
+            buff = []
+            count = 0
+            for ele in self._iterable:
+                if isinstance(ele, Entity):
+                    if count == 0:
+                        buff = ele
+                        for key in ele.__dict__.keys():
+                            buff.__dict__[key] = [buff.__dict__[key]]
+                        count = 1
+                        continue
+                    for key in ele.__dict__.keys():
+                        buff.__dict__[key].append(ele.__dict__[key])
+                else:
+                    buff.append(ele)
+                count += 1
+
+                if count == size:
+                    res.append(buff)
+                    buff = []
+                    count = 0
+
+            if not drop_tail and count > 0:
+                res.append(buff)
+
+            return res
+
+        return self._factory(stream()) if self.is_stream else self._factory(unstream())
 
     @register_dag
     def rolling(self, size: int, drop_head=True, drop_tail=True):
