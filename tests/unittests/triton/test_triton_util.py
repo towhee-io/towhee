@@ -101,7 +101,7 @@ class TestToTritonData(unittest.TestCase):
 
     def test_to_triton_data_image(self):
         towhee_data = [Image(np.random.randn(224, 224, 3), 'RGB'), 100]
-        triton_datas = ToTritonData(towhee_data).get_triton_tensor()
+        triton_datas = ToTritonData(towhee_data).get_triton_tensor('INPUT')
         self.assertEqual(len(triton_datas), 3)
         self.assertEqual(triton_datas[0].name(), 'INPUT0')
         self.assertEqual(triton_datas[0].as_numpy().shape, (224, 224, 3))
@@ -112,7 +112,7 @@ class TestToTritonData(unittest.TestCase):
 
     def test_to_triton_data_videoframe(self):
         towhee_data = [32.5, 'BGR', VideoFrame(np.random.randn(224, 224, 3), 'RGB', 10000, 1)]
-        triton_datas = ToTritonData(towhee_data).get_triton_tensor()
+        triton_datas = ToTritonData(towhee_data).get_triton_tensor('INPUT')
         self.assertEqual(len(triton_datas), 6)
         self.assertEqual(triton_datas[0].name(), 'INPUT0')
         self.assertEqual(triton_datas[0].as_numpy()[0], 32.5)
@@ -129,7 +129,7 @@ class TestToTritonData(unittest.TestCase):
 
     def test_to_triton_data_audioframe(self):
         towhee_data = [np.random.randn(3, 4), AudioFrame(np.random.randn(224, 224, 3), 1000, 2000, 'mono')]
-        triton_datas = ToTritonData(towhee_data).get_triton_tensor()
+        triton_datas = ToTritonData(towhee_data).get_triton_tensor('INPUT')
         self.assertEqual(len(triton_datas), 5)
         self.assertEqual(triton_datas[0].name(), 'INPUT0')
         self.assertEqual(triton_datas[0].as_numpy().shape, (3, 4))
@@ -144,5 +144,5 @@ class TestToTritonData(unittest.TestCase):
 
     def test_to_triton_data_error(self):
         towhee_data = [MockTritonPythonBackendTensor('INPUT0', np.array([1]))]
-        triton_datas = ToTritonData(towhee_data).get_triton_tensor()
+        triton_datas = ToTritonData(towhee_data).get_triton_tensor('INPUT')
         self.assertTrue(triton_datas is None)

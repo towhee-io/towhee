@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import logging
 
 import numpy
@@ -35,7 +35,7 @@ class ToTowheeData:
         r:  triton python_backend request
         schema: op input schema
     '''
-    def __init__(self, r, schema):
+    def __init__(self, r: 'triton.request', schema: List[Tuple]):
         self._r = r
         self._schema = schema
 
@@ -102,7 +102,12 @@ class ToTritonData:
     def __init__(self, towhee_datas):
         self._towhee_datas = towhee_datas
 
-    def get_triton_tensor(self):
+    def to_triton_response(self):
+        if self.get_triton_tensor('OUTPUT') is None:
+            return None
+        return pb_utils.InferenceResponse(output_tensors=self.get_triton_tensor('OUTPUT'))
+
+    def get_triton_tensor(self, name_prefix):
         count = 0
         outputs = []
         for data in self._towhee_datas:
@@ -110,7 +115,7 @@ class ToTritonData:
             if np_datas is None:
                 return None
             for np_data in np_datas:
-                tensor = pb_utils.Tensor('INPUT' + str(count), np_data)
+                tensor = pb_utils.Tensor(name_prefix + str(count), np_data)
                 count += 1
                 outputs.append(tensor)
         return outputs

@@ -28,8 +28,13 @@ class MockTritonPythonBackendUtils:
         '''
         return r.get(input_key)
 
+    @staticmethod
     def Tensor(name, np_data):
         return MockTritonPythonBackendTensor(name, np_data)
+
+    @staticmethod
+    def InferenceResponse(output_tensors, err=None):
+        return MockInferenceResponse(output_tensors, err)
 
 
 class MockTritonPythonBackendTensor:
@@ -45,6 +50,12 @@ class MockTritonPythonBackendTensor:
 
     def as_numpy(self):
         return self._data
+
+
+class MockInferenceResponse:
+    def __init__(self, tensors, err):
+        self._tensors = tensors
+        self._err = err
 
 
 try:
