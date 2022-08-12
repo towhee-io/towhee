@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |  
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
-          DOCKER_BUILDKIT=1 docker build -t towhee/towhee-ut:${IMAGE_TAG} -t towhee/towhee-ut:latest -f Dockerfile .
+          DOCKER_BUILDKIT=1 docker build -t towhee/towhee-ut:${IMAGE_TAG} -f Dockerfile .
       - name: Docker Push
         if: success() && github.event_name == 'push' && github.repository == 'towhee-io/towhee'
         continue-on-error: true
@@ -40,6 +40,5 @@ jobs:
                        -p ${{ secrets.DOCKERHUB_TOKEN }}
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
           docker push towhee/towhee-ut:${IMAGE_TAG}
-          docker push towhee/towhee-ut:latest
           echo "Push towhee-ut image Succeeded"
 
