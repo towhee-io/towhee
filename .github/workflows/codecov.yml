@@ -15,9 +15,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     container: towhee/towhee-ut:latest
-    volumes:
-      - /workspace/tests:/tests
-      - /workspace/towhee:/towhee
+      volumes:
+        - /workspace/tests:/tests
+        - /workspace/towhee:/towhee
     steps:
     - name: Generate coverage report
       run: |
