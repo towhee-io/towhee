@@ -2,11 +2,6 @@ name: Publish UT Image
 
 # This workflow is triggered on pushes or pull request to the repository.
 on:
-  push:
-    # file paths to consider in the event. Optional; defaults to all.
-    paths:
-      - 'Dockerfile'
-      - '.github/workflows/publish_ut_image.yml'
   pull_request:
     # file paths to consider in the event. Optional; defaults to all.
     paths:
@@ -20,7 +15,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.0
       - name: Get version from system time after release step
         id: extracter
         run: |
@@ -40,5 +35,6 @@ jobs:
                        -p ${{ secrets.DOCKERHUB_TOKEN }}
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
           docker push towhee/towhee-ut:${IMAGE_TAG}
+          docker push towhee/towhee-ut:latest
           echo "Push towhee-ut image Succeeded"
 
