@@ -14,7 +14,8 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    container: towhee/towhee-ut:latest
+    container: 
+      image: towhee/towhee-ut:latest
       volumes:
         - /workspace/tests:/tests
         - /workspace/towhee:/towhee
