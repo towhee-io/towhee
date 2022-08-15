@@ -33,7 +33,7 @@ show_authors = True
 # ones.
 extensions = ['sphinx.ext.napoleon',
     # 'sphinx_rtd_theme',
-    # 'myst_parser',
+    'myst_parser',
     # 'numpydoc',
     # 'sphinx.ext.autodoc',
     # 'sphinx_mdinclude',
@@ -63,6 +63,8 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -96,6 +98,6 @@ html_theme_options = {
    ],
     'pygment_light_style': 'tango',
     'pygment_dark_style': 'monokai',
-    'navbar_center': [],
+    # 'navbar_center': [],
     'page_sidebar_items': [],
 }

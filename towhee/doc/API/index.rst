@@ -1,7 +1,6 @@
-Towhee
-======
-
+Towhee Project
+==============
 .. toctree::
-   :maxdepth: 4
-
-   _source/towhee
+   :maxdepth: 8
+   
+   _api/api
