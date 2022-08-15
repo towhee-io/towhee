@@ -22,6 +22,7 @@ jobs:
     steps:
     - name: Generate coverage report
       run: |
+        ls 
         conda create -n towhee-ut python=3.8
         conda run -n towhee-ut pip install coverage pytest pytest-xdist
         conda run -n towhee-ut coverage erase
