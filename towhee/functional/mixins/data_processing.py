@@ -155,7 +155,7 @@ class DataProcessingMixin:
         >>> dc.batch(2)
         [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
-        def stream():
+        def inner():
             buff = []
             count = 0
             for ele in self._iterable:
@@ -180,38 +180,10 @@ class DataProcessingMixin:
             if not drop_tail and count > 0:
                 yield buff
 
-        def unstream():
-            res = []
-            buff = []
-            count = 0
-            for ele in self._iterable:
-                if isinstance(ele, Entity):
-                    if count == 0:
-                        buff = ele
-                        for key in ele.__dict__.keys():
-                            buff.__dict__[key] = [buff.__dict__[key]]
-                        count = 1
-                        continue
-                    for key in ele.__dict__.keys():
-                        buff.__dict__[key].append(ele.__dict__[key])
-                else:
-                    buff.append(ele)
-                count += 1
-
-                if count == size:
-                    res.append(buff)
-                    buff = []
-                    count = 0
-
-            if not drop_tail and count > 0:
-                res.append(buff)
-
-            return res
-
-        return self._factory(stream()) if self.is_stream else self._factory(unstream())
+        return self._factory(inner())
 
     @register_dag
-    def rolling(self, size: int, drop_head=True, drop_tail=True):
+    def rolling(self, size: int, step: int=1, drop_head=True, drop_tail=True):
         """
         Create rolling windows from data collections.
 
@@ -240,18 +212,39 @@ class DataProcessingMixin:
         >>> dc = DataCollection(range(5))
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
+
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection(range(5))
+        >>> dc.rolling(2, 2, drop_head=False, drop_tail=False)
+        [[0], [0, 1], [2, 3], [4]]
+
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection(range(5))
+        >>> dc.rolling(2, 4, drop_head=False, drop_tail=False)
+        [[0], [0, 1], [4]]
         """
         def inner():
             buff = []
+            gap = 0
+            head_flag = True
             for ele in self._iterable:
+                if gap:
+                    gap -= 1
+                    continue
+
                 buff.append(ele)
-                if not drop_head or len(buff) == size:
+
+                if not drop_head and head_flag or len(buff) == size:
                     yield buff.copy()
+
                 if len(buff) == size:
-                    buff = buff[1:]
-            while not drop_tail and len(buff) > 0:
+                    head_flag = False
+                    buff = buff[step:]
+                    gap = step - size if step > size else 0
+
+            while not drop_tail and buff:
                 yield buff
-                buff = buff[1:]
+                buff = buff[step:]
 
         return self._factory(inner())
 
