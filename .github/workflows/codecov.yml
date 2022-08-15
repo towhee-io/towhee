@@ -16,11 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     container: towhee/towhee-ut:latest
     steps:
-    - uses: actions/checkout@v3.0.0
-    - name: Setup Python
-      uses: actions/setup-python@v3.0.0
-      with:
-        python-version: 3.8
     - name: Generate coverage report
       run: |
         conda run -n towhee-ut pip install coverage pytest pytest-xdist
