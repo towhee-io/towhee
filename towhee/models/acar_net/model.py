@@ -26,6 +26,10 @@ from towhee.models.acar_net import backbone, neck, head
 class AcarNet(nn.Module):
     """
     ACAR-Net built with backbone, neck, head
+
+    Args:
+        - configs (`dict`):
+            A dictionary of parameters.
     """
     def __init__(self, configs: dict):
         super().__init__()
