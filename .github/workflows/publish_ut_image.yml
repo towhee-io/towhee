@@ -40,5 +40,6 @@ jobs:
                        -p ${{ secrets.DOCKERHUB_TOKEN }}
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
           docker push towhee/towhee-ut:${IMAGE_TAG}
+          docker push towhee/towhee-ut:latest
           echo "Push towhee-ut image Succeeded"
 
