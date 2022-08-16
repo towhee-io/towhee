@@ -20,6 +20,8 @@ class StateMixin:
     """
     Mixin for state tracking.
 
+    The most common use case is for tracking training and evaluation states.
+
     Examples:
 
     >>> from towhee import DataCollection, State

@@ -4,7 +4,10 @@ from abc import ABCMeta
 
 from towhee.hparam import param_scope
 
+
 def register_dag(f):
+    """Wrapper used for registering the DataCollection operation in the chains' DAG.
+    """
     @wraps(f)
     def wrapper(self, *arg, **kws):
         # Get the result DataCollections
