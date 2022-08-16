@@ -17,6 +17,43 @@ jobs:
     container: 
       image: towhee/towhee-ut:latest
     steps:
+    - name: Installing dependencies..
+        run: |
+          # Sync repos
+          # Check for git
+          if ! apt list --installed 2>/dev/null | grep -qP "^git\/stable.*"; then
+            # Check if we can install git
+            if ! apt list | grep -qP "^git\/stable.*"; then
+              apt update
+            elif apt list | grep -qP "^git\/stable.*"; then
+              true
+            else
+              exit 255
+            fi
+            # Install git
+            apt install -y git
+          elif apt list --installed 2>/dev/null | grep -qP "^git\/stable.*"; then
+            true
+          else
+            exit 255
+          fi 
+          # Check for shellcheck
+          if ! apt list --installed 2>/dev/null | grep -qP "^shellcheck\s{1}-.*"; then
+            # Check if we can install shellcheck
+            if ! apt list | grep -qP "^shellcheck\s{1}-.*"; then
+              apt update
+            elif apt list | grep -qP "^shellcheck\s{1}-.*"; then
+              true
+            else
+              exit 255
+            fi
+            # Install shellcheck
+            apt install -y shellcheck
+          elif apt list --installed 2>/dev/null | grep -qP "^shellcheck\s{1}-.*"; then
+            true
+          else
+            exit 255
+          fi 
     - uses: actions/checkout@v3.0.0
     - name: Generate coverage report
       run: |
