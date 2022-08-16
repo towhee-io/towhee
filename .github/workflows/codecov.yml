@@ -23,7 +23,8 @@ jobs:
         cd towhee
         pip install coverage pytest pytest-xdist
         pip install -r test_requirements.txt
-        apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+        apt-get update && apt-get install -y opencv-python-headless
+        pip install opencv-python-headless
         coverage erase
         coverage run -m pytest
     - name: Generate xml report
