@@ -148,7 +148,8 @@ class TowheeCompiler:
 
 class CompileMixin:
     """
-    Mixin to just-in-time complie the Operator.
+    Mixin to just-in-time compile the Operator. More information about just-in-time
+    compilation can be found at https://en.wikipedia.org/wiki/Just-in-time_compilation.
 
     Examples:
 
