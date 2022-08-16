@@ -19,7 +19,7 @@ jobs:
     steps:
     - name: Generate coverage report
       run: |
-        git clone github.com:towhee-io/towhee.git
+        git clone https://github.com/towhee-io/towhee.git
         cd towhee
         conda create -n towhee-ut python=3.8
         conda run -n towhee-ut pip install coverage pytest pytest-xdist
