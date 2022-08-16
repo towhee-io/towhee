@@ -16,8 +16,6 @@ jobs:
     runs-on: self-hosted
     container: 
       image: towhee/towhee-ut:latest
-      volumes:
-        - workspace/actions-runner/_work/towhee/towhee:/home/super/towhee
     steps:
     - uses: actions/checkout@v3.0.0
     - name: Generate coverage report
