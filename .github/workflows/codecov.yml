@@ -19,6 +19,8 @@ jobs:
       options: --user root
     steps:
     - uses: actions/checkout@v3.0.0
+      with:
+        token: ${{ secrets.TOKEN }}
     - name: Generate coverage report
       run: |
         pip install coverage codecov pytest pytest-xdist
