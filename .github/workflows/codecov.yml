@@ -23,6 +23,7 @@ jobs:
         cd towhee
         conda create -n towhee-ut python=3.8
         conda run -n towhee-ut pip install coverage pytest pytest-xdist
+        conda run -n towhee-ut pip install -r test_requirements.txt
         conda run -n towhee-ut coverage erase
         conda run -n towhee-ut coverage run -m pytest
     - name: Generate xml report
