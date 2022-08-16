@@ -21,12 +21,11 @@ jobs:
       run: |
         git clone https://github.com/towhee-io/towhee.git
         cd towhee
-        conda create -n towhee-ut python=3.8
-        conda run -n towhee-ut pip install coverage pytest pytest-xdist
-        conda run -n towhee-ut pip install -r test_requirements.txt
-        conda run -n towhee-ut apt install libgl1-mesa-glx
-        conda run -n towhee-ut coverage erase
-        conda run -n towhee-ut coverage run -m pytest
+        pip install coverage pytest pytest-xdist
+        pip install -r test_requirements.txt
+        apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+        coverage erase
+        coverage run -m pytest
     - name: Generate xml report
       run: |
         coverage xml
