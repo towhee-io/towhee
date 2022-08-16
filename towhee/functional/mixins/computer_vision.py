@@ -67,16 +67,6 @@ class ComputerVisionMixin:
 
         return cls(images)
 
-    @classmethod
-    def read_audio(cls, path):
-        from towhee.utils.av_utils import av
-
-        acontainer = av.open(path)
-
-        audio_stream = acontainer.streams.audio[0]
-
-        return cls(acontainer.decode(audio_stream))
-
     def to_video(self,
                  output_path,
                  codec=None,
