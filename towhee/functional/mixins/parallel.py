@@ -17,7 +17,11 @@ import threading
 import time
 from queue import Queue
 
-import torch
+try:
+    import torch
+except: # pylint: disable=bare-except
+    pass
+
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.hparam.hyperparameter import param_scope
@@ -27,9 +31,12 @@ stream = threading.local()
 
 
 def initializer():
-    if torch.cuda.is_available():
-        stream.stream = torch.cuda.Stream()
-
+    # pylint: disable=bare-except
+    try:
+        if torch.cuda.is_available():
+            stream.stream = torch.cuda.Stream()
+    except:
+        pass
 
 class ParallelMixin:
     """
