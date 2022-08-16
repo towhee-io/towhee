@@ -29,6 +29,7 @@ jobs:
         coverage run -m pytest
     - name: Generate xml report
       run: |
+        coverage combine
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
