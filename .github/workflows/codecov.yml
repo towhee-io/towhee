@@ -28,16 +28,8 @@ jobs:
         coverage erase
         coverage run -m pytest
         coverage xml
-    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
       id: upload_cov
       with:
         files: ./coverage.xml
         fail_ci_if_error: false
-    - name: Retry upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.0
-      id: retry_upload_cov
-      with:
-        files: ./coverage.xml
-        fail_ci_if_error: true
-
