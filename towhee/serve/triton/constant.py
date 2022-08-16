@@ -24,3 +24,7 @@ POSTPROCESS = 'postprocess'
 
 OP_CONFIG = 'op_config'
 FORMAT_PRIORITY = 'format_priority'
+
+
+# bls constant
+OP_CONFIG_FILE = 'config.json'
