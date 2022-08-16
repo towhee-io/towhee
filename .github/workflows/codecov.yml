@@ -19,18 +19,15 @@ jobs:
     steps:
     - name: Generate coverage report
       run: |
-        conda create -n towhee-ut python=3.8
-        conda run -n towhee-ut rm -rf towhee
-        conda run -n towhee-ut git clone https://github.com/towhee-io/towhee.git
-        conda run -n towhee-ut cd towhee
-        conda run -n towhee-ut pip install coverage pytest pytest-xdist
-        conda run -n towhee-ut pip install -r test_requirements.txt
-        conda run -n towhee-ut apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
-        conda run -n towhee-ut coverage erase
-        conda run -n towhee-ut coverage run -m pytest
-    - name: Generate xml report
-      run: |
-        conda run -n towhee-ut coverage xml
+        rm -rf towhee
+        git clone https://github.com/towhee-io/towhee.git
+        cd towhee
+        pip install coverage pytest pytest-xdist
+        pip install -r test_requirements.txt
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
+        coverage erase
+        coverage run -m pytest
+        coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
       id: upload_cov
