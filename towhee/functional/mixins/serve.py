@@ -21,8 +21,10 @@ from towhee.functional.option import Some
 
 
 class _APIWrapper:
-    """
-    API Wrapper
+    """API Wrapper
+
+    Works by creating a local queue where values are added. At the same time this queue
+    is consumed by a DataCollection which is created when entering the API.
     """
     tls = threading.local()
 
@@ -61,7 +63,7 @@ class _APIWrapper:
 
 class _PipeWrapper:
     """
-    Wrapper for execute pipeline as function
+    Allows for the execution of a DataCollection chain as a function. Thread safe.
     """
 
     def __init__(self, pipe, place_holder) -> None:

@@ -126,6 +126,7 @@ class _Accessor(dict):
         return default if not value else value
 
     def __getattr__(self, name: str) -> Any:
+        # _path and _root are not allowed as keys for user.
         if name in ['_path', '_root']:
             return self[name]
 
@@ -134,6 +135,7 @@ class _Accessor(dict):
         return _Accessor(self._root, name)
 
     def __setattr__(self, name: str, value: Any):
+        # _path and _root are not allowed as keys for user.
         if name in ['_path', '_root']:
             return self.__setitem__(name, value)
         full_name = '{}.{}'.format(self._path,
@@ -207,6 +209,8 @@ class DynamicDispatch:
 
 
 def dynamic_dispatch(func, name=None, index=None):
+    """Wraps function with a class to allow __getitem__ and __getattr__ on a function.
+    """
     new_class = type(func.__name__, (
         DynamicDispatch,
         object,
@@ -462,6 +466,7 @@ class param_scope(HyperParameter):  # pylint: disable=invalid-name
     tls = threading.local()
 
     def __init__(self, *args, **kws):
+        # Check if nested param_scope, if so, update current scope to include previous.
         if hasattr(param_scope.tls,
                    'history') and len(param_scope.tls.history) > 0:
             self.update(param_scope.tls.history[-1])
