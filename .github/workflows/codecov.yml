@@ -28,5 +28,5 @@ jobs:
         coverage erase
         coverage run -m pytest
         coverage xml
-        codecov -f ./coverage.xml -t ${{ secrets.CODECOV_TOKEN }}
+        codecov -f ./coverage.xml -t a5b3c722-5757-499b-Baba-fe14d2a8001a
 
