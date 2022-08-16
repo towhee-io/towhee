@@ -17,7 +17,7 @@ import unittest
 import numpy as np
 
 from towhee.types import Image, AudioFrame, VideoFrame
-from towhee.serve.triton.bls.python_backend_wrapper import MockTritonPythonBackendTensor
+from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 from towhee.serve.triton.bls.model_runner.transformer import RequestToOpInputs, OpOutputToResponses
 
 
@@ -28,9 +28,9 @@ class TestToTowheeData(unittest.TestCase):
 
     def test_to_towhee_data_image(self):
         data = {
-            'INPUT0': MockTritonPythonBackendTensor('INPUT0', np.array([10])),
-            'INPUT1': MockTritonPythonBackendTensor('INPUT1', np.random.randn(224, 224, 3)),
-            'INPUT2': MockTritonPythonBackendTensor('INPUT2', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
+            'INPUT0': pb_utils.Tensor('INPUT0', np.array([10])),
+            'INPUT1': pb_utils.Tensor('INPUT1', np.random.randn(224, 224, 3)),
+            'INPUT2': pb_utils.Tensor('INPUT2', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
         }
 
         schema = [(int, (1,)), (Image, (-1, -1, 3))]
@@ -45,11 +45,11 @@ class TestToTowheeData(unittest.TestCase):
 
     def test_to_towhee_data_audioframe(self):
         data = {
-            'INPUT0': MockTritonPythonBackendTensor('INPUT0', np.random.randn(224, 224, 3)),
-            'INPUT1': MockTritonPythonBackendTensor('INPUT1', np.array([1000])),
-            'INPUT2': MockTritonPythonBackendTensor('INPUT2', np.array([2000])),
-            'INPUT3': MockTritonPythonBackendTensor('INPUT3', np.array(['mono'.encode('utf-8')], dtype=np.object_)),
-            'INPUT4': MockTritonPythonBackendTensor('INPUT4', np.array([10.5])),
+            'INPUT0': pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
+            'INPUT1': pb_utils.Tensor('INPUT1', np.array([1000])),
+            'INPUT2': pb_utils.Tensor('INPUT2', np.array([2000])),
+            'INPUT3': pb_utils.Tensor('INPUT3', np.array(['mono'.encode('utf-8')], dtype=np.object_)),
+            'INPUT4': pb_utils.Tensor('INPUT4', np.array([10.5])),
         }
 
         schema = [(AudioFrame, (-1, -1, 3)), (float, (1,))]
@@ -67,11 +67,11 @@ class TestToTowheeData(unittest.TestCase):
 
     def test_to_towhee_data_videoframe(self):
         data = {
-            'INPUT0': MockTritonPythonBackendTensor('INPUT0', np.random.randn(224, 224, 3)),
-            'INPUT1': MockTritonPythonBackendTensor('INPUT1', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
-            'INPUT2': MockTritonPythonBackendTensor('INPUT2', np.array([1000])),
-            'INPUT3': MockTritonPythonBackendTensor('INPUT3', np.array([1])),
-            'INPUT4': MockTritonPythonBackendTensor('INPUT4', np.array([1, 2])),
+            'INPUT0': pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
+            'INPUT1': pb_utils.Tensor('INPUT1', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
+            'INPUT2': pb_utils.Tensor('INPUT2', np.array([1000])),
+            'INPUT3': pb_utils.Tensor('INPUT3', np.array([1])),
+            'INPUT4': pb_utils.Tensor('INPUT4', np.array([1, 2])),
         }
 
         schema = [(VideoFrame, (-1, -1, 3)), (np.int32, (-1,))]
@@ -87,9 +87,9 @@ class TestToTowheeData(unittest.TestCase):
 
     def test_to_towhee_data_error(self):
         data = {
-            'INPUT0': MockTritonPythonBackendTensor('INPUT0', np.array([1]))
+            'INPUT0': pb_utils.Tensor('INPUT0', np.array([1]))
         }
-        schema = [(MockTritonPythonBackendTensor, (1, ))]
+        schema = [(pb_utils.Tensor, (1, ))]
         data = RequestToOpInputs(data, schema).get_towhee_data()
         self.assertTrue(data is None)
 
@@ -145,6 +145,6 @@ class TestToTritonData(unittest.TestCase):
         self.assertEqual(triton_datas[4].as_numpy()[0].decode('utf-8'), 'mono')
 
     def test_to_triton_data_error(self):
-        towhee_data = [MockTritonPythonBackendTensor('OUTPUT0', np.array([1]))]
+        towhee_data = [pb_utils.Tensor('OUTPUT0', np.array([1]))]
         respones = OpOutputToResponses(towhee_data).to_triton_responses()
         self.assertTrue(respones.has_error())

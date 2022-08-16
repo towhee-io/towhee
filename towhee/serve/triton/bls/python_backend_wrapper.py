@@ -13,72 +13,9 @@
 # limitations under the License.
 
 
-class MockTritonPythonBackendUtils:
-    '''
-    mock triton_python_backend_utils, used in UT.
-    '''
-    @staticmethod
-    def get_input_tensor_by_name(r, input_key):
-        '''
-        Args:
-            r: dict
-            input_key: str
-        return:
-            MockTritonPythonBackendTensor
-        '''
-        return r.get(input_key)
-
-    @staticmethod
-    def Tensor(name, np_data):
-        return MockTritonPythonBackendTensor(name, np_data)
-
-    @staticmethod
-    def InferenceResponse(output_tensors, err=None):
-        return MockInferenceResponse(output_tensors, err)
-
-    @staticmethod
-    def TritonError(msg):
-        return MockTritonError(msg)
-
-
-class MockTritonPythonBackendTensor:
-    '''
-    Mock python_backend tensor object.
-    '''
-    def __init__(self, name:str, data: 'ndarray'):
-        self._name = name
-        self._data = data
-
-    def name(self):
-        return self._name
-
-    def as_numpy(self):
-        return self._data
-
-
-class MockInferenceResponse:
-    def __init__(self, tensors, err):
-        self._tensors = tensors
-        self._err = err
-
-    def output_tensors(self):
-        return self._tensors
-
-    def has_error(self):
-        return self._err is not None
-
-
-class MockTritonError:
-    def __init__(self, msg):
-        self._msg = msg
-
-    def message(self):
-        return self._msg
-
-
 try:
     # in triton image
     import triton_python_backend_utils as pb_utils
 except Exception:
-    # in test env
+    from towhee.serve.triton.bls.mock.mock_pb_util import MockTritonPythonBackendUtils
     pb_utils = MockTritonPythonBackendUtils
