@@ -16,17 +16,21 @@ jobs:
     runs-on: self-hosted
     container: 
       image: towhee/towhee-ut:latest
+      volumes:
+        - workspace/actions-runner/_work/towhee/towhee:/home/super/towhee
     steps:
+    - uses: actions/checkout@v3.0.0
     - name: Generate coverage report
       run: |
-        rm -rf towhee
-        git clone https://github.com/towhee-io/towhee.git
-        cd towhee
         pip install coverage codecov pytest pytest-xdist
         pip install -r test_requirements.txt
         apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
         coverage erase
         coverage run -m pytest
         coverage xml
-        codecov -f ./coverage.xml -t a5b3c722-5757-499b-Baba-fe14d2a8001a
-
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3.1.0
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        fail_ci_if_error: true    
