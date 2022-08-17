@@ -35,5 +35,5 @@ jobs:
       uses: codecov/codecov-action@v3.1.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: /home/super/towhee/coverage.xml
+        files: /__w/towhee/towhee/coverage.xml
         fail_ci_if_error: true    
