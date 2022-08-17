@@ -70,6 +70,6 @@ where you can find more helpful information with respect to scenarios or tasks.
 | Video Swin Transformer | [Video Swin Transformer](http://openaccess.thecvf.com//content/CVPR2022/papers/Liu_Video_Swin_Transformer_CVPR_2022_paper.pdf) | action classification | [action_classification.video_swin_transformer](https://towhee.io/action-classification/video-swin-transformer) |
 | Violet | [VIOLET: End-to-End Video-Language Transformers with Masked Visual-token Modeling](https://arxiv.org/pdf/2111.12681v2.pdf) | video question answering | |
 | ViT | [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://openreview.net/pdf?id=YicbFdNTTy) | image classification | [image_embedding.timm](https://towhee.io/image-embedding/timm) |
-
+| Wave-ViT | [Wave-ViT: Unifying Wavelet and Transformers for Visual Representation Learning](http://arxiv.org/pdf/2207.04978) | image recognition, object detection, instance segmentation | |
 
 

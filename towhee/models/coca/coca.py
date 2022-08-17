@@ -136,17 +136,28 @@ class ParallelTransformerBlock(nn.Module):
 class CoCa(nn.Module):
     """
     CoCa model.
+
     Args:
-        dim: model dimension
-        img_encoder: vision transformer - image encoder, returning image embeddings as (batch, seq, dim).
-        image_dim: image embedding dimension, if not the same as model dimensions.
-        num_tokens: number of text tokens.
-        unimodal_depth: depth of the unimodal transformer.
-        multimodal_depth: depth of the multimodal transformer.
-        dim_head: dimension per attention head.
-        heads: number of attention heads.
-        caption_loss_weight: weight on the autoregressive caption loss.
-        contrastive_loss_weight: weight on the contrastive loss between image and text CLS embeddings.
+        dim (`int`):
+            model dimension
+        img_encoder (`nn.Module`):
+            vision transformer - image encoder, returning image embeddings as (batch, seq, dim).
+        image_dim (`int`):
+            image embedding dimension, if not the same as model dimensions.
+        num_tokens (`int`):
+            number of text tokens.
+        unimodal_depth (`int`):
+            depth of the unimodal transformer.
+        multimodal_depth (`int`):
+            depth of the multimodal transformer.
+        dim_head (`int`):
+            dimension per attention head.
+        heads (`int`):
+            number of attention heads.
+        caption_loss_weight (`float`):
+            weight on the autoregressive caption loss.
+        contrastive_loss_weight (`float`):
+            weight on the contrastive loss between image and text CLS embeddings.
     """
     def __init__(
         self,
