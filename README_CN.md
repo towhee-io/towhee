@@ -54,24 +54,36 @@
 
 ## 📰 近期动态
 
+**v0.7.3 Jul.27,2022**
+
+* 新增一个多模态（文本/图片）模型 :
+[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
+* 新增两个视频模型，用于“接地的态势感知（GSR）”和“智能计数重复动作”场景
+Add two video models for grounded situation recognition & repetitive action counting:
+[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
+[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
+* 新增两个图片任务（图像检索、图像分类等）的 SoTA 模型
+[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
+[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
+
 **v0.7.1 2022年7月1日**
 * 新增一个图片嵌入模型（image embedding）:
 [*MPViT*](https://towhee.io/image-embedding/mpvit).
-* 添加两个视频检索模型（video retrieval）:
+* 新增两个视频检索模型（video retrieval）:
 [*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
 [*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
-* 添加 FAISS-based ANNSearch 算子: *to_faiss*, *faiss_search*.
+* 新增 FAISS-based ANNSearch 算子: *to_faiss*, *faiss_search*.
 
 **v0.7.0 2022年6月24日**
 
-* 添加六个视频理解/分类模型（video understanding/classification）
+* 新增六个视频理解/分类模型（video understanding/classification）
 [*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
 [*TSM*](https://towhee.io/action-classification/tsm), 
 [*Uniformer*](https://towhee.io/action-classification/uniformer), 
 [*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
 [*TimeSformer*](https://towhee.io/action-classification/timesformer), 
 [*MoViNets*](https://towhee.io/action-classification/movinet).
-* 添加四个视频检索模型（video retrieval）
+* 新增四个视频检索模型（video retrieval）
 [*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
 [*DRL*](https://towhee.io/video-text-embedding/drl), 
 [*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
@@ -80,7 +92,7 @@
 
 **v0.6.1 2022年5月13日**
 
-* 添加三个文本图像检索模型（text-image retrieval）：
+* 新增三个文本图像检索模型（text-image retrieval）：
 [*CLIP*](https://towhee.io/image-text-embedding/clip),
 [*BLIP*](https://towhee.io/image-text-embedding/blip),
 [*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
@@ -148,7 +160,7 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 
 你可以通过很多方式来参与 Towhee 社区：提交问题、回答问题、改进文档、加入社群讨论、参加线下 Meetup 活动等。
 
-你的参与对于项目的持续健康发展至关重要。欢迎查阅🎁[贡献页面](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) 的文档内容，了解更多详细信息。
+你的参与对于项目的持续健康发展至关重要。欢迎查阅 🎁[贡献页面](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) 的文档内容，了解更多详细信息。
 
 ### 💥 致谢
 
