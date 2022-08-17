@@ -121,7 +121,7 @@ class DataProcessingMixin:
         return self._factory(filter(lambda _: random.random() < ratio, self))
 
     @register_dag
-    def batch(self, size, drop_tail=False, raw=True):
+    def batch(self, size, drop_tail=False):
         """
         Create small batches from data collections.
 
@@ -130,8 +130,7 @@ class DataProcessingMixin:
                 Window size;
             drop_tail (`bool`):
                 Drop tailing windows that not full, defaults to False;
-            raw (`bool`):
-                Whether to return raw data instead of DataCollection, defaults to True
+
 
         Returns:
             DataCollection of batched windows or batch raw data
@@ -140,7 +139,7 @@ class DataProcessingMixin:
 
         >>> from towhee import DataCollection
         >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(2, raw=False)]
+        >>> [list(batch) for batch in dc.batch(2)]
         [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
 
         >>> dc = DataCollection(range(10))
@@ -174,22 +173,17 @@ class DataProcessingMixin:
                 count += 1
 
                 if count == size:
-                    if raw:
-                        yield buff
-                    else:
-                        yield buff if isinstance(buff, list) else [buff]
+                    yield buff
                     buff = []
                     count = 0
+
             if not drop_tail and count > 0:
-                if raw:
-                    yield buff
-                else:
-                    yield buff if isinstance(buff, list) else [buff]
+                yield buff
 
         return self._factory(inner())
 
     @register_dag
-    def rolling(self, size: int, drop_head=True, drop_tail=True):
+    def rolling(self, size: int, step: int=1, drop_head=True, drop_tail=True):
         """
         Create rolling windows from data collections.
 
@@ -218,18 +212,39 @@ class DataProcessingMixin:
         >>> dc = DataCollection(range(5))
         >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
         [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
+
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection(range(5))
+        >>> dc.rolling(2, 2, drop_head=False, drop_tail=False)
+        [[0], [0, 1], [2, 3], [4]]
+
+        >>> from towhee import DataCollection
+        >>> dc = DataCollection(range(5))
+        >>> dc.rolling(2, 4, drop_head=False, drop_tail=False)
+        [[0], [0, 1], [4]]
         """
         def inner():
             buff = []
+            gap = 0
+            head_flag = True
             for ele in self._iterable:
+                if gap:
+                    gap -= 1
+                    continue
+
                 buff.append(ele)
-                if not drop_head or len(buff) == size:
+
+                if not drop_head and head_flag or len(buff) == size:
                     yield buff.copy()
+
                 if len(buff) == size:
-                    buff = buff[1:]
-            while not drop_tail and len(buff) > 0:
+                    head_flag = False
+                    buff = buff[step:]
+                    gap = step - size if step > size else 0
+
+            while not drop_tail and buff:
                 yield buff
-                buff = buff[1:]
+                buff = buff[step:]
 
         return self._factory(inner())
 
