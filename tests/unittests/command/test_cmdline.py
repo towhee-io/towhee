@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import shutil
 import unittest
 import argparse
 import os
 from pathlib import Path
 
 from towhee.command.develop import SetupCommand, UninstallCommand
+from towhee.command.repo import RepoCommand
 # from towhee.command.execute import ExecuteCommand
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -39,6 +40,23 @@ class TestCmdline(unittest.TestCase):
         UninstallCommand(args_unins)()
         SetupCommand(args_dev)()
         UninstallCommand(args_unins)()
+
+    def test_create(self):
+        pyrepo = 'create_pyoperator'
+        nnrepo = 'cmd/create_nnoperator'
+        repo_path = public_path / 'mock_operators'
+        os.chdir(str(repo_path))
+        args_create_pyop = argparse.Namespace(action='create', type='pyop', dir=str(repo_path), uri=pyrepo, local=True)
+        args_create_nnop = argparse.Namespace(action='create', type='nnop', framework='tensorflow', dir=str(repo_path), uri=nnrepo, local=True)
+
+        RepoCommand(args_create_pyop)()
+        RepoCommand(args_create_nnop)()
+        self.assertTrue((repo_path / pyrepo / 'create_pyoperator.py').is_file())
+        self.assertTrue((repo_path / 'create_nnoperator' / 'create_nnoperator.py').is_file())
+        self.assertTrue((repo_path / 'create_nnoperator' / 'tensorflow').is_dir())
+
+        shutil.rmtree(str(repo_path / pyrepo))
+        shutil.rmtree(str(repo_path / 'create_nnoperator'))
 
     # TODO: enable this test case with pytest @shiyu22
     # def test_run(self):
