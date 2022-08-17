@@ -1,0 +1,45 @@
+name: Publish UT Image
+
+# This workflow is triggered on pushes or pull request to the repository.
+on:
+  push:
+    # file paths to consider in the event. Optional; defaults to all.
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/publish_ut_image.yml'
+  pull_request:
+    # file paths to consider in the event. Optional; defaults to all.
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/publish_ut_image.yml'
+
+jobs:
+  publish-ut-images:
+    name: UT
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get version from system time after release step
+        id: extracter
+        run: |
+          echo "::set-output name=version::$(date +%Y%m%d)"
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      - name: Docker Build
+        shell: bash
+        run: |  
+          export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
+          DOCKER_BUILDKIT=1 docker build -t towhee/towhee-ut:${IMAGE_TAG} -t towhee/towhee-ut:latest -f Dockerfile .
+      - name: Docker Push
+        if: success() && github.event_name == 'push' && github.repository == 'towhee-io/towhee'
+        continue-on-error: true
+        shell: bash
+        run: |
+          docker login -u ${{ secrets.DOCKERHUB_USER }} \
+                       -p ${{ secrets.DOCKERHUB_TOKEN }}
+          export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
+          docker push towhee/towhee-ut:${IMAGE_TAG}
+          docker push towhee/towhee-ut:latest
+          echo "Push towhee-ut image Succeeded"
+

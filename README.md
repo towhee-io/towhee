@@ -10,6 +10,12 @@
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
 </h3>
 
+<h3 align="center">
+  <p style="text-align: center;">
+  <a href="https://github.com/towhee-io/towhee/blob/main/README.md" target="_blank">ENGLISH</a> | <a href="https://github.com/towhee-io/towhee/blob/main/README_CN.md">中文文档</a>
+  </p>
+</h3>
+
 <div class="column" align="middle">
   <a href="https://slack.towhee.io">
     <img src="https://img.shields.io/badge/join-slack-orange?style=flat" alt="join-slack"/>
@@ -44,6 +50,16 @@ automatically optimize it for production-ready environments.
 :snake:&emsp;**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
 ## What's New
+
+**v0.7.3 Jul. 27, 2022**
+* Add one multimodal (text/image) model:
+[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
+* Add two video models for grounded situation recognition & repetitive action counting:
+[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
+[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
+* Add two SoTA models for image tasks (image retrieval, image classification, etc.):
+[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
+[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
 
 **v0.7.1 Jul. 1, 2022**
 * Add one image embedding model:
@@ -87,9 +103,10 @@ automatically optimize it for production-ready environments.
 Towhee requires Python 3.6+. You can install Towhee via `pip`:
 
 ```bash
-% pip install -U pip  # if you run into installation issues, try updating pip
-% pip install towhee
+pip install towhee towhee.models
 ```
+
+If you run into any pip-related install problems, please try to upgrade pip with `pip install -U pip`.
 
 Try your first Towhee pipeline. For example, create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
 

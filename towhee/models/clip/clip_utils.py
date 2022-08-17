@@ -77,7 +77,8 @@ def get_configs(model_name):
         configs.update(dict(
             url=("https://openaipublic.azureedge.net/clip/models/"
                  "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt"),
-            vision_patch_size=32
+            vision_patch_size=32,
+            multilingual_model="M-CLIP/XLM-Roberta-Large-Vit-B-32"
         ))
     else:
         raise ValueError(f"Invalid model name '{model_name}'.")

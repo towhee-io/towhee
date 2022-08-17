@@ -13,7 +13,7 @@ $ towhee <command> -<option> param
 $ python -m towhee <command> -<option> param
 ```
 
-Of course, you can also run `towhee ` with source code:
+Of course, you can also run `towhee` with source code:
 
 ```bash
 $ git clone https://github.com/towhee-io/towhee.git
@@ -67,7 +67,7 @@ optional arguments:
 ```
 
 ### Create Repo
-#### `create-operator`
+#### `create-op`
 ```bash
 $  towhee create-op -h
 usage: towhee create-op [-h] [-t {pyop,nnop}] [-f FRAMEWORK] [-d DIR] [--local] [--plain] uri
@@ -85,7 +85,7 @@ optional arguments:
   --local               optional, create and init repo in local
   --plain               optional, just create repo with init file
 ```
-#### `create pipeline`
+#### `create-pipeline`
 ```bash
 $ towhee create-pipeline -h
 usage: towhee create-pipeline [-h] [-d DIR] [--local] [--plain] uri
@@ -100,8 +100,8 @@ optional arguments:
   --plain            optional, just create repo with init file
 ```
 
-### Setup operator
-#### `install operator`
+### Setup Operator
+#### `install`
 ```bash
 $ towhee install -h        
 towhee install -h
@@ -114,7 +114,7 @@ optional arguments:
   -p PATH, --path PATH  optional, path to the operator repo, defaults to cwd which is '.'
   --develop             optional, install operator with setup.py develop
 ```
-#### `uninstall operator`
+#### `uninstall`
 ```bash
 $ towhee uninstall -h
 usage: towhee uninstall [-h] [-n NAMESPACE] [-p PATH]
@@ -127,7 +127,7 @@ optional arguments:
 ```
 
 ### Execute
-#### `run pipeline`
+#### `run`
 ```bash
 $ towhee run -h      
 usage: towhee run [-h] -i INPUT [-o OUTPUT] pipeline

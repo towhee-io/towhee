@@ -84,6 +84,14 @@ class TestCollaborativeExperts(unittest.TestCase):
             "ocr": torch.ones(batch_size, ),
         }
         text = torch.randn(batch_size, 1, 37, self.text_dim)
+
+        if torch.cuda.is_available():
+            for key in experts:
+                experts[key] = experts[key].cuda()
+            for key in experts:
+                ind[key] = ind[key].cuda()
+            text = text.cuda()
+
         out = self.ce_net(experts, ind, text)
         self.assertEqual(out["cross_view_conf_matrix"].shape, (batch_size, batch_size))
 

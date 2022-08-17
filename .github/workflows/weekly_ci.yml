@@ -11,28 +11,30 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     #        │ │ │ │ │
-    - cron: "0 0 * * 6"
+    - cron: "0 0 * * 5"
 
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04, macos-10.15]
-        python: [ 3.8, 3.7, 3.6 ]
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@master
     - name: Setup Python
       uses: actions/setup-python@v2.3.1
       with:
-        python-version: ${{ matrix.python }}
+        python-version: 3.8
     - name: Run Test
       env:
         TOWHEE_WORKER: True
       run: |
+        source /test/miniconda3/etc/profile.d/conda.sh
+        conda env remove -n towhee-weekly
+        conda create -n towhee-weekly python=3.8
+        conda activate towhee-weekly
+        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         cd  tests/testcases
         python3 -m pip install -U pip
         python3 -m pip install --no-cache-dir -r requirements.text
+        cd  tests/testcases/hub
         export TOWHEE_WORKER=True
-        python3 -W ignore test_main.py
+        python3 -W ignore execute_hub_operators.py

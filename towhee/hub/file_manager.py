@@ -95,6 +95,8 @@ class FileManagerConfig():
         """
         default_path = Path(default_path)
         with self._cache_paths_lock:
+            if default_path in self.cache_paths:
+                self.cache_paths.remove(default_path)
             self._cache_paths.append(default_path)
 
     def add_cache_path(self, insert_path: Union[str, Path, List[Union[str, Path]]]):

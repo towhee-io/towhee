@@ -29,20 +29,29 @@ class TestBuilder(unittest.TestCase):
     def test_builder(self):
         test_dag = {
             'start': {
-                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3'], 'op_config': None
             },
             'cb2876f3': {
-                'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13']
+                'op_name': 'local/triton_py', 'init_args': {}, 'child_ids': ['fae9ba13'], 'op_config': {'device_ids': [1]}
             },
             'fae9ba13': {
-                'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end']
+                'op_name': 'local/triton_nnop', 'init_args': {'model_name': 'test'},'child_ids': ['end'],
+                'op_config': {
+                    'format_priority': ['tensorrt'],
+                    'device_ids': [1, 2],
+                    'dynamic_batching': {
+                        'max_batch_size': 128,
+                        'preferred_batch_size': [1, 2],
+                        'preferred_max_queue_delay_microseconds': 10000
+                    }
+                }
             },
             'end': {
-                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': [], 'op_config': None
             }
         }
         with TemporaryDirectory(dir='./') as root:
-            builer = Builder(test_dag, root, ['tensorrt'])
+            builer = Builder(test_dag, root)
             self.assertTrue(builer.build())
 
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
@@ -77,3 +86,21 @@ class TestBuilder(unittest.TestCase):
             expect_root = Path(EXPECTED_FILE_PATH) / 'ensemble'
             dst = Path(root) / 'pipeline'
             filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt')
+
+    def test_old_version_nnop(self):
+        test_dag = {
+            'start': {
+                'op_name': 'dummy_input', 'init_args': None, 'child_ids': ['cb2876f3']
+            },
+            'cb2876f3': {
+                'op_name': 'local/trion_nnop_oldversion', 'init_args': {}, 'child_ids': ['end']
+            },
+            'end': {
+                'op_name': 'end', 'init_args': None, 'call_args': None, 'child_ids': []
+            }
+        }
+        with TemporaryDirectory(dir='./') as root:
+            builer = Builder(test_dag, root)
+            self.assertTrue(builer.build())
+            dst = Path(root) / 'cb2876f3_local_trion_nnop_oldversion' / '1' / 'model.py'
+            self.assertTrue(dst.is_file())

@@ -71,7 +71,7 @@ def get_clip_relevance(model: nn.Module, pil_img: Image, text_list: List[str], d
     text_tokens = tokenize(text_list).to(device)
     batch_size = text_tokens.shape[0]
     img_tensors = img_tensor.repeat(batch_size, 1, 1, 1)
-    logits_per_image, _ = model(img_tensors, text_tokens)
+    logits_per_image, _ = model(img_tensors, text_tokens, device=device)
     index = list(range(batch_size))
     one_hot = np.zeros((logits_per_image.shape[0], logits_per_image.shape[1]), dtype=np.float32)
     one_hot[torch.arange(logits_per_image.shape[0]), index] = 1

@@ -11,187 +11,259 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import Any, Iterable, Iterator, Callable
-import random
+from typing import Iterable, Iterator, Callable
 import reprlib
 
 from towhee.functional.mixins.dag import register_dag
 from towhee.hparam import param_scope, dynamic_dispatch
-from towhee.functional.entity import Entity, EntityView
-from towhee.functional.option import Option, Some, Empty
+from towhee.functional.option import Option, Some
+from towhee.functional.entity import EntityView
 from towhee.functional.mixins import DCMixins
 from towhee.functional.mixins.dataframe import DataFrameMixin
 from towhee.functional.mixins.column import ColumnMixin
 
 
 class DataCollection(Iterable, DCMixins):
-    """
-    DataCollection is a pythonic computation and processing framework
-    for unstructured data in machine learning and data science.
-    It allows a data scientist or researcher to assemble a data processing pipeline,
-    do his model work (embedding, transforming, or classification)
-    and apply it to the business (search, recommendation, or shopping)
-    with a method-chaining style API.
+    """A pythonic computation and processing framework.
+
+    DataCollection is a pythonic computation and processing framework for unstructured
+    data in machine learning and data science. It allows a data scientist or researcher
+    to assemble data processing pipelines and do their model work (embedding,
+    transforming, or classification) with a method-chaining style API. It is also
+    designed to behave as a python list or iterator. When created from a list,
+    operations arent performed once all data has been stored from previous step. When
+    created from an iterator, operations are performed streamwise, reading and operating
+    on data one by one, and only progressing if its previous output has been consumed.
 
     Examples:
+        1. Create a DataCollection from list or iterator::
 
-    1. Create a data collection from list or iterator:
+        >>> dc = DataCollection([0, 1, 2, 3, 4])
+        >>> dc = DataCollection(iter([0, 1, 2, 3, 4]))
 
-    >>> dc = DataCollection([0, 1, 2, 3, 4])
-    >>> dc = DataCollection(iter([0, 1, 2, 3, 4]))
+        2. Chaining function invocations makes your code clean and fluent::
 
-    2. Chaining function invocations makes your code clean and fluent:
+        >>> (
+        ...    dc.map(lambda x: x+1)
+        ...      .map(lambda x: x*2)
+        ... ).to_list()
+        [2, 4, 6, 8, 10]
 
-    >>> (
-    ...    dc.map(lambda x: x+1)
-    ...      .map(lambda x: x*2)
-    ... ).to_list()
-    [2, 4, 6, 8, 10]
+        3. Multi-line closures are also supported via decorator syntax::
 
-    3. Multi-line closures are also supported via decorator syntax
-
-    >>> dc = DataCollection([1,2,3,4])
-    >>> @dc.map
-    ... def add1(x):
-    ...     return x+1
-    >>> @add1.map
-    ... def mul2(x):
-    ...     return x *2
-    >>> mul2.to_list()
-    [4, 6, 8, 10]
-
-    >>> dc = DataCollection([1,2,3,4])
-    >>> @dc.filter
-    ... def ge3(x):
-    ...     return x>=3
-    >>> ge3.to_list()
-    [3, 4]
-
-    `DataCollection` is designed to behave as a python list or iterator. Consider you are running
-    the following code:
-
-    .. code-block:: python
-      :linenos:
-
-      dc.map(stage1)
-        .map(stage2)
-
-    1. `iterator` and `stream mode`: When a `DataCollection` object is created from an iterator, it behaves as a python
-    iterator and performs `stream-wise` data processing:
-
-        a. `DataCollection` takes one element from the input and applies `stage1` and `stage2` sequentially ;
-        b. Since DataCollection holds no data, indexing or shuffle is not supported;
-
-    2. `list` and `unstream mode`: If a `DataCollection` object is created from a list, it will hold all the input values,
-    and perform stage-wise computations:
-
-        a. `stage2` will wait until all the calculations are done in `stage1`;
-        b. A new DataCollection will be created to hold all the outputs for each stage. You can perform list operations on result DataCollection;
-
+        >>> dc = DataCollection([1,2,3,4])
+        >>> @dc.map
+        ... def add1(x):
+        ...     return x+1
+        >>> @add1.map
+        ... def mul2(x):
+        ...     return x *2
+        >>> @mul2.filter
+        ... def ge3(x):
+        ...     return x>=7
+        >>> ge3.to_list()
+        [8, 10]
     """
 
     def __init__(self, iterable: Iterable) -> None:
         """Initializes a new DataCollection instance.
 
         Args:
-            iterable (Iterable): input data
+            iterable (Iterable): The iterable data that is stored in the DataCollection.
         """
         super().__init__()
         self._iterable = iterable
 
-    def __iter__(self):
+    def __iter__(self) -> iter:
+        """Generate an iterator of the DataCollection.
+
+        Returns:
+            iter : iterator for the data.
+        """
         if hasattr(self._iterable, 'iterrows'):
             return (x[1] for x in self._iterable.iterrows())
         return iter(self._iterable)
 
-    @register_dag
-    def stream(self):
-        """
-        Create a stream data collection.
+    def __getattr__(self, name) -> 'DataCollection':
+        """Unknown method dispatcher.
 
-        Examples:
-        1. Convert a data collection to streamed version
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> dc.is_stream
-        False
-
-        >>> dc = dc.stream()
-        >>> dc.is_stream
-        True
-        """
-        # pylint: disable=protected-access
-        iterable = iter(self._iterable) if not self.is_stream else self._iterable
-        return self._factory(iterable, parent_stream=False)
-
-    @register_dag
-    def unstream(self):
-        """
-        Create a unstream data collection.
-
-        Examples:
-
-        1. Create a unstream data collection
-
-        >>> dc = DataCollection(iter(range(5))).unstream()
-        >>> dc.is_stream
-        False
-
-        2. Convert a streamed data collection to unstream version
-
-        >>> dc = DataCollection(iter(range(5)))
-        >>> dc.is_stream
-        True
-        >>> dc = dc.unstream()
-        >>> dc.is_stream
-        False
-        """
-        iterable = list(self._iterable) if self.is_stream else self._iterable
-        return self._factory(iterable, parent_stream=False)
-
-    @property
-    def is_stream(self):
-        """
-        Check whether the data collection is stream or unstream.
-
-        Examples:
-
-        >>> dc = DataCollection([0,1,2,3,4])
-        >>> dc.is_stream
-        False
-
-        >>> result = dc.map(lambda x: x+1)
-        >>> result.is_stream
-        False
-        >>> result._iterable
-        [1, 2, 3, 4, 5]
-
-        >>> dc = DataCollection(iter(range(5)))
-        >>> dc.is_stream
-        True
-
-        >>> result = dc.map(lambda x: x+1)
-        >>> result.is_stream
-        True
-        >>> isinstance(result._iterable, Iterable)
-        True
-
-        """
-        return isinstance(self._iterable, Iterator)
-
-    def _factory(self, iterable, parent_stream=True):
-        """
-        Factory method for data collection.
-
-        This factory method has been wrapped into a `param_scope()` which contains parent information.
+        When a unknown method is invoked on a `DataCollection` object, the function call
+        will be dispatched to a method resolver. By registering function to the
+        resolver, you are able to extend `DataCollection`'s API at runtime without
+        modifying its code.
 
         Args:
-            iterable: An iterable object, the data being stored in the DC
-            parent_stream: Whether to copy the parents format (streamed vs unstreamed)
+            name (str): The unkown attribute.
 
         Returns:
-            DataCollection: DataCollection encapsulating the iterable.
+            DataCollection: Returns a new DataCollection for the output of attribute
+                call.
+
+        Examples:
+            >>> from towhee import register
+            >>> dc = DataCollection([1,2,3,4])
+            >>> @register(name='test/add1')
+            ... def add1(x):
+            ...     return x+1
+            >>> dc.test.add1().to_list()
+            [2, 3, 4, 5]
+        """
+        if name.startswith('_'):
+            return super().__getattribute__(name)
+
+        @dynamic_dispatch
+        def wrapper(*arg, **kws):
+            with param_scope() as hp:
+                # pylint: disable=protected-access
+                path = hp._name
+                index = hp._index
+            if self.get_backend() == 'ray':
+                return self.ray_resolve({}, path, index, *arg, **kws)
+            if self._jit is not None:
+                op = self.jit_resolve(path, index, *arg, **kws)
+            else:
+                op = self.resolve(path, index, *arg, **kws)
+            return self.map(op)
+
+        return getattr(wrapper, name)
+
+    def __getitem__(self, index) -> any:
+        """Index based access of element in DataCollection.
+
+        Access the element at the given index, similar to accessing `list[at_index]`.
+        Does not work with streamed DataCollections.
+
+        Args:
+            index (int): The index location of the element being accessed.
+
+        Raises:
+            TypeError: If function called on streamed DataCollection
+
+        Returns:
+            any: The object at index.
+
+        Examples:
+            1. Usage with non-streamed::
+
+                >>> dc = DataCollection([0, 1, 2, 3, 4])
+                >>> dc[2]
+                2
+
+            2. Usage with streamed::
+
+                >>> dc.stream()[1] # doctest: +NORMALIZE_WHITESPACE
+                Traceback (most recent call last):
+                TypeError: indexing is only supported for DataCollection created from list
+                    or pandas DataFrame.
+        """
+        if not hasattr(self._iterable, '__getitem__'):
+            raise TypeError(
+                'indexing is only supported for '
+                'DataCollection created from list or pandas DataFrame.')
+        if isinstance(index, int):
+            return self._iterable[index]
+        return DataCollection(self._iterable[index])
+
+    def __setitem__(self, index, value):
+        """Index based setting of element in DataCollection.
+
+        Assign the value of the element at the given index, similar to
+        `list[at_index]=val`. Does not work with streamed DataCollections.
+
+        Args:
+            index (int): The index location of the element being set.
+            val (any): The value to be set.
+
+        Raises:
+            TypeError: If function called on streamed DataCollection
+
+        Examples:
+            1. Usage with non-streamed::
+
+                >>> dc = DataCollection([0, 1, 2, 3, 4])
+                >>> dc[2] = 3
+                >>> dc.to_list()
+                [0, 1, 3, 3, 4]
+
+            2. Usage with streamed::
+
+                >>> dc.stream()[1] # doctest: +NORMALIZE_WHITESPACE
+                Traceback (most recent call last):
+                TypeError: indexing is only supported for DataCollection created from list
+                    or pandas DataFrame.
+        """
+        if not hasattr(self._iterable, '__setitem__'):
+            raise TypeError(
+                'indexing is only supported for '
+                'DataCollection created from list or pandas DataFrame.')
+        self._iterable[index] = value
+
+    @register_dag
+    def __add__(self, other) -> 'DataCollection':
+        """Concat two DataCollections.
+
+        Args:
+            other (DataCollection): The DataCollection being appended to the calling
+                DataFrame.
+
+        Returns:
+            DataCollection: A new DataCollection of the concated DataCollections.
+
+        Examples:
+            >>> dc0 = DataCollection.range(5)
+            >>> dc1 = DataCollection.range(5)
+            >>> dc2 = DataCollection.range(5)
+            >>> (dc0 + dc1 + dc2)
+            [0, 1, 2, 3, 4, 0, ...]
+        """
+        self.parent_ids.append(other.id)
+        other.notify_consumed(self.id)
+
+        def inner():
+            for x in self:
+                yield x
+            for x in other:
+                yield x
+
+        return self._factory(inner())
+
+    def __repr__(self) -> str:
+        """String representation of the DataCollection
+
+        Returns:
+            str: String repersentation of the DataCollection.
+
+        Examples:
+            1. Usage with non-streamed::
+
+                >>> DataCollection([1, 2, 3]).unstream()
+                [1, 2, 3]
+
+            2. Usage with streamed::
+
+                >>> DataCollection([1, 2, 3]).stream() #doctest: +ELLIPSIS
+                <list_iterator object at...>
+        """
+        if isinstance(self._iterable, list):
+            return reprlib.repr(self._iterable)
+        if hasattr(self._iterable, '__repr__'):
+            return repr(self._iterable)
+        return super().__repr__()
+
+    # Generation Related Function
+    def _factory(self, iterable, parent_stream=True) -> 'DataCollection':
+        """Factory method for Creating new DataCollections.
+
+        This factory method has been wrapped into a `param_scope()` which contains the
+        parent DataCollection's information.
+
+        Args:
+            iterable (Iterable): The data being encapsulated by the DataCollection
+            parent_stream (bool, optional): Whether to use the same format of parent
+                DataCollection (streamed or unstreamed). Defaults to True.
+
+        Returns:
+            DataCollection: The newly created DataCollection.
         """
         if parent_stream is True:
             if self.is_stream:
@@ -205,147 +277,63 @@ class DataCollection(Iterable, DCMixins):
             hp().data_collection.parent = self
             return DataCollection(iterable)
 
+    @staticmethod
     @register_dag
-    def exception_safe(self):
-        """
-        Making the data collection exception-safe by warp elements with `Option`.
+    def range(*arg, **kws) -> 'DataCollection':
+        """Generate DataCollection with range of values.
 
-        Examples:
-
-        1. Exception breaks pipeline execution:
-
-        >>> dc = DataCollection.range(5)
-        >>> dc.map(lambda x: x / (0 if x == 3 else 2)).to_list()
-        Traceback (most recent call last):
-        ZeroDivisionError: division by zero
-
-        2. Exception-safe execution
-
-        >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).to_list()
-        [Some(0.0), Some(0.5), Some(1.0), Empty(), Some(2.0)]
-
-        >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5).to_list()
-        [Some(0.0), Some(0.5), Some(1.0), Empty()]
-
-        >>> dc.exception_safe().map(lambda x: x / (0 if x == 3 else 2)).filter(lambda x: x < 1.5, drop_empty=True).to_list()
-        [Some(0.0), Some(0.5), Some(1.0)]
-        """
-        result = map(lambda x: Some(x) if not isinstance(x, Option) else x, self._iterable)
-        return self._factory(result)
-
-    def safe(self):
-        """
-        Shortcut for `exception_safe`
-        """
-        return self.exception_safe()
-
-    @register_dag
-    def select_from(self, other):
-        """
-        Select data from dc with list(self).
-
-        Examples:
-
-        >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
-        >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
-
-        >>> dc3 = dc2.select_from(dc1)
-        >>> list(dc3)
-        [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
-        """
-        self.parent_ids.append(other.id)
-        other.notify_consumed(self.id)
-
-        def inner(x):
-            if isinstance(x, Iterable):
-                return [other[i] for i in x]
-            return other[x]
-
-        result = map(inner, self._iterable)
-        return self._factory(result)
-
-    @register_dag
-    def fill_empty(self, default: Any = None) -> 'DataCollection':
-        """
-        Unbox `Option` values and fill `Empty` with default values.
-
-        Args:
-            default (Any): default value to replace empty values;
+        Generate DataCollection with a range of numbers as the data. Functions in same
+        way as Python `range()` function.
 
         Returns:
-            DataCollection: data collection with empty values filled with `default`;
+            DataCollection: Returns a new DataCollection.
 
         Examples:
+            >>> DataCollection.range(5).to_list()
+            [0, 1, 2, 3, 4]
 
-        >>> dc = DataCollection.range(5)
-        >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).fill_empty(-1.0).to_list()
-        [0.0, 0.5, 1.0, -1.0, 2.0]
         """
-        result = map(lambda x: x.get() if isinstance(x, Some) else default, self._iterable)
-        return self._factory(result)
+        return DataCollection(range(*arg, **kws))
 
-    @register_dag
-    def drop_empty(self, callback: Callable = None) -> 'DataCollection':
-        """
-        Unbox `Option` values and drop `Empty`.
-
-        Args:
-            callback (Callable): handler for empty values;
+    def to_list(self) -> list:
+        """Convert DataCollection to list.
 
         Returns:
-            DataCollection: data collection that drops empty values;
+            list: List of values stored in DataCollection.
 
         Examples:
-
-        >>> dc = DataCollection.range(5)
-        >>> dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty().to_list()
-        [0.0, 0.5, 1.0, 2.0]
-
-        Get inputs that case exceptions:
-
-        >>> exception_inputs = []
-        >>> result = dc.safe().map(lambda x: x / (0 if x == 3 else 2)).drop_empty(lambda x: exception_inputs.append(x.get().value))
-        >>> exception_inputs
-        [3]
+            >>> DataCollection.range(5).to_list()
+            [0, 1, 2, 3, 4]
         """
-        if callback is not None:
-
-            def inner(data):
-                for x in data:
-                    if isinstance(x, Empty):
-                        callback(x)
-                    if isinstance(x, Some):
-                        yield x.get()
-
-            result = inner(self._iterable)
-        else:
-
-            def inner(data):
-                for x in data:
-                    if isinstance(x, Some):
-                        yield x.get()
-
-            result = inner(self._iterable)
-        return self._factory(result)
+        return self._iterable if isinstance(self._iterable, list) else list(self._iterable)
 
     @register_dag
-    def map(self, *arg):
-        """
-        Apply operator to data collection.
+    def map(self, *arg) -> 'DataCollection':
+        """Apply a function across all values in a DataCollection.
+
+        Can apply multiple functions to the DataCollection. If multiple functions
+        supplied, the same amount of new DataCollections will be returend.
 
         Args:
-            *arg (Callable): functions/operators to apply to data collection;
+            *arg (Callable): One or multiple functions to apply to the DataCollection.
 
         Returns:
-            DataCollection: data collections that contains computation results;
+            DataCollection: New DataCollection containing computation results.
 
         Examples:
+            1. Single Function::
 
-        >>> dc = DataCollection([1,2,3,4])
-        >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
-        [4, 6, 8, 10]
+                >>> dc = DataCollection([1,2,3,4])
+                >>> dc.map(lambda x: x+1).map(lambda x: x*2).to_list()
+                [4, 6, 8, 10]
+
+            2. Multiple Functions::
+
+                >>> dc = DataCollection([1,2,3,4])
+                >>> a, b = dc.map(lambda x: x+1, lambda x: x*2)
+                >>> (a.to_list(), b.to_list())
+                ([2, 3, 4, 5], [2, 4, 6, 8])
         """
-
         # mmap
         if len(arg) > 1:
             return self.mmap(list(arg))
@@ -376,47 +364,20 @@ class DataCollection(Iterable, DCMixins):
         return self._factory(result)
 
     @register_dag
-    def zip(self, *others) -> 'DataCollection':
-        """
-        Combine two data collections.
-
-        Args:
-            *others (DataCollection): other data collections;
-
-        Returns:
-            DataCollection: data collection with zipped values;
-
-        Examples:
-
-        >>> dc1 = DataCollection([1,2,3,4])
-        >>> dc2 = DataCollection([1,2,3,4]).map(lambda x: x+1)
-        >>> dc3 = dc1.zip(dc2)
-        >>> list(dc3)
-        [(1, 2), (2, 3), (3, 4), (4, 5)]
-        """
-        self.parent_ids.extend([other.id for other in others])
-
-        for x in others:
-            x.notify_consumed(self.id)
-
-        return self._factory(zip(self, *others))
-
-    @register_dag
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
-        """
-        Filter data collection with `unary_op`.
+        """Filter the DataCollection data based on function.
+
+        Filters the DataCollection based on the function provided. If data is stored
+        as an Option (see towhee.functional.option.py), drop empty will decide whether
+        to remove the element or set it to empty.
 
         Args:
-            unary_op (`Callable`):
-                Callable to decide whether to filter the element;
-            drop_empty (`bool`):
-                Drop empty values. Defaults to False.
+            unary_op (Callable): Function that dictates filtering.
+            drop_empty (bool, optional): Whether to drop empty fields. Defaults to False.
 
         Returns:
-            DataCollection: filtered data collection
+            DataCollection: Resulting DataCollection after filter.
         """
-
-        # return filter(unary_op, self)
         def inner(x):
             if isinstance(x, Option):
                 if isinstance(x, Some):
@@ -432,582 +393,49 @@ class DataCollection(Iterable, DCMixins):
 
         return self._factory(filter(inner, self._iterable))
 
-    @register_dag
-    def sample(self, ratio=1.0) -> 'DataCollection':
-        """
-        Sample the data collection.
-
-        Args:
-            ratio (float): sample ratio;
-
-        Returns:
-            DataCollection: sampled data collection;
-
-        Examples:
-
-        >>> dc = DataCollection(range(10000))
-        >>> result = dc.sample(0.1)
-        >>> ratio = len(result.to_list()) / 10000.
-        >>> 0.09 < ratio < 0.11
-        True
-        """
-        return self._factory(filter(lambda _: random.random() < ratio, self))
-
-    @staticmethod
-    @register_dag
-    def range(*arg, **kws):
-        """
-        Generate data collection with ranged numbers.
-
-        Examples:
-
-        >>> DataCollection.range(5).to_list()
-        [0, 1, 2, 3, 4]
-        """
-        return DataCollection(range(*arg, **kws))
-
-    @register_dag
-    def batch(self, size, drop_tail=False, raw=True):
-        """
-        Create small batches from data collections.
-
-        Args:
-            size (int): window size;
-            drop_tail (bool): drop tailing windows that not full, defaults to False;
-            raw (bool): whether to return raw data instead of DataCollection, defaults to True
-
-        Returns:
-            DataCollection of batched windows or batch raw data
-
-        Examples:
-
-        >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(2, raw=False)]
-        [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
-
-        >>> dc = DataCollection(range(10))
-        >>> dc.batch(3)
-        [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
-
-        >>> dc = DataCollection(range(10))
-        >>> dc.batch(3, drop_tail=True)
-        [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-
-        >>> from towhee import Entity
-        >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
-        >>> dc.batch(2)
-        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
-        """
-
-        def inner():
-            buff = []
-            count = 0
-            for ele in self._iterable:
-                if isinstance(ele, Entity):
-                    if count == 0:
-                        buff = ele
-                        for key in ele.__dict__.keys():
-                            buff.__dict__[key] = [buff.__dict__[key]]
-                        count = 1
-                        continue
-                    for key in ele.__dict__.keys():
-                        buff.__dict__[key].append(ele.__dict__[key])
-                else:
-                    buff.append(ele)
-                count += 1
-
-                if count == size:
-                    if raw:
-                        yield buff
-                    else:
-                        yield buff if isinstance(buff, list) else [buff]
-                    buff = []
-                    count = 0
-            if not drop_tail and count > 0:
-                if raw:
-                    yield buff
-                else:
-                    yield buff if isinstance(buff, list) else [buff]
-
-        return self._factory(inner())
-
-    @register_dag
-    def rolling(self, size: int, drop_head=True, drop_tail=True):
-        """
-        Create rolling windows from data collections.
-
-        Args:
-            size (int): window size;
-            drop_head (bool): drop headding windows that not full;
-            drop_tail (bool): drop tailing windows that not full;
-
-        Returns:
-            DataCollection: data collection of rolling windows;
-
-        Examples:
-
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3)]
-        [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
-
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3, drop_head=False)]
-        [[0], [0, 1], [0, 1, 2], [1, 2, 3], [2, 3, 4]]
-
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
-        [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
-        """
-
-        def inner():
-            buff = []
-            for ele in self._iterable:
-                buff.append(ele)
-                if not drop_head or len(buff) == size:
-                    yield buff.copy()
-                if len(buff) == size:
-                    buff = buff[1:]
-            while not drop_tail and len(buff) > 0:
-                yield buff
-                buff = buff[1:]
-
-        return self._factory(inner())
-
-    @register_dag
-    def flatten(self) -> 'DataCollection':
-        """
-        Flatten nested data collections.
-
-        Returns:
-            DataCollection: flattened data collection;
-
-        Examples:
-
-        >>> dc = DataCollection(range(10))
-        >>> nested_dc = dc.batch(2)
-        >>> nested_dc.flatten().to_list()
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        """
-
-        def inner():
-            for ele in self._iterable:
-                if isinstance(ele, Iterable):
-                    for nested_ele in iter(ele):
-                        yield nested_ele
-                else:
-                    yield ele
-
-        return self._factory(inner())
-
-    @register_dag
-    def shuffle(self) -> 'DataCollection':
-        """
-        Shuffle an unstreamed data collection in place.
-
-        Returns:
-            DataCollection: shuffled data collection;
-
-        Examples:
-
-        1. Shuffle:
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> a = dc.shuffle()
-        >>> tuple(a) == tuple(range(5))
-        False
-
-        2. streamed data collection is not supported:
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4]).stream()
-        >>> _ = dc.shuffle()
-        Traceback (most recent call last):
-        TypeError: shuffle is not supported for streamed data collection.
-        """
-        if self.is_stream:
-            raise TypeError('shuffle is not supported for streamed data collection.')
-        iterable = random.sample(self._iterable, len(self._iterable))
-        return self._factory(iterable)
-
-    def __getattr__(self, name):
-        """
-        Unknown method dispatcher.
-
-        When a unknown method is invoked on a `DataCollection` object,
-        the function call will be dispatched to a method resolver.
-        By registering function to the resolver, you are able to extend
-        `DataCollection`'s API at runtime without modifying its code.
-
-        Examples:
-
-        1. Define two operators:
-
-        >>> from towhee import register
-        >>> @register
-        ... class myadd:
-        ...     def __init__(self, val):
-        ...         self.val = val
-        ...     def __call__(self, x):
-        ...         return x+self.val
-
-        >>> @register
-        ... class mymul:
-        ...     def __init__(self, val):
-        ...         self.val = val
-        ...     def __call__(self, x):
-        ...         return x*self.val
-
-        2. Register the operators to `DataCollection`'s execution context with `param_scope`:
-
-        >>> dc = DataCollection([1,2,3,4])
-        >>> dc.myadd(1).mymul(val=2).to_list() # call registered operator
-        [4, 6, 8, 10]
-        """
-
-        if name.startswith('_'):
-            return super().__getattribute__(name)
-
-        @dynamic_dispatch
-        def wrapper(*arg, **kws):
-            with param_scope() as hp:
-                # pylint: disable=protected-access
-                path = hp._name
-                index = hp._index
-            if self.get_backend() == 'ray':
-                return self.ray_resolve({}, path, index, *arg, **kws)
-            if self._jit is not None:
-                op = self.jit_resolve(path, index, *arg, **kws)
-            else:
-                op = self.resolve(path, index, *arg, **kws)
-            return self.map(op)
-
-        return getattr(wrapper, name)
-
-    def __getitem__(self, index):
-        """
-        Indexing for data collection.
-
-        Examples:
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> dc[0]
-        0
-
-        >>> dc.stream()[1]
-        Traceback (most recent call last):
-        TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
-        """
-        if not hasattr(self._iterable, '__getitem__'):
-            raise TypeError(
-                'indexing is only supported for '
-                'data collection created from list or pandas DataFrame.')
-        if isinstance(index, int):
-            return self._iterable[index]
-        return DataCollection(self._iterable[index])
-
-    def __setitem__(self, index, value):
-        """
-        Indexing for data collection.
-
-        Examples:
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> dc[0]
-        0
-
-        >>> dc[0] = 5
-        >>> dc._iterable[0]
-        5
-
-        >>> dc.stream()[0]
-        Traceback (most recent call last):
-        TypeError: indexing is only supported for data collection created from list or pandas DataFrame.
-        """
-        if not hasattr(self._iterable, '__setitem__'):
-            raise TypeError(
-                'indexing is only supported for '
-                'data collection created from list or pandas DataFrame.')
-        self._iterable[index] = value
-
-    def append(self, *args) -> 'DataCollection':
-        """
-        Append item to data collection.
-
-        Args:
-            item (Any): the item to append
-
-        Returns:
-            DataCollection: self
-
-        Examples:
-
-        >>> dc = DataCollection([0, 1, 2])
-        >>> dc.append(3).append(4)
-        [0, 1, 2, 3, 4]
-        """
-        if hasattr(self._iterable, 'append'):
-            self._iterable.append(*args)
-            return self
-        raise TypeError('append() is only supported for data collection created from list.')
-
-    def clear(self, *args) -> 'DataCollection':
-        """
-        Clear a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.clear()
-        []
-        """
-        if hasattr(self._iterable, 'clear'):
-            self._iterable.clear(*args)
-            return self
-        raise TypeError('clear() is only supported for data collection created from list.')
-
-    def copy(self, *args) -> 'DataCollection':
-        """
-        Copy a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc_1 = dc.copy()
-        >>> dc_1._iterable.append(4)
-        >>> dc, dc_1
-        ([1, 2, 3], [1, 2, 3, 4])
-        """
-        if hasattr(self._iterable, 'copy'):
-            return self._factory(self._iterable.copy(*args))
-        raise TypeError('copy() is only supported for data collection created from list.')
-
-    def count(self, *args) -> int:
-        """
-        Count an element in  DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.count(1)
-        1
-        """
-        if hasattr(self._iterable, 'count'):
-            return self._iterable.count(*args)
-        raise TypeError('count() is only supported for data collection created from list.')
-
-    def extend(self, *args) -> 'DataCollection':
-        """
-        Extend a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.extend([4, 5])
-        [1, 2, 3, 4, 5]
-        """
-        if hasattr(self._iterable, 'extend'):
-            self._iterable.extend(*args)
-            return self
-        raise TypeError('extend() is only supported for data collection created from list.')
-
-    def insert(self, *args) -> 'DataCollection':
-        """
-        Insert data into a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.insert(0, 0)
-        [0, 1, 2, 3]
-        """
-        if hasattr(self._iterable, 'insert'):
-            self._iterable.insert(*args)
-            return self
-        raise TypeError('insert() is only supported for data collection created from list.')
-
-    def pop(self, *args) -> 'DataCollection':
-        """
-        Extend a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.pop()
-        [1, 2]
-        """
-        if hasattr(self._iterable, 'pop'):
-            self._iterable.pop(*args)
-            return self
-        raise TypeError('pop() is only supported for data collection created from list.')
-
-    def remove(self, *args) -> 'DataCollection':
-        """
-        Remove element from DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.remove(1)
-        [2, 3]
-        """
-        if hasattr(self._iterable, 'remove'):
-            self._iterable.remove(*args)
-            return self
-        raise TypeError('remove() is only supported for data collection created from list.')
-
-    def reverse(self, *args) -> 'DataCollection':
-        """
-        Reverse a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 2, 3])
-        >>> dc.reverse()
-        [3, 2, 1]
-        """
-        if hasattr(self._iterable, 'reverse'):
-            self._iterable.reverse(*args)
-            return self
-        raise TypeError('reverse() is only supported for data collection created from list.')
-
-    def sort(self, *args) -> 'DataCollection':
-        """
-        Sort a DataCollection.
-
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([1, 4, 3])
-        >>> dc.sort()
-        [1, 3, 4]
-        """
-        if hasattr(self._iterable, 'sort'):
-            self._iterable.sort(*args)
-            return self
-        raise TypeError('sort() is only supported for data collection created from list.')
-
-    # def __len__(self):
-    #     """
-    #     Return the length of iterable.
-    #     """
-    #     if not self.is_stream():
-    #         return self._iterable.__len__()
-    #     else:
-    #         raise TypeError('Streamed data collection does not support len.')
-
-    @register_dag
-    def __add__(self, other):
-        """
-        Concat two data collections:
-
-        Examples:
-
-        >>> (DataCollection.range(5) + DataCollection.range(5)).to_list()
-        [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
-
-        >>> (DataCollection.range(5) + DataCollection.range(5) + DataCollection.range(5)).to_list()
-        [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
-        """
-        self.parent_ids.append(other.id)
-        other.notify_consumed(self.id)
-
-        def inner():
-            for x in self:
-                yield x
-            for x in other:
-                yield x
-
-        return self._factory(inner())
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation for DataCollection.
-
-        Examples:
-
-        >>> DataCollection([1, 2, 3]).unstream()
-        [1, 2, 3]
-
-        >>> DataCollection([1, 2, 3]).stream() #doctest: +ELLIPSIS
-        <list_iterator object at...>
-        """
-        if isinstance(self._iterable, list):
-            return reprlib.repr(self._iterable)
-        if hasattr(self._iterable, '__repr__'):
-            return repr(self._iterable)
-        return super().__repr__()
-
-    @register_dag
-    def head(self, n: int = 5):
-        """
-        Get the first n lines of a DataCollection.
-
-        Args:
-            n (`int`):
-                The number of lines to print. Default value is 5.
-
-        Examples:
-
-        >>> DataCollection.range(10).head(3).to_list()
-        [0, 1, 2]
-        """
-
-        def inner():
-            for i, x in enumerate(self._iterable):
-                if i >= n:
-                    break
-                yield x
-
-        return self._factory(inner())
-
     def run(self):
+        """Iterate through the DataCollections data.
+
+        Stream-based DataCollections will not run if the data is not a datasink. This
+        function is a datasink that consumes the data without any operations.
+        """
         for _ in self._iterable:
             pass
 
-    def to_list(self):
-        return self._iterable if isinstance(self._iterable, list) else list(self._iterable)
+    def to_df(self) -> 'DataFrame':
+        """Turn a DataCollection into a DataFrame.
 
-    def to_df(self):
-        """
-        Turn a DataCollection to DataFrame.
+        Returns:
+            DataFrame: Resulting converted DataFrame.
 
         Examples:
+            >>> from towhee import DataCollection, Entity
+            >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+            >>> dc = DataCollection(e)
+            >>> type(dc)
+            <class 'towhee.functional.data_collection.DataCollection'>
 
-        >>> from towhee import DataCollection, Entity
-        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
-        >>> dc = DataCollection(e)
-        >>> type(dc)
-        <class 'towhee.functional.data_collection.DataCollection'>
-        >>> type(dc.to_df())
-        <class 'towhee.functional.data_collection.DataFrame'>
+            >>> type(dc.to_df())
+            <class 'towhee.functional.data_collection.DataFrame'>
         """
         return DataFrame(self._iterable)
 
 
 class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
-    """
-    Entity based DataCollection.
+    """Entity based DataCollection.
 
-    Args:
-        iterable (Iterable): input data.
-
-    >>> from towhee import Entity
-    >>> DataFrame([Entity(id=a) for a in [1,2,3]])
-    [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
+    Examples:
+        >>> from towhee import Entity
+        >>> DataFrame([Entity(id=a) for a in [1,2,3]])
+        [<Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>, <Entity dict_keys(['id'])>]
     """
 
     def __init__(self, iterable: Iterable = None, **kws) -> None:
-        """Initializes a new DataCollection instance.
+        """Initializes a new DataFrame instance.
 
         Args:
-            iterable (Iterable): input data
+            iterable (Iterable, optional): The data to be encapsualted by the DataFrame.
+                Defaults to None.
         """
         if iterable is not None:
             super().__init__(iterable)
@@ -1017,20 +445,20 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             self._mode = self.ModeFlag.COLBASEDFLAG
 
 
-    def _factory(self, iterable, parent_stream=True, mode=None):
-        """
-        Factory method for DataFrame.
+    def _factory(self, iterable, parent_stream=True, mode=None) -> 'DataFrame':
+        """Factory method for Creating new DataFrames.
 
-        This factory method has been wrapped into a `param_scope()` which contains parent information.
+        This factory method has been wrapped into a `param_scope()` which contains the
+        parent DataFrames's information.
 
         Args:
-            iterable:
-                An iterable object, the data being stored in the DC
-            parent_stream:
-                Whether to copy the parents format (streamed vs unstreamed)
+            iterable (Iterable): The data being encapsulated by the DataFrame
+            parent_stream (bool, optional): Whether to use the same format of parent
+                DataFrame (streamed or unstreamed). Defaults to True.
+            mode (ModeFlag): The storage mode of the Dataframe.
 
         Returns:
-            DataFrame: DataFrame encapsulating the iterable.
+            DataFrame: The newly created DataFrame.
         """
 
         # pylint: disable=protected-access
@@ -1048,58 +476,73 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             df._mode = self._mode if mode is None else mode
             return df
 
-    def to_dc(self):
-        """
-        Turn a DataFrame to DataCollection.
+    def to_dc(self) -> 'DataCollection':
+        """Turn a DataFrame into a DataCollection.
+
+        Returns:
+            DataCollection: Resulting DataCollection from DataFrame
 
         Examples:
+            >>> from towhee import DataFrame, Entity
+            >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+            >>> df = DataFrame(e)
+            >>> type(df)
+            <class 'towhee.functional.data_collection.DataFrame'>
 
-        >>> from towhee import DataFrame, Entity
-        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
-        >>> df = DataFrame(e)
-        >>> type(df)
-        <class 'towhee.functional.data_collection.DataFrame'>
-        >>> type(df.to_dc())
-        <class 'towhee.functional.data_collection.DataCollection'>
+            >>> type(df.to_dc())
+            <class 'towhee.functional.data_collection.DataCollection'>
         """
         return DataCollection(self._iterable)
 
     @property
     def mode(self):
-        """
+        """Storage mode of the DataFrame.
+
         Return the storage mode of the DataFrame.
 
-        Examples:
+        Returns:
+            ModeFlag: The storage format of the Dataframe.
 
-        >>> from towhee import Entity, DataFrame
-        >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
-        >>> df = DataFrame(e)
-        >>> df.mode
-        <ModeFlag.ROWBASEDFLAG: 1>
-        >>> df = df.to_column()
-        >>> df.mode
-        <ModeFlag.COLBASEDFLAG: 2>
+        Examples:
+            >>> from towhee import Entity, DataFrame
+            >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
+            >>> df = DataFrame(e)
+            >>> df.mode
+            <ModeFlag.ROWBASEDFLAG: 1>
+
+            >>> df = df.to_column()
+            >>> df.mode
+            <ModeFlag.COLBASEDFLAG: 2>
         """
         return self._mode
 
-    def __iter__(self):
-        """
-        Define the way of iterating a DataFrame.
+    def __iter__(self) -> iter:
+        """Generate an iterator of the DataFrame.
+
+        Returns:
+            iterator: The iterator for the DataFrame.
 
         Examples:
+            1. Row Based::
 
-        >>> from towhee import Entity, DataFrame
-        >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
-        >>> df = DataFrame(e)
-        >>> df.to_list()[0]
-        <Entity dict_keys(['a', 'b'])>
-        >>> df = df.to_column()
-        >>> df.to_list()[0]
-        <EntityView dict_keys(['a', 'b'])>
-        >>> df = DataFrame(e)
-        >>> df = df.set_chunksize(2)
-        >>> df.to_list()[0]
-        <EntityView dict_keys(['a', 'b'])>
+                >>> from towhee import Entity, DataFrame
+                >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
+                >>> df = DataFrame(e)
+                >>> df.to_list()[0]
+                <Entity dict_keys(['a', 'b'])>
+
+            2. Column Based::
+
+                >>> df = df.to_column()
+                >>> df.to_list()[0]
+                <EntityView dict_keys(['a', 'b'])>
+
+            2. Chunk Bassed::
+
+                >>> df = DataFrame(e)
+                >>> df = df.set_chunksize(2)
+                >>> df.to_list()[0]
+                <EntityView dict_keys(['a', 'b'])>
         """
         if hasattr(self._iterable, 'iterrows'):
             return (x[1] for x in self._iterable.iterrows())
@@ -1110,7 +553,15 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         if self._mode == self.ModeFlag.CHUNKBASEDFLAG:
             return (ev for wtable in self._iterable.chunks() for ev in wtable)
 
-    def map(self, *arg):
+    def map(self, *arg) -> 'DataFrame':
+        """Apply a function across all values in a DataFrame.
+
+        Args:
+            *arg (Callable): One function to apply to the DataFrame.
+
+        Returns:
+            DataFrame: New DataFrame containing computation results.
+        """
         if hasattr(arg[0], '__check_init__'):
             arg[0].__check_init__()
         if self._mode == self.ModeFlag.COLBASEDFLAG or self._mode == self.ModeFlag.CHUNKBASEDFLAG:

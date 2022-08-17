@@ -31,8 +31,8 @@ class TestCLIP4Clip(unittest.TestCase):
 
     def test_forward(self):
         input_ids = torch.randint(low=0, high=2, size=(2, 1, 32))
-        video = torch.randn(2, 1, 12, 1, 3, 224, 224)
-        video_mask = torch.randint(low=0, high=2, size=(2, 1, 12))
+        video = torch.randn(2, 1, 12, 1, 3, 224, 224).to(self.device)
+        video_mask = torch.randint(low=0, high=2, size=(2, 1, 12)).to(self.device)
         loss = self.model(input_ids, video, video_mask)
         self.assertTrue(loss.size() == torch.Size([]))
 

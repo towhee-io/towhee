@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List
+from typing import Dict
 import traceback
 import logging
 
@@ -52,25 +52,25 @@ class Builder:
         model_root (`str`):
             Triton models root.
 
-        model_format_priority (`List(str)`):
-            Try to converter nnoperator's model, support tensorrt, onnx, torchscript.
     '''
-    def __init__(self, dag: Dict, model_root: str, model_format_priority: List[str]):
+    def __init__(self, dag: Dict, model_root: str):
         self.dag = dag
         self._runtime_dag = None
         self._model_root = model_root
         self._ensemble_config = None
-        self._model_format_priority = model_format_priority
 
     def _nnoperator_config(self, op, op_name, node_id, node):
         '''
         preprocess -> model -> postprocess
         '''
         models = []
+        op_config = node.get(constant.OP_CONFIG, None)
+        if op_config is None:
+            op_config = {}
         if hasattr(op, constant.PREPROCESS):
             model_name = '_'.join([node_id, op_name, 'preprocess']).replace('/', '_')
             converter = PreprocessToTriton(op, self._model_root,
-                                           model_name)
+                                           model_name, op_config)
             models.append({
                 'model_name': model_name,
                 'model_version': 1,
@@ -81,7 +81,7 @@ class Builder:
 
         model_name = '_'.join([node_id, op_name, 'model']).replace('/', '_')
         converter = ModelToTriton(op, self._model_root,
-                                  model_name, self._model_format_priority)
+                                  model_name, op_config)
         models.append({
             'model_name': model_name,
             'model_version': 1,
@@ -92,7 +92,7 @@ class Builder:
         if hasattr(op, constant.POSTPROCESS):
             model_name = '_'.join([node_id, op_name, 'postprocess']).replace('/', '_')
             converter = PostprocessToTriton(op, self._model_root,
-                                            model_name)
+                                            model_name, op_config)
             models.append({
                 'model_name': model_name,
                 'model_version': 1,
@@ -109,10 +109,13 @@ class Builder:
         return dict((model['id'], model) for model in models)
 
     def _pyop_config(self, op: 'Operator', node_id: str, node: Dict) -> Dict:
+        op_config = node.get(constant.OP_CONFIG, None)
+        if op_config is None:
+            op_config = {}
         model_name = node_id + '_' + node['op_name'].replace('/', '_')
         hub, name = node['op_name'].split('/')
         converter = PyOpToTriton(op, self._model_root, model_name,
-                                 hub, name, node['init_args'])
+                                 hub, name, node['init_args'], op_config)
         config = {node_id: {
             'id': node_id,
             'model_name': model_name,
@@ -129,12 +132,21 @@ class Builder:
         init_args = node['init_args']
         op = Builder._load_op(op_name, init_args)
         if op is None:
+            logger.error('Load operator: [%s] by init args: [%s] failed', op_name, init_args)
             return None
 
-        if isinstance(op, NNOperator) and op.model.supported_formats:
-            return self._nnoperator_config(op, op_name, node_id, node)
-        else:
-            return self._pyop_config(op, node_id, node)
+        if isinstance(op, NNOperator):
+            config = node.get(constant.OP_CONFIG, {})
+            if config is None:
+                config = {}
+            format_priority = config.get(constant.FORMAT_PRIORITY, [])
+            if format_priority is None:
+                format_priority = []
+            op_support_format = op.model.supported_formats if hasattr(op, 'model') and hasattr(op.model, 'supported_formats') else []
+
+            if set(format_priority) & set(op_support_format):
+                return self._nnoperator_config(op, op_name, node_id, node)
+        return self._pyop_config(op, node_id, node)
 
     @staticmethod
     def _load_op(op_name: str, init_args: Dict) -> 'Operator':
@@ -156,6 +168,7 @@ class Builder:
 
     def load(self) -> bool:
         self._runtime_dag = {}
+
         for node_id, node in self.dag.items():
             if node_id in ['start', 'end']:
                 continue
@@ -165,6 +178,7 @@ class Builder:
                 node['child_ids'].remove('end')
             config = self._create_node_config(node_id, node)
             if config is None:
+                logger.error('Create node config failed')
                 return False
             self._runtime_dag.update(config)
         return True
@@ -185,14 +199,13 @@ class Builder:
 def main():
     import json  # pylint: disable=import-outside-toplevel
     import sys  # pylint: disable=import-outside-toplevel
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 3:
         sys.exit(-1)
 
-    dag_file, model_root, model_format_priority_str = sys.argv[1], sys.argv[2], sys.argv[3]
+    dag_file, model_root = sys.argv[1], sys.argv[2]
     with open(dag_file, 'rt', encoding='utf-8') as f:
         dag = json.load(f)
-        model_format_priority = model_format_priority_str.split(',')
-        if not Builder(dag, model_root, model_format_priority).build():
+        if not Builder(dag, model_root).build():
             sys.exit(-1)
     sys.exit(0)
 

@@ -32,6 +32,10 @@ import towhee.functional.mixins.state
 import towhee.functional.mixins.serve
 import towhee.functional.mixins.config
 import towhee.functional.mixins.remote
+import towhee.functional.mixins.data_processing
+import towhee.functional.mixins.safe
+import towhee.functional.mixins.list
+import towhee.functional.mixins.stream
 
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection, DataFrame, dc
@@ -54,6 +58,10 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.column,
             towhee.functional.mixins.config,
             towhee.functional.mixins.remote,
+            towhee.functional.mixins.list,
+            towhee.functional.mixins.data_processing,
+            towhee.functional.mixins.stream,
+            towhee.functional.mixins.safe,
     ]:
         tests.addTests(doctest.DocTestSuite(mod))
 

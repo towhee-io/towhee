@@ -37,7 +37,7 @@ def parse_requirements(file_name: str) -> List[str]:
 if '--models' in sys.argv:
     sys.argv.remove('--models')
     setup(name='towhee.models',
-          version='0.7.2',
+          version='0.8.0',
           description='',
           author='Towhee Team',
           author_email='towhee-team@zilliz.com',
@@ -50,6 +50,7 @@ if '--models' in sys.argv:
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(include=['towhee.models*']),#['towhee.models'],
           package_data={'towhee.tests.test_util': ['*.yaml']},
+          namespace_package = ['towhee'],
           include_package_data=True,
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
@@ -65,7 +66,8 @@ else:
           extras_require={':python_version<\'3.7\'': 'importlib-resources'},
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(exclude=['*test*', 'towhee.models*']),
-          package_data={'towhee.tests.test_util': ['*.yaml']},
+          namespace_package = ['towhee'],
+          package_data={'towhee.tests.test_util': ['*.yaml'], 'towhee.serve.triton.dockerfiles': ['*']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': [

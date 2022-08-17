@@ -23,7 +23,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from .clip_utils import get_configs, _download, convert_weights, patch_device, patch_float
+from .clip_utils import get_configs, _download, convert_weights, patch_device, patch_float, tokenize
 from towhee.models.clip.auxilary import multi_head_attention_forward, MultiheadAttention
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -289,9 +289,9 @@ class Transformer(nn.Module):
         super().__init__()
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask, vis,
-                                                                patch_nums=patch_nums,
-                                                                is_bridge_former_video=is_bridge_former_video) for _ in range(layers)])
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(
+            width, heads, attn_mask, vis,
+            patch_nums=patch_nums, is_bridge_former_video=is_bridge_former_video) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
@@ -375,7 +375,6 @@ class CLIP(nn.Module):
     """
     CLIP model
     """
-
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -384,11 +383,12 @@ class CLIP(nn.Module):
                  vision_width: int,
                  vision_patch_size: int,
                  # text
-                 context_length: int,
-                 vocab_size: int,
-                 transformer_width: int,
-                 transformer_heads: int,
-                 transformer_layers: int,
+                 multilingual_model: str = None,
+                 context_length: int = 77,
+                 vocab_size: int = 49408,
+                 transformer_width: int = 512,
+                 transformer_heads: int = 8,
+                 transformer_layers: int = 12,
                  # whether used for CLIP4Clip model
                  clip4clip: bool = False,
                  # whether be able to visualize
@@ -399,6 +399,7 @@ class CLIP(nn.Module):
                  ):
         super().__init__()
 
+        self.multilingual_model = multilingual_model
         self.context_length = context_length
         self.is_bridge_former = is_bridge_former
         if isinstance(vision_layers, (tuple, list)):
@@ -500,41 +501,63 @@ class CLIP(nn.Module):
     def encode_image(self, image):
         return self.visual(image.type(self.dtype))
 
-    def encode_text(self, text, clip4clip=False, return_hidden=False):
+    def encode_text(self, text, clip4clip=False, return_hidden=False, multilingual=False, device=None):
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        if multilingual:
+            assert self.multilingual_model is not None, "Multilingual is not supported yet."
+            assert isinstance(text[0], str), "Multilingual is only supported for inputs in text or list of texts."
+            try:
+                from multilingual_clip import pt_multilingual_clip  # pylint: disable=C0415
+            except ModuleNotFoundError:
+                os.system("pip install multilingual-clip")
+            try:
+                import transformers  # pylint: disable=C0415
+            except ModuleNotFoundError:
+                os.system("pip install transformers")
 
-        if clip4clip:
-            x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
-
-            pos_emd = self.positional_embedding[:x.size(1), :].type(self.dtype)
-            x = x + pos_emd
-            x = x.permute(1, 0, 2)  # NLD -> LND
-            x = self.transformer(x)
-            x = x.permute(1, 0, 2)  # LND -> NLD
-
-            hidden = self.ln_final(x).type(self.dtype) @ self.text_projection
-
-            # x.shape = [batch_size, n_ctx, transformer.width]
-            # take features from the eot embedding (eot_token is the highest number in each sequence)
-            x = hidden[torch.arange(hidden.shape[0]), text.argmax(dim=-1)]
-
-            if return_hidden:
-                return x, hidden
+            tokenizer = transformers.AutoTokenizer.from_pretrained(self.multilingual_model)
+            encoder = pt_multilingual_clip.MultilingualCLIP.from_pretrained(self.multilingual_model)
+            x = encoder(text, tokenizer)
+            return x
         else:
-            x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+            if isinstance(text[0], str):
+                text = tokenize(text).to(device)
+            else:
+                text = text.to(device)
+            if clip4clip:
+                x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
 
-            x = x + self.positional_embedding.type(self.dtype)
-            x = x.permute(1, 0, 2)  # NLD -> LND
-            x = self.transformer(x)
-            x = x.permute(1, 0, 2)  # LND -> NLD
-            x = self.ln_final(x).type(self.dtype)
+                pos_emd = self.positional_embedding[:x.size(1), :].type(self.dtype)
+                x = x + pos_emd
+                x = x.permute(1, 0, 2)  # NLD -> LND
+                x = self.transformer(x)
+                x = x.permute(1, 0, 2)  # LND -> NLD
 
-            x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+                hidden = self.ln_final(x).type(self.dtype) @ self.text_projection
 
-        return x
+                # x.shape = [batch_size, n_ctx, transformer.width]
+                # take features from the eot embedding (eot_token is the highest number in each sequence)
+                x = hidden[torch.arange(hidden.shape[0]), text.argmax(dim=-1)]
 
-    def forward(self, image, text):
+                if return_hidden:
+                    return x, hidden
+            else:
+                x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+
+                x = x + self.positional_embedding.type(self.dtype)
+                x = x.permute(1, 0, 2)  # NLD -> LND
+                x = self.transformer(x)
+                x = x.permute(1, 0, 2)  # LND -> NLD
+                x = self.ln_final(x).type(self.dtype)
+
+                x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+
+            return x
+
+    def forward(self, image, text, multilingual=False, device=None):
         image_features = self.encode_image(image)
-        text_features = self.encode_text(text)
+        text_features = self.encode_text(text, multilingual=multilingual, device=device)
         # normalized features
         image_features = image_features / image_features.norm(dim=1, keepdim=True)
         text_features = text_features / text_features.norm(dim=1, keepdim=True)
@@ -585,14 +608,14 @@ def create_model(
     if model_name is None:
         if pretrained:
             raise AttributeError("Fail to load pretrained model: no model name is specified.")
-        model = CLIP(**kwargs)
+        model = CLIP(**kwargs).to(device)
     else:
         configs = get_configs(model_name)
         configs.update(**kwargs)
         if "url" in configs:
             url = configs["url"]
             configs.pop("url")
-        model = CLIP(**configs)
+        model = CLIP(**configs).to(device)
 
         if pretrained:
             if weights_path:
@@ -620,7 +643,7 @@ def create_model(
                 state_dict = torch.load(local_path, map_location="cpu")
 
             if not jit:
-                clip_model = CLIP(**configs)
+                clip_model = CLIP(**configs).to(device)
                 for key in ["input_resolution", "context_length", "vocab_size"]:
                     if key in state_dict:
                         del state_dict[key]

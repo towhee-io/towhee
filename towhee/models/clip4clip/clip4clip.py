@@ -47,9 +47,10 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
         self.loose_type = True
         self.linear_patch = "2d"
         self.clip = CLIP(
-            embed_dim,
-            image_resolution, vision_layers, vision_width, vision_patch_size,
-            context_length, vocab_size, transformer_width, transformer_heads, transformer_layers,
+            embed_dim=embed_dim, image_resolution=image_resolution,
+            vision_layers=vision_layers, vision_width=vision_width, vision_patch_size=vision_patch_size,
+            context_length=context_length, vocab_size=vocab_size, transformer_width=transformer_width,
+            transformer_heads=transformer_heads, transformer_layers=transformer_layers,
             clip4clip=True
         ).float()
         self.sim_header = "meanP"
@@ -171,6 +172,8 @@ def create_model(
 
     """
     configs = get_configs(model_name)
+    if "multilingual_model" in configs:
+        configs.pop("multilingual_model")
     if "url" in configs:
         configs.pop("url")
     configs["context_length"] = context_length

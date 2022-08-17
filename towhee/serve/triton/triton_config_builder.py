@@ -50,8 +50,9 @@ class TritonModelConfigBuilder:
 
 
 def create_modelconfig(model_name, max_batch_size, inputs, outputs, backend,
-                       enable_dynamic_batching=None, preferred_batch_size=None,
-                       max_queue_delay_microseconds=None):
+                       enable_dynamic_batching=False, preferred_batch_size=None,
+                       max_queue_delay_microseconds=None,
+                       instance_count=1, device_ids=None):
     '''
     example of input and output:
         {
@@ -96,6 +97,25 @@ output [
     dims: {}
   }}
 ]\n'''.format(output_name, data_type, shape)
+
+    if device_ids is not None:
+        config += '''
+instance_group [
+    {{
+        kind: KIND_GPU
+        count: {}
+        gpus: {}
+    }}
+]\n'''.format(instance_count, device_ids)
+    else:
+        config += '''
+instance_group [
+    {{
+        kind: KIND_CPU
+        count: {}
+    }}
+]\n'''.format(instance_count)
+
     return config
 
 

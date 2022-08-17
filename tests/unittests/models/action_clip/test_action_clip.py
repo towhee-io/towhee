@@ -23,7 +23,8 @@ class TestActionClip(unittest.TestCase):
     """
     Test ActionClip model
     """
-    video = torch.rand(1, 2, 3, 4, 4)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    video = torch.rand(1, 2, 3, 4, 4).to(device)
     text = ["archery", "dance"]
     clip_model = clip.create_model(
             embed_dim=512, image_resolution=4, vision_layers=12, vision_width=768, vision_patch_size=2,

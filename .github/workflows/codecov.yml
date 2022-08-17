@@ -1,26 +1,40 @@
 name: Workflow for codecov
-on: [push, pull_request]
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    # file paths to consider in the event
+    paths:
+      - 'towhee/**'
+      - '!**.md'
+      - 'tests/**'
+      - '.github/workflows/codecov.yml'
+
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container: 
+      image: towhee/towhee-ut:latest
+      options: --user root
+      volumes:
+        - /__w/towhee/towhee:/__w/towhee/towhee
     steps:
+    - name: work around permission
+      run: git config --global --add safe.directory /__w/towhee/towhee
     - uses: actions/checkout@v3.0.0
-    - name: Setup Python
-      uses: actions/setup-python@v3.0.0
-      with:
-        python-version: 3.8
     - name: Generate coverage report
       run: |
-        pip install coverage pytest pytest-xdist
+        rm -rf ./coverage.xml
+        pip install coverage codecov pytest pytest-xdist
         pip install -r test_requirements.txt
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
         coverage erase
         coverage run -m pytest
-    - name: Generate xml report
-      run: |
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage.xml
-        fail_ci_if_error: true
+        files: /__w/towhee/towhee/coverage.xml
+        fail_ci_if_error: true    

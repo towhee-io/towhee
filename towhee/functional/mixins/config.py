@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
+from typing import Union, List
 from towhee.hparam import param_scope
 
 
@@ -28,13 +28,33 @@ class ConfigMixin:
     >>> dc = dc.set_parallel(2)
     >>> dc = dc.set_jit('numba')
     >>> dc.get_config()
-    {'parallel': 2, 'chunksize': 10, 'jit': 'numba'}
+    {'parallel': 2, 'chunksize': 10, 'jit': 'numba', 'format_priority': None}
     >>> dc1 = towhee.dc([1,2,3]).config(jit='numba')
     >>> dc2 = towhee.dc['a'](range(40)).config(parallel=2, chunksize=20)
     >>> dc1.get_config()
-    {'parallel': None, 'chunksize': None, 'jit': 'numba'}
+    {'parallel': None, 'chunksize': None, 'jit': 'numba', 'format_priority': None}
     >>> dc2.get_config()
-    {'parallel': 2, 'chunksize': 20, 'jit': None}
+    {'parallel': 2, 'chunksize': 20, 'jit': None, 'format_priority': None}
+    >>> dc3 = towhee.dc['a'](range(10)).config(format_priority=['tensorrt', 'onnx'])
+    >>> dc3.get_config()
+    {'parallel': None, 'chunksize': None, 'jit': None, 'format_priority': ['tensorrt', 'onnx']}
+
+    >>> import towhee
+    >>> dc = towhee.dc['a'](range(20))
+    >>> dc = dc.set_chunksize(10)
+    >>> dc = dc.set_parallel(2)
+    >>> dc = dc.set_jit('numba')
+    >>> dc.get_pipeline_config()
+    {'parallel': 2, 'chunksize': 10, 'jit': 'numba', 'format_priority': None}
+    >>> dc1 = towhee.dc([1,2,3]).pipeline_config(jit='numba')
+    >>> dc2 = towhee.dc['a'](range(40)).pipeline_config(parallel=2, chunksize=20)
+    >>> dc1.get_pipeline_config()
+    {'parallel': None, 'chunksize': None, 'jit': 'numba', 'format_priority': None}
+    >>> dc2.get_pipeline_config()
+    {'parallel': 2, 'chunksize': 20, 'jit': None, 'format_priority': None}
+    >>> dc3 = towhee.dc['a'](range(10)).pipeline_config(format_priority=['tensorrt', 'onnx'])
+    >>> dc3.get_pipeline_config()
+    {'parallel': None, 'chunksize': None, 'jit': None, 'format_priority': ['tensorrt', 'onnx']}
     """
 
     def __init__(self) -> None:
@@ -51,8 +71,10 @@ class ConfigMixin:
             self._chunksize = None
         if parent is None or not hasattr(parent, '_jit'):
             self._jit = None
+        if parent is None or not hasattr(parent, '_format_priority'):
+            self._format_priority = None
 
-    def config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None):
+    def config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None, format_priority: List[str] = None):
         """
         Set the parameters in DC.
 
@@ -64,6 +86,8 @@ class ConfigMixin:
             jit (`Union[str, dict]`):
                It can set to "numba", this mode will speed up the Operator's function, but it may also need to return to python mode due to JIT
                failure, which will take longer, so please set it carefully.
+            format_priority (`List[str]`):
+                The priority list of format.
         """
         dc = self
         if jit is not None:
@@ -72,15 +96,64 @@ class ConfigMixin:
             dc = dc.set_parallel(num_worker=parallel)
         if chunksize is not None:
             dc = dc.set_chunksize(chunksize=chunksize)
+        if format_priority is not None:
+            dc = dc.set_format_priority(format_priority=format_priority)
         return dc
 
     def get_config(self):
         """
-        Return the config in DC, such as `parallel`, `chunksize` and `jit`.
+        Return the config in DC, such as `parallel`, `chunksize`, `jit` and `format_priority`.
         """
-        self._config = {
-            'parallel': self._num_worker,
-            'chunksize': self._chunksize,
-            'jit': self._jit,
-        }
+        self._config = {}
+
+        if hasattr(self, '_num_worker'):
+            self._config['parallel'] = self._num_worker
+        if hasattr(self, '_chunksize'):
+            self._config['chunksize'] = self._chunksize
+        if hasattr(self, '_jit'):
+            self._config['jit'] = self._jit
+        if hasattr(self, '_format_priority'):
+            self._config['format_priority'] = self._format_priority
         return self._config
+
+    def pipeline_config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None, format_priority: List[str] = None):
+        """
+        Set the parameters in DC.
+
+        Args:
+            parallel (`int`):
+               Set the number of parallel execution for following calls.
+            chunksize (`int`):
+               Set the chunk size for arrow.
+            jit (`Union[str, dict]`):
+               It can set to "numba", this mode will speed up the Operator's function, but it may also need to return to python mode due to JIT
+               failure, which will take longer, so please set it carefully.
+            format_priority (`List[str]`):
+                The priority list of format.
+        """
+        dc = self
+        if jit is not None:
+            dc = dc.set_jit(compiler=jit)
+        if parallel is not None:
+            dc = dc.set_parallel(num_worker=parallel)
+        if chunksize is not None:
+            dc = dc.set_chunksize(chunksize=chunksize)
+        if format_priority is not None:
+            dc = dc.set_format_priority(format_priority=format_priority)
+        return dc
+
+    def get_pipeline_config(self):
+        """
+        Return the config in DC, such as `parallel`, `chunksize`, `jit` and `format_priority`.
+        """
+        self._pipeline_config = {}
+
+        if hasattr(self, '_num_worker'):
+            self._pipeline_config['parallel'] = self._num_worker
+        if hasattr(self, '_chunksize'):
+            self._pipeline_config['chunksize'] = self._chunksize
+        if hasattr(self, '_jit'):
+            self._pipeline_config['jit'] = self._jit
+        if hasattr(self, '_format_priority'):
+            self._pipeline_config['format_priority'] = self._format_priority
+        return self._pipeline_config

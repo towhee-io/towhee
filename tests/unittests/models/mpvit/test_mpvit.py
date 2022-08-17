@@ -28,7 +28,7 @@ class TestMPViT(unittest.TestCase):
     model.eval()
 
     def test_forward(self):
-        img = torch.rand(1, 3, 224, 224)
+        img = torch.rand(1, 3, 224, 224).to(self.device)
         out = self.model(img)
         print(out.shape)
         self.assertTrue(out.shape == (1, self.num_classes))

@@ -27,6 +27,9 @@ def get_dockerfile(cuda_version: str) -> Path:
         file_name = 'DockerfileCuda114'
     elif cuda_version == '11.6':
         file_name = 'DockerfileCuda116'
+    elif cuda_version == 'dev':
+        # for QA to test towhee
+        file_name = 'DockerfileCuda114dev'
     else:
         logger.error("Towhee serve doesn't support cuda %s, the support cuda: 11.3, 11.4, 11.6", cuda_version)
         return None

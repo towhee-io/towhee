@@ -8,10 +8,17 @@ class TritonPythonModel:
 
     def initialize(self, args):
 
+        device = "cpu"
+        if args["model_instance_kind"] == "GPU":
+            device = int(args["model_instance_device_id"])        
         # create op instance
         task = getattr(ops, 'image_embedding')
         init_args = {"model_name": "resnet50"}
-        self.op = getattr(task, 'timm')(**init_args)
+        op_wrapper = getattr(task, 'timm')(**init_args)
+        self.op = op_wrapper.get_op()
+        self.op._device = device
+        if hasattr(self.op, "to_device"):
+            self.op.to_device()
 
     def execute(self, requests):
 

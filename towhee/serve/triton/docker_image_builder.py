@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
 import json
 import shutil
 import subprocess
@@ -26,11 +25,9 @@ class DockerImageBuilder:
     '''
     Build triton image
     '''
-    def __init__(self, towhee_pipeline: 'towhee.dc', image_name: str,
-                 model_format_priority: List[str], cuda: str):
+    def __init__(self, towhee_pipeline: 'towhee.dc', image_name: str, cuda: str):
         self._towhee_pipeline = towhee_pipeline
         self._image_name = image_name
-        self._model_format_priority = model_format_priority
         self._cuda = cuda
 
     def prepare_dag(self, workspace: Path):
@@ -41,9 +38,8 @@ class DockerImageBuilder:
             json.dump(dag, f)
 
     def build_image(self, workspace: Path):
-        cmd = 'cd {} && docker build -t {} --build-arg MODEL_FORMAT_PRIORITY={} .'.format(workspace,
-                                                                                          self._image_name,
-                                                                                          ','.join(self._model_format_priority))
+        cmd = 'cd {} && docker build -t {} .'.format(workspace,
+                                                     self._image_name)
         subprocess.run(cmd, shell=True, check=True)
 
     def docker_file(self) -> Path:

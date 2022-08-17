@@ -1239,9 +1239,7 @@ def create_model(config: Dict = None, weights_path: str = None, device: str = No
         }
     ce_net_model = CENet(**config)
     if weights_path is not None:
-        checkpoint = torch.load(weights_path, map_location="cpu")
-        state_dict = checkpoint["state_dict"]
-        # support backwards compatibility
+        state_dict = torch.load(weights_path, map_location="cpu")
         deprecated = ["ce.moe_fc_bottleneck1", "ce.moe_cg", "ce.moe_fc_proj"]
         for mod in deprecated:
             for suffix in ("weight", "bias"):
