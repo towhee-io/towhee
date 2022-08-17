@@ -37,7 +37,7 @@ class RequestToOpInputs:
     def get_towhee_data(self) -> Optional[List[any]]:
         input_count = 0
         outputs = []
-        for (towhee_type, shape) in self._schema:
+        for (towhee_type, _) in self._schema:
             size = type_util.type_size(towhee_type)
             data = []
             for _ in range(size):
@@ -75,7 +75,7 @@ class RequestToOpInputs:
         elif towhee_type in type_util.NUMPY_TYPES:
             return triton_data[0].as_numpy()
         else:
-            logger.error('Unsupport type %s' % towhee_type)
+            logger.error('Unsupport type %s', towhee_type)
             return None
 
 
@@ -89,7 +89,7 @@ class OpOutputToResponses:
     def to_triton_responses(self):
         tensors = self.get_triton_tensor()
         if tensors is None:
-            return pb_utils.InferenceResponse([], err=pb_utils.TritonError("Gen respones failed"))
+            return pb_utils.InferenceResponse([], err=pb_utils.TritonError('Gen respones failed'))
         return pb_utils.InferenceResponse(output_tensors=tensors)
 
     def get_triton_tensor(self, name_prefix='OUTPUT'):

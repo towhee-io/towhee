@@ -15,8 +15,8 @@
 
 try:
     # In triton env
-    import triton_python_backend_utils as pb_utils
-except Exception:
+    import triton_python_backend_utils as pb_utils  # pylint: disable=unused-import
+except Exception:  # pylint: disable=broad-except
     # In test env
     from towhee.serve.triton.bls.mock.mock_pb_util import MockTritonPythonBackendUtils
-    pb_utils = MockTritonPythonBackendUtils
+    pb_utils = MockTritonPythonBackendUtils  # pylint: disable=invalid-name

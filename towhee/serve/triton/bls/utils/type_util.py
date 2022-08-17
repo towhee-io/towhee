@@ -60,7 +60,7 @@ def to_numpy_data(towhee_data):
     elif isinstance(towhee_data, numpy.ndarray):
         return [towhee_data]
     else:
-        logger.error('Unsupport type %s' % type(towhee_data))
+        logger.error('Unsupport type %s', type(towhee_data))
         return None
 
 
@@ -99,5 +99,5 @@ def numpy_to_towhee(np_datas, towhee_type):
     elif towhee_type in NUMPY_TYPES:
         return np_datas[0]
     else:
-        logger.error('Unsupport type %s' % towhee_type)
+        logger.error('Unsupport type %s', towhee_type)
         return None
