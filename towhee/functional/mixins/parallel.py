@@ -12,16 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import concurrent.futures
-from queue import Queue
 import asyncio
 import threading
 import time
+from queue import Queue
+
+try:
+    import torch
+except: # pylint: disable=bare-except
+    pass
 
 from towhee.utils.log import engine_log
 from towhee.functional.option import Option, Empty, _Reason
 from towhee.hparam.hyperparameter import param_scope
 from towhee.functional.storages import WritableTable, ChunkedTable
 
+stream = threading.local()
+
+
+def initializer():
+    # pylint: disable=bare-except
+    try:
+        if torch.cuda.is_available():
+            stream.stream = torch.cuda.Stream()
+    except:
+        pass
 
 class ParallelMixin:
     """
@@ -105,12 +120,11 @@ class ParallelMixin:
         >>> len(stage_2_thread_set)>1
         True
         """
-
         self._backend = backend
         self._num_worker = num_worker
 
         if self._backend == 'thread' and self._num_worker is not None:
-            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker)
+            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker, initializer=initializer)
         else:  # clear executor
             self._executor = None
         return self
@@ -190,17 +204,28 @@ class ParallelMixin:
         return [self._factory(x) for x in retval]
 
     def _map_task(self, x, unary_op):
-        def map_wrapper():
+        def inner():
             try:
                 if isinstance(x, Option):
-                    return x.map(unary_op)
+                    res = x.map(unary_op)
                 elif isinstance(x, WritableTable):
-                    return WritableTable(self.__table_apply__(x, unary_op))
+                    res = WritableTable(self.__table_apply__(x, unary_op))
                 else:
-                    return unary_op(x)
+                    res = unary_op(x)
+                return res
             except Exception as e:  # pylint: disable=broad-except
                 engine_log.warning(f'{e}, please check {x} with op {unary_op}. Continue...')  # pylint: disable=logging-fstring-interpolation
                 return Empty(_Reason(x, e))
+
+        def map_wrapper():
+            if hasattr(stream, 'stream'):
+                torch.cuda.synchronize()
+                with torch.cuda.stream(stream.stream):
+                    res = inner()
+                torch.cuda.synchronize()
+                return res
+            else:
+                return inner()
 
         return map_wrapper
 
@@ -239,7 +264,7 @@ class ParallelMixin:
         if num_worker is None and self.get_num_worker() is None:
             num_worker = 2
         if num_worker is not None:
-            executor = concurrent.futures.ThreadPoolExecutor(num_worker)
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_worker, initializer=initializer)
         elif self.get_executor() is not None:
             executor = self._executor
             num_worker = self._num_worker

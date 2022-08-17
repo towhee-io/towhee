@@ -1,5 +1,14 @@
 name: Workflow for pylint
-on: [push, pull_request]
+on:
+  pull_request:
+    branches:
+      - main
+      # file paths to consider in the event
+    paths:
+      - 'towhee/**'
+      - '!**.md'
+      - 'tests/**'
+      - '.github/workflows/pylint.yml'
 jobs:
   run:
     runs-on: ubuntu-latest

@@ -59,6 +59,7 @@ pretrained_model = vit.create_model(model_name='vit_base_16x224', pretrained=Tru
 | MoViNet | [MoViNets: Mobile Video Networks for Efficient Video Recognition](http://openaccess.thecvf.com//content/CVPR2021/papers/Kondratyuk_MoViNets_Mobile_Video_Networks_for_Efficient_Video_Recognition_CVPR_2021_paper.pdf) | action classification | [action_classification.movinet](https://towhee.io/action-classification/movinet) |
 | MPViT | [MPViT: Multi-Path Vision Transformer for Dense Prediction](http://openaccess.thecvf.com//content/CVPR2022/papers/Lee_MPViT_Multi-Path_Vision_Transformer_for_Dense_Prediction_CVPR_2022_paper.pdf) | image classification | [image_embedding.mpvit](https://towhee.io/image-embedding/mpvit) |
 | MViT | [Multiscale Vision Transformers]([http://openaccess.thecvf.com//content/ICCV2021/papers/Fan_Multiscale_Vision_Transformers_ICCV_2021_paper.pdf]) | image classification, action classification | [image_embedding.timm](https://towhee.io/image-embedding/timm) [action_classification.pytorchvideo](https://towhee.io/action-classification/pytorchvideo) |
+| NNFp | [Neural Audio Fingerprint for High-specific Audio Retrieval based on Contrastive Learning](https://arxiv.org/pdf/2010.11910) | audio fingerprint | [audio_embedding.nnfp](https://towhee.io/audio-embedding/nnfp) |
 | Omnivore | [Omnivore: A Single Model for Many Visual Modalities](http://openaccess.thecvf.com//content/CVPR2022/papers/Girdhar_Omnivore_A_Single_Model_for_Many_Visual_Modalities_CVPR_2022_paper.pdf) | action classification | [action_classification.omnivore](https://towhee.io/action-classification/omnivore) |
 | Perceiver | [Perceiver: General Perception with Iterative Attention](https://arxiv.org/pdf/2103.03206v2.pdf) | image-classification, audio-classification | |
 | RetinaFace | [RetinaFace: Single-stage Dense Face Localisation in the Wild](https://arxiv.org/pdf/1905.00641v2.pdf) | face detection | [face_detection.retinaface](https://towhee.io/face-detection/retinaface) |
@@ -69,6 +70,7 @@ pretrained_model = vit.create_model(model_name='vit_base_16x224', pretrained=Tru
 | Video Swin Transformer | [Video Swin Transformer](http://openaccess.thecvf.com//content/CVPR2022/papers/Liu_Video_Swin_Transformer_CVPR_2022_paper.pdf) | action classification | [action_classification.video_swin_transformer](https://towhee.io/action-classification/video-swin-transformer) |
 | Violet | [VIOLET: End-to-End Video-Language Transformers with Masked Visual-token Modeling](https://arxiv.org/pdf/2111.12681v2.pdf) | video question answering | |
 | ViT | [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://openreview.net/pdf?id=YicbFdNTTy) | image classification | [image_embedding.timm](https://towhee.io/image-embedding/timm) |
+| Wave-ViT | [Wave-ViT: Unifying Wavelet and Transformers for Visual Representation Learning](http://arxiv.org/pdf/2207.04978) | image recognition, object detection, instance segmentation | |
 
 
 

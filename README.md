@@ -12,7 +12,7 @@
 
 <h3 align="center">
   <p style="text-align: center;">
-  <a href="https://github.com/towhee-io/towhee/blob/main/README.md" target="_blank">ENGLISH</a> | <a href="https://github.com/towhee-io/towhee/blob/main/README-CN.md">中文文档</a>
+  <a href="https://github.com/towhee-io/towhee/blob/main/README.md" target="_blank">ENGLISH</a> | <a href="https://github.com/towhee-io/towhee/blob/main/README_CN.md">中文文档</a>
   </p>
 </h3>
 
@@ -50,6 +50,16 @@ automatically optimize it for production-ready environments.
 :snake:&emsp;**Pythonic API:** Towhee includes a pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, making processing unstructured data as easy as handling tabular data.
 
 ## What's New
+
+**v0.7.3 Jul.27,2022**
+* Add one multimodal (text/image) model:
+[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
+* Add two video models for grounded situation recognition & repetitive action counting:
+[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
+[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
+* Add two SoTA models for image tasks (image retrieval, image classification, etc.):
+[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
+[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
 
 **v0.7.1 Jul.1,2022**
 * Add one image embedding model:
