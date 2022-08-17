@@ -29,15 +29,15 @@ class MockTritonPythonBackendUtils:
         return r.get(input_key)
 
     @staticmethod
-    def InferenceResponse(output_tensors, err=None):
+    def InferenceResponse(output_tensors, err=None):  # pylint: disable=invalid-name
         return MockInferenceResponse(output_tensors, err)
 
     @staticmethod
-    def TritonError(msg):
+    def TritonError(msg):  # pylint: disable=invalid-name
         return MockTritonError(msg)
 
     @staticmethod
-    def Tensor(name: str, data: 'ndarray'):
+    def Tensor(name: str, data: 'ndarray'):  # pylint: disable=invalid-name
         return MockTritonPythonBackendTensor(name, data)
 
 
