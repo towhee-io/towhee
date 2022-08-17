@@ -6,12 +6,12 @@
 
 > You can use `python -m towhee` instead of `towhee` to trobleshot.
 
-````bash
+```bash
 $ pip3 inatsll towhee
 $ towhee <command> -<option> param
 # OR
 $ python -m towhee <command> -<option> param
-````
+```
 
 Of course, you can also run `towhee` with source code:
 

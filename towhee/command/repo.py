@@ -93,7 +93,7 @@ class RepoCommand:
         if not self._args.plain:
             GitUtils(self.uri.author, self.uri.repo).clone(local_repo_path=repo_path)
 
-    def init_repo(self, manager, repo_path, is_pipeline=False):
+    def init_repo(self, manager, repo_path):
         print('\nInitializing the repo file structure...\n')
         if self._args.type == 'pyop':
             temp_path = Path(self._args.dir) / 'pyoperator_template'
