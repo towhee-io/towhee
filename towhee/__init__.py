@@ -14,7 +14,7 @@
 from typing import Union, List
 from pathlib import Path
 from towhee.engine import register
-from towhee.engine.factory import ops, pipes, pipeline, DEFAULT_PIPELINES, _PipelineBuilder as Build
+from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.connectors import Connectors as connectors
@@ -35,8 +35,6 @@ __all__ = [
     'ops',
     'register',
     'param_scope',
-    'Build',
-    'Inject',
     'dataset',
     'Document',
     'DataCollection',
@@ -99,40 +97,6 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
     return TorchDataSet(torch_dataset)
 
-
-class Inject:
-    """
-    Build a pipeline by operator injection.
-
-    Injecting is another pipeline templating mechanism that allows the use to modify
-    the pipeline directly without declaring template variables.
-
-    Examples:
-    ```yaml
-    operators:
-    - name: operator_1
-      function: namespace/operator_1         <<-- injection point
-      ...
-    - name: operator_2
-      function: namespace/operator_2
-    ```
-
-    You can modify the pipeline directly by:
-
-    >>> pipe = Inject(operator_1 = dict(function='my_namespace/my_op')).pipeline('pipeline_name')
-
-    and the value at the injection point is replace by the `Inject` API.
-    """
-
-    def __init__(self, **kws) -> None:
-        self._injections = {}
-        for k, v in kws.items():
-            self._injections[k] = v
-
-    def pipeline(self, *arg, **kws):
-        with param_scope() as hp:
-            hp().injections = self._injections
-            return pipeline(*arg, **kws)
 
 def update_default_cache(default_path: Union[str, Path]):
     """
