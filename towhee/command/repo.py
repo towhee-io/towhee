@@ -20,7 +20,6 @@ from requests.exceptions import HTTPError
 from urllib.parse import urlsplit
 
 from towhee.hub.operator_manager import OperatorManager
-from towhee.hub.pipeline_manager import PipelineManager
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.hub_file_utils import HubFileUtils
 from towhee.utils.repo_normalize import RepoNormalize
@@ -61,14 +60,7 @@ class RepoCommand:
                     print(f'Authenticated user: {author} does not match the username: {self.uri.author}, please specify the correct author.')
                     sys.exit()
         try:
-            if self._args.action == 'create-op':
-                self.create_op()
-            if self._args.action == 'create-pipeline':
-                self.create_pipeline()
-            elif self._args.action == 'generate-yaml':
-                print('Generating yaml for repo...')
-                self.generate_yaml()
-                print('Done')
+            self.create_op()
         except HTTPError as e:
             print(e)
 
@@ -79,7 +71,7 @@ class RepoCommand:
                                help='optional, operator repo type in [\'pyop\', \'nnop\'] for init file, defaults to \'nnop\'')
         op_parser.add_argument('-f', '--framework', default='pytorch', help='optional, framework of nnoperator, defaults to \'pytorch\'')
 
-        subparsers.add_parser('create-op', parents=[op_parser, parser], help='hub-repo command: create operator and generate init file')
+        subparsers.add_parser('create', parents=[op_parser, parser], help='hub-repo command: create operator and generate init file')
 
     def create_op(self):
         op_manager = OperatorManager(self.uri.author, self.uri.repo)
@@ -91,16 +83,6 @@ class RepoCommand:
         if self._args.local or not self._args.plain:
             self.init_repo(op_manager, repo_path)
 
-    def create_pipeline(self):
-        pipeline_manager = PipelineManager(self.uri.author, self.uri.repo)
-        repo_path = Path(self._args.dir) / self.uri.repo
-        if not self._args.local:
-            self.create_repo(pipeline_manager, repo_path)
-        else:
-            repo_path.mkdir(parents=True)
-        if self._args.local or not self._args.plain:
-            self.init_repo(pipeline_manager, repo_path, True)
-
     def create_repo(self, manager, repo_path):
         link = self.uri.full_uri.split('?')[0]
         if manager.exists():
@@ -111,13 +93,9 @@ class RepoCommand:
         if not self._args.plain:
             GitUtils(self.uri.author, self.uri.repo).clone(local_repo_path=repo_path)
 
-    def init_repo(self, manager, repo_path, is_pipeline=False):
+    def init_repo(self, manager, repo_path):
         print('\nInitializing the repo file structure...\n')
-        if is_pipeline:
-            temp_path = Path(self._args.dir) / 'pipeline_template'
-            PipelineManager('towhee', 'pipeline-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
-            manager.init_pipeline(temp_path, repo_path)
-        elif self._args.type == 'pyop':
+        if self._args.type == 'pyop':
             temp_path = Path(self._args.dir) / 'pyoperator_template'
             OperatorManager('towhee', 'pyoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_pyoperator(temp_path, repo_path)
@@ -126,24 +104,3 @@ class RepoCommand:
             OperatorManager('towhee', 'nnoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_nnoperator(temp_path, repo_path, self._args.framework)
         shutil.rmtree(str(temp_path))
-
-    def generate_yaml(self):
-        repo_manager = OperatorManager(self.uri.author, self.uri.repo)
-        repo_manager.generate_yaml(Path(self._args.dir))
-
-
-class PipeCommand:
-    """
-    Implementation for subcmd `towhee develop` and `towhee install`.
-    Setup repo to `towheeoperator.{self._args.namespace}_{self._args.repo_name}' package with pypi methods.
-    """
-
-    def __init__(self, args) -> None:
-        self._args = args
-
-    def __call__(self) -> None:
-        RepoCommand(self._args)()
-
-    @staticmethod
-    def install(subparsers):
-        subparsers.add_parser('create-pipeline', parents=[parser], help='hub-repo command: create pipeline and generate init file')
