@@ -14,36 +14,27 @@ on:
 jobs:
   run:
     runs-on: self-hosted
+    container: 
+      image: towhee/towhee-ut:latest
+      options: --user root
+      volumes:
+        - /__w/towhee/towhee:/__w/towhee/towhee
     steps:
+    - name: work around permission
+      run: git config --global --add safe.directory /__w/towhee/towhee
     - uses: actions/checkout@v3.0.0
-    - name: Setup Python
-      uses: actions/setup-python@v3.0.0
-      with:
-        python-version: 3.8
     - name: Generate coverage report
       run: |
-        source /test/miniconda3/etc/profile.d/conda.sh
-        conda env remove -n towhee-ut
-        conda create -n towhee-ut python=3.8
-        conda activate towhee-ut
-        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
-        conda run -n towhee-ut pip install coverage pytest pytest-xdist
-        conda run -n towhee-ut pip install -r test_requirements.txt
-        conda run -n towhee-ut coverage erase
-        conda run -n towhee-ut coverage run -m pytest
-    - name: Generate xml report
-      run: |
+        rm -rf ./coverage.xml
+        pip install coverage codecov pytest pytest-xdist
+        pip install -r test_requirements.txt
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
+        coverage erase
+        coverage run -m pytest
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
-      id: upload_cov
       with:
-        files: ./coverage.xml
-        fail_ci_if_error: false
-    - name: Retry upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.0
-      id: retry_upload_cov
-      with:
-        files: ./coverage.xml
-        fail_ci_if_error: true
-
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: /__w/towhee/towhee/coverage.xml
+        fail_ci_if_error: true    
