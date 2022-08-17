@@ -18,7 +18,7 @@ import argparse
 from towhee.command.develop import SetupCommand, UninstallCommand
 from towhee.command.execute import ExecuteCommand
 from towhee.command.user import UserCommand, WhoCommand, LogoutCommand
-from towhee.command.repo import RepoCommand, PipeCommand
+from towhee.command.repo import RepoCommand
 
 
 def main_body(args):
@@ -32,8 +32,7 @@ def main_body(args):
         'login': UserCommand,
         'logout': LogoutCommand,
         'whoami': WhoCommand,
-        'create-op': RepoCommand,
-        'create-pipeline': PipeCommand
+        'create-op': RepoCommand
     }
 
     for _, impl in actions.items():
