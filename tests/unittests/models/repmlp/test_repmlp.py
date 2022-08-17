@@ -55,8 +55,6 @@ class TestRepMLP(unittest.TestCase):
         # print(outs.shape)
         self.assertTrue(outs.shape == (1, 10))
 
-<<<<<<< HEAD
-=======
     def test_create_model(self):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         data = torch.rand(1, 3, 224, 224).to(device)
@@ -64,7 +62,5 @@ class TestRepMLP(unittest.TestCase):
         outs = model(data)
         self.assertTrue(outs.shape == (1, 10))
 
-
->>>>>>> 020f862 (RepMLP: add configs for different model names (#1687))
 if __name__ == '__main__':
     unittest.main()
