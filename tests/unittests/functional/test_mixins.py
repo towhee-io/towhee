@@ -289,7 +289,6 @@ class TestCompileMixin(unittest.TestCase):
         self.assertTrue(t3 - t2 < t2 - t1)
 
     def test_failed_compile(self):
-        import time
         from towhee import register
         @register(name='inner_distance1')
         def inner_distance1(query, data):
@@ -306,21 +305,22 @@ class TestCompileMixin(unittest.TestCase):
         data = [np.random.random((10000, 128)) for _ in range(10)]
         query = np.random.random(128)
 
-        t1 = time.time()
-        _ = (
-            towhee.dc['a'](data)
-                .runas_op['a', 'b'](func=lambda _: query)
-                .inner_distance1[('b', 'a'), 'c']()
-        )
-        t2 = time.time()
-        _ = (
-            towhee.dc['a'](data)
-                .config(jit='numba')
-                .runas_op['a', 'b'](func=lambda _: query)
-                .inner_distance1[('b', 'a'), 'c']()
-        )
-        t3 = time.time()
-        self.assertTrue(t3 - t2 > t2 - t1)
+        # t1 = time.time()
+        # _ = (
+        #     towhee.dc['a'](data)
+        #         .runas_op['a', 'b'](func=lambda _: query)
+        #         .inner_distance1[('b', 'a'), 'c']()
+        # )
+        # t2 = time.time()
+        with self.assertLogs():
+            _ = (
+                towhee.dc['a'](data)
+                    .config(jit='numba')
+                    .runas_op['a', 'b'](func=lambda _: query)
+                    .inner_distance1[('b', 'a'), 'c']()
+            )
+        # t3 = time.time()
+        # self.assertTrue(t3 - t2 > t2 - t1)
 
 class TestRemoteMixin(unittest.TestCase):
     """
