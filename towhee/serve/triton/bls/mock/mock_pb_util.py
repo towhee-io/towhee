@@ -21,16 +21,23 @@ class MockTritonPythonBackendUtils:
     def get_input_tensor_by_name(r, input_key):
         '''
         Args:
-            r: dict
+            r: MockInferenceRequest
             input_key: str
         return:
             MockTritonPythonBackendTensor
         '''
-        return r.get(input_key)
+        for item in r.inputs():
+            if item.name() == input_key:
+                return item
+        return None
 
     @staticmethod
     def InferenceResponse(output_tensors, err=None):  # pylint: disable=invalid-name
         return MockInferenceResponse(output_tensors, err)
+
+    @staticmethod
+    def InferenceRequest(inputs):  # pylint: disable=invalid-name
+        return MockInferenceRequest(inputs)
 
     @staticmethod
     def TritonError(msg):  # pylint: disable=invalid-name
@@ -54,6 +61,14 @@ class MockTritonPythonBackendTensor:
 
     def as_numpy(self):
         return self._data
+
+
+class MockInferenceRequest:
+    def __init__(self, tensors: MockTritonPythonBackendTensor):
+        self._tensors = tensors
+
+    def inputs(self):
+        return self._tensors
 
 
 class MockInferenceResponse:

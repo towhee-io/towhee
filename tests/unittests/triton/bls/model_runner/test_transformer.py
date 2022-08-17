@@ -27,11 +27,11 @@ class TestToTowheeData(unittest.TestCase):
     '''
 
     def test_to_towhee_data_image(self):
-        data = {
-            'INPUT0': pb_utils.Tensor('INPUT0', np.array([10])),
-            'INPUT1': pb_utils.Tensor('INPUT1', np.random.randn(224, 224, 3)),
-            'INPUT2': pb_utils.Tensor('INPUT2', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
-        }
+        data = pb_utils.InferenceRequest(
+            [pb_utils.Tensor('INPUT0', np.array([10])),
+             pb_utils.Tensor('INPUT1', np.random.randn(224, 224, 3)),
+             pb_utils.Tensor('INPUT2', np.array(['RGB'.encode('utf-8')], dtype=np.object_))]
+        )
 
         schema = [(int, (1,)), (Image, (-1, -1, 3))]
         data = RequestToOpInputs(data, schema).get_towhee_data()
@@ -44,13 +44,13 @@ class TestToTowheeData(unittest.TestCase):
         self.assertEqual(data[1].shape, (224, 224, 3))
 
     def test_to_towhee_data_audioframe(self):
-        data = {
-            'INPUT0': pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
-            'INPUT1': pb_utils.Tensor('INPUT1', np.array([1000])),
-            'INPUT2': pb_utils.Tensor('INPUT2', np.array([2000])),
-            'INPUT3': pb_utils.Tensor('INPUT3', np.array(['mono'.encode('utf-8')], dtype=np.object_)),
-            'INPUT4': pb_utils.Tensor('INPUT4', np.array([10.5])),
-        }
+        data = pb_utils.InferenceRequest(
+            [pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
+             pb_utils.Tensor('INPUT1', np.array([1000])),
+             pb_utils.Tensor('INPUT2', np.array([2000])),
+             pb_utils.Tensor('INPUT3', np.array(['mono'.encode('utf-8')], dtype=np.object_)),
+             pb_utils.Tensor('INPUT4', np.array([10.5]))]
+        )
 
         schema = [(AudioFrame, (-1, -1, 3)), (float, (1,))]
         data = RequestToOpInputs(data, schema).get_towhee_data()
@@ -66,13 +66,13 @@ class TestToTowheeData(unittest.TestCase):
         self.assertEqual(data[1], 10.5)
 
     def test_to_towhee_data_videoframe(self):
-        data = {
-            'INPUT0': pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
-            'INPUT1': pb_utils.Tensor('INPUT1', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
-            'INPUT2': pb_utils.Tensor('INPUT2', np.array([1000])),
-            'INPUT3': pb_utils.Tensor('INPUT3', np.array([1])),
-            'INPUT4': pb_utils.Tensor('INPUT4', np.array([1, 2])),
-        }
+        data = pb_utils.InferenceRequest(
+            [pb_utils.Tensor('INPUT0', np.random.randn(224, 224, 3)),
+             pb_utils.Tensor('INPUT1', np.array(['RGB'.encode('utf-8')], dtype=np.object_)),
+             pb_utils.Tensor('INPUT2', np.array([1000])),
+             pb_utils.Tensor('INPUT3', np.array([1])),
+             pb_utils.Tensor('INPUT4', np.array([1, 2]))]
+        )
 
         schema = [(VideoFrame, (-1, -1, 3)), (np.int32, (-1,))]
         data = RequestToOpInputs(data, schema).get_towhee_data()
@@ -86,9 +86,10 @@ class TestToTowheeData(unittest.TestCase):
         self.assertEqual(data[1].tolist(), [1, 2])
 
     def test_to_towhee_data_error(self):
-        data = {
-            'INPUT0': pb_utils.Tensor('INPUT0', np.array([1]))
-        }
+        data = pb_utils.InferenceRequest(
+            [pb_utils.Tensor('INPUT0', np.array([1]))]
+        )
+
         schema = [(pb_utils.Tensor, (1, ))]
         data = RequestToOpInputs(data, schema).get_towhee_data()
         self.assertTrue(data is None)
