@@ -45,7 +45,8 @@ def register_dag(f):
                     'input_info': input_info,
                     'output_info': output_info,
                     'parent_ids': self.parent_ids,
-                    'child_ids':  self.child_ids}
+                    'child_ids':  self.child_ids,
+                    'dc_sequence': self.dc_sequence}
             # if has op_config, update op_config
             if self.op_config is not None:
                 info['op_config'].update(self.op_config)
@@ -73,7 +74,8 @@ def register_dag(f):
                     'input_info': input_info,
                     'output_info': output_info,
                     'parent_ids': [],
-                    'child_ids':  child_ids}
+                    'child_ids':  child_ids,
+                    'dc_sequence': self.dc_sequence}
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
@@ -97,9 +99,13 @@ class DagMixin:
         if parent is None:
             self.parent_ids = ['start']
             self._control_plane = ControlPlane()
+            self.dc_sequence = [self.id]
+
         else:
             self.parent_ids = [parent.id]
             self._control_plane = parent._control_plane
+            self.dc_sequence = parent.dc_sequence
+            self.dc_sequence.append(self.id)
         self.op = None
         self.op_name = None
         self.init_args = None
@@ -124,7 +130,8 @@ class DagMixin:
                 'input_info': self.input_info,
                 'output_info': self.output_info,
                 'parent_ids': self.parent_ids,
-                'child_ids':  self.child_ids}
+                'child_ids':  self.child_ids,
+                'dc_sequence': self.dc_sequence}
         self._control_plane.dag[self.id] = info
         return children
 
@@ -171,7 +178,6 @@ class DagMixin:
         new_dict = {}
         label_dict = {}
         for key,value in compiled_dag.items():
-            # print(key, value)
             new_dict[key] = value['child_ids']
             label_dict[key] = value['op']
         label_dict['end'] = 'end'
@@ -225,17 +231,43 @@ class DagMixin:
 
     def _solve_input_info(self, dag):
         copy_dag = dag.copy()
+        for k in copy_dag.keys():
+            if k == 'end':
+                continue
+            copy_dag[k]['dc_sequence'][0] = 'start'
+            copy_dag[k]['dc_sequence'][-1] = 'end'
         for key, value in dag.items():
             if isinstance(value['input_info'], list):
                 input_info = []
                 for i in value['input_info']:
-                    for j in value['parent_ids']:
-                        if j == 'start':
-                            input_info.append(tuple(['start', i]))
-                        elif dag[j]['output_info'] is not None and (i in dag[j]['output_info']) :
-                            input_info.append(tuple([j, i]))
+                    input_i = []
+                    for j in value['dc_sequence']:
+                        if dag[j]['output_info'] is not None and (i in dag[j]['output_info']):
+                            input_i = tuple([j, i])
+                    input_info.append(input_i)
                     copy_dag[key]['input_info'] = input_info
-        return copy_dag
+        return self._fix_parent_child_ids(copy_dag)
+
+    def _fix_parent_child_ids(self, dag):
+        # fix parent_ids
+        copy_dag = dag.copy()
+        for k, v in dag.items():
+            parent_ids = []
+            if v['input_info'] is not None:
+                for i in v['input_info']:
+                    if isinstance(i, tuple):
+                        parent_ids.append(i[0])
+                copy_dag[k]['parent_ids'] = parent_ids
+        # fix child_ids
+        copy_dag2 = copy_dag.copy()
+        for i in copy_dag.keys():
+            child_ids = []
+            for m, n in copy_dag.items():
+                if i in n['parent_ids']:
+                    child_ids.append(m)
+            copy_dag2[i]['child_ids'] = child_ids
+
+        return copy_dag2
 
     def _clean_streams(self, dag):
         raise NotImplementedError
