@@ -32,7 +32,7 @@ def main_body(args):
         'login': UserCommand,
         'logout': LogoutCommand,
         'whoami': WhoCommand,
-        'create-op': RepoCommand
+        'create': RepoCommand
     }
 
     for _, impl in actions.items():

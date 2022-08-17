@@ -71,7 +71,7 @@ class RepoCommand:
                                help='optional, operator repo type in [\'pyop\', \'nnop\'] for init file, defaults to \'nnop\'')
         op_parser.add_argument('-f', '--framework', default='pytorch', help='optional, framework of nnoperator, defaults to \'pytorch\'')
 
-        subparsers.add_parser('create-op', parents=[op_parser, parser], help='hub-repo command: create operator and generate init file')
+        subparsers.add_parser('create', parents=[op_parser, parser], help='hub-repo command: create operator and generate init file')
 
     def create_op(self):
         op_manager = OperatorManager(self.uri.author, self.uri.repo)
