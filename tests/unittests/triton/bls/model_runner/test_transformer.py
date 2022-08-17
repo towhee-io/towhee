@@ -131,7 +131,7 @@ class TestToTritonData(unittest.TestCase):
         towhee_data = [np.random.randn(3, 4), AudioFrame(np.random.randn(224, 224, 3), 1000, 2000, 'mono')]
         respones = OpOutputToResponses(towhee_data).to_triton_responses()
         triton_datas = respones.output_tensors()
-        
+
         self.assertEqual(len(triton_datas), 5)
         self.assertEqual(triton_datas[0].name(), 'OUTPUT0')
         self.assertEqual(triton_datas[0].as_numpy().shape, (3, 4))
