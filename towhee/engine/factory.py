@@ -67,7 +67,7 @@ class _OperatorLazyWrapper(  #
         StatefulExecution,  #
         VectorizedExecution):
     """
-    operator wrapper for lazy initialization.
+    operator wrapper for lazy initialization. Inherits from different execution strategies.
     """
 
     def __init__(self,
@@ -89,6 +89,7 @@ class _OperatorLazyWrapper(  #
     def __check_init__(self):
         with self._lock:
             if self._op is None:
+                #  Called with param scope in order to pass index in to op.
                 with param_scope(index=self._index):
                     self._op = op(self._name,
                                   self._tag,
@@ -118,7 +119,7 @@ class _OperatorLazyWrapper(  #
     def callback(real_name: str, index: Tuple[str], *arg, **kws):
         return _OperatorLazyWrapper(real_name, index, arg=arg, kws=kws)
 
-
+# TODO: move to different location
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
     'image-encoding': 'towhee/image-embedding-resnet50',  # TODO: add encoders
