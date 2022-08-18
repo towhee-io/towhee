@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .data_collection import DataCollection, DataFrame
-from .entity import Entity
-from .option import Option, Some, Empty
+from towhee.functional.data_collection import DataCollection, DataFrame
+from towhee.functional.entity import Entity
+from towhee.functional.option import Option, Some, Empty
 from towhee.hparam import HyperParameter as State
 
 from towhee.hparam import param_scope
@@ -59,7 +59,30 @@ def glob(*arg):  # pragma: no cover
         return DataCollection.from_glob(*arg)
     return DataFrame.from_glob(*arg).map(lambda x: Entity(**{index: x}))
 
+@dynamic_dispatch
+# pylint: disable=redefined-builtin
+def range(*args, **kwargs):  # pragma: no cover
+    """
+    Return a DataCollection of a range of values.
+    Examples:
 
+    1. create a simple data collection;
+
+    >>> import towhee
+    >>> towhee.range(5).to_list() #doctest: +SKIP
+    [0, 1, 2, 3, 4]
+
+    2. create a data collection of schema'd range.
+
+    >>> towhee.range['nums'](5).select['nums']().as_raw() #doctest: +SKIP
+    [0, 1, 2, 3, 4]
+    """
+
+    index = param_scope()._index
+    if index is None:
+        return DataCollection.range(*args, **kwargs)
+    return DataFrame(DataCollection.range(*args, **kwargs)).map(lambda x: Entity(**{index: x}))
+# pylint: enable=redefined-builtin
 @dynamic_dispatch
 def glob_zip(uri, pattern):  # pragma: no cover
     """

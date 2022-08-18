@@ -24,7 +24,7 @@ from towhee.functional import glob, glob_zip
 from towhee.functional import read_csv, read_json, read_camera
 from towhee.functional import read_video, read_audio
 from towhee.functional import read_zip, from_df
-from towhee.functional import dc, api, dummy_input
+from towhee.functional import dc, api, dummy_input, range # pylint: disable=redefined-builtin
 
 # pylint: disable=import-outside-toplevel
 
@@ -42,7 +42,7 @@ __all__ = [
     'State',
     'Entity',
     'connectors',
-    #
+    'range',
     'glob',
     'glob_zip',
     'from_df',
