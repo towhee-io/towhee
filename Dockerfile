@@ -9,7 +9,9 @@ FROM ${BASE_IMAGE} as towhee-base
 # In addition, use the default software source of the base image and language
 ARG USE_MIRROR=false
 ENV USE_MIRROR=${USE_MIRROR}
-RUN if [ "$USE_MIRROR" = "true" ]; then sed -i -e "s/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/" /etc/apt/sources.list && sed -i -e "s/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/" /etc/apt/sources.list; fi
+ARG UBUNTU_MIRROR="mirrors.tuna.tsinghua.edu.cn"
+ENV UBUNTU_MIRROR=${UBUNTU_MIRROR}
+RUN if [ "$USE_MIRROR" = "true" ]; then sed -i -e "s/archive.ubuntu.com/${UBUNTU_MIRROR}/" /etc/apt/sources.list && sed -i -e "s/security.ubuntu.com/${UBUNTU_MIRROR}/" /etc/apt/sources.list; fi
 
 RUN --mount=type=cache,id=apt-dev,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git && \
