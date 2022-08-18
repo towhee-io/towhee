@@ -110,7 +110,7 @@ class GitUtils:
 
         try:
             print(f'Cloning the repo: {self._author}/{self._repo}... Be patient and waiting printing \'Successfully\'.')
-            subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path])
+            subprocess.check_call(['git', 'clone', '-b', tag, url, local_repo_path, '--depth 1'])
             print(f'Successfully clone the repo: {self._author}/{self._repo}.')
         except FileNotFoundError as e:
             engine_log.warning(
