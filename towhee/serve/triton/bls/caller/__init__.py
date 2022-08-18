@@ -11,21 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-EMPTY_OPS = ['dummy_input', 'end']
-NNOPERATOR = 'NNOperator'
-PYOPERATOR = 'PyOperator'
-
-
-PREPROCESS = 'preprocess'
-POSTPROCESS = 'postprocess'
-
-
-OP_CONFIG = 'op_config'
-FORMAT_PRIORITY = 'format_priority'
-
-
-# bls
-
-OP_CONFIG_FILE = 'config.json'

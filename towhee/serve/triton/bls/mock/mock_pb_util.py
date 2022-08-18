@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+from typing import List
+
+
 class MockTritonPythonBackendUtils:
     '''
     mock triton_python_backend_utils, used in UT.
@@ -32,11 +35,11 @@ class MockTritonPythonBackendUtils:
         return None
 
     @staticmethod
-    def InferenceResponse(output_tensors, err=None):  # pylint: disable=invalid-name
+    def InferenceResponse(output_tensors: List['MockTritonPythonBackendTensor'], err=None):  # pylint: disable=invalid-name
         return MockInferenceResponse(output_tensors, err)
 
     @staticmethod
-    def InferenceRequest(inputs):  # pylint: disable=invalid-name
+    def InferenceRequest(inputs: 'MockTritonPythonBackendTensor'):  # pylint: disable=invalid-name
         return MockInferenceRequest(inputs)
 
     @staticmethod

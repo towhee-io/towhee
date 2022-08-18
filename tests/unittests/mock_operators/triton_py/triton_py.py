@@ -6,7 +6,7 @@ from towhee.operator import PyOperator
 class TritonPy(PyOperator):
 
     def __call__(self, image_path: str):
-        return Image(np.random.rand((300, 300, 3), 'BGR'))
+        return Image(np.random.rand(300, 300, 3), 'BGR')
 
     def input_schema(self):
         return [(str, (1,))]

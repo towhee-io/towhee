@@ -1,0 +1,5 @@
+{
+    "hub": "local",
+    "name": "triton_py",
+    "init_args": {}
+}

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from typing import List
 import logging
 
 import numpy
@@ -64,12 +65,17 @@ def to_numpy_data(towhee_data):
         return None
 
 
-def to_op_data(np_datas, schema):
+def client_result_to_op_data(infer_result: 'InferResult', schema: List, name_prefix='OUTPUT'):
     input_count = 0
     outputs = []
     for (towhee_type, _) in schema:
+        nps = []
         size = type_size(towhee_type)
-        data = numpy_to_towhee(np_datas[input_count: size], towhee_type)
+        for _ in range(size):
+            nps.append(infer_result.as_numpy(name_prefix + str(input_count)))
+            input_count += 1
+
+        data = numpy_to_towhee(nps, towhee_type)
         if data is None:
             return None
         outputs.append(data)
@@ -77,6 +83,10 @@ def to_op_data(np_datas, schema):
 
 
 def numpy_to_towhee(np_datas, towhee_type):
+    if None in np_datas:
+        logger.error('Can not convert None to towhee_type')
+        return None
+
     if towhee_type is str:
         return np_datas[0][0].decode('utf-8')
     elif towhee_type is int:
@@ -100,4 +110,18 @@ def numpy_to_towhee(np_datas, towhee_type):
         return np_datas[0]
     else:
         logger.error('Unsupport type %s', towhee_type)
+        return None
+
+
+def py_to_np_type(py_data):
+    if isinstance(py_data, str):
+        return numpy.object_
+    elif isinstance(py_data, int):
+        return numpy.int64
+    elif isinstance(py_data, float):
+        return numpy.float64
+    elif isinstance(py_data, numpy.ndarray):
+        return py_data.dtype
+    else:
+        logger.error('Unsupport type %s', type(py_data))
         return None
