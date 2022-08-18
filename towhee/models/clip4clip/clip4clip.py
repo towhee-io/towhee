@@ -40,8 +40,16 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
     Only meanP and 2d type reserved because of its performance.
     """
 
-    def __init__(self, embed_dim, image_resolution, vision_layers, vision_width, vision_patch_size, context_length,
-                 vocab_size, transformer_width, transformer_heads, transformer_layers):
+    def __init__(self, embed_dim: int,
+                 image_resolution: int,
+                 vision_layers: int,
+                 vision_width: int,
+                 vision_patch_size: int,
+                 context_length: int,
+                 vocab_size: int,
+                 transformer_width: int,
+                 transformer_heads: int,
+                 transformer_layers: int):
         super().__init__()
         self.ignore_video_index = -1
         self.loose_type = True
