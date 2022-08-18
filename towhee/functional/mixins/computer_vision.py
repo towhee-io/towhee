@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # pylint: disable=import-outside-toplevel
+from towhee.types.video_frame import VideoFrame
 
 
 class ComputerVisionMixin:
@@ -63,7 +64,7 @@ class ComputerVisionMixin:
         video_stream = vcontainer.streams.video[0]
 
         frames = vcontainer.decode(video_stream)
-        images = (frame.to_rgb().to_ndarray(format=format) for frame in frames)
+        images = (VideoFrame(frame.to_rgb().to_ndarray(format=format), 'RGB', int(frame.time * 1000), frame.key_frame) for frame in frames)
 
         return cls(images)
 
