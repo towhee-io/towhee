@@ -37,9 +37,9 @@ RUN if [ "$USE_MIRROR" = "true" ]; then export CONDA_SRC="${CONDA_MIRROR}/minico
     rm ~/miniconda.sh && \
     if [ "$USE_MIRROR" = "true" ]; then \
         echo "channels:" > $HOME/.condarc && \
-        echo "  - ${CONDA_SRC}/pkgs/free/" >> $HOME/.condarc && \
-        echo "  - ${CONDA_SRC}/pkgs/main/" >> $HOME/.condarc && \
-        echo "  - ${CONDA_SRC}/cloud/pytorch/" >> $HOME/.condarc && \
+        echo "  - ${CONDA_MIRROR}/pkgs/free/" >> $HOME/.condarc && \
+        echo "  - ${CONDA_MIRROR}/pkgs/main/" >> $HOME/.condarc && \
+        echo "  - ${CONDA_MIRROR}/cloud/pytorch/" >> $HOME/.condarc && \
         echo "  - defaults" >> $HOME/.condarc && \
         echo "show_channel_urls: true" >> $HOME/.condarc; \
     fi
