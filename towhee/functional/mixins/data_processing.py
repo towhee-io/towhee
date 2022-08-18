@@ -15,8 +15,6 @@ import random
 from towhee.functional.mixins.dag import register_dag
 from typing import Iterable
 
-from towhee.functional.entity import Entity
-
 
 class DataProcessingMixin:
     """
@@ -153,23 +151,13 @@ class DataProcessingMixin:
         >>> from towhee import Entity
         >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
         >>> dc.batch(2)
-        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+        [[<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>], [<Entity dict_keys(['a', 'b'])>]]
         """
         def inner():
             buff = []
             count = 0
             for ele in self._iterable:
-                if isinstance(ele, Entity):
-                    if count == 0:
-                        buff = ele
-                        for key in ele.__dict__.keys():
-                            buff.__dict__[key] = [buff.__dict__[key]]
-                        count = 1
-                        continue
-                    for key in ele.__dict__.keys():
-                        buff.__dict__[key].append(ele.__dict__[key])
-                else:
-                    buff.append(ele)
+                buff.append(ele)
                 count += 1
 
                 if count == size:
