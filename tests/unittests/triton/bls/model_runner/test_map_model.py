@@ -22,10 +22,16 @@ from towhee.types import Image
 
 
 class TestMapModel(unittest.TestCase):
+    '''
+    Map model test
+    '''
     def test_map_model(self):
         model = map_model.TritonPythonModel()
         model._op_config_file = str(Path(__file__).parent.resolve() / 'map_model_config.json')  # pylint: disable=protected-access
         model.initialize({'model_instance_kind': 'CPU'})
 
         callser = local_caller.LocalCaller({'test_model': model})
-        callser.call_model('test_model', ['/test/path'], [(Image, (-1, -1, 3))])
+        ret = callser.call_model('test_model', ['/test/path'], [(Image, (-1, -1, 3))])
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].shape, (300, 300, 3))
+        self.assertEqual(ret[0].mode, 'BGR')

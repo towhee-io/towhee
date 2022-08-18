@@ -56,6 +56,8 @@ class TritonPythonModel:
         for request in requests:
             inputs = RequestToOpInputs(request, self._op.input_schema()).get_towhee_data()
             ret = self._op(*inputs)
+            if not isinstance(ret, tuple):
+                ret = (ret, )
             response = OpOutputToResponses(ret).to_triton_responses()
             responses.append(response)
         return responses
