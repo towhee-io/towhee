@@ -13,14 +13,11 @@
 # limitations under the License.
 
 import os
-import sys
 from typing import Union
 from pathlib import Path
-from importlib import import_module
 
 from towhee.hub.repo_manager import RepoManager
 from towhee.utils.log import engine_log
-from towhee.utils.yaml_utils import load_yaml, dump_yaml
 
 
 class OperatorManager(RepoManager):
