@@ -4,10 +4,10 @@
 
 **(Recommended)** Once you have [installed Towhee](https://docs.towhee.io/get-started/install), you can use `towhee` with the following command:
 
-> You can use `python -m towhee` instead of `towhee` to trobleshot.
+> You can use `python -m towhee` instead of `towhee` to troubleshoot.
 
 ```bash
-$ pip3 inatsll towhee
+$ pip3 install towhee
 $ towhee <command> -<option> param
 # OR
 $ python -m towhee <command> -<option> param
@@ -33,10 +33,10 @@ $ python -m towhee <command> -<option> param
 - create operator
   - [`create`](#create)
 - setup operator
-  - [`install operator`](#install-operator)
-  - [`uninstall operator`](#uninstall-operator)
+  - [`install operator`](#install)
+  - [`uninstall operator`](#uninstall)
 - execute
-  - [`run`](#run-pipeline)
+  - [`run`](#run)
 
 
 ### User Config
@@ -69,7 +69,7 @@ optional arguments:
 #### `create`
 ```bash
 $  towhee create -h
-usage: towhee create-op [-h] [-t {pyop,nnop}] [-f FRAMEWORK] [-d DIR] [--local] [--plain] uri
+usage: towhee create [-h] [-t {pyop,nnop}] [-f FRAMEWORK] [-d DIR] [--local] [--plain] uri
 
 positional arguments:
   uri                   Repo uri, such as author/repo-name or repo-name(author defaults to login account).
@@ -192,7 +192,7 @@ $ towhee create <repo-name> --plain
 When you add `--local` to the command, it will not create the operator in the hub, but just initializes the file structure in local.
 
 ```bash
-$ towhee create-op <repo-name> --local
+$ towhee create <repo-name> --local
 ```
 
 ### 3. Setup your Operator

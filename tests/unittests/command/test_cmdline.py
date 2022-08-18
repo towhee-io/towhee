@@ -16,7 +16,10 @@ import unittest
 import argparse
 import os
 from pathlib import Path
+from unittest.mock import patch
+from io import StringIO
 
+import towhee.command.cmdline as cmd
 from towhee.command.develop import SetupCommand, UninstallCommand
 from towhee.command.repo import RepoCommand
 # from towhee.command.execute import ExecuteCommand
@@ -28,6 +31,12 @@ class TestCmdline(unittest.TestCase):
     """
     Unittests for towhee cmdline.
     """
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_cmd(self, stdout):
+        cmd.main()
+        self.assertEqual(stdout.getvalue()[0:13], 'usage: towhee')
+
     def test_develop(self):
         repo = 'add_operator'
         repo_path = public_path / 'mock_operators' / repo
