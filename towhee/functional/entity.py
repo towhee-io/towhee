@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import overload
-
 
 class Entity:
     """
@@ -20,14 +18,6 @@ class Entity:
 
     Users can create an Entity with free schema, which means there is no limit on attribute name and type.
     """
-
-    @overload
-    def __init__(self):
-        """
-        Create an empty entity.
-        """
-        ...
-
     def __init__(self, **kwargs):
         """
         Create an Entity with given attributes.
