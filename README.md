@@ -37,7 +37,7 @@
 &nbsp;
 
 [Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
-We provide several hundred models, algorithms, and transformations that can be used as standard pipeline building blocks.
+We provide hundreds of models, algorithms, and transformations that can be used as standard pipeline building blocks.
 You can use Towhee's Pythonic API to build a prototype of your pipeline and
 automatically optimize it for production-ready environments.
 
