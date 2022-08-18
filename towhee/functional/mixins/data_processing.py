@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import random
-from towhee.functional.mixins.dag import register_dag
 from typing import Iterable
 
+from towhee.functional.entity import Entity
+from towhee.functional.mixins.dag import register_dag
+from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
 
 class DataProcessingMixin:
     """
@@ -236,31 +238,59 @@ class DataProcessingMixin:
 
         return self._factory(inner())
 
-    @register_dag
+    @property
+    # @register_dag
     def flatten(self) -> 'DataCollection':
         """
         Flatten nested data collections.
+
+        Args:
+            index (`str`):
+                The index of the column to flatten.
 
         Returns:
             DataCollection: flattened data collection;
 
         Examples:
 
-        >>> from towhee import DataCollection
+        >>> from towhee import DataCollection, Entity
         >>> dc = DataCollection(range(10))
         >>> nested_dc = dc.batch(2)
         >>> nested_dc.flatten().to_list()
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        """
-        def inner():
-            for ele in self._iterable:
-                if isinstance(ele, Iterable):
-                    for nested_ele in iter(ele):
-                        yield nested_ele
-                else:
-                    yield ele
 
-        return self._factory(inner())
+        >>> g = (i for i in range(3))
+        >>> e = Entity(a=1, b=2, c=g)
+        >>> dc = DataCollection([e]).flatten['c']()
+        >>> [str(i) for i in dc]
+        ["{'a': 1, 'b': 2, 'c': 0}", "{'a': 1, 'b': 2, 'c': 1}", "{'a': 1, 'b': 2, 'c': 2}"]
+        """
+        @dynamic_dispatch
+        def flattener():
+
+            def inner():
+                for ele in self._iterable:
+                    #pylint: disable=protected-access
+                    index = param_scope()._index
+                    # With schema
+                    if isinstance(ele, Entity):
+                        if not index:
+                            raise IndexError('Please specify the column to flatten.')
+                        else:
+                            new_ele = ele.__dict__.copy()
+                            for nested_ele in getattr(ele, index):
+                                new_ele[index] = nested_ele
+                                yield Entity(**new_ele)
+                    # Without schema
+                    elif isinstance(ele, Iterable):
+                        for nested_ele in iter(ele):
+                            yield nested_ele
+                    else:
+                        yield ele
+
+            return self._factory(inner())
+
+        return flattener
 
     @register_dag
     def shuffle(self) -> 'DataCollection':
