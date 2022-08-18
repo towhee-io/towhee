@@ -35,7 +35,16 @@ RUN if [ "$USE_MIRROR" = "true" ]; then export CONDA_SRC="${CONDA_MIRROR}/minico
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
-    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} cmake conda-build pyyaml numpy ipython
+    if [ "$USE_MIRROR" = "true" ]; then \
+        echo "channels:" > $HOME/.condarc && \
+        echo "  - ${CONDA_SRC}/pkgs/free/" >> $HOME/.condarc && \
+        echo "  - ${CONDA_SRC}/pkgs/main/" >> $HOME/.condarc && \
+        echo "  - ${CONDA_SRC}/cloud/pytorch/" >> $HOME/.condarc && \
+        echo "  - defaults" >> $HOME/.condarc && \
+        echo "show_channel_urls: true" >> $HOME/.condarc; \
+    fi
+
+RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} cmake conda-build pyyaml numpy ipython
 ENV CONDA_OVERRIDE_CUDA=${CUDA_VERSION}
 RUN /opt/conda/bin/conda install -c "${INSTALL_CHANNEL}" -c "${CUDA_CHANNEL}" -y python=${PYTHON_VERSION} pytorch torchvision torchaudio torchtext "cudatoolkit=${CUDA_VERSION}" && \
     /opt/conda/bin/conda clean -ya
