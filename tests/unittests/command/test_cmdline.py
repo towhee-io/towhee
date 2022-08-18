@@ -15,7 +15,6 @@ import shutil
 import unittest
 import argparse
 import os
-import subprocess
 from pathlib import Path
 from unittest.mock import patch
 from io import StringIO
@@ -37,12 +36,6 @@ class TestCmdline(unittest.TestCase):
     def test_cmd(self, stdout):
         cmd.main()
         self.assertEqual(stdout.getvalue()[0:13], 'usage: towhee')
-
-    def test_user(self):
-        # pylint: disable=consider-using-with
-        proc = subprocess.Popen(['towhee', 'whoami'], stdout=subprocess.PIPE)
-        res = proc.stdout.readline().decode('utf-8')
-        self.assertEqual(res, 'Not logged it.\n')
 
     def test_develop(self):
         repo = 'add_operator'
