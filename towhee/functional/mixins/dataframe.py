@@ -85,7 +85,17 @@ class DataFrameMixin:
 
     @property
     def select(self):
+        """
+        Select columns from a DC.
 
+        Examples:
+
+        >>> from towhee import Entity, DataFrame
+        >>> entities = [Entity(a=i, b=i, c=i) for i in range(3)]
+        >>> dc = DataFrame(entities)
+        >>> dc.select('a')
+        [<Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>, <Entity dict_keys(['a'])>]
+        """
         @dynamic_dispatch
         def selector(*arg):
             index = param_scope()._index
