@@ -28,22 +28,14 @@ jobs:
         - /__w/towhee/towhee:/__w/towhee/towhee
     steps:
     - uses: actions/checkout@master
-    - name: Setup Python
-      uses: actions/setup-python@v2.3.1
-      with:
-        python-version: 3.8
     - name: Run Test
       env:
         TOWHEE_WORKER: True
       run: |
-        source /test/miniconda3/etc/profile.d/conda.sh
-        conda env remove -n towhee-weekly
-        conda create -n towhee-weekly python=3.8
-        conda activate towhee-weekly
-        conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
-        cd  tests/testcases
+        pip install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+        cd  /__w/towhee/towhee/tests/testcases
         python3 -m pip install -U pip
         python3 -m pip install --no-cache-dir -r requirements.text
-        cd  tests/testcases/hub
+        cd  /__w/towhee/towhee/tests/testcases/hub
         export TOWHEE_WORKER=True
         python3 -W ignore execute_hub_operators.py
