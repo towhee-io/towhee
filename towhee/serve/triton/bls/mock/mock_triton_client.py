@@ -47,6 +47,17 @@ class MockInferResult:
         return None
 
 
+class CallbackWrapper:
+    def __init__(self, callback):
+        self._callback = callback
+
+    def __call__(self, response, err):
+        if response is None and err is None:
+            self._callback(None, None)
+        else:
+            self._callback(MockInferResult(response), err)
+
+
 class MockTritonClient:
     '''
     Mock client
@@ -65,3 +76,19 @@ class MockTritonClient:
         responses = self._models[model_name].execute([request])
         assert len(responses) == 1
         return MockInferResult(responses[0])
+
+    def start_stream(self, callback):
+        self._callback = CallbackWrapper(callback)
+
+    def async_stream_infer(self, model_name, inputs: List[MockInferInput]):
+        assert self._callback is not None
+        request = mock_pb_util.MockInferenceRequest(
+            [mock_pb_util.MockTritonPythonBackendTensor(item.name(), item.data())
+             for item in inputs],
+            self._callback
+        )
+
+        self._models[model_name].execute([request])
+
+    def stop_stream(self):
+        self._callback = None
