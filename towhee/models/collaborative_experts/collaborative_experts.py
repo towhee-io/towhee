@@ -47,17 +47,20 @@ def kronecker_prod(t1, t2):
 
 
 def drop_nans(x, ind, validate_missing):
-    """Remove nans, which we expect to find at missing indices.
+    """
+    Remove nans, which we expect to find at missing indices.
 
     Args:
-        x (torch.Tensor): features
-        ind (torch.Tensor): binary values denoting whether or not a given feature is
-            present
-        validate_missing (bool): whether to validate that the missing location contains
-            a nan.
+        x (`torch.Tensor`):
+            Features
+        ind (`torch.Tensor`):
+            Binary values denoting whether or not a given feature is present.
+        validate_missing (`bool`):
+            Whether to validate that the missing location contains a nan.
 
     Returns:
-        (torch.tensor): the features, with the missing values masked to zero.
+        (`torch.tensor`):
+            The features, with the missing values masked to zero.
     """
     missing = torch.nonzero(ind == 0).flatten()
     if missing.numel():
