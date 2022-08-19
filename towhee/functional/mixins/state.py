@@ -24,9 +24,9 @@ class StateMixin:
 
     Examples:
 
-    >>> from towhee import DataCollection, State
-    >>> from towhee import param_scope
-    >>> dc = DataCollection.range(10).set_state(State(a=1))
+    >>> import towhee
+    >>> from towhee import param_scope, State
+    >>> dc = towhee.range(10).set_state(State(a=1))
     >>> dc.get_state()
     {'a': 1}
 
