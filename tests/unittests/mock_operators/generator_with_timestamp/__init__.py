@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from generator_with_timestamp import GeneratorWithTimestamp
+from .generator_with_timestamp import GeneratorWithTimestamp
 
 
 def generator_with_timestamp():

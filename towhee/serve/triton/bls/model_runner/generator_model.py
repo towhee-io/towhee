@@ -79,8 +79,6 @@ class TritonPythonModel:
     def execute(self, requests):
         for request in requests:
             self._queue.put(request)
-        return None
-
 
     def finalize(self):
         self._need_stop = True

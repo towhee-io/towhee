@@ -75,6 +75,9 @@ class LocalCaller(LocalCallerBase):
 
 
 class Callback:
+    '''
+    Get the respones from model.
+    '''
     def __init__(self, q: queue.Queue, schema):
         self.q = q
         self._schema = schema
@@ -88,9 +91,9 @@ class Callback:
 
 
 class LocalStreamCaller(LocalCallerBase):
-    def __init__(self, models):
-        super().__init__(models)
-
+    '''
+    Stream caller.
+    '''
     def start_stream(self, outputs: queue.Queue, output_schema: List[any]):
         self._client.start_stream(callback=Callback(outputs, output_schema))
 
