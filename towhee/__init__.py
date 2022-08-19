@@ -142,17 +142,6 @@ cache_paths = FileManagerConfig().cache_paths
 default_cache = FileManagerConfig().default_cache
 
 
-def plot(img1: Union[str, list], img2: list = None):
-    from towhee.utils.plot_utils import plot_img  # pylint: disable=C
-    if not img2:
-        plot_img(img1)
-    else:
-        assert len(img1) == len(img2)
-        for i in range(len(img1)):
-            plot_img(img1[i])
-            plot_img(img2[i])
-
-
 def build_docker_image(dc_pipeline, image_name, cuda, inference_server='triton'):  # pylint: disable=unused-argument
     from towhee.serve.triton.docker_image_builder import DockerImageBuilder
     DockerImageBuilder(dc_pipeline, image_name, cuda).build()
