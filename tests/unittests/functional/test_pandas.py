@@ -25,6 +25,10 @@ class TestEntity(unittest.TestCase):
         import pandas as pd
 
         df = pd.DataFrame(dict(a=range(5), b=range(5)))
+        dc = towhee.from_df(df, as_stream=True)
+        self.assertEqual(len(list(dc)), 5)
+
+        df = pd.DataFrame(dict(a=range(5), b=range(5)))
         dc = towhee.from_df(df)
         self.assertListEqual(dc.df.a.to_list(), [0, 1, 2, 3, 4])
 

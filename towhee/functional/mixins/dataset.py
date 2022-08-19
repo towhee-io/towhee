@@ -25,8 +25,7 @@ class DatasetMixin:
     @classmethod
     def from_df(cls, dataframe, as_stream=False):
         if as_stream:
-            return cls.stream(
-                dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
+            return cls(dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
         return cls(dataframe)
 
     # pylint: disable=import-outside-toplevel
