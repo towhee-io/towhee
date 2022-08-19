@@ -17,6 +17,11 @@ jobs:
   test:
     name: Test
     runs-on: self-hosted
+    container: 
+      image: towhee/towhee-ut:latest
+      options: --user root
+      volumes:
+        - /__w/towhee/towhee:/__w/towhee/towhee
     steps:
     - uses: actions/checkout@master
     - name: Setup Python
