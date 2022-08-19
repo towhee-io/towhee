@@ -28,8 +28,8 @@ class StreamMixin:
         Examples:
         1. Convert a data collection to streamed version
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
+        >>> import towhee
+        >>> dc = towhee.dc([0, 1, 2, 3, 4])
         >>> dc.is_stream
         False
 
@@ -50,14 +50,14 @@ class StreamMixin:
 
         1. Create a unstream data collection
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(iter(range(5))).unstream()
+        >>> import towhee
+        >>> dc = towhee.dc(iter(range(5))).unstream()
         >>> dc.is_stream
         False
 
         2. Convert a streamed data collection to unstream version
 
-        >>> dc = DataCollection(iter(range(5)))
+        >>> dc = towhee.dc(iter(range(5)))
         >>> dc.is_stream
         True
         >>> dc = dc.unstream()
@@ -74,9 +74,9 @@ class StreamMixin:
 
         Examples:
 
-        >>> from towhee import DataCollection
+        >>> import towhee
         >>> from typing import Iterable
-        >>> dc = DataCollection([0,1,2,3,4])
+        >>> dc = towhee.dc([0,1,2,3,4])
         >>> dc.is_stream
         False
 
@@ -86,7 +86,7 @@ class StreamMixin:
         >>> result._iterable
         [1, 2, 3, 4, 5]
 
-        >>> dc = DataCollection(iter(range(5)))
+        >>> dc = towhee.dc(iter(range(5)))
         >>> dc.is_stream
         True
 
