@@ -19,6 +19,7 @@ import math
 import os
 import sys
 from functools import partial
+from typing import List
 
 import numpy as np
 import torch
@@ -636,16 +637,16 @@ class MPViT(nn.Module):
     # pylint: disable=dangerous-default-value
     def __init__(
             self,
-            img_size=224,
-            num_stages=4,
-            num_path=[4, 4, 4, 4],
-            num_layers=[1, 1, 1, 1],
-            embed_dims=[64, 128, 256, 512],
-            mlp_ratios=[8, 8, 4, 4],
-            num_heads=[8, 8, 8, 8],
-            drop_path_rate=0.0,
-            in_chans=3,
-            num_classes=1000,
+            img_size: int = 224,
+            num_stages: int = 4,
+            num_path: List = [4, 4, 4, 4],
+            num_layers: List = [1, 1, 1, 1],
+            embed_dims: List = [64, 128, 256, 512],
+            mlp_ratios: List = [8, 8, 4, 4],
+            num_heads: List = [8, 8, 8, 8],
+            drop_path_rate: float = 0.0,
+            in_chans: int = 3,
+            num_classes: int = 1000,
     ):
         super().__init__()
         self.img_size = img_size
