@@ -80,7 +80,12 @@ class Bottleneck(nn.Module):
 
 class AttentionPool2d(nn.Module):
     """
-    Attention
+    Attention module for modified ResNet
+    Args:
+        spacial_dim (int): spatial dimension
+        embed_dim (int): embedding dimension
+        num_heads (int): number of heads
+        output_dim (int): output dimension
     """
 
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None, vis=False):
