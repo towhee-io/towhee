@@ -28,6 +28,7 @@ from towhee.functional import (
 )
 
 
+# Place all functions that are meant to be called by towhee.func() here aftering importing them.
 __all__ = [
     'DEFAULT_PIPELINES',
     'pipeline',
