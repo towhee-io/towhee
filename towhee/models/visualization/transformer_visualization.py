@@ -32,7 +32,7 @@ class LRP:
     https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0130140&type=printable
     """
 
-    def __init__(self, model):
+    def __init__(self, model: nn.Module):
         self.model = model
         self.model.eval()
 
@@ -84,7 +84,7 @@ def _add_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return cam
 
 
-def _reshape_attr_and_get_heatmap(image_relevance: torch.Tensor, img_tensor: torch.Tensor, img_size=224):
+def _reshape_attr_and_get_heatmap(image_relevance: torch.Tensor, img_tensor: torch.Tensor, img_size=224) -> np.ndarray:
     side_length = int(np.sqrt(image_relevance.shape[-1]))
     image_relevance = image_relevance.reshape(1, 1, side_length, side_length)
     image_relevance = torch.nn.functional.interpolate(image_relevance, size=img_size, mode='bilinear')
