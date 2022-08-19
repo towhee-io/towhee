@@ -1062,16 +1062,20 @@ def sharded_cross_view_inner_product(vid_embds, text_embds, text_weights,
 
 def sharded_single_view_inner_product(embds, subspaces, text_weights=None,
                                       l2renorm=True):
-    """Compute a similarity matrix from sharded vectors.
+    """
+    Compute a similarity matrix from sharded vectors.
 
     Args:
-        embds (dict[str:torch.Tensor]): the set of sub-embeddings that, when concatenated,
-            form the whole. The ith shard has shape `B x K x F_i` (i.e. they can
-            differ in the last dimension), or shape `B x F_i`
-        l2norm (bool::True): whether to l2 normalize the full embedding.
+        embds (`dict`):
+            The set of sub-embeddings that, when concatenated, form the whole.
+            The ith shard has shape `B x K x F_i` (i.e. they can differ in the last
+            dimension), or shape `B x F_i`
+        l2norm (`bool`):
+            Whether to l2 normalize the full embedding.
 
     Returns:
-        (torch.tensor): similarity matrix of size `BK x BK`.
+        (`torch.Tensor`):
+            Similarity matrix of size `BK x BK`.
     """
     _ = subspaces
     subspaces = list(embds.keys())
