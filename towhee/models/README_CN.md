@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and limitations 
 -->
 
 ![https://towhee.io](../../towhee_logo.png#gh-light-mode-only)
-![https://towhee.io](../../towhee_logo_dark.png#gh-dark-mode-only)
+![https://towhee.io](../../assets/towhee_logo_dark.png#gh-dark-mode-only)
 
 <h3 align="center">
   <p style="text-align: center;"> <span style="font-weight: bold; font: Arial, sans-serif;">x</span>2vec, Towhee is all you need! </p>
