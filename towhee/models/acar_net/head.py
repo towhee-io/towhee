@@ -26,6 +26,18 @@ import torchvision
 class LinearHead(nn.Module):
     """
     Linear head of ACAR-Net
+
+    Args:
+        - width (`int`):
+            Input dimension of linear layer.
+        - roi_spatial (`int`):
+            Portion to filter in spatial dimension.
+        - num_classes (`int`):
+            Number of classes.
+        - dropout (`float`):
+            Dropout ratio.
+        - bias (`bool`):
+            Flag to control if use bias.
     """
     def __init__(self, width, roi_spatial=7, num_classes=60, dropout=0., bias=False):
         super().__init__()
