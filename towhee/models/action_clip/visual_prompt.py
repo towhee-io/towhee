@@ -22,6 +22,7 @@ from torch import nn
 from collections import OrderedDict
 
 from towhee.models.utils.weight_init import trunc_normal_
+from towhee.models.utils.init_vit_weights import init_vit_weights
 
 
 class LayerNorm(nn.Module):
@@ -80,7 +81,7 @@ class TAggregate(nn.Module):
     """
     TAggregate
     """
-    def __init__(self, clip_length=None, embed_dim=2048, n_layers=6):
+    def __init__(self, clip_length=0, embed_dim=2048, n_layers=6):
         super().__init__()
         self.clip_length = clip_length
         drop_rate = 0.
@@ -95,17 +96,7 @@ class TAggregate(nn.Module):
         with torch.no_grad():
             trunc_normal_(self.pos_embed, std=.02)
             trunc_normal_(self.cls_token, std=.02)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            with torch.no_grad():
-                trunc_normal_(m.weight, std=.02)
-        if isinstance(m, nn.Linear) and m.bias is not None:
-            nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
+        self.apply(init_vit_weights)
 
     def forward(self, x):
         nvids = x.shape[0]
@@ -164,7 +155,7 @@ class VisualPrompt(nn.Module):
             self.lstm_visual = nn.LSTM(input_size=embed_dim, hidden_size=embed_dim,
                                        batch_first=True, bidirectional=False, num_layers=1)
 
-        self.apply(self.init_weights)
+        self.apply(init_vit_weights)
 
         if self.sim_header == 'Transf_cls':
             self.transformer = TAggregate(clip_length=self.num_frames, embed_dim=embed_dim, n_layers=6)
@@ -176,24 +167,6 @@ class VisualPrompt(nn.Module):
             weight[embed_dim // 4:embed_dim // 4 + embed_dim // 2, 0, 1] = 1.0
             weight[-embed_dim // 4:, 0, 2] = 1.0
             self.shift.weight = nn.Parameter(weight)
-
-    def init_weights(self, module):
-        """
-        Initialize the weights.
-        """
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            # Slightly different from the TF version which uses truncated_normal for initialization
-            # cf https://github.com/pytorch/pytorch/pull/5617
-            module.weight.data.normal_(mean=0.0, std=0.02)
-        elif isinstance(module, LayerNorm):
-            if 'beta' in dir(module) and 'gamma' in dir(module):
-                module.beta.data.zero_()
-                module.gamma.data.fill_(1.0)
-            else:
-                module.bias.data.zero_()
-                module.weight.data.fill_(1.0)
-        if isinstance(module, nn.Linear) and module.bias is not None:
-            module.bias.data.zero_()
 
     def forward(self, x):
         _, t, c = x.size()
