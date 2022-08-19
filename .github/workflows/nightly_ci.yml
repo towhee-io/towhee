@@ -12,6 +12,10 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     - cron: "0 22 * * *"
+  pull_request:
+    # file paths to consider in the event
+    paths:
+      - '.github/workflows/nightly_ci.yml'
 
 jobs:
   test:
