@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.
+from typing import  Dict, Any
 
 class Entity:
     """
@@ -51,6 +51,24 @@ class Entity:
         "{'a': 1, 'b': 2}"
         """
         return str(self.__dict__)
+
+    @classmethod
+    def from_dict(cls, tar: Dict[str, Any]):
+        """
+        Create an Entity from a dict.
+
+        Args:
+            tar (`Dict[str, Any]`):
+                The dict to create the Entity.
+
+        Examples:
+
+        >>> from towhee import Entity
+        >>> d = {'a': 1, 'b': 2}
+        >>> str(Entity.from_dict(d))
+        "{'a': 1, 'b': 2}"
+        """
+        return cls(**tar)
 
 
 class EntityView:
