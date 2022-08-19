@@ -26,6 +26,14 @@ from towhee.models.acar_net.utils import get_bbox_after_aug
 class BasicNeck(nn.Module):
     """
     Basic Neck of ACAR-Net
+
+    Args:
+        - aug_threshold (`float`):
+            threshold on preserved ratio of bboxes after cropping augmentation.
+        - num_classes (`int`):
+            Number of classes.
+        - multi_class (`bool`):
+            Whether to use multiple classes.
     """
     def __init__(self, aug_threshold=0., num_classes=60, multi_class=True):
         super().__init__()
