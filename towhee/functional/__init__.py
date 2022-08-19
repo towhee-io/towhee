@@ -20,7 +20,7 @@ from towhee.hparam import HyperParameter as State
 from towhee.hparam import param_scope
 from towhee.hparam import dynamic_dispatch
 # pylint: disable=protected-access
-
+# pylint: disable=redefined-builtin
 read_audio = DataCollection.read_audio
 read_camera = DataCollection.read_camera
 read_csv = DataFrame.read_csv
@@ -36,8 +36,34 @@ def from_df(dataframe, as_stream=False):
     return DataFrame(dataframe)
 
 
-@dynamic_dispatch
-def glob(*arg):  # pragma: no cover
+# pylint: disable=redefined-builtin
+def _range(*args, **kwargs):  # pragma: no cover
+    """
+    Return a DataCollection of a range of values.
+    Examples:
+
+    1. create a simple data collection;
+
+    >>> import towhee
+    >>> towhee.range(5).to_list() #doctest: +SKIP
+    [0, 1, 2, 3, 4]
+
+    2. create a data collection of schema'd range.
+
+    >>> towhee.range['nums'](5).select['nums']().as_raw() #doctest: +SKIP
+    [0, 1, 2, 3, 4]
+    """
+
+    index = param_scope()._index
+    if index is None:
+        return DataCollection.range(*args, **kwargs)
+    return DataFrame(DataCollection.range(*args, **kwargs)).map(lambda x: Entity(**{index: x}))
+
+
+range = dynamic_dispatch(_range)
+
+
+def _glob(*arg):  # pragma: no cover
     """
     Return a DataCollection of paths matching a pathname pattern.
     Examples:
@@ -59,32 +85,12 @@ def glob(*arg):  # pragma: no cover
         return DataCollection.from_glob(*arg)
     return DataFrame.from_glob(*arg).map(lambda x: Entity(**{index: x}))
 
-@dynamic_dispatch
-# pylint: disable=redefined-builtin
-def range(*args, **kwargs):  # pragma: no cover
-    """
-    Return a DataCollection of a range of values.
-    Examples:
 
-    1. create a simple data collection;
+glob = dynamic_dispatch(_glob)
 
-    >>> import towhee
-    >>> towhee.range(5).to_list() #doctest: +SKIP
-    [0, 1, 2, 3, 4]
 
-    2. create a data collection of schema'd range.
-
-    >>> towhee.range['nums'](5).select['nums']().as_raw() #doctest: +SKIP
-    [0, 1, 2, 3, 4]
-    """
-
-    index = param_scope()._index
-    if index is None:
-        return DataCollection.range(*args, **kwargs)
-    return DataFrame(DataCollection.range(*args, **kwargs)).map(lambda x: Entity(**{index: x}))
 # pylint: enable=redefined-builtin
-@dynamic_dispatch
-def glob_zip(uri, pattern):  # pragma: no cover
+def _glob_zip(uri, pattern):  # pragma: no cover
     """
     Return a DataCollection of files matching a pathname pattern from a zip archive.
     Examples:
@@ -105,6 +111,9 @@ def glob_zip(uri, pattern):  # pragma: no cover
     if index is None:
         return DataCollection.read_zip(uri, pattern)
     return DataFrame.read_zip(uri, pattern).map(lambda x: Entity(**{index: x}))
+
+
+glob_zip = dynamic_dispatch(_glob_zip)
 
 
 def _api():
