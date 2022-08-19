@@ -7,6 +7,20 @@ All notable updates to Towhee models will be documented in this file.
 ### [Preview]  Latest
 
 
+### [0.8.0]  Aug. 16, 2022
+
+Add 3 SOTA models
+
+* **nnfp**
+  * page: [*audio-embedding/nnfp*](https://towhee.io/audio-embedding/nnfp)
+  * paper: [*Neural Audio Fingerprint for High-specific Audio Retrieval based on Contrastive Learning*](https://arxiv.org/pdf/2010.11910.pdf)
+
+* **RepMLPNet**
+  * paper: [*Hierarchical Vision MLP with Re-parameterized Locality*](https://arxiv.org/pdf/2112.11081.pdf)
+
+* **Wave-ViT**
+  * paper: [*Unifying Wavelet and Transformers for Visual Representation Learning*](https://arxiv.org/pdf/2207.04978v1.pdf)
+
 
 ### [0.7.3]  Jul. 27, 2022
 
