@@ -41,6 +41,7 @@ jobs:
       run: |
         cd  /__w/towhee/towhee/tests/testcases
         python3 -m pip install -U pip
+        python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
         python3 -m pip install --no-cache-dir -r requirements.text
         export TOWHEE_WORKER=True
         python3 -W ignore test_main.py

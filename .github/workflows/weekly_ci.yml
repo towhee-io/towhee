@@ -32,9 +32,9 @@ jobs:
       env:
         TOWHEE_WORKER: True
       run: |
-        pip install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
         cd  /__w/towhee/towhee/tests/testcases
         python3 -m pip install -U pip
+        python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
         python3 -m pip install --no-cache-dir -r requirements.text
         cd  /__w/towhee/towhee/tests/testcases/hub
         export TOWHEE_WORKER=True
