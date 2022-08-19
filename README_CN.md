@@ -54,7 +54,14 @@
 
 ## 📰 近期动态
 
-**v0.7.3 Jul.27,2022**
+**v0.8.0 2022年8月16日**
+
+* 支持“一键生成”基于 Nvidia Triton 的 Pipeline，快速构建适用于生产环节的 Docker Image，支持使用 GPU 对图片进行解码。
+  * 教程：[“从定义流水线到生成 Docker 镜像，再到启动服务并调用执行，一共不到30行代码”](https://zhuanlan.zhihu.com/p/552917095)
+* 新增一个音频指纹识别模型：[**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
+* 新增两个图片嵌入模型：[**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
+
+**v0.7.3 2022年7月27日**
 
 * 新增一个多模态（文本/图片）模型 :
 [*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
