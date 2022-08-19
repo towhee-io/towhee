@@ -51,6 +51,12 @@ automatically optimize it for production-ready environments.
 
 ## What's New
 
+**v0.8.0 Aug. 16, 2022**
+
+* Towhee supports generating a nvidia triton server from a towhee pipeline, and supports GPU image decode.
+* Add one audio fingerprinting model: [**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
+* Add two image embedding models: [**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
+
 **v0.7.3 Jul. 27, 2022**
 * Add one multimodal (text/image) model:
 [*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
