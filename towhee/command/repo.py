@@ -34,8 +34,8 @@ parser.add_argument('--plain', action='store_true', help='optional, just create 
 
 class RepoCommand:
     """
-    Implementation for subcmd `towhee develop` and `towhee install`.
-    Setup repo to `towheeoperator.{self._args.namespace}_{self._args.repo_name}' package with pypi methods.
+    Implementation for subcmd `towhee create`.
+    Create an Operator in towhee hub.
     """
 
     def __init__(self, args) -> None:
