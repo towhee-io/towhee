@@ -56,7 +56,7 @@ class milvus_search:
      <Entity dict_keys(['path', 'img', 'vec', 'results'])>]
     """
     def __init__(self, collection, **kwargs):
-        from towhee.utils.milvus_utils import Collection
+        from towhee.utils.thirdparty.milvus_utils import Collection
 
         if isinstance(collection, str):
             self.collection = Collection(collection)
