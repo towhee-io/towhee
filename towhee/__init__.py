@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=redefined-builtin
+# pylint: disable=import-outside-toplevel
 from typing import Union, List
 from pathlib import Path
 from towhee.engine import register
@@ -20,13 +23,9 @@ from towhee.hparam import HyperParameter as Document
 from towhee.connectors import Connectors as connectors
 from towhee.hub.file_manager import FileManagerConfig
 from towhee.functional import DataCollection, State, Entity, DataFrame
-from towhee.functional import glob, glob_zip
-from towhee.functional import read_csv, read_json, read_camera
-from towhee.functional import read_video, read_audio
-from towhee.functional import read_zip, from_df
-from towhee.functional import dc, api, dummy_input, range # pylint: disable=redefined-builtin
-
-# pylint: disable=import-outside-toplevel
+from towhee.functional import (
+    glob, glob_zip, read_csv, read_json, read_camera, read_video, read_audio, read_zip, dc, api, dummy_input, range, from_df
+)
 
 
 __all__ = [
@@ -61,7 +60,6 @@ __all__ = [
     'default_cache'
 ]
 
-
 __import__('pkg_resources').declare_namespace(__name__)
 
 
@@ -89,9 +87,7 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     from torchvision import datasets
     from towhee.data.dataset.dataset import TorchDataSet
     dataset_construct_map = {
-        'mnist': datasets.MNIST,
-        'cifar10': datasets.cifar.CIFAR10,
-        'fake': datasets.FakeData
+        'mnist': datasets.MNIST, 'cifar10': datasets.cifar.CIFAR10, 'fake': datasets.FakeData
         # 'imdb': IMDB  # ,()
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
