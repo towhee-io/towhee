@@ -12,7 +12,7 @@
 
 <h3 align="center">
   <p style="text-align: center;">
-  <a href="https://github.com/towhee-io/towhee/blob/main/README.md" target="_blank">ENGLISH</a> | <a href="https://github.com/towhee-io/towhee/blob/main/README_CN.md">中文文档</a>
+  <a href="README.md" target="_blank">ENGLISH</a> | <a href="README_CN.md">中文文档</a>
   </p>
 </h3>
 
