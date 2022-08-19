@@ -215,7 +215,14 @@ class QuickGELU(nn.Module):
 
 class ResidualAttentionBlock(nn.Module):
     """
-    ResidualAttentuonBlock
+    Residual Attention Block
+    Args:
+        d_model (int): dimension of model
+        n_head (int): number of head
+        attn_mask (Union[torch.Tensor, Callable]): mask for attention
+        vis (int): visualization
+        patch_nums (int): number of patches
+        is_bridge_former_video (bool): text transformer or visual transformer for a single frame
     """
 
     def __init__(self, d_model: int, n_head: int,
@@ -253,8 +260,9 @@ class ResidualAttentionBlock(nn.Module):
         attn_mask_ = attn_mask_.to(dtype=x.dtype, device=x.device) if attn_mask_ is not None else None
         if self.vis:
             return \
-            self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_, attention_probs_forward_hook=self.set_attn_probs,
-                      attention_probs_backwards_hook=self.set_attn_grad)[0]
+                self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_,
+                          attention_probs_forward_hook=self.set_attn_probs,
+                          attention_probs_backwards_hook=self.set_attn_grad)[0]
         else:
             return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
 
@@ -262,29 +270,29 @@ class ResidualAttentionBlock(nn.Module):
         self.attn_mask = None
         bz = x.shape[1]
         # print(x.shape)
-        cls_x = x[0:1,:]
+        cls_x = x[0:1, :]
         cls_out = self.attn(cls_x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
-        x_ = x[1:,:].permute(1, 0, 2)
+        x_ = x[1:, :].permute(1, 0, 2)
 
         x_ = x_.reshape(-1, self.patch_nums, x_.shape[-1])
         n_f = int(x_.shape[0] / bz)  # num frames
-        cls_x_tile = cls_x.permute(1, 0, 2).repeat_interleave(n_f,0)
-        cls_x_cat = torch.cat([cls_x_tile,x_],1)
+        cls_x_tile = cls_x.permute(1, 0, 2).repeat_interleave(n_f, 0)
+        cls_x_cat = torch.cat([cls_x_tile, x_], 1)
         x_ = x_.permute(1, 0, 2)
         cls_x_cat = cls_x_cat.permute(1, 0, 2)
         out_ = self.attn(x_, cls_x_cat, cls_x_cat, need_weights=False, attn_mask=self.attn_mask)[0]
         out_ = out_.permute(1, 0, 2)
         out_ = out_.reshape(bz, -1, out_.shape[-1])
         out_ = out_.permute(1, 0, 2)
-        out = torch.cat([cls_out,out_],0)
+        out = torch.cat([cls_out, out_], 0)
         return out
 
     def forward(self, x: torch.Tensor):
 
-        ## text transformer or visual transformer for a single frame
+        # text transformer or visual transformer for a single frame
         if not self.is_bridge_former_video:
             x = x + self.attention(self.ln_1(x))
-        ## visual transformer for multiple frames
+        # visual transformer for multiple frames
         else:
             x = x + self.attention_frames(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
@@ -295,6 +303,7 @@ class Transformer(nn.Module):
     """
     Transformer
     """
+
     def __init__(self, width: int, layers: int, heads: int,
                  attn_mask: Union[torch.Tensor, Callable] = None, vis: bool = False,
                  patch_nums: int = None, is_bridge_former_video: bool = False):
@@ -326,7 +335,7 @@ class VisionTransformer(nn.Module):
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
         self.patch_nums = (input_resolution // patch_size) ** 2
-        self.positional_embedding = nn.Parameter(scale * torch.randn(self.patch_nums+1, width))
+        self.positional_embedding = nn.Parameter(scale * torch.randn(self.patch_nums + 1, width))
         self.ln_pre = LayerNorm(width)
 
         self.transformer = Transformer(width, layers, heads, vis=vis, patch_nums=self.patch_nums,
@@ -353,7 +362,7 @@ class VisionTransformer(nn.Module):
             x = x.reshape(bz, -1, x.shape[-1])  # shape = [bz, n_frames*grid*grid, width]
 
             cls = self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype,
-                                                                 device=x.device)   # shape = [bz, 1, width]
+                                                                 device=x.device)  # shape = [bz, 1, width]
 
             x = torch.cat([cls, x], dim=1)  # shape = [bz, n_frames*grid*grid + 1, width]
             cls_embed = self.positional_embedding[0:1, :]  # shape = [1, width]
@@ -366,7 +375,8 @@ class VisionTransformer(nn.Module):
             x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
             x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
             x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(
-            x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+                x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x],
+                          dim=1)  # shape = [*, grid ** 2 + 1, width]
 
             x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
@@ -387,6 +397,7 @@ class CLIP(nn.Module):
     """
     CLIP model
     """
+
     def __init__(self,
                  embed_dim: int,
                  # vision
