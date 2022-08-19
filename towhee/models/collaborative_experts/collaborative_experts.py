@@ -976,18 +976,24 @@ def sharded_cross_view_inner_product(vid_embds, text_embds, text_weights,
                                      keep_missing_modalities,
                                      merge_caption_similiarities="avg", tol=1E-5,
                                      raw_captions=None):
-    """Compute a similarity matrix from sharded vectors.
+    """
+    Compute a similarity matrix from sharded vectors.
 
     Args:
-        embds1 (dict[str:torch.Tensor]): the set of sub-embeddings that, when
-            concatenated, form the whole. The ith shard has shape `B x K x F_i`
-            (i.e. they can differ in the last dimension).
-        embds2 (dict[str:torch.Tensor]): same format.
-        weights2 (torch.Tensor): weights for the shards in `embds2`.
-        l2norm (bool::True): whether to l2 renormalize the full embeddings.
+        embds1 (`dict`):
+            The set of sub-embeddings that, when concatenated, form the whole.
+            The ith shard has shape `B x K x F_i` (i.e. they can differ in
+            the last dimension).
+        embds2 (`dict`):
+            Same format.
+        weights2 (`torch.Tensor`):
+            Weights for the shards in `embds2`.
+        l2norm (`bool`):
+            Whether to l2 renormalize the full embeddings.
 
     Returns:
-        (torch.tensor): similarity matrix of size `BK x BK`.
+        (`torch.Tensor`):
+            Similarity matrix of size `BK x BK`.
 
     NOTE: If multiple captions are provided, we can aggregate their similarities to
     provide a single video-text similarity score.
