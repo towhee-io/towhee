@@ -27,6 +27,20 @@ BN = nn.BatchNorm3d
 class Bottleneck(nn.Module):
     """
     Slowfast Bottleneck
+
+    Args:
+        - inplanes (`int`):
+            Number of input channels for conv layers.
+        - planes (`int`):
+            Number of output channels for conv layers.
+        - stride (`int`):
+            Number to build stride (1, stride, stride).
+        - downsample (`nn.Module=None`):
+            Down-sample method.
+        - dilation (`int=1`):
+            Number of dilation.
+        - head_conv (`int=1`):
+            Number to control head conv layer.
     """
     expansion = 4
 
