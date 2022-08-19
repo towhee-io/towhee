@@ -58,7 +58,7 @@ class ComputerVisionMixin:
             format:
                 The format of the images loaded from video.
         """
-        from towhee.utils.av_utils import av
+        from towhee.utils.thirdparty.av_utils import av
 
         vcontainer = av.open(path)
         video_stream = vcontainer.streams.video[0]
@@ -98,7 +98,7 @@ class ComputerVisionMixin:
             audio_src:
                 The audio to encode with the video.
         """
-        from towhee.utils.av_utils import av
+        from towhee.utils.thirdparty.av_utils import av
         import itertools
 
         output_container = av.open(output_path, 'w')
