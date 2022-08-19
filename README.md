@@ -2,7 +2,7 @@
 
 <p align="center">
     <img src="towhee_logo.png#gh-light-mode-only" width="60%"/>
-    <img src="towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
+    <img src="assets/towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
 </p>
 
 
@@ -137,7 +137,7 @@ results = (
           .select['text', 'results']()
 )
 ```
-<img src="towhee_example.png" style="width: 60%; height: 60%">
+<img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
 Learn more examples from the [Towhee Bootcamp](https://codelabs.towhee.io/).
 

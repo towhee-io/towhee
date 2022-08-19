@@ -2,7 +2,7 @@
 
 <p align="center">
     <img src="towhee_logo.png#gh-light-mode-only" width="60%"/>
-    <img src="towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
+    <img src="assets/towhee_logo_dark.png#gh-dark-mode-only" width="60%"/>
 </p>
 
 
@@ -145,7 +145,7 @@ results = (
 
 程序执行完毕，结果如下：
 
-<img src="towhee_example.png" style="width: 60%; height: 60%">
+<img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
 不够过瘾，想要了解更多例子吗？那么来👉 [Towhee 训练营](https://codelabs.towhee.io/) 👈 看看吧！
 
