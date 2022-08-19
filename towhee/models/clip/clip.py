@@ -134,6 +134,13 @@ class ModifiedResNet(nn.Module):
     - There are now 3 "stem" convolutions as opposed to 1, with an average pool instead of a max pool.
     - Performs anti-aliasing strided convolutions, where an avgpool is prepended to convolutions with stride > 1
     - The final pooling layer is a QKV attention instead of an average pool
+    Args:
+        layers (nn.Module): layers for modified ResNet
+        output_dim (int): output dimension
+        heads (int): output dimension
+        input_resolution (int): input resolution
+        width (int): output dimension
+        vis (bool): visualization
     """
 
     def __init__(self, layers, output_dim, heads, input_resolution=224, width=64, vis=False):
