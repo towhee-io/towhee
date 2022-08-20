@@ -12,15 +12,26 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     - cron: "0 22 * * *"
+  pull_request:
+    # file paths to consider in the event
+    paths:
+      - '.github/workflows/nightly_ci.yml'
 
 jobs:
   test:
     name: Test
     runs-on: self-hosted
+    container: 
+      image: towhee/towhee-ut:latest
+      options: --user root
+      volumes:
+        - /__w/towhee/towhee:/__w/towhee/towhee
     strategy:
       matrix:
         python: [ 3.8, 3.7, 3.6 ]
     steps:
+    - name: work around permission
+      run: git config --global --add safe.directory /__w/towhee/towhee
     - uses: actions/checkout@master
     - name: Setup Python
       uses: actions/setup-python@v2.3.1
@@ -30,8 +41,10 @@ jobs:
       env:
         TOWHEE_WORKER: True
       run: |
-        cd  tests/testcases
+        cd  /__w/towhee/towhee/tests/testcases
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
         python3 -m pip install -U pip
+        python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
         python3 -m pip install --no-cache-dir -r requirements.text
         export TOWHEE_WORKER=True
         python3 -W ignore test_main.py
