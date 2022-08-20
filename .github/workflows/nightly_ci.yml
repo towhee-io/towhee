@@ -30,6 +30,8 @@ jobs:
       matrix:
         python: [ 3.8, 3.7, 3.6 ]
     steps:
+    - name: work around permission
+      run: git config --global --add safe.directory /__w/towhee/towhee
     - uses: actions/checkout@master
     - name: Setup Python
       uses: actions/setup-python@v2.3.1
