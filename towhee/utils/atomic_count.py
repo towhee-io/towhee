@@ -16,11 +16,15 @@ import threading
 
 
 class AtomicCount:
-    '''
-    Atomic count, support thread-safe += operator.
-    '''
+    """Atomic count, support thread-safe += operator.
+    """
 
     def __init__(self, count: int):
+        """Create a counter with a starting count.
+
+        Args:
+            count (int): The starting count.
+        """
         self._count = count
         self._lock = threading.Lock()
 
@@ -29,6 +33,14 @@ class AtomicCount:
         return self._count
 
     def __iadd__(self, num: int) -> 'AtomicCount':
+        """Add amount to count.
+
+        Args:
+            num (int): Amount to be added.
+
+        Returns:
+            AtomicCount: The AtomicCount with incremented amount.
+        """
         with self._lock:
             self._count += num
         return self
