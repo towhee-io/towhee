@@ -15,7 +15,7 @@ try:
     # pylint: disable=unused-import,ungrouped-imports
     from pymilvus.orm.mutation import MutationResult
     from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
-except ModuleNotFoundError as moduleNotFound:
+except ModuleNotFoundError as moduleNotFound: # pragma: no cover
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('pymilvus')

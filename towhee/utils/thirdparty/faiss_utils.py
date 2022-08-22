@@ -18,7 +18,7 @@ from pathlib import Path
 try:
     # pylint: disable=unused-import,ungrouped-imports
     import faiss
-except ModuleNotFoundError as moduleNotFound:
+except ModuleNotFoundError as moduleNotFound: # pragma: no cover
     try:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('faiss-cpu')

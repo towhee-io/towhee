@@ -48,7 +48,7 @@ class ComputerVisionMixin:
 
     # pylint: disable=redefined-builtin
     @classmethod
-    def read_video(cls, path, format='rgb24'):
+    def read_video(cls, path, format='rgb24'): # pragma: no cover
         """
         Load video as a datacollection.
 
@@ -76,7 +76,7 @@ class ComputerVisionMixin:
                  height=None,
                  format=None,
                  template=None,
-                 audio_src=None):
+                 audio_src=None): # pragma: no cover
         """
         Encode a video with audio if provided.
 

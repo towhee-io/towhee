@@ -95,7 +95,7 @@ class NumbaCompiler:
             return self._op.__call__(*arg, **kws)
 
 
-class TowheeCompiler:
+class TowheeCompiler: # pragma: no cover
     """
     Towhee's just-in-time compiler
     """
