@@ -5,7 +5,7 @@ import yaml
 from loguru import logger
 from common import common_func as cf
 
-path = '/home/super/towhee_CI/hub_operator'
+path = '/workspace/towhee_CI/hub_operator'
 log_path = path + "/log" + "/hub_op_readme.log"
 test_case_path = path + "/testcases"
 
