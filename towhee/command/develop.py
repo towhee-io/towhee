@@ -26,7 +26,7 @@ parser.add_argument('-n', '--namespace', default='towhee', help='optional, repo 
 parser.add_argument('-p', '--path', required=False, default='.', help='optional, path to the operator repo, defaults to cwd which is \'.\'')
 
 
-class SetupCommand:
+class SetupCommand: # pragma: no cover
     """
     Implementation for subcmd `towhee develop` and `towhee install`.
     Setup repo to `towheeoperator.{self._args.namespace}_{self._args.repo_name}' package with pypi methods.
@@ -103,7 +103,7 @@ class SetupCommand:
         install.add_argument('--user', action='store_true', help='optional, whether to install op to the local path(site.USER_SITE).')
 
 
-class UninstallCommand:
+class UninstallCommand: # pragma: no cover
     """
     Implementation for subcmd `towhee uninstall`.
     """

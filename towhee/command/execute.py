@@ -19,7 +19,7 @@ from typing import Union, Any
 from towhee import pipeline
 
 
-class ExecuteCommand:
+class ExecuteCommand: # pragma: no cover
     """
     Implementation for subcmd `towhee run`
     """

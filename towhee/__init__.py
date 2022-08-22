@@ -20,7 +20,6 @@ from towhee.engine import register
 from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
-from towhee.connectors import Connectors as connectors
 from towhee.hub.file_manager import FileManagerConfig
 from towhee.functional import DataCollection, State, Entity, DataFrame
 from towhee.functional import (
@@ -40,7 +39,6 @@ __all__ = [
     'DataFrame',
     'State',
     'Entity',
-    'connectors',
     'range',
     'glob',
     'glob_zip',
