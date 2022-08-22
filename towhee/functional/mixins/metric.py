@@ -32,9 +32,6 @@ class Collector:
         self.scores = scores if scores is not None else {}
         self.labels = labels if labels is not None else {}
 
-    def add_metrics(self, value: str):
-        self.metrics.append(value)
-
     def add_scores(self, value: dict):
         self.scores.update(value)
 
@@ -170,7 +167,11 @@ class MetricMixin:
         lr       1.0     1.0
         rf       0.8     0.8
         {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 0.8, 'recall': 0.8}}
-
+        >>> dc1.with_metrics(['confusion_matrix']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report()
+        <IPython.core.display.HTML object>
+        {'lr': {'confusion_matrix': array([[3, 0],
+               [0, 2]])}, 'rf': {'confusion_matrix': array([[2, 1],
+               [0, 2]])}}
         >>> dc2 = DataCollection([Entity(pred=[1,6,2,7,8,3,9,10,4,5], act=[1,2,3,4,5])])
         >>> dc2.with_metrics(['mean_average_precision', 'mean_hit_ratio']).evaluate['act', 'pred'](name='test').report()
               mean_average_precision  mean_hit_ratio
