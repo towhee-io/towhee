@@ -153,6 +153,14 @@ class TestDataCollection(unittest.TestCase):
         #     .evaluate['target', 'svm_evaluate_predict']('svm') \
         #     .report()
 
+    def test_run(self):
+        # pylint: disable=unnecessary-lambda
+        x = []
+        dc = towhee.range(2).stream().runas_op(func=lambda a: x.append(a))
+        self.assertEqual(x, [])
+        dc.run()
+        self.assertEqual(x, [0, 1])
+
 
 def load_tests(loader, tests, ignore):
     # pylint: disable=unused-argument
