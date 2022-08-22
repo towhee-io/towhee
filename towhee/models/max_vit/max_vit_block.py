@@ -35,17 +35,28 @@ class MaxViTTransformerBlock(nn.Module):
         Layer Normalization (LN) is applied after the grid/window partition to prevent multiple reshaping operations.
         Grid/window reverse (Unblock/Ungrid) is performed on the final output for the same reason.
     Args:
-        in_channels (int): Number of input channels.
-        partition_function (Callable): Partition function to be utilized (grid or window partition).
-        reverse_function (Callable): Reverse function to be utilized  (grid or window reverse).
-        num_heads (int, optional): Number of attention heads. Default 32
-        grid_window_size (Tuple[int, int], optional): Grid/Window size to be utilized. Default (7, 7)
-        attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
-        drop (float, optional): Dropout ratio of output. Default: 0.0
-        drop_path (float, optional): Dropout ratio of path. Default: 0.0
-        mlp_ratio (float, optional): Ratio of mlp hidden dim to embedding dim. Default: 4.0
-        act_layer (Type[nn.Module], optional): Type of activation layer to be utilized. Default: nn.GELU
-        norm_layer (Type[nn.Module], optional): Type of normalization layer to be utilized. Default: nn.BatchNorm2d
+        in_channels (`int`):
+            Number of input channels.
+        partition_function (`Callable`):
+            Partition function to be utilized (grid or window partition).
+        reverse_function (`Callable`):
+            Reverse function to be utilized  (grid or window reverse).
+        num_heads (`int`):
+            Number of attention heads. Default 32
+        grid_window_size (`Tuple[int, int]`):
+            Grid/Window size to be utilized. Default (7, 7)
+        attn_drop (`float`):
+            Dropout ratio of attention weight. Default: 0.0
+        drop (`float`):
+            Dropout ratio of output. Default: 0.0
+        drop_path (`float`):
+            Dropout ratio of path. Default: 0.0
+        mlp_ratio (`float`):
+            Ratio of mlp hidden dim to embedding dim. Default: 4.0
+        act_layer (`nn.Module`):
+            Type of activation layer to be utilized. Default: nn.GELU
+        norm_layer (`nn.Module`):
+            Type of normalization layer to be utilized. Default: nn.BatchNorm2d
     """
 
     def __init__(
