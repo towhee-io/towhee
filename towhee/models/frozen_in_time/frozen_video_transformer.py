@@ -180,26 +180,45 @@ class SpaceTimeTransformer(nn.Module):
                  num_frames=8, time_init='rand', attention_style='frozen_in_time'):
         """
         Args:
-            img_size (int, tuple): input image size
-            patch_size (int, tuple): patch size
-            in_chans (int): number of input channels
-            num_classes (int): number of classes for classification head
-            embed_dim (int): embedding dimension
-            depth (int): depth of transformer
-            num_heads (int): number of attention heads
-            mlp_ratio (int): ratio of mlp hidden dim to embedding dim
-            qkv_bias (bool): enable bias for qkv if True
-            qk_scale (float): override default qk scale of head_dim ** -0.5 if set
-            representation_size (Optional[int]): enable and set representation layer (pre-logits) to this value if set
-            drop_rate (float): dropout rate
-            attn_drop_rate (float): attention dropout rate
-            drop_path_rate (float): stochastic depth rate
-            hybrid_backbone (nn.Module): CNN backbone to use in-place of PatchEmbed module
-            norm_layer: (nn.Module): normalization layer
-            num_frames: (int) maximum number of frames expected as input
-            time_init: (str) how to initialise the time attention layer, 'zeros' allows for the timesformer to start off
-                        as ViT.
-            attention_style: (str) how to attend to space and time.
+            img_size: (`int`, `tuple`)
+                Input image size.
+            patch_size: (`int`, `tuple`)
+                Patch size.
+            in_chans: (`int`)
+                Number of input channels
+            num_classes: (`int`)
+                Number of classes for classification head.
+            embed_dim: (`int`)
+                Embedding dimension.
+            depth: (`int`)
+                Depth of transformer.
+            num_heads: (`int`)
+                Number of attention heads.
+            mlp_ratio: (`int`)
+                Ratio of mlp hidden dim to embedding dim.
+            qkv_bias: (`bool`)
+                Enable bias for qkv if True.
+            qk_scale: (`float`)
+                Override default qk scale of head_dim ** -0.5 if set.
+            representation_size: (`Optional[int]`)
+                Enable and set representation layer (pre-logits) to this value if set.
+            drop_rate: (`float`)
+                Dropout rate.
+            attn_drop_rate: (`float`)
+                Attention dropout rate.
+            drop_path_rate: (`float`)
+                Stochastic depth rate.
+            hybrid_backbone: (`nn.Module`)
+                CNN backbone to use in-place of PatchEmbed module.
+            norm_layer: (`nn.Module`)
+                Normalization layer.
+            num_frames: (`int`)
+                Maximum number of frames expected as input.
+            time_init: (`str`)
+                How to initialise the time attention layer, 'zeros' allows for the timesformer to start off
+                as ViT.
+            attention_style: (`str`)
+                How to attend to space and time.
         """
         super().__init__()
         self.num_classes = num_classes
