@@ -79,7 +79,15 @@ class ResidualAttentionBlock(nn.Module):
 
 class TAggregate(nn.Module):
     """
-    TAggregate
+    Aggregation module.
+
+    Args:
+        - clip_length (`int=0`):
+            Dimension of CLIP features.
+        - embed_dim (`int=2048`):
+            Dimension used in Transformer encoder.
+        - n_layers (`int=6`):
+            Number of layers used in Transformer encoder.
     """
     def __init__(self, clip_length=0, embed_dim=2048, n_layers=6):
         super().__init__()
