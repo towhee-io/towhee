@@ -16,23 +16,18 @@ from towhee.functional.data_collection import DataCollection, DataFrame
 from towhee.functional.entity import Entity
 from towhee.functional.option import Option, Some, Empty
 from towhee.hparam import HyperParameter as State
-
 from towhee.hparam import param_scope, dynamic_dispatch
 # pylint: disable=protected-access
 # pylint: disable=redefined-builtin
+
+
+from_df = DataFrame.from_df
 read_audio = DataCollection.read_audio
 read_camera = DataCollection.read_camera
 read_csv = DataFrame.read_csv
 read_json = DataFrame.read_json
 read_video = DataCollection.read_video
 read_zip = DataCollection.read_zip
-
-
-def from_df(dataframe, as_stream=False):
-    if as_stream:
-        return DataFrame.stream(
-            dataframe.iterrows()).map(lambda x: Entity(**x[1].to_dict()))
-    return DataFrame(dataframe)
 
 
 # pylint: disable=redefined-builtin
@@ -88,7 +83,6 @@ def _glob(*arg):  # pragma: no cover
 glob = dynamic_dispatch(_glob)
 
 
-# pylint: enable=redefined-builtin
 def _glob_zip(uri, pattern):  # pragma: no cover
     """
     Return a DataCollection of files matching a pathname pattern from a zip archive.
