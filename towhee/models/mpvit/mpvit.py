@@ -19,7 +19,7 @@ import math
 import os
 import sys
 from functools import partial
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 import torch
@@ -449,13 +449,13 @@ class MHCAEncoder(nn.Module):
     # pylint: disable=dangerous-default-value
     def __init__(
             self,
-            dim,
-            num_layers=1,
-            num_heads=8,
-            mlp_ratio=3,
-            drop_path_list=[],
-            qk_scale=None,
-            crpe_window={
+            dim: int,
+            num_layers: int = 1,
+            num_heads: int = 8,
+            mlp_ratio: int = 3,
+            drop_path_list: List = [],
+            qk_scale: float = None,
+            crpe_window: Dict = {
                 3: 2,
                 5: 3,
                 7: 3
