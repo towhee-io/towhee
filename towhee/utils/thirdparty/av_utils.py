@@ -16,7 +16,7 @@
 try:
     # pylint: disable=unused-import
     import av
-except ModuleNotFoundError as e:
+except ModuleNotFoundError as e: # pragma: no cover
     from towhee.utils.dependency_control import prompt_install
     prompt_install('av')
     import av # pylint: disable=ungrouped-imports
