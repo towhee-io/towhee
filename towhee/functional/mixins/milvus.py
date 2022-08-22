@@ -21,7 +21,7 @@ from ..entity import Entity
 
 def _milvus_insert(iterable: Iterable, index: Tuple[str], collection, batch_size: int): # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.milvus_utils import Collection, MutationResult
+    from towhee.utils.thirdparty.milvus_utils import Collection, MutationResult
     if isinstance(collection, str):
         collection = Collection(collection)
     primary_keys = []

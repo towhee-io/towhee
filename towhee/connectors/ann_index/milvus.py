@@ -28,7 +28,7 @@ class MilvusDB(ANNIndex):
         """
         Init MilvusDB class and get an existing collection.
         """
-        from towhee.utils.milvus_utils import Collection
+        from towhee.utils.thirdparty.milvus_utils import Collection
         self._uri = uri
         if uri:
             host, port, collection_name = self._parse_uri()
@@ -171,12 +171,12 @@ class MilvusDB(ANNIndex):
         return self.collection.num_entities
 
     def connect(self):
-        from towhee.utils.milvus_utils import connections
+        from towhee.utils.thirdparty.milvus_utils import connections
         if not connections.has_connection('default'):
             connections.connect(host=self._host, port=self._port)
 
     def disconnect(self):
-        from towhee.utils.milvus_utils import connections
+        from towhee.utils.thirdparty.milvus_utils import connections
         connections.disconnect('default')
 
     def __enter__(self):
