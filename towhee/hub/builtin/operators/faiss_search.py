@@ -47,7 +47,7 @@ class faiss_search:
      <Entity dict_keys(['path', 'img', 'vec', 'results'])>]
     """
     def __init__(self, findex, **kwargs):
-        from towhee.utils.faiss_utils import KVStorage, faiss
+        from towhee.utils.thirdparty.faiss_utils import KVStorage, faiss
         self.faiss_index = findex
         self.kwargs = kwargs
         self.kv_storage = None
