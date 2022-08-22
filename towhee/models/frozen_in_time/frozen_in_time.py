@@ -75,23 +75,23 @@ class FrozenInTime(nn.Module):
 
     """
     def __init__(self,
-                 img_size=224,
-                 patch_size=16,
-                 in_chans=3,
-                 num_frames=4,
-                 is_pretrained=False,
-                 weights_path='',
-                 attention_style='frozen_in_time',
-                 projection_dim=256,
-                 video_pretrained_model='vit_base_16x224',
-                 video_is_load_pretrained=False,
-                 video_model_type='SpaceTimeTransformer',
-                 text_pretrained_model='distilbert-base-uncased',
-                 text_is_load_pretrained=False,
-                 projection='minimal',
-                 load_temporal_fix='zeros',
-                 device='cpu',
-                 pretrained_url='https://www.robots.ox.ac.uk/~maxbain/frozen-in-time/models/cc-webvid2m-4f_stformer_b_16_224.pth.tar'
+                 img_size: int = 224,
+                 patch_size: int = 16,
+                 in_chans: int = 3,
+                 num_frames: int = 4,
+                 is_pretrained: bool = False,
+                 weights_path: str = '',
+                 attention_style: str = 'frozen_in_time',
+                 projection_dim: int = 256,
+                 video_pretrained_model: str = 'vit_base_16x224',
+                 video_is_load_pretrained: bool = False,
+                 video_model_type: str = 'SpaceTimeTransformer',
+                 text_pretrained_model: str = 'distilbert-base-uncased',
+                 text_is_load_pretrained: bool = False,
+                 projection: str = 'minimal',
+                 load_temporal_fix: str = 'zeros',
+                 device: str = 'cpu',
+                 pretrained_url: str = 'https://www.robots.ox.ac.uk/~maxbain/frozen-in-time/models/cc-webvid2m-4f_stformer_b_16_224.pth.tar'
                  ):
         super().__init__()
 
