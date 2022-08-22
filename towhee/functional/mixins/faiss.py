@@ -24,7 +24,7 @@ from towhee.utils.log import engine_log
 
 
 def get_faiss_index(findex, dim, index_str, metric):
-    from towhee.utils.faiss_utils import faiss
+    from towhee.utils.thirdparty.faiss_utils import faiss
     if not isinstance(findex, Path):
         return findex
     elif not findex.exists():
@@ -35,7 +35,7 @@ def get_faiss_index(findex, dim, index_str, metric):
 
 
 def _faiss_insert(iterable: Iterable, column: Tuple[str], findex, string, metric): # pragma: no cover
-    from towhee.utils.faiss_utils import KVStorage, faiss
+    from towhee.utils.thirdparty.faiss_utils import KVStorage, faiss
     if isinstance(findex, str):
         findex = Path(findex)
         kv_file = Path(str(findex).replace('.', '_kv.'))
@@ -80,7 +80,7 @@ def _faiss_insert(iterable: Iterable, column: Tuple[str], findex, string, metric
 
 def _to_faiss_callback(self): # pragma: no cover
     def wrapper(_: str, index, *arg, **kws):
-        from towhee.utils.faiss_utils import faiss
+        from towhee.utils.thirdparty.faiss_utils import faiss
         findex = './index.bin'
         string = 'IDMap,Flat'
         metric = faiss.METRIC_L2
