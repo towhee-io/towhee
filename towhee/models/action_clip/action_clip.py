@@ -25,7 +25,15 @@ from .visual_prompt import VisualPrompt
 
 class ActionClip:
     """
-    ActionClip
+    ActionClip model.
+
+    Args:
+        - clip_model (`nn.Module`):
+            CLIP model
+        - visual_prompt (`nn.Module`):
+            Visual prompt.
+        - text_prompt_flat (`bool`):
+            Flag to control whether to use text prompt.
     """
     def __init__(
             self,
