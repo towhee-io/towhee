@@ -301,7 +301,15 @@ class ResidualAttentionBlock(nn.Module):
 
 class Transformer(nn.Module):
     """
-    Transformer
+    Transformer for clip
+    Args:
+        width (int): width
+        layers (int): number of layers
+        heads (int): number of heads
+        attn_mask (Union[torch.Tensor, Callable]): attention mask
+        vis (bool): visualization
+        patch_nums (int): number of patches
+        is_bridge_former_video (bool): text transformer or visual transformer for a single frame
     """
 
     def __init__(self, width: int, layers: int, heads: int,
@@ -320,7 +328,18 @@ class Transformer(nn.Module):
 
 class VisionTransformer(nn.Module):
     """
-    ViT
+    ViT for clip
+    Args:
+        input_resolution (int): input resolution
+        patch_size (int): patch size
+        width (int): width
+        layers (int): number of layers
+        heads (int): number of heads
+        output_dim (int): output dimension
+        vis (bool): visualization
+        patch_nums (int): number of patches
+        is_bridgeformer (bool): is bridge model or not
+        is_bridge_former_video (bool): text transformer or visual transformer for a single frame
     """
 
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int,
