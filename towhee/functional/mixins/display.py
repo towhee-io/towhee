@@ -22,7 +22,7 @@ from towhee.functional.entity import Entity, EntityView
 # pylint: disable=dangerous-default-value
 
 
-def get_df_on_columns(self, index: Tuple[str]):
+def get_df_on_columns(self, index: Tuple[str]): # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.pandas_utils import pandas as pd
 
@@ -37,7 +37,7 @@ def get_df_on_columns(self, index: Tuple[str]):
     return df
 
 
-def calc_df(df, feature: str, target: str):
+def calc_df(df, feature: str, target: str): # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.pandas_utils import pandas as pd
     lst = []
@@ -79,7 +79,7 @@ def calc_df(df, feature: str, target: str):
         return data
 
 
-def _feature_summarize_callback(self):
+def _feature_summarize_callback(self): # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.pandas_utils import pandas as pd
 
@@ -110,7 +110,7 @@ def _feature_summarize_callback(self):
     return wrapper
 
 
-def _plot_callback(self):
+def _plot_callback(self): # pragma: no cover
     # pylint: disable=unused-argument
     def wrapper(_: str, index, *arg, **kws):
         if isinstance(index, str):
@@ -123,7 +123,7 @@ def _plot_callback(self):
     return wrapper
 
 
-class DisplayMixin:
+class DisplayMixin: # pragma: no cover
     """
     Mixin for display data.
     """
