@@ -51,23 +51,40 @@ class VitModel(nn.Module):
     """
     Vision Transformer Model
     Args:
-        img_size (int): image height or width (height=width)
-        patch_size (int): patch height or width (height=width)
-        in_c (int): number of image channels
-        num_classes (int): number of classes
-        embed_dim (int): number of features
-        depth (int): number of blocks
-        num_heads (int): number of heads for Multi-Attention layer
-        mlp_ratio (float): mlp ratio
-        qkv_bias (bool): if add bias to qkv layer
-        qk_scale (float): number to scale qk
-        representation_size (int): size of representations
-        drop_ratio (float): drop rate of a block
-        attn_drop_ratio (float): drop rate of attention layer
-        drop_path_ratio (float): drop rate of drop_path layer
-        embed_layer: patch embedding layer
-        norm_layer: normalization layer
-        act_layer: activation layer
+        img_size (`int`):
+            Image height or width (height=width).
+        patch_size (`int`):
+            Patch height or width (height=width).
+        in_c (`int`):
+            Number of image channels.
+        num_classes (`int`):
+            Number of classes.
+        embed_dim (`int`):
+            Number of features.
+        depth (`int`):
+            Number of blocks.
+        num_heads (`int`):
+            Number of heads for Multi-Attention layer.
+        mlp_ratio (`float`):
+            Mlp ratio.
+        qkv_bias (`bool`):
+            If add bias to qkv layer.
+        qk_scale (`float`):
+            Number to scale qk
+        representation_size (`int`):
+            Size of representations.
+        drop_ratio (`float`):
+            Drop rate of a block
+        attn_drop_ratio (`float`):
+            Drop rate of attention layer
+        drop_path_ratio (`float`):
+            Drop rate of drop_path layer
+        embed_layer (`nn.Module`):
+            Patch embedding layer.
+        norm_layer (`nn.Module`):
+            Normalization layer.
+        act_layer(`nn.Module`):
+            Activation layer.
     """
 
     def __init__(self,
