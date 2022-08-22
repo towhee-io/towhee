@@ -87,13 +87,13 @@ class DataCollection(Iterable, DCMixins):
     def __getattr__(self, name) -> 'DataCollection':
         """Unknown method dispatcher.
 
-        When a unknown method is invoked on a `DataCollection` object, the function call
+        When an unknown method is invoked on a `DataCollection` object, the function call
         will be dispatched to a method resolver. By registering function to the
         resolver, you are able to extend `DataCollection`'s API at runtime without
         modifying its code.
 
         Args:
-            name (str): The unkown attribute.
+            name (str): The unknown attribute.
 
         Returns:
             DataCollection: Returns a new DataCollection for the output of attribute
@@ -231,7 +231,7 @@ class DataCollection(Iterable, DCMixins):
         """String representation of the DataCollection
 
         Returns:
-            str: String repersentation of the DataCollection.
+            str: String representation of the DataCollection.
 
         Examples:
             1. Usage with non-streamed::
