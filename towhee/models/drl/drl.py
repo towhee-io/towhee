@@ -2,6 +2,7 @@
 # modified by Zilliz
 
 from collections import OrderedDict
+from typing import Optional
 from types import SimpleNamespace
 import torch
 import logging
@@ -44,16 +45,16 @@ class DRL(nn.Module):
     """
 
     def __init__(self,
-                 base_encoder="clip_vit_b32",
-                 agg_module="seqTransf",
-                 interaction="wti",
-                 wti_arch=2,
-                 cdcr=3,
-                 cdcr_alpha1=1.0,
-                 cdcr_alpha2=0.06,
-                 cdcr_lambda=0.001,
-                 cross_num_hidden_layers=None,
-                 backbone_pretrained=False
+                 base_encoder: str = "clip_vit_b32",
+                 agg_module: str = "seqTransf",
+                 interaction: str = "wti",
+                 wti_arch: int = 2,
+                 cdcr: int = 3,
+                 cdcr_alpha1: float = 1.0,
+                 cdcr_alpha2: float = 0.06,
+                 cdcr_lambda: float = 0.001,
+                 cross_num_hidden_layers: Optional[int] = None,
+                 backbone_pretrained: bool = False
                  ):
         super().__init__()
         self.base_encoder = base_encoder
