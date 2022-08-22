@@ -21,7 +21,7 @@ class AudioMixin():
     Mixin for audio processing.
     """
     @classmethod
-    def read_audio(cls, path):
+    def read_audio(cls, path): # pragma: no cover
         from towhee.utils.thirdparty.av_utils import av
 
         def inner():
