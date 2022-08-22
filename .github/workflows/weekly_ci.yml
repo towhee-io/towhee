@@ -27,9 +27,12 @@ jobs:
       options: --user root
       volumes:
         - /__w/towhee/towhee:/__w/towhee/towhee
+        - /home/super/towhee_CI:/workspace/towhee_CI
     steps:
     - name: work around permission
-      run: git config --global --add safe.directory /__w/towhee/towhee
+      run: |
+        git config --global --add safe.directory /__w/towhee/towhee
+        git config --global --add safe.directory /workspace/towhee_CI/operator-tasks
     - uses: actions/checkout@master
     - name: Run Test
       env:
