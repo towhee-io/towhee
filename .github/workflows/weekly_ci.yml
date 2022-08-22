@@ -16,6 +16,7 @@ on:
     # file paths to consider in the event
     paths:
       - '.github/workflows/weekly_ci.yml'
+      - 'tests/testcases/hub/execute_hu_operators.py'
 
 jobs:
   test:
@@ -26,9 +27,12 @@ jobs:
       options: --user root
       volumes:
         - /__w/towhee/towhee:/__w/towhee/towhee
+        - /home/super/towhee_CI:/workspace/towhee_CI
     steps:
     - name: work around permission
-      run: git config --global --add safe.directory /__w/towhee/towhee
+      run: |
+        git config --global --add safe.directory /__w/towhee/towhee
+        git config --global --add safe.directory /workspace/towhee_CI/operator-tasks
     - uses: actions/checkout@master
     - name: Run Test
       env:
@@ -36,6 +40,7 @@ jobs:
       run: |
         cd  /__w/towhee/towhee/tests/testcases
         apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
+        apt-get install wget
         python3 -m pip install -U pip
         python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
         python3 -m pip install --no-cache-dir -r requirements.text
