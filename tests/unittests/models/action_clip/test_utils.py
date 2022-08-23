@@ -24,9 +24,13 @@ class TestUtils(unittest.TestCase):
     """
     # Test Remap Weights of Visual Prompt
     def test_visual_prompt_weights(self):
-        fake_weights = {"module.layer1": 1}
-        new_weights = action_clip.map_state_dict(fake_weights)
-        self.assertTrue("layer1" in new_weights)
+        fake_weights1 = {"module.layer1": 1}
+        new_weights1 = action_clip.map_state_dict(fake_weights1)
+        self.assertTrue("layer1" in new_weights1)
+
+        fake_weights2 = {"visual": {"module.layer1": 1}}
+        new_weights2 = action_clip.map_state_dict(fake_weights2, state_dict_name="visual")
+        self.assertTrue("layer1" in new_weights2)
 
     # Test similarity
     def test_similarity(self):
