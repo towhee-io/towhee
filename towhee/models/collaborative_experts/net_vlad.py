@@ -24,6 +24,11 @@ from torch import nn
 class NetVLAD(nn.Module):
     """
     NetVLAD module
+    Args:
+        cluster_size (int): cluster size
+        feature_size (int): feature size
+        ghost_clusters (int): ghost cluster size
+        add_batch_norm (bool): add batch normalization
     """
 
     def __init__(self, cluster_size, feature_size, ghost_clusters=0,
