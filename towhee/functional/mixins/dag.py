@@ -75,7 +75,7 @@ def register_dag(f):
                     'output_info': output_info,
                     'parent_ids': [],
                     'child_ids':  child_ids,
-                    'dc_sequence': self.dc_sequence}
+                    'dc_sequence': None}
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
