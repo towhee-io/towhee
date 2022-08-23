@@ -183,7 +183,7 @@ def foo(a: Set(str), b: List[int], c: Dict[str, Any]) -> Tuple(int, str):
     return return_int, return_str
 ```
 *Notes*:
-- Use Set, Dict, List, Tuple instead of set, dict, list, tuple in annotation, also specify the data type inside.
+- Use Set, Dict, List, Tuple instead of set, dict, list, tuple in annotation, also specify the data type inside unless in complicated nested cases.
 
 *Special case*:
 - If we want to return a Foo object inside of the Foo class, use string to annotate the return type:
