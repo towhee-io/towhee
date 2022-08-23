@@ -53,38 +53,38 @@ automatically optimize it for production-ready environments.
 
 **v0.8.0 Aug. 16, 2022**
 
-* Towhee supports generating a nvidia triton server from a towhee pipeline, and supports GPU image decode.
-* Add one audio fingerprinting model: [**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
-* Add two image embedding models: [**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
+* Towhee now supports generating an Nvidia Triton Server from a Towhee pipeline, with aditional support for GPU image decoding.
+* Added one audio fingerprinting model: [**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
+* Added two image embedding models: [**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
 
 **v0.7.3 Jul. 27, 2022**
-* Add one multimodal (text/image) model:
+* Added one multimodal (text/image) model:
 [*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
-* Add two video models for grounded situation recognition & repetitive action counting:
+* Added two video models for grounded situation recognition & repetitive action counting:
 [*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
 [*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
-* Add two SoTA models for image tasks (image retrieval, image classification, etc.):
+* Added two SoTA models for image tasks (image retrieval, image classification, etc.):
 [*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
 [*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
 
 **v0.7.1 Jul. 1, 2022**
-* Add one image embedding model:
+* Added one image embedding model:
 [*MPViT*](https://towhee.io/image-embedding/mpvit).
-* Add two video retrieval models:
+* Added two video retrieval models:
 [*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
 [*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
-* Add FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
+* Added FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
 
 **v0.7.0 Jun. 24, 2022**
 
-* Add six video understanding/classification models:
+* Added six video understanding/classification models:
 [*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
 [*TSM*](https://towhee.io/action-classification/tsm), 
 [*Uniformer*](https://towhee.io/action-classification/uniformer), 
 [*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
 [*TimeSformer*](https://towhee.io/action-classification/timesformer), 
 [*MoViNets*](https://towhee.io/action-classification/movinet).
-* Add four video retrieval models:
+* Added four video retrieval models:
 [*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
 [*DRL*](https://towhee.io/video-text-embedding/drl), 
 [*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
@@ -92,11 +92,11 @@ automatically optimize it for production-ready environments.
 
 **v0.6.1  May. 13, 2022**
 
-* Add three text-image retrieval models:
+* Added three text-image retrieval models:
 [*CLIP*](https://towhee.io/image-text-embedding/clip),
 [*BLIP*](https://towhee.io/image-text-embedding/blip),
 [*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
-* Add six video understanding/classification models from PyTorchVideo:
+* Added six video understanding/classification models from PyTorchVideo:
 [*I3D*](https://towhee.io/action-classification/pytorchvideo),
 [*C2D*](https://towhee.io/action-classification/pytorchvideo),
 [*Slow*](https://towhee.io/action-classification/pytorchvideo),
