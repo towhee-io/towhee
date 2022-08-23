@@ -64,9 +64,6 @@ class milvus_search:
             self.collection = collection
         self.kwargs = kwargs
 
-    def __call__(self, query: list):
-        from towhee.functional.entity import Entity
-
         if 'anns_field' not in self.kwargs:
             fields_schema = self.collection.schema.fields
             for schema in fields_schema:
@@ -96,6 +93,9 @@ class milvus_search:
                 self.kwargs['param'] = {'metric_type': self.kwargs['metric_type']}
             else:
                 self.kwargs['param'] = {'metric_type': 'L2'}
+
+    def __call__(self, query: list):
+        from towhee.functional.entity import Entity
 
         milvus_result = self.collection.search(
             data=[query],
