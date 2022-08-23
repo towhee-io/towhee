@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.engine.factory import ops
+from towhee.engine.factory import ops, create_op
+from towhee.hparam import param_scope
 
 
 class DispatcherMixin:
@@ -32,4 +33,19 @@ class DispatcherMixin:
     """
 
     def resolve(self, path, index, *arg, **kws):
-        return getattr(ops,path)[index](*arg, **kws)
+        with param_scope() as hp:
+            locals_ = hp.locals
+            globals_ = hp.globals
+            op = None
+            if '.' not in path:
+                if path in locals_:
+                    op = locals_[path]
+                elif path in globals_:
+                    op = globals_[path]
+            if op is not None and callable(op):
+                if isinstance(op, type):
+                    instance = op(*arg, **kws)
+                else:
+                    instance = op
+                return create_op(instance, path, index, arg, kws)
+            return getattr(ops, path)[index](*arg, **kws)
