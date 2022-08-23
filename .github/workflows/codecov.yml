@@ -25,6 +25,7 @@ jobs:
     - uses: actions/checkout@v3.0.0
     - name: Generate coverage report
       run: |
+        export TOWHEE_WORKER=True
         rm -rf ./coverage.xml
         pip install coverage codecov pytest pytest-xdist
         pip install -r test_requirements.txt
