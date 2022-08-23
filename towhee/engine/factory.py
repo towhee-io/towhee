@@ -288,11 +288,12 @@ def pipes(*arg, **kws):
     return _PipelineBuilder.callback(real_name, index, *arg, **kws)
 
 
-def create_op(op,
-              name: str = 'tmp',
-              index: Tuple[str] = None,
-              arg: List[Any] = [],
-              kws: Dict[str, Any] = {}) -> None:
+def create_op(
+        func,
+        name: str = 'tmp',
+        index: Tuple[str] = None,
+        arg: List[Any] = [],
+        kws: Dict[str, Any] = {}) -> None:  # pylint: disable=protected-access
     operator = _OperatorLazyWrapper(name, index, arg=arg, kws=kws)
-    operator._op = op
+    operator._op = func
     return operator

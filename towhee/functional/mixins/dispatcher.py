@@ -14,7 +14,6 @@
 
 from towhee.engine.factory import ops, create_op
 from towhee.hparam import param_scope
-import inspect
 
 
 class DispatcherMixin:
