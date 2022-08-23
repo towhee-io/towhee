@@ -956,7 +956,7 @@ class MViT(nn.Module):
         x = self.head(x)
         return x
 
-    def relprop(self, cam, method="rollout", start_layer=0, **kwargs):
+    def relprop(self, cam: torch.Tensor, method: str = "rollout", start_layer: int = 0, **kwargs) -> torch.Tensor:
         cam = self.head.relprop(cam, **kwargs)
         if self.cls_embed_on:
             cam = cam.unsqueeze(1)
@@ -984,7 +984,6 @@ class MViT(nn.Module):
             cam = compute_rollout_attention(attn_cams, start_layer=start_layer)
             cam = cam[:, 0, 1:]
             return cam
-
 
         elif method in ("transformer_attribution", "grad"):
             cams = []
