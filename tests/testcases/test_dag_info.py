@@ -110,5 +110,20 @@ class TestDagInfo(unittest.TestCase):
                 self.assertEqual(j['input_info'][0][1], expect_input)
                 self.assertEqual(j['output_info'], expect_output)
                 
+    def test_schema_dag(self):
+        """
+        Unittest schema dag info
+        """
+        f = towhee.dummy_input[(),('video_url', 'video_id')]()\
+            .set_parallel(5).video_decode.ffmpeg[('video_url'), ('video_frame')]()\
+            .image_text_embedding.clip_image[('video_frame'), ('embedding')]()\
+            .image_decode.test[('video_id', 'video_frame', 'embedding'),()]()\
+            .as_function()
+        for i in f.dag_info.values():
+            if i['op_name'] == 'video-decode/ffmpeg':
+                expect_input = [('start', 'video_url')]
+                expect_output = ['video_frame']
+                self.assertEqual(i['input_info'], expect_input)
+                self.assertEqual(i['output_info'], expect_output)
 if __name__ == '__main__':
     unittest.main()
