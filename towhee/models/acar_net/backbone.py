@@ -91,7 +91,23 @@ class Bottleneck(nn.Module):
 
 class SlowFast(nn.Module):
     """
-    Slowfast for ACAR-Net
+    Slowfast for ACAR-Net.
+
+    Args:
+        - block (`Bottleneck`):
+            Bottleneck module.
+        - layers (`tuple or list`):
+            Number of layers at different stages.
+        - alpha (`int`):
+            The frame rate ratio between the Fast and Slow pathway.
+        - beta (`float`):
+            The ratio of channels of the Slow pathway.
+        - fuse_only_conv (`bool`):
+            Whether to use conv only to fuse pathways.
+        - fuse_kernel_size (`int`):
+            Kernel size used to fuse pathways.
+        - slow_full_span (`bool`):
+            Whether to span inputs for Slow pathway.
     """
     def __init__(self, block, layers, alpha=8, beta=0.125, fuse_only_conv=True, fuse_kernel_size=5,
                  slow_full_span=False):
