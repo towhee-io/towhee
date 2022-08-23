@@ -22,6 +22,29 @@ class DataProcessingMixin:
     """
     Mixin for processing data.
     """
+
+    @classmethod
+    def combine(cls, *datacollections):
+        """Combine dataframes to be able to access schemas from seperate DF chains.
+
+        Args:
+            datacollections (DataFrame): DataFrames to combine.
+
+        Examples:
+            >>> import towhee
+            >>> a = towhee.range['a'](1,5)
+            >>> b = towhee.range['b'](5,10)
+            >>> c = towhee.range['c'](10, 15)
+            >>> z = towhee.DataFrame.combine(a, b, c)
+            >>> z.as_raw().to_list()
+            [(1, 5, 10), (2, 6, 11), (3, 7, 12), (4, 8, 13)]
+        """
+        def inner():
+            for dicts in zip(*datacollections):
+                dicts[0].combine(*dicts[1:])
+                yield dicts[0]
+        return cls(inner())
+
     @register_dag
     def select_from(self, other):
         """

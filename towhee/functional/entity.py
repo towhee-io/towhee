@@ -53,6 +53,24 @@ class Entity:
         """
         return str(self.__dict__)
 
+    def combine(self, *entities):
+        """Combine entities.
+
+        Args:
+            entities (Entity): The entities to be added into self.
+
+        Examples:
+            >>> from towhee import Entity
+            >>> e = Entity(a = 1, b = 2)
+            >>> b = Entity(c = 3, d = 4)
+            >>> c = Entity(e = 5, f = 6)
+            >>> e.combine(b, c)
+            >>> str(e)
+            "{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}"
+        """
+        for x in entities:
+            self.__dict__.update(x.__dict__)
+
     @classmethod
     def from_dict(cls, tar: Dict[str, Any]):
         """
@@ -151,4 +169,3 @@ class EntityView:
             <EntityView dict_keys(['a', 'b'])>
         """
         return f'<{self.__class__.__name__} dict_keys({self._table.column_names})>'
-
