@@ -30,16 +30,26 @@ class Block(nn.Module):
     """
     The Transformer block.
     Args:
-        dim (int): number of features
-        num_heads (int): number of heads
-        mlp_ratio (int): ratio of mlp layer
-        qkv_bias (bool): if add bias to qkv layer
-        qk_scale (float): number to scale qk
-        drop_ratio (float): drop rate at the end of the block (mlp layer)
-        attn_drop_ratio (float): drop rate of attention layer
-        drop_path_ratio (float): drop rate of drop_path layer
-        act_layer: activation layer
-        norm_layer: normalization layer
+        dim (`int`):
+            Number of features.
+        num_heads (`int`):
+            Number of heads.
+        mlp_ratio (`int`):
+            Ratio of mlp layer.
+        qkv_bias (`bool`):
+            If add bias to qkv layer.
+        qk_scale (`float`):
+            Number to scale qk.
+        drop_ratio (`float`):
+            Drop rate at the end of the block (mlp layer)
+        attn_drop_ratio (`float`):
+            Drop rate of attention layer
+        drop_path_ratio (`float`):
+            Drop rate of drop_path layer
+        act_layer (`nn.Module`):
+            Activation layer
+        norm_layer (`nn.Module`):
+            Normalization layer.
     """
     def __init__(self,
                  dim,
