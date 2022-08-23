@@ -52,7 +52,15 @@ class QuickGELU(nn.Module):
 
 class ResidualAttentionBlock(nn.Module):
     """
-    ResidualAttentionBlock
+    Residual Attention Block
+
+    Args:
+        - d_model (`int`):
+            Dimension of features.
+        - n_head (`int`):
+            Number of heads for multi-head attention.
+        - attn_mask (`torch.Tensor`):
+            Attention mask.
     """
     def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None):
         super().__init__()
