@@ -22,7 +22,7 @@ try:
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
-        prompt_install('sklearn')
+        prompt_install('scikit-learn')
         # pylint: disable=unused-import,ungrouped-imports
         from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, ConfusionMatrixDisplay
         from sklearn.model_selection import train_test_split
@@ -32,5 +32,5 @@ except ModuleNotFoundError as moduleNotFound:
         from sklearn import svm
     except:
         from towhee.utils.log import engine_log
-        engine_log.error('sklearn not found, you can install via `pip install sklearn`.')
-        raise ModuleNotFoundError('sklearn not found, you can install via `pip install sklearn`.') from moduleNotFound
+        engine_log.error('sklearn not found, you can install via `pip install scikit-learn`.')
+        raise ModuleNotFoundError('sklearn not found, you can install via `pip install scikit-learn`.') from moduleNotFound
