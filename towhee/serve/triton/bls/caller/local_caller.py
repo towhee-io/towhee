@@ -14,15 +14,16 @@
 
 
 from typing import List
+import queue
 
 from towhee.serve.triton.bls.utils import type_util
 from towhee.serve.triton.bls.mock import mock_triton_client as client
 from tritonclient.utils import np_to_triton_dtype
 
 
-class LocalCaller:
+class LocalCallerBase:
     '''
-    Call local models
+    Local caller base
     '''
     def __init__(self, models):
         self._client = client.MockTritonClient(models)
@@ -39,6 +40,12 @@ class LocalCaller:
             infer.set_data_from_numpy(datas[i])
             infers.append(infer)
         return infers
+
+
+class LocalCaller(LocalCallerBase):
+    '''
+    Call local models
+    '''
 
     def call_model(self, model_name: str, request_data: List[any], output_schema: List[any]) -> any:
         '''
@@ -65,3 +72,39 @@ class LocalCaller:
 
         # triton_outputs to op_outputs
         return type_util.client_result_to_op_data(result, output_schema)
+
+
+class Callback:
+    '''
+    Get the respones from model.
+    '''
+    def __init__(self, q: queue.Queue, schema):
+        self.q = q
+        self._schema = schema
+
+    def __call__(self, result: 'InferResult', error):
+        if result:
+            ret = type_util.client_result_to_op_data(result, self._schema)
+            self.q.put(ret)
+        else:
+            self.q.put(None)
+
+
+class LocalStreamCaller(LocalCallerBase):
+    '''
+    Stream caller.
+    '''
+    def start_stream(self, outputs: queue.Queue, output_schema: List[any]):
+        self._client.start_stream(callback=Callback(outputs, output_schema))
+
+    def async_stream_call(self, model_name: str, request_data: List) -> any:
+        nps = []
+        for item in request_data:
+            nps.extend(type_util.to_numpy_data(item))
+        infers = self.gen_inputs(nps, 'INPUT')
+
+        # call model
+        self._client.async_stream_infer(model_name, infers)
+
+    def stop_stream(self):
+        self._client.stop_stream()

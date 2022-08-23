@@ -20,6 +20,9 @@ class MockTritonPythonBackendUtils:
     '''
     mock triton_python_backend_utils, used in UT.
     '''
+
+    TRITONSERVER_RESPONSE_COMPLETE_FINAL = 1
+
     @staticmethod
     def get_input_tensor_by_name(r, input_key):
         '''
@@ -66,12 +69,27 @@ class MockTritonPythonBackendTensor:
         return self._data
 
 
+class MockResponseSender:
+    def __init__(self, callback):
+        self._callback = callback
+
+    def send(self, response=None, flags=0):
+        if flags != MockTritonPythonBackendUtils.TRITONSERVER_RESPONSE_COMPLETE_FINAL:
+            self._callback(response, None)
+        else:
+            self._callback(None, None)
+
+
 class MockInferenceRequest:
-    def __init__(self, tensors: MockTritonPythonBackendTensor):
+    def __init__(self, tensors: MockTritonPythonBackendTensor, callback=None):
         self._tensors = tensors
+        self._sender = MockResponseSender(callback)
 
     def inputs(self):
         return self._tensors
+
+    def get_response_sender(self):
+        return self._sender
 
 
 class MockInferenceResponse:

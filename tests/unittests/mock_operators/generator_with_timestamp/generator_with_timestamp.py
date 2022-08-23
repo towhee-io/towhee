@@ -40,3 +40,10 @@ class GeneratorWithTimestamp(Operator):
     @property
     def shared_type(self):
         return SharedType.NotShareable
+
+
+    def input_schema(self):
+        return [(int, (1, ))]
+
+    def output_schema(self):
+        return [(int, (1, )), (int, (1, ))]
