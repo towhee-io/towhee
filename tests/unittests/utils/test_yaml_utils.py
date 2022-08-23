@@ -16,9 +16,8 @@ import unittest
 import os
 from pathlib import Path
 
-from towhee.utils.yaml_utils import load_yaml, dump_yaml
 import ruamel.yaml
-
+from towhee.utils.yaml_utils import load_yaml, dump_yaml
 PIPELINE_PATH = Path(__file__).parent.parent.resolve() / 'test_util' / 'resnet50_embedding' / 'resnet50_embedding.yaml'
 cache_path = Path(__file__).parent.parent.resolve() / 'test_cache' / 'test_yaml.yaml'
 
