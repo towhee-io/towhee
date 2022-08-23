@@ -14,7 +14,21 @@
 import io
 from typing import Union, Dict, List
 
-from ruamel.yaml import YAML
+try:
+    # pylint: disable=unused-import,ungrouped-imports
+    import ruamel.yaml as ryaml
+    from ruamel.yaml import YAML
+except ModuleNotFoundError as moduleNotFound:
+    try:
+        from towhee.utils.dependency_control import prompt_install
+        prompt_install('ruamel.yaml')
+        # pylint: disable=unused-import,ungrouped-imports
+        import ruamel.yaml
+        from ruamel.yaml import YAML
+    except:
+        from towhee.utils.log import engine_log
+        engine_log.error('ruamel.yaml not found, you can install via `pip install ruamel.yaml`.')
+        raise ModuleNotFoundError('ruamel.yaml not found, you can install via `pip install ruamel.yaml`.') from moduleNotFound
 
 
 def load_yaml(stream, typ: str = 'safe'):
