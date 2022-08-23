@@ -22,7 +22,7 @@ from towhee.utils.hub_utils import HubUtils
 from towhee.utils.hub_file_utils import HubFileUtils
 
 
-class UserCommand:
+class UserCommand: # pragma: no cover
     """
     Implementation for subcmd `towhee login`, `towhee whoami` and `towhee logout`.
     """

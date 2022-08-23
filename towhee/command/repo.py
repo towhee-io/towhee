@@ -32,7 +32,7 @@ parser.add_argument('--local', action='store_true', help='optional, create and i
 parser.add_argument('--plain', action='store_true', help='optional, just create repo with init file')
 
 
-class RepoCommand:
+class RepoCommand: # pragma: no cover
     """
     Implementation for subcmd `towhee create`.
     Create an Operator in towhee hub.
