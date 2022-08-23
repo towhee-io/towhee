@@ -85,13 +85,17 @@ class CoFormer(nn.Module):
 
     def forward(self, samples, targets=None, inference=False):
         """
-        Parameters:
-               - samples: The forward expects a NestedTensor, which consists of:
-                        - samples.tensor: batched images, of shape [batch_size x 3 x H x W]
-               - targets: This has verbs, roles and labels information
-               - inference: boolean, used in inference
-        Outputs:
-               - out: dict of tensors. 'pred_verb', 'pred_noun', 'pred_bbox' and 'pred_bbox_conf' are keys
+        Args:
+            samples (`torch.Tensor`):
+                The forward expects a NestedTensor, which consists of:
+                samples.tensor: batched images, of shape [batch_size x 3 x H x W].
+            targets (`torch.Tensor`):
+                This has verbs, roles and labels information.
+            inference (`bool`):
+                Used in inference.
+        Returns:
+            (`dict`):
+                Dict of tensors. 'pred_verb', 'pred_noun', 'pred_bbox' and 'pred_bbox_conf' are keys.
         """
         max_num_roles = 6
         if isinstance(samples, (list, torch.Tensor)):
