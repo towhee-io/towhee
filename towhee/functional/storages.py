@@ -16,14 +16,25 @@ from .entity import EntityView
 
 
 class WritableTable:
-    """
-    A wrapper that make arrow table writable.
-    """
+    """A wrapper that make arrow table writable.
+
+        Args:
+            table (pyarrow.Table): The pyarrow table to write.
+        """
     def __init__(self, table):
         self._table = table
         self._buffer = {}
 
     def write_many(self, names, arrays):
+        """Write many arrays to table.
+
+        Args:
+            names (str): The name of column.
+            arrays (any): The values of the column.
+
+        Returns:
+            pyarrow.Table: The new table.
+        """
         self.prepare()
         if isinstance(arrays, tuple):
             self._buffer = dict(zip(names, arrays))
@@ -32,6 +43,13 @@ class WritableTable:
         return self.seal()
 
     def write(self, name, offset, value):
+        """Write a value to a column.
+
+        Args:
+            name (str): Column name.
+            offset (int): The offset to write the value at.
+            value (any): The value to write.
+        """
         if name not in self._buffer:
             self._buffer[name] = []
         while len(self._buffer[name]) < offset:
@@ -39,11 +57,21 @@ class WritableTable:
         self._buffer[name].append(value)
 
     def prepare(self):
+        """Return the WriteableTable.
+
+        Returns:
+            WriteableTable: The writeable table.
+        """
         if not hasattr(self, '_sealed'):
             self._sealed = WritableTable(None)
         return self._sealed
 
     def seal(self):
+        """Writes the values from buffer to the table and seals the table.
+
+        Returns:
+            WriteableTable: The updated and sealed pyarrow.Table.
+        """
         # pylint: disable=protected-access
         from towhee.utils.thirdparty.pyarrow import pa
         from towhee.types.tensor_array import TensorArray
@@ -63,6 +91,11 @@ class WritableTable:
         return self._sealed
 
     def __iter__(self):
+        """Iterator.
+
+        Yields:
+            EntityView: The entity for each row.
+        """
         for i in range(self._table.shape[0]):
             yield EntityView(i, self)
 
@@ -83,21 +116,17 @@ class WritableTable:
 
 
 class ChunkedTable:
-    """
-    Chunked arrow table
+    """A chunked pyarrow table.
+
+    Args:
+        chunks:
+            The list or queue of chunks.
+        chunksize (`int`):
+            The size of the chunk.
+        stream (`bool`):
+            If the data is streamed.
     """
     def __init__(self, chunks=None, chunksize=128, stream=False) -> None:
-        """
-        A chunked pyarrow table.
-
-        Args:
-            chunks:
-                The list or queue of chunks.
-            chunksize (`int`):
-                The size of the chunk.
-            stream (`bool`):
-                If the data is streamed.
-        """
         self._chunksize = chunksize
         self._is_stream = stream
         if chunks is not None:
