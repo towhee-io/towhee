@@ -26,16 +26,20 @@ from towhee.models.coformer.config import _C
 
 
 class CoFormer(nn.Module):
-    """CoFormer model for Grounded Situation Recognition"""
+    """
+    CoFormer model for Grounded Situation Recognition
+    Args:
+        backbone (`nn.Module`):
+            Torch module of the backbone to be used. See backbone.py.
+        transformer (`nn.Module`):
+            Torch module of the transformer architecture. See transformer.py.
+        num_noun_classes (`int`):
+            The number of noun classes.
+        vidx_ridx (`dict`):
+            Verb index to role index.
+    """
 
     def __init__(self, backbone, transformer, num_noun_classes, vidx_ridx):
-        """ Initialize the model.
-        Parameters:
-            - backbone: torch module of the backbone to be used. See backbone.py
-            - transformer: torch module of the transformer architecture. See transformer.py
-            - num_noun_classes: the number of noun classes
-            - vidx_ridx: verb index to role index
-        """
         super().__init__()
         self.backbone = backbone
         self.transformer = transformer
