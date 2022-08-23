@@ -20,10 +20,12 @@ T = TypeVar('T')
 
 
 class _Reason:
-    """
-    reason for `Empty` value
-    """
+    """The reason for the current value.
 
+        Args:
+            x (Any): The value.
+            e (Exception): The Exception that caused it.
+        """
     def __init__(self, x: Any, e: Exception) -> None:
         self._value = x
         self._exception = e
@@ -38,8 +40,7 @@ class _Reason:
 
 
 class Option(Generic[A]):
-    """
-    Functional-style error handling.
+    """Functional-style error handling.
 
     Option[A] = Some(A) or Empty[A]
     1. Some(A): just a container for result;
@@ -47,55 +48,54 @@ class Option(Generic[A]):
 
     Examples:
 
-    >>> a = Some(10)
-    >>> a.map(lambda x: x/2.0)
-    Some(5.0)
+        >>> a = Some(10)
+        >>> a.map(lambda x: x/2.0)
+        Some(5.0)
 
-    >>> a.map(lambda x: x/0)
-    Empty()
+        >>> a.map(lambda x: x/0)
+        Empty()
 
-    >>> b = Empty()
-    >>> b.map(lambda x: x/2.0)
-    Empty()
+        >>> b = Empty()
+        >>> b.map(lambda x: x/2.0)
+        Empty()
     """
-
     @staticmethod
     def of(x: T):
-        """Return a boxed value
+        """Return a boxed value.
 
         Args:
-            x (T): input value
+            x (T): The input value.
 
         Returns:
-            Some(T): boxed value
+            Some(T): The boxed value.
         """
         return Some(x)
 
     @staticmethod
     def empty():
-        """Return an empty value
+        """Return an empty value.
 
         Returns:
-            Empty: empty value
+            Empty: The empty value.
         """
         return Empty()
 
     def flat_map(self, f: Callable[[A], 'Option[B]']) -> 'Option[B]':
-        """Apply boxed version of callable
+        """Apply boxed version of callable.
 
         Args:
-            f (Callable[[A], Option[B]]): boxed version of callable
+            f (Callable[[A], Option[B]]): Boxed version of callable
 
         Returns:
-            Option[B]: boxed value
+            Option[B]: The boxed value.
 
         Examples:
 
-        >>> Option.of(1).flat_map(lambda x: x+1)
-        2
+            >>> Option.of(1).flat_map(lambda x: x+1)
+            2
 
-        >>> Option.empty().flat_map(lambda x: x+1)
-        Empty()
+            >>> Option.empty().flat_map(lambda x: x+1)
+            Empty()
         """
         if isinstance(self, Some):
             return f(self._value)
@@ -103,13 +103,13 @@ class Option(Generic[A]):
             return self
 
     def map(self, f: Callable[[A], 'B']) -> 'Option[B]':
-        """Apply function to value
+        """Apply a function to a value.
 
         Args:
-            f (Callable[[A], B]): unboxed function
+            f (Callable[[A], B]): A unboxed callable.
 
         Returns:
-            Option[B]: boxed return value
+            Option[B]: The boxed return value.
         """
 
         def wrapper(x):
@@ -122,24 +122,36 @@ class Option(Generic[A]):
 
     def is_empty(self):
         """Return True if the value is empty.
+
+        Returns:
+            bool: True if empty.
         """
         return isinstance(self, Empty)
 
     def is_some(self):
         """Return True if the value is boxed value.
+
+        Returns:
+            bool: True if boxed.
         """
         return isinstance(self, Some)
 
     def get_or_else(self, default):
-        """Return unboxed value, or default is the value is empty.
+        """Return unboxed value, or default if the value is empty.
+
+        Args:
+            default (any): The default value to return.
+
+        Returns:
+            any: The unboxed value, or default if empty.
 
         Examples:
 
-        >>> Option.of(0).get_or_else(1)
-        0
+            >>> Option.of(0).get_or_else(1)
+            0
 
-        >>> Option.empty().get_or_else(1)
-        1
+            >>> Option.empty().get_or_else(1)
+            1
         """
         if self.is_some():
             return self.get()
@@ -147,8 +159,7 @@ class Option(Generic[A]):
 
 
 class Some(Option[A]):
-    """
-    `Some` value for `Option`
+    """`Some` value for `Option`
     """
 
     def __init__(self, x: A) -> None:
@@ -167,14 +178,21 @@ class Some(Option[A]):
 
 
 class Empty(Option[A]):
-    """
-    `Empty` value for `Option`
-    """
+    """`Empty` value for `Option`
 
+        Args:
+            x (Any, optional): The value. Defaults to None.
+            e (Exception, optional): The reasone for value. Defaults to None.
+    """
     def __init__(self, x: Any = None, e: Exception = None) -> None:
         self._reason = _Reason(x, e)
 
     def __repr__(self) -> str:
+        """The repr function that returns default 'Empty()'.
+
+        Returns:
+            str: Returns 'Empty()'.
+        """
         return 'Empty()'
 
     def flat_map(self, f: Callable[[A], 'Option[B]']) -> 'Option[B]':
@@ -182,6 +200,9 @@ class Empty(Option[A]):
 
     def get(self):
         """Return the reason of the empty value.
+
+        Returns:
+            _Reason: Reason for empty.
         """
         return self._reason
 
