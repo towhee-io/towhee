@@ -242,7 +242,7 @@ class DagMixin:
                 for i in value['input_info']:
                     input_i = []
                     for j in value['dc_sequence']:
-                        if dag[j]['output_info'] is not None and (i in dag[j]['output_info']):
+                        if j in dag.keys() and dag[j]['output_info'] is not None and (i in dag[j]['output_info']):
                             input_i = tuple([j, i])
                     input_info.append(input_i)
                     copy_dag[key]['input_info'] = input_info
