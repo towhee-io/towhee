@@ -16,6 +16,8 @@ from unittest import TestCase
 
 import towhee
 
+# pylint: disable=unused-variable
+
 
 def add_global(x):
     return x + 1
