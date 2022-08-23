@@ -16,7 +16,7 @@ on:
     # file paths to consider in the event
     paths:
       - '.github/workflows/weekly_ci.yml'
-      - 'tests/testcases/hub/execute_hu_operators.py'
+      - 'tests/testcases/hub/execute_hub_operators.py'
 
 jobs:
   test:
