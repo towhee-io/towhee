@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+from pathlib import Path
 
 from towhee.utils.hub_file_utils import HubFileUtils
 
@@ -24,6 +25,8 @@ class TestHubUtils(unittest.TestCase):
     Unittest for hub utils.
     """
     def test_token(self):
+        self.assertEqual(hub_file.token, None)
+        self.assertEqual(hub_file.file, (Path.home() / '.towhee/token').resolve())
         hub_file.set_token('test-token')
         hub_file.save()
         token1 = hub_file.get_token()
