@@ -178,9 +178,7 @@ class VitModel(nn.Module):
     def get_inp_grad(self):
         return self.inp_grad
 
-    def relprop(self, cam=None, method="transformer_attribution", start_layer=0, **kwargs):
-        # print(kwargs)
-        # print("conservation 1", cam.sum())
+    def relprop(self, cam: torch.Tensor = None, method: str = "transformer_attribution", start_layer: int = 0, **kwargs):
         cam = self.head.relprop(cam, **kwargs)
         cam = cam.unsqueeze(1)
         cam = self.pool.relprop(cam, **kwargs)
