@@ -51,7 +51,7 @@ def _range(*args, **kwargs):  # pragma: no cover
     index = param_scope()._index
     if index is None:
         return DataCollection.range(*args, **kwargs)
-    return DataFrame(DataCollection.range(*args, **kwargs)).map(lambda x: Entity(**{index: x}))
+    return DataFrame.range(*args, **kwargs).map(lambda x: Entity(**{index: x}))
 
 
 range = dynamic_dispatch(_range)
