@@ -305,13 +305,6 @@ class TestCompileMixin(unittest.TestCase):
         data = [np.random.random((10000, 128)) for _ in range(10)]
         query = np.random.random(128)
 
-        # t1 = time.time()
-        # _ = (
-        #     towhee.dc['a'](data)
-        #         .runas_op['a', 'b'](func=lambda _: query)
-        #         .inner_distance1[('b', 'a'), 'c']()
-        # )
-        # t2 = time.time()
         with self.assertLogs():
             _ = (
                 towhee.dc['a'](data)
@@ -319,8 +312,7 @@ class TestCompileMixin(unittest.TestCase):
                     .runas_op['a', 'b'](func=lambda _: query)
                     .inner_distance1[('b', 'a'), 'c']()
             )
-        # t3 = time.time()
-        # self.assertTrue(t3 - t2 > t2 - t1)
+
 
 class TestRemoteMixin(unittest.TestCase):
     """
@@ -335,6 +327,7 @@ class TestRemoteMixin(unittest.TestCase):
         dc_2 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
         remote = dc_2.remote('127.0.0.1:8000', mode='async_infer', protocol='http')
         self.assertEqual(remote[0], None)
+
 
 if __name__ == '__main__':
     unittest.main()
