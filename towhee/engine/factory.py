@@ -119,6 +119,7 @@ class _OperatorLazyWrapper(  #
     def callback(real_name: str, index: Tuple[str], *arg, **kws):
         return _OperatorLazyWrapper(real_name, index, arg=arg, kws=kws)
 
+
 # TODO: move to different location
 DEFAULT_PIPELINES = {
     'image-embedding': 'towhee/image-embedding-resnet50',
@@ -285,3 +286,13 @@ def pipes(*arg, **kws):
         real_name = hp._name
         index = hp._index
     return _PipelineBuilder.callback(real_name, index, *arg, **kws)
+
+
+def create_op(op,
+              name: str = 'tmp',
+              index: Tuple[str] = None,
+              arg: List[Any] = [],
+              kws: Dict[str, Any] = {}) -> None:
+    operator = _OperatorLazyWrapper(name, index, arg=arg, kws=kws)
+    operator._op = op
+    return operator

@@ -13,6 +13,7 @@
 # limitations under the License.
 from typing import Iterable, Iterator, Callable
 import reprlib
+import inspect
 
 from towhee.functional.mixins.dag import register_dag
 from towhee.hparam import param_scope, dynamic_dispatch
@@ -107,6 +108,11 @@ class DataCollection(Iterable, DCMixins):
             ...     return x+1
             >>> dc.test.add1().to_list()
             [2, 3, 4, 5]
+
+            >>> def add2(x):
+            ...     return x+2
+            >>> DataCollection([1,2,3,4]).add2().to_list()
+            [3, 4, 5, 6]
         """
         if name.startswith('_'):
             return super().__getattribute__(name)
@@ -122,7 +128,18 @@ class DataCollection(Iterable, DCMixins):
             if self._jit is not None:
                 op = self.jit_resolve(path, index, *arg, **kws)
             else:
-                op = self.resolve(path, index, *arg, **kws)
+                with param_scope(  #
+                        locals={
+                            k: v
+                            for k, v in inspect.stack()[2]
+                            [0].f_locals.items() if k != 'self'
+                        },
+                        globals={
+                            k: v
+                            for k, v in inspect.stack()[2]
+                            [0].f_globals.items() if k != 'self'
+                        }):
+                    op = self.resolve(path, index, *arg, **kws)
             return self.map(op)
 
         return getattr(wrapper, name)
@@ -305,7 +322,8 @@ class DataCollection(Iterable, DCMixins):
             >>> DataCollection.range(5).to_list()
             [0, 1, 2, 3, 4]
         """
-        return self._iterable if isinstance(self._iterable, list) else list(self._iterable)
+        return self._iterable if isinstance(self._iterable, list) else list(
+            self._iterable)
 
     @register_dag
     def map(self, *arg) -> 'DataCollection':
@@ -350,7 +368,8 @@ class DataCollection(Iterable, DCMixins):
         if hasattr(self._iterable, 'map'):
             return self._factory(self._iterable.map(unary_op))
 
-        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_apply__'):
+        if hasattr(self._iterable, 'apply') and hasattr(
+                unary_op, '__dataframe_apply__'):
             return self._factory(unary_op.__dataframe_apply__(self._iterable))
 
         # map
@@ -378,6 +397,7 @@ class DataCollection(Iterable, DCMixins):
         Returns:
             DataCollection: Resulting DataCollection after filter.
         """
+
         def inner(x):
             if isinstance(x, Option):
                 if isinstance(x, Some):
@@ -388,7 +408,8 @@ class DataCollection(Iterable, DCMixins):
         if hasattr(self._iterable, 'filter'):
             return self._factory(self._iterable.filter(unary_op))
 
-        if hasattr(self._iterable, 'apply') and hasattr(unary_op, '__dataframe_filter__'):
+        if hasattr(self._iterable, 'apply') and hasattr(
+                unary_op, '__dataframe_filter__'):
             return DataCollection(unary_op.__dataframe_apply__(self._iterable))
 
         return self._factory(filter(inner, self._iterable))
@@ -443,7 +464,6 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         else:
             super().__init__(DataFrame.from_arrow_talbe(**kws))
             self._mode = self.ModeFlag.COLBASEDFLAG
-
 
     def _factory(self, iterable, parent_stream=True, mode=None) -> 'DataFrame':
         """Factory method for Creating new DataFrames.
@@ -549,7 +569,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         if self._mode == self.ModeFlag.ROWBASEDFLAG:
             return iter(self._iterable)
         if self._mode == self.ModeFlag.COLBASEDFLAG:
-            return (EntityView(i, self._iterable) for i in range(len((self._iterable))))
+            return (EntityView(i, self._iterable)
+                    for i in range(len((self._iterable))))
         if self._mode == self.ModeFlag.CHUNKBASEDFLAG:
             return (ev for wtable in self._iterable.chunks() for ev in wtable)
 
