@@ -244,6 +244,9 @@ class DagMixin:
         return self._control_plane
 
 class ControlPlane:
+    """
+    The ControlPlane use make node_id as dag_info's key
+    """
     def __init__(self) -> None:
         self._dag = {}
 
