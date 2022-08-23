@@ -293,7 +293,8 @@ def create_op(
         name: str = 'tmp',
         index: Tuple[str] = None,
         arg: List[Any] = [],
-        kws: Dict[str, Any] = {}) -> None:  # pylint: disable=protected-access
+        kws: Dict[str, Any] = {}) -> None:  
+    # pylint: disable=protected-access
     operator = _OperatorLazyWrapper(name, index, arg=arg, kws=kws)
     operator._op = func
     return operator
