@@ -347,6 +347,10 @@ class TemporalAttention(torch.nn.Module):
 class RelationModuleMultiScale(torch.nn.Module):
     """
     RelationModuleMultiScale Module
+    Args:
+        img_feature_dim (int): image feature dimension
+        num_frames (int): number of frames
+        num_class (int): number of classes
     """
 
     # Temporal Relation module in multiply scale, suming over
