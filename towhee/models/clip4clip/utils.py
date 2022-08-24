@@ -4,6 +4,15 @@ from towhee.models.clip.simple_tokenizer import SimpleTokenizer, whitespace_clea
 
 
 def tokenize(text: str):
+    """
+    Use SimpleTokenizer to tokenize text.
+    Args:
+        text (`str`):
+            Text to tokenize
+
+    Returns:
+        Tokenized infos.
+    """
     tokenizer = SimpleTokenizer()
     tokens = []
     text = whitespace_clean(basic_clean(text)).lower()
@@ -14,6 +23,19 @@ def tokenize(text: str):
 
 
 def convert_tokens_to_id(tokenizer: SimpleTokenizer, words: str, max_words: int = 32) -> np.ndarray:
+    """
+    Convert tokens to token ID.
+    Args:
+        tokenizer (`SimpleTokenizer`):
+            SimpleTokenizer instance.
+        words (`str`):
+            Raw text words.
+        max_words (`int`):
+            Max mord length, if not enough, the output ID is 0.
+
+    Returns:
+        Ndarray of ID list.
+    """
     special_token = {"CLS_TOKEN": "<|startoftext|>", "SEP_TOKEN": "<|endoftext|>",
                      "MASK_TOKEN": "[MASK]", "UNK_TOKEN": "[UNK]", "PAD_TOKEN": "[PAD]"}
 
