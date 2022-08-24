@@ -21,7 +21,8 @@ from PIL import Image
 import torch
 from torchvision import transforms
 import numpy as np
-import cv2
+
+from towhee.utils.cv2_utils import cv2
 from towhee.trainer.utils.file_utils import is_matplotlib_available
 from towhee.utils.log import models_log
 
