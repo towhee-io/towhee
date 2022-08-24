@@ -76,6 +76,39 @@ def drop_nans(x, ind, validate_missing):
 class CENet(nn.Module):
     """
     Collaborative Experts Module.
+    Args:
+        task (str): task string
+        use_ce (bool): use collaborative experts
+        text_dim (int): text dimension
+        l2renorm (bool): l2 norm for CEModule
+        expert_dims (int): dimension of expert
+        vlad_clusters (int): number vlad clusters
+        ghost_clusters (int): number ghost clusters
+        disable_nan_checks (bool): disable nan checks
+        keep_missing_modalities (bool): assign every expert/text inner product the same weight,
+        even if the expert is missing
+        test_caption_mode (str): test caption mode
+        randomise_feats (str): randomise feature function
+        feat_aggregation (dict): configs for feature aggregation
+        ce_shared_dim (dict): shared dimension of collaborative experts
+        trn_config (dict): train configs
+        trn_cat (int): train categries
+        include_self (int): include self
+        use_mish (int): use mish module
+        use_bn_reason (int): use batch normalization
+        num_h_layers (int): number of layers for h_reason
+        num_g_layers (int): number of layers for g_reason
+        kron_dets (bool): kronecker product
+        freeze_weights (bool): freeze weights
+        geometric_mlp (bool): geometric mlp
+        rand_proj (bool): random projection
+        mimic_ce_dims (bool): mimic collaborative experts dimension
+        coord_dets (bool): use spatial feature dimension
+        concat_experts (bool): concat embedding of experts
+        spatial_feats (bool): use spatial features
+        concat_mix_experts (bool): concat mix experts
+        verbose (bool): verbose mode
+        num_classes (int): number of classes
     """
 
     def __init__(
