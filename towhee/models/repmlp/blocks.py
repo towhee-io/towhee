@@ -64,21 +64,21 @@ class RepMLPBlock(nn.Module):
     RepMLP Block.
 
     Args:
-         - input_channels (`int`):
+        input_channels (`int`):
             Number of input channels & final output channels.
-        - internal_neurons (`int`):
+        internal_neurons (`int`):
             Number of channels used to connect conv2d layers inside block.
-        - h (`int`):
+        h (`int`):
             Input image height.
-        - w (`int`):
+        w (`int`):
             Input image weight.
-        - reparam_conv_k (`tuple or list`):
+        reparam_conv_k (`tuple or list`):
             Numbers of conv layers.
-        - globalperceptron_reduce (`int`):
-            Number to reduce internal hidden channels
-        - num_sharesets (`int`):
+        globalperceptron_reduce (`int`):
+            Number to reduce internal hidden channels.
+        num_sharesets (`int`):
             Number of sharesets.
-        - deploy (`bool`):
+        deploy (`bool`):
             Flag to control deploy parameters like bias.
 
     Example:
