@@ -37,41 +37,41 @@ class FrozenInTime(nn.Module):
     """
     FrozenInTime model
     Args:
-        img_size (int):
-          the image or video height
-        patch_size (int):
-            patch height (equal to width)
-        in_chans (int):
-            number of image channel
-        num_frames (int):
-            maximum number of frames expected as input
-        is_pretrained (bool):
-            if true, then load the frozen pretrained model
-        weights_path (str):
-            the frozen pretrained model path, if is_pretrained is true, and this not None, then load from this path,
+        img_size (`int`):
+            The image or video height.
+        patch_size (`int`):
+            Patch height (equal to width).
+        in_chans (`int`):
+            Number of image channel.
+        num_frames (`int`):
+            Maximum number of frames expected as input.
+        is_pretrained (`bool`):
+            If true, then load the frozen pretrained model.
+        weights_path (`str`):
+            The frozen pretrained model path, if is_pretrained is true, and this not None, then load from this path,
             otherwise, will load the frozen model from an url.
-        attention_style (str):
-            default is "frozen_in_time", if is "bridge_former", then is the BridgeFormer model
-        projection_dim (int):
-            the output dim
-        video_pretrained_model (str):
-            default is "vit_base_16x224", if is_pretrained is false, then must load the pretrained vit parameters
-        video_is_load_pretrained (bool):
-            if true, then will load vit pretrained weight
-        video_model_type (str) :
-            default is "SpaceTimeTransformer", the frozen model name, no need to change
-        text_pretrained_model (str):
-            default is "distilbert-base-uncased", the pretrained model for text encoder
-        text_is_load_pretrained (bool):
-            if false, then will not load pretrained model for text encoder
-        projection (str):
-            a layer
-        load_temporal_fix (str):
-            if is_pretrained is true, this will use in function "_inflate_positional_embeds"
-        device (str):
-            "cpu" or "cuda"
-        pretrained_url (str):
-            if is_pretrained is true and weights_path is None, will load frozen pretrained model from this url
+        attention_style (`str`):
+            Default is "frozen_in_time", if is "bridge_former", then is the BridgeFormer model.
+        projection_dim (`int`):
+            The output dim.
+        video_pretrained_model (`str`):
+            Default is "vit_base_16x224", if is_pretrained is false, then must load the pretrained vit parameters.
+        video_is_load_pretrained (`bool`):
+            If true, then will load vit pretrained weight.
+        video_model_type (`str`) :
+            Default is "SpaceTimeTransformer", the frozen model name, no need to change.
+        text_pretrained_model (`str`):
+            Default is "distilbert-base-uncased", the pretrained model for text encoder.
+        text_is_load_pretrained (`bool`):
+            If false, then will not load pretrained model for text encoder.
+        projection (`str`):
+            A layer.
+        load_temporal_fix (`str`):
+            If is_pretrained is true, this will use in function "_inflate_positional_embeds".
+        device (`str`):
+            "cpu" or "cuda".
+        pretrained_url (`str`):
+            If is_pretrained is true and weights_path is None, will load frozen pretrained model from this url.
 
     """
     def __init__(self,
