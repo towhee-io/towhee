@@ -39,6 +39,13 @@ class TestUtils(unittest.TestCase):
         similarity = action_clip.get_similarity(text_features, fusion_features, num_text_augs=3, norm=True)
         self.assertTrue(similarity[0].tolist() == [0.5, 0.5])
 
+    # Test configs
+    def test_configs(self):
+        cfg1 = action_clip.get_configs("clip_vit_b16")
+        cfg2 = action_clip.get_configs("clip_vit_b32")
+        self.assertTrue(cfg1["num_frames"] == 8)
+        self.assertTrue(cfg2["num_frames"] == 8)
+
 
 if __name__ == "__main__":
     unittest.main()
