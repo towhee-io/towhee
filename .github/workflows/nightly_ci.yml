@@ -28,7 +28,7 @@ jobs:
         - /__w/towhee/towhee:/__w/towhee/towhee
     strategy:
       matrix:
-        python: [ 3.8, 3.7, 3.6 ]
+        python: [ 3.8, 3.7 ]
     steps:
     - name: work around permission
       run: git config --global --add safe.directory /__w/towhee/towhee
