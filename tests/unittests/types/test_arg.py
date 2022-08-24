@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import cv2
+from pathlib import Path
 
+import numpy as np
+from towhee.utils.cv2_utils import cv2
 from towhee.types import arg, to_image_color
 from towhee._types import Image
-from pathlib import Path
-import numpy as np
+
 
 cache_path = Path(__file__).parent.parent.resolve()
 test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')

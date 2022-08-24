@@ -57,12 +57,11 @@ class faiss_search:
             self.faiss_index = faiss.read_index(str(index_file))
             if Path(kv_file).exists():
                 self.kv_storage = KVStorage(kv_file)
+        if 'k' not in self.kwargs:
+            self.kwargs['k'] = 10
 
     def __call__(self, query: list):
         from towhee.functional.entity import Entity
-
-        if 'k' not in self.kwargs:
-            self.kwargs['k'] = 10
 
         query = np.array([query])
         scores, ids = self.faiss_index.search(query, **self.kwargs)

@@ -92,7 +92,7 @@ class CENet(nn.Module):
         feat_aggregation (dict): configs for feature aggregation
         ce_shared_dim (dict): shared dimension of collaborative experts
         trn_config (dict): train configs
-        trn_cat (int): train categries
+        trn_cat (int): train catogries
         include_self (int): include self
         use_mish (int): use mish module
         use_bn_reason (int): use batch normalization
@@ -313,6 +313,9 @@ class CENet(nn.Module):
 class TemporalAttention(torch.nn.Module):
     """
     TemporalAttention Module
+    Args:
+        img_feature_dim (int): image feature dimension
+        num_attention (int): number of attention
     """
 
     def __init__(self, img_feature_dim, num_attention):
@@ -344,6 +347,10 @@ class TemporalAttention(torch.nn.Module):
 class RelationModuleMultiScale(torch.nn.Module):
     """
     RelationModuleMultiScale Module
+    Args:
+        img_feature_dim (int): image feature dimension
+        num_frames (int): number of frames
+        num_class (int): number of classes
     """
 
     # Temporal Relation module in multiply scale, suming over
@@ -404,6 +411,10 @@ class RelationModuleMultiScale(torch.nn.Module):
 class RelationModuleMultiScale_Cat(torch.nn.Module):  # pylint: disable=invalid-name
     """
     RelationModuleMultiScale_Cat Module
+    Args:
+        img_feature_dim (int): image feature dimension
+        num_frames (int): number of frames
+        num_class (int): number of classes
     """
 
     # Temporal Relation module in multiply scale, suming over [2-frame relation, 3-frame relation, ..., n-frame relation]
