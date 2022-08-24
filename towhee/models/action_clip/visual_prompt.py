@@ -128,7 +128,17 @@ class TAggregate(nn.Module):
 
 class TemporalTransformer(nn.Module):
     """
-    TemporalTransformer
+    Temporal Transformer
+
+    Args:
+        - width (`int`):
+            Dimension used in Residual Attention.
+        - layers (`int`):
+            Number of layers.
+        - heads (`int`):
+            Number of heads.
+        - attn_mask (`torch.Tensor`):
+            Attention mask.
     """
     def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
         super().__init__()
