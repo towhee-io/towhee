@@ -15,11 +15,11 @@
 import doctest
 import unittest
 import os
-import cv2
 import faiss
 import numpy as np
 from pathlib import Path
 from towhee._types.image import Image
+from towhee.utils.cv2_utils import cv2
 
 import towhee
 import towhee.functional.mixins.computer_vision

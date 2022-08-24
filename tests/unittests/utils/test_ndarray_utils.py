@@ -14,10 +14,10 @@
 
 import os
 import unittest
-import cv2
 import numpy as np
 from pathlib import Path
 
+from towhee.utils.cv2_utils import cv2
 from towhee.types import Image
 from towhee.utils.ndarray_utils import from_ndarray, from_src, to_ndarray, rgb2bgr
 
