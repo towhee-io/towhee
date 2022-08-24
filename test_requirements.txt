@@ -12,7 +12,6 @@ importlib_metadata
 tabulate
 ipython
 fastapi
-pymilvus
 pytest
 fairscale
 python-multipart
