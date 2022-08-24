@@ -192,7 +192,15 @@ class ACARHead(nn.Module):
 
 class HR2ONL(nn.Module):
     """
-    HR2O_NL module for ACAR head
+    HR2O_NL module for ACAR head.
+
+    Args:
+        - hidden_dim (`int`):
+            Hidden dimension.
+        - kernel_size (`int`):
+            Kernel size.
+        - mlp_1x1 (`bool`):
+            Whether to use 1 as kernel size.
     """
     def __init__(self, hidden_dim=512, kernel_size=3, mlp_1x1=False):
         super().__init__()
