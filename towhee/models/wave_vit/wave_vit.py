@@ -17,6 +17,7 @@
 # limitations under the License.
 import torch
 from torch import nn
+from typing import List, Any
 import numpy as np
 from timm.models.vision_transformer import _cfg
 from towhee.models.wave_vit.wave_vit_block import rand_bbox, Stem, DownSamples, Block, ClassBlock
@@ -34,7 +35,7 @@ class WaveViT(nn.Module):
         embed_dims (list): every layer`s embedding dim
         num_heads (list): every layer`s head number
         mlp_ratios (list): every layer`s mlp ration
-        drop_path_rate (list): every layer`s drop rate
+        drop_path_rate (float): every layer`s drop rate
         norm_layer: default nn.LayerNorm
         depths (int): number of depths
         sr_ratios (list): every block`s sr ration
@@ -42,18 +43,18 @@ class WaveViT(nn.Module):
         token_label (bool): whether to use the token_label
     """
     def __init__(self,
-                 in_chans=3,
-                 num_classes=1000,
-                 stem_hidden_dim=32,
-                 embed_dims=None,
-                 num_heads=None,
-                 mlp_ratios=None,
-                 drop_path_rate=0.,
-                 norm_layer=nn.LayerNorm,
-                 depths=None,
-                 sr_ratios=None,
-                 num_stages=4,
-                 token_label=True,
+                 in_chans: int = 3,
+                 num_classes: int = 1000,
+                 stem_hidden_dim: int = 32,
+                 embed_dims: List = None,
+                 num_heads: List = None,
+                 mlp_ratios: List = None,
+                 drop_path_rate: float = 0.,
+                 norm_layer: Any = nn.LayerNorm,
+                 depths: int = None,
+                 sr_ratios: List = None,
+                 num_stages: int = 4,
+                 token_label: bool = True,
                  ):
         super().__init__()
         if embed_dims is None:
