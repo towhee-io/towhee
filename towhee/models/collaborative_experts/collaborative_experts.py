@@ -411,6 +411,10 @@ class RelationModuleMultiScale(torch.nn.Module):
 class RelationModuleMultiScale_Cat(torch.nn.Module):  # pylint: disable=invalid-name
     """
     RelationModuleMultiScale_Cat Module
+    Args:
+        img_feature_dim (int): image feature dimension
+        num_frames (int): number of frames
+        num_class (int): number of classes
     """
 
     # Temporal Relation module in multiply scale, suming over [2-frame relation, 3-frame relation, ..., n-frame relation]
