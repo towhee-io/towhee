@@ -227,7 +227,22 @@ def create_model(
         weights_path: str = None,
         device: str = None,
         **kwargs
-):
+) -> VitModel:
+    """
+    Create ViT model.
+    Args:
+        model_name (`str`):
+            ViT model name.
+        pretrained (`bool`):
+            Whether it is a pretrained model.
+        weights_path (`str`):
+            If pretrained, you can use your local weights.
+        device (`str`):
+            Cuda or cpu.
+
+    Returns:
+        VitModel
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
