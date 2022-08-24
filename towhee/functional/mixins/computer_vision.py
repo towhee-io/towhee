@@ -22,6 +22,11 @@ class ComputerVisionMixin:
     """
 
     def image_imshow(self, title='image'):  # pragma: no cover
+        """Produce a CV2 imshow window.
+
+        Args:
+            title (str, optional): The title for the image. Defaults to 'image'.
+        """
         from towhee.utils.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)
@@ -29,8 +34,14 @@ class ComputerVisionMixin:
 
     @classmethod
     def read_camera(cls, device_id=0, limit=-1):  # pragma: no cover
-        """
-        read images from a camera.
+        """Read images from a camera.
+
+        Args:
+            device_id (int, optional): The camera device ID. Defaults to 0.
+            limit (int, optional): The amount of images to capture. Defaults to -1.
+
+        Returns:
+            DataCollection: Collection with images.
         """
         from towhee.utils.cv2_utils import cv2
         cnt = limit
@@ -49,14 +60,14 @@ class ComputerVisionMixin:
     # pylint: disable=redefined-builtin
     @classmethod
     def read_video(cls, path, format='rgb24'): # pragma: no cover
-        """
-        Load video as a datacollection.
+        """Load a video as a DataCollection.
 
         Args:
-            path:
-                The path to the target video.
-            format:
-                The format of the images loaded from video.
+            path (str): The path of the video.
+            format (str, optional): The color format of video. Defaults to 'rgb24'.
+
+        Returns:
+            DataCollection: DataCollection with the video.
         """
         from towhee.utils.thirdparty.av_utils import av
 
@@ -77,26 +88,17 @@ class ComputerVisionMixin:
                  format=None,
                  template=None,
                  audio_src=None): # pragma: no cover
-        """
-        Encode a video with audio if provided.
+        """Encode a video; with audio if provided.
 
         Args:
-            output_path:
-                The path of the output video.
-            codec:
-                The codec to encode and decode the video.
-            rate:
-                The rate of the video.
-            width:
-                The width of the video.
-            height:
-                The height of the video.
-            format:
-                The format of the video frame image.
-            template:
-                The template video stream of the ouput video stream.
-            audio_src:
-                The audio to encode with the video.
+            output_path (str): Path to output the video to.
+            codec (str, optional): Which codec to use for encoding. Defaults to None.
+            rate (int, optional): The framrate of the video. Defaults to None.
+            width (int, optional): The width of the video image. Defaults to None.
+            height (int, optional): The height of the video image. Defaults to None.
+            format (str, optional): The color format of the video. Defaults to None.
+            template (str, optional): The template video stream of the ouput video stream. Defaults to None.
+            audio_src (str, optional): Audio path to include in video. Defaults to None.
         """
         from towhee.utils.thirdparty.av_utils import av
         import itertools
