@@ -2,7 +2,7 @@
 
 ### Installation requirements
 
-Towhee has been tested with Python 3.7+ on macOS 10, macOS 11 (Intel CPU only), Ubuntu 18.04, Ubuntu 20.04, and Windows 10. Each individual operator may have its own specific requirements for Pytorch and Tensorflow, but in general, Pytorch 1.2+ and Tensorflow 2.0+ should work for the majority of model-based operators.
+Towhee has been tested with Python>=3.7 on macOS 10, macOS 11 (Intel CPU only), Ubuntu 18.04, Ubuntu 20.04, and Windows 10. Each individual operator may have its own specific requirements for Pytorch and Tensorflow, but in general, Pytorch 1.2+ and Tensorflow 2.0+ should work for the majority of model-based operators.
 
 ### Installing Towhee with Conda
 
@@ -26,7 +26,7 @@ $ pip3 install -U towhee  # install Towhee
 $ pip3 install -U towhee.models  #install towhee.models
 ```
 
-Alternatively, if you are on Windows, install Python 3.7+ first, either through the Windows Store or through one of the [official releases](https://www.python.org/downloads/windows). You can then install Towhee as follows:
+Alternatively, if you are on Windows, install Python>=3.7 first, either through the Windows Store or through one of the [official releases](https://www.python.org/downloads/windows). You can then install Towhee as follows:
 
 ```console
 c:\> python -m venv towhee_env
