@@ -21,8 +21,7 @@ from towhee.functional.storages import ChunkedTable, WritableTable
 # pylint: disable=import-outside-toplevel
 # pylint: disable=bare-except
 class ColumnMixin:
-    """
-    Mixins to support column-based storage.
+    """Mixins to support column-based storage.
     """
 
     class ModeFlag(Flag):
@@ -38,45 +37,50 @@ class ColumnMixin:
             self._chunksize = parent._chunksize
 
     def set_chunksize(self, chunksize):
-        """
-        Set chunk size for arrow
+        """Set chunk size for arrow
+
+        Args:
+            chuksize (int): How many rows per chunk.
+
+        Return:
+            DataCollection: New DataCollection converted to Table.
 
         Examples:
 
-        >>> import towhee
-        >>> dc_1 = towhee.dc['a'](range(20))
-        >>> dc_1 = dc_1.set_chunksize(10)
-        >>> dc_2 = dc_1.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc_1.get_chunksize(), dc_2.get_chunksize()
-        (10, 10)
-        >>> dc_2._iterable.chunks()
-        [pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[0,1,2,3,4,5,6,7,8,9]]
-        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[10,11,12,13,14,15,16,17,18,19]]
-        b: [[11,12,13,14,15,16,17,18,19,20]]]
+            >>> import towhee
+            >>> dc_1 = towhee.dc['a'](range(20))
+            >>> dc_1 = dc_1.set_chunksize(10)
+            >>> dc_2 = dc_1.runas_op['a', 'b'](func=lambda x: x+1)
+            >>> dc_1.get_chunksize(), dc_2.get_chunksize()
+            (10, 10)
+            >>> dc_2._iterable.chunks()
+            [pyarrow.Table
+            a: int64
+            b: int64
+            ----
+            a: [[0,1,2,3,4,5,6,7,8,9]]
+            b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+            a: int64
+            b: int64
+            ----
+            a: [[10,11,12,13,14,15,16,17,18,19]]
+            b: [[11,12,13,14,15,16,17,18,19,20]]]
 
-        >>> dc_3 = towhee.dc['a'](range(20)).stream()
-        >>> dc_3 = dc_3.set_chunksize(10)
-        >>> dc_4 = dc_3.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc_4._iterable.chunks()
-        [pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[0,1,2,3,4,5,6,7,8,9]]
-        b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[10,11,12,13,14,15,16,17,18,19]]
-        b: [[11,12,13,14,15,16,17,18,19,20]]]
+            >>> dc_3 = towhee.dc['a'](range(20)).stream()
+            >>> dc_3 = dc_3.set_chunksize(10)
+            >>> dc_4 = dc_3.runas_op['a', 'b'](func=lambda x: x+1)
+            >>> dc_4._iterable.chunks()
+            [pyarrow.Table
+            a: int64
+            b: int64
+            ----
+            a: [[0,1,2,3,4,5,6,7,8,9]]
+            b: [[1,2,3,4,5,6,7,8,9,10]], pyarrow.Table
+            a: int64
+            b: int64
+            ----
+            a: [[10,11,12,13,14,15,16,17,18,19]]
+            b: [[11,12,13,14,15,16,17,18,19,20]]]
         """
 
         self._chunksize = chunksize
@@ -88,30 +92,32 @@ class ColumnMixin:
         return self._chunksize
 
     def _create_col_table(self):
-        """
-        Create a column-based table.
+        """Create a column-based table.
+
+        Returns:
+            pyarrow.Table: The columnar table.
 
         Examples:
 
-        >>> from towhee import Entity, DataFrame
-        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
-        >>> df = DataFrame(e)
-        >>> table = df._create_col_table()
-        >>> table
-        pyarrow.Table
-        a: string
-        b: int64
-        ----
-        a: [["abc","def","ghi"]]
-        b: [[1,2,3]]
+            >>> from towhee import Entity, DataFrame
+            >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+            >>> df = DataFrame(e)
+            >>> table = df._create_col_table()
+            >>> table
+            pyarrow.Table
+            a: string
+            b: int64
+            ----
+            a: [["abc","def","ghi"]]
+            b: [[1,2,3]]
 
-        >>> df.stream()._create_col_table()
-        pyarrow.Table
-        a: string
-        b: int64
-        ----
-        a: [["abc","def","ghi"]]
-        b: [[1,2,3]]
+            >>> df.stream()._create_col_table()
+            pyarrow.Table
+            a: string
+            b: int64
+            ----
+            a: [["abc","def","ghi"]]
+            b: [[1,2,3]]
         """
         from towhee.utils.thirdparty.pyarrow import pa
         from towhee.types.tensor_array import TensorArray
@@ -142,6 +148,11 @@ class ColumnMixin:
 
     @classmethod
     def from_arrow_table(cls, **kws):
+        """Convert kwargs to Table.
+
+        Returns:
+            pyarrow.Table: The Table from the kwargs.
+        """
         from towhee.utils.thirdparty.pyarrow import pa
 
         arrays = []
@@ -152,23 +163,25 @@ class ColumnMixin:
         return pa.Table.from_arrays(arrays, names=names)
 
     def to_column(self):
-        """
-        Convert the iterables to column-based table.
+        """Convert the DataCollection to column-based table DataCollection.
+
+        Returns:
+            DataCollection: The current DC converted to Table DC.
 
         Examples:
 
-        >>> from towhee import Entity, DataFrame
-        >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
-        >>> df = DataFrame(e)
-        >>> df
-        [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
-        >>> df.to_column()
-        pyarrow.Table
-        a: string
-        b: int64
-        ----
-        a: [["abc","def","ghi"]]
-        b: [[1,2,3]]
+            >>> from towhee import Entity, DataFrame
+            >>> e = [Entity(a=a, b=b) for a,b in zip(['abc', 'def', 'ghi'], [1,2,3])]
+            >>> df = DataFrame(e)
+            >>> df
+            [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
+            >>> df.to_column()
+            pyarrow.Table
+            a: string
+            b: int64
+            ----
+            a: [["abc","def","ghi"]]
+            b: [[1,2,3]]
         """
 
         # pylint: disable=protected-access
@@ -179,31 +192,36 @@ class ColumnMixin:
         return df
 
     def cmap(self, unary_op):
-        """
-        chunked map
+        """Chunked map.
+
+        Args:
+            unary_op (callable): The operation to map.
+
+        Returns:
+            DataCollection: A new DataCollection after mapping.
 
         Examples:
 
-        >>> import towhee
-        >>> dc = towhee.dc['a'](range(10))
-        >>> dc = dc.to_column()
-        >>> dc = dc.runas_op['a', 'b'](func=lambda x: x+1)
-        >>> dc.show(limit=5, tablefmt='plain')
-          a    b
-          0    1
-          1    2
-          2    3
-          3    4
-          4    5
-        >>> dc._iterable
-        pyarrow.Table
-        a: int64
-        b: int64
-        ----
-        a: [[0,1,2,3,4,5,6,7,8,9]]
-        b: [[1,2,3,4,5,6,7,8,9,10]]
-        >>> len(dc._iterable)
-        10
+            >>> import towhee
+            >>> dc = towhee.dc['a'](range(10))
+            >>> dc = dc.to_column()
+            >>> dc = dc.runas_op['a', 'b'](func=lambda x: x+1)
+            >>> dc.show(limit=5, tablefmt='plain')
+              a    b
+              0    1
+              1    2
+              2    3
+              3    4
+              4    5
+            >>> dc._iterable
+            pyarrow.Table
+            a: int64
+            b: int64
+            ----
+            a: [[0,1,2,3,4,5,6,7,8,9]]
+            b: [[1,2,3,4,5,6,7,8,9,10]]
+            >>> len(dc._iterable)
+            10
         """
         # pylint: disable=protected-access
         if self.get_executor() is None:
@@ -223,6 +241,15 @@ class ColumnMixin:
                                 self.__col_apply__(table, unary_op))
 
     def __col_apply__(self, cols, unary_op):
+        """Columnar apply.
+
+        Args:
+            cols (list): List of columns to apply op to.
+            unary_op (callable): The operation
+
+        Returns:
+            DataCollection: The datacollection with callable applied.
+        """
         # pylint: disable=protected-access
         from towhee.utils.thirdparty.pyarrow import pa
         from towhee.types.tensor_array import TensorArray
