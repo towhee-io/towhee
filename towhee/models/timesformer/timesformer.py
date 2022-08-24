@@ -37,38 +37,38 @@ class TimeSformer(nn.Module):
     TimeSformer model.
 
     Args:
-        img_size (`int=224`):
-            image height of video frame (equal to width)
-        patch_size (`int=16`):
-            patch height (equal to width)
-        in_c (`int=3`):
-            number of image channel
-        num_classes (`int=1000`):
-            number of categories of classification
-        embed_dim (`int=768`):
-            number of hidden features
-        depth (`int=12`):
-            number of blocks in model
+        img_size (`int`):
+            Image height of video frame (equal to width).
+        patch_size (`int`):
+            Patch height (equal to width)
+        in_c (`int`):
+            Number of image channel.
+        num_classes (`int`):
+            Number of categories of classification.
+        embed_dim (`int`):
+            Number of hidden features.
+        depth (`int`):
+            Number of blocks in model.
         num_heads (`int`):
-            number of attention heads
+            Number of attention heads.
         mlp_ratio (`float`):
-            mlp ratio
-        qkv_bias (`bool=False`):
-            if use qkv_bias
-        qk_scale (`float=None`):
-            number to scale qk
-        drop_ratio (`float=0.`):
-            drop rate of blocks & position embedding layer
-        attn_drop_ratio (`float=0.`):
-            attention drop rate
-        norm_layer (`nn.module=nn.LayerNorm`):
-            module used in normalization layer
-        num_frames (`int=8`):
-            number of samples to take frames
-        attention_type (`str='divided_space_time`):
-            type of TimeSformer attention from ['divided_space_time', 'space_only', 'joint_space_time']
-        dropout (`float=0.`):
-            drop ratio of Dropout layer
+            Mlp ratio.
+        qkv_bias (`bool`):
+            If use qkv_bias.
+        qk_scale (`float`):
+            Number to scale qk.
+        drop_ratio (`float`):
+            Drop rate of blocks & position embedding layer.
+        attn_drop_ratio (`float`):
+            Attention drop rate.
+        norm_layer (`nn.Module`):
+            Module used in normalization layer.
+        num_frames (`int`):
+            Number of samples to take frames.
+        attention_type (`str`):
+            Type of TimeSformer attention from ['divided_space_time', 'space_only', 'joint_space_time']
+        dropout (`float`):
+            Drop ratio of Dropout layer.
 
     Examples:
         >>> import torch
