@@ -10,6 +10,7 @@ on:
       - '!**.md'
       - 'tests/**'
       - '.github/workflows/codecov.yml'
+      - 'test_requirements.txt'
 
 jobs:
   run:
