@@ -163,6 +163,7 @@ def execute_ops(op_clone_list):
 
     if success != len(op_clone_list):
         logger.error("Fail to run readme for [%d] operators: [%s]" % (len(op_fail_list), op_fail_list))
+        assert False
     else:
         logger.info("Success to run readme for all operators")
 
