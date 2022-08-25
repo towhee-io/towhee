@@ -104,7 +104,7 @@ def _feature_summarize_callback(self): # pragma: no cover
             summarize = summarize.append(data)
 
         # pylint: disable=import-outside-toplevel
-        from towhee.utils import ipython_utils
+        from towhee.utils.thirdparty import ipython_utils
         ipython_utils.display(summarize)
 
     return wrapper
@@ -176,7 +176,7 @@ def table_display(table, tablefmt='html'):  # pragma: no cover
             The format of the output, support html, plain, grid.
     """
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.ipython_utils import display, HTML
+    from towhee.utils.thirdparty.ipython_utils import display, HTML
 
     if tablefmt == 'html':
         display(HTML(table))
