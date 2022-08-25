@@ -1,9 +1,10 @@
 import regex as re
 import numpy as np
+from typing import List
 from towhee.models.clip.simple_tokenizer import SimpleTokenizer, whitespace_clean, basic_clean
 
 
-def tokenize(text: str):
+def tokenize(text: str) -> List:
     """
     Use SimpleTokenizer to tokenize text.
     Args:
