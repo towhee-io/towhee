@@ -116,7 +116,7 @@ class DatasetMixin:
                 The encoding to use in the output file.
         """
         import csv
-        from towhee.utils.pandas_utils import pandas as pd
+        from towhee.utils.thirdparty.pandas_utils import pandas as pd
 
         if isinstance(self._iterable, pd.DataFrame):
             self._iterable.to_csv(csv_path, index=False)

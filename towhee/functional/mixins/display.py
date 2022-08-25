@@ -24,7 +24,7 @@ from towhee.functional.entity import Entity, EntityView
 
 def get_df_on_columns(self, index: Tuple[str]): # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.pandas_utils import pandas as pd
+    from towhee.utils.thirdparty.pandas_utils import pandas as pd
 
     def inner(entity: Entity):
         data = {}
@@ -39,7 +39,7 @@ def get_df_on_columns(self, index: Tuple[str]): # pragma: no cover
 
 def calc_df(df, feature: str, target: str): # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.pandas_utils import pandas as pd
+    from towhee.utils.thirdparty.pandas_utils import pandas as pd
     lst = []
     df[feature] = df[feature].fillna('NULL')
 
@@ -81,7 +81,7 @@ def calc_df(df, feature: str, target: str): # pragma: no cover
 
 def _feature_summarize_callback(self): # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.pandas_utils import pandas as pd
+    from towhee.utils.thirdparty.pandas_utils import pandas as pd
 
     def wrapper(_: str, index, *arg, **kws):
         if isinstance(index, str):
