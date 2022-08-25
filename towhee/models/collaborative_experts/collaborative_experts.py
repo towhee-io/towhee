@@ -934,6 +934,13 @@ class GatedEmbeddingUnit(nn.Module):
 
 
 class MimicCEGatedEmbeddingUnit(nn.Module):
+    """
+    MimicCEGatedEmbeddingUnit
+    Args:
+        input_dimension (int): dimension of input
+        output_dimension (int): dimension of output
+        use_bn (bool): use batch normalization
+    """
     def __init__(self, input_dimension, output_dimension, use_bn):
         super().__init__()
         _ = output_dimension
