@@ -187,7 +187,7 @@ def convert_weights(model: nn.Module):
     model.apply(_convert_weights_to_fp16)
 
 
-def patch_device(model, device):
+def patch_device(model: nn.Module, device: str):
     device_holder = torch.jit.trace(lambda: torch.ones([]).to(torch.device(device)), example_inputs=[])
     device_node = [n for n in device_holder.graph.findAllNodes("prim::Constant") if "Device" in repr(n)][-1]
 
@@ -210,7 +210,7 @@ def patch_device(model, device):
     patch_dev(model.encode_text)
 
 
-def patch_float(model):
+def patch_float(model: nn.Module):
     float_holder = torch.jit.trace(lambda: torch.ones([]).float(), example_inputs=[])
     float_input = list(float_holder.graph.findNode("aten::to").inputs())[1]
     float_node = float_input.node()
