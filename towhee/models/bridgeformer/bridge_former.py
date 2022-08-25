@@ -28,11 +28,19 @@ def create_model(
         **kwargs
 ):
     """
-    create the bridgeformer model
-    model_name:
-        if "clip_initialized_model": use the clip_initialized_model
-        elif "bridge_former_training": use the bridge former training model Architecture
-        else: use the default inference bridge former model Architecture
+    Create BridgeFormer model.
+
+    Args:
+        model_name (`str`):
+            - "clip_initialized_model": use the clip_initialized_model.
+            - "bridge_former_training": use the bridge former training model Architecture.
+            - Others: use the default inference bridge former model Architecture.
+        pretrained (`bool`):
+            Flag to control if load pretrained model.
+        weights_path (`str`):
+            The path of local model weights.
+        device (`str`):
+            Device, defaults to None. If None, use cuda when it is available.
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
