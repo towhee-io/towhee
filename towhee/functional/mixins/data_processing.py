@@ -47,18 +47,20 @@ class DataProcessingMixin:
 
     @register_dag
     def select_from(self, other):
-        """
-        Select data from dc with list(self).
+        """Select data from dc with list(self).
+
+        Args:
+            other (DataCollection): DataCollection to select from.
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
-        >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
+            >>> from towhee import DataCollection
+            >>> dc1 = DataCollection([0.8, 0.9, 8.1, 9.2])
+            >>> dc2 = DataCollection([[1, 2, 0], [2, 3, 0]])
 
-        >>> dc3 = dc2.select_from(dc1)
-        >>> list(dc3)
-        [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
+            >>> dc3 = dc2.select_from(dc1)
+            >>> list(dc3)
+            [[0.9, 8.1, 0.8], [8.1, 9.2, 0.8]]
         """
         self.parent_ids.append(other.id)
         other.notify_consumed(self.id)
@@ -73,23 +75,22 @@ class DataProcessingMixin:
 
     @register_dag
     def zip(self, *others) -> 'DataCollection':
-        """
-        Combine two data collections.
+        """Combine multiple data collections.
 
         Args:
-            *others (DataCollection): other data collections;
+            *others (DataCollection): The other data collections.
 
         Returns:
-            DataCollection: data collection with zipped values;
+            DataCollection: Data collection with zipped values.
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc1 = DataCollection([1,2,3,4])
-        >>> dc2 = DataCollection([1,2,3,4]).map(lambda x: x+1)
-        >>> dc3 = dc1.zip(dc2)
-        >>> list(dc3)
-        [(1, 2), (2, 3), (3, 4), (4, 5)]
+            >>> from towhee import DataCollection
+            >>> dc1 = DataCollection([1,2,3,4])
+            >>> dc2 = DataCollection([1,2,3,4]).map(lambda x: x+1)
+            >>> dc3 = dc1.zip(dc2)
+            >>> list(dc3)
+            [(1, 2), (2, 3), (3, 4), (4, 5)]
         """
         self.parent_ids.extend([other.id for other in others])
 
@@ -100,18 +101,13 @@ class DataProcessingMixin:
 
     @register_dag
     def head(self, n: int = 5):
-        """
-        Get the first n lines of a DataCollection.
+        """Return the first `n` values of a DataCollection.
 
         Args:
-            n (`int`):
-                The number of lines to print. Default value is 5.
+            n (int, optional): The amount to select. Defaults to 5.
 
-        Examples:
-
-        >>> from towhee import DataCollection
-        >>> DataCollection.range(10).head(3).to_list()
-        [0, 1, 2]
+        Returns:
+            DataCollection: DataCollection with the selected values.
         """
         def inner():
             for i, x in enumerate(self._iterable):
@@ -123,60 +119,57 @@ class DataProcessingMixin:
 
     @register_dag
     def sample(self, ratio=1.0) -> 'DataCollection':
-        """
-        Sample the data collection.
+        """Sample the data collection.
 
         Args:
-            ratio (float): sample ratio;
+            ratio (float): sample ratio.
 
         Returns:
-            DataCollection: sampled data collection;
+            DataCollection: Sampled data collection.
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(range(10000))
-        >>> result = dc.sample(0.1)
-        >>> ratio = len(result.to_list()) / 10000.
-        >>> 0.09 < ratio < 0.11
-        True
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection(range(10000))
+            >>> result = dc.sample(0.1)
+            >>> ratio = len(result.to_list()) / 10000.
+            >>> 0.09 < ratio < 0.11
+            True
         """
         return self._factory(filter(lambda _: random.random() < ratio, self))
 
     @register_dag
     def batch(self, size, drop_tail=False):
-        """
-        Create small batches from data collections.
+        """Create batches from the DataCollection.
 
         Args:
-            size (`int`):
+            size (int):
                 Window size;
-            drop_tail (`bool`):
-                Drop tailing windows that not full, defaults to False;
+            drop_tail (`bool`): Drop trailing window that is not full, defaults to False.
 
 
         Returns:
-            DataCollection of batched windows or batch raw data
+            DataCollection: Batched DataCollection.
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(range(10))
-        >>> [list(batch) for batch in dc.batch(2)]
-        [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection(range(10))
+            >>> [list(batch) for batch in dc.batch(2)]
+            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
 
-        >>> dc = DataCollection(range(10))
-        >>> dc.batch(3)
-        [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+            >>> dc = DataCollection(range(10))
+            >>> dc.batch(3)
+            [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
 
-        >>> dc = DataCollection(range(10))
-        >>> dc.batch(3, drop_tail=True)
-        [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+            >>> dc = DataCollection(range(10))
+            >>> dc.batch(3, drop_tail=True)
+            [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
 
-        >>> from towhee import Entity
-        >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
-        >>> dc.batch(2)
-        [[<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>], [<Entity dict_keys(['a', 'b'])>]]
+            >>> from towhee import Entity
+            >>> dc = DataCollection([Entity(a=a, b=b) for a,b in zip(['abc', 'vdfvcd', 'cdsc'], [1,2,3])])
+            >>> dc.batch(2)
+            [[<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>], [<Entity dict_keys(['a', 'b'])>]]
         """
         def inner():
             buff = []
@@ -197,44 +190,40 @@ class DataProcessingMixin:
 
     @register_dag
     def rolling(self, size: int, step: int=1, drop_head=True, drop_tail=True):
-        """
-        Create rolling windows from data collections.
+        """Create rolling windows from DataCollection.
 
         Args:
-            size (`int`):
-                Wndow size.
-            drop_head (`bool`):
-                Drop headding windows that not full.
-            drop_tail (`bool`):
-                Drop tailing windows that not full.
+            size (int): Window size.
+            drop_head (bool): Drop head windows that are not full.
+            drop_tail (bool): Drop trailing windows that are not full.
 
         Returns:
-            DataCollection: data collection of rolling windows;
+            DataCollection: DataCollection of rolling windows.
 
         Examples:
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3)]
-        [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection(range(5))
+            >>> [list(batch) for batch in dc.rolling(3)]
+            [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
 
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3, drop_head=False)]
-        [[0], [0, 1], [0, 1, 2], [1, 2, 3], [2, 3, 4]]
+            >>> dc = DataCollection(range(5))
+            >>> [list(batch) for batch in dc.rolling(3, drop_head=False)]
+            [[0], [0, 1], [0, 1, 2], [1, 2, 3], [2, 3, 4]]
 
-        >>> dc = DataCollection(range(5))
-        >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
-        [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
+            >>> dc = DataCollection(range(5))
+            >>> [list(batch) for batch in dc.rolling(3, drop_tail=False)]
+            [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4], [4]]
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(range(5))
-        >>> dc.rolling(2, 2, drop_head=False, drop_tail=False)
-        [[0], [0, 1], [2, 3], [4]]
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection(range(5))
+            >>> dc.rolling(2, 2, drop_head=False, drop_tail=False)
+            [[0], [0, 1], [2, 3], [4]]
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection(range(5))
-        >>> dc.rolling(2, 4, drop_head=False, drop_tail=False)
-        [[0], [0, 1], [4]]
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection(range(5))
+            >>> dc.rolling(2, 4, drop_head=False, drop_tail=False)
+            [[0], [0, 1], [4]]
         """
         def inner():
             buff = []
@@ -264,29 +253,24 @@ class DataProcessingMixin:
     @property
     # @register_dag
     def flatten(self) -> 'DataCollection':
-        """
-        Flatten nested data collections.
-
-        Args:
-            index (`str`):
-                The index of the column to flatten.
+        """Flatten nested data within DataCollection.
 
         Returns:
-            DataCollection: flattened data collection;
+            DataCollection: Flattened DataCollection.
 
         Examples:
 
-        >>> from towhee import DataCollection, Entity
-        >>> dc = DataCollection(range(10))
-        >>> nested_dc = dc.batch(2)
-        >>> nested_dc.flatten().to_list()
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            >>> from towhee import DataCollection, Entity
+            >>> dc = DataCollection(range(10))
+            >>> nested_dc = dc.batch(2)
+            >>> nested_dc.flatten().to_list()
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-        >>> g = (i for i in range(3))
-        >>> e = Entity(a=1, b=2, c=g)
-        >>> dc = DataCollection([e]).flatten['c']()
-        >>> [str(i) for i in dc]
-        ["{'a': 1, 'b': 2, 'c': 0}", "{'a': 1, 'b': 2, 'c': 1}", "{'a': 1, 'b': 2, 'c': 2}"]
+            >>> g = (i for i in range(3))
+            >>> e = Entity(a=1, b=2, c=g)
+            >>> dc = DataCollection([e]).flatten['c']()
+            >>> [str(i) for i in dc]
+            ["{'a': 1, 'b': 2, 'c': 0}", "{'a': 1, 'b': 2, 'c': 1}", "{'a': 1, 'b': 2, 'c': 2}"]
         """
         @dynamic_dispatch
         def flattener():
@@ -317,28 +301,25 @@ class DataProcessingMixin:
 
     @register_dag
     def shuffle(self) -> 'DataCollection':
-        """
-        Shuffle an unstreamed data collection in place.
+        """Shuffle an unstreamed data collection in place.
 
         Returns:
-            DataCollection: shuffled data collection;
+            DataCollection: Shuffled data collection.
 
         Examples:
 
-        1. Shuffle:
+            1. Shuffle:
+            >>> from towhee import DataCollection
+            >>> dc = DataCollection([0, 1, 2, 3, 4])
+            >>> a = dc.shuffle()
+            >>> tuple(a) == tuple(range(5))
+            False
 
-        >>> from towhee import DataCollection
-        >>> dc = DataCollection([0, 1, 2, 3, 4])
-        >>> a = dc.shuffle()
-        >>> tuple(a) == tuple(range(5))
-        False
-
-        2. streamed data collection is not supported:
-
-        >>> dc = DataCollection([0, 1, 2, 3, 4]).stream()
-        >>> _ = dc.shuffle()
-        Traceback (most recent call last):
-        TypeError: shuffle is not supported for streamed data collection.
+            2. Streamed data collection is not supported:
+            >>> dc = DataCollection([0, 1, 2, 3, 4]).stream()
+            >>> _ = dc.shuffle()
+            Traceback (most recent call last):
+            TypeError: shuffle is not supported for streamed data collection.
         """
         if self.is_stream:
             raise TypeError('shuffle is not supported for streamed data collection.')
