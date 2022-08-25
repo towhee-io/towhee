@@ -20,7 +20,7 @@ from towhee.engine import register
 
 @register(name='builtin/tensor_hstack')
 def tensor_hstack(*arg):
-    from scipy import sparse
+    from towhee.utils.scipy_utils import sparse
     return sparse.hstack(arg)
 
 
