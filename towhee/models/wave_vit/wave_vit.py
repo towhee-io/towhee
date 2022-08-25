@@ -29,18 +29,30 @@ class WaveViT(nn.Module):
     """
     WaveViT
     Args:
-        in_chans (int): number of image channels
-        num_classes (int): number of image classes
-        stem_hidden_dim (int): Stem layer hidden dim
-        embed_dims (list): every layer`s embedding dim
-        num_heads (list): every layer`s head number
-        mlp_ratios (list): every layer`s mlp ration
-        drop_path_rate (float): every layer`s drop rate
-        norm_layer: default nn.LayerNorm
-        depths (int): number of depths
-        sr_ratios (list): every block`s sr ration
-        num_stages (int): number of stages
-        token_label (bool): whether to use the token_label
+        in_chans (`int`):
+            Number of image channels.
+        num_classes (`int`):
+            Number of image classes.
+        stem_hidden_dim (`int`):
+            Stem layer hidden dim.
+        embed_dims (`list`):
+            Every layer`s embedding dim.
+        num_heads (`list`):
+            Every layer`s head number.
+        mlp_ratios (`list`):
+            Every layer`s mlp ration.
+        drop_path_rate (`float`):
+            Every layer`s drop rate.
+        norm_layer (`nn.Module`):
+            Default nn.LayerNorm.
+        depths (`int`):
+            Number of depths.
+        sr_ratios (`list`):
+            Every block`s sr ration.
+        num_stages (`int`):
+            Number of stages.
+        token_label (`bool`):
+            Whether to use the token_label.
     """
     def __init__(self,
                  in_chans: int = 3,
