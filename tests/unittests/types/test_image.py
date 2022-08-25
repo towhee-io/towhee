@@ -12,23 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import unittest
 import numpy as np
 
-from pathlib import Path
-from PIL import Image as PILImage
-
 from towhee.types import Image
-
-logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')
-img = PILImage.open(logo_path)
-img_width = img.width
-img_height = img.height
-img_channel = len(img.split())
-img_mode = img.mode
-img_array = np.array(img)
-array_size = np.array(img).shape
 
 
 class TestImage(unittest.TestCase):
@@ -37,6 +24,14 @@ class TestImage(unittest.TestCase):
     """
 
     def test_base(self):
+
+        img_height = 600
+        img_width = 400
+        img_channel = 3
+        img_mode = 'RGB'
+
+        img_array = np.random.rand(img_height, img_width, img_channel)
+        array_size = img_array.shape
         towhee_img = Image(img_array, img_mode)
 
         self.assertIsInstance(towhee_img, Image)
