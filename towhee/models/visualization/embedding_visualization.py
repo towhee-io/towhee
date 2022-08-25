@@ -17,6 +17,8 @@ from typing import List, Tuple
 import torch
 from towhee.utils.log import models_log
 from towhee.trainer.utils.file_utils import is_matplotlib_available
+# pylint: disable=import-outside-toplevel
+# pylint: disable=unused-import
 
 
 def show_embeddings(emb_list: List[torch.Tensor], figsize: Tuple = (10, 10), emb_name_list: [List[str]] = None):
@@ -33,6 +35,7 @@ def show_embeddings(emb_list: List[torch.Tensor], figsize: Tuple = (10, 10), emb
     """
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     if isinstance(emb_name_list, list):
         assert len(emb_name_list) == len(
