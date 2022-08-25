@@ -955,6 +955,9 @@ class MimicCEGatedEmbeddingUnit(nn.Module):
 class ReduceDim(nn.Module):
     """
     ReduceDim Module
+    Args:
+        input_dimension (int): dimension of input
+        output_dimension (int): dimension of output
     """
 
     def __init__(self, input_dimension, output_dimension):
