@@ -24,7 +24,7 @@ class NumbaCompiler:
     """
 
     def __init__(self, name, index, *arg, **kws):
-        from towhee.utils.numba_utils import njit  # pylint: disable=import-outside-toplevel
+        from towhee.utils.thirdparty.numba_utils import njit  # pylint: disable=import-outside-toplevel
         name_func = [name + '_func', name.replace('_', '-') + '_func']
         for n in name_func:
             func = OperatorRegistry.resolve(n)
