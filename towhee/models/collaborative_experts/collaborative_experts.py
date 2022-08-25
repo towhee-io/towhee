@@ -915,6 +915,10 @@ class CEModule(nn.Module):
 class GatedEmbeddingUnit(nn.Module):
     """
     GatedEmbeddingUnit
+    Args:
+        input_dimension (int): dimension of input
+        output_dimension (int): dimension of output
+        use_bn (bool): use batch normalization
     """
 
     def __init__(self, input_dimension, output_dimension, use_bn):
