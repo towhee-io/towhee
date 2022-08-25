@@ -11,7 +11,7 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     #        │ │ │ │ │
-    - cron: "0 0 * * 5"
+    - cron: "0 0 * * 6"
   pull_request:
     # file paths to consider in the event
     paths:
