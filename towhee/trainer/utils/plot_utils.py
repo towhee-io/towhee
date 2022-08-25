@@ -29,11 +29,14 @@ import numpy as np
 import random
 import os
 import copy
+# pylint: disable=import-outside-toplevel
+# pylint: disable=unused-import
 
 
 def _show_grid(row_grid_list, cls_list):
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     _, axs = plt.subplots(nrows=len(row_grid_list), ncols=len(row_grid_list[0]), squeeze=False, figsize=(13, 13))
@@ -140,6 +143,7 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     root_path = Path(root)
@@ -177,6 +181,7 @@ def show_transform(image_path: str, transform: Any, sample_num: int = 6):
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     plt.rcParams['savefig.bbox'] = 'tight'
     orig_img = Image.open(image_path)
@@ -187,6 +192,7 @@ def show_transform(image_path: str, transform: Any, sample_num: int = 6):
 def _plot_transform(orig_img, imgs, with_orig=True, row_title=None, **imshow_kwargs):
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     if not isinstance(imgs[0], list):
         imgs = [imgs]
@@ -224,6 +230,7 @@ def plot_lrs_for_scheduler(optimizer: torch.optim.Optimizer, scheduler: '_LRSche
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     lrs = []
     for _ in range(total_steps):

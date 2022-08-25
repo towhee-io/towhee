@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-import matplotlib
 import torch
 
 from pathlib import Path
 from PIL import Image
+from towhee.utils.matplotlib_utils import matplotlib
 from towhee.models.visualization.clip_visualization import show_attention_for_clip
 from towhee.models.clip import clip
 

@@ -25,6 +25,8 @@ import numpy as np
 from towhee.utils.cv2_utils import cv2
 from towhee.trainer.utils.file_utils import is_matplotlib_available
 from towhee.utils.log import models_log
+# pylint: disable=import-outside-toplevel
+# pylint: disable=unused-import
 
 
 class LRP:
@@ -169,6 +171,7 @@ def show_image_heatmap(model: nn.Module, pil_img: Image, method: str = 'transfor
     img_tensor = transform(pil_img)
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
+    from towhee.utils.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     _, axs = plt.subplots(1, 2)
     axs[0].imshow(pil_img)

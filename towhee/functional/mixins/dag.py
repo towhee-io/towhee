@@ -173,7 +173,7 @@ class DagMixin:
 
     def netx(self):
         import networkx as nx
-        import matplotlib.pyplot as plt
+        from towhee.utils.matplotlib_utils import plt
         compiled_dag = self.compile_dag()
         new_dict = {}
         label_dict = {}
