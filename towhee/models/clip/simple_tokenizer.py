@@ -71,13 +71,13 @@ def get_pairs(word):
     return pairs
 
 
-def basic_clean(text):
+def basic_clean(text: str) -> str:
     text = ftfy.fix_text(text)
     text = html.unescape(html.unescape(text))
     return text.strip()
 
 
-def whitespace_clean(text):
+def whitespace_clean(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     text = text.strip()
     return text
