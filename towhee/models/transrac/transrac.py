@@ -30,12 +30,12 @@ class TransRAC(nn.Module):
     TransRAC model
 
     Args:
-        - backbone (`str`):
-            model name of pretrained backbone
-        - num_frames (`int`):
-            number of video frames
-        - scales (`list`):
-            a list of scale numbers
+        backbone (`str`):
+            Model name of pretrained backbone.
+        num_frames (`int`):
+            Number of video frames.
+        scales (`list`):
+            A list of scale numbers.
 
     Example:
         >>> import torch
