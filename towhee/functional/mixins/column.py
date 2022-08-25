@@ -147,7 +147,7 @@ class ColumnMixin:
         return pa.Table.from_arrays(arrays, names=header)
 
     @classmethod
-    def from_arrow_table(cls, **kws):
+    def create_arrow_table(cls, **kws):
         """Convert kwargs to Table.
 
         Returns:
