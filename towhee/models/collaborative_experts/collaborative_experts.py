@@ -482,6 +482,32 @@ class RelationModuleMultiScale_Cat(torch.nn.Module):  # pylint: disable=invalid-
 class CEModule(nn.Module):
     """
     CE Module
+    Args:
+        expert_dims (int): dimension of experts
+        text_dim (int): dimension of text
+        use_ce (bool): use collaborative experts
+        verbose (bool): verbose mode
+        l2renorm (bool): l2 norm for CEModule
+        num_classes (int): number of classes
+        trn_config (dict): train configs
+        trn_cat (int): train catogries
+        use_mish (int): use mish module
+        include_self (int): include self
+        num_h_layers (int): number of layers for h_reason
+        num_g_layers (int): number of layers for g_reason
+        disable_nan_checks (bool): disable nan checks
+        random_feats (set): random features
+        test_caption_mode (str): test caption mode
+        mimic_ce_dims (bool): mimic collaborative experts dimension
+        concat_experts (bool): concat embedding of experts
+        concat_mix_experts (bool): concat mix experts
+        freeze_weights (bool): freeze weights
+        task (str): task string
+        keep_missing_modalities (bool): assign every expert/text inner product the same weight,
+        even if the expert is missing
+        vlad_feat_sizes (dict): vlad feature sizes
+        same_dim (int): same dimension
+        use_bn_reason (int): use batch normalization
     """
 
     def __init__(self, expert_dims, text_dim, use_ce, verbose, l2renorm, num_classes,
