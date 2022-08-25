@@ -17,6 +17,8 @@ import sys
 import importlib
 import logging
 
+logger = logging.getLogger()
+
 _MOCK_OPERATOR_DIR = os.path.dirname(__file__)
 
 ADD_OPERATOR_PATH = os.path.join(_MOCK_OPERATOR_DIR, 'add_operator')
@@ -37,6 +39,6 @@ def load_local_operator(op_name: str, op_path: str):
         sys.path.insert(0, op_path)
         return importlib.import_module(op_name)
     except ModuleNotFoundError as e:
-        logging.error('import model: {op_name} from path: {op_path} failed, error: {err}', op_name=op_name, op_path=op_path, err=str(e))
+        logger.error('import model: {op_name} from path: {op_path} failed, error: {err}', op_name=op_name, op_path=op_path, err=str(e))
     finally:
         sys.path.pop(0)

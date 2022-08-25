@@ -13,8 +13,8 @@
 # limitations under the License.
 import unittest
 
-from towhee.types import AudioFrame
 import numpy as np
+from towhee.types import AudioFrame
 
 
 class TestAudioFrame(unittest.TestCase):

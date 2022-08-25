@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import os
-from towhee.utils.pandas_utils import pandas as pd
+from towhee.utils.thirdparty.pandas_utils import pandas as pd
 import torch
 
 from pandas import Series
