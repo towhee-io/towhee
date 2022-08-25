@@ -13,8 +13,8 @@
 # limitations under the License.
 import unittest
 
-from towhee.types import VideoFrame
 import numpy as np
+from towhee.types import VideoFrame
 
 
 class TestVideoFrame(unittest.TestCase):
