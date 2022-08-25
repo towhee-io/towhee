@@ -7,6 +7,12 @@ from towhee.hparam import param_scope
 
 def register_dag(f):
     """Wrapper used for registering the DataCollection operation in the chains' DAG.
+
+    Args:
+        f (callable): The function to wrap.
+
+    Returns:
+        Any: Returns the result of function called on self.
     """
     @wraps(f)
     def wrapper(self, *arg, **kws):
@@ -87,8 +93,7 @@ def register_dag(f):
 
 class DagMixin:
     #pylint: disable=import-outside-toplevel
-    """
-    Mixin for creating DAGs and their corresponding yamls from a DC
+    """Mixin for creating DAGs and their corresponding yamls from a DC
     """
     def __init__(self) -> None:
         super().__init__()
@@ -116,6 +121,14 @@ class DagMixin:
         self.child_ids = []
 
     def register_dag(self, children):
+        """Function that can be called within the function trying to be added to dag.
+
+        Args:
+            children (DataCollecton or list): List of children DataCollection's or singular child DataCollection.
+
+        Returns:
+            DataCollection or list: The resulting child DataCollections.
+        """
         # check if list of dc or just dc
         if isinstance(children, type(self)):
             self.child_ids = [children.id]
@@ -136,6 +149,15 @@ class DagMixin:
         return children
 
     def notify_consumed(self, new_id):
+        """Notfify that a DataCollection was consumed.
+
+        When a DataCollection is consumed by a call to another DataCollection, that Dag
+        needs to be aware of this, so any functions that consume more than the DataCollection calling
+        the function need to use this function, e.g. zip().
+
+        Args:
+            new_id (str): The ID of the DataCollection that did the consuming.
+        """
         info = {'op': 'nop',
                 'op_name': None,
                 'init_args': None,
@@ -148,6 +170,13 @@ class DagMixin:
         self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
+        """Compile the dag.
+
+        Runs a chain of commands that removes unecessary steps and cleans the DAG.
+
+        Returns:
+            dict: The compiled DAG.
+        """
         info = {'op': 'nop',
                 'op_name': None,
                 'init_args': None,
