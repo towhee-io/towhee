@@ -632,18 +632,30 @@ def dpr_generator(drop_path_rate, num_layers, num_stages):
 
 
 class MPViT(nn.Module):
-    """Multi-Path ViT class.
-        Args:
-        img_size (int): Input images size.
-        num_stages (int): Network stage numbers.
-        num_path (List): Path number in every stage.
-        num_layers (List): Layers in every stage.
-        embed_dims (List): Embed dim in every stage.
-        mlp_ratios (List): MLP ratio in every stage.
-        num_heads (List): head number in every stage.
-        drop_path_rate (float): Drop path rate.
-        in_chans (int): Input channels.
-        num_classes (int): Output classes number.
+    """
+    Multi-Path ViT class.
+
+    Args:
+        img_size (`int`):
+            Input images size.
+        num_stages (`int`):
+            Network stage numbers.
+        num_path (`List`):
+            Path number in every stage.
+        num_layers (`List`):
+            Layers in every stage.
+        embed_dims (`List`):
+            Embed dim in every stage.
+        mlp_ratios (`List`):
+            MLP ratio in every stage.
+        num_heads (`List`):
+            Head number in every stage.
+        drop_path_rate (`float`):
+            Drop path rate.
+        in_chans (`int`):
+            Input channels.
+        num_classes (`int`):
+            Output classes number.
     """
     # pylint: disable=dangerous-default-value
     def __init__(
