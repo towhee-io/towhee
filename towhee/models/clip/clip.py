@@ -337,7 +337,6 @@ class VisionTransformer(nn.Module):
         heads (int): number of heads
         output_dim (int): output dimension
         vis (bool): visualization
-        patch_nums (int): number of patches
         is_bridgeformer (bool): is bridge model or not
         is_bridge_former_video (bool): text transformer or visual transformer for a single frame
     """
@@ -422,15 +421,14 @@ class CLIP(nn.Module):
         vision_width (int): width of vision transformer
         vision_patch_size (int): patch size of vision transformer
         multilingual_model (str): config for multilingual model
-        context_length (int): lenth of context
+        context_length (int): length of context
         vocab_size (int): vocabulary size
         transformer_width (int): width of transformer
         transformer_heads (int): heads number of transformer
         transformer_layers (int): layer number of transformer
         clip4clip (bool): is clip4clip or not
         vis (bool): visualization
-        patch_nums (int): number of patches
-        is_bridgeformer (bool): is bridge model or not
+        is_bridge_former (bool): is bridge model or not
         is_bridge_former_video (bool): text transformer or visual transformer for a single frame
     """
 
