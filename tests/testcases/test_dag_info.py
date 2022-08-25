@@ -86,8 +86,9 @@ class TestDagInfo(unittest.TestCase):
         for key, val in dc.dag_info.items():
             if val['op'] == 'stream':
                 self.assertEqual(val['op_name'], 'dummy_input')
-            if val['parent_ids'] == []:
-                self.assertEqual(key, 'start')
+            if key == 'start':
+                expect = 3
+                self.assertEqual(len(val['dc_sequence']), expect)
 
         expect_no_config = {'parallel': None, 'chunksize': None, 'jit': None, 'format_priority': None}
         for i in dc.dag_info.values():
@@ -120,10 +121,33 @@ class TestDagInfo(unittest.TestCase):
             .image_decode.test[('video_id', 'video_frame', 'embedding'),()]()\
             .as_function()
         for i in f.dag_info.values():
-            if i['op_name'] == 'video-decode/ffmpeg':
+            if i['op_name'] == 'start':
+                expect_input = []
+                expect_output = ['video_url', 'video_id']
+                self.assertEqual(i['input_info'], expect_input)
+                self.assertEqual(i['output_info'], expect_output)
+            elif i['op_name'] == 'video-decode/ffmpeg':
                 expect_input = [('start', 'video_url')]
                 expect_output = ['video_frame']
                 self.assertEqual(i['input_info'], expect_input)
                 self.assertEqual(i['output_info'], expect_output)
+            elif i['op_name'] == 'image-text-embedding/clip-image':
+                expect_input = 'video_frame'
+                expect_output = ['embedding']
+                self.assertEqual(i['input_info'][0][1], expect_input)
+                self.assertEqual(i['output_info'], expect_output)
+            elif i['op_name'] == 'image-decode/test':
+                expect_input_1 = 'video_id'
+                expect_input_2 = 'video_frame'
+                expect_input_3 = 'embedding'
+                expect_output = []
+                self.assertEqual(i['input_info'][0][1], expect_input_1)
+                self.assertEqual(i['input_info'][1][1], expect_input_2)
+                self.assertEqual(i['input_info'][2][1], expect_input_3)
+                self.assertEqual(i['output_info'], expect_output)
+            elif i['op_name'] == 'end':
+                self.assertEqual(i['input_info'], None)
+                self.assertEqual(i['output_info'], None)
+
 if __name__ == '__main__':
     unittest.main()
