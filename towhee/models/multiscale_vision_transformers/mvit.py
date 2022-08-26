@@ -87,19 +87,19 @@ class AttentionPool(nn.Module):
                                            ↓
                                           norm
     Args:
-        thw_shape(List):
+        thw_shape (`List[int]`):
             the shape of the input tensor (before flattening).
-        pool(Callable):
+        pool (`Callable`):
             Pool operation that is applied to the input tensor.
             If pool is None, return the input tensor.
-        has_cls_embed(bool):
+        has_cls_embed (`bool`):
             whether the input tensor contains cls token. Pool operation excludes cls token.
-        norm(Callable):
+        norm (`Callable`):
             Optional normalization operation applied to tensor after pool.
     Returns:
-        tensor(torch.Tensor):
+        tensor (`torch.Tensor`):
             Input tensor after pool.
-        thw_shape(List[int]):
+        thw_shape (`List[int]`):
             Output tensor shape (before flattening).
     """
 
@@ -327,12 +327,17 @@ class TransformerBasicHead(nn.Module):
         """
         Perform linear projection and activation as head for tranformers.
         Args:
-            dim_in (int): the channel dimension of the input to the head.
-            num_classes (int): the channel dimensions of the output to the head.
-            dropout_rate (float): dropout rate. If equal to 0.0, perform no
+            dim_in (`int`):
+                The channel dimension of the input to the head.
+            num_classes (`int`):
+                The channel dimensions of the output to the head.
+            dropout_rate (`float`):
+                Dropout rate. If equal to 0.0, perform no
                 dropout.
-            act_func (string): activation function to use. "softmax": applies
-                softmax on the output. "sigmoid": applies sigmoid on the output.
+            act_func (`string`):
+                Activation function to use.
+                - "softmax": applies softmax on the output.
+                - "sigmoid": applies sigmoid on the output.
         """
         super().__init__()
         if dropout_rate > 0.0:
