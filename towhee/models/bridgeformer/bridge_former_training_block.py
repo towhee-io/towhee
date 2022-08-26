@@ -40,12 +40,21 @@ def attn_mask(q, k, v, mask):
 
 class VarAttention(nn.Module):
     """
-    dim:
-    num_heads:
-    qkv_bias:
-    qk_scale:
-    attn_drop:
-    proj_drop:
+    Modified multi-head Attention.
+
+    Args:
+        dim (`int`):
+            Dimension of features.
+        num_heads (`int`):
+            Number of heads.
+        qkv_bias (`bool`):
+            Flag to control if add bias to qkv layer.
+        qk_scale (`float`):
+            Number to scale qk.
+        attn_drop (`float`):
+            Drop rate of attention layer.
+        proj_drop (`float`):
+            Drop rate of projection layer.
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
                  initialize='random'):
@@ -68,7 +77,7 @@ class VarAttention(nn.Module):
 
     def forward(self, x, mask, whether, einops_from, einops_to, **einops_dims):
         h = self.num_heads
-        # project x to q, k, v vaalues
+        # project x to q, k, v values
         q, k, v = self.qkv(x).chunk(3, dim=-1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
 
