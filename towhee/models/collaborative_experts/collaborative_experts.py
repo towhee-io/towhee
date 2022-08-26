@@ -997,6 +997,11 @@ class ContextGating(nn.Module):
 
 
 class GatedEmbeddingUnitReasoning(nn.Module):
+    """
+    GatedEmbeddingUnitReasoning
+    Args:
+        output_dimension (int): dimension of output
+    """
     def __init__(self, output_dimension):
         super().__init__()
         self.cg = ContextGatingReasoning(output_dimension)
