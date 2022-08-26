@@ -31,7 +31,6 @@ import towhee.functional.mixins.parallel
 import towhee.functional.mixins.state
 import towhee.functional.mixins.serve
 import towhee.functional.mixins.config
-import towhee.functional.mixins.remote
 import towhee.functional.mixins.data_processing
 import towhee.functional.mixins.safe
 import towhee.functional.mixins.list
@@ -57,7 +56,6 @@ def load_tests(loader, tests, ignore):
             towhee.functional.mixins.serve,
             towhee.functional.mixins.column,
             towhee.functional.mixins.config,
-            towhee.functional.mixins.remote,
             towhee.functional.mixins.list,
             towhee.functional.mixins.data_processing,
             towhee.functional.mixins.stream,
@@ -312,21 +310,6 @@ class TestCompileMixin(unittest.TestCase):
                     .runas_op['a', 'b'](func=lambda _: query)
                     .inner_distance1[('b', 'a'), 'c']()
             )
-
-
-class TestRemoteMixin(unittest.TestCase):
-    """
-    Unit test for RemoteMixin
-    """
-    def test_remote(self):
-        dc_1 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
-        remote = dc_1.remote('127.0.0.1:8001', mode='infer', protocol='grpc')
-        self.assertEqual(remote[0], None)
-
-    def test_remote_error(self):
-        dc_2 = DataCollection(((1, 2, 3, 4, 5, 6), (2, 3, 4, 5, 6, 7)))
-        remote = dc_2.remote('127.0.0.1:8000', mode='async_infer', protocol='http')
-        self.assertEqual(remote[0], None)
 
 
 if __name__ == '__main__':
