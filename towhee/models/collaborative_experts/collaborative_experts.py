@@ -1031,6 +1031,9 @@ class SpatialMLP(nn.Module):
 class ContextGatingReasoning(nn.Module):
     """
     ContextGatingReasoning
+    Args:
+        dimension (int): dimension of input
+        add_batch_norm (int): add batch normalization
     """
 
     def __init__(self, dimension, add_batch_norm=True):
@@ -1053,6 +1056,10 @@ class ContextGatingReasoning(nn.Module):
 class G_reason(nn.Module):  # pylint: disable=invalid-name
     """
     G_reason Module
+    Args:
+        same_dim (int): same dimension
+        num_inputs (int): number of inputs
+        non_lin (nn.module): non-linear module
     """
 
     def __init__(self, same_dim, num_inputs, non_lin):
