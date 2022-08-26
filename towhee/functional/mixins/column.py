@@ -119,7 +119,7 @@ class ColumnMixin:
             a: [["abc","def","ghi"]]
             b: [[1,2,3]]
         """
-        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.utils.thirdparty.pyarrow_utils import pa
         from towhee.types.tensor_array import TensorArray
 
         header = None
@@ -153,7 +153,7 @@ class ColumnMixin:
         Returns:
             pyarrow.Table: The Table from the kwargs.
         """
-        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.utils.thirdparty.pyarrow_utils import pa
 
         arrays = []
         names = []
@@ -251,7 +251,7 @@ class ColumnMixin:
             DataCollection: The datacollection with callable applied.
         """
         # pylint: disable=protected-access
-        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.utils.thirdparty.pyarrow_utils import pa
         from towhee.types.tensor_array import TensorArray
 
         import numpy as np
