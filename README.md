@@ -114,7 +114,7 @@ pip install towhee towhee.models
 
 If you run into any pip-related install problems, please try to upgrade pip with `pip install -U pip`.
 
-Try your first Towhee pipeline. For example, create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
+Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
 
 ```python
 import towhee
