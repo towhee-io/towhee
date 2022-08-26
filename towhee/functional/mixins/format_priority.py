@@ -18,16 +18,15 @@ from towhee.hparam.hyperparameter import param_scope
 
 
 class FormatPriorityMixin:
-    """
-    Mixin for Format Priority.
+    """Mixin for Format Priority.
 
     Examples:
 
-    >>> import towhee
-    >>> dc = towhee.DataCollection.range(100)
-    >>> dc = dc.set_format_priority(['tensorrt', 'onnx'])
-    >>> dc.get_formate_priority()
-    ['tensorrt', 'onnx']
+        >>> import towhee
+        >>> dc = towhee.DataCollection.range(100)
+        >>> dc = dc.set_format_priority(['tensorrt', 'onnx'])
+        >>> dc.get_formate_priority()
+        ['tensorrt', 'onnx']
     """
     def __init__(self) -> None:
         super().__init__()
@@ -37,12 +36,13 @@ class FormatPriorityMixin:
             self._format_priority = parent._format_priority
 
     def set_format_priority(self, format_priority: List[str]):
-        """
-        Set format priority.
+        """Set format priority.
 
         Args:
-            format_priority (`List[str]`):
-                The priority queue of format.
+            format_priority (List[str]): The priority queue of format.
+
+        Returns:
+            DataCollection: DataCollection with format_priorty set.
         """
         self._format_priority = format_priority
         return self._factory(self._iterable)
