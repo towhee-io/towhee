@@ -18,7 +18,7 @@ from towhee.engine import register
 # pylint: disable=invalid-name
 
 @register(name='builtin/milvus_search')
-class milvus_search:
+class milvus_search:  # pragma: no cover
     """
     Search for embedding vectors in Milvus. Note that the Milvus collection has data before searching,
     refer to DataCollection Mixin `to_milvus`.
