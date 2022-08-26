@@ -77,7 +77,27 @@ def create_model(
         device: str = None,
         checkpoints: dict = None,
         cfg: dict = None
-        ):
+        ) -> ActionClip:
+    """
+    Create action clip model
+    Args:
+        clip_model (`Union[str, nn.Module]`):
+            A clip model name or a model instance.
+        pretrained (`bool`):
+            Whether model is pretrained.
+        jit (`bool`):
+            Whether returned one is a jit model, only useful when `pretrained` is True.
+        device (`str`):
+            Cuda or gpu.
+        checkpoints (`dict`):
+            Checkpoints state infos, only useful when `pretrained` is True.
+        cfg (`dict`):
+            Other model configs.
+
+    Returns:
+        (`ActionClip`)
+            ActionClip model instance.
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if isinstance(clip_model, str):
