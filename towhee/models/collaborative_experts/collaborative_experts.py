@@ -1013,6 +1013,11 @@ class GatedEmbeddingUnitReasoning(nn.Module):
 
 
 class SpatialMLP(nn.Module):
+    """
+    SpatialMLP module
+    Args:
+        dimension (int): dimension of input
+    """
     def __init__(self, dimension):
         super().__init__()
         self.cg1 = ContextGating(dimension)
