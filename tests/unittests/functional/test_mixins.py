@@ -15,11 +15,8 @@
 import doctest
 import unittest
 import os
-import faiss
 import numpy as np
 from pathlib import Path
-from towhee._types.image import Image
-from towhee.utils.cv2_utils import cv2
 
 import towhee
 import towhee.functional.mixins.computer_vision
@@ -36,10 +33,13 @@ import towhee.functional.mixins.data_processing
 import towhee.functional.mixins.safe
 import towhee.functional.mixins.list
 import towhee.functional.mixins.stream
-
-from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
 from towhee import DataCollection, DataFrame, dc
 from towhee import Entity
+from towhee._types.image import Image
+from towhee.utils.thirdparty.faiss_utils import faiss
+from towhee.utils.cv2_utils import cv2
+from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
+
 
 public_path = Path(__file__).parent.parent.resolve()
 
