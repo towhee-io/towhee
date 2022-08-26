@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from towhee.models import clip
 from towhee.models.clip import CLIP
 from towhee.models.frozen_in_time import FrozenInTime
-from towhee.models.bridgeformer.bridge_former_utils import clip_initialized_model_configs
 from towhee.models.bridgeformer.bridge_former_training import BridgeFormerTraining
 from towhee.models.frozen_in_time.frozen_utils import state_dict_data_parallel_fix
 from towhee.models.clip.clip_utils import convert_weights
@@ -46,11 +46,10 @@ def create_model(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if pretrained and weights_path is None:
         raise AssertionError("if pretrained is true, weights_path needs to be specified")
-    if model_name == "clip_initialized_model":
 
+    if model_name == "clip_initialized_model":
         if pretrained:
-            configs = clip_initialized_model_configs()
-            model = CLIP(**configs)
+            model = clip.create_model(model_name="clip_vit_b32", pretrained=False)
             checkpoint = torch.load(weights_path, map_location=device)
             state_dict = checkpoint["state_dict"]
             state_dict = state_dict_data_parallel_fix(state_dict, model.state_dict())
