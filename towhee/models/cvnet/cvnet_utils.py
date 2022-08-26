@@ -21,9 +21,9 @@ import torch.nn.functional as F
 def get_configs(model_name='CVNet_R101'):
     args = {
         'CVNet_R101':
-            {'reset_depth': 101},
+            {'resnet_depth': 101},
         'CVNet_R50':
-            {'reset_depth': 50},
+            {'resnet_depth': 50},
     }
     return args[model_name]
 

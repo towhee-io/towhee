@@ -198,15 +198,15 @@ class ResStemIN(nn.Module):
 class ResNet(nn.Module):
     """ResNet model."""
 
-    def __init__(self, reset_depth, reduction_dim):
+    def __init__(self, resnet_depth, reduction_dim):
         super().__init__()
-        self.reset_depth = reset_depth
+        self.resnet_depth = resnet_depth
         self.reduction_dim = reduction_dim
         self._construct()
 
     def _construct(self):
         g, gw = NUM_GROUPS, WIDTH_PER_GROUP
-        (d1, d2, d3, d4) = _IN_STAGE_DS[self.reset_depth]
+        (d1, d2, d3, d4) = _IN_STAGE_DS[self.resnet_depth]
         w_b = gw * g
         self.stem = ResStemIN(3, 64)
         self.s1 = ResStage(64, 256, stride=1, d=d1, w_b=w_b, num_gs=g)

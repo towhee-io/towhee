@@ -28,11 +28,17 @@ from towhee.models.cvnet.resnet import ResNet
 class CVNet(nn.Module):
     """
     CVNet
+
+    Args:
+        resnet_depth (`int`):
+            ResNet depth.
+        reduction_dim (`int`):
+            Reduction dimension of ResNet.
     """
-    def __init__(self, reset_depth=50, reduction_dim=2048):
+    def __init__(self, resnet_depth=50, reduction_dim=2048):
         super().__init__()
 
-        self.encoder_q = ResNet(reset_depth, reduction_dim)
+        self.encoder_q = ResNet(resnet_depth, reduction_dim)
         self.encoder_q.eval()
 
         self.scales = [0.25, 0.5, 1.0]
@@ -44,14 +50,14 @@ class CVNet(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         self.extract_feats = extract_feat_res_pycls
 
-        if reset_depth == 50:
+        if resnet_depth == 50:
             nbottlenecks = [3, 4, 6, 3]
             self.feat_ids = [13]
-        elif reset_depth == 101:
+        elif resnet_depth == 101:
             nbottlenecks = [3, 4, 23, 3]
             self.feat_ids = [30]
         else:
-            raise Exception("Unavailable RESNET_DEPTH %s" % reset_depth)
+            raise Exception("Unavailable RESNET_DEPTH %s" % resnet_depth)
 
         self.bottleneck_ids = reduce(add, list(map(lambda x: list(range(x)), nbottlenecks)))
         self.lids = reduce(add, [[i + 1] * x for i, x in enumerate(nbottlenecks)])
