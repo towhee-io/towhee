@@ -977,6 +977,9 @@ class ReduceDim(nn.Module):
 class ContextGating(nn.Module):
     """
     ContextGating Module
+    Args:
+        dimension (int): dimension of input
+        add_batch_norm (int): add batch normalization
     """
 
     def __init__(self, dimension, add_batch_norm=True):
