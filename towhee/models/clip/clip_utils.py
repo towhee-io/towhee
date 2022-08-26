@@ -18,7 +18,7 @@ import os
 import hashlib
 import urllib.request
 from tqdm import tqdm
-from typing import Union, List
+from typing import Union, List, Dict
 from pkg_resources import packaging
 import warnings
 
@@ -28,7 +28,7 @@ from torch import nn
 from .simple_tokenizer import SimpleTokenizer
 
 
-def base_configs():
+def base_configs() -> Dict:
     return dict(
         # vision
         embed_dim=512,
@@ -45,7 +45,7 @@ def base_configs():
     )
 
 
-def get_configs(model_name):
+def get_configs(model_name: str) -> Dict:
     """
     Given a clip model name, return the default configs.
     Args:
