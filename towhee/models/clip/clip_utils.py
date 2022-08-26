@@ -46,6 +46,16 @@ def base_configs():
 
 
 def get_configs(model_name):
+    """
+    Given a clip model name, return the default configs.
+    Args:
+        model_name (`str`):
+            Clip model name.
+
+    Returns:
+        (`Dict`):
+            Default configs for given model name.
+    """
     if model_name == "clip_resnet_r50":
         configs = base_configs()
         configs.update(dict(
