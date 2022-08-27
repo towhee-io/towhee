@@ -17,8 +17,7 @@ from towhee.hparam import param_scope
 
 
 class DispatcherMixin:
-    """
-    Mixin for call dispatcher for data collection
+    """Mixin for call dispatcher for data collection.
 
     >>> from towhee import register
     >>> from towhee import ops
@@ -33,6 +32,15 @@ class DispatcherMixin:
     """
 
     def resolve(self, path, index, *arg, **kws):
+        """Dispatch unknown operators.
+
+        Args:
+            path (str): The operator name.
+            index (str): The index of data being called on.
+
+        Returns:
+            _OperatorLazyWrapper: The operator that corresponds to the path.
+        """
         with param_scope() as hp:
             locals_ = hp.locals
             globals_ = hp.globals
