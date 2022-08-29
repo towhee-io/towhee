@@ -97,7 +97,7 @@ class TAggregate(nn.Module):
         - n_layers (`int=6`):
             Number of layers used in Transformer encoder.
     """
-    def __init__(self, clip_length=0, embed_dim=2048, n_layers=6):
+    def __init__(self, clip_length: int = 0, embed_dim: int = 2048, n_layers: int = 6):
         super().__init__()
         self.clip_length = clip_length
         drop_rate = 0.
