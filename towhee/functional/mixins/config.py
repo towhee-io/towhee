@@ -17,7 +17,8 @@ from towhee.hparam import param_scope
 
 
 class ConfigMixin:
-    """Mixin to config DC, such as set the `parallel`, `chunksize`, `jit`.
+    """
+    Mixin to config DC, such as set the `parallel`, `chunksize`, `jit`.
 
     Examples:
 
@@ -74,7 +75,8 @@ class ConfigMixin:
             self._format_priority = None
 
     def config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None, format_priority: List[str] = None):
-        """ Set the parameters for the DC.
+        """
+        Set the parameters for the DC.
 
         Args:
             parallel (int, optional): Set the number of parallel execution for the following calls. Defaults to None.
@@ -99,7 +101,8 @@ class ConfigMixin:
         return dc
 
     def get_config(self):
-        """Return the config of the DC, including parameters such as `parallel`, `chunksize`, `jit` and `format_priority`.
+        """
+        Return the config of the DC, including parameters such as `parallel`, `chunksize`, `jit` and `format_priority`.
 
         Returns:
             dict: A dict of config parameters.
@@ -117,7 +120,8 @@ class ConfigMixin:
         return self._config
 
     def pipeline_config(self, parallel: int = None, chunksize: int = None, jit: Union[str, dict] = None, format_priority: List[str] = None):
-        """Set the parameters in DC.
+        """
+        Set the parameters in DC.
 
         Args:
             parallel (int, optional): Set the number of parallel executions for the following calls. Defaults to None.
@@ -142,7 +146,8 @@ class ConfigMixin:
         return dc
 
     def get_pipeline_config(self):
-        """Return the config of the DC, including parameters such as `parallel`, `chunksize`, `jit` and `format_priority`.
+        """
+        Return the config of the DC, including parameters such as `parallel`, `chunksize`, `jit` and `format_priority`.
 
         Returns:
             dict: A dict of config parameters.
