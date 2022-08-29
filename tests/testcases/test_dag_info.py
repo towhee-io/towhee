@@ -11,41 +11,29 @@ class TestDagInfo(unittest.TestCase):
 
         example of dag info
         {
-            'e4b074eb': {
+            '89be9ec1': {
                 'op': 'map',
                 'op_name': 'towhee/image-decode',
                 'is_stream': True,
                 'init_args': {},
                 'call_args': {
-                    '*arg': ( < towhee.engine.factory._OperatorLazyWrapper object at 0x1216d4f70 > , ),
-                    '*kws': {}
-                },
-                'op_config': None,
-                'input_info': [('start', 'path')],
-                'output_info': ['img'],
-                'parent_ids': ['start'],
-                'child_ids': ['db5377c3']
-            },
-            'db5377c3': {
-                'op': 'map',
-                'op_name': 'towhee/clip',
-                'is_stream': True,
-                'init_args': {
-                    'model_name': 'clip_vit_b32',
-                    'modality': 'image'
-                },
-                'call_args': {
-                    '*arg': ( < towhee.engine.factory._OperatorLazyWrapper object at 0x12171a670 > , ),
+                    '*arg': ( < towhee.engine.factory._OperatorLazyWrapper object at 0x13faba040 > , ),
                     '*kws': {}
                 },
                 'op_config': {
+                    'chunksize': None,
+                    'jit': None,
+                    'format_priority': ['onnx'],
                     'ac': '123',
                     'asd': 'wea'
                 },
-                'input_info': [('e4b074eb', 'img')],
-                'output_info': ['vec'],
-                'parent_ids': ['e4b074eb'],
-                'child_ids': ['end']
+                'input_info': [
+                    []
+                ],
+                'output_info': ['img'],
+                'parent_ids': [],
+                'child_ids': ['end'],
+                'dc_sequence': ['start', '89be9ec1', 'end']
             },
             'end': {
                 'op': 'end',
@@ -55,7 +43,7 @@ class TestDagInfo(unittest.TestCase):
                 'op_config': None,
                 'input_info': None,
                 'output_info': None,
-                'parent_ids': ['db5377c3'],
+                'parent_ids': ['89be9ec1'],
                 'child_ids': []
             },
             'start': {
@@ -67,11 +55,17 @@ class TestDagInfo(unittest.TestCase):
                     '*arg': (),
                     '*kws': {}
                 },
-                'op_config': None,
+                'op_config': {
+                    'parallel': None,
+                    'chunksize': None,
+                    'jit': None,
+                    'format_priority': None
+                },
                 'input_info': None,
                 'output_info': None,
                 'parent_ids': [],
-                'child_ids': ['e4b074eb']
+                'child_ids': [],
+                'dc_sequence': ['start', '89be9ec1', 'end']
             }
         }
         """
