@@ -229,8 +229,11 @@ class TransformerEncoderLayer(nn.Module):
     """
     TransformerEncoderLayer class.
     Args:
-        encoder_layer (nn.Module): encoder module
-        num_layers (int): number of layers
+        d_model (int): dimension of model
+        nhead (int): number of head
+        dim_feedforward (int): dimension of feedforward
+        dropout (float): dropout
+        activation (str): activation
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.15, activation="relu"):
         super().__init__()
@@ -268,9 +271,16 @@ class TransformerEncoderLayer(nn.Module):
         src = src + self.dropout2(src2)
         return src
 
+
 class TransformerDecoderLayer(nn.Module):
     """
     TransformerDecoderLayer class.
+    Args:
+        d_model (int): dimension of model
+        nhead (int): number of head
+        dim_feedforward (int): dimension of feedforward
+        dropout (float): dropout
+        activation (str): activation
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.15, activation="relu"):
         super().__init__()
