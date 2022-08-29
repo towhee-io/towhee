@@ -21,7 +21,7 @@ import torch
 from towhee.models import clip
 
 
-def text_aug(word):
+def text_aug(word: str):
     augs = [f"a photo of action {word}", f"a picture of action {word}", f"Human action of {word}",
             f"{word}, an action", f"{word} this is an action", f"{word}, a video of action",
             f"Playing action of {word}", f"{word}", f"Playing a kind of action, {word}",
@@ -31,7 +31,7 @@ def text_aug(word):
     return augs
 
 
-def text_prompt(labels):
+def text_prompt(labels: list):
     text_dict = {}
     num_txt_augs = len(text_aug(""))
     txt_augs = [text_aug(c) for c in labels]
