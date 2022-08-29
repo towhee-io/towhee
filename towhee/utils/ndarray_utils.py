@@ -21,21 +21,8 @@ from zipfile import ZipFile
 from urllib.request import urlopen
 
 from towhee.types import Image
-from towhee.utils.log import engine_log
 from towhee.utils.repo_normalize import RepoNormalize
-
-try:
-    # pylint: disable=unused-import,ungrouped-imports
-    import cv2
-except ModuleNotFoundError as moduleNotFound:
-    try:
-        from towhee.utils.dependency_control import prompt_install
-        prompt_install('opencv-python')
-        # pylint: disable=unused-import,ungrouped-imports
-        import cv2
-    except:
-        engine_log.error('cv2 not found, you can install via `pip install opencv-python`.')
-        raise ModuleNotFoundError('cv2 not found, you can install via `pip install opencv-python`.') from moduleNotFound
+from towhee.utils.cv2_utils import cv2
 
 
 def from_src(src: Union[str, PosixPath]) -> Image:
