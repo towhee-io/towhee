@@ -153,8 +153,16 @@ class TemporalTransformer(nn.Module):
 class VisualPrompt(nn.Module):
     """
     VisualPrompt
+
+    Args:
+        - sim_head (`int`):
+            Sim head type, must be in ['meanP', 'LSTM', 'Transf', 'Conv_1D', 'Transf_cls'].
+        - clip_state_dict (`int`):
+            Clip model state dict.
+        - num_frames (`int`):
+            Number of frame.
     """
-    def __init__(self, sim_head, clip_state_dict, num_frames):
+    def __init__(self, sim_head: str, clip_state_dict: dict, num_frames: int):
         super().__init__()
         self.sim_header = sim_head
         self.num_frames = num_frames
