@@ -132,10 +132,13 @@ class MaxViT(nn.Module):
     #     return nwd
 
     def reset_classifier(self, num_classes: int, global_pool: Optional[str] = None) -> None:
-        """Method results the classification head
+        """
+        Method results the classification head
         Args:
-            num_classes (int): Number of classes to be predicted
-            global_pool (str, optional): If not global pooling is updated
+            num_classes (`int`):
+                Number of classes to be predicted.
+            global_pool (`str`):
+                If not global pooling is updated.
         """
         self.num_classes: int = num_classes
         if global_pool is not None:
@@ -143,11 +146,14 @@ class MaxViT(nn.Module):
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
     def forward_features(self, data: torch.Tensor) -> torch.Tensor:
-        """ Forward pass of feature extraction.
+        """
+        Forward pass of feature extraction.
         Args:
-            data (torch.Tensor): Input images of the shape [B, C, H, W].
+            data (`torch.Tensor`):
+                Input images of the shape [B, C, H, W].
         Returns:
-            output (torch.Tensor): Image features of the backbone.
+            output (`torch.Tensor`):
+                Image features of the backbone.
         """
         output = data
         for stage in self.stages:
@@ -155,12 +161,16 @@ class MaxViT(nn.Module):
         return output
 
     def forward_head(self, data: torch.Tensor, pre_logits: bool = False):
-        """ Forward pass of classification head.
+        """
+        Forward pass of classification head.
         Args:
-            data (torch.Tensor): Input features
-            pre_logits (bool, optional): If true pre-logits are returned
+            data (`torch.Tensor`):
+                Input features.
+            pre_logits (`bool`):
+                If true pre-logits are returned.
         Returns:
-            output (torch.Tensor): Classification output of the shape [B, num_classes].
+            output (`torch.Tensor`):
+                Classification output of the shape [B, num_classes].
         """
         if self.global_pool == "avg":
             data = data.mean(dim=(2, 3))
@@ -171,9 +181,11 @@ class MaxViT(nn.Module):
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         """ Forward pass
         Args:
-            data (torch.Tensor): Input images of the shape [B, C, H, W].
+            data (`torch.Tensor`):
+                Input images of the shape [B, C, H, W].
         Returns:
-            output (torch.Tensor): Classification output of the shape [B, num_classes].
+            output (`torch.Tensor`):
+                Classification output of the shape [B, num_classes].
         """
         output = self.forward_features(self.stem(data))
         output = self.forward_head(output)
