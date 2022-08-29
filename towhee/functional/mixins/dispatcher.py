@@ -20,14 +20,13 @@ class DispatcherMixin:
     """
     Mixin for call dispatcher for data collection
 
+    >>> import towhee
     >>> from towhee import register
-    >>> from towhee import ops
-    >>> from towhee import DataCollection
     >>> @register(name='add_1')
     ... def add_1(x):
     ...     return x+1
 
-    >>> dc = DataCollection.range(5).stream()
+    >>> dc = towhee.range(5).stream()
     >>> dc.add_1['a','b','c']() #doctest: +ELLIPSIS
     <map object at ...>
     """
