@@ -8,7 +8,6 @@ torchmetrics==0.7.0
 ruamel.yaml<=0.16.6
 importlib_metadata
 tabulate
-ipython
 fastapi
 pytest
 fairscale
