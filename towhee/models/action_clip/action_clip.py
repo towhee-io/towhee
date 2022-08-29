@@ -101,8 +101,8 @@ def create_model(
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if isinstance(clip_model, str):
-        clip_model = clip.create_model(model_name=clip_model, pretrained=pretrained, jit=jit, device=device)
         configs = get_configs(model_name=clip_model)
+        clip_model = clip.create_model(model_name=clip_model, pretrained=pretrained, jit=jit, device=device)
     else:
         configs = get_configs()
     if cfg is not None:
