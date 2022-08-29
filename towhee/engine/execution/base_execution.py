@@ -15,7 +15,7 @@
 
 class BaseExecution:
     """
-    Execute an operator
+    Basic execution of an operator.
     """
     def __apply__(self, *arg, **kws):
         # Multi inputs.
