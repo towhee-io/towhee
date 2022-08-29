@@ -12,16 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-from pathlib import Path
 
 import numpy as np
-from towhee.utils.cv2_utils import cv2
-from towhee.types import arg, to_image_color
-from towhee._types import Image
 
-
-cache_path = Path(__file__).parent.parent.resolve()
-test_image = cache_path.joinpath('data/dataset/kaggle_dataset_small/train/001cdf01b096e06d78e9e5112d419397.jpg')
+from towhee.types import arg, to_image_color, Image
 
 
 @arg(0, to_image_color('BGR'))
@@ -45,7 +39,7 @@ class TestConvertImageColor(unittest.TestCase):
     """
 
     def test_convert_color(self):
-        img = cv2.imread(test_image.absolute().as_posix())
+        img = np.random.randint(0, 255, (400, 300, 3), dtype=np.uint8)
         rgb = Image(img, 'RGB')
         bgr = any2bgr(rgb)
         rgb2 = any2rgb(bgr)
@@ -55,7 +49,7 @@ class TestConvertImageColor(unittest.TestCase):
         self.assertTrue(np.array_equal(rgb, rgb2))
 
     def test_exception(self):
-        img = cv2.imread(test_image.absolute().as_posix())
+        img = np.random.randint(0, 255, (400, 300, 3), dtype=np.uint8)
         rgb = Image(img, 'RGB')
 
         with self.assertRaises(ValueError):
