@@ -141,14 +141,6 @@ class DatasetMixin:
                 for row in self._iterable:
                     inner(row)
 
-    def random_sample(self):
-        # core API already exists
-        pass
-
-    def filter_data(self):
-        # core API already exists
-        pass
-
     # pylint: disable=dangerous-default-value
     def split_train_test(self, size: list = [0.9, 0.1], **kws):
         """
