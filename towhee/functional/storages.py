@@ -73,7 +73,7 @@ class WritableTable:
             WriteableTable: The updated and sealed pyarrow.Table.
         """
         # pylint: disable=protected-access
-        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.utils.thirdparty.pyarrow_utils import pa
         from towhee.types.tensor_array import TensorArray
 
         names = list(self._buffer)
@@ -146,7 +146,7 @@ class ChunkedTable:
         return self._chunks
 
     def _create_table(self, chunk, head):
-        from towhee.utils.thirdparty.pyarrow import pa
+        from towhee.utils.thirdparty.pyarrow_utils import pa
         from towhee.types.tensor_array import TensorArray
 
         # head = []

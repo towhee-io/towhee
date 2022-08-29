@@ -15,7 +15,7 @@
 from typing import Tuple
 import numpy as np
 
-from towhee.utils.thirdparty.pyarrow import pa
+from towhee.utils.thirdparty.pyarrow_utils import pa
 
 
 class _TensorArrayType(pa.PyExtensionType):
