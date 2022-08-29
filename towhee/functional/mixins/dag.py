@@ -172,7 +172,7 @@ class DagMixin:
     def compile_dag(self):
         """Compile the dag.
 
-        Runs a chain of commands that removes unecessary steps and cleans the DAG.
+        Runs a schema of commands that removes unecessary steps and cleans the DAG.
 
         Returns:
             dict: The compiled DAG.
