@@ -16,7 +16,7 @@
 
 class VectorizedExecution:
     """
-    Vectorized execute operator on Arrow tables
+    Vectorized execution of an operator on Arrow tables.
     """
 
     def __vcall__(self, *arg, **kws):
