@@ -25,9 +25,19 @@ import torch.nn.functional as F
 from typing import Optional
 from torch import nn, Tensor
 
+
 class Transformer(nn.Module):
     """
     Transformer class.
+    Args:
+        d_model (int): model dimension
+        nhead (int): number of heads
+        num_glance_enc_layers (int): number of glance encoder layers
+        num_gaze_s1_dec_layers (int): number of gaze s1 decoder layers
+        num_gaze_s2_dec_layers (int): number of gaze s2 decoder layers
+        dim_feedforward (int): dimension of feedforward
+        dropout (int): drop out probability
+        activation (str): activation
     """
     def __init__(self,
                  d_model=512,
@@ -38,8 +48,7 @@ class Transformer(nn.Module):
                  num_gaze_s2_dec_layers=3,
                  dim_feedforward=2048,
                  dropout=0.15,
-                 activation="relu"
-                ):
+                 activation="relu"):
         super().__init__()
 
         self.d_model = d_model
@@ -160,6 +169,7 @@ class Transformer(nn.Module):
         final_rhs = final_rhs.transpose(1,2)
 
         return verb_pred, extracted_rhs, aggregated_rhs, final_rhs, selected_roles
+
 
 class TransformerEncoder(nn.Module):
     """
