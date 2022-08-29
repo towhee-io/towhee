@@ -105,7 +105,7 @@ class MilvusMixin: # pragma: no cover
             Whther the stream mode with `to_milvus`, defaults to True.
 
     Returns:
-        A MutationResult object contains `insert_count` represents how many and a `primary_keys` is a list of primary keys.
+        The DataCollection.
 
     Examples:
 
@@ -114,7 +114,6 @@ class MilvusMixin: # pragma: no cover
         be the same as it.
 
     >>> import towhee
-    >>> from pymilvus import connections #doctest: +SKIP
     >>> mr = ( #doctest: +SKIP
     ...     towhee.glob['path']('./*.jpg')
     ...           .image_decode['path', 'img']()
