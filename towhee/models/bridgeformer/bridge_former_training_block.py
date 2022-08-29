@@ -128,7 +128,21 @@ class VarAttention(nn.Module):
 
 class CrossAttention(nn.Module):
     """
-    CrossAttention
+    Modified cross attention for BridgeFormer.
+
+    Args:
+        dim (`int`):
+            Dimension of features.
+        num_heads (`int`):
+            Number of heads.
+        qkv_bias (`bool`):
+            If add bias to qkv.
+        qk_scale (`float`):
+            Number to scale qk.
+        attn_drop (`float`):
+            Drop rate of attention layer.
+        proj_drop (`float`):
+            Drop rate of projection layer.
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
