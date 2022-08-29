@@ -28,6 +28,8 @@ from towhee.models.layers.position_encoding import build_position_encoding
 
 class BackboneBase(nn.Module):
     """
+    Backbone base block.
+
     Args:
         backbone(`nn.Module`):
             Backbone model.
@@ -38,7 +40,7 @@ class BackboneBase(nn.Module):
         num_channels(`int`):
             The number of the channels.
         return_interm_layers(`bool`):
-            If the model returns interm layers.
+            If the model returns intermediate layers.
     """
     def __init__(self,
                  backbone: nn.Module,
@@ -76,6 +78,16 @@ class BackboneBase(nn.Module):
 class Backbone(BackboneBase):
     """
     ResNet backbone with frozen BatchNorm.
+
+    Args:
+        name (`str`):
+            Backbone name.
+        train_backbone (`bool`):
+            The flag to control train mode for backbone.
+        return_interm_layers (`bool`):
+            The flag to return intermediate layers.
+        dilation (`bool`):
+            The flag to use dilated model.
     """
     def __init__(self, name: str,
                  train_backbone: bool,
