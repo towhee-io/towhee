@@ -221,9 +221,13 @@ class TransformerDecoder(nn.Module):
 
         return output.unsqueeze(0)
 
+
 class TransformerEncoderLayer(nn.Module):
     """
     TransformerEncoderLayer class.
+    Args:
+        encoder_layer (nn.Module): encoder module
+        num_layers (int): number of layers
     """
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.15, activation="relu"):
         super().__init__()
