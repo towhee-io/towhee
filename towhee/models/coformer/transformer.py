@@ -197,6 +197,9 @@ class TransformerEncoder(nn.Module):
 class TransformerDecoder(nn.Module):
     """
     TransformerDecoder class.
+    Args:
+        decoder_layer (nn.Module): dencoder module
+        num_layers (int): number of layers
     """
     def __init__(self, decoder_layer, num_layers):
         super().__init__()
