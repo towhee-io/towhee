@@ -24,10 +24,14 @@ class NetVLAD(nn.Module):
     NetVLAD layer implementation.
 
     Args:
-            num_clusters (`int`): The number of clusters
-            dim (`int`): Dimension of descriptors
-            alpha (`float`): Parameter of initialization. Larger value is harder assignment.
-            normalize_input (`bool`): If true, descriptor-wise L2 normalization is applied to input.
+        num_clusters (`int`):
+            The number of clusters.
+        dim (`int`):
+            Dimension of descriptors.
+        alpha (`float`):
+            Parameter of initialization. Larger value is harder assignment.
+        normalize_input (`bool`):
+            If true, descriptor-wise L2 normalization is applied to input.
     """
 
     def __init__(self, num_clusters: int = 64, dim: int = 128, alpha: float = 100.0,
@@ -78,8 +82,10 @@ class EmbedNet(nn.Module):
     Embed a base model and the net vlad to a new network.
 
     Args:
-            base_model (`int`): The base model that extracts image features
-            net_vlad (`int`): NetVLAD model to extract global features
+        base_model (`int`):
+            The base model that extracts image features.
+        net_vlad (`int`):
+            NetVLAD model to extract global features.
     """
     def __init__(self, base_model: torch.nn.Sequential, net_vlad: NetVLAD):
         super().__init__()
