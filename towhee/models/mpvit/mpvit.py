@@ -273,11 +273,16 @@ class ConvRelPosEnc(nn.Module):
     """Convolutional relative position encoding."""
 
     def __init__(self, ch, h, window):
-        """Initialization.
+        """
+        Initialization.
 
-        Ch: Channels per head.
-        h: Number of heads.
-        window: Window size(s) in convolutional relative positional encoding.
+        Args:
+            Ch (`int`):
+                Channels per head.
+            h (`int`):
+                Number of heads.
+            window (`int` or 'Dict'):
+                Window size(s) in convolutional relative positional encoding.
                 It can have two forms:
                 1. An integer of window size, which assigns all attention heads
                    with the same window size in ConvRelPosEnc.
