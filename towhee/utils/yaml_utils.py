@@ -16,7 +16,7 @@ from typing import Union, Dict, List
 
 try:
     # pylint: disable=unused-import,ungrouped-imports
-    import ruamel.yaml as ryaml
+    import ruamel.yaml
     from ruamel.yaml import YAML
 except ModuleNotFoundError as moduleNotFound:
     try:
