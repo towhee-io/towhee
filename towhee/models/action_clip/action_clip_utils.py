@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from collections import OrderedDict
+from typing import Dict
 
 import torch
 
 
-def map_state_dict(checkpoint, state_dict_name: str = None):
+def map_state_dict(checkpoint: Dict, state_dict_name: str = None):
     if state_dict_name and state_dict_name in checkpoint:
         old_state_dict = checkpoint[state_dict_name]
     else:
@@ -42,7 +43,7 @@ def get_similarity(text_features: torch.Tensor, visual_features: torch.Tensor, n
     return similarity
 
 
-def get_configs(model_name: str = None, **kwargs):
+def get_configs(model_name: str = None, **kwargs) -> Dict:
     configs = dict(
         visual_prompt_type='Transf',
         num_frames=8
