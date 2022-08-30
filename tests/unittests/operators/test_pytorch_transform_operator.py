@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import unittest
-from PIL import Image
 from torchvision import transforms
 import os
 
+from towhee.utils.pil_utils import PILImage as Image
 from tests.unittests.mock_operators import PYTORCH_TRANSFORM_OPERATOR_PATH, load_local_operator
 from tests.unittests import VIT_DIR
 

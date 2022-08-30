@@ -17,9 +17,9 @@ import unittest
 import numpy as np
 
 from pathlib import Path
-from PIL import Image as PILImage
 
 from towhee.types import Image
+from towhee.utils.pil_utils import PILImage
 from towhee.types.image_utils import from_pil, to_pil
 
 logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')

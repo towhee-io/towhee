@@ -16,12 +16,12 @@
 from typing import Any
 
 from torch import nn
-from PIL import Image
 
 import torch
 from torchvision import transforms
 import numpy as np
 
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.utils.cv2_utils import cv2
 from towhee.trainer.utils.file_utils import is_matplotlib_available
 from towhee.utils.log import models_log

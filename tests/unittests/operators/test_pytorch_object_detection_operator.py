@@ -19,8 +19,7 @@ import torchvision
 
 from pathlib import Path
 
-from PIL import Image
-
+from towhee.utils.pil_utils import PILImage as Image
 from tests.unittests.mock_operators import PYTORCH_OBJECT_DETECTION_OPERATOR_PATH, load_local_operator
 
 cache_path = Path(__file__).parent.parent.resolve()

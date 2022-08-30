@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import Optional, List, Any, Tuple
-from PIL import Image
 from torchvision import transforms
 from torchvision.io import read_image
 from pathlib import Path
 from torch import nn
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.trainer.optimization.optimization import get_scheduler, get_warmup_steps
 from towhee.trainer.utils.trainer_utils import _construct_scheduler_from_config
 from towhee.trainer.training_config import TrainingConfig
