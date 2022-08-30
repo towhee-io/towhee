@@ -215,6 +215,11 @@ class DagMixin:
         return self._clean_nops(self._control_plane.dag)
 
     def netx(self):
+        """show dags' relations.
+
+        Returns:
+            image: The dags' relations
+        """
         import networkx as nx
         from towhee.utils.matplotlib_utils import plt
         compiled_dag = self.compile_dag()
@@ -318,6 +323,7 @@ class DagMixin:
     @property
     def control_plane(self):
         return self._control_plane
+
 
 class ControlPlane:
     """
