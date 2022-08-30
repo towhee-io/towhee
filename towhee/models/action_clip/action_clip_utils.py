@@ -14,6 +14,8 @@
 
 from collections import OrderedDict
 
+import torch
+
 
 def map_state_dict(checkpoint, state_dict_name: str = None):
     if state_dict_name and state_dict_name in checkpoint:
@@ -29,7 +31,8 @@ def map_state_dict(checkpoint, state_dict_name: str = None):
     return new_state_dict
 
 
-def get_similarity(text_features, visual_features, num_text_augs, norm: bool = False):
+def get_similarity(text_features: torch.Tensor, visual_features: torch.Tensor, num_text_augs: int,
+                   norm: bool = False) -> torch.Tensor:
     if norm:
         text_features /= text_features.norm(dim=-1, keepdim=True)
         visual_features /= visual_features.norm(dim=-1, keepdim=True)
@@ -43,14 +46,14 @@ def get_configs(model_name: str = None, **kwargs):
     configs = dict(
         visual_prompt_type='Transf',
         num_frames=8
-        )
+    )
     configs.update(**kwargs)
     if model_name == 'clip_vit_b16':
         configs.update(
             num_frames=8
-            )
+        )
     elif model_name == 'clip_vit_b32':
         configs.update(
             num_frames=8
-            )
+        )
     return configs
