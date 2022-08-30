@@ -17,7 +17,8 @@ import unittest
 import torchvision
 
 from pathlib import Path
-from PIL import Image
+
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.models.layers.netvlad import NetVLAD, EmbedNet
 from torchvision.models import resnet18
 from torch import nn

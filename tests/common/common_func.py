@@ -1,7 +1,7 @@
 # coding : UTF-8
 
 import os
-from PIL import Image
+from towhee.utils.pil_utils import PILImage as Image
 
 
 def create_image(mode="RGB", size=(200, 200), color=(155, 155, 155)):

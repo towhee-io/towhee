@@ -65,6 +65,6 @@ def to_pil(img: Image):
             A PIL image.
     """
     # pylint: disable=import-outside-toplevel
-    from PIL import Image as PILImage
+    from towhee.utils.pil_utils import PILImage
 
     return PILImage.fromarray(img, img.mode)

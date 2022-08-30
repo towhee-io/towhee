@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import List, Tuple, Callable
-from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from torch import nn
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.models.visualization.transformer_visualization import _reshape_attr_and_get_heatmap
 from towhee.models import clip
 from towhee.models.clip import SimpleTokenizer

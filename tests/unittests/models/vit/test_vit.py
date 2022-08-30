@@ -15,12 +15,12 @@
 import unittest
 import os
 import json
-from PIL import Image
 import torch
+from tests.unittests import VIT_DIR
 from torchvision import transforms
 
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.models import vit
-from tests.unittests import VIT_DIR
 
 
 class VisionTransformerTest(unittest.TestCase):

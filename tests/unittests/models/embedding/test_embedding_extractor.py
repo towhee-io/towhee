@@ -18,8 +18,8 @@ import torch
 import os
 from torchvision.models import resnet34
 from torchvision import transforms
-from PIL import Image
 
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.models.embedding.embedding_extractor import EmbeddingExtractor
 
 

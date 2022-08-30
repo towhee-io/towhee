@@ -15,9 +15,10 @@ import unittest
 import torch
 
 from pathlib import Path
-from PIL import Image
 from torchvision import transforms
 from torchvision.models import resnet18
+
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.utils.matplotlib_utils import matplotlib
 from towhee.trainer.utils.plot_utils import image_folder_sample_show, image_folder_statistic, show_transform, \
     plot_lrs_for_config, plot_lrs_for_scheduler, interpret_image_classification

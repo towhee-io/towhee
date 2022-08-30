@@ -18,8 +18,10 @@ from towhee.utils.thirdparty.pandas_utils import pandas as pd
 import torch
 
 from pandas import Series
+
+# pylint: disable=ungrouped-imports
+from towhee.utils.pil_utils import PILImage as Image
 from torch.utils.data import Dataset
-from PIL import Image
 from torchvision import transforms
 from typing import Tuple
 

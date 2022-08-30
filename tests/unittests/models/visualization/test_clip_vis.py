@@ -15,7 +15,9 @@ import unittest
 import torch
 
 from pathlib import Path
-from PIL import Image
+
+
+from towhee.utils.pil_utils import PILImage as Image
 from towhee.utils.matplotlib_utils import matplotlib
 from towhee.models.visualization.clip_visualization import show_attention_for_clip
 from towhee.models.clip import clip

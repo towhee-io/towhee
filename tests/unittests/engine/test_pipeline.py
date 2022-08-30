@@ -13,12 +13,10 @@
 # limitations under the License.
 
 import unittest
-from PIL import Image
-# from shutil import rmtree
 
 from towhee import pipeline
 from towhee.errors import OpFailedError
-
+from towhee.utils.pil_utils import PILImage as Image
 from tests.unittests import CACHE_PATH
 
 
