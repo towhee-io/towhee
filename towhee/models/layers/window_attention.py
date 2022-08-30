@@ -21,17 +21,24 @@ from towhee.models.utils.weight_init import trunc_normal_
 
 
 class WindowAttention(nn.Module):
-    r""" Window based multi-head self attention (W-MSA) module with relative position bias.
+    r"""
+    Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
     Args:
-        dim (int): Number of input channels.
-        window_size (tuple[int]): The height and width of the window.
-        num_heads (int): Number of attention heads.
-        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value. Default: True
-        attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
-        proj_drop (float, optional): Dropout ratio of output. Default: 0.0
-        pretrained_window_size (tuple[int]): The height and width of the window in pre-training.
-
+        dim (`int`):
+            Number of input channels.
+        window_size (`tuple[int]`):
+            The height and width of the window.
+        num_heads (`int`):
+            Number of attention heads.
+        qkv_bias (`bool`):
+            If True, add a learnable bias to query, key, value. Default: True
+        attn_drop (`float`):
+            Dropout ratio of attention weight. Default: 0.0
+        proj_drop (`float`):
+            Dropout ratio of output. Default: 0.0
+        pretrained_window_size (`tuple[int]`):
+            The height and width of the window in pre-training.
     """
 
     def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0., is_v2=False,
