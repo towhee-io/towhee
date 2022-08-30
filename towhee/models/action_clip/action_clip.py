@@ -18,9 +18,9 @@ import torch.cuda
 from torch import nn
 
 from towhee.models import clip
-from .action_clip_utils import map_state_dict, get_configs
-from .text_prompt import text_prompt
-from .visual_prompt import VisualPrompt
+from towhee.models.action_clip.action_clip_utils import map_state_dict, get_configs
+from towhee.models.action_clip.text_prompt import text_prompt
+from towhee.models.action_clip.visual_prompt import VisualPrompt
 
 
 class ActionClip:
@@ -35,18 +35,19 @@ class ActionClip:
         - text_prompt_flat (`bool`):
             Flag to control whether to use text prompt.
     """
+
     def __init__(
             self,
             clip_model: nn.Module,
             visual_prompt: nn.Module = None,
             text_prompt_flag: bool = True
-            ):
+    ):
         super().__init__()
         self.clip_model = clip_model
         self.visual_prompt = visual_prompt
         self.text_prompt_flag = text_prompt_flag
 
-    def encode_video(self, video):
+    def encode_video(self, video: torch.Tensor):
         b, t, c, h, w = video.size()
         frames = video.view(-1, c, h, w)
         if hasattr(self.clip_model, "encode_image"):
@@ -77,7 +78,7 @@ def create_model(
         device: str = None,
         checkpoints: dict = None,
         cfg: dict = None
-        ) -> ActionClip:
+) -> ActionClip:
     """
     Create action clip model
     Args:
