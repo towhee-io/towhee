@@ -155,7 +155,7 @@ class MetricMixin:
 
     def report(self):
         """
-        report the metric scores
+        Report the metric scores, and if you are using 'confusion matrix' metric, please use jupyter to display the matrix.
 
         Examples:
 
