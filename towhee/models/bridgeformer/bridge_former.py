@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from towhee.models import clip
-from towhee.models.clip import CLIP
 from towhee.models.frozen_in_time import FrozenInTime
 from towhee.models.bridgeformer.bridge_former_training import BridgeFormerTraining
 from towhee.models.frozen_in_time.frozen_utils import state_dict_data_parallel_fix
@@ -32,7 +31,7 @@ def create_model(
 
     Args:
         model_name (`str`):
-            - "clip_initialized_model": use the clip_initialized_model.
+            - "clip_initialized_model": use the clip_vit_b32 model.
             - "bridge_former_training": use the bridge former training model Architecture.
             - Others: use the default inference bridge former model Architecture.
         pretrained (`bool`):
@@ -48,8 +47,9 @@ def create_model(
         raise AssertionError("if pretrained is true, weights_path needs to be specified")
 
     if model_name == "clip_initialized_model":
+        model = clip.create_model(model_name="clip_vit_b32", pretrained=False,
+                                  is_bridge_former=True, is_bridge_former_video=True, **kwargs)
         if pretrained:
-            model = clip.create_model(model_name="clip_vit_b32", pretrained=False)
             checkpoint = torch.load(weights_path, map_location=device)
             state_dict = checkpoint["state_dict"]
             state_dict = state_dict_data_parallel_fix(state_dict, model.state_dict())
@@ -61,10 +61,6 @@ def create_model(
                 convert_weights(model)
             model.load_state_dict(state_dict, strict=True)
 
-        else:
-            model = CLIP(
-                is_bridge_former=True, is_bridge_former_video=True, **kwargs
-            )
     elif model_name == "bridge_former_training":
         model = BridgeFormerTraining(weights_path=weights_path,
                                      is_pretrained=pretrained,
