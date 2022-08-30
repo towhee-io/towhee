@@ -19,13 +19,24 @@ from torch import einsum, nn
 import torch.nn.functional as F
 
 from einops import rearrange, repeat
-from towhee.models.layers.cross_attention import LayerNorm, Residual, RotaryEmbedding, apply_rotary_pos_emb, CrossAttention
+from towhee.models.layers.cross_attention import LayerNorm, Residual, RotaryEmbedding, apply_rotary_pos_emb, \
+    CrossAttention
 from towhee.models.layers.activations.swiglu import SwiGLU
+
 
 class ParallelTransformerBlock(nn.Module):
     """
-    parallel attention and feedforward with residual
-    discovered by Wang et al + EleutherAI from GPT-J fame
+    Parallel attention and feedforward with residual discovered by Wang et al + EleutherAI from GPT-J fame.
+
+    Args:
+        dim (`int`):
+            Dimension of features.
+        dim_head (`int`):
+            Head of fused dimensions.
+        heads (`int`):
+            Number of heads.
+        ff_mult (`int`):
+            Multiple number for feedforward.
     """
     def __init__(self, dim, dim_head=64, heads=8, ff_mult=4):
         super().__init__()
@@ -36,7 +47,7 @@ class ParallelTransformerBlock(nn.Module):
         self.fused_dims = (attn_inner_dim, dim_head, dim_head, (ff_inner_dim * 2))
 
         self.heads = heads
-        self.scale = dim_head**-0.5
+        self.scale = dim_head ** -0.5
         self.rotary_emb = RotaryEmbedding(dim_head)
 
         self.fused_attn_ff_proj = nn.Linear(dim, sum(self.fused_dims), bias=False)
@@ -70,68 +81,58 @@ class ParallelTransformerBlock(nn.Module):
 
     def forward(self, x, attn_mask=None):
         """
-        einstein notation
-        b - batch
-        h - heads
-        n, i, j - sequence length (base sequence length, source, target)
-        d - feature dimension
+        Einstein notation:
+            - b: batch
+            - h: heads
+            - n, i, j: sequence length (base sequence length, source, target)
+            - d: feature dimension
         """
 
         n, device, h = x.shape[1], x.device, self.heads
 
         # pre layernorm
-
         x = self.norm(x)
 
         # attention queries, keys, values, and feedforward inner
-
         q, k, v, ff = self.fused_attn_ff_proj(x).split(self.fused_dims, dim=-1)
 
         # split heads
         # they use multi-query single-key-value attention, yet another Noam Shazeer paper
         # they found no performance loss past a certain scale, and more efficient decoding obviously
         # https://arxiv.org/abs/1911.02150
-
         q = rearrange(q, "b n (h d) -> b h n d", h=h)
 
         # rotary embeddings
-
         positions = self.get_rotary_embedding(n, device)
         q, k = map(lambda t: apply_rotary_pos_emb(positions, t), (q, k))
 
         # scale
-
         q = q * self.scale
 
         # similarity
-
         sim = einsum("b h i d, b j d -> b h i j", q, k)
 
         # causal mask
-
         causal_mask = self.get_mask(n, device)
         sim = sim.masked_fill(causal_mask, -torch.finfo(sim.dtype).max)
 
         # extra attention mask - for masking out attention from text CLS token to padding
-
         if attn_mask is not None:
             attn_mask = rearrange(attn_mask, "b i j -> b 1 i j")
             # pylint: disable=E1130
             sim = sim.masked_fill(~attn_mask, -torch.finfo(sim.dtype).max)
 
         # attention
-
         sim = sim - sim.amax(dim=-1, keepdim=True).detach()
         attn = sim.softmax(dim=-1)
 
         # aggregate values
-
         out = einsum("b h i j, b j d -> b h i d", attn, v)
 
         # merge heads
-
         out = rearrange(out, "b h n d -> b n (h d)")
         return self.attn_out(out) + self.ff_out(ff)
+
 
 class CoCa(nn.Module):
     """
@@ -159,22 +160,23 @@ class CoCa(nn.Module):
         contrastive_loss_weight (`float`):
             weight on the contrastive loss between image and text CLS embeddings.
     """
+
     def __init__(
-        self,
-        *,
-        dim,
-        num_tokens,
-        unimodal_depth,
-        multimodal_depth,
-        image_dim = None,
-        num_img_queries=256,
-        dim_head=64,
-        heads=8,
-        ff_mult=4,
-        img_encoder=None,
-        caption_loss_weight=1.,
-        contrastive_loss_weight=1.,
-        pad_id=0
+            self,
+            *,
+            dim,
+            num_tokens,
+            unimodal_depth,
+            multimodal_depth,
+            image_dim=None,
+            num_img_queries=256,
+            dim_head=64,
+            heads=8,
+            ff_mult=4,
+            img_encoder=None,
+            caption_loss_weight=1.,
+            contrastive_loss_weight=1.,
+            pad_id=0
     ):
         super().__init__()
         self.dim = dim
@@ -195,7 +197,8 @@ class CoCa(nn.Module):
         # attention pooling for image tokens
 
         self.img_queries = nn.Parameter(torch.randn(num_img_queries + 1, dim))
-        self.img_attn_pool = CrossAttention(dim=dim, context_dim=image_dim, dim_head=dim_head, heads=heads, norm_context=True)
+        self.img_attn_pool = CrossAttention(dim=dim, context_dim=image_dim, dim_head=dim_head, heads=heads,
+                                            norm_context=True)
 
         self.img_attn_pool_norm = LayerNorm(dim)
         self.text_cls_norm = LayerNorm(dim)
@@ -248,7 +251,7 @@ class CoCa(nn.Module):
         # create specific mask for text cls token at the end
         # to prevent it from attending to padding
 
-        cls_mask = rearrange(text!=self.pad_id, "b j -> b 1 j")
+        cls_mask = rearrange(text != self.pad_id, "b j -> b 1 j")
         attn_mask = F.pad(cls_mask, (0, 1, seq, 0), value=True)
 
         # go through unimodal layers
@@ -282,13 +285,13 @@ class CoCa(nn.Module):
         return img_queries[:, 0], img_queries[:, 1:]
 
     def forward(
-        self,
-        text,
-        images=None,
-        image_tokens=None,
-        labels=None,
-        return_loss=False,
-        return_embeddings=False
+            self,
+            text,
+            images=None,
+            image_tokens=None,
+            labels=None,
+            return_loss=False,
+            return_embeddings=False
     ):
         batch, device = text.shape[0], text.device
 
