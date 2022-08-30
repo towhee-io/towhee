@@ -26,6 +26,7 @@ def completion_callback(user_data, result, error):
     # passing error raise and handling out
     user_data.completed_requests.put((result, error))
 
+
 class Client():
     @staticmethod
     def init(url, model_name='pipeline', stream=False, protocol='grpc'):
@@ -36,6 +37,7 @@ class Client():
                 return GrpcStreamClient(url, model_name)
             else:
                 return GrpcClient(url, model_name)
+
 
 class HttpClient():
     '''
@@ -104,6 +106,7 @@ class HttpClient():
                 res_dict[output_name] = responses[i].as_numpy(output_name)
             res.append(res_dict)
         return res, None
+
 
 class GrpcClient():
     '''
@@ -193,6 +196,7 @@ class GrpcClient():
                 res_dict[output_name] = responses[i].as_numpy(output_name)
             res.append(res_dict)
         return res, error_dict
+
 
 class GrpcStreamClient():
     '''
