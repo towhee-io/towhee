@@ -50,38 +50,38 @@ class MultiScaleBlock(nn.Module):
                                         ↓                   |
                                     Summation  ←------------+
     Args:
-        dim(int):
+        dim (`int`):
             Input feature dimension.
-        dim_out(int):
+        dim_out (`int`):
             Output feature dimension.
-        num_heads(int):
+        num_heads (`int`):
             Number of heads in the attention layer.
-        mlp_ratio(float):
+        mlp_ratio (`float`):
             MLP ratio which controls the feature dimension in the hidden layer of the MLP block.
-        qkv_bias(bool):
+        qkv_bias (`bool`):
             If set to False, the qkv layer will not learn an additive bias.
-        dropout_rate(float):
+        dropout_rate (`float`):
             DropOut rate. If set to 0, DropOut is disabled.
-        droppath_rate(float):
+        droppath_rate (`float`):
             DropPath rate. If set to 0, DropPath is disabled.
-        activation(nn.Module):
+        activation (`nn.Module`):
             Activation layer used in the MLP layer.
-        norm_layer(nn.Module):
+        norm_layer (`nn.Module`):
             Normalization layer.
-        kernel_q(_size_3_t):
+        kernel_q (`_size_3_t`):
             Pooling kernel size for q. If pooling kernel size is 1 for all the dimensions.
-        kernel_kv(_size_3_t):
+        kernel_kv (`_size_3_t`):
             Pooling kernel size for kv. If pooling kernel size is 1 for all the dimensions, pooling is not used.
-        stride_q(_size_3_t):
+        stride_q (`_size_3_t`):
             Pooling kernel stride for q.
-        stride_kv(_size_3_t):
+        stride_kv (`_size_3_t`):
             Pooling kernel stride for kv.
-        pool_mode(nn.Module):
+        pool_mode (`nn.Module`):
             Pooling mode.
-        has_cls_embed(bool):
+        has_cls_embed (`bool`):
             If set to True, the first token of the input tensor should be a cls token.
             Otherwise, the input tensor does not contain a cls token. Pooling is not applied to the cls token.
-        pool_first(bool):
+        pool_first (`bool`):
             If set to True, pool is applied before qkv projection. Otherwise, pool is applied after qkv projection.
     """
 
@@ -152,9 +152,9 @@ class MultiScaleBlock(nn.Module):
     ) -> Tuple[torch.Tensor, List[int]]:
         """
         Args:
-            x(torch.Tensor):
+            x (`torch.Tensor`):
                 Input tensor.
-            thw_shape(List):
+            thw_shape (`List`):
                 The shape of the input tensor (before flattening).
         """
 
