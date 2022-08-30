@@ -40,6 +40,14 @@ class Client():
 class HttpClient():
     '''
     triton HttpClient
+
+    Args:
+        url(`string`):
+            triton server's ip
+            example: '127.0.0.1'
+        model_name(`string`):
+            model name
+            example: 'pipeline'
     '''
     def __init__(self, url, model_name):
         self.client = httpclient.InferenceServerClient(url)
@@ -100,6 +108,14 @@ class HttpClient():
 class GrpcClient():
     '''
     triton GrpcClient
+
+    Args:
+        url(`string`):
+            triton server's ip
+            example: '127.0.0.1'
+        model_name(`string`):
+            model name
+            example: 'pipeline'
     '''
     def __init__(self, url, model_name):
         self.client = grpcclient.InferenceServerClient(url)
@@ -180,7 +196,15 @@ class GrpcClient():
 
 class GrpcStreamClient():
     '''
-    triton streamClient
+    triton GrpcStreamClient
+
+    Args:
+        url(`string`):
+            triton server's ip
+            example: '127.0.0.1'
+        model_name(`string`):
+            model name
+            example: 'pipeline'
     '''
     def __init__(self, url, model_name):
         self.client = grpcclient.InferenceServerClient(url)
