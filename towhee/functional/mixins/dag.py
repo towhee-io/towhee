@@ -56,7 +56,7 @@ def register_dag(f):
             # if has op_config, update op_config
             if self.op_config is not None:
                 info['op_config'].update(self.op_config)
-            self.get_control_plane().dag[self.id] = info
+            self.control_plane.dag[self.id] = info
             return children
         # If not called from a dc, think static or class method.
         else:
@@ -85,7 +85,7 @@ def register_dag(f):
             # If not called from a dc, it means that it is a start method
             # so it must be added to the childrens dags.
             for x in children if isinstance(children, list) else  [children]:
-                x.get_control_plane().dag['start'] = info
+                x.control_plane.dag['start'] = info
             return children
 
     return wrapper
@@ -301,7 +301,8 @@ class DagMixin:
     def _clean_streams(self, dag):
         raise NotImplementedError
 
-    def get_control_plane(self):
+    @property
+    def control_plane(self):
         return self._control_plane
 
 class ControlPlane:
