@@ -49,6 +49,11 @@ class ContextGating(nn.Module):
 class GatedEmbeddingUnit(nn.Module):
     """
     Gated Embedding Unit
+    Args:
+        input_dimension (int): dimension of input
+        output_dimension (int): dimension of output
+        use_bn (bool): use batch normalization
+        normalize (bool): normalization
     """
 
     def __init__(self, input_dimension, output_dimension, use_bn, normalize):
