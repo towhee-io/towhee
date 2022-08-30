@@ -34,12 +34,18 @@ class MBConv(nn.Module):
         Proj is the shrink 1 X 1 convolution.
         Note: This implementation differs slightly from the original MobileNet implementation!
     Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        downscale (bool, optional): If true downscale by a factor of two is performed. Default: False
-        act_layer (Type[nn.Module], optional): Type of activation layer to be utilized. Default: nn.GELU
-        norm_layer (Type[nn.Module], optional): Type of normalization layer to be utilized. Default: nn.BatchNorm2d
-        drop_path (float, optional): Dropout rate to be applied during training. Default 0.
+        in_channels (`int`):
+            Number of input channels.
+        out_channels (`int`):
+            Number of output channels.
+        downscale (`bool`):
+            If true downscale by a factor of two is performed. Default: False
+        act_layer (`nn.Module`):
+            Type of activation layer to be utilized. Default: nn.GELU
+        norm_layer (`nn.Module`):
+            Type of normalization layer to be utilized. Default: nn.BatchNorm2d
+        drop_path (`float`):
+            Dropout rate to be applied during training. Default 0.
     """
 
     def __init__(
