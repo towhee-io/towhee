@@ -15,7 +15,7 @@
 
 class StatefulExecution:
     """
-    Execute a stateful operator
+    Stateful execution of an operator.
     """
 
     def train(self, *arg, **kws):
