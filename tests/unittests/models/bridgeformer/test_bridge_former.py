@@ -34,11 +34,10 @@ class BridgeFormerTest(unittest.TestCase):
     dummy_ans = {"input_ids": input_ids, "attention_mask": attention_mask}
     dummy_question = {"input_ids": input_ids, "attention_mask": attention_mask}
 
-    def test_without_all_pretrained(self):
-        '''
-        do not use any pretrained model
-        Returns:None
-        '''
+    def test_base(self):
+        """
+        Test BridgeFormer without model_name=None & pretrained=False.
+        """
 
         model = create_model(pretrained=False,
                              img_size=self.image_size, patch_size=self.patch_size,
@@ -51,12 +50,11 @@ class BridgeFormerTest(unittest.TestCase):
         text_with_video_sim = sim_matrix(text_embeddings, video_embeddings)
         self.assertEqual(text_with_video_sim.shape, (1, 1))
 
-    def test_without_all_pretrained_with_clip_initialized_model(self):
-        model = create_model(pretrained=False, model_name="clip_initialized_model", embed_dim=512,
-                             image_resolution=self.image_size, vision_layers=12, vision_width=768,
+    def test_clip_initialized_model(self):
+        model = create_model(model_name="clip_initialized_model", pretrained=False,
+                             image_resolution=self.image_size,
                              vision_patch_size=self.patch_size,
-                             context_length=self.text_len, vocab_size=49408, transformer_width=512, transformer_heads=8,
-                             transformer_layers=12,
+                             context_length=self.text_len
                              )
         text_embeddings = model.encode_text(self.input_ids)
         video_embeddings = model.encode_image(self.dummy_video)
@@ -65,7 +63,7 @@ class BridgeFormerTest(unittest.TestCase):
         text_with_video_sim = sim_matrix(text_embeddings, video_embeddings)
         self.assertEqual(text_with_video_sim.shape, (1, 1))
 
-    def test_without_all_pretrained_for_bridge_former_training(self):
+    def test_bridge_former_training(self):
         model = create_model(pretrained=False, model_name="bridge_former_training",
                              img_size=self.image_size, patch_size=self.patch_size,
                              in_chans=self.in_chans,
