@@ -106,6 +106,12 @@ class Backbone(BackboneBase):
 class Joiner(nn.Sequential):
     """
     Joiner class.
+
+    Args:
+        backbone (`Backbone`):
+            ResNet backbone with frozen BatchNorm.
+        position_embedding (`nn.Module`):
+            Position embedding layer.
     """
     # pylint: disable=W0235
     def __init__(self, backbone, position_embedding):
@@ -134,10 +140,7 @@ def build_backbone(
                                                  hidden_dim=hidden_dim,
                                                  position_embedding=position_embedding,
                                                 )
-    train_backbone = False
-    return_interm_layers = False
-    dilation = False
-    backbone = Backbone(backbone, train_backbone, return_interm_layers, dilation)
+    backbone = Backbone(backbone, train_backbone=False, return_interm_layers=False, dilation=False)
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
