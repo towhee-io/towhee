@@ -16,14 +16,14 @@ import unittest
 import numpy as np
 
 from towhee.types import Image
+from towhee._types import Image as LegacyImage
 
 
 class TestImage(unittest.TestCase):
     """
     Test Image class.
     """
-
-    def test_base(self):
+    def towhee_image(self, ImageClass):  # pylint: disable=invalid-name
 
         img_height = 600
         img_width = 400
@@ -32,9 +32,8 @@ class TestImage(unittest.TestCase):
 
         img_array = np.random.rand(img_height, img_width, img_channel)
         array_size = img_array.shape
-        towhee_img = Image(img_array, img_mode)
+        towhee_img = ImageClass(img_array, img_mode)
 
-        self.assertIsInstance(towhee_img, Image)
         self.assertEqual(towhee_img.width, img_width)
         self.assertEqual(towhee_img.height, img_height)
         self.assertEqual(towhee_img.channel, img_channel)
@@ -46,6 +45,10 @@ class TestImage(unittest.TestCase):
         self.assertEqual(array_size[2], img_channel)
 
         self.assertTrue((towhee_img == img_array).all())
+
+    def test_image(self):
+        self.towhee_image(Image)
+        self.towhee_image(LegacyImage)
 
 
 if __name__ == '__main__':
