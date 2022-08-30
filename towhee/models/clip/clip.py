@@ -32,6 +32,10 @@ warnings.filterwarnings("ignore", category=UserWarning)
 class Bottleneck(nn.Module):
     """
     BottleNeck
+    Args:
+        inplanes (int): number of inplanes
+        planes (int): number of planes
+        stride (int): number of stride
     """
     expansion = 4
 
