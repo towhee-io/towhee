@@ -19,7 +19,8 @@ from towhee.utils.thirdparty.pyarrow_utils import pa
 
 
 class _TensorArrayType(pa.PyExtensionType):
-    """Tensor array type
+    """
+    Tensor array type
     """
 
     def __init__(self, shape: Tuple[int, ...], dtype: pa.DataType):
@@ -45,7 +46,8 @@ class _TensorArrayType(pa.PyExtensionType):
 
 
 class TensorArray(pa.ExtensionArray):
-    """Array for ndarrays
+    """
+    Array for ndarrays
 
     Examples:
 
