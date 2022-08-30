@@ -27,6 +27,9 @@ from towhee.models.mdmmt.bert_mmt import BertMMT
 class ContextGating(nn.Module):
     """
     Context Gating Layer
+    Args:
+        dimension (int): dimension
+        add_batch_norm (bool): add batch normalization
     """
 
     def __init__(self, dimension, add_batch_norm=True):
