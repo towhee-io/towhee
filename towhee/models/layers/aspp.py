@@ -6,6 +6,12 @@ from torch import nn
 class ASPP(nn.Module):
     """
     Atrous spatial pyramid pooling used in object detection and segmentation.
+
+    Args:
+        in_channels (`int`):
+            Number of input channels.
+        depth (`int`):
+            Hidden dimension.
     """
     def __init__(self, in_channel=512, depth=256):
         super().__init__()
