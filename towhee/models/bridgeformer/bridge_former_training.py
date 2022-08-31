@@ -61,20 +61,20 @@ class BridgeFormerTraining(nn.Module):
     """
 
     def __init__(self,
-                 img_size=224,
-                 patch_size=16,
-                 in_chans=3,
-                 num_frames=4,
-                 is_pretrained=False,
-                 weights_path='',
-                 projection_dim=256,
-                 video_pretrained_model='vit_base_16x224',
-                 video_is_load_pretrained=False,
-                 text_pretrained_model='distilbert-base-uncased',
-                 text_is_load_pretrained=False,
-                 projection='minimal',
-                 device='cpu',
-                 pretrained_url=''
+                 img_size: int = 224,
+                 patch_size: int = 16,
+                 in_chans: int = 3,
+                 num_frames: int = 4,
+                 is_pretrained: bool = False,
+                 weights_path: str = '',
+                 projection_dim: int = 256,
+                 video_pretrained_model: str = 'vit_base_16x224',
+                 video_is_load_pretrained: bool = False,
+                 text_pretrained_model: str = 'distilbert-base-uncased',
+                 text_is_load_pretrained: bool = False,
+                 projection: str = 'minimal',
+                 device: str = 'cpu',
+                 pretrained_url: str = ''
                  ):
         super().__init__()
 

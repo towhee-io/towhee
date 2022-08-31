@@ -38,17 +38,19 @@ def op(operator_src: str,
        tag: str = 'main',
        arg: List[Any] = [],
        kwargs: Dict[str, Any] = {}):
-    """
+    """Create the supplied operator.
+
     Entry method which takes either operator tasks or paths to python files or class in notebook.
     An `Operator` object is created with the init args(kwargs).
+
     Args:
-        operator_src (`str`):
-            operator name or python file location or class in notebook.
-        tag (`str`):
-            Which tag to use for operators on hub, defaults to `main`.
-    Returns
-        (`typing.Any`)
-            The `Operator` output.
+        operator_src (str): Operator name or python file location or class in notebook.
+        tag (str, optional): Which tag to use for operators on hub. Defaults to 'main'.
+        arg (List[Any], optional): Operator `args` to pass in. Defaults to [].
+        kwargs (Dict[str, Any], optional): Operator `kwargs` to pass in. Defaults to {}.
+
+    Returns:
+        operator: The operator.
     """
     if isinstance(operator_src, type):
         class_op = type('operator', (operator_src, ), kwargs)
@@ -67,7 +69,7 @@ class _OperatorLazyWrapper(  #
         StatefulExecution,  #
         VectorizedExecution):
     """
-    operator wrapper for lazy initialization. Inherits from different execution strategies.
+    Operator wrapper for lazy initialization. Inherits from different execution strategies.
     """
 
     def __init__(self,
@@ -130,14 +132,12 @@ DEFAULT_PIPELINES = {
 
 
 class _PipelineWrapper:
-    """
-    A wrapper class around `Pipeline`.
+    """A wrapper class around `Pipeline`.
 
     The class prevents users from having to create `DataFrame` instances by hand.
 
     Args:
-        pipeline_ (`towhee.Pipeline`):
-            Base `Pipeline` instance for which this object will provide a wrapper for.
+        pipeline_ (towhee.Pipeline): Base `Pipeline` instance for which this object will provide a wrapper for.
     """
 
     def __init__(self, pipeline_: Pipeline):
@@ -183,23 +183,18 @@ def pipeline(pipeline_src: str,
              tag: str = 'main',
              install_reqs: bool = True,
              **kwargs):
-    """
-    Entry method which takes either an input task or path to an operator YAML.
+    """Entry method which takes either an input task or path to an operator YAML.
 
     A `Pipeline` object is created (based on said task) and subsequently added to the
     existing `Engine`.
 
     Args:
-        pipeline_src (`str`):
-            pipeline name or YAML file location to use.
-        tag (`str`):
-            Which tag to use for operators/pipelines on hub, defaults to `main`.
-        install_reqs (`bool`):
-            Whether to download the python packages if a requirements.txt file is included in the repo.
+        pipeline_src (str): Pipeline name or YAML file location to use.
+        tag (str, optional):  Which tag to use for operators/pipelines on hub. Defaults to 'main'.
+        install_reqs (bool, optional): Whether to download the python packages if a requirements.txt file is included in the repo.. Defaults to True.
 
-    Returns
-        (`typing.Any`)
-            The `Pipeline` output.
+    Returns:
+        _PipelineWrapper:  The `Pipeline` output.
     """
     from_ops = kwargs['from_ops'] if 'from_ops' in kwargs else False
     start_engine()
@@ -221,8 +216,7 @@ def pipeline(pipeline_src: str,
 
 
 class _PipelineBuilder:
-    """
-    Build a pipeline with template variables.
+    """Build a pipeline with template variables.
 
     A pipeline template is a yaml file contains `template variables`,
     which will be replaced by `variable values` when createing pipeline instance.
@@ -261,7 +255,8 @@ class _PipelineBuilder:
 
 @dynamic_dispatch
 def ops(*arg, **kws):
-    """
+    """Create operator instance.
+
     Entry point for creating operator instances, for example:
 
     >>> op_instance = ops.my_namespace.my_repo_name(init_arg1=xxx, init_arg2=xxx)
@@ -276,7 +271,8 @@ def ops(*arg, **kws):
 
 @dynamic_dispatch
 def pipes(*arg, **kws):
-    """
+    """Create pipeline instance.
+
     Entry point for creating pipeline instances, for example:
 
     >>> pipe_instance = pipes.my_namespace.my_repo_name(init_arg1=xxx, init_arg2=xxx)
