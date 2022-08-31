@@ -83,8 +83,10 @@ class OperatorLoader:
         Args:
             path (`Union[str, Path]`):
                 Path to the operator python file.
-            args (`Dict[str, Any]`):
+            arg (`List[str, Any]`):
                 The init args for OperatorClass.
+            kws (`Dict[str, Any]`):
+                The init kwargs for OperatorClass.
         Returns
             (`typing.Any`)
                 The `Operator` output.
