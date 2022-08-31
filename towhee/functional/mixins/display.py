@@ -125,7 +125,7 @@ def _plot_callback(self): # pragma: no cover
 
 class DisplayMixin: # pragma: no cover
     """
-    Mixin for display data.
+    Mixin for displaying data.
     """
 
     def __init__(self):
@@ -137,19 +137,13 @@ class DisplayMixin: # pragma: no cover
         return self._factory(map(str, self._iterable))
 
     def show(self, limit=5, header=None, tablefmt='html', formatter={}):
-        """
-        Print the first n lines of a DataCollection.
+        """Print the first n lines of a DataCollection.
 
         Args:
-            limit (`int`):
-                The number of lines to print. Default value is 5.
-                Print all if limit is non-positive.
-            header (list of `str`):
-                The field names.
-            tablefmt (`str`):
-                The format of the output, support html, plain, grid.
+            limit (int, optional): The number of lines to print. Prints all if limit is negative. Defaults to 5.
+            header (_type_, optional): The field names. Defaults to None.
+            tablefmt (str, optional): The format of the output, supports html, plain, grid.. Defaults to 'html'.
         """
-
         # pylint: disable=protected-access
         contents = [x for i, x in enumerate(self._iterable) if i < limit]
 
@@ -166,14 +160,14 @@ class DisplayMixin: # pragma: no cover
 
 
 def table_display(table, tablefmt='html'):  # pragma: no cover
-    """
-    Display table
+    """_summary_
 
     Args:
-        table (`str`):
-            Table in printable format, such as HTML.
-        tablefmt (`str`):
-            The format of the output, support html, plain, grid.
+        table (str): Table in printable format, such as HTML.
+        tablefmt (str, optional): The format of the output, supports html, plain, grid. Defaults to 'html'.
+
+    Raises:
+        ValueError: Unsupported table format.
     """
     # pylint: disable=import-outside-toplevel
     from towhee.utils.thirdparty.ipython_utils import display, HTML
@@ -187,16 +181,18 @@ def table_display(table, tablefmt='html'):  # pragma: no cover
 
 
 def to_printable_table(data, header=None, tablefmt='html', formatter={}):  # pragma: no cover
-    """
-    Convert two dimensional data structure into printable table
+    """Convert two dimensional data structure into printable table
 
     Args:
-        data (`List[List]`, or `List[Dict]`):
-            The data filled into table. If a list of dict is given, keys are used as column names.
-        header (`Iterable[str]`):
-            The name of columns defined by users.
-        tablefmt (`str`):
-            The format of the output, support html, plain, grid.
+        data (List[List], or List[Dict]): The data filled into table. If a list of dict is given, keys are used as column names.
+        header (Iterable[str]), optional): The names of columns defined by user. Defaults to None.
+        tablefmt (str, optional): The format of the output, supports html, plain, grid.. Defaults to 'html'.
+
+    Raises:
+        ValueError: Unsupported table format
+
+    Returns:
+        str: The table.
     """
     header = [] if not header else header
 
@@ -209,16 +205,15 @@ def to_printable_table(data, header=None, tablefmt='html', formatter={}):  # pra
 
 
 def to_plain_table(data, header, tablefmt):  # pragma: no cover
-    """
-    Convert two dimensional data structure into plain table
+    """Convert two dimensional data structure into plain table
 
     Args:
-        data (`List[List]`, or `List[Dict]`):
-            The data filled into table. If a list of dict is given, keys are used as column names.
-        header (`Iterable[str]`):
-            The name of columns defined by users.
-        tablefmt (`str`):
-            The format of the output, support plain, grid.
+        data (List[List] or List[Dict]): The data filled into table. If a list of dict is given, keys are used as column names.
+        header (Iterable[str]): The names of columns defined by user.
+        tablefmt (str): The format of the output, supports plain, grid.
+
+    Returns:
+        str: The table in plain format.
     """
     # pylint: disable=import-outside-toplevel
     from tabulate import tabulate
@@ -250,14 +245,14 @@ def _to_plain_cell(data):  # pragma: no cover
 
 
 def to_html_table(data, header, formatter={}):  # pragma: no cover
-    """
-    Convert two dimensional data structure into html table
+    """Convert two dimensional data structure into html table
 
     Args:
-        data (`List[List]`, or `List[Dict]`):
-            The data filled into table. If a list of dict is given, keys are used as column names.
-        header (`Iterable[str]`):
-            The name of columns defined by users.
+        data (List[List] or List[Dict]): The data filled into table. If a list of dict is given, keys are used as column names.
+        header (Iterable[str]): The names of columns defined by user.
+
+    Returns:
+        str: The table in html format.
     """
     tb_style = 'style="border-collapse: collapse;"'
     th_style = 'style="text-align: center; font-size: 130%; border: none;"'
