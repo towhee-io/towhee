@@ -136,7 +136,7 @@ class _PipelineWrapper:
     The class prevents users from having to create `DataFrame` instances by hand.
 
     Args:
-        pipeline (`towhee.Pipeline`):
+        pipeline_ (`towhee.Pipeline`):
             Base `Pipeline` instance for which this object will provide a wrapper for.
     """
 
