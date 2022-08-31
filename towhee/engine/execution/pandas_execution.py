@@ -15,7 +15,7 @@
 
 class PandasExecution:
     """
-    Execute operator on pandas DataFrame
+    Pandas execution of operator on DataFrame.
     """
     def __dataframe_apply__(self, df):
         self.__check_init__()
