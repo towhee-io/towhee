@@ -209,9 +209,3 @@ class OperatorRegistry:
             return cls
 
         return wrapper
-
-
-if __name__ == '__main__':
-    import doctest
-
-    doctest.testmod(verbose=False)
