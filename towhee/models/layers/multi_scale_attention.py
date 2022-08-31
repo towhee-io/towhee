@@ -47,34 +47,34 @@ class MultiScaleAttention(nn.Module):
                                          ↓
                                       DropOut
     Args:
-        dim(int):
+        dim(`int`):
             Input feature dimension.
-        num_heads(int):
+        num_heads(`int`):
             number of heads in the attention layer.
-        qkv_bias(bool):
+        qkv_bias(`bool`):
             If set to False, the qkv layer will not learn an additive bias.
-        dropout_rate(float):
+        dropout_rate(`float`):
             Dropout rate.
-        kernel_q(_size_3_t):
+        kernel_q(`_size_3_t`):
             Pooling kernel size for q. If both pooling kernel
             size and pooling stride size are 1 for all the dimensions, pooling is disabled.
-        kernel_kv(_size_3_t):
+        kernel_kv(`_size_3_t`):
             Pooling kernel size for kv. If both pooling kernel size and pooling stride size
             are 1 for all the dimensions, pooling is disabled.
-        stride_q(_size_3_t):
+        stride_q(`_size_3_t`):
             Pooling kernel stride for q.
-        stride_kv(_size_3_t):
+        stride_kv(`_size_3_t`):
             Pooling kernel stride for kv.
-        norm_layer(nn.Module):
+        norm_layer(`nn.Module`):
             normalization layer used after pooling.
-        has_cls_embed(bool):
+        has_cls_embed(`bool`):
             If set to True, the first token of the input tensor
             should be a cls token. Otherwise, the input tensor does not contain a cls token.
             Pooling is not applied to the cls token.
-        pool_mode(str):
+        pool_mode(`str`):
             Pooling mode. Option includes "conv" (learned pooling), "avg"
             (average pooling), and "max" (max pooling).
-        pool_first(bool):
+        pool_first(`bool`):
             If set to True, pool is applied before qkv projection.
             Otherwise, pool is applied after qkv projection.
     """
