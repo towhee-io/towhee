@@ -20,7 +20,8 @@ from towhee.hparam import param_scope
 
 
 def register_dag(f):
-    """Wrapper used for registering the DataCollection operation in the chains' DAG.
+    """
+    Wrapper used for registering the DataCollection operation in the chains' DAG.
 
     Args:
         f (callable): The function to wrap.
@@ -107,7 +108,8 @@ def register_dag(f):
 
 class DagMixin:
     #pylint: disable=import-outside-toplevel
-    """Mixin for creating DAGs and their corresponding yamls from a DC
+    """
+    Mixin for creating DAGs and their corresponding yamls from a DC
     """
     def __init__(self) -> None:
         super().__init__()
@@ -135,7 +137,8 @@ class DagMixin:
         self.child_ids = []
 
     def register_dag(self, children):
-        """Function that can be called within the function trying to be added to dag.
+        """
+        Function that can be called within the function trying to be added to dag.
 
         Args:
             children (DataCollecton or list): List of children DataCollection's or singular child DataCollection.
@@ -163,7 +166,8 @@ class DagMixin:
         return children
 
     def notify_consumed(self, new_id):
-        """Notfify that a DataCollection was consumed.
+        """
+        Notfify that a DataCollection was consumed.
 
         When a DataCollection is consumed by a call to another DataCollection, that Dag
         needs to be aware of this, so any functions that consume more than the DataCollection calling
@@ -184,7 +188,8 @@ class DagMixin:
         self._control_plane.dag[self.id] = info
 
     def compile_dag(self):
-        """Compile the dag.
+        """
+        Compile the dag.
 
         Runs a schema of commands that removes unecessary steps and cleans the DAG.
 
@@ -215,7 +220,8 @@ class DagMixin:
         return self._clean_nops(self._control_plane.dag)
 
     def netx(self):
-        """show dags' relations.
+        """
+        show dags' relations.
 
         Returns:
             image: The dags' relations
