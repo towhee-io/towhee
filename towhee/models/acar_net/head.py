@@ -28,15 +28,15 @@ class LinearHead(nn.Module):
     Linear head of ACAR-Net
 
     Args:
-        - width (`int`):
+        width (`int`):
             Input dimension of linear layer.
-        - roi_spatial (`int`):
+        roi_spatial (`int`):
             Portion to filter in spatial dimension.
-        - num_classes (`int`):
+        num_classes (`int`):
             Number of classes.
-        - dropout (`float`):
+        dropout (`float`):
             Dropout ratio.
-        - bias (`bool`):
+        bias (`bool`):
             Flag to control if use bias.
     """
     def __init__(self, width, roi_spatial=7, num_classes=60, dropout=0., bias=False):
@@ -88,6 +88,29 @@ class LinearHead(nn.Module):
 class ACARHead(nn.Module):
     """
     ACAR head of ACAR-Net
+    Args:
+        width (`int`):
+            Input dimension of linear layer.
+        roi_spatial (`int`):
+            Portion to filter in spatial dimension.
+        num_classes (`int`):
+            Number of classes.
+       dropout (`float`):
+            Dropout ratio.
+        bias (`bool`):
+            Flag to control if use bias.
+        reduce_dim (`int`):
+            Reduce dimension.
+        hidden_dim (`int`):
+            Hidden dimension.
+        downsample (`str`):
+            downsample layer.
+        depth (`int`):
+            depth.
+        kernel_size (`int`):
+            kernel size
+        mlp_1x1 (`bool`):
+            use mlp_1x1
     """
     def __init__(self, width, roi_spatial=7, num_classes=60, dropout=0., bias=False,
                  reduce_dim=1024, hidden_dim=512, downsample='max2x2', depth=2,
