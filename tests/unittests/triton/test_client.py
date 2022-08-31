@@ -147,6 +147,9 @@ class TestTritonClient(unittest.TestCase):
     Unit test for triton client.
     """
     def test_http_client(self):
+        """
+        test http client infer function
+        """
         tclient = client.Client.init('127.0.0.1:8001', protocol='http')
         tclient.client = MockHttpClient('127.0.0.1:8001')
         res = tclient.infer('/test.jpg')
@@ -158,6 +161,9 @@ class TestTritonClient(unittest.TestCase):
         self.assertEqual(res[0], expect)
 
     def test_grpc_client(self):
+        """
+        test grpc client infer function
+        """
         tclient = client.Client.init('127.0.0.1:8002')
         tclient.client = MockGrpcClient('127.0.0.1:8002')
         res = tclient.infer('/test.jpg')
