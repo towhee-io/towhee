@@ -17,11 +17,15 @@ from torch import nn
 
 
 class PatchMerging(nn.Module):
-    r""" Patch Merging Layer.
+    r"""
+    Patch Merging Layer.
     Args:
-        input_resolution (tuple[int]): Resolution of input feature.
-        dim (int): Number of input channels.
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        input_resolution (`tuple[int]`):
+            Resolution of input feature.
+        dim (`int`):
+            Number of input channels.
+        norm_layer (`nn.Module`):
+            Normalization layer.  Default: nn.LayerNorm
     """
 
     def __init__(self, input_resolution, dim, norm_layer=nn.LayerNorm, is_v2=False):
