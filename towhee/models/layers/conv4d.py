@@ -20,7 +20,23 @@ from torch import nn
 
 
 class CenterPivotConv4d(nn.Module):
-    r""" CenterPivot 4D conv"""
+    """
+    CenterPivot 4D conv
+
+    Args:
+        in_channels (`int`):
+            Number of input channels.
+        out_channels (`int`):
+            Number of output channels.
+        kernel_size (`list or tuple`):
+            Numbers for kernel size.
+        stride (`list or tuple`):
+            Numbers for stride.
+        padding (`list or tuple`):
+            Numbers for padding.
+        bias (`bool`):
+            Whether to add bias for conv layer.
+    """
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, bias=True):
         super().__init__()
 
