@@ -255,8 +255,10 @@ class TestCompileMixin(unittest.TestCase):
     Unittest for FaissMixin.
     """
     def test_compile(self):
+        # pylint: disable=unused-import
         import time
         from towhee import register
+        from towhee.utils.thirdparty.numba_utils import njit
         @register(name='inner_distance')
         def inner_distance(query, data):
             dists = []
