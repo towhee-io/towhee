@@ -34,19 +34,19 @@ class AttentionPool(nn.Module):
                                            ↓
                                           norm
     Args:
-        thw_shape(List):
+        thw_shape (`List`):
             the shape of the input tensor (before flattening).
-        pool(Callable):
+        pool (`Callable`):
             Pool operation that is applied to the input tensor.
             If pool is None, return the input tensor.
-        has_cls_embed(bool):
+        has_cls_embed (`bool`):
             whether the input tensor contains cls token. Pool operation excludes cls token.
-        norm(Callable):
+        norm (`Callable`):
             Optional normalization operation applied to tensor after pool.
     Returns:
-        tensor(torch.Tensor):
+        tensor (`torch.Tensor`):
             Input tensor after pool.
-        thw_shape(List[int]):
+        thw_shape (`List[int]`):
             Output tensor shape (before flattening).
     """
     def __init__(
