@@ -20,7 +20,6 @@ except (ModuleNotFoundError, ImportError) as e:
         from towhee.utils.dependency_control import prompt_install
         prompt_install('numba')
         # pylint: disable=unused-import,ungrouped-imports
-        import numba
         from numba import njit
     except:
         from towhee.utils.log import engine_log
