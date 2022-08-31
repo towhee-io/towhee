@@ -39,7 +39,7 @@ class CoFormer(nn.Module):
             Verb index to role index.
     """
 
-    def __init__(self, backbone, transformer, num_noun_classes, vidx_ridx):
+    def __init__(self, backbone: nn.Module, transformer: nn.Module, num_noun_classes: int, vidx_ridx: dict):
         super().__init__()
         self.backbone = backbone
         self.transformer = transformer
