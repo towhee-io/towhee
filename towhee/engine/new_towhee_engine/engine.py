@@ -21,8 +21,7 @@ class Engine:
         self._execution_roots = self.find_execution_roots()
         self._execution_leaves = self.find_execution_leaves()
         self._actions = self.generate_actions()
-        self.run()
-        return {x: iter(self._actions[x]) for x in self._execution_leaves}
+        
 
     def create_execution_plan(self) -> dict:
         """This method creates the execution plan fgit or the engine.
@@ -89,6 +88,6 @@ class Engine:
         for x in self._execution_roots:
             y = threading.thread(x.start())
             y.start()
-
+        return {x: iter(self._actions[x]) for x in self._execution_leaves}
         
         
