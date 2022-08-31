@@ -18,6 +18,7 @@
 
 import torch
 import torch.nn.functional as F
+from typing import Any
 from torch import nn
 from towhee.models.coformer.utils import nested_tensor_from_tensor_list
 from towhee.models.coformer.backbone import build_backbone
@@ -181,9 +182,23 @@ class CoFormer(nn.Module):
 
 def create_model(
         model_name: str = None,
-        vidx_ridx=None,
-        device=None,
-):
+        vidx_ridx: Any = None,
+        device: str = None,
+) -> CoFormer:
+    """
+    Create CoFormer model
+    Args:
+        model_name (`str`):
+            CoFormer model name.
+        vidx_ridx (`Any`):
+            Verb index to role index.
+        device (`str`):
+            cuda or cpu.
+
+    Returns:
+        (`CoFormer`):
+            CoFormer instance.
+    """
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if model_name == 'coformer':
