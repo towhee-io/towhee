@@ -16,7 +16,7 @@ try:
     # pylint: disable=unused-import,ungrouped-imports
     import tritonclient.grpc as grpcclient
     import tritonclient.http as httpclient
-    from tritonclient.utils import InferenceServerException
+    from tritonclient.utils import InferenceServerException, np_to_triton_dtype
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
@@ -24,7 +24,7 @@ except ModuleNotFoundError as moduleNotFound:
         # pylint: disable=unused-import,ungrouped-imports
         import tritonclient.grpc as grpcclient
         import tritonclient.http as httpclient
-        from tritonclient.utils import InferenceServerException
+        from tritonclient.utils import InferenceServerException, np_to_triton_dtype
     except:
         from towhee.utils.log import engine_log
         engine_log.error('tritonclient not found, you can install via `pip install tritonclient[all]`.')
