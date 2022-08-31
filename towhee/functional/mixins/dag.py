@@ -216,7 +216,6 @@ class DagMixin:
                 'parent_ids': [self.id],
                 'child_ids': []}
         self._control_plane.dag['end'] = info
-        # return self._control_plane.dag
         return self._clean_nops(self._control_plane.dag)
 
     def netx(self):
