@@ -160,7 +160,16 @@ class Conv2dBN(nn.Module):
 
 
 class DWConv2dBN(nn.Module):
-    """Depthwise Separable Convolution with BN module."""
+    """
+    Depthwise Separable Convolution with BN module.
+    Args:
+        in_ch (int): input channel
+        out_ch (int): output channel
+        kernel_size (int): kernel features
+        stride (int): stride
+        norm_layer (int): normalization layer
+        bn_weight_init (int): batch normalization init
+    """
 
     def __init__(
             self,
