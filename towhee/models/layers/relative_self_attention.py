@@ -23,13 +23,19 @@ import torch
 
 
 class RelativeSelfAttention(nn.Module):
-    """ Relative Self-Attention similar to Swin V1. Implementation inspired by Timms Swin V1 implementation.
+    """
+    Relative Self-Attention similar to Swin V1. Implementation inspired by Timms Swin V1 implementation.
     Args:
-        in_channels (int): Number of input channels.
-        num_heads (int, optional): Number of attention heads. Default 32
-        grid_window_size (Tuple[int, int], optional): Grid/Window size to be utilized. Default (7, 7)
-        attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
-        drop (float, optional): Dropout ratio of output. Default: 0.0
+        in_channels (`int`):
+            Number of input channels.
+        num_heads (`int`):
+            Number of attention heads. Default 32
+        grid_window_size (`Tuple[int, int]`):
+            Grid/Window size to be utilized. Default (7, 7)
+        attn_drop (`float`):
+            Dropout ratio of attention weight. Default: 0.0
+        drop (`float`):
+            Dropout ratio of output. Default: 0.0
     """
 
     def __init__(
@@ -81,11 +87,14 @@ class RelativeSelfAttention(nn.Module):
             self,
             data: torch.Tensor
     ) -> torch.Tensor:
-        """ Forward pass.
+        """
+        Forward pass.
         Args:
-            data (torch.Tensor): Input tensor of the shape [B_, N, C].
+            data (`torch.Tensor`):
+                Input tensor of the shape [B_, N, C].
         Returns:
-            output (torch.Tensor): Output tensor of the shape [B_, N, C].
+            output (`torch.Tensor`):
+                Output tensor of the shape [B_, N, C].
         """
         # Get shape of input
         b_, n, _ = data.shape
