@@ -104,7 +104,7 @@ class DataProcessingMixin:
         """Return the first `n` values of a DataCollection.
 
         Args:
-            n (int, optional): The amount to select. Defaults to 5.
+            n (int, optional): The amount to select, defaults to 5.
 
         Returns:
             DataCollection: DataCollection with the selected values.
@@ -143,8 +143,7 @@ class DataProcessingMixin:
         """Create batches from the DataCollection.
 
         Args:
-            size (int):
-                Window size;
+            size (int): Window size.
             drop_tail (`bool`): Drop trailing window that is not full, defaults to False.
 
 
