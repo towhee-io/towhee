@@ -21,16 +21,12 @@ from towhee.utils.log import engine_log
 
 
 class OperatorManager(RepoManager):
-    """
-    The Repo Manager to manage the operator repos.
+    """The Repo Manager to manage the operator repos.
 
     Args:
-        author (`str`):
-            The author of the repo.
-        repo (`str`):
-            The name of the repo.
-        root (`str`):
-            The root url where the repo located.
+        author (str): The author of the repo.
+        repo (str): The name of the repo.
+        root (str): The root url where the repo located.
     """
     def __init__(self, author: str, repo: str, root: str = 'https://hub.towhee.io'):
         super().__init__(author, repo, root)
@@ -38,16 +34,13 @@ class OperatorManager(RepoManager):
         self._class = 2
 
     def create(self, password: str) -> None:
-        """
-        Create a repo under current account.
+        """Create a repo under current account.
 
         Args:
-            password (`str`):
-                Current author's password.
+            password (str): Current author's password.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
+            HTTPError: Raise error in request.
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
@@ -55,16 +48,13 @@ class OperatorManager(RepoManager):
             self.hub_utils.create(password, self._class)
 
     def create_with_token(self, token: str) -> None:
-        """
-        Create a repo under current account.
+        """Create a repo under current account.
 
         Args:
-            token (`str`):
-                Current author's token.
+            token (str): Current author's token.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
+            HTTPError: Raise error in request.
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
@@ -72,22 +62,16 @@ class OperatorManager(RepoManager):
             self.hub_utils.create_repo(token, self._class)
 
     def init_nnoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path], framework: str = 'pytorch') -> None:
-        """
-        Initialize the files under file_dest by moving and updating the text under file_temp.
+        """Initialize the files under file_dest by moving and updating the text under file_temp.
 
         Args:
-            file_temp (`Union[str, Path]`):
-                The path to the template files.
-            file_dest (`Union[str, Path]`):
-                The path to the local repo to init.
-            framework (`str, Path`):
-                The framework for the model, defaults to 'pytorch'
+            file_temp (Union[str, Path]): The path to the template files.
+            file_dest (Union[str, Path]): The path to the local repo to init.
+            framework (str, Path): The framework for the model, defaults to 'pytorch'
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
-            (`OSError`)
-                Raise error in writing file.
+            HTTPError: Raise error in request.
+            OSError: Raise error in writing file.
         """
         repo_temp = self._temp['nnoperator']
 
@@ -103,20 +87,15 @@ class OperatorManager(RepoManager):
             os.rename(Path(file_dest) / 'pytorch', Path(file_dest) / framework)
 
     def init_pyoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
-        """
-        Initialize the files under file_dest by moving and updating the text under file_temp.
+        """Initialize the files under file_dest by moving and updating the text under file_temp.
 
         Args:
-            file_temp (`Union[str, Path]`):
-                The path to the template files.
-            file_dest (`Union[str, Path]`):
-                The path to the local repo to init.
+            file_temp (Union[str, Path]): The path to the template files.
+            file_dest (Union[str, Path]): The path to the local repo to init.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
-            (`OSError`)
-                Raise error in writing file.
+            HTTPError: Raise error in request.
+            OSError: Raise error in writing file.
         """
         repo_temp = self._temp['pyoperator']
 
