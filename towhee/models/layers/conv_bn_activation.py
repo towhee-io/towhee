@@ -87,9 +87,28 @@ class Conv2dBNActivation(nn.Sequential):
 
 class Conv3DBNActivation(nn.Sequential):
     """
-    Conv3DBNActivation
-    """
+    Conv3d with BatchNorm & Activation
 
+    Args:
+        in_planes (`int`):
+            Number of input channels.
+        out_planes (`int`):
+            Number of output channels.
+        kernel_size (Union[int, Tuple[int, int]]):
+            Kernel size for conv layer.
+        padding (`Union[int, Tuple[int, int]]`):
+            Padding for conv layer.
+        stride (`Union[int, Tuple[int, int]]`):
+            Stride for conv layer.
+        norm_layer (`nn.Module`):
+            Norm layer.
+        eps (`float`):
+            The number of eps for norm layer.
+        activation_layer (`nn.Module`):
+            Activation layer
+        **kwargs (`Any`):
+            Other parameters.
+    """
     def __init__(
             self,
             in_planes: int,
