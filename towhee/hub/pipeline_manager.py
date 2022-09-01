@@ -21,16 +21,12 @@ from towhee.utils.log import engine_log
 
 
 class PipelineManager(RepoManager):
-    """
-    The Repo Manager to manage the pipeline repos.
+    """The Repo Manager to manage the pipeline repos.
 
     Args:
-        author (`str`):
-            The author of the repo.
-        repo (`str`):
-            The name of the repo.
-        root (`str`):
-            The root url where the repo located.
+        author (str): The author of the repo.
+        repo (str): The name of the repo.
+        root (str): The root url where the repo located.
     """
     def __init__(self, author: str, repo: str, root: str = 'https://towhee.io'):
         super().__init__(author, repo, root)
@@ -38,16 +34,13 @@ class PipelineManager(RepoManager):
         self._class = 3
 
     def create(self, password: str) -> None:
-        """
-        Create a repo under current account.
+        """Create a repo under current account.
 
         Args:
-            password (`str`):
-                Current author's password.
+            password (str): Current author's password.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
+            HTTPError: Raise error in request.
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
@@ -55,16 +48,13 @@ class PipelineManager(RepoManager):
             self.hub_utils.create(password, self._class)
 
     def create_with_token(self, token: str) -> None:
-        """
-        Create a repo under current account.
+        """Create a repo under current account.
 
         Args:
-            token (`str`):
-                Current author's token.
+            token (str): Current author's token.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
+            HTTPError: Raise error in request.
         """
         if self.exists():
             engine_log.info('%s/%s repo already exists.', self._author, self._repo)
@@ -72,20 +62,15 @@ class PipelineManager(RepoManager):
             self.hub_utils.create_repo(token, self._class)
 
     def init_pipeline(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
-        """
-        Initialize the files under file_dest by moving and updating the text under file_temp.
+        """Initialize the files under file_dest by moving and updating the text under file_temp.
 
         Args:
-            file_temp (`Union[str, Path]`):
-                The path to the template files.
-            file_dest (`Union[str, Path]`):
-                The path to the local repo to init.
+            file_temp (Union[str, Path]): The path to the template files.
+            file_dest (Union[str, Path]): The path to the local repo to init.
 
         Raises:
-            (`HTTPError`)
-                Raise error in request.
-            (`OSError`)
-                Raise error in writing file.
+            HTTPError: Raise error in request.
+            OSError: Raise error in writing file.
         """
         repo_temp = self._temp['pipeline']
 
@@ -99,16 +84,13 @@ class PipelineManager(RepoManager):
                 os.rename(file, Path(file_dest) / file.name)
 
     def check(self, local_dir: Union[str, Path] = Path().cwd()) -> bool:
-        """
-        Check if the main file exists and match the file name
+        """Check if the main file exists and match the file name
 
         Args:
-            local_dir (`Union[str, Path]`):
-                The directory to the repo.
+            local_dir (Union[str, Path]): The directory to the repo.
 
         Returns:
-            (`bool`)
-                Check if passed.
+            bool: Check if passed.
         """
         file_name = self._repo.replace('-', '_')
         for file in ['README.md', f'{file_name}.yaml']:
