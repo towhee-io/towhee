@@ -36,10 +36,9 @@ class OutputFormat(ABC):
 
 
 class ImageEmbeddingFormat(OutputFormat):
-    """
-    Image embedding pipeline format.
+    """Image embedding pipeline format.
 
-    If pipelie's type is image-embedding, use the pipeline.
+    If pipeline's type is image-embedding, use the pipeline.
     """
 
     def __call__(self, itr: MapIterator):
