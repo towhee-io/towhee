@@ -70,7 +70,7 @@ class MaxViT(nn.Module):
             num_heads: int = 32,
             grid_window_size: Tuple[int, int] = (7, 7),
             attn_drop: float = 0.,
-            drop : float = 0.,
+            drop: float = 0.,
             drop_path: float = 0.,
             mlp_ratio: float = 4.,
             act_layer=nn.GELU,
@@ -199,6 +199,21 @@ def create_model(
         device: str = None,
         **kwargs
 ):
+    """
+    Create a MaxViT model.
+    Args:
+        model_name (`str`):
+            MaxViT model name. It can be in 'max_vit_tiny', 'max_vit_small', 'max_vit_base', 'max_vit_large', 'max_vit_xlarge'.
+        pretrained (`bool`):
+            Whether load pretrained weights.
+        weights_path (`str`):
+            Useful when pretrained is True.
+        device (`str):
+            Cpu or cuda.
+    Returns:
+        (`MaxViT`):
+            MaxViT instance.
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if pretrained and weights_path is None:
@@ -218,7 +233,6 @@ def create_model(
     model.eval()
     model.to(device)
     return model
-
 
 # if __name__ == '__main__':
 #     data = torch.rand(1, 3, 224, 224)
