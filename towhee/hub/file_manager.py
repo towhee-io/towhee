@@ -32,16 +32,10 @@ from towhee.utils.git_utils import GitUtils
 
 @singleton
 class FileManagerConfig():
-    """
-    Global FileManager config
+    """Global FileManager config
 
     This class dictates which cache locations to look through and in what order to check
     for files. This config is ultimately used with FileManager.
-
-    Args:
-        set_default_cache (`str` | `Path`):
-            The default cache to check in, if nothing supplied, the default cache of $HOME/.towhee
-            will be used.
     """
     def __init__(self):
         # TODO: #1 Deal with specifying cache priority per pipeline?
@@ -86,11 +80,10 @@ class FileManagerConfig():
         return self._cache_paths_lock
 
     def update_default_cache(self, default_path: Union[str, Path]):
-        """
-        Change the default cache path.
+        """Change the default cache path.
 
         Args:
-            insert_path (`str` | `Path`):
+            default_path (`str` | `Path`):
                 The new default cache.
         """
         default_path = Path(default_path)
@@ -100,9 +93,9 @@ class FileManagerConfig():
             self._cache_paths.append(default_path)
 
     def add_cache_path(self, insert_path: Union[str, Path, List[Union[str, Path]]]):
-        """
-        Add a cache location to the front. Most recently added paths will be
-        checked first.
+        """Add a cache location to the front.
+
+        Most recently added paths will be checked first.
 
         Args:
             insert_path (`str` | `Path | `list[str | Path]`):
@@ -118,8 +111,7 @@ class FileManagerConfig():
 
     # Pretty useless now but might be worth having in the future
     def remove_cache_path(self, remove_path: Union[str, Path, List[Union[str, Path]]]):
-        """
-        Remove a cache location.
+        """Remove a cache location.
 
         Args:
             remove_path (`str` | `Path | `list[str | Path]`):
@@ -142,15 +134,14 @@ class FileManagerConfig():
     def reset_cache_path(self):
         """
         Remove all cache locations.
-
         """
         with self._cache_paths_lock:
             self._cache_paths = [self._cache_paths.pop()]
 
     def cache_local_operator(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
-        """
-        Add a local operator to a cache. In order for operators to be visible to Towhee
-        they need to be cached.
+        """Add a local operator to a cache.
+
+        In order for operators to be visible to Towhee they need to be cached.
 
         Args:
             path (`str` | `Path | `list[str | Path]`):
@@ -178,9 +169,9 @@ class FileManagerConfig():
                     self._cache_operators.append(op)
 
     def cache_local_pipeline(self, path: Union[str, Path, List[Union[str, Path]]], overwrite: bool = True, cache: Union[str, Path] = None):
-        """
-        Add a local pipeline to a cache. In order for pipelines to be visible to Towhee
-        they need to be cached.
+        """Add a local pipeline to a cache.
+
+        In order for pipelines to be visible to Towhee they need to be cached.
 
         Args:
             path (`str` | `Path | `list[str | Path]`):
@@ -213,9 +204,9 @@ class FileManagerConfig():
 
 @singleton
 class FileManager():
-    """
-    The filemanager for the current instance of Towhee. In charge of dealing with multiple
-    cache locations, downloading from hub, and importing local files.
+    """The filemanager for the current instance of Towhee.
+
+    In charge of dealing with multiple cache locations, downloading from hub, and importing local files.
 
     Args:
         fmc (`FileManagerConfig`):
@@ -294,8 +285,7 @@ class FileManager():
             return path
 
     def get_pipeline(self, pipeline: str, tag: str, install_reqs: bool = True, from_ops: bool = False):
-        """
-        Obtain the path to the requested pipeline.
+        """Obtain the path to the requested pipeline.
 
         This function will obtain the first reference to the pipeline from the cache locations.
         If no pipeline is found, this function will download it to the default cache location
@@ -387,8 +377,7 @@ class FileManager():
         return file_path
 
     def get_operator(self, operator: str, tag, install_reqs: bool = True):
-        """
-        Obtain the path to the requested operator.
+        """Obtain the path to the requested operator.
 
         This function will obtain the first reference to the operator from the cache locations.
         If no opeartor is found, this function will download it to the default cache location
