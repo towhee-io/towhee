@@ -198,7 +198,7 @@ def create_model(
         weights_path: str = None,
         device: str = None,
         **kwargs
-):
+) -> MaxViT:
     """
     Create a MaxViT model.
     Args:
@@ -233,7 +233,3 @@ def create_model(
     model.eval()
     model.to(device)
     return model
-
-# if __name__ == '__main__':
-#     data = torch.rand(1, 3, 224, 224)
-#     model = create_model(model_name='max_vit_tiny', drop_path=0.2)
