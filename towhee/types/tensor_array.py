@@ -60,19 +60,19 @@ class TensorArray(pa.ExtensionArray):
                 The ndarray to create the TensorArray from.
 
         Examples:
-        >>> import numpy as np
-        >>> from towhee.types import TensorArray
-        >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
-        >>> arr[0]
-        array([0, 1])
+            >>> import numpy as np
+            >>> from towhee.types import TensorArray
+            >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+            >>> arr[0]
+            array([0, 1])
 
-        >>> arr = TensorArray.from_numpy(np.arange(36).reshape([6,2,3]))
-        >>> arr[1]
-        array([[ 6,  7,  8],
-            [ 9, 10, 11]])
-        >>> list(arr.chunks(5))[1]
-        array([[[30, 31, 32],
-                [33, 34, 35]]])
+            >>> arr = TensorArray.from_numpy(np.arange(36).reshape([6,2,3]))
+            >>> arr[1]
+            array([[ 6,  7,  8],
+                   [ 9, 10, 11]])
+            >>> list(arr.chunks(5))[1]
+            array([[[30, 31, 32],
+                    [33, 34, 35]]])
         """
         if isinstance(data, (list, tuple)):
             if np.isscalar(data[0]):
@@ -103,6 +103,14 @@ class TensorArray(pa.ExtensionArray):
         return pa.ExtensionArray.from_storage(type_, storage)
 
     def __getitem__(self, index):
+        """
+        Examples:
+            >>> import numpy as np
+            >>> from towhee.types import TensorArray
+            >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+            >>> arr[0]
+            array([0, 1])
+        """
         if isinstance(index, slice):
             retval = super().__getitem__(index)
             storage = retval.storage
@@ -120,19 +128,31 @@ class TensorArray(pa.ExtensionArray):
                 Whether to create a copy of the array.
 
         Examples:
-        >>> import numpy as np
-        >>> from towhee.types import TensorArray
-        >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
-        >>> arr.to_numpy()
-        array([[0, 1],
-            [2, 3],
-            [4, 5],
-            [6, 7],
-            [8, 9]])
+            >>> import numpy as np
+            >>> from towhee.types import TensorArray
+            >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+            >>> arr.to_numpy()
+            array([[0, 1],
+                   [2, 3],
+                   [4, 5],
+                   [6, 7],
+                   [8, 9]])
         """
         return self.storage.flatten().to_numpy(zero_copy_only=zero_copy_only).reshape(self.type.ext_shape)
 
     def chunks(self, chunk_size=None):
+        """
+        Get the chunks of the TensorArray.
+
+        Examples:
+            >>> import numpy as np
+            >>> from towhee.types import TensorArray
+            >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+            >>> chunks = arr.chunks(2)
+            >>> next(chunks)
+            array([[0, 1],
+                   [2, 3]])
+        """
         view = self.to_numpy()
         for i in range(0, len(self), chunk_size):
             yield view[i:i + chunk_size]
