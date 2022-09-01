@@ -101,7 +101,20 @@ class Mlp(nn.Module):
 
 
 class Conv2dBN(nn.Module):
-    """Convolution with BN module."""
+    """
+    Convolution with BN module.
+    Args:
+        in_ch (int): input channel
+        out_ch (int): output channel
+        kernel_size (int): kernel features
+        stride (int): stride
+        pad (int): padding
+        dilation (int): dilation
+        groups (int): number of groups
+        bn_weight_init (int): batch normalization init
+        norm_layer (int): normalization layer
+        act_layer (int): activation layer
+    """
 
     def __init__(
             self,
