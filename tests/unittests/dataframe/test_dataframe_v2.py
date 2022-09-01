@@ -22,7 +22,8 @@ from tests.unittests.test_util.dataframe_test_util import DfWriter, MultiThreadR
 
 
 class TestDataframe(unittest.TestCase):
-    """Basic test case for `DataFrame`.
+    """
+    Basic test case for `DataFrame`.
     """
 
     def get_columns(self):
