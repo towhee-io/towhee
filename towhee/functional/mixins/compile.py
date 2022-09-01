@@ -102,7 +102,6 @@ class TowheeCompiler: # pragma: no cover
 
     def __init__(self, name, index, *arg, **kws):
         from towhee.compiler import jit_compile  # pylint: disable=import-outside-toplevel
-        # self._op = getattr(ops, name)[index](*arg, **kws)
         self._name = name
         self._index = index
         self._compiler = jit_compile()
