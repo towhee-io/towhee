@@ -48,25 +48,32 @@ class _TensorArrayType(pa.PyExtensionType):
 class TensorArray(pa.ExtensionArray):
     """
     Array for ndarrays
-
-    Examples:
-
-    >>> import numpy as np
-    >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
-    >>> arr[0]
-    array([0, 1])
-
-    >>> arr = TensorArray.from_numpy(np.arange(36).reshape([6,2,3]))
-    >>> arr[1]
-    array([[ 6,  7,  8],
-           [ 9, 10, 11]])
-    >>> list(arr.chunks(5))[1]
-    array([[[30, 31, 32],
-            [33, 34, 35]]])
     """
 
     @classmethod
     def from_numpy(cls, data):
+        """
+        Create a TensroArray from numpy array.
+
+        Args:
+            data (`numpy.ndarray`):
+                The ndarray to create the TensorArray from.
+
+        Examples:
+        >>> import numpy as np
+        >>> from towhee.types import TensorArray
+        >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+        >>> arr[0]
+        array([0, 1])
+
+        >>> arr = TensorArray.from_numpy(np.arange(36).reshape([6,2,3]))
+        >>> arr[1]
+        array([[ 6,  7,  8],
+            [ 9, 10, 11]])
+        >>> list(arr.chunks(5))[1]
+        array([[[30, 31, 32],
+                [33, 34, 35]]])
+        """
         if isinstance(data, (list, tuple)):
             if np.isscalar(data[0]):
                 return pa.array(data)
@@ -105,6 +112,24 @@ class TensorArray(pa.ExtensionArray):
         return storage.to_numpy().reshape(self.type.shape)
 
     def to_numpy(self, zero_copy_only=True):
+        """
+        Create a numpy array from the TensorArray.
+
+        Args:
+            zero_copy_only (`bool`):
+                Whether to create a copy of the array.
+
+        Examples:
+        >>> import numpy as np
+        >>> from towhee.types import TensorArray
+        >>> arr = TensorArray.from_numpy(np.arange(10).reshape([5,2]))
+        >>> arr.to_numpy()
+        array([[0, 1],
+            [2, 3],
+            [4, 5],
+            [6, 7],
+            [8, 9]])
+        """
         return self.storage.flatten().to_numpy(zero_copy_only=zero_copy_only).reshape(self.type.ext_shape)
 
     def chunks(self, chunk_size=None):
