@@ -21,7 +21,8 @@ from towhee.engine.operator_runner.runner_base import _OpInfo
 
 
 class TestOperatorPool(unittest.TestCase):
-    """Basic test case for `OperatorPool`.
+    """
+    Basic test case for `OperatorPool`.
     """
 
     def setUp(self):
