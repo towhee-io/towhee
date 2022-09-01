@@ -11,7 +11,8 @@ from towhee.types._frame import _Frame
 
 
 class TestIterators(unittest.TestCase):
-    """Basic test case for `TestIterators`.
+    """
+    Basic test case for `TestIterators`.
     """
     def remove_frame(self, inputs):
         if not isinstance(inputs, tuple):
