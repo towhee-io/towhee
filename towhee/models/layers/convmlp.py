@@ -14,9 +14,26 @@
 # This code is modified by Zilliz.
 from torch import nn
 
+
 class ConvMlp(nn.Module):
-    """ MLP using 1x1 convs that keeps spatial dims
     """
+    MLP using 1x1 conv layers that keeps spatial dims.
+
+    Args:
+        in_features (`int`):
+            Dimension of input features.
+        hidden_features (`int`):
+            Dimension of hidden features.
+        out_features (`int`):
+            Dimension of output features.
+        act_layer (`nn.Module`):
+            Activation layer.
+        norm_layer (`nn.Module`):
+            Normalization layer.
+        drop (`float`):
+            Drop rate.
+    """
+
     def __init__(
             self, in_features, hidden_features=None, out_features=None, act_layer=nn.ReLU, norm_layer=None, drop=0.):
         super().__init__()
