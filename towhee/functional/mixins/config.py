@@ -18,7 +18,7 @@ from towhee.hparam import param_scope
 
 class ConfigMixin:
     """
-    Mixin to config DC, such as set the `parallel`, `chunksize`, `jit`.
+    Mixin to config DC, such as set the `parallel`, `chunksize`, `jit` and `format_priority`.
 
     Examples:
 
@@ -79,12 +79,12 @@ class ConfigMixin:
         Set the parameters for the DC.
 
         Args:
-            parallel (int, optional): Set the number of parallel execution for the following calls. Defaults to None.
-            chunksize (int, optional): Set the chunk size for arrow.. Defaults to None.
+            parallel (int, optional): Set the number of parallel execution for the following calls, defaults to None.
+            chunksize (int, optional): Set the chunk size for arrow, defaults to None.
             jit (Union[str, dict], optional): Can be set to "numba", this mode will speed up the Operator's function,
                 but it may also need to return to python mode due to JIT failure, which will take longer, so please
-                set it carefully. Defaults to None.
-            format_priority (List[str], optional): The priority list of formats. Defaults to None.
+                set it carefully, defaults to None.
+            format_priority (List[str], optional): The priority list of formats, defaults to None.
 
         Returns:
             DataCollection: Self.
@@ -124,12 +124,12 @@ class ConfigMixin:
         Set the parameters in DC.
 
         Args:
-            parallel (int, optional): Set the number of parallel executions for the following calls. Defaults to None.
-            chunksize (int, optional): Set the chunk size for arrow. Defaults to None.
+            parallel (int, optional): Set the number of parallel executions for the following calls, defaults to None.
+            chunksize (int, optional): Set the chunk size for arrow, defaults to None.
             jit (Union[str, dict], optional): Can be set to "numba", this mode will speed up the Operator's function,
                 but it may also need to return to python mode due to JIT failure, which will take longer, so please
-                set it carefully. Defaults to None.
-            format_priority (List[str], optional): The priority list of format. Defaults to None.
+                set it carefully, defaults to None.
+            format_priority (List[str], optional): The priority list of format, defaults to None.
 
         Returns:
             DataCollection: Self
