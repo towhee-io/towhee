@@ -18,7 +18,8 @@ from functools import wraps
 
 
 def singleton(cls):
-    """Wrapper that creates singleton instance of class that it is fed.
+    """
+    Wrapper that creates singleton instance of class that it is fed.
 
     Returns:
         any: Singleton instance of class.
