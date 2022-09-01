@@ -13,22 +13,35 @@
 from typing import  Dict, Any
 
 class Entity:
-    """ Entity is the basic data type in DataCollection.
+    """
+    Entity is the basic data type in DataCollection.
 
     Users can create an Entity with free schema, which means there is no limit on
     attribute name and type.
+
+    Exampels:
+        >>> from towhee import Entity
+        >>> e = Entity(a=1, b=2)
+        >>> e
+        <Entity dict_keys(['a', 'b'])>
+        >>> e.a
+        1
+        >>> e.b
+        2
     """
     def __init__(self, **kwargs):
-        """Create an Entity with given attributes.
+        """
+        Create an Entity with given attributes.
         """
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
     def __repr__(self):
-        """Define the representation of the Entity.
+        """
+        Define the representation of the Entity.
 
-        Returns:
-            string: the repr of the entity.
+        Returns (`str`):
+            The repr of the entity.
 
         Examples:
             >>> from towhee import Entity
@@ -40,10 +53,11 @@ class Entity:
         return f'<{self.__class__.__name__} {content.strip()}>'
 
     def __str__(self) -> str:
-        """Return the str representation of an Entity.
+        """
+        Return the str representation of an Entity.
 
-        Returns:
-            string: the string representation of the entity.
+        Returns (`str`):
+            The string representation of the entity.
 
         Examples:
             >>> from towhee import Entity
@@ -54,7 +68,8 @@ class Entity:
         return str(self.__dict__)
 
     def combine(self, *entities):
-        """Combine entities.
+        """
+        Combine entities.
 
         Args:
             entities (Entity): The entities to be added into self.
@@ -94,6 +109,12 @@ class EntityView:
     """
     The view to iterate DataFrames.
 
+    Args:
+        offset (`int`):
+            The offset of an Entity in the table.
+        table:
+            Which table stored in.
+
     Examples:
         >>> from towhee import Entity, DataFrame
         >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
@@ -108,22 +129,19 @@ class EntityView:
     """
 
     def __init__(self, offset: int, table):
-        """
-        Args:
-            offset (int): The offset of an Entity in the table.
-            table (_type_): Which table stored in.
-        """
         self._offset = offset
         self._table = table
 
     def __getattr__(self, name):
-        """Get the value of the entity.
+        """
+        Get the value of the entity.
 
         Args:
-            name (str): The key string of the entity.
+            name (`str`):
+                The key string of the entity.
 
         Returns:
-            any: The value for that entity at the current offset.
+            Any: The value for that entity at the current offset.
         """
         value = self._table[name][self._offset]
         try:
@@ -133,11 +151,14 @@ class EntityView:
             return value
 
     def __setattr__(self, name, value):
-        """Set the `name` entity at current offset.
+        """
+        Set the `name` entity at current offset.
 
         Args:
-            name (str): The entity name.
-            value (any): The entity value to be set.
+            name (`str`):
+                The entity name.
+            value (`Any`):
+                The entity value to be set.
         """
         if name in ('_table', '_offset'):
             self.__dict__[name] = value
@@ -149,10 +170,11 @@ class EntityView:
         self._table = self._table.prepare()
 
     def __repr__(self):
-        """Define the representation of the EntityView.
+        """
+        Define the representation of the EntityView.
 
-         Returns:
-            str: The representation of the EntityView.
+        Returns (`str`):
+            The representation of the EntityView.
 
         Examples:
 
