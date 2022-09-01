@@ -14,10 +14,28 @@
 # This code is modified by Zilliz.
 from torch import nn
 
+
 class GatedMlp(nn.Module):
-    """ MLP as used in gMLP
     """
-    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, gate_layer=None, drop=0.):
+    MLP as used in gMLP.
+
+    Args:
+        in_features (`int`):
+            Dimension of input features.
+        hidden_features (`int`):
+            Dimension of hidden features.
+        out_features (`int`):
+            Dimension of output features.
+        act_layer (`nn.Module`):
+            Activation layer.
+        gate_layer (`nn.Module`):
+            Gate layer.
+        drop (`float`):
+            Drop rate.
+    """
+
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, gate_layer=None,
+                 drop=0.):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
