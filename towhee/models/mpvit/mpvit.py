@@ -64,9 +64,14 @@ def _cfg_mpvit(url="", **kwargs):
 
 
 class Mlp(nn.Module):
-    """Feed-forward network (FFN, a.k.a.
-
-    MLP) class.
+    """
+    Feed-forward network (FFN, a.k.a.MLP) class.
+    Args:
+        in_features (int): input features
+        hidden_features (int): hidden features
+        out_features (int): output features
+        act_layer (nn.Module): activation layer
+        drop (float): drop out probability
     """
 
     def __init__(
