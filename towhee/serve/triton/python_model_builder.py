@@ -266,17 +266,21 @@ class OpPyModelBuilder(PyModelBuilder):
         op_name: str,
         op_init_args: Dict,
         input_annotations: List[Tuple[Any, Tuple]],
-        output_annotations: List[Tuple[Any, Tuple]]
+        output_annotations: List[Tuple[Any, Tuple]],
+        towhee_config_path: str
     ):
         self.task_name = task_name
         self.op_name = op_name
         self.op_init_args = op_init_args
         self.input_annotations = input_annotations
         self.output_annotations = output_annotations
+        self.towhee_config_path = towhee_config_path
 
     def gen_imports(self):
         lines = []
+        lines.append('import json')
         lines.append('import towhee')
+        lines.append('import towhee.compiler')
         lines.append('import numpy')
         lines.append('from towhee import ops')
         lines.append('import triton_python_backend_utils as pb_utils')
@@ -296,6 +300,11 @@ class OpPyModelBuilder(PyModelBuilder):
         lines.append('op_wrapper = getattr(task, \'' + self.op_name + '\')(' + '**init_args' + ')')
         lines.append('self.op = op_wrapper.get_op()')
         lines.append('self.op._device = device')
+        lines.append('with open(\'' + str(self.towhee_config_path) + '\', \'r\') as f:')
+        lines.append(fmt.intend('self.op_config = json.load(f)'))
+        lines.append('self.jit = self.op_config.get(\'jit\', None)')
+        lines.append('if self.jit == \'towhee\':')
+        lines.append(fmt.intend('self.jit = \'nebullvm\''))
         lines.append('if hasattr(self.op, "to_device"):')
         lines.append(fmt.intend('self.op.to_device()'))
         lines = lines[:1] + fmt.intend(lines[1:])
@@ -337,7 +346,13 @@ class OpPyModelBuilder(PyModelBuilder):
         taskloop.append('')
         taskloop.append('# call callable object')
         op_results = ['result' + str(i) for i in range(len(self.output_annotations))]
-        taskloop.append(', '.join(op_results) + ' = self.op(' + ' ,'.join(op_input_args) + ')')
+
+        taskloop.append('if self.jit is not None:')
+        taskloop.append(fmt.intend('with towhee.compiler.jit_compile(self.jit):'))
+        taskloop.append(fmt.intend(fmt.intend(', '.join(op_results) + ' = self.op(' + ' ,'.join(op_input_args) + ')')))
+
+        taskloop.append('else:')
+        taskloop.append(fmt.intend(', '.join(op_results) + ' = self.op(' + ' ,'.join(op_input_args) + ')'))
 
         taskloop.append('')
         taskloop.append('# convert results to tensors')
@@ -398,6 +413,7 @@ def gen_model_from_pickled_callable(
 
 def gen_model_from_op(
     save_path: str,
+    towhee_config_path: str,
     task_name: str,
     op_name: str,
     op_init_args: Dict,
@@ -409,7 +425,9 @@ def gen_model_from_op(
         op_name,
         op_init_args,
         input_annotations,
-        output_annotations
+        output_annotations,
+        towhee_config_path
     )
 
     return builder.build(save_path)
+
