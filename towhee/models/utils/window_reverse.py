@@ -5,10 +5,14 @@
 def window_reverse(windows, window_size: int, h: int, w: int):
     """
     Args:
-       windows: (num_windows*b, window_size, window_size, c)
-       window_size (int): Window size
-       h (int): Height of image
-       w (int): Width of image
+       windows (`tuple`):
+            (num_windows*b, window_size, window_size, c)
+       window_size (`int`):
+           Window size
+       h (`int`):
+           Height of image
+       w (`int`):
+           Width of image
     Returns:
        x: (b, h, w, c)
     """
