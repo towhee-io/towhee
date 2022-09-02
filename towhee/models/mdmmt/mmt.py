@@ -212,6 +212,11 @@ class MMTTXT(nn.Module):
 class MMTVID(nn.Module):
     """
     MMT VID model
+    Args:
+        expert_dims (Dict): dim of each expert model
+        vid_bert_config (Any): vid bert config
+        same_dim (int): reduce to same dim
+        hidden_size (int): hidden size
     """
 
     def __init__(self,
