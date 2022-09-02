@@ -108,6 +108,15 @@ def pad(x, max_length):
 class MMTTXT(nn.Module):
     """
     MMT TXT Model
+    Args:
+        txt_bert (nn.Module): Bert model using for text
+        tokenizer (Any): Tokenizer for input text
+        max_length (int): text max length
+        modalities (List): modalities name list
+        add_special_tokens (bool): whether use special tokens
+        add_dot (bool): add dot in the end of text
+        same_dim (int): same dim in the dimension of output of GatedEmbeddingUnit
+        dout_prob (float): dropout prob
     """
 
     def __init__(self,
