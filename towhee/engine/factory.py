@@ -38,7 +38,8 @@ def op(operator_src: str,
        tag: str = 'main',
        arg: List[Any] = [],
        kwargs: Dict[str, Any] = {}):
-    """Create the supplied operator.
+    """
+    Create the supplied operator.
 
     Entry method which takes either operator tasks or paths to python files or class in notebook.
     An `Operator` object is created with the init args(kwargs).
@@ -132,7 +133,8 @@ DEFAULT_PIPELINES = {
 
 
 class _PipelineWrapper:
-    """A wrapper class around `Pipeline`.
+    """
+    A wrapper class around `Pipeline`.
 
     The class prevents users from having to create `DataFrame` instances by hand.
 
@@ -183,7 +185,8 @@ def pipeline(pipeline_src: str,
              tag: str = 'main',
              install_reqs: bool = True,
              **kwargs):
-    """Entry method which takes either an input task or path to an operator YAML.
+    """
+    Entry method which takes either an input task or path to an operator YAML.
 
     A `Pipeline` object is created (based on said task) and subsequently added to the
     existing `Engine`.
@@ -216,7 +219,8 @@ def pipeline(pipeline_src: str,
 
 
 class _PipelineBuilder:
-    """Build a pipeline with template variables.
+    """
+    Build a pipeline with template variables.
 
     A pipeline template is a yaml file contains `template variables`,
     which will be replaced by `variable values` when createing pipeline instance.
@@ -255,7 +259,8 @@ class _PipelineBuilder:
 
 @dynamic_dispatch
 def ops(*arg, **kws):
-    """Create operator instance.
+    """
+    Create operator instance.
 
     Entry point for creating operator instances, for example:
 
@@ -271,7 +276,8 @@ def ops(*arg, **kws):
 
 @dynamic_dispatch
 def pipes(*arg, **kws):
-    """Create pipeline instance.
+    """
+    Create pipeline instance.
 
     Entry point for creating pipeline instances, for example:
 
