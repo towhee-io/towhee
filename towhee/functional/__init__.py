@@ -32,7 +32,8 @@ read_zip = DataCollection.read_zip
 
 # pylint: disable=redefined-builtin
 def _range(*args, **kwargs):  # pragma: no cover
-    """Return a DataCollection of a range of values.
+    """
+    Return a DataCollection of a range of values.
 
     Returns:
         DataCollection or DataFrame: The range of values.
@@ -60,7 +61,8 @@ range = dynamic_dispatch(_range)
 
 
 def _glob(*arg):  # pragma: no cover
-    """Return a DataCollection of paths matching a pathname pattern.
+    """
+    Return a DataCollection of paths matching a pathname pattern.
 
     Returns:
         DataCollection or DataFrame: DataCollection holding paths.
@@ -89,7 +91,8 @@ glob = dynamic_dispatch(_glob)
 
 
 def _glob_zip(uri, pattern):  # pragma: no cover
-    """Return a DataCollection of files matching a pathname pattern from a zip archive.
+    """
+    Return a DataCollection of files matching a pathname pattern from a zip archive.
 
     Args:
         uri (str or Path): The path to zip.
@@ -122,7 +125,8 @@ glob_zip = dynamic_dispatch(_glob_zip)
 
 
 def _api():
-    """Create an API input, for building RestFul API or application API.
+    """
+    Create an API input, for building RestFul API or application API.
 
     Returns:
         DataFrame: DataFrame containing the APi.
@@ -174,7 +178,8 @@ api = dynamic_dispatch(_api)
 
 
 def _dummy_input():
-    """Create a dummy input.
+    """
+    Create a dummy input.
 
     Returns:
         DataFrame: DataFrame containing the pipeline.
@@ -222,7 +227,8 @@ dummy_input = dynamic_dispatch(_dummy_input)
 
 
 def _dc(iterable):
-    """Return a DataCollection.
+    """
+    Return a DataCollection.
 
     Args:
         iterable (iterable): The iterable to wrap in a DataCollection.
