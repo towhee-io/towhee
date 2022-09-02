@@ -39,16 +39,26 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
     CLIP4Clip model from the paper: https://arxiv.org/abs/2104.08860
     Only meanP and 2d type reserved because of its performance.
     Args:
-        embed_dim (int): embedding dimension
-        image_resolution (int): image resolution
-        vision_layers (int): number of layers for vision
-        vision_width (int): width for vision
-        vision_patch_size (int): patch size for vision
-        context_length (int): length of context
-        vocab_size (int): vocabulary size
-        transformer_width (int): width for transformer
-        transformer_heads (int): number of heads for transformer
-        transformer_layers (int): number of layers for transformer size
+        embed_dim (`int`):
+            Embedding dimension.
+        image_resolution (`int`):
+            Image resolution.
+        vision_layers (`int`):
+            Number of layers for vision.
+        vision_width (`int`):
+            Width for vision.
+        vision_patch_size (`int`):
+            Patch size for vision.
+        context_length (`int`):
+            Length of context.
+        vocab_size (`int`):
+            Vocabulary size.
+        transformer_width (`int`):
+            Width for transformer.
+        transformer_heads (`int`):
+            Number of heads for transformer.
+        transformer_layers (`int`):
+            Number of layers for transformer size.
     """
 
     def __init__(self, embed_dim: int,
