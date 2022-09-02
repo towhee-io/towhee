@@ -458,6 +458,16 @@ class FactorAttConvRelPosEnc(nn.Module):
 class MHCABlock(nn.Module):
     """
     Multi-Head Convolutional self-Attention block.
+    Args:
+        dim (int): input and output dimension
+        num_heads (int): number of heads
+        mlp_ratio (float): mlp ratio
+        drop_path (float): drop path
+        qkv_bias (bool): qkv bias
+        qk_scale (float): qk scale
+        norm_layer (nn.Module): normalization layer
+        shared_cpe (nn.Module): shared convolutional position encoding
+        shared_crpe (nn.Module): shared convolutional relative position encoding
     """
 
     def __init__(
