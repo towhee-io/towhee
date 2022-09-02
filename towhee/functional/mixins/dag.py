@@ -109,7 +109,7 @@ def register_dag(f):
 class DagMixin:
     #pylint: disable=import-outside-toplevel
     """
-    Mixin for creating DAGs and their corresponding yamls from a DC
+    Mixin for creating DAGs and their corresponding yamls from a DC.
     """
     def __init__(self) -> None:
         super().__init__()
@@ -220,7 +220,7 @@ class DagMixin:
 
     def netx(self):
         """
-        show dags' relations.
+        Show dags' relations.
 
         Returns:
             image: The dags' relations
