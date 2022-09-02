@@ -20,7 +20,7 @@ from towhee.functional.entity import Entity
 
 class DatasetMixin:
     """
-    Mixin for dealing with dataset
+    Mixin for dealing with dataset.
     """
     @classmethod
     def from_df(cls, dataframe, as_stream=False):
@@ -32,7 +32,7 @@ class DatasetMixin:
     @classmethod
     def from_glob(cls, *args):  # pragma: no cover
         """
-        generate a file list with `pattern`
+        Generate a file list with `pattern`.
         """
         from glob import glob
         files = []
@@ -44,7 +44,7 @@ class DatasetMixin:
 
     @classmethod
     def read_zip(cls, url, pattern, mode='r'):  # pragma: no cover
-        """load files from url/path.
+        """Load files from url/path.
 
         Args:
             zip_src (`Union[str, path]`):
