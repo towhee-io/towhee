@@ -71,7 +71,8 @@ class EngineConfig:
 
 @singleton
 class Engine(threading.Thread):
-    """Engines are the core component responsible for deliving results to the user. A
+    """
+    Engines are the core component responsible for deliving results to the user. A
     single engine may be composed of multiple pipelines.
     """
 
@@ -113,7 +114,8 @@ class Engine(threading.Thread):
         self._task_sched.schedule_forever(self._config.sched_interval_ms)
 
     def add_pipeline(self, pipeline: Pipeline):
-        """Add a single pipeline to this engine. Pipelines can be added long after an
+        """
+        Add a single pipeline to this engine. Pipelines can be added long after an
         engine has been instantiated.
 
         Args:
@@ -125,7 +127,8 @@ class Engine(threading.Thread):
         self._pipelines.append(pipeline)
 
     def _setup_execs(self):
-        """(Initialization function) Scan for devices and create TaskExecutors to
+        """
+        (Initialization function) Scan for devices and create TaskExecutors to
         manage task execution on CPU, GPU, and other devices.
         """
         self._task_execs = []
@@ -141,7 +144,8 @@ class Engine(threading.Thread):
             executor.start()
 
     def _setup_sched(self):
-        """(Initialization function) Create a `TaskScheduler` instance.
+        """
+        (Initialization function) Create a `TaskScheduler` instance.
         """
         self._task_sched = None
 
