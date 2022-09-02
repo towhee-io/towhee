@@ -30,7 +30,8 @@ from towhee.hparam import param_scope
 from .operator_registry import OperatorRegistry
 
 class OperatorLoader:
-    """Wrapper class used to load operators from either local cache or a remote
+    """
+    Wrapper class used to load operators from either local cache or a remote
     location.
 
     Args:
@@ -143,7 +144,8 @@ class OperatorLoader:
         return self.load_operator_from_path(path, arg, kws)
 
     def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:
-        """Attempts to load an operator from cache. If it does not exist, looks up the
+        """
+        Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
         convention, the operator must be called `Operator` and all associated data must
         be contained within a single directory.

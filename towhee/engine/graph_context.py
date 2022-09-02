@@ -50,7 +50,8 @@ class GraphContext:
 
     @property
     def inputs(self) -> DataFrame:
-        """Returns the graph's input `DataFrame`.
+        """
+        Returns the graph's input `DataFrame`.
 
         Returns:
             (`towhee.dataframe.DataFrame`)
@@ -60,7 +61,8 @@ class GraphContext:
 
     @property
     def outputs(self) -> DataFrame:
-        """Returns the graph's output `DataFrame`.
+        """
+        Returns the graph's output `DataFrame`.
 
         Returns:
             (`towhee.dataframe.DataFrame`)
