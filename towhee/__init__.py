@@ -63,20 +63,15 @@ __import__('pkg_resources').declare_namespace(__name__)
 
 
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
-    """
-    Get a dataset by name, and pass into the custom params.
+    """Get a dataset by name, and pass into the custom params.
 
     Args:
-        name (`str`):
-            Name of a dataset.
-        *args (`Any`):
-            Arguments of the dataset construct method.
-        **kwargs (`Any`):
-            Keyword arguments of the dataset construct method.
+        name (str): Name of a dataset.
+        *args (any): Arguments of the dataset construct method.
+        **kwargs (any): Keyword arguments of the dataset construct method.
 
     Returns:
-        (`TorchDataSet`)
-            The corresponding `TorchDataSet`.
+        TorchDataSet: The corresponding `TorchDataSet`.
 
     Examples:
         >>> from towhee import dataset
@@ -94,40 +89,37 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
 
 
 def update_default_cache(default_path: Union[str, Path]):
-    """
-    Update default cache.
+    """Update default cache.
 
     Args:
-        default_path (`Union[str, Path]`):
-            The default cache path.
+        default_path (Union[str, Path]): The default cache path.
 
     Examples:
-    >>> import towhee
-    >>> towhee.update_default_cache('mock/path')
-    >>> towhee.default_cache
-    PosixPath('mock/path')
+        >>> import towhee
+        >>> towhee.update_default_cache('mock/path')
+        >>> towhee.default_cache
+        PosixPath('mock/path')
 
-    >>> from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
-    >>> towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
+        >>> from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
+        >>> towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
     """
     fmc = FileManagerConfig()
     fmc.update_default_cache(default_path)
 
 
 def add_cache_path(insert_path: Union[str, Path, List[Union[str, Path]]]):
-    """
-    Add a cache location to the front. Most recently added paths will be
-    checked first.
+    """Add a cache location to the front.
+
+    Most recently added paths will be checked first.
 
     Args:
-        insert_path (`str` | `Path | `list[str | Path]`):
-            The path that you are trying to add. Accepts multiple inputs at once.
+        insert_path (str | Path | list[str | Path]): The path that you are trying to add. Accepts multiple inputs at once.
 
     Examples:
-    >>> import towhee
-    >>> towhee.add_cache_path('mock/path')
-    >>> towhee.cache_paths[0]
-    PosixPath('mock/path')
+        >>> import towhee
+        >>> towhee.add_cache_path('mock/path')
+        >>> towhee.cache_paths[0]
+        PosixPath('mock/path')
     """
     fmc = FileManagerConfig()
     fmc.add_cache_path(insert_path)
