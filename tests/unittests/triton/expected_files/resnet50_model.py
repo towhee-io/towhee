@@ -1,8 +1,9 @@
-import json
 import towhee
 import towhee.compiler
+import json
 import numpy
 from towhee import ops
+from pathlib import Path
 import triton_python_backend_utils as pb_utils
 
 
@@ -22,7 +23,8 @@ class TritonPythonModel:
         if hasattr(self.op, "to_device"):
             self.op.to_device()
         # get jit configuration
-        with open('./config.json', 'r') as f:
+        dc_config_path = Path(__file__).parent.parent / 'dc_config.json'
+        with open(dc_config_path, 'r') as f:
             self.op_config = json.load(f)
         self.jit = self.op_config.get('jit', None)
         if self.jit == 'towhee':

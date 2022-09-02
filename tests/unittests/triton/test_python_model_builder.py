@@ -88,10 +88,8 @@ class TestPythonModelBuilder(unittest.TestCase):
         with TemporaryDirectory(dir='./') as gen_file_path:
             pyfile_name = 'resnet50_model.py'
             save_path = gen_file_path + '/' + pyfile_name
-            towhee_config_path = gen_file_path + '/config.json'
             gen_model_from_op(
                 save_path=save_path,
-                towhee_config_path=towhee_config_path,
                 task_name='image_embedding',
                 op_name='timm',
                 op_init_args={'model_name': 'resnet50'},

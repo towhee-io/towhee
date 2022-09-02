@@ -16,6 +16,7 @@
 import json
 from typing import List, Tuple, Any, Dict
 
+from towhee.serve.triton import constant
 import towhee.serve.triton.type_gen as tygen
 from towhee.serve.triton import format_utils as fmt
 
@@ -266,23 +267,22 @@ class OpPyModelBuilder(PyModelBuilder):
         op_name: str,
         op_init_args: Dict,
         input_annotations: List[Tuple[Any, Tuple]],
-        output_annotations: List[Tuple[Any, Tuple]],
-        towhee_config_path: str
+        output_annotations: List[Tuple[Any, Tuple]]
     ):
         self.task_name = task_name
         self.op_name = op_name
         self.op_init_args = op_init_args
         self.input_annotations = input_annotations
         self.output_annotations = output_annotations
-        self.towhee_config_path = towhee_config_path
 
     def gen_imports(self):
         lines = []
-        lines.append('import json')
         lines.append('import towhee')
         lines.append('import towhee.compiler')
+        lines.append('import json')
         lines.append('import numpy')
         lines.append('from towhee import ops')
+        lines.append('from pathlib import Path')
         lines.append('import triton_python_backend_utils as pb_utils')
 
         return fmt.add_line_separator(lines)
@@ -303,7 +303,8 @@ class OpPyModelBuilder(PyModelBuilder):
         lines.append('if hasattr(self.op, "to_device"):')
         lines.append(fmt.intend('self.op.to_device()'))
         lines.append('# get jit configuration')
-        lines.append('with open(\'' + str(self.towhee_config_path) + '\', \'r\') as f:')
+        lines.append(f'dc_config_path = Path(__file__).parent.parent / \'{constant.DC_CONFIG_FILE}\'')
+        lines.append('with open(dc_config_path, \'r\') as f:')
         lines.append(fmt.intend('self.op_config = json.load(f)'))
         lines.append('self.jit = self.op_config.get(\'jit\', None)')
         lines.append('if self.jit == \'towhee\':')
@@ -414,7 +415,6 @@ def gen_model_from_pickled_callable(
 
 def gen_model_from_op(
     save_path: str,
-    towhee_config_path: str,
     task_name: str,
     op_name: str,
     op_init_args: Dict,
@@ -426,8 +426,7 @@ def gen_model_from_op(
         op_name,
         op_init_args,
         input_annotations,
-        output_annotations,
-        towhee_config_path
+        output_annotations
     )
 
     return builder.build(save_path)

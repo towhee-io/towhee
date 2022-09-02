@@ -43,8 +43,8 @@ class TritonFiles:
         return self._root / 'config.pbtxt'
 
     @property
-    def towhee_config_file(self) -> Path:
-        return self._root / 'config.json'
+    def dc_config_file(self) -> Path:
+        return self._root / constant.DC_CONFIG_FILE
 
     @property
     def model_path(self) -> Path:
@@ -149,10 +149,9 @@ class PyOpToTriton(ToTriton):
         self._init_args = init_args
 
     def _prepare_model(self):
-        with open(self._triton_files.towhee_config_file, 'wt', encoding='utf-8') as f:
+        with open(self._triton_files.dc_config_file, 'wt', encoding='utf-8') as f:
             json.dump(self._op_config, f)
         gen_model_from_op(self._triton_files.python_model_file,
-                          self._triton_files.towhee_config_file,
                           self._op_hub,
                           self._op_name,
                           self._init_args,

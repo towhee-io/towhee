@@ -29,3 +29,4 @@ FORMAT_PRIORITY = 'format_priority'
 # bls
 
 OP_CONFIG_FILE = 'config.json'
+DC_CONFIG_FILE = 'dc_config.json'
