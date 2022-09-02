@@ -31,23 +31,23 @@ class RepMLPNetUnit(nn.Module):
     RepMLP Unit (composed of RepMLP block)
 
     Args:
-        - channels (`int`):
+        channels (`int`):
             Number of input channels & final output channels.
-        - internal_neurons (`int`):
+        internal_neurons (`int`):
             Number of channels used to connect conv2d layers inside block.
-        - h (`int`):
+        h (`int`):
             Input image height.
-        - w (`int`):
+        w (`int`):
             Input image weight.
-        - reparam_conv_k (`tuple`):
+        reparam_conv_k (`tuple`):
             Numbers of conv layers.
-        - globalperceptron_reduce (`int`):
+        globalperceptron_reduce (`int`):
             Number to reduce internal hidden channels.
-        - ffn_expand (`int`):
+        ffn_expand (`int`):
             Number to expan channels in FFN block
-        - num_sharesets (`int`):
+        num_sharesets (`int`):
             Number of sharesets.
-        - deploy (`bool`):
+        deploy (`bool`):
             Flag to control deploy parameters like bias.
     """
 
