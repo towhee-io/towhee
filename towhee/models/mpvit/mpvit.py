@@ -167,7 +167,7 @@ class DWConv2dBN(nn.Module):
         out_ch (int): output channel
         kernel_size (int): kernel features
         stride (int): stride
-        norm_layer (int): normalization layer
+        norm_layer (nn.Module): normalization layer
         bn_weight_init (int): batch normalization init
     """
 
@@ -221,8 +221,15 @@ class DWConv2dBN(nn.Module):
 
 
 class DWCPatchEmbed(nn.Module):
-    """Depthwise Convolutional Patch Embedding layer Image to Patch
-    Embedding."""
+    """
+    Depthwise Convolutional Patch Embedding layer Image to Patch Embedding.
+    Args:
+        in_chans (int): input channel
+        embed_dim (int): embedding dimension
+        patch_size (int): patch size
+        stride (int): stride
+        act_layer (nn.Module): activation layer
+    """
 
     def __init__(self,
                  in_chans=3,
@@ -248,8 +255,9 @@ class DWCPatchEmbed(nn.Module):
 
 
 class PatchEmbedStage(nn.Module):
-    """Depthwise Convolutional Patch Embedding stage comprised of
-    `DWCPatchEmbed` layers."""
+    """
+    Depthwise Convolutional Patch Embedding stage comprised of `DWCPatchEmbed` layers.
+    """
 
     def __init__(self, embed_dim, num_path=4, is_pool=False):
         super().__init__()
