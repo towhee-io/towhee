@@ -22,7 +22,8 @@ from towhee.engine.thread_pool_task_executor import ThreadPoolTaskExecutor
 
 
 class TaskScheduler(ABC):
-    """Task scheduler abstract interface.
+    """
+    Task scheduler abstract interface.
 
     Args:
         task_execs: (`List[towhee.TaskExecutor]`)
@@ -45,7 +46,8 @@ class TaskScheduler(ABC):
         raise NotImplementedError
 
     def schedule_forever(self, sleep_ms):
-        """Runs the a single schedule step in a loop.
+        """
+        Runs the a single schedule step in a loop.
 
         sleep_ms: (`int`)
             Milliseconds to sleep after completing a single scheduling step.
