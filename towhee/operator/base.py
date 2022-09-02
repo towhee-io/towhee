@@ -28,10 +28,12 @@ from enum import Flag, auto
 
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
+
 class OperatorFlag(Flag):
     EMPTYFLAG = auto()
     STATELESS = auto()
     REUSEABLE = auto()
+
 
 class Operator(ABC):
     """
