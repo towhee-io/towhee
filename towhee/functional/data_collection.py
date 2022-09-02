@@ -25,7 +25,8 @@ from towhee.functional.mixins.column import ColumnMixin
 
 
 class DataCollection(Iterable, DCMixins):
-    """A pythonic computation and processing framework.
+    """
+    A pythonic computation and processing framework.
 
     DataCollection is a pythonic computation and processing framework for unstructured
     data in machine learning and data science. It allows a data scientist or researcher
@@ -67,7 +68,8 @@ class DataCollection(Iterable, DCMixins):
     """
 
     def __init__(self, iterable: Iterable) -> None:
-        """Initializes a new DataCollection instance.
+        """
+        Initializes a new DataCollection instance.
 
         Args:
             iterable (Iterable): The iterable data that is stored in the DataCollection.
@@ -76,7 +78,8 @@ class DataCollection(Iterable, DCMixins):
         self._iterable = iterable
 
     def __iter__(self) -> iter:
-        """Generate an iterator of the DataCollection.
+        """
+        Generate an iterator of the DataCollection.
 
         Returns:
             iter : iterator for the data.
@@ -86,7 +89,8 @@ class DataCollection(Iterable, DCMixins):
         return iter(self._iterable)
 
     def __getattr__(self, name) -> 'DataCollection':
-        """Unknown method dispatcher.
+        """
+        Unknown method dispatcher.
 
         When an unknown method is invoked on a `DataCollection` object, the function call
         will be dispatched to a method resolver. By registering function to the
@@ -145,7 +149,8 @@ class DataCollection(Iterable, DCMixins):
         return getattr(wrapper, name)
 
     def __getitem__(self, index) -> any:
-        """Index based access of element in DataCollection.
+        """
+        Index based access of element in DataCollection.
 
         Access the element at the given index, similar to accessing `list[at_index]`.
         Does not work with streamed DataCollections.
@@ -182,7 +187,8 @@ class DataCollection(Iterable, DCMixins):
         return DataCollection(self._iterable[index])
 
     def __setitem__(self, index, value):
-        """Index based setting of element in DataCollection.
+        """
+        Index based setting of element in DataCollection.
 
         Assign the value of the element at the given index, similar to
         `list[at_index]=val`. Does not work with streamed DataCollections.
@@ -217,7 +223,8 @@ class DataCollection(Iterable, DCMixins):
 
     @register_dag
     def __add__(self, other) -> 'DataCollection':
-        """Concat two DataCollections.
+        """
+        Concat two DataCollections.
 
         Args:
             other (DataCollection): The DataCollection being appended to the calling
@@ -245,7 +252,8 @@ class DataCollection(Iterable, DCMixins):
         return self._factory(inner())
 
     def __repr__(self) -> str:
-        """String representation of the DataCollection
+        """
+        String representation of the DataCollection
 
         Returns:
             str: String representation of the DataCollection.
@@ -269,7 +277,8 @@ class DataCollection(Iterable, DCMixins):
 
     # Generation Related Function
     def _factory(self, iterable, parent_stream=True) -> 'DataCollection':
-        """Factory method for Creating new DataCollections.
+        """
+        Factory method for Creating new DataCollections.
 
         This factory method has been wrapped into a `param_scope()` which contains the
         parent DataCollection's information.
@@ -297,7 +306,8 @@ class DataCollection(Iterable, DCMixins):
     @staticmethod
     @register_dag
     def range(*arg, **kws) -> 'DataCollection':
-        """Generate DataCollection with range of values.
+        """
+        Generate DataCollection with range of values.
 
         Generate DataCollection with a range of numbers as the data. Functions in same
         way as Python `range()` function.
@@ -313,7 +323,8 @@ class DataCollection(Iterable, DCMixins):
         return DataCollection(range(*arg, **kws))
 
     def to_list(self) -> list:
-        """Convert DataCollection to list.
+        """
+        Convert DataCollection to list.
 
         Returns:
             list: List of values stored in DataCollection.
@@ -327,7 +338,8 @@ class DataCollection(Iterable, DCMixins):
 
     @register_dag
     def map(self, *arg) -> 'DataCollection':
-        """Apply a function across all values in a DataCollection.
+        """
+        Apply a function across all values in a DataCollection.
 
         Can apply multiple functions to the DataCollection. If multiple functions
         supplied, the same amount of new DataCollections will be returend.
@@ -384,7 +396,8 @@ class DataCollection(Iterable, DCMixins):
 
     @register_dag
     def filter(self, unary_op: Callable, drop_empty=False) -> 'DataCollection':
-        """Filter the DataCollection data based on function.
+        """
+        Filter the DataCollection data based on function.
 
         Filters the DataCollection based on the function provided. If data is stored
         as an Option (see towhee.functional.option.py), drop empty will decide whether
@@ -415,7 +428,8 @@ class DataCollection(Iterable, DCMixins):
         return self._factory(filter(inner, self._iterable))
 
     def run(self):
-        """Iterate through the DataCollections data.
+        """
+        Iterate through the DataCollections data.
 
         Stream-based DataCollections will not run if the data is not a datasink. This
         function is a datasink that consumes the data without any operations.
@@ -424,7 +438,8 @@ class DataCollection(Iterable, DCMixins):
             pass
 
     def to_df(self) -> 'DataFrame':
-        """Turn a DataCollection into a DataFrame.
+        """
+        Turn a DataCollection into a DataFrame.
 
         Returns:
             DataFrame: Resulting converted DataFrame.
@@ -443,7 +458,8 @@ class DataCollection(Iterable, DCMixins):
 
 
 class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
-    """Entity based DataCollection.
+    """
+    Entity based DataCollection.
 
     Examples:
         >>> from towhee import Entity
@@ -466,7 +482,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             self._mode = self.ModeFlag.COLBASEDFLAG
 
     def _factory(self, iterable, parent_stream=True, mode=None) -> 'DataFrame':
-        """Factory method for Creating new DataFrames.
+        """
+        Factory method for Creating new DataFrames.
 
         This factory method has been wrapped into a `param_scope()` which contains the
         parent DataFrames's information.
@@ -497,7 +514,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             return df
 
     def to_dc(self) -> 'DataCollection':
-        """Turn a DataFrame into a DataCollection.
+        """
+        Turn a DataFrame into a DataCollection.
 
         Returns:
             DataCollection: Resulting DataCollection from DataFrame
@@ -516,7 +534,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
 
     @property
     def mode(self):
-        """Storage mode of the DataFrame.
+        """
+        Storage mode of the DataFrame.
 
         Return the storage mode of the DataFrame.
 
@@ -537,7 +556,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
         return self._mode
 
     def __iter__(self) -> iter:
-        """Generate an iterator of the DataFrame.
+        """
+        Generate an iterator of the DataFrame.
 
         Returns:
             iterator: The iterator for the DataFrame.
@@ -575,7 +595,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
             return (ev for wtable in self._iterable.chunks() for ev in wtable)
 
     def map(self, *arg) -> 'DataFrame':
-        """Apply a function across all values in a DataFrame.
+        """
+        Apply a function across all values in a DataFrame.
 
         Args:
             *arg (Callable): One function to apply to the DataFrame.
