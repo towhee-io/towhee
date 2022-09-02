@@ -257,6 +257,10 @@ class DWCPatchEmbed(nn.Module):
 class PatchEmbedStage(nn.Module):
     """
     Depthwise Convolutional Patch Embedding stage comprised of `DWCPatchEmbed` layers.
+    Args:
+        embed_dim (int): embedding dimension
+        num_path (int): number of path
+        is_pool (bool): is pool
     """
 
     def __init__(self, embed_dim, num_path=4, is_pool=False):
@@ -281,9 +285,13 @@ class PatchEmbedStage(nn.Module):
 
 
 class ConvPosEnc(nn.Module):
-    """Convolutional Position Encoding.
+    """
+    Convolutional Position Encoding.
 
     Note: This module is similar to the conditional position encoding in CPVT.
+    Args:
+        dim (int): input and output dimension
+        k (int): kernel size
     """
 
     def __init__(self, dim, k=3):
@@ -305,7 +313,9 @@ class ConvPosEnc(nn.Module):
 
 
 class ConvRelPosEnc(nn.Module):
-    """Convolutional relative position encoding."""
+    """
+    Convolutional relative position encoding.
+    """
 
     def __init__(self, ch, h, window):
         """
@@ -382,8 +392,16 @@ class ConvRelPosEnc(nn.Module):
 
 
 class FactorAttConvRelPosEnc(nn.Module):
-    """Factorized attention with convolutional relative position encoding
-    class."""
+    """
+    Factorized attention with convolutional relative position encoding class.
+    Args:
+        dim (int): input and output dimension
+        qkv_bias (bool): qkv bias
+        qk_scale (float): qk scale
+        attn_drop (float): attention dropout
+        proj_drop (float): projection dropout
+        shared_crpe (nn.Module): shared convolutional relative position encoding
+    """
 
     def __init__(
             self,
@@ -438,7 +456,9 @@ class FactorAttConvRelPosEnc(nn.Module):
 
 
 class MHCABlock(nn.Module):
-    """Multi-Head Convolutional self-Attention block."""
+    """
+    Multi-Head Convolutional self-Attention block.
+    """
 
     def __init__(
             self,
