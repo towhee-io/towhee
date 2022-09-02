@@ -831,7 +831,7 @@ class MPViT(nn.Module):
         return out
 
 
-def mpvit_tiny(**kwargs):
+def mpvit_tiny(**kwargs) -> MPViT:
     """mpvit_tiny :
 
     - #paths : [2, 3, 3, 3]
@@ -857,7 +857,7 @@ def mpvit_tiny(**kwargs):
     return model
 
 
-def mpvit_xsmall(**kwargs):
+def mpvit_xsmall(**kwargs) -> MPViT:
     """mpvit_xsmall :
 
     - #paths : [2, 3, 3, 3]
@@ -883,7 +883,7 @@ def mpvit_xsmall(**kwargs):
     return model
 
 
-def mpvit_small(**kwargs):
+def mpvit_small(**kwargs) -> MPViT:
     """mpvit_small :
 
     - #paths : [2, 3, 3, 3]
@@ -909,7 +909,7 @@ def mpvit_small(**kwargs):
     return model
 
 
-def mpvit_base(**kwargs):
+def mpvit_base(**kwargs) -> MPViT:
     """mpvit_base :
 
     - #paths : [2, 3, 3, 3]
