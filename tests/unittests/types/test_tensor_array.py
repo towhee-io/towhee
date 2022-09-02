@@ -19,7 +19,6 @@ import towhee.types.tensor_array
 def load_tests(loader, tests, ignore):
     #pylint: disable=unused-argument
     tests.addTests(doctest.DocTestSuite(towhee.types.tensor_array))
-
     return tests
 
 
