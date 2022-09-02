@@ -26,7 +26,8 @@ def _get_default_namespace():
 
 
 class OperatorRegistry:
-    """Operator Registry
+    """
+    Operator Registry
     """
 
     REGISTRY: Dict[str, Any] = {}
