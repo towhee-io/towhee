@@ -24,13 +24,13 @@ class FFNBlock(nn.Module):
     The common FFN block.
 
     Args:
-        - in_channels (`int`):
+        in_channels (`int`):
             Number of input channels.
-        - hidden_channels (`int`):
+        hidden_channels (`int`):
             Number of hidden channels to connect conv2d layers.
-        - out_channels (`int`):
+        out_channels (`int`):
             Number of output channels.
-        - act_layer (`nn.Module`):
+        act_layer (`nn.Module`):
             Activation layer.
 
     Example:
