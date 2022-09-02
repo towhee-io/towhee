@@ -1,4 +1,6 @@
+import json
 import towhee
+import towhee.compiler
 import numpy
 from towhee import ops
 import triton_python_backend_utils as pb_utils
@@ -19,6 +21,12 @@ class TritonPythonModel:
         self.op._device = device
         if hasattr(self.op, "to_device"):
             self.op.to_device()
+        # get jit configuration
+        with open('./config.json', 'r') as f:
+            self.op_config = json.load(f)
+        self.jit = self.op_config.get('jit', None)
+        if self.jit == 'towhee':
+            self.jit = 'nebullvm'
 
     def execute(self, requests):
 
@@ -33,7 +41,11 @@ class TritonPythonModel:
             arg0 = towhee._types.Image(in0.as_numpy(), in1.as_numpy()[0].decode('utf-8'))
 
             # call callable object
-            result0 = self.op(arg0)
+            if self.jit is not None:
+                with towhee.compiler.jit_compile(self.jit):
+                    result0 = self.op(arg0)
+            else:
+                result0 = self.op(arg0)
 
             # convert results to tensors
             out0 = pb_utils.Tensor('OUTPUT0', numpy.array(result0, numpy.float32))
