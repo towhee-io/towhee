@@ -53,7 +53,7 @@ class SafeMixin:
 
     def safe(self):
         """
-        Shortcut for `exception_safe`
+        Shortcut for `exception_safe`.
         """
         return self.exception_safe()
 
@@ -87,7 +87,7 @@ class SafeMixin:
             callback (Callable): handler for empty values;
 
         Returns:
-            DataCollection: data collection that drops empty values;
+            DataCollection: A DataCollection that drops empty values;
 
         Examples:
 
