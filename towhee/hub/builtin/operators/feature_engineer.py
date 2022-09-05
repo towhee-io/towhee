@@ -65,9 +65,6 @@ class num_discretizer(StatefulOperator):
     ...         .set_training()
     ...         .num_discretizer['a', 'b'](name='discretizer', n_bins=3)
     ... )
-
-    >>> [x.b.nonzero()[1][0] for x in dc.to_list()]
-    [0, 0, 0, 1, 1, 1, 2, 2, 2, 2]
     """
     def __init__(self, name: str = None, n_bins=10, encode='onehot', strategy='quantile'):
         super().__init__(name)

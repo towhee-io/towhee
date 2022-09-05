@@ -200,7 +200,7 @@ class tensor_reshape:
     >>> df.tensor_reshape['tensor', 'new_tensor'](shape = [2, 1]).map(lambda x: x.new_tensor.shape).to_list()
     [(2, 1), (2, 1), (2, 1)]
 
-    >>> df.to_column()
+    >>> df = df.to_column()
     >>> df.tensor_reshape['tensor', 'new_new_tensor'](shape = [2, 1])['new_new_tensor'].map(lambda x: x.shape).to_list()
     [(2, 1), (2, 1), (2, 1)]
     """
@@ -238,7 +238,7 @@ class tensor_random:
     >>> df.tensor_random['a', 'b'](shape = [2, 1]).map(lambda x: x.b.shape).to_list()
     [(2, 1), (2, 1), (2, 1)]
 
-    >>> df.to_column()
+    >>> df = df.to_column()
     >>> df.tensor_random['a', 'c'](shape = [2, 1])['c'].map(lambda x: x.shape).to_list()
     [(2, 1), (2, 1), (2, 1)]
     """
@@ -271,9 +271,9 @@ class tensor_matmul:
     >>> df.tensor_matmul[('a', 'b'), 'c']().to_list()
     [<Entity dict_keys(['a', 'b', 'c'])>, <Entity dict_keys(['a', 'b', 'c'])>, <Entity dict_keys(['a', 'b', 'c'])>]
 
-    >>> df.to_column()
+    >>> df = df.to_column()
     >>> df.tensor_matmul[('a', 'b'), 'd']().to_list()
-    [<EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>]df
+    [<EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>, <EntityView dict_keys(['a', 'b', 'c', 'd'])>]
     """
 
     def __init__(self, trans=None):

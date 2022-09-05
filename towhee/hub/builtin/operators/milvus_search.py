@@ -40,20 +40,18 @@ class milvus_search:  # pragma: no cover
                 RHNSW_PQ: {"params": {"ef": 10}},
                 ANNOY: {"params": {"search_k": 10}}.
 
-    Examples:
-
-    >>> import towhee
-    >>> from pymilvus import connections
-    >>> connections.connect(host='localhost', port='19530')
-    >>> (
-    ...    towhee.glob['path']('./*.jpg')
-    ...           .image_decode['path', 'img']()
-    ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')
-    ...           .milvus_search['vec', 'results'](collection='test')
-    ...           .to_list()
-    ... )
-    [<Entity dict_keys(['path', 'img', 'vec', 'results'])>,
-     <Entity dict_keys(['path', 'img', 'vec', 'results'])>]
+    ```python
+    import towhee
+    from pymilvus import connections
+    connections.connect(host='localhost', port='19530')
+    (
+        towhee.glob['path']('./*.jpg')
+            .image_decode['path', 'img']()
+            .image_embedding.timm['img', 'vec'](model_name='resnet50')
+            .milvus_search['vec', 'results'](collection='test')
+            .to_list()
+    )
+    ```
     """
     def __init__(self, collection, **kwargs):
         from towhee.utils.thirdparty.milvus_utils import Collection
