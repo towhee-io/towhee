@@ -23,7 +23,7 @@ class TritonPythonModel:
         if hasattr(self.op, "to_device"):
             self.op.to_device()
         # get jit configuration
-        dc_config_path = Path(__file__).parent.parent / 'dc_config.json'
+        dc_config_path = Path(__file__).parent / 'dc_config.json'
         with open(dc_config_path, 'r') as f:
             self.op_config = json.load(f)
         self.jit = self.op_config.get('jit', None)

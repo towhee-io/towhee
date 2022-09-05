@@ -303,7 +303,7 @@ class OpPyModelBuilder(PyModelBuilder):
         lines.append('if hasattr(self.op, "to_device"):')
         lines.append(fmt.intend('self.op.to_device()'))
         lines.append('# get jit configuration')
-        lines.append(f'dc_config_path = Path(__file__).parent.parent / \'{constant.DC_CONFIG_FILE}\'')
+        lines.append(f'dc_config_path = Path(__file__).parent / \'{constant.DC_CONFIG_FILE}\'')
         lines.append('with open(dc_config_path, \'r\') as f:')
         lines.append(fmt.intend('self.op_config = json.load(f)'))
         lines.append('self.jit = self.op_config.get(\'jit\', None)')

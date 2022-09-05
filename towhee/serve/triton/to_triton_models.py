@@ -43,12 +43,12 @@ class TritonFiles:
         return self._root / 'config.pbtxt'
 
     @property
-    def dc_config_file(self) -> Path:
-        return self._root / constant.DC_CONFIG_FILE
-
-    @property
     def model_path(self) -> Path:
         return self._root / '1'
+
+    @property
+    def dc_config_file(self) -> Path:
+        return self.model_path / constant.DC_CONFIG_FILE
 
     @property
     def python_model_file(self) -> Path:

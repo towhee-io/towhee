@@ -37,7 +37,7 @@ class TestPyOpToTriton(unittest.TestCase):
             expect_root = Path(EXPECTED_FILE_PATH) / 'py_to_triton_test'
             dst = Path(root) / 'cb2876f3_local_triton_py'
             self.assertTrue(filecmp.cmp(expect_root / 'config.pbtxt', dst / 'config.pbtxt'))
-            self.assertTrue(filecmp.cmp(expect_root / 'dc_config.json', dst / 'dc_config.json'))
+            self.assertTrue(filecmp.cmp(expect_root / '1' / 'dc_config.json', dst / '1' / 'dc_config.json'))
 
 
 class TestPreprocessor(unittest.TestCase):
