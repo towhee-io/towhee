@@ -98,7 +98,7 @@ class image_resize:
     ...         .tensor_random(shape=[100, 100, 3])
     ...         .image_resize(dsize=[10, 10], interpolation='nearest')
     ... )
-    >>> dc.select['shape']().as_raw().to_list()
+    >>> [i.shape for i in dc]
     [(10, 10, 3), (10, 10, 3), (10, 10, 3), (10, 10, 3), (10, 10, 3)]
     """
 

@@ -34,17 +34,16 @@ class faiss_search:
             The kwargs with index.search, refer to https://github.com/facebookresearch/faiss/wiki. And the parameter `k` defaults to 10.
 
     Examples:
-
-    >>> import towhee
-    >>> res = (
-    ...    towhee.glob['path']('./*.jpg')
-    ...           .image_decode['path', 'img']()
-    ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')
-    ...           .faiss_search['vec', 'results'](findex='./faiss/faiss.index')
-    ...           .to_list()
-    ... )
-    [<Entity dict_keys(['path', 'img', 'vec', 'results'])>,
-     <Entity dict_keys(['path', 'img', 'vec', 'results'])>]
+    ```
+    import towhee
+    res = (
+       towhee.glob['path']('./*.jpg')
+              .image_decode['path', 'img']()
+              .image_embedding.timm['img', 'vec'](model_name='resnet50')
+              .faiss_search['vec', 'results'](findex='./faiss/faiss.index')
+              .to_list()
+    )
+    ```
     """
     def __init__(self, findex, **kwargs):
         from towhee.utils.thirdparty.faiss_utils import KVStorage, faiss

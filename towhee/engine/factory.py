@@ -147,12 +147,7 @@ class _PipelineWrapper:
 
     def __call__(self, *args) -> List[Tuple]:
         """
-        Wraps the input arguments around a `Dataframe` for Pipeline.__call__(). For
-        example:
-        ```
-        >>> p = pipeline('some-pipeline')
-        >>> result = p(arg0, arg1)
-        ```
+        Wrap the input arguments around a `Dataframe` for Pipeline.__call__().
         """
         if not args:
             raise RuntimeError('Input data is empty')
@@ -239,7 +234,9 @@ class _PipelineBuilder:
 
     You can specialize template variable values with the following code:
 
-    >>> pipe = _PipelineBuilder(template_variable_1='new_value').pipeline('pipeline_name')
+    ```python
+    pipe = _PipelineBuilder(template_variable_1='new_value').pipeline('pipeline_name')
+    ```
     """
 
     def __init__(self, **kws) -> None:

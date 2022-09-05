@@ -468,7 +468,8 @@ class DataFrame(DataCollection, DataFrameMixin, ColumnMixin):
     """
 
     def __init__(self, iterable: Iterable = None, **kws) -> None:
-        """Initializes a new DataFrame instance.
+        """
+        Initializes a new DataFrame instance.
 
         Args:
             iterable (Iterable, optional): The data to be encapsualted by the DataFrame.
