@@ -53,7 +53,7 @@ automatically optimize it for production-ready environments.
 
 **v0.8.0 Aug. 16, 2022**
 
-* Towhee now supports generating an Nvidia Triton Server from a Towhee pipeline, with aditional support for GPU image decoding.
+* Towhee now supports generating an Nvidia Triton Server from a Towhee pipeline, with additional support for GPU image decoding.
 * Added one audio fingerprinting model: [**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
 * Added two image embedding models: [**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
 
@@ -104,7 +104,7 @@ automatically optimize it for production-ready environments.
 [*X3D*](https://towhee.io/action-classification/pytorchvideo),
 [*MViT*](https://towhee.io/action-classification/pytorchvideo).
 
-## Getting started
+## Getting Started
 
 Towhee requires Python 3.6+. You can install Towhee via `pip`:
 
@@ -149,15 +149,15 @@ Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `Dat
 
 - __Pipelines__: A pipeline is composed of several operators interconnected in the form of a DAG (directed acyclic graph). This DAG can direct complex functionalities, such as embedding feature extraction, data tagging, and cross modal data analysis.
 
-- __DataCollection API__: A Pythonic and method-chaining style API for building custom pipelines. A pipeline defined by the DataColltion API can be run locally on a laptop for fast prototyping and then be converted to a docker image, with end-to-end optimizations, for production-ready environments.
+- __DataCollection API__: A Pythonic and method-chaining style API for building custom pipelines. A pipeline defined by the DataCollection API can be run locally on a laptop for fast prototyping and then be converted to a docker image, with end-to-end optimizations, for production-ready environments.
 
-- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow among individual operators, schedule tasks, and monitor compute resource usage (CPU/GPU/etc). We provide a basic engine within Towhee to run pipelines on a single-instance machine and a Triton-based engine for docker containers.
+- __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow among individual operators, schedule tasks, and monitor compute resource usage (CPU/GPU/etc.). We provide a basic engine within Towhee to run pipelines on a single-instance machine, and a Triton-based engine in the form of a docker container.
 
 ## Contributing
 
 Writing code is not the only way to contribute! Submitting issues, answering questions, and improving documentation are just some of the many ways you can help our growing community. Check out our [contributing page](https://github.com/towhee-io/towhee/blob/main/CONTRIBUTING.md) for more information.
 
-Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
+Special thanks go to the following folks for contributing to Towhee on GitHub, Towhee Hub, or elsewhere:
 <br><!-- Do not remove start of hero-bot --><br>
 <img src="https://img.shields.io/badge/all--contributors-28-orange"><br>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
