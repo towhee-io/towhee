@@ -25,7 +25,8 @@ class DataProcessingMixin:
 
     @classmethod
     def combine(cls, *datacollections):
-        """Combine dataframes to be able to access schemas from seperate DF chains.
+        """
+        Combine dataframes to be able to access schemas from seperate DF chains.
 
         Args:
             datacollections (DataFrame): DataFrames to combine.
@@ -47,7 +48,8 @@ class DataProcessingMixin:
 
     @register_dag
     def select_from(self, other):
-        """Select data from dc with list(self).
+        """
+        Select data from dc with list(self).
 
         Args:
             other (DataCollection): DataCollection to select from.
@@ -75,7 +77,8 @@ class DataProcessingMixin:
 
     @register_dag
     def zip(self, *others) -> 'DataCollection':
-        """Combine multiple data collections.
+        """
+        Combine multiple data collections.
 
         Args:
             *others (DataCollection): The other data collections.
@@ -101,7 +104,8 @@ class DataProcessingMixin:
 
     @register_dag
     def head(self, n: int = 5):
-        """Return the first `n` values of a DataCollection.
+        """
+        Return the first `n` values of a DataCollection.
 
         Args:
             n (int, optional): The amount to select, defaults to 5.
@@ -119,7 +123,8 @@ class DataProcessingMixin:
 
     @register_dag
     def sample(self, ratio=1.0) -> 'DataCollection':
-        """Sample the data collection.
+        """
+        Sample the data collection.
 
         Args:
             ratio (float): sample ratio.
@@ -140,7 +145,8 @@ class DataProcessingMixin:
 
     @register_dag
     def batch(self, size, drop_tail=False):
-        """Create batches from the DataCollection.
+        """
+        Create batches from the DataCollection.
 
         Args:
             size (int): Window size.
@@ -189,7 +195,8 @@ class DataProcessingMixin:
 
     @register_dag
     def rolling(self, size: int, step: int=1, drop_head=True, drop_tail=True):
-        """Create rolling windows from DataCollection.
+        """
+        Create rolling windows from DataCollection.
 
         Args:
             size (int): Window size.
@@ -252,7 +259,8 @@ class DataProcessingMixin:
     @property
     # @register_dag
     def flatten(self) -> 'DataCollection':
-        """Flatten nested data within DataCollection.
+        """
+        Flatten nested data within DataCollection.
 
         Returns:
             DataCollection: Flattened DataCollection.
@@ -300,7 +308,8 @@ class DataProcessingMixin:
 
     @register_dag
     def shuffle(self) -> 'DataCollection':
-        """Shuffle an unstreamed data collection in place.
+        """
+        Shuffle an unstreamed data collection in place.
 
         Returns:
             DataCollection: Shuffled data collection.
