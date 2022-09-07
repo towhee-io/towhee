@@ -5,15 +5,7 @@ from towhee.hparam import param_scope
 import uuid
 # pylint: disable=protected-access
 # pylint: disable=redefined-builtin
-__all__ = ['input']
 
-@dynamic_dispatch
-def input(*args, **kwargs):
-    pipeline = Pipeline()
-    with param_scope() as hp:
-        index = hp._index
-
-    return getattr(pipeline, 'input')[index](*args, **kwargs)
 
 class Pipeline:
     """New Pipeline Design
@@ -24,49 +16,60 @@ class Pipeline:
     def __init__(self):
         self._dag = {}
         self._input = None
+    
+    @classmethod
+    def input(cls, output):
+        uid = uuid.uuid4().hex
+        pipeline = cls()
+        pipeline._input = uid
+        pipeline._dag[uid] = {
+            'op': None,
+            'input': None,
+            'output': output,
+            'op_type': 'input'
+        }
+        return pipeline
+    
+    def map(self, input, output, op):
+        uid = uuid.uuid4().hex
+        if isinstance(op, tuple):
+            op_type = 'operator'
+        elif getattr(op, '__name__', None) == '<lambda>':
+            op_type = 'lambda'
+        elif callable(op):
+            op_type = 'callable'
 
-    def __getattr__(self, name):
+        self._dag[uid] = {
+            'op': op,
+            'input': input,
+            'output': output,
+            'op_type': op_type
+        }
+        return self
+
+
+class Operation:
+    def init(self):
+        pass
+
+    @classmethod
+    def __getattr__(cls, name):
 
         @dynamic_dispatch
         def wrapper(*args, **kwargs):
             with param_scope() as hp:
                 path = hp._name
-                index = hp._index
 
-            unique_id = uuid.uuid4().hex
-            dag_info = {}
-
-            if self._input is None:
-                self._input = unique_id
-            #     if isinstance(index, str) or len(index) == 1:
-            #         dag_info['input'] = None
-            #         dag_info['output'] = (index, ) if isinstance(index, str) else index
-            #     else:
-            #         dag_info['input'] = None
-            #         dag_info['output'] = index[1]
-            # else:
-            #     dag_info = {}
-            #     if isinstance(index, str) or len(index) == 1:
-            #         dag_info['input'] = (index, ) if isinstance(index, str) else index
-            #         dag_info['output'] = None
-            #     else:
-            #         dag_info['input'] = index[0]
-            #         dag_info['output'] = index[1]
-            dag_info['input'] = index[0]
-            dag_info['output'] = index[1]
-            dag_info['op'] = path
-            dag_info['args'] = args
-            dag_info['kwargs'] = kwargs
-
-            self._dag[unique_id] = dag_info
-
-            return self
+            return (path, args, kwargs)
 
         return getattr(wrapper, name)
 
+ops = Operation()
 
 if __name__ == '__main__':
-    import pipeline as p
-    x = p.input[('output1'), ('output2')](input_arg = 'input_arg').towhee.function['test_schema'](test_arg = 'test_arg')
-    pprint(x._dag)
+    def f(x):
+        return x + 1
+    x = Pipeline.input(('a,', 'b')).map('a', 'c', ops.towhee.decode('a', b ='b')).map(('a', 'b'), 'd', lambda x, y: x + y).map('a', 'e', f)
+    pprint (x._dag)
+
 
