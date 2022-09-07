@@ -19,7 +19,7 @@ import torch
 from tests.unittests import VIT_DIR
 from torchvision import transforms
 
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from towhee.models import vit
 
 

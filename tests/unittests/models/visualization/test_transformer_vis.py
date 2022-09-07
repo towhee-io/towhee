@@ -15,8 +15,8 @@ import unittest
 
 from pathlib import Path
 
-from towhee.utils.pil_utils import PILImage as Image
-from towhee.utils.matplotlib_utils import matplotlib
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.matplotlib_utils import matplotlib
 from towhee.models.visualization.transformer_visualization import show_image_heatmap
 from towhee.models import vit
 from towhee.models.multiscale_vision_transformers import create_mvit_model

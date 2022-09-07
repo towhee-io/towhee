@@ -18,7 +18,7 @@ import torchvision
 
 from pathlib import Path
 
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from tests.unittests.mock_operators import PYTORCH_IMAGE_CLASSIFICATION_OPERATOR_PATH, load_local_operator
 from tests.unittests.mock_operators.pytorch_transform_operator.pytorch_transform_operator import PytorchTransformOperator
 

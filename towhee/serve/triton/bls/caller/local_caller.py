@@ -18,7 +18,7 @@ import queue
 
 from towhee.serve.triton.bls.utils import type_util
 from towhee.serve.triton.bls.mock import mock_triton_client as client
-from towhee.utils.tritonclient_utils import np_to_triton_dtype
+from towhee.utils.thirdparty.tritonclient_utils import np_to_triton_dtype
 
 
 class LocalCallerBase:

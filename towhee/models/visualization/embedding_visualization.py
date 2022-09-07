@@ -35,7 +35,7 @@ def show_embeddings(emb_list: List[torch.Tensor], figsize: Tuple = (10, 10), emb
     """
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     if isinstance(emb_name_list, list):
         assert len(emb_name_list) == len(

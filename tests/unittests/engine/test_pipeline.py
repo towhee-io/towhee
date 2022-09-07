@@ -16,7 +16,7 @@ import unittest
 
 from towhee import pipeline
 from towhee.errors import OpFailedError
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from tests.unittests import CACHE_PATH
 
 

@@ -319,7 +319,7 @@ def _to_html_td(data, callback=None):  # pragma: no cover
 
 def _image_to_html_cell(img, width=128, height=128):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.cv2_utils import cv2
+    from towhee.utils.thirdparty.cv2_utils import cv2
     import base64
 
     _, img_encode = cv2.imencode('.JPEG', img)
@@ -337,7 +337,7 @@ def _images_to_html_cell(imgs, width=128, height=128):  # pragma: no cover
 
 def _audio_frame_to_html_cell(frame, width=128, height=128):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.matplotlib_utils import plt
+    from towhee.utils.thirdparty.matplotlib_utils import plt
 
     signal = frame[0, ...]
     fourier = numpy.fft.fft(signal)

@@ -20,7 +20,7 @@ import torch
 from pandas import Series
 
 # pylint: disable=ungrouped-imports
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from typing import Tuple

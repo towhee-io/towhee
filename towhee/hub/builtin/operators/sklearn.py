@@ -30,8 +30,8 @@ class logistic_regression(StatefulOperator):
         self._model_agrs = kws
 
     def fit(self):
-        from towhee.utils.sklearn_utils import LogisticRegression
-        from towhee.utils.scipy_utils import sparse
+        from towhee.utils.thirdparty.sklearn_utils import LogisticRegression
+        from towhee.utils.thirdparty.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = LogisticRegression(**self._model_agrs)
@@ -51,8 +51,8 @@ class random_forest(StatefulOperator):
         self._model_agrs = kws
 
     def fit(self):
-        from towhee.utils.sklearn_utils import RandomForestClassifier
-        from towhee.utils.scipy_utils import sparse
+        from towhee.utils.thirdparty.sklearn_utils import RandomForestClassifier
+        from towhee.utils.thirdparty.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = RandomForestClassifier(**self._model_agrs)
@@ -72,8 +72,8 @@ class decision_tree(StatefulOperator):
         self._model_agrs = kws
 
     def fit(self):
-        from towhee.utils.sklearn_utils import DecisionTreeClassifier
-        from towhee.utils.scipy_utils import sparse
+        from towhee.utils.thirdparty.sklearn_utils import DecisionTreeClassifier
+        from towhee.utils.thirdparty.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = DecisionTreeClassifier(**self._model_agrs)
@@ -93,8 +93,8 @@ class svc(StatefulOperator):
         self._model_agrs = kws
 
     def fit(self):
-        from towhee.utils.sklearn_utils import svm
-        from towhee.utils.scipy_utils import sparse
+        from towhee.utils.thirdparty.sklearn_utils import svm
+        from towhee.utils.thirdparty.scipy_utils import sparse
         X = sparse.vstack(self._data[0])
         y = np.array(self._data[1]).reshape([-1, 1])
         self._state.model = svm.SVC(**self._model_agrs)

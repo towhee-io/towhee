@@ -17,8 +17,8 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-from towhee.utils.cv2_utils import cv2
 from towhee.types import Image
+from towhee.utils.thirdparty.cv2_utils import cv2
 from towhee.utils.ndarray_utils import from_ndarray, from_src, to_ndarray, rgb2bgr
 
 logo_path = os.path.join(Path(__file__).parent.parent.parent.parent.resolve(), 'towhee_logo.png')

@@ -16,7 +16,7 @@
 from typing import List, Tuple, Callable
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from torch import nn
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from towhee.models.visualization.transformer_visualization import _reshape_attr_and_get_heatmap
 from towhee.models import clip
 from towhee.models.clip import SimpleTokenizer
@@ -130,7 +130,7 @@ def show_image_relevance(image_relevance: torch.Tensor, img_tensor: torch.Tensor
     """
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     _, axs = plt.subplots(1, 2)
     axs[0].imshow(orig_image)
@@ -159,7 +159,7 @@ def show_heatmap_on_text(text: str, text_encoding: torch.Tensor, rel_text: torch
     from captum.attr import visualization as viz  # pylint: disable=import-outside-toplevel
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     tokenizer = SimpleTokenizer()
@@ -194,7 +194,7 @@ def show_attention_for_clip(model: nn.Module, pil_img: Image, text_list: List[st
     rel_text, rel_image, text_tokens, img_tensor = get_clip_relevance(model, pil_img, text_list, device)
     if not is_matplotlib_available():
         models_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     batch_size = len(text_list)
     for i in range(batch_size):

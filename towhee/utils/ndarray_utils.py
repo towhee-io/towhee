@@ -22,7 +22,7 @@ from urllib.request import urlopen
 
 from towhee.types import Image
 from towhee.utils.repo_normalize import RepoNormalize
-from towhee.utils.cv2_utils import cv2
+from towhee.utils.thirdparty.cv2_utils import cv2
 
 
 def from_src(src: Union[str, PosixPath]) -> Image:

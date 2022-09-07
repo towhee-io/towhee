@@ -20,7 +20,7 @@ def to_image_color(img: Image, target_mode: str):
     convert images from one color-space to another, like BGR ↔ Gray, BGR ↔ HSV, etc.
     """
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.cv2_utils import cv2
+    from towhee.utils.thirdparty.cv2_utils import cv2
     if not hasattr(img, 'mode'):
         return img
     if img.mode == target_mode:
@@ -65,6 +65,6 @@ def to_pil(img: Image):
             A PIL image.
     """
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.pil_utils import PILImage
+    from towhee.utils.thirdparty.pil_utils import PILImage
 
     return PILImage.fromarray(img, img.mode)

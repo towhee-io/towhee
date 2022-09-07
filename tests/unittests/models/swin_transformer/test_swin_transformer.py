@@ -18,7 +18,7 @@ import torch
 from torchvision import transforms
 import os
 
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from towhee.models.swin_transformer.configs import build_configs
 from towhee.models.swin_transformer.model import SwinTransformer
 from towhee.models.utils.pretrained_utils import load_pretrained_weights

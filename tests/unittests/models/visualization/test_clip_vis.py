@@ -16,9 +16,8 @@ import torch
 
 from pathlib import Path
 
-
-from towhee.utils.pil_utils import PILImage as Image
-from towhee.utils.matplotlib_utils import matplotlib
+from towhee.utils.thirdparty.matplotlib_utils import matplotlib
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from towhee.models.visualization.clip_visualization import show_attention_for_clip
 from towhee.models.clip import clip
 

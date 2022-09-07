@@ -16,7 +16,7 @@ from torchvision import transforms
 from torchvision.io import read_image
 from pathlib import Path
 from torch import nn
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 from towhee.trainer.optimization.optimization import get_scheduler, get_warmup_steps
 from towhee.trainer.utils.trainer_utils import _construct_scheduler_from_config
 from towhee.trainer.training_config import TrainingConfig
@@ -36,7 +36,7 @@ import copy
 def _show_grid(row_grid_list, cls_list):
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     _, axs = plt.subplots(nrows=len(row_grid_list), ncols=len(row_grid_list[0]), squeeze=False, figsize=(13, 13))
@@ -143,7 +143,7 @@ def image_folder_statistic(root: str, classes: Optional[List[str]] = None, show_
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
 
     root_path = Path(root)
@@ -181,7 +181,7 @@ def show_transform(image_path: str, transform: Any, sample_num: int = 6):
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     plt.rcParams['savefig.bbox'] = 'tight'
     orig_img = Image.open(image_path)
@@ -192,7 +192,7 @@ def show_transform(image_path: str, transform: Any, sample_num: int = 6):
 def _plot_transform(orig_img, imgs, with_orig=True, row_title=None, **imshow_kwargs):
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     if not isinstance(imgs[0], list):
         imgs = [imgs]
@@ -230,7 +230,7 @@ def plot_lrs_for_scheduler(optimizer: torch.optim.Optimizer, scheduler: '_LRSche
     """
     if not is_matplotlib_available():
         trainer_log.warning('Matplotlib is not available.')
-    from towhee.utils.matplotlib_utils import matplotlib
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib
     import matplotlib.pylab as plt  # pylint: disable=import-outside-toplevel
     lrs = []
     for _ in range(total_steps):

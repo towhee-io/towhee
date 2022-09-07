@@ -34,7 +34,7 @@ jobs:
         git config --global --add safe.directory /__w/towhee/towhee
         git config --global --add safe.directory /workspace/towhee_CI/operator-tasks
     - uses: actions/checkout@master
-    - name: Run Test
+    - name: Run Tests
       env:
         TOWHEE_WORKER: True
       run: |

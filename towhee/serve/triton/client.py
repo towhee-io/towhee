@@ -14,7 +14,7 @@
 
 import queue
 import numpy as np
-from towhee.utils.tritonclient_utils import grpcclient, httpclient, InferenceServerException
+from towhee.utils.thirdparty.tritonclient_utils import grpcclient, httpclient, InferenceServerException
 from functools import partial
 
 class UserData:

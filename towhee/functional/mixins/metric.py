@@ -41,8 +41,8 @@ class Collector:
 
 def encode_fig_img(mat, size=300):
     # pylint: disable=import-outside-toplevel
-    from towhee.utils.sklearn_utils import ConfusionMatrixDisplay
-    from towhee.utils.matplotlib_utils import matplotlib as mpl
+    from towhee.utils.thirdparty.sklearn_utils import ConfusionMatrixDisplay
+    from towhee.utils.thirdparty.matplotlib_utils import matplotlib as mpl
     import base64
     import io
     mpl.use('Agg')  # Prevent showing stuff

@@ -20,8 +20,8 @@ import torch
 from torchvision.models import resnet18
 from torchvision import transforms
 
-from towhee.utils.pil_utils import PILImage as Image
-from towhee.utils.matplotlib_utils import matplotlib
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.matplotlib_utils import matplotlib
 from towhee.models.embedding.embedding_extractor import EmbeddingExtractor
 from towhee.models.visualization.embedding_visualization import show_embeddings
 

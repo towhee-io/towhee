@@ -19,7 +19,7 @@ import torch
 from torchvision import transforms
 
 from towhee.operator import Operator
-from towhee.utils.pil_utils import PILImage as Image
+from towhee.utils.thirdparty.pil_utils import PILImage as Image
 
 
 class PytorchTransformOperator(Operator):

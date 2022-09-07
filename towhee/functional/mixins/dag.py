@@ -226,7 +226,7 @@ class DagMixin:
             image: The dags' relations
         """
         import networkx as nx
-        from towhee.utils.matplotlib_utils import plt
+        from towhee.utils.thirdparty.matplotlib_utils import plt
         compiled_dag = self.compile_dag()
         new_dict = {}
         label_dict = {}

@@ -27,7 +27,7 @@ class ComputerVisionMixin:
         Args:
             title (str, optional): The title for the image. Defaults to 'image'.
         """
-        from towhee.utils.cv2_utils import cv2
+        from towhee.utils.thirdparty.cv2_utils import cv2
         for im in self:
             cv2.imshow(title, im)
             cv2.waitKey(1)
@@ -43,7 +43,7 @@ class ComputerVisionMixin:
         Returns:
             DataCollection: Collection with images.
         """
-        from towhee.utils.cv2_utils import cv2
+        from towhee.utils.thirdparty.cv2_utils import cv2
         cnt = limit
 
         def inner():
