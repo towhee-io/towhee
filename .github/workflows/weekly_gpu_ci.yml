@@ -1,4 +1,4 @@
-name: Weekly CI
+name: Weekly GPU CI
 
 on:
   schedule:
