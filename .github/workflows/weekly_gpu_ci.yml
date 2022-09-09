@@ -1,4 +1,4 @@
-name: Weekly CI
+name: Weekly GPU CI
 
 on:
   schedule:
@@ -11,7 +11,7 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     #        │ │ │ │ │
-    - cron: "0 0 * * 7"
+    - cron: "0 0 * * 0"
   pull_request:
     # file paths to consider in the event
     paths:
