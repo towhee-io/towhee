@@ -6,11 +6,13 @@ on:
     # file paths to consider in the event. Optional; defaults to all.
     paths:
       - 'Dockerfile'
+      - 'GPUDockerfile'
       - '.github/workflows/publish_ut_image.yml'
   pull_request:
     # file paths to consider in the event. Optional; defaults to all.
     paths:
       - 'Dockerfile'
+      - 'GPUDockerfile'
       - '.github/workflows/publish_ut_image.yml'
 
 jobs:
@@ -31,6 +33,7 @@ jobs:
         run: |  
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
           DOCKER_BUILDKIT=1 docker build -t towhee/towhee-ut:${IMAGE_TAG} -t towhee/towhee-ut:latest -f Dockerfile .
+          DOCKER_BUILDKIT=1 docker build -t towhee/towhee-ut:gpu-latest -f GPUDockerfile .
       - name: Docker Push
         if: success() && github.event_name == 'push' && github.repository == 'towhee-io/towhee'
         continue-on-error: true
@@ -41,5 +44,6 @@ jobs:
           export IMAGE_TAG=${{ steps.extracter.outputs.version }}-${{ steps.extracter.outputs.sha_short }}
           docker push towhee/towhee-ut:${IMAGE_TAG}
           docker push towhee/towhee-ut:latest
+          docker push towhee/towhee-ut:gpu-latest
           echo "Push towhee-ut image Succeeded"
 

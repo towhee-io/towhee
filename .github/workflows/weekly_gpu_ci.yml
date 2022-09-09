@@ -1,0 +1,49 @@
+name: Weekly CI
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    #        ┌───────────── minute (0 - 59)
+    #        │ ┌───────────── hour (0 - 23)
+    #        │ │ ┌───────────── day of the month (1 - 31)
+    #        │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    - cron: "0 0 * * 7"
+  pull_request:
+    # file paths to consider in the event
+    paths:
+      - '.github/workflows/weekly_gpu_ci.yml'
+      - 'tests/testcases/hub/execute_hub_operators.py'
+
+jobs:
+  test:
+    name: Test
+    runs-on: self-hosted
+    container: 
+      image: towhee/towhee-ut:gpu-latest
+      options: --user root
+      volumes:
+        - /__w/towhee/towhee:/__w/towhee/towhee
+        - /home/super/towhee_CI:/workspace/towhee_CI
+    steps:
+    - name: work around permission
+      run: |
+        git config --global --add safe.directory /__w/towhee/towhee
+        git config --global --add safe.directory /workspace/towhee_CI/operator-tasks
+    - uses: actions/checkout@master
+    - name: Run Test
+      env:
+        TOWHEE_WORKER: True
+      run: |
+        cd  /__w/towhee/towhee/tests/testcases
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
+        apt-get install wget
+        python3 -m pip install -U pip
+        python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+        python3 -m pip install --no-cache-dir -r requirements.text
+        cd  /__w/towhee/towhee/tests/testcases/hub
+        export TOWHEE_WORKER=True
+        python3 -W ignore execute_hub_operators.py
