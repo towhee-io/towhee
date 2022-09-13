@@ -20,16 +20,13 @@ RUN pip3 install torch torchvision torchaudio --extra-index-url https://download
 
 RUN pip3 install pyarrow onnxruntime
 
+RUN pip3 install towhee.compiler
 RUN pip3 install towhee towhee.models
 
 RUN apt-get install git-lfs && \
     git lfs install
 
 WORKDIR /workspace
-
-RUN git clone -b nebullvm https://github.com/towhee-io/towhee-compiler.git
-RUN cd towhee-compiler && pip install -r requirements.txt &&  python3 setup.py develop
-RUN python3 -c "import nebullvm"
 
 RUN mkdir -p /workspace/models
 
