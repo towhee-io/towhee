@@ -17,13 +17,24 @@ jobs:
   contributor:
     runs-on: ubuntu-latest
     steps:
-      # Update README.md
-      - uses: milvus-io/hero-bot@1.11
+      - name: Update README
+        uses: milvus-io/hero-bot@1.11
         with:
           # Required
           token: ${{ secrets.ALL_CONTRIBUTORS_TOKEN }}
-          repos: "towhee-io/towhee"
+          repos: "towhee-io/towhee, towhee-io/examples"
           target: "towhee-io/towhee/README.md"
+          # Optional
+          isAscend: True
+          width: "30px"
+
+      - name: Update README_CN
+        uses: milvus-io/hero-bot@1.11
+        with:
+          # Required
+          token: ${{ secrets.ALL_CONTRIBUTORS_TOKEN }}
+          repos: "towhee-io/towhee, towhee-io/examples"
+          target: "towhee-io/towhee/README_CN.md"
           # Optional
           isAscend: True
           width: "30px"
