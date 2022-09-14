@@ -42,7 +42,7 @@ def register_dag(f):
             output_info = None
         elif isinstance(index_info, tuple):
             input_info = list(index_info[0]) if isinstance(index_info[0], tuple) else [index_info[0]]
-            output_info = list(index_info[1]) if isinstance(index_info[1], tuple) else [index_info[1]]
+            output_info = None if len(index_info) == 1 else list(index_info[1]) if isinstance(index_info[1], tuple) else [index_info[1]]
         else:
             input_info = None
             output_info = list(index_info) if isinstance(index_info, tuple) else [index_info]
