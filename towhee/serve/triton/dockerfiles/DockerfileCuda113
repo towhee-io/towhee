@@ -21,6 +21,7 @@ RUN pip3 install torch torchvision torchaudio --extra-index-url https://download
 
 RUN pip3 install pyarrow onnxruntime
 
+RUN pip3 install towhee.compiler
 RUN pip3 install towhee towhee.models
 
 RUN apt-get install git-lfs && \

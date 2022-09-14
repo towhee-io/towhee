@@ -16,6 +16,7 @@ from typing import Dict
 from pathlib import Path
 import inspect
 import pickle
+import json
 from abc import ABC
 import logging
 
@@ -44,6 +45,10 @@ class TritonFiles:
     @property
     def model_path(self) -> Path:
         return self._root / '1'
+
+    @property
+    def dc_config_file(self) -> Path:
+        return self.model_path / constant.DC_CONFIG_FILE
 
     @property
     def python_model_file(self) -> Path:
@@ -144,6 +149,8 @@ class PyOpToTriton(ToTriton):
         self._init_args = init_args
 
     def _prepare_model(self):
+        with open(self._triton_files.dc_config_file, 'wt', encoding='utf-8') as f:
+            json.dump(self._op_config, f)
         gen_model_from_op(self._triton_files.python_model_file,
                           self._op_hub,
                           self._op_name,
