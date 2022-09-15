@@ -30,6 +30,7 @@ jobs:
         rm -rf ./coverage.xml
         pip install coverage codecov pytest pytest-xdist
         pip install -r test_requirements.txt
+        apt install gcc g++
         apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
         coverage erase
         coverage run -m pytest
