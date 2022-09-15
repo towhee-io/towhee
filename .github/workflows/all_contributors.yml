@@ -22,7 +22,7 @@ jobs:
         with:
           # Required
           token: ${{ secrets.ALL_CONTRIBUTORS_TOKEN }}
-          repos: "towhee-io/towhee, towhee-io/examples"
+          repos: "towhee-io/towhee,examples"
           target: "towhee-io/towhee/README.md"
           # Optional
           isAscend: True
@@ -33,7 +33,7 @@ jobs:
         with:
           # Required
           token: ${{ secrets.ALL_CONTRIBUTORS_TOKEN }}
-          repos: "towhee-io/towhee, towhee-io/examples"
+          repos: "towhee-io/towhee,examples"
           target: "towhee-io/towhee/README_CN.md"
           # Optional
           isAscend: True
