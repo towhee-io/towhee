@@ -167,7 +167,7 @@ class MetricMixin:
         lr       1.0     1.0
         rf       0.8     0.8
         {'lr': {'accuracy': 1.0, 'recall': 1.0}, 'rf': {'accuracy': 0.8, 'recall': 0.8}}
-        >>> dc1.with_metrics(['confusion_matrix']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report()
+        >>> dc1.with_metrics(['confusion_matrix']).evaluate['a', 'c'](name='lr').evaluate['a', 'b'](name='rf').report() #doctest: +SKIP
         <IPython.core.display.HTML object>
         {'lr': {'confusion_matrix': array([[3, 0],
                [0, 2]])}, 'rf': {'confusion_matrix': array([[2, 1],

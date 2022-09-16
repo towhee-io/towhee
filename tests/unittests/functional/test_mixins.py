@@ -254,7 +254,40 @@ class TestCompileMixin(unittest.TestCase):
     """
     Unittest for FaissMixin.
     """
-    def test_compile(self):
+    @staticmethod
+    def transformers_ori(model_name):
+        return (towhee.dummy_input()
+                .text_embedding.transformers(model_name=model_name)
+                .as_function()
+                )
+
+    @staticmethod
+    def transformers_jit(model_name):
+        return (towhee.dummy_input()
+                .set_jit('towhee')
+                .text_embedding.transformers(model_name=model_name)
+                .as_function()
+                )
+
+    def test_compile_towhee(self):
+        import time
+        model_name = 'distilbert-base-cased'
+        data = 'hello world'
+        timm_func0 = self.transformers_ori(model_name)
+        _ = timm_func0(data)
+        t1 = time.time()
+        _ = timm_func0(data)
+        t2 = time.time()
+
+        timm_func1 = self.transformers_jit(model_name)
+        _ = timm_func1(data)
+        t3 = time.time()
+        _ = timm_func1(data)
+        t4 = time.time()
+
+        self.assertTrue(t2 - t1 > t4 - t3)
+
+    def test_compile_numba(self):
         # pylint: disable=unused-import
         import time
         from towhee import register
@@ -287,31 +320,6 @@ class TestCompileMixin(unittest.TestCase):
         )
         t3 = time.time()
         self.assertTrue(t3 - t2 < t2 - t1)
-
-    def test_failed_compile(self):
-        from towhee import register
-        @register(name='inner_distance1')
-        def inner_distance1(query, data):
-            data = np.array(data) # numba does not support np.array(data)
-            dists = []
-            for vec in data:
-                dist = 0
-                for i in range(len(vec)):
-
-                    dist += vec[i] * query[i]
-                dists.append(dist)
-            return dists
-
-        data = [np.random.random((10000, 128)) for _ in range(10)]
-        query = np.random.random(128)
-
-        with self.assertLogs():
-            _ = (
-                towhee.dc['a'](data)
-                    .config(jit='numba')
-                    .runas_op['a', 'b'](func=lambda _: query)
-                    .inner_distance1[('b', 'a'), 'c']()
-            )
 
 
 if __name__ == '__main__':

@@ -101,7 +101,7 @@ class TowheeCompiler: # pragma: no cover
     """
 
     def __init__(self, name, index, *arg, **kws):
-        from towhee.compiler import jit_compile  # pylint: disable=import-outside-toplevel
+        from towhee.utils.jit_utils import jit_compile  # pylint: disable=import-outside-toplevel
         self._name = name
         self._index = index
         self._compiler = jit_compile()
@@ -152,6 +152,8 @@ class CompileMixin:
 
     Examples:
 
+    1. compile the python function with numba:
+
     >>> import numpy
     >>> import towhee
     >>> import time
@@ -183,6 +185,19 @@ class CompileMixin:
     ... )
     >>> t3 = time.time()
     >>> assert(t3-t2 < t2-t1)
+
+    2. compile the models with towhee.compiler:
+
+    .. note::
+       It will take some time to compile in the first time.
+
+       More information about towhee.compiler refer to https://github.com/towhee-io/towhee-compiler.
+
+    >>> import towhee
+    >>> dc1 = (towhee.dc(['hello world']) #doctest: +SKIP
+    ...     .set_jit('towhee')
+    ...     .text_embedding.transformers(model_name='distilbert-base-cased')
+    ... )
     """
 
     def __init__(self) -> None:
