@@ -13,5 +13,25 @@ class Iterator:
         Raises:
             NotImplemented: _description_
         """
-        raise NotImplemented
+        raise NotImplementedError
+
+
+class MapIterator(Iterator):
+    def __init__(self):
+        raise NotImplementedError
+
+class FlatMapIterator(Iterator):
+    def __init__(self):
+        raise NotImplementedError
+
+class FilterIterator(Iterator):
+    def __init__(self):
+        raise NotImplementedError
+
+class BatchIterator(Iterator):
+    def __init__(self):
+        raise NotImplementedError
+class WindowIterator(Iterator):
+    def __init__(self):
+        raise NotImplementedError
     
