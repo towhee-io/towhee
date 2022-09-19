@@ -21,6 +21,9 @@ from towhee.utils.log import engine_log
 
 # pylint: disable=consider-using-get
 # pylint: disable=import-outside-toplevel
+# pylint: disable=protected-access
+# pylint: disable=invalid-name
+# pylint: disable=no-value-for-parameter
 
 
 def get_faiss_index(findex, dim, index_str, metric):
@@ -116,6 +119,65 @@ def _to_faiss_callback(self): # pragma: no cover
     return wrapper
 
 
+def _insert_faiss_callback(self):
+
+    def wrapper(_, index, *arg, **kws):
+        from towhee.utils.thirdparty.faiss_utils import faiss
+        path = 'index.bin'
+        if arg is not None and len(arg) == 1:
+            path = arg[0]
+        if 'path' in kws:
+            path = kws['path']
+
+        vecs = np.array([getattr(i, index[0]) for i in self._iterable])
+
+        findex = faiss.IndexFlatL2(vecs[0].shape[0])
+        findex = faiss.IndexIDMap(findex)
+        # vecs = np.concatenate(vecs).reshape(-1, vecs[0].shape[0])
+        ids = np.arange(len(vecs))
+        findex.add_with_ids(vecs, ids)
+        faiss.write_index(findex, path)
+
+        dc_data = self
+        for i, e in enumerate(dc_data):
+            setattr(e, index[1], i)
+
+        return dc_data
+
+    return wrapper
+
+
+def _search_faiss_callback(self):
+    from towhee.utils.thirdparty.faiss_utils import faiss
+    def wrapper(_, index, *arg, **kws):
+        path = 'index.bin'
+        k = 1
+        if arg and len(arg) == 1:
+            path = arg[0]
+        elif arg and len(arg) == 2:
+            path = arg[0]
+            k = arg[1]
+
+        if 'path' in kws:
+            path = kws['path']
+        if 'k' in kws:
+            k = kws['k']
+
+        findex = faiss.read_index(path)
+
+        query = np.array([getattr(i, index[0]) for i in self._iterable])
+        D, I = findex.search(query, k)
+        S = 1 / (D.ravel() + 1).reshape(D.shape)
+
+        dc_data = self
+        for e, i, s in zip(dc_data, I, S):
+            setattr(e, index[1][0], i)
+            setattr(e, index[1][1], s)
+
+        return dc_data
+    return wrapper
+
+
 class FaissMixin: # pragma: no cover
     """
     Mixins for Faiss, such as loading data into Faiss. And `ids` and `vectors` need to be passed as index. If ids is a string, KV storage will be
@@ -144,8 +206,12 @@ class FaissMixin: # pragma: no cover
     ...           .image_decode['path', 'img']()
     ...           .image_embedding.timm['img', 'vec'](model_name='resnet50')
     ...           .to_faiss['path', 'vec'](findex='./faiss/faiss.index')
+    ...           .insert_faiss['vec', 'id']()
+    ...           .search_faiss['vec', ('candidates', 'scores')]()
     ... )
     """
     def __init__(self):
         super().__init__()
         self.to_faiss = param_scope().dispatch(_to_faiss_callback(self))
+        self.insert_faiss = param_scope().dispatch(_insert_faiss_callback(self))
+        self.search_faiss = param_scope().dispatch(_search_faiss_callback(self))
