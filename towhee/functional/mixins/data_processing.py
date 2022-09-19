@@ -283,9 +283,9 @@ class DataProcessingMixin:
         def flattener():
 
             def inner():
+                #pylint: disable=protected-access
+                index = param_scope()._index
                 for ele in self._iterable:
-                    #pylint: disable=protected-access
-                    index = param_scope()._index
                     # With schema
                     if isinstance(ele, Entity):
                         if not index:
@@ -333,3 +333,41 @@ class DataProcessingMixin:
             raise TypeError('shuffle is not supported for streamed data collection.')
         iterable = random.sample(self._iterable, len(self._iterable))
         return self._factory(iterable)
+
+
+    @property
+    # @register_dag
+    def merge(self) -> 'DataCollection':
+        """
+        Merge columns in DataCollection. Unstreamed data only.
+
+
+        Examples:
+        >>> import towhee
+        >>> dc = towhee.dc['a'](range(10))
+        >>> [i.a for i in dc]
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        >>> dc = dc.merge['a']()
+        >>> [i.a for i in dc]
+        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]
+        """
+        @dynamic_dispatch
+        def merger():
+
+            def inner():
+                #pylint: disable=protected-access
+                index = param_scope()._index
+                if not index:
+                    raise IndexError('Please specify the column to merge.')
+                if isinstance(index, str):
+                    index = (index,)
+                new_ele = self._iterable[0].__dict__.copy()
+
+                for i in index:
+                    new_ele[i] = [getattr(ele, i) for ele in self._iterable]
+
+                return [Entity(**new_ele)]
+
+            return self._factory(inner())
+
+        return merger
