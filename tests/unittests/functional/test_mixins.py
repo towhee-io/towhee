@@ -255,13 +255,6 @@ class TestCompileMixin(unittest.TestCase):
     Unittest for FaissMixin.
     """
     @staticmethod
-    def transformers_ori(model_name):
-        return (towhee.dummy_input()
-                .text_embedding.transformers(model_name=model_name)
-                .as_function()
-                )
-
-    @staticmethod
     def transformers_jit(model_name):
         return (towhee.dummy_input()
                 .set_jit('towhee')
@@ -270,28 +263,17 @@ class TestCompileMixin(unittest.TestCase):
                 )
 
     def test_compile_towhee(self):
-        import time
         model_name = 'distilbert-base-cased'
         data = 'hello world'
-        timm_func0 = self.transformers_ori(model_name)
-        _ = timm_func0(data)
-        t1 = time.time()
-        _ = timm_func0(data)
-        t2 = time.time()
 
-        timm_func1 = self.transformers_jit(model_name)
-        _ = timm_func1(data)
-        t3 = time.time()
-        _ = timm_func1(data)
-        t4 = time.time()
+        timm_func = self.transformers_jit(model_name)
+        res = timm_func(data)
 
-        self.assertTrue(t2 - t1 > t4 - t3)
+        self.assertTrue(isinstance(res[0], np.ndarray))
 
     def test_compile_numba(self):
         # pylint: disable=unused-import
-        import time
         from towhee import register
-        from towhee.utils.thirdparty.numba_utils import njit
         @register(name='inner_distance')
         def inner_distance(query, data):
             dists = []
@@ -304,22 +286,13 @@ class TestCompileMixin(unittest.TestCase):
 
         data = [np.random.random((10000, 128)) for _ in range(10)]
         query = np.random.random(128)
-
-        t1 = time.time()
-        _ = (
-            towhee.dc['a'](data)
-                .runas_op['a', 'b'](func=lambda _: query)
-                .inner_distance[('b', 'a'), 'c']()
-        )
-        t2 = time.time()
-        _ = (
+        res = (
             towhee.dc['a'](data)
                 .config(jit='numba')
                 .runas_op['a', 'b'](func=lambda _: query)
                 .inner_distance[('b', 'a'), 'c']()
         )
-        t3 = time.time()
-        self.assertTrue(t3 - t2 < t2 - t1)
+        self.assertTrue(isinstance(res[0].c, list))
 
 
 if __name__ == '__main__':
