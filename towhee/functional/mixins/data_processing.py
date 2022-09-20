@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import random
+import itertools
 from typing import Iterable
 
 from towhee.functional.entity import Entity
@@ -337,37 +338,37 @@ class DataProcessingMixin:
 
     @property
     # @register_dag
-    def merge(self) -> 'DataCollection':
+    def group_by(self) -> 'DataCollection':
         """
         Merge columns in DataCollection. Unstreamed data only.
 
-
         Examples:
         >>> import towhee
-        >>> dc = towhee.dc['a'](range(10))
+        >>> dc = towhee.dc['a']([1,1,2,2,3,3])
         >>> [i.a for i in dc]
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        >>> dc = dc.merge['a']()
+        [1, 1, 2, 2, 3, 3]
+        >>> dc = dc.group_by['a']()
         >>> [i.a for i in dc]
-        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]
+        [1, 2, 3]
         """
         @dynamic_dispatch
-        def merger():
+        def grouper():
 
             def inner():
                 #pylint: disable=protected-access
                 index = param_scope()._index
                 if not index:
-                    raise IndexError('Please specify the column to merge.')
-                if isinstance(index, str):
-                    index = (index,)
-                new_ele = self._iterable[0].__dict__.copy()
+                    raise IndexError('Please specify the column to group by.')
 
-                for i in index:
-                    new_ele[i] = [getattr(ele, i) for ele in self._iterable]
-
-                return [Entity(**new_ele)]
+                key_func = lambda x: getattr(x, index)
+                for _, group in itertools.groupby(self._iterable, key_func):
+                    group = list(group)
+                    new_ele = group[0].__dict__.copy()
+                    for i in new_ele.keys():
+                        if i != index:
+                            new_ele[i] = [getattr(ele, i) for ele in group]
+                    yield Entity(**new_ele)
 
             return self._factory(inner())
 
-        return merger
+        return grouper
