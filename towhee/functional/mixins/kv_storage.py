@@ -46,10 +46,10 @@ def _insert_leveldb_callback(self):
                 np.save(np_bytes, val, allow_pickle=True)
                 val = np_bytes.getvalue()
             else:
-                val = str(val).encode('ascii')
+                val = str(val).encode('utf-8')
 
             for k in key:
-                db.put(str(k).encode('ascii'), val)
+                db.put(str(k).encode('utf-8'), val)
 
         db.close()
         return self
@@ -79,7 +79,7 @@ def _from_leveldb_callback(self):
         for i in self._iterable:
             key = getattr(i, index[0])
             if isinstance(key, str) or not isinstance(key, Iterable):
-                val = db.get(str(key).encode('ascii'))
+                val = db.get(str(key).encode('utf-8'))
                 if not is_ndarray:
                     val.decode('utf-8')
                 else:
@@ -90,7 +90,7 @@ def _from_leveldb_callback(self):
             else:
                 vals = []
                 for k in key:
-                    val = db.get(str(k).encode('ascii'))
+                    val = db.get(str(k).encode('utf-8'))
                     if not is_ndarray:
                         vals.append(val.decode('utf-8'))
                     else:
