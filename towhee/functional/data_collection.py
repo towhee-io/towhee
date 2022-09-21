@@ -13,7 +13,6 @@
 # limitations under the License.
 from typing import Iterable, Iterator, Callable
 import reprlib
-import inspect
 
 from towhee.functional.mixins.dag import register_dag
 from towhee.hparam import param_scope, dynamic_dispatch
@@ -112,11 +111,6 @@ class DataCollection(Iterable, DCMixins):
             ...     return x+1
             >>> dc.test.add1().to_list()
             [2, 3, 4, 5]
-
-            >>> def add2(x):
-            ...     return x+2
-            >>> DataCollection([1,2,3,4]).add2().to_list()
-            [3, 4, 5, 6]
         """
         if name.startswith('_'):
             return super().__getattribute__(name)
@@ -132,18 +126,19 @@ class DataCollection(Iterable, DCMixins):
             if self._jit is not None:
                 op = self.jit_resolve(path, index, *arg, **kws)
             else:
-                with param_scope(  #
-                        locals={
-                            k: v
-                            for k, v in inspect.stack()[2]
-                            [0].f_locals.items() if k != 'self'
-                        },
-                        globals={
-                            k: v
-                            for k, v in inspect.stack()[2]
-                            [0].f_globals.items() if k != 'self'
-                        }):
-                    op = self.resolve(path, index, *arg, **kws)
+                # import inspect
+                # with param_scope(
+                #         locals={
+                #             k: v
+                #             for k, v in inspect.stack()[2]
+                #             [0].f_locals.items() if k != 'self'
+                #         },
+                #         globals={
+                #             k: v
+                #             for k, v in inspect.stack()[2]
+                #             [0].f_globals.items() if k != 'self'
+                #         }):
+                op = self.resolve(path, index, *arg, **kws)
             return self.map(op)
 
         return getattr(wrapper, name)
