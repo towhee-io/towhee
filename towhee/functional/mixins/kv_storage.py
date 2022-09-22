@@ -34,7 +34,11 @@ def _insert_leveldb_callback(self):
 
         db = plyvel.DB(path, create_if_missing=True)
 
-        for i in self._iterable:
+        dc_data = self
+        if self.is_stream:
+            dc_data = self.unstream()
+
+        for i in dc_data._iterable:
             key = getattr(i, index[0][0])
             val = getattr(i, index[0][1])
 
@@ -52,7 +56,7 @@ def _insert_leveldb_callback(self):
                 db.put(str(k).encode('utf-8'), val)
 
         db.close()
-        return self
+        return dc_data
 
     return wrapper
 
@@ -77,7 +81,11 @@ def _from_leveldb_callback(self):
 
         db = plyvel.DB(path, create_if_missing=True)
 
-        for i in self._iterable:
+        dc_data = self
+        if self.is_stream:
+            dc_data = self.unstream()
+
+        for i in dc_data._iterable:
             key = getattr(i, index[0])
             if isinstance(key, str) or not isinstance(key, Iterable):
                 val = db.get(str(key).encode('utf-8'))
@@ -101,7 +109,7 @@ def _from_leveldb_callback(self):
                 setattr(i, index[1], vals)
 
         db.close()
-        return self
+        return dc_data
 
     return wrapper
 
