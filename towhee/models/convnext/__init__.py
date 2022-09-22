@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from .utils import *
+from .convnext import *
