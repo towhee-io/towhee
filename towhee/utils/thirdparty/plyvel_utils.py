@@ -22,5 +22,5 @@ except ModuleNotFoundError as moduleNotFound:
         import plyvel # pylint: disable=ungrouped-imports
     except:
         from towhee.utils.log import engine_log
-        engine_log.error('pandas not found, you can install via `pip install plyvel`.')
+        engine_log.error('plyvel not found, you can install via `pip install plyvel`.')
         raise ModuleNotFoundError('plyvel not found, you can install via `pip install plyvel`.') from moduleNotFound

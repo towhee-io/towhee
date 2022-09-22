@@ -58,8 +58,9 @@ def _insert_leveldb_callback(self):
 
 
 def _from_leveldb_callback(self):
-    from towhee.utils.thirdparty.plyvel_utils import plyvel
+
     def wrapper(_, index, *arg, **kws):
+        from towhee.utils.thirdparty.plyvel_utils import plyvel
         path = None
         is_ndarray = False
 
