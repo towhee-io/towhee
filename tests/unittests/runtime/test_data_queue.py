@@ -25,6 +25,34 @@ class TestDataQueue(unittest.TestCase):
     DataQueue test
     '''
 
+    def test_max_size(self):
+        max_size = 5
+        que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)], max_size)
+
+        size = 20
+        def write():
+            for i in range(size):
+                que.put(('http://towhee.io', 'image' + str(i)))
+            que.seal()
+
+        t = threading.Thread(target=write)
+        t.start()
+        time.sleep(0.01)
+        self.assertEqual(que.size, max_size)
+        output = []
+        while True:
+            ret = que.get()
+            if ret is None:
+                break
+            output.append(ret)
+            time.sleep(0.01)
+            if len(output) <= size - max_size:
+                self.assertEqual(que.size, max_size)
+            else:
+                self.assertEqual(que.size, size - len(output))
+        t.join()
+        self.assertTrue(que.sealed)
+
     def test_normal(self):
         que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         que.put(('http://towhee.io', 'image1', 'vec1'))

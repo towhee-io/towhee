@@ -81,15 +81,6 @@ class DataQueue:
             self._not_full.notify()
             return ret
 
-    def get_dict(self):
-        ret = self.get()
-        if ret is None:
-            return None
-        dict_ret = {}
-        for i in range(self._schema.size()):
-            dict_ret[self._schema.get_key(i), ret[i]]
-        return dict_ret
-
     @property
     def size(self):
         return self._size
