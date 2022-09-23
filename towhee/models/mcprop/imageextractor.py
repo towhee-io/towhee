@@ -21,7 +21,7 @@ from towhee.models import clip
 
 class ImageExtractor(nn.Module):
     """
-    Text extractor
+    Image extractor
     Args:
         image_model (str): image model
         finetune (bool): finetune
