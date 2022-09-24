@@ -15,11 +15,11 @@
 import unittest
 import torch
 
-from towhee.models.mcprop.depthaggregator import DepthAggregatorModel
+from towhee.models.mcprop.depthaggregator import DepthAggregator
 
 
 class DepthAggregatorTest(unittest.TestCase):
-    model = DepthAggregatorModel(aggr=None)
+    model = DepthAggregator(aggr=None)
 
     def test_model(self):
         dummy_input = torch.randn(8, 8, 8, 1024)
