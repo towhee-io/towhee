@@ -18,7 +18,7 @@ import torch
 from torch import nn
 
 
-class DepthAggregatorModel(nn.Module):
+class DepthAggregator(nn.Module):
     """
     Depth aggregator
     Args:
