@@ -17,8 +17,10 @@ from typing import Iterable
 
 from towhee.functional.entity import Entity
 from towhee.functional.mixins.dag import register_dag
-# from towhee.hparam.hyperparameter import dynamic_dispatch, param_scope
+from towhee.functional.option import Empty
 
+
+#pylint: disable=broad-except
 class DataProcessingMixin:
     """
     Mixin for processing data.
@@ -257,7 +259,6 @@ class DataProcessingMixin:
 
         return self._factory(inner())
 
-    # @property
     @register_dag
     def flatten(self, index=None) -> 'DataCollection':
         """
@@ -280,32 +281,29 @@ class DataProcessingMixin:
             >>> [str(i) for i in dc]
             ["{'a': 1, 'b': 2, 'c': 0}", "{'a': 1, 'b': 2, 'c': 1}", "{'a': 1, 'b': 2, 'c': 2}"]
         """
-        # @dynamic_dispatch
-        # def flattener():
         def inner(index):
             #pylint: disable=protected-access
-            # index = param_scope()._index
             for ele in self._iterable:
-                # With schema
-                # from towhee.functional.option import Some
-                if isinstance(ele, Entity):
-                    if not index:
-                        raise IndexError('Please specify the column to flatten.')
+                try:
+                    # With schema
+                    if isinstance(ele, Entity):
+                        if not index:
+                            raise IndexError('Please specify the column to flatten.')
+                        else:
+                            new_ele = ele.__dict__.copy()
+                            for nested_ele in getattr(ele, index):
+                                new_ele[index] = nested_ele
+                                yield Entity(**new_ele)
+                    # Without schema
+                    elif isinstance(ele, Iterable):
+                        for nested_ele in iter(ele):
+                            yield nested_ele
                     else:
-                        new_ele = ele.__dict__.copy()
-                        for nested_ele in getattr(ele, index):
-                            new_ele[index] = nested_ele
-                            yield Entity(**new_ele)
-                # Without schema
-                elif isinstance(ele, Iterable):
-                    for nested_ele in iter(ele):
-                        yield nested_ele
-                else:
-                    yield ele
+                        yield ele
+                except Exception:
+                    yield Empty()
 
         return self._factory(inner(index))
-
-        # return flattener
 
     @register_dag
     def shuffle(self) -> 'DataCollection':
@@ -351,12 +349,8 @@ class DataProcessingMixin:
         >>> [i.a for i in dc]
         [1, 2, 3]
         """
-        # @dynamic_dispatch
-        # def grouper():
-
         def inner(index):
             #pylint: disable=protected-access
-            # index = param_scope()._index
             if not index:
                 raise IndexError('Please specify the column to group by.')
 
@@ -370,5 +364,3 @@ class DataProcessingMixin:
                 yield Entity(**new_ele)
 
         return self._factory(inner(index))
-
-        # return grouper
