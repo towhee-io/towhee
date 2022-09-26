@@ -19,7 +19,7 @@ from towhee.models.hornet.utils import GatedConv, GlobalLocalFilter, Block
 
 class TestUtils(unittest.TestCase):
     """
-    Test utils for ConvNeXt
+    Test utils for HorNet
     """
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
