@@ -17,7 +17,6 @@ from towhee.functional.option import Empty
 from towhee.functional.mixins.dag import register_dag
 from towhee.functional.option import Option, Some
 
-
 class SafeMixin:
     """
     Mixin for exception safety.
@@ -111,6 +110,8 @@ class SafeMixin:
                         callback(x)
                     if isinstance(x, Some):
                         yield x.get()
+                    else:
+                        yield x
 
             result = inner(self._iterable)
         else:
@@ -119,7 +120,8 @@ class SafeMixin:
                 for x in data:
                     if isinstance(x, Some):
                         yield x.get()
+                    elif not isinstance(x, Empty):
+                        yield x
 
             result = inner(self._iterable)
         return self._factory(result)
-
