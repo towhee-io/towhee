@@ -15,12 +15,27 @@
 # limitations under the License.
 
 from torch import nn
+import torch
 
 
-class GroupNorm(nn.GroupNorm):
+class LayerNormChannel(nn.Module):
     """
-    Group Normalization with 1 group.
+    LayerNorm only for Channel Dimension.
     Input: tensor in shape [B, C, H, W]
+    Args:
+        num_channels (int): number of channel
+        eps (float): precision
     """
-    def __init__(self, num_channels, **kwargs):
-        super().__init__(1, num_channels, **kwargs)
+    def __init__(self, num_channels, eps=1e-05):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(num_channels))
+        self.bias = nn.Parameter(torch.zeros(num_channels))
+        self.eps = eps
+
+    def forward(self, x):
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight.unsqueeze(-1).unsqueeze(-1) * x \
+            + self.bias.unsqueeze(-1).unsqueeze(-1)
+        return x
