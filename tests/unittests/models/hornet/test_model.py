@@ -14,7 +14,7 @@
 
 import unittest
 import torch
-from towhee.models.hornet import HorNet, GatedConv, Block
+from towhee.models.hornet import create_model
 
 
 class TestModel(unittest.TestCase):
@@ -26,21 +26,33 @@ class TestModel(unittest.TestCase):
     def test_model(self):
         data = torch.rand(1, 3, 32, 32).to(self.device)
 
-        model1 = HorNet(
-            in_chans=3, num_classes=10,
-            depths=(2, 2, 3, 3), base_dim=16, drop_path_rate=0.,
-            gnconv=GatedConv, block=Block
+        model = create_model(
+            num_classes=10, depths=(2, 2, 3, 3), base_dim=16, drop_path_rate=0.1, uniform_init=True
         ).to(self.device)
-        outs1 = model1(data)
-        self.assertTrue(outs1.shape == (1, 10))
+        outs = model(data)
+        self.assertTrue(outs.shape == (1, 10))
 
-        model2 = HorNet(
-            in_chans=3, num_classes=10,
-            depths=(2, 2, 3, 3), base_dim=16, drop_path_rate=0.,
-            gnconv=[GatedConv]*4, block=Block, uniform_init=True
-        ).to(self.device)
-        outs2 = model2(data)
-        self.assertTrue(outs2.shape == (1, 10))
+    def test_model_names(self):
+        try:
+            create_model(model_name='wrong name')
+        except ValueError:
+            pass
+
+        hornet_tiny = create_model(model_name='hornet_tiny_7x7', device=self.device)
+        self.assertTrue(hornet_tiny.base_dim == 64)
+        self.assertTrue(hornet_tiny.num_classes == 1000)
+
+        hornet_small = create_model(model_name='hornet_small_gf', device=self.device)
+        self.assertTrue(hornet_small.base_dim == 96)
+        self.assertTrue(hornet_small.num_classes == 1000)
+
+        hornet_base = create_model(model_name='hornet_base_7x7', device=self.device)
+        self.assertTrue(hornet_base.base_dim == 128)
+        self.assertTrue(hornet_base.num_classes == 1000)
+
+        hornet_large = create_model(model_name='hornet_large_gf_img384_22k', device=self.device)
+        self.assertTrue(hornet_large.base_dim == 192)
+        self.assertTrue(hornet_large.num_classes == 21841)
 
 
 if __name__ == '__main__':

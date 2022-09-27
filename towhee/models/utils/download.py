@@ -20,7 +20,9 @@ import warnings
 from tqdm import tqdm
 
 
-def download_from_url(url: str, root: str, hash_prefix: str = None):
+def download_from_url(url: str, root: str = None, hash_prefix: str = None):
+    if root is None:
+        root = os.path.expanduser('~/.towhee/checkpoints')
     os.makedirs(root, exist_ok=True)
     with request.urlopen(url) as r:
         d = r.headers['content-disposition']

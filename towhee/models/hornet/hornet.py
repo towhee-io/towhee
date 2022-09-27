@@ -22,8 +22,9 @@ import torch
 from torch import nn
 
 from towhee.models.utils.weight_init import trunc_normal_
+from towhee.models.utils.download import download_from_url
 from towhee.models.convnext.utils import LayerNorm
-from towhee.models.hornet.utils import Block, GatedConv
+from towhee.models.hornet import Block, GatedConv, get_configs
 
 
 class HorNet(nn.Module):
@@ -48,6 +49,10 @@ class HorNet(nn.Module):
                  gnconv=GatedConv, block=Block, uniform_init=False
                  ):
         super().__init__()
+
+        self.base_dim = base_dim
+        self.num_classes = num_classes
+
         dims = [base_dim, base_dim * 2, base_dim * 4, base_dim * 8]
 
         self.downsample_layers = nn.ModuleList()  # stem and 3 intermediate downsampling conv layers
@@ -111,3 +116,36 @@ class HorNet(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+
+def create_model(
+        model_name: str = None,
+        pretrained: bool = False,
+        weights_path: str = None,
+        device: str = None,
+        **kwargs,
+):
+    if device is None:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    configs = get_configs(model_name)
+    configs.update(**kwargs)
+    if 'url' in configs:
+        url = configs['url']
+        del configs['url']
+    else:
+        url = None
+
+    model = HorNet(**configs).to(device)
+
+    if pretrained:
+        if weights_path is None:
+            assert url, 'No default url or weights path is provided for the pretrained model.'
+            weights_path = download_from_url(url)
+        state_dict = torch.load(weights_path, map_location=device)
+        if 'model' in state_dict:
+            state_dict = state_dict['model']
+        model.load_state_dict(state_dict)
+
+    model.eval()
+    return model
