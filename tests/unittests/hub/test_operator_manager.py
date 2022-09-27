@@ -50,11 +50,10 @@ class TestOperatorManager(unittest.TestCase):
             (public_path / 'test_cache' / nn_repo).mkdir()
 
         nn_manager.init_nnoperator(
-            file_temp=public_path / 'test_cache' / temp_repo, file_dest=public_path / 'test_cache' / nn_repo, framework='test-fw'
+            file_temp=public_path / 'test_cache' / temp_repo, file_dest=public_path / 'test_cache' / nn_repo
         )
         self.assertTrue((public_path / 'test_cache' / nn_repo / 'nn_operator.py').is_file())
         self.assertTrue((public_path / 'test_cache' / nn_repo / 'nn_operator.yaml').is_file())
-        self.assertTrue((public_path / 'test_cache' / nn_repo / 'test-fw').is_dir())
         rmtree(public_path / 'test_cache' / nn_repo)
         rmtree(public_path / 'test_cache' / temp_repo)
 
