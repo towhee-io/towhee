@@ -73,14 +73,14 @@ class OperatorManager(RepoManager):
             OSError: Raise error in writing file.
         """
         repo_temp = self._temp['nnoperator']
-        py_repo_temp = repo_temp.replace('-', '_')
-        py_repo = self._repo.replace('-', '_')
+        temp_module = repo_temp.replace('-', '_')
+        repo_module = self._repo.replace('-', '_')
 
-        ori_str_list = [f'namespace.{py_repo_temp}', repo_temp, py_repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
-        tar_str_list = [f'{self._author}.{py_repo}', self._repo, py_repo, ''.join(x.title() for x in self._repo.split('-'))]
+        ori_str_list = [f'namespace.{temp_module}', temp_module, repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+        tar_str_list = [f'{self._author}.{repo_module}', repo_module, self._repo, ''.join(x.title() for x in self._repo.split('-'))]
         for file in Path(file_temp).glob('*'):
-            if file.name.endswith(('.md', 'template.py', '__init__.py')):
-                new_file = Path(file_dest) / str(file.name).replace(py_repo_temp, py_repo)
+            if file.name.endswith(('.md', '.yaml', 'template.py', '__init__.py')):
+                new_file = Path(file_dest) / str(file.name).replace(temp_module, repo_module)
                 self.hub_utils.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
             elif file.name != '.git':
                 os.rename(file, Path(file_dest) / file.name)
