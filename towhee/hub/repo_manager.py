@@ -44,7 +44,7 @@ class RepoManager:
         self._author = author
         self._repo = repo
         self._root = root
-        self._temp = {'pipeline': 'pipeline-template', 'pyoperator': 'pyoperator-template', 'nnoperator': 'nnoperator-template'}
+        self._temp = {'pipeline': 'pipeline-template', 'pyoperator': 'pyop-template', 'nnoperator': 'nnop-template'}
         self.hub_utils = HubUtils(self._author, self._repo, self._root)
 
     @property

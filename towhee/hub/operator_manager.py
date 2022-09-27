@@ -61,30 +61,29 @@ class OperatorManager(RepoManager):
         else:
             self.hub_utils.create_repo(token, self._class)
 
-    def init_nnoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path], framework: str = 'pytorch') -> None:
+    def init_nnoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
         """Initialize the files under file_dest by moving and updating the text under file_temp.
 
         Args:
             file_temp (Union[str, Path]): The path to the template files.
             file_dest (Union[str, Path]): The path to the local repo to init.
-            framework (str, Path): The framework for the model, defaults to 'pytorch'
 
         Raises:
             HTTPError: Raise error in request.
             OSError: Raise error in writing file.
         """
         repo_temp = self._temp['nnoperator']
+        py_repo_temp = repo_temp.replace('-', '_')
+        py_repo = self._repo.replace('-', '_')
 
-        ori_str_list = [f'author/{repo_temp}', repo_temp, ''.join(x.title() for x in repo_temp.split('-')), 'pytorch']
-        tar_str_list = [f'{self._author}/{self._repo}', self._repo, ''.join(x.title() for x in self._repo.split('-')), framework]
+        ori_str_list = [f'namespace.{py_repo_temp}', repo_temp, py_repo_temp, ''.join(x.title() for x in repo_temp.split('-'))]
+        tar_str_list = [f'{self._author}.{py_repo}', self._repo, py_repo, ''.join(x.title() for x in self._repo.split('-'))]
         for file in Path(file_temp).glob('*'):
-            if file.name.endswith(('.md', '.yaml', 'template.py', '__init__.py')):
-                new_file = Path(file_dest) / str(file.name).replace(repo_temp.replace('-', '_'), self._repo.replace('-', '_'))
+            if file.name.endswith(('.md', 'template.py', '__init__.py')):
+                new_file = Path(file_dest) / str(file.name).replace(py_repo_temp, py_repo)
                 self.hub_utils.update_text(ori_str_list, tar_str_list, str(file), str(new_file))
             elif file.name != '.git':
                 os.rename(file, Path(file_dest) / file.name)
-        if framework != 'pytorch':
-            os.rename(Path(file_dest) / 'pytorch', Path(file_dest) / framework)
 
     def init_pyoperator(self, file_temp: Union[str, Path], file_dest: Union[str, Path]) -> None:
         """Initialize the files under file_dest by moving and updating the text under file_temp.

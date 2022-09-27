@@ -2,27 +2,42 @@
 
 ## Installation 
 
-**(Recommended)** Once you have [installed Towhee](https://docs.towhee.io/get-started/install), you can use `towhee` with the following command:
-
-> You can use `python -m towhee` instead of `towhee` to troubleshoot.
+### Install with pip
 
 ```bash
 $ pip3 install towhee
-$ towhee <command> -<option> param
-# OR
-$ python -m towhee <command> -<option> param
 ```
 
-Of course, you can also run `towhee` with source code:
+### Install from source code
 
 ```bash
 $ git clone https://github.com/towhee-io/towhee.git
 $ python3 setup.py install
-$ towhee <command> -<option> param
-# OR
-$ python -m towhee <command> -<option> param
 ```
 
+Once you have [installed Towhee](https://docs.towhee.io/get-started/install), you can use `towhee` with the following command:
+
+> You can use `python -m towhee` instead of `towhee` to troubleshoot.
+
+```bash
+$ towhee -h
+usage: towhee
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+subcommands:
+  towhee command line tool.
+
+  {install,uninstall,run,login,logout,whoami,create}
+    install             setup command: install operator with setup.py
+    uninstall           setup command: uninstall operator with pip uninstall
+    run                 execute command: run towhee pipeline
+    login               user command: login using the same credentials as on towhee.io
+    logout              user command: logout
+    whoami              user command: find out which towhee.io account you are logged in
+    create              hub-repo command: create operator and generate init file
+```
 
 ## Usage
 
@@ -69,17 +84,15 @@ optional arguments:
 #### `create`
 ```bash
 $  towhee create -h
-usage: towhee create [-h] [-t {pyop,nnop}] [-f FRAMEWORK] [-d DIR] [--local] [--plain] uri
+usage: towhee create [-h] [-t {pyop,nnop}] [-d DIR] [--local] [--plain] uri
 
 positional arguments:
-  uri                   Repo uri, such as author/repo-name or repo-name(author defaults to login account).
+  uri                   Repo uri, such as author/repo-name or repo-name(author defaults to login account)
 
 optional arguments:
   -h, --help            show this help message and exit
   -t {pyop,nnop}, --type {pyop,nnop}
                         optional, operator repo type in ['pyop', 'nnop'] for init file, defaults to 'nnop'
-  -f FRAMEWORK, --framework FRAMEWORK
-                        optional, framework of nnoperator, defaults to 'pytorch'
   -d DIR, --dir DIR     optional, directory to the Repo file, defaults to '.'
   --local               optional, create and init repo in local
   --plain               optional, just create repo with init file
@@ -176,11 +189,6 @@ Create operator and initialize it to a specific directory using the 'pyop' opera
 ```bash
 $ towhee create -t pyop -d <path/to/your/dir> <repo-name>
 ```
-Create operator and initialize it with the 'nnop' operator type template, also specify the framework.
-
-```bash
-$ towhee create -t nnop -f <my-framework> <repo-name>
-```
 Only create operator in hub without initializing the files.
 
 ```bash
@@ -242,4 +250,3 @@ Also you can run pipeline in hub.
 ```bash
 $ towhee run towhee/image-embedding-resnet50
 ```
-
