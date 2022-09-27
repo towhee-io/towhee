@@ -260,7 +260,7 @@ class DataProcessingMixin:
         return self._factory(inner())
 
     @register_dag
-    def flatten(self, index=None) -> 'DataCollection':
+    def flatten(self, *args) -> 'DataCollection':
         """
         Flatten nested data within DataCollection.
 
@@ -281,6 +281,8 @@ class DataProcessingMixin:
             >>> [str(i) for i in dc]
             ["{'a': 1, 'b': 2, 'c': 0}", "{'a': 1, 'b': 2, 'c': 1}", "{'a': 1, 'b': 2, 'c': 2}"]
         """
+        index = args
+
         def inner(index):
             #pylint: disable=protected-access
             for ele in self._iterable:
@@ -291,8 +293,9 @@ class DataProcessingMixin:
                             raise IndexError('Please specify the column to flatten.')
                         else:
                             new_ele = ele.__dict__.copy()
-                            for nested_ele in getattr(ele, index):
-                                new_ele[index] = nested_ele
+                            for nested_eles in zip(*[getattr(ele, i) for i in index]):
+                                for j, e in zip(index, nested_eles):
+                                    new_ele[j] = e
                                 yield Entity(**new_ele)
                     # Without schema
                     elif isinstance(ele, Iterable):
