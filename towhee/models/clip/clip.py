@@ -20,13 +20,24 @@ from collections import OrderedDict
 from typing import Tuple, Union, Callable
 
 import numpy as np
+from PIL import Image
 import torch
 from torch import nn
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+try:
+    from torchvision.transforms import InterpolationMode
+    BICUBIC = InterpolationMode.BICUBIC
+except ImportError:
+    BICUBIC = Image.BICUBIC
 
-from .clip_utils import get_configs, _download, convert_weights, patch_device, patch_float, tokenize
+from towhee.models.clip.clip_utils import get_configs, _download, convert_weights, patch_device, patch_float, tokenize
 from towhee.models.clip.auxilary import multi_head_attention_forward, MultiheadAttention
 
 warnings.filterwarnings("ignore", category=UserWarning)
+
+
+def _convert_image_to_rgb(image):
+    return image.convert("RGB")
 
 
 class Bottleneck(nn.Module):
@@ -554,6 +565,16 @@ class CLIP(nn.Module):
         mask.fill_(float("-inf"))
         mask.triu_(1)  # zero out the lower diagonal
         return mask
+
+    def return_transforms(self):
+        n_px = self.visual.input_resolution
+        return Compose([
+            Resize(n_px, interpolation=BICUBIC),
+            CenterCrop(n_px),
+            _convert_image_to_rgb,
+            ToTensor(),
+            Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+        ])
 
     @property
     def dtype(self):
