@@ -96,11 +96,11 @@ class RepoCommand: # pragma: no cover
     def init_repo(self, manager, repo_path):
         print('\nInitializing the repo file structure...\n')
         if self._args.type == 'pyop':
-            temp_path = Path(self._args.dir) / REPO_TEMPLATE['pyoperator']
+            temp_path = Path(self._args.dir) / (REPO_TEMPLATE['pyoperator'] + '_tmp')
             OperatorManager('towhee', REPO_TEMPLATE['pyoperator']).download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_pyoperator(temp_path, repo_path)
         elif self._args.type == 'nnop':
-            temp_path = Path(self._args.dir) / REPO_TEMPLATE['nnoperator']
+            temp_path = Path(self._args.dir) / (REPO_TEMPLATE['nnoperator'] + '_tmp')
             OperatorManager('towhee', REPO_TEMPLATE['nnoperator']).download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_nnoperator(temp_path, repo_path)
         shutil.rmtree(str(temp_path))
