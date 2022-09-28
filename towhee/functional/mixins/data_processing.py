@@ -344,13 +344,15 @@ class DataProcessingMixin:
         Merge columns in DataCollection. Unstreamed data only.
 
         Examples:
-        >>> import towhee
-        >>> dc = towhee.dc['a']([1,1,2,2,3,3])
-        >>> [i.a for i in dc]
-        [1, 1, 2, 2, 3, 3]
-        >>> dc = dc.group_by('a')
-        >>> [i.a for i in dc]
-        [1, 2, 3]
+
+            >>> import towhee
+            >>> dc = towhee.dc['a']([1,1,2,2,3,3])
+            >>> [i.a for i in dc]
+            [1, 1, 2, 2, 3, 3]
+
+            >>> dc = dc.group_by('a')
+            >>> [i.a for i in dc]
+            [1, 2, 3]
         """
         def inner(index):
             #pylint: disable=protected-access
