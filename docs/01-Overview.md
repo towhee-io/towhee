@@ -42,7 +42,8 @@ For more information, take a look at our [quick start](/02-Getting%20Started/01-
 ### Getting started:
 
 - Check out our [Quick Start](/02-Getting%20Started/01-quick-start.mdx): install Towhee and try your first pipeline.
-- Try a pre-built [Pipeline](https://towhee.io/pipelines?limit=30&page=1):
+- Try pre-built [Operator](https://towhee.io/operators).
+- Towhee [API Reference](https://towhee.readthedocs.io/en/branch0.8.0/).
 
 ### Tutorials:
 
