@@ -3,7 +3,7 @@ name: Check Towhee docs update
 on:
   push:
     branches:
-      - 'main'
+      - 'branch0.8.0'
     paths:
       - "docs/**"
 
