@@ -1,3 +1,4 @@
+Jinja2<=3.0.3
 importlib_metadata
 ipython
 m2r2
