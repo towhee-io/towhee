@@ -1,6 +1,6 @@
 # 10 minutes to Towhee CMD
 
-The Towhee command line tool provides some [Towhee Hub](https://towhee.io/) related actions, and can also help you set up your Operators, you can [learn more about it](https://github.com/towhee-io/towhee/tree/main/towhee/command). The following shows you the common examples of towhee cmd, so that you can quickly understand.
+The Towhee command line tool provides some [Towhee Hub](https://towhee.io/) related actions, and can also help you set up your Operators, you can [learn more about it](https://github.com/towhee-io/towhee/tree/main/towhee/command). The following shows you the common examples of Towhee CMD, so that you can quickly understand.
 
 ## Manage your account
 
@@ -60,11 +60,11 @@ Successfully create Operator in hub: https://towhee.io/<your-account>/test-add
 Initializing the repo file structure...
 ```
 
-If you just want to create the operator in the towhee hub without initializing the file, you can run the above command with `--plain` argument, e.g. `towhee create-op -t pyop -d test test-add --plain`.
+If you just want to create the operator in the Towhee hub without initializing the file, you can run the above command with `--plain` argument, e.g. `towhee create-op -t pyop -d test test-add --plain`.
 
 ### Create operator locally
 
-If you only want to develop locally without creating the Operator on the Towhee hub, you can run with the `--local` argument.
+If you only want to develop locally without creating the Operator on the Towhee hub, you can run with the `--local` argument, and it will not require your Towhee account.
 
 ```Bash
 $ towhee create -t pyop -d test test-add --local
@@ -74,7 +74,7 @@ Initializing the repo file structure...
 
 ### Develop your code
 
-After initializing the operator file, you will see the following files: **test_add.py**, **__init__.py**, **requirements.txt**, which are required by the towhee operator, and more details in "How to develop my first Operator"(TBD). Then modify the code in **test_add.py** as follows:
+After initializing the operator file, you will see the following files: **test_add.py**, **__init__.py**, **requirements.txt**, which are required by the Towhee operator, and more details in "How to develop my first Operator"(TBD). Then modify the code in **test_add.py** as follows:
 
 ```Python
 from towhee.operator import PyOperator, SharedType
