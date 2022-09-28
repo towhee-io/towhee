@@ -4,3 +4,4 @@ tabulate
 numpy
 pygit2
 pgzip
+pyarrow
