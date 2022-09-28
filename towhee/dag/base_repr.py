@@ -18,9 +18,8 @@ import json
 from typing import Dict, Set, Any
 
 from towhee.hparam import param_scope, HyperParameter
-from towhee.utils.yaml_utils import dump_yaml, load_yaml
 
-
+# pylint: disable=import-outside-toplevel
 class BaseRepr:
     """
     Base representation from which all other representation objects inherit.
@@ -63,6 +62,7 @@ class BaseRepr:
 
     @staticmethod
     def render_template(string: str):
+        from towhee.utils.yaml_utils import load_yaml
         string = string.read() if hasattr(string, 'read') else string
         retval = load_yaml(string)
         retval = param_scope(**retval)
@@ -74,6 +74,7 @@ class BaseRepr:
 
     @staticmethod
     def inject_template(info: Dict[str, Any]) -> Dict:
+        from towhee.utils.yaml_utils import dump_yaml
         def inject(op, injections):
             if op['name'] in injections:
                 patch = injections[op['name']]
@@ -104,6 +105,7 @@ class BaseRepr:
                 The dict loaded from the YAML file that contains the representation
                 information.
         """
+        from towhee.utils.yaml_utils import load_yaml
         rendered = BaseRepr.render_template(string)
         info = load_yaml(rendered)
         info['ir'] = rendered
