@@ -56,13 +56,12 @@ class TestCmdline(unittest.TestCase):
         repo_path = public_path / 'mock_operators'
         os.chdir(str(repo_path))
         args_create_pyop = argparse.Namespace(action='create', type='pyop', dir=str(repo_path), uri=pyrepo, local=True)
-        args_create_nnop = argparse.Namespace(action='create', type='nnop', framework='tensorflow', dir=str(repo_path), uri=nnrepo, local=True)
+        args_create_nnop = argparse.Namespace(action='create', type='nnop', dir=str(repo_path), uri=nnrepo, local=True)
 
         RepoCommand(args_create_pyop)()
         RepoCommand(args_create_nnop)()
         self.assertTrue((repo_path / pyrepo / 'create_pyoperator.py').is_file())
         self.assertTrue((repo_path / 'create_nnoperator' / 'create_nnoperator.py').is_file())
-        self.assertTrue((repo_path / 'create_nnoperator' / 'tensorflow').is_dir())
 
         shutil.rmtree(str(repo_path / pyrepo))
         shutil.rmtree(str(repo_path / 'create_nnoperator'))

@@ -19,6 +19,7 @@ from pathlib import Path
 from requests.exceptions import HTTPError
 from urllib.parse import urlsplit
 
+from towhee.hub.repo_manager import REPO_TEMPLATE
 from towhee.hub.operator_manager import OperatorManager
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.hub_file_utils import HubFileUtils
@@ -69,7 +70,6 @@ class RepoCommand: # pragma: no cover
         op_parser = argparse.ArgumentParser(add_help=False)
         op_parser.add_argument('-t', '--type', choices=['pyop', 'nnop'], default='nnop',
                                help='optional, operator repo type in [\'pyop\', \'nnop\'] for init file, defaults to \'nnop\'')
-        op_parser.add_argument('-f', '--framework', default='pytorch', help='optional, framework of nnoperator, defaults to \'pytorch\'')
 
         subparsers.add_parser('create', parents=[op_parser, parser], help='hub-repo command: create operator and generate init file')
 
@@ -96,11 +96,11 @@ class RepoCommand: # pragma: no cover
     def init_repo(self, manager, repo_path):
         print('\nInitializing the repo file structure...\n')
         if self._args.type == 'pyop':
-            temp_path = Path(self._args.dir) / 'pyoperator_template'
-            OperatorManager('towhee', 'pyoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
+            temp_path = Path(self._args.dir) / (REPO_TEMPLATE['pyoperator'] + '_tmp')
+            OperatorManager('towhee', REPO_TEMPLATE['pyoperator']).download(local_repo_path=temp_path, tag='main', install_reqs=False)
             manager.init_pyoperator(temp_path, repo_path)
         elif self._args.type == 'nnop':
-            temp_path = Path(self._args.dir) / 'nnoperator_template'
-            OperatorManager('towhee', 'nnoperator-template').download(local_repo_path=temp_path, tag='main', install_reqs=False)
-            manager.init_nnoperator(temp_path, repo_path, self._args.framework)
+            temp_path = Path(self._args.dir) / (REPO_TEMPLATE['nnoperator'] + '_tmp')
+            OperatorManager('towhee', REPO_TEMPLATE['nnoperator']).download(local_repo_path=temp_path, tag='main', install_reqs=False)
+            manager.init_nnoperator(temp_path, repo_path)
         shutil.rmtree(str(temp_path))
