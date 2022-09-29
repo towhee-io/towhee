@@ -18,7 +18,7 @@ from torch import nn
 import torch
 
 from towhee.models.layers.droppath import DropPath
-from towhee.models.layers.mlp import Mlp
+from towhee.models.poolformer.mlp import Mlp
 from towhee.models.poolformer.groupnorm import GroupNorm
 from towhee.models.poolformer.pooling import Pooling
 
