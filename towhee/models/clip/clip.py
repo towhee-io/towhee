@@ -30,7 +30,8 @@ try:
 except ImportError:
     BICUBIC = Image.BICUBIC
 
-from towhee.models.clip.clip_utils import get_configs, _download, convert_weights, patch_device, patch_float, tokenize
+from towhee.models.utils.download import download_from_url
+from towhee.models.clip.clip_utils import get_configs, convert_weights, patch_device, patch_float, tokenize
 from towhee.models.clip.auxilary import multi_head_attention_forward, MultiheadAttention
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -704,7 +705,7 @@ def create_model(
                 local_path = weights_path
             elif url:
                 cache_dir = os.path.expanduser("~/.cache/clip")
-                local_path = _download(url, cache_dir)
+                local_path = download_from_url(url=url, root=cache_dir, hash_prefix="default")
             else:
                 raise AttributeError("No url or local path is provided for pretrained model.")
 
