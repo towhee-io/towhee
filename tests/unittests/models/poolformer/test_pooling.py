@@ -18,12 +18,13 @@ from towhee.models.poolformer.pooling import Pooling
 
 
 class LayerNormChannelTest(unittest.TestCase):
-    model = Pooling()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = Pooling().to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
+        dummy_img = torch.rand(1, 3, 4, 4).to(self.device)
         out = self.model(dummy_img)
-        self.assertEqual(out.shape, (1, 3, 224, 224))
+        self.assertEqual(out.shape, (1, 3, 4, 4))
 
 
 if __name__ == '__main__':

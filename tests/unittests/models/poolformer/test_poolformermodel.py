@@ -14,14 +14,15 @@
 
 import unittest
 import torch
-from towhee.models.poolformer.poolformer import *
+from towhee.models.poolformer.poolformer import poolformer_s12
 
 
 class PoolformerModelTest(unittest.TestCase):
-    model = poolformer_s12()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = poolformer_s12().to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
+        dummy_img = torch.rand(1, 3, 224, 224).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 1000))
 

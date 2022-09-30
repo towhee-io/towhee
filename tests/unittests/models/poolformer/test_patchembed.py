@@ -18,12 +18,13 @@ from towhee.models.poolformer.patchembed import PatchEmbed
 
 
 class PoolFormerPatchEmbedTest(unittest.TestCase):
-    model = PatchEmbed()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = PatchEmbed(patch_size=2, stride=2, embed_dim=6).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
+        dummy_img = torch.rand(1, 3, 4, 4).to(self.device)
         out = self.model(dummy_img)
-        self.assertEqual(out.shape, (1, 768, 14, 14))
+        self.assertEqual(out.shape, (1, 6, 2, 2))
 
 
 if __name__ == '__main__':
