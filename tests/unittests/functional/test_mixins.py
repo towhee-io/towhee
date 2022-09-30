@@ -38,6 +38,7 @@ from towhee._types.image import Image
 from towhee.utils.thirdparty.faiss_utils import faiss
 from towhee.utils.cv2_utils import cv2
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table
+from tests.unittests import new_cache
 
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -293,6 +294,18 @@ class TestCompileMixin(unittest.TestCase):
                 .inner_distance[('b', 'a'), 'c']()
         )
         self.assertTrue(isinstance(res[0].c, list))
+
+
+class TestKVStorage(unittest.TestCase):
+    """
+    Unit tests for kv storage.
+    """
+    def test_kvstorage(self):
+        #pylint: disable=unused-variable
+        dc1 = towhee.dc['a', 'b']([['a', '1'], ['b', '2'], ['c', '3']]).insert_leveldb[('a', 'b'),](str(new_cache/'test.db'))
+        dc2 = towhee.dc['a', 'b']([['a', '1'], ['b', '2'], ['c', '3']]).from_leveldb['a', 'c'](str(new_cache/'test.db'))
+        for i in dc2:
+            self.assertEqual(i.c.decode('utf-8'), i.b)
 
 
 if __name__ == '__main__':
