@@ -18,12 +18,13 @@ from towhee.models.poolformer.mlp import Mlp
 
 
 class PoolFormerMlpTest(unittest.TestCase):
-    model = Mlp(in_features=64, out_features=8)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = Mlp(in_features=4, out_features=6).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 64, 56, 56)
+        dummy_img = torch.rand(1, 4, 2, 2).to(self.device)
         out = self.model(dummy_img)
-        self.assertEqual(out.shape, (1, 8, 56, 56))
+        self.assertEqual(out.shape, (1, 6, 2, 2))
 
 
 if __name__ == '__main__':
