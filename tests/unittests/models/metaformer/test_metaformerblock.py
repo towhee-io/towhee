@@ -18,10 +18,11 @@ from towhee.models.metaformer.metaformerblock import MetaFormerBlock
 
 
 class AddPositionEmbTest(unittest.TestCase):
-    model = MetaFormerBlock(dim=8)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = MetaFormerBlock(dim=8).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 8, 8, 8)
+        dummy_img = torch.rand(1, 8, 8, 8).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 8, 8, 8))
 

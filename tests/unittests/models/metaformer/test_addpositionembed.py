@@ -18,12 +18,13 @@ from towhee.models.metaformer.addpositionembed import AddPositionEmb
 
 
 class AddPositionEmbTest(unittest.TestCase):
-    model = AddPositionEmb()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = AddPositionEmb(dim=4, spatial_shape=[2, 2]).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 384, 14, 14)
+        dummy_img = torch.rand(1, 4, 2, 2).to(self.device)
         out = self.model(dummy_img)
-        self.assertEqual(out.shape, (1, 384, 14, 14))
+        self.assertEqual(out.shape, (1, 4, 2, 2))
 
 
 if __name__ == '__main__':

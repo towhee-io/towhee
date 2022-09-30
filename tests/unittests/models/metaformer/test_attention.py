@@ -18,11 +18,11 @@ from towhee.models.metaformer.attention import Attention
 
 
 class AttentionTest(unittest.TestCase):
-    dim = 8
-    model = Attention(dim=dim, head_dim=2)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = Attention(dim=8, head_dim=2).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 8, 32, 32)
+        dummy_img = torch.rand(1, 8, 32, 32).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 8, 32, 32))
 

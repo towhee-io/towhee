@@ -20,10 +20,11 @@ from towhee.models.metaformer.basicblocks import basic_blocks
 class MetaFormerBlockTest(unittest.TestCase):
     index = 1
     layers = [1, 1]
-    model = basic_blocks(dim=8, index=index, layers=layers, use_layer_scale=False)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = basic_blocks(dim=8, index=index, layers=layers, use_layer_scale=False).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 8, 8, 8)
+        dummy_img = torch.rand(1, 8, 8, 8).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 8, 8, 8))
 

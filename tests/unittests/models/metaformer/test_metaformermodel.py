@@ -14,14 +14,18 @@
 
 import unittest
 import torch
-from towhee.models.metaformer.metaformer import *
+from towhee.models.metaformer.metaformer import metaformer_id_s12
 
 
 class MetaformerModelTest(unittest.TestCase):
-    model = metaformer_id_s12(pretrained=True)
+    """
+    Test MetaFormer model.
+    """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = metaformer_id_s12(pretrained=False).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
+        dummy_img = torch.rand(1, 3, 224, 224).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 1000))
 

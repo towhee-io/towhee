@@ -18,10 +18,11 @@ from towhee.models.metaformer.spatialfc import SpatialFc
 
 
 class SpatialFcTest(unittest.TestCase):
-    model = SpatialFc()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = SpatialFc().to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 64, 14, 14)
+        dummy_img = torch.rand(1, 64, 14, 14).to(self.device)
         out = self.model(dummy_img)
         self.assertEqual(out.shape, (1, 64, 14, 14))
 
