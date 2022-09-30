@@ -18,7 +18,7 @@ from torch import nn
 import torch
 import math
 
-import opt_einsum.contract as contract
+from opt_einsum import contract
 
 
 class TransposedLinear(nn.Module):
