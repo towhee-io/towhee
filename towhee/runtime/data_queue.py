@@ -29,7 +29,7 @@ class DataQueue:
             if col_type == ColumnType.QUEUE:
                 self._data.append(_QueueColumn())
             else:
-                self._data.append(_NoQueueColumn())
+                self._data.append(_SCALARColumn())
             
         self._sealed = False
         self._size = 0
@@ -58,7 +58,7 @@ class DataQueue:
 
             inc_size = max([len(col) for col in batch_inputs])
             for col_index in range(self._schema.size()):
-                if self._schema.get_col_type(col_index) == ColumnType.NOQUEUE:
+                if self._schema.get_col_type(col_index) == ColumnType.SCALAR:
                     self._data[col_index].put(batch_inputs[col_index][0])
                 else:
                     for item in batch_inputs[col_index]:
@@ -101,7 +101,7 @@ class DataQueue:
 
 class ColumnType(Enum):
     QUEUE = auto()
-    NOQUEUE = auto()
+    SCALAR = auto()
 
 
 _ColumnInfo = namedtuple('_ColumnInfo', ['name', 'col_type'])
@@ -142,7 +142,7 @@ class _QueueColumn:
         self._q.append(data)
 
 
-class _NoQueueColumn:
+class _SCALARColumn:
     def __init__(self):
         self._data = None
 

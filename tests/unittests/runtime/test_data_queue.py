@@ -27,7 +27,7 @@ class TestDataQueue(unittest.TestCase):
 
     def test_max_size(self):
         max_size = 5
-        que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)], max_size)
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)], max_size)
 
         size = 20
         def write():
@@ -54,7 +54,7 @@ class TestDataQueue(unittest.TestCase):
         self.assertTrue(que.sealed)
 
     def test_normal(self):
-        que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         que.put(('http://towhee.io', 'image1', 'vec1'))
         self.assertEqual(que.size, 1)
         que.put(('http://towhee.io', 'image2', 'vec2'))
@@ -76,8 +76,8 @@ class TestDataQueue(unittest.TestCase):
         input_schema: image
         output_schema: vec
         '''
-        input_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
 
         size = 20
 
@@ -121,11 +121,11 @@ class TestDataQueue(unittest.TestCase):
         input_schema: url
         output_schema: image
         '''
-        input_que = DataQueue([('url', ColumnType.NOQUEUE)])
+        input_que = DataQueue([('url', ColumnType.SCALAR)])
         input_que.put(('http://towhee.io', ))
         input_que.seal()
 
-        output_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)])
+        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
 
         size = 20
         ret = input_que.get()
@@ -152,8 +152,8 @@ class TestDataQueue(unittest.TestCase):
         input_schema: image
         output_schema: vec
         '''
-        input_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
 
         size = 20
         def write():
@@ -228,8 +228,8 @@ class TestDataQueue(unittest.TestCase):
         filter_columns: image
         '''
 
-        input_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.NOQUEUE), ('image', ColumnType.QUEUE), ('filter_image', ColumnType.QUEUE)])
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('filter_image', ColumnType.QUEUE)])
 
         size = 20
         def write():
