@@ -14,7 +14,9 @@
 
 from typing import List, Tuple, Union, Dict, Optional
 import threading
+import copy
 from enum import Enum, auto
+from typing import List, Tuple
 
 from collections import deque, namedtuple
 
@@ -26,9 +28,9 @@ class DataQueue:
 
     def __init__(self, schema_info, max_size=0):
         self._max_size = max_size
-        self._schema = _Schema(schema_info)
+        self._schema = schema_info if isinstance(schema_info, _Schema) else _Schema(schema_info)
         self._data = []
-        for col_type in self._schema.col_types():
+        for col_type in self._schema.col_types:
             if col_type == ColumnType.QUEUE:
                 self._data.append(_QueueColumn())
             else:
@@ -39,6 +41,12 @@ class DataQueue:
         self._lock = threading.Lock()
         self._not_full = threading.Condition(self._lock)
         self._not_empty = threading.Condition(self._lock)
+    
+    def __repr__(self):
+        names = self._schema.col_names
+        types = self._schema.col_types
+        content = ', '.join([i + ': ' + str(j) for i, j in zip(names, types)])
+        return f'<{self.__class__.__name__} {content}>'
 
     def put(self, inputs: Union[Tuple, List]) -> bool:
         assert len(inputs) == self._schema.size()
@@ -127,6 +135,19 @@ class DataQueue:
     @property
     def sealed(self) -> bool:
         return self._sealed
+    
+    @property
+    def schema(self) -> List[str]:
+        return [(i, j) for i, j in zip(self._schema.col_names, self._schema.col_types)]
+
+    def copy(self):
+        dq_copy = DataQueue(self._schema, self._max_size)
+
+        with self._not_empty:
+            dq_copy._data = copy.deepcopy(self._data)
+            dq_copy._size = self._size
+
+        return dq_copy
 
 
 class ColumnType(Enum):
