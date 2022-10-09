@@ -58,7 +58,7 @@ towhee_dag = {
 dr = DAGRepr(towhee_dag)
 
 
-class TestDAG(unittest.TestCase):
+class TestDAGRepr(unittest.TestCase):
     """
     DAGRepr test
     """
@@ -69,14 +69,3 @@ class TestDAG(unittest.TestCase):
         nodes = dr.get_nodes()
         self.assertEqual(len(nodes), 4)
         self.assertTrue(isinstance(nodes[0], NodeRepr))
-        self.assertEqual(nodes[2].name, 'b1196')
-        self.assertEqual(nodes[2].function, 'towhee.test')
-        self.assertEqual(nodes[2].init_args, ('a',))
-        self.assertEqual(nodes[2].init_kws, {'b': 'b'})
-        self.assertEqual(nodes[2].inputs, ('a', 'b'))
-        self.assertEqual(nodes[2].outputs, 'd')
-        self.assertEqual(nodes[2].fn_type, 'hub')
-        self.assertEqual(nodes[2].iteration, 'filter')
-        self.assertEqual(nodes[2].config, {'parallel': 3})
-        self.assertEqual(nodes[2].tag, '1.1')
-        self.assertEqual(nodes[2].param, {'filter_columns': 'a'})

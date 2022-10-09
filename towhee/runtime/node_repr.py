@@ -124,7 +124,7 @@ class NodeRepr:
         """
         node_keys = set(node.keys())
         if not isinstance(node, dict) or not essentials.issubset(node_keys):
-            raise ValueError('Node [%s] is not valid, lack attr [%s]', str(node), essentials - node_keys)
+            raise ValueError(f'Node {str(node)} is not valid, lack attr {essentials - node_keys}')
         return True
 
     @staticmethod
