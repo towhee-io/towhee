@@ -31,13 +31,6 @@ class NodeRepr:
         config (`Dict[str, any]`): The configuration to this node.
         tag (`str`): The tag for The function, defauts to 'main'.
         param (`Dict[str, any]`): The parameter for the iteration, defaults to None.
-
-    Examples:
-    >>> from towhee.runtime.node_repr import NodeRepr
-    >>> node_dict = {'inputs': None, 'outputs': ('a', 'b'), 'fn_type': '_input', 'iteration': 'map'}
-    >>> nr = NodeRepr.from_dict('_input', node_dict)
-    >>> print(nr.name, nr.function, nr.init_args, nr.init_kws, nr.inputs, nr.outputs, nr.fn_type, nr.iteration, nr.config, nr.tag, nr.param)
-    input None None None None ('a', 'b') input map None main None
     """
     def __init__(
         self,

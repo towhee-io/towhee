@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List
+from typing import Dict
+
 from towhee.runtime.node_repr import NodeRepr
+from towhee.runtime.schema_repr import SchemaRepr
 
 
 class DAGRepr:
@@ -25,31 +27,17 @@ class DAGRepr:
     """
     def __init__(self, dag: dict):
         self._dag = dag
+        self._nodes = dict((name, NodeRepr.from_dict(name, self._dag[name])) for name in self._dag)
+        self._schemas = dict((name, SchemaRepr(name, self._dag[name]['inputs'], self._dag[name]['outputs'])) for name in self._dag)
 
     @property
     def dag(self) -> Dict:
         return self._dag
 
-    def get_nodes(self) -> List:
-        """
-        Get a list of NodeRepr from the DAG.
+    @property
+    def nodes(self) -> Dict:
+        return self._nodes
 
-        Examples:
-        >>> from towhee.runtime.dag_repr import DAGRepr
-        >>> towhee_dag = {
-        ...  '_input': {'inputs': ('a', 'b'), 'outputs': ('a', 'b'), 'fn_type': '_input', 'iteration': 'map'},
-        ...  'e433a': {'function': 'towhee.decode', 'init_args': ('a',), 'init_kws': {'b': 'b'}, 'inputs': 'a', 'outputs': 'c', 'fn_type': 'hub',
-        ...            'iteration': 'map', 'config': None, 'tag': 'main', 'param': None},
-        ...  'b1196': {'function': 'towhee.hub', 'init_args': ('a',), 'init_kws': {'b': 'b'}, 'inputs': ('a', 'b'), 'outputs': 'b', 'fn_type': 'hub',
-        ...            'iteration': 'filter', 'config': None, 'tag': '1.1', 'param': {'filter_columns': 'a'}},
-        ...  '_output': {'inputs': 'd', 'outputs': 'd', 'fn_type': '_output', 'iteration': 'map'},
-        ... }
-        >>> dr = DAGRepr(towhee_dag)
-        >>> nodes = dr.get_nodes()
-        >>> print(nodes[0].name, nodes[2].function, nodes[2].iteration, nodes[2].param, nodes[3].name)
-        _input towhee.clip filter {'filter_columns': 'a'} _output
-        """
-        nodes_list = []
-        for name in self._dag:
-            nodes_list.append(NodeRepr.from_dict(name, self._dag[name]))
-        return nodes_list
+    @property
+    def schemas(self) -> Dict:
+        return self._schemas
