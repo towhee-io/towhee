@@ -263,3 +263,39 @@ class TestDataQueue(unittest.TestCase):
 
             self.assertEqual(int(ret[1][len('image'):]), int(ret[2][len('filter_image'): ]))
         t.join()
+
+    def test_seal(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        self.assertTrue(input_que.put(('1', '2')))
+        input_que.seal()
+        self.assertFalse(input_que.put(('1', '2')))
+
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        self.assertTrue(input_que.put(('1', '2')))
+        self.assertTrue(input_que.put(('1', '2')))
+        self.assertEqual(input_que.size, 2)
+        input_que.clear_and_seal()
+        self.assertFalse(input_que.put(('1', '2')))
+        self.assertEqual(input_que.size, 0)
+        self.assertEqual(input_que.get(), None)
+        self.assertEqual(input_que.get_dict(), None)
+
+    def test_get_dict(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        self.assertTrue(input_que.put(('1', '2')))
+        self.assertEqual(input_que.size, 1)
+        data = input_que.get_dict()
+        self.assertEqual(data, {
+            'url': '1',
+            'image': '2'
+        })
+        self.assertEqual(input_que.size, 0)
+
+    def test_put_dict(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        self.assertTrue(input_que.put_dict({
+            'url': '1',
+            'image': 1,
+            'other': 1
+        }))
+        self.assertEqual(input_que.size, 1)

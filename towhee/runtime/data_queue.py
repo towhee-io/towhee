@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple
+from typing import List, Tuple, Union, Dict, Optional
 import threading
 from enum import Enum, auto
 
@@ -37,9 +37,12 @@ class DataQueue:
         self._not_full = threading.Condition(self._lock)
         self._not_empty = threading.Condition(self._lock)
 
-    def put(self, inputs: Tuple):
+    def put(self, inputs: Union[Tuple, List]) -> bool:
         assert len(inputs) == self._schema.size()
         with self._not_full:
+            if self._sealed:
+                return False
+
             if self._max_size > 0:
                 while self.size >= self._max_size:
                     self._not_full.wait()
@@ -48,6 +51,11 @@ class DataQueue:
                 self._data[i].put(inputs[i])
             self._size += 1
             self._not_empty.notify()
+            return True
+
+    def put_dict(self, inputs: Dict) -> bool:
+        data = [inputs.get(name, None) for name in self._schema.col_names()]
+        return self.put(data)
 
     def batch_put(self, batch_inputs: List[List]):
         assert len(batch_inputs) == self._schema.size()
@@ -66,7 +74,7 @@ class DataQueue:
             self._size += inc_size
             self._not_empty.notify(inc_size)
 
-    def get(self):
+    def get(self) -> Optional[List]:
         with self._not_empty:
             while self._size <= 0 and not self._sealed:
                 self._not_empty.wait()
@@ -81,18 +89,37 @@ class DataQueue:
             self._not_full.notify()
             return ret
 
+    def get_dict(self) -> Optional[Dict]:
+        data = self.get()
+        if data is None:
+            return None
+
+        ret = {}
+        names = self._schema.col_names()
+        for i in range(len(names)):
+            ret[names[i]] = data[i]
+        return ret
+
     @property
-    def size(self):
+    def size(self) -> int:
         return self._size
 
     @property
-    def col_size(self):
+    def col_size(self) -> int:
         return self._schema.size()
-    
-    def seal(self):
-        with self._not_empty:
+
+    def clear_and_seal(self):
+        with self._lock:
+            self._size = 0
             self._sealed = True
             self._not_empty.notify_all()
+            self._not_full.notify_all()
+
+    def seal(self):
+        with self._lock:
+            self._sealed = True
+            self._not_empty.notify_all()
+            self._not_full.notify_all()
 
     @property
     def sealed(self) -> bool:
@@ -117,12 +144,15 @@ class _Schema:
     def size(self):
         return self._size
 
-    def get_col_name(self, index):
-        assert index < self._size
-        return self._cols[index].name
+    def col_names(self):
+        return [col.name for col in self._cols]
 
     def col_types(self):
         return [col.col_type for col in self._cols]
+
+    def get_col_name(self, index):
+        assert index < self._size
+        return self._cols[index].name
 
     def get_col_type(self, index):
         assert index < self._size
