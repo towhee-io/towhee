@@ -12,14 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List, Any, Tuple, Union
+from typing import Dict, Any, Tuple, Union, Callable, Set
 
 
 class NodeRepr:
+    """
+    NodeRepr for node representations.
+
+    Args:
+        name (`str`): Name of the node, such as 'input', 'output' and id for the node.
+        function (`Union[str, Callable]`): The operator, such as a callable (lambda, function) or the name of an op on the hub.
+        init_args (`[str, Tuple]`): The args to initilize the operator.
+        init_kws (`Dict[str, any]`): The kwargs to initilize the operator.
+        inputs (`Union[str, Tuple]`): Input schema to this node.
+        outputs (`Union[str, Tuple]`): Output schema to this node.
+        fn_type (`str`): The of function, such as 'hub', 'lambda' and 'callable'.
+        iteration (`str`): The iteration to this node, such as 'map', 'flat_map', 'filter', 'time_window'.
+        config (`Dict[str, any]`): The configuration to this node.
+        tag (`str`): The tag for The function, defauts to 'main'.
+        param (`Dict[str, any]`): The parameter for the iteration, defaults to None.
+
+    Examples:
+    >>> from towhee.runtime.node_repr import NodeRepr
+    >>> node_dict = {'inputs': None, 'outputs': ('a', 'b'), 'fn_type': '_input', 'iteration': 'map'}
+    >>> nr = NodeRepr.from_dict('_input', node_dict)
+    >>> print(nr.name, nr.function, nr.init_args, nr.init_kws, nr.inputs, nr.outputs, nr.fn_type, nr.iteration, nr.config, nr.tag, nr.param)
+    input None None None None ('a', 'b') input map None main None
+    """
     def __init__(
         self,
         name: str,
-        function: str,
+        function: Union[str, Callable],
         init_args: Tuple,
         init_kws: Dict[str, Any],
         inputs: Union[str, Tuple],
@@ -28,6 +51,7 @@ class NodeRepr:
         iteration: str,
         config: Dict[str, Any],
         tag: str = 'main',
+        param: Dict[str, Any] = None,
     ):
         self._name = name
         self._function = function
@@ -39,6 +63,7 @@ class NodeRepr:
         self._iteration = iteration
         self._config = config
         self._tag = tag
+        self._param = param
 
     @property
     def name(self):
@@ -57,11 +82,11 @@ class NodeRepr:
         return self._init_kws
 
     @property
-    def input(self) -> Union[str, Tuple]:
+    def inputs(self) -> Union[str, Tuple]:
         return self._inputs
 
     @property
-    def output(self) -> Union[str, Tuple]:
+    def outputs(self) -> Union[str, Tuple]:
         return self._outputs
 
     @property
@@ -81,20 +106,43 @@ class NodeRepr:
         return self._tag
 
     @property
-    def input_schema(self) -> List:
-        return self._function.input_schema()
+    def param(self) -> Dict[str, Any]:
+        return self._param
 
-    @property
-    def output_schema(self) -> List:
-        return self._function.output_schema()
+    @staticmethod
+    def is_valid(node: Dict[str, Any], essentials: Set[str]):
+        """
+        Check if the src is a valid node dictionary to describe.
+
+        Args:
+            node (`Dict[str, Any]`): The node dictionary.
+            essentials (`Set[str]`): The essential keys that node dictionary should contain.
+
+        Returns:
+            (`bool | raise`)
+                Return `True` if it is valid, else raise exception.
+        """
+        node_keys = set(node.keys())
+        if not isinstance(node, dict) or not essentials.issubset(node_keys):
+            raise ValueError('Node [%s] is not valid, lack attr [%s]', str(node), essentials - node_keys)
+        return True
 
     @staticmethod
     def from_dict(name: str, node: Dict[str, Any]) -> 'NodeRepr':
-        if 'tag' not in node:
-            node['tag'] = 'main'
-        if name in ['input', 'output']:
-            return NodeRepr(name, None, None, None, node['input'], node['output'], node['fn_type'],
-                            node['iteration'], None, node['tag'])
+        """Return a NodeRepr from a description dict.
+
+        Args:
+            name (`str`): Name of the node, such as 'input', 'output' or id for the node.
+            node (`Dict[str, Any]`): Dictionary about node info from dag.
+
+        Returns:
+            NodeRepr object.
+        """
+        if name in ['_input', '_output']:
+            NodeRepr.is_valid(node, {'inputs', 'outputs', 'fn_type', 'iteration'})
+            return NodeRepr(name, None, None, None, node['inputs'], node['outputs'], node['fn_type'],
+                            node['iteration'], None, None, None)
         else:
-            return NodeRepr(name, node['fn'][0], node['fn'][1], node['fn'][2], node['input'], node['output'], node['fn_type'],
-                            node['iteration'], node['config'], node['tag'])
+            NodeRepr.is_valid(node, {'function', 'init_args', 'init_kws', 'inputs', 'outputs', 'fn_type', 'iteration', 'config', 'tag', 'param'})
+            return NodeRepr(name, node['function'], node['init_args'], node['init_kws'], node['inputs'], node['outputs'], node['fn_type'],
+                            node['iteration'], node['config'], node['tag'], node['param'])
