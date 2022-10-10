@@ -14,8 +14,8 @@
 import copy
 from typing import Any
 
-from towhee.functional import Entity
-from towhee.functional.mixins import DisplayMixin
+from towhee.datacollection.entity import Entity
+from towhee.datacollection.mixins.display import DisplayMixin
 
 
 # pylint: disable=protected-access
@@ -34,9 +34,10 @@ class DataCollection(DisplayMixin):
 
     Examples:
         >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-        >>> from towhee.functional.new_dc import DataCollection
+        >>> from towhee.datacollection.data_collection import DataCollection
         >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
         >>> dq.put(('a', 'b1'))
+        True
         >>> DataCollection(dq)
         <DataCollection Schema[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 1>
     """
@@ -51,10 +52,12 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dq.put(('a', 'b2'))
+            True
             >>> dc = DataCollection(dq)
             >>> [i for i in dc]
             [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
@@ -67,9 +70,10 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dc = DataCollection(dq)
             >>> dc[0]
             <Entity dict_keys(['a', 'b'])>
@@ -82,9 +86,10 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dc = DataCollection(dq)
             >>> dc[0] = 'a'
             >>> dc[0]
@@ -98,7 +103,7 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dc = DataCollection(dq)
             >>> repr(dc)
@@ -115,7 +120,7 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dc = DataCollection(dq)
             >>> len(dc)
@@ -135,12 +140,14 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq1 = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq2 = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq1.put(('a', 'b1'))
+            True
             >>> dq2.put(('a', 'b2'))
+            True
             >>> dc1 = DataCollection(dq1)
             >>> dc2 = DataCollection(dq2)
             >>> len(dc1)
@@ -161,9 +168,10 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dc = DataCollection(dq)
             >>> dc.to_list()
             [<Entity dict_keys(['a', 'b'])>]
@@ -176,9 +184,10 @@ class DataCollection(DisplayMixin):
 
         Examples:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
+            >>> from towhee.datacollection.data_collection import DataCollection
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dc = DataCollection(dq)
             >>> dc_copy = dc.copy()
             >>> dc_dcopy = dc.copy(True)

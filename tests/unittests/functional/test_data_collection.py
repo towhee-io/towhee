@@ -19,7 +19,6 @@ from collections import namedtuple
 import towhee
 import towhee.functional.data_collection
 import towhee.functional.option
-import towhee.functional.new_dc
 
 from towhee import register
 from towhee import DataCollection
@@ -167,7 +166,6 @@ def load_tests(loader, tests, ignore):
     # pylint: disable=unused-argument
     tests.addTests(doctest.DocTestSuite(towhee.functional.data_collection))
     tests.addTests(doctest.DocTestSuite(towhee.functional.option))
-    tests.addTests(doctest.DocTestSuite(towhee.functinal.new_dc))
     return tests
 
 

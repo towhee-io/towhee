@@ -12,25 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Union, Dict, Optional
 import threading
-import copy
 from enum import Enum, auto
-from typing import List, Tuple
+from typing import List, Tuple, Union, Dict, Optional
 
 from collections import deque, namedtuple
 
 
 class DataQueue:
-    '''
+    """
     Col-based storage.
-    '''
+    """
 
     def __init__(self, schema_info, max_size=0):
         self._max_size = max_size
-        self._schema = schema_info if isinstance(schema_info, _Schema) else _Schema(schema_info)
+        self._schema = _Schema(schema_info)
         self._data = []
-        for col_type in self._schema.col_types:
+        for col_type in self._schema.col_types():
             if col_type == ColumnType.QUEUE:
                 self._data.append(_QueueColumn())
             else:
@@ -41,21 +39,6 @@ class DataQueue:
         self._lock = threading.Lock()
         self._not_full = threading.Condition(self._lock)
         self._not_empty = threading.Condition(self._lock)
-    
-    def __repr__(self):
-        """
-        The str repr of DataQueue.
-
-        Examples:
-            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
-            >>> repr(dq)
-            '<DataQueue SCHEMA[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 0>'
-        """
-        names = self._schema.col_names
-        types = self._schema.col_types
-        content = ', '.join([i + ': ' + str(j) for i, j in zip(names, types)])
-        return f'<{self.__class__.__name__} SCHEMA[{content}] SIZE {self.size}>'
 
     def put(self, inputs: Union[Tuple, List]) -> bool:
         assert len(inputs) == self._schema.size()
@@ -144,7 +127,7 @@ class DataQueue:
     @property
     def sealed(self) -> bool:
         return self._sealed
-    
+
     @property
     def schema(self) -> List[str]:
         """
@@ -154,11 +137,12 @@ class DataQueue:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dq.schema
             ['a', 'b']
         """
-        return [i for i in self._schema.col_names]
-    
+        return list(self._schema.col_names())
+
     @property
     def type_schema(self) -> List[str]:
         """
@@ -168,16 +152,17 @@ class DataQueue:
             >>> from towhee.runtime.data_queue import DataQueue, ColumnType
             >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
             >>> dq.put(('a', 'b1'))
+            True
             >>> dq.type_schema
             [<ColumnType.SCALAR: 2>, <ColumnType.QUEUE: 1>]
         """
-        return [i for i in self._schema.col_types]
+        return list(self._schema.col_types())
 
 
 class ColumnType(Enum):
-    '''
+    """
     ColumnType
-    '''
+    """
     QUEUE = auto()
     SCALAR = auto()
 
@@ -186,9 +171,9 @@ _ColumnInfo = namedtuple('_ColumnInfo', ['name', 'col_type'])
 
 
 class _Schema:
-    '''
+    """
     schema_info.
-    '''
+    """
 
     def __init__(self, schema_info: List[Tuple]):
         self._cols = []
@@ -215,9 +200,9 @@ class _Schema:
 
 
 class _QueueColumn:
-    '''
+    """
     Queue column.
-    '''
+    """
 
     def __init__(self):
         self._q = deque()
@@ -232,9 +217,9 @@ class _QueueColumn:
 
 
 class _ScalarColumn:
-    '''
+    """
     Scalar column
-    '''
+    """
 
     def __init__(self):
         self._data = None
