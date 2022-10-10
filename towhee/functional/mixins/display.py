@@ -145,7 +145,7 @@ class DisplayMixin: # pragma: no cover
             tablefmt (str, optional): The format of the output, supports html, plain, grid.. Defaults to 'html'.
         """
         # pylint: disable=protected-access
-        contents = [x for i, x in enumerate(self._iterable) if i < limit]
+        contents = [x for i, x in enumerate(self) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
             header = tuple(contents[0].__dict__) if not header else header

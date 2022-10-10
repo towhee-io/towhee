@@ -166,6 +166,7 @@ def load_tests(loader, tests, ignore):
     # pylint: disable=unused-argument
     tests.addTests(doctest.DocTestSuite(towhee.functional.data_collection))
     tests.addTests(doctest.DocTestSuite(towhee.functional.option))
+    tests.addTests(doctest.DocTestSuite(towhee.functinal.new_dc))
     return tests
 
 
