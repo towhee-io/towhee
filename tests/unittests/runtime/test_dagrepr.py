@@ -55,7 +55,7 @@ towhee_dag = {
         'iteration': 'map'
     },
 }
-dr = DAGRepr(towhee_dag)
+dr = DAGRepr.from_dict(towhee_dag)
 
 
 class TestDAGRepr(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestDAGRepr(unittest.TestCase):
     DAGRepr test
     """
     def test_dag(self):
-        self.assertEqual(dr.dag, towhee_dag)
+        self.assertEqual(dr.dag_type, 'local')
 
         self.assertEqual(len(dr.nodes), 4)
         self.assertTrue(isinstance(dr.nodes['_input'], NodeRepr))

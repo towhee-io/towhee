@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
+from typing import Dict, Any
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
@@ -23,16 +23,18 @@ class DAGRepr:
     A `DAGRepr` represents a complete DAG.
 
     Args:
-        dag (`Dict[str, Any]`): The DAG dictionary.
+        dag_type (`str`): The type of DAG type, such as 'local', 'triton' and 'mix', defaults to 'local'.
+        nodes (`Dict[str, NodeRepr]`): All nodes in the dag.
+        schemas (`Dict[str, SchemaRepr]`): All schemas in the dag for each node.
     """
-    def __init__(self, dag: dict):
-        self._dag = dag
-        self._nodes = dict((name, NodeRepr.from_dict(name, self._dag[name])) for name in self._dag)
-        self._schemas = dict((name, SchemaRepr(name, self._dag[name]['inputs'], self._dag[name]['outputs'])) for name in self._dag)
+    def __init__(self, nodes: Dict[str, NodeRepr], schemas: Dict[str, SchemaRepr], dag_type: str = 'local'):
+        self._nodes = nodes
+        self._schemas = schemas
+        self._dag_type = dag_type
 
     @property
-    def dag(self) -> Dict:
-        return self._dag
+    def dag_type(self) -> str:
+        return self._dag_type
 
     @property
     def nodes(self) -> Dict:
@@ -41,3 +43,9 @@ class DAGRepr:
     @property
     def schemas(self) -> Dict:
         return self._schemas
+
+    @staticmethod
+    def from_dict(dag: Dict[str, Any], dag_type: str = 'local'):
+        nodes = dict((name, NodeRepr.from_dict(name, dag[name])) for name in dag)
+        schemas = dict((name, SchemaRepr(name, dag[name]['inputs'], dag[name]['outputs'])) for name in dag)
+        return DAGRepr(nodes, schemas, dag_type)
