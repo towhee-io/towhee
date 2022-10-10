@@ -15,9 +15,9 @@
 # limitations under the License.
 
 from torch import nn
-from transposelinear import TransposedLinear
-from activation import Activation
-from get_initializer import get_initializer
+from towhee.models.vis4mer.transposelinear import TransposedLinear
+from towhee.models.vis4mer.activation import Activation
+from towhee.models.vis4mer.get_initializer import get_initializer
 
 
 def LinearActivation(
