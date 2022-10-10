@@ -14,13 +14,21 @@
 
 
 from typing import Generator
-import traceback
 
-from .node import Node, NodeStatus
-from towhee.utils.log import engine_log
+from .node import Node
 
 
 class Map(Node):
+    '''
+    Map node impl
+    '''
+
+    def get_frmo_gen(self, gen, size):
+        ret = [ [] for _ in range(size)]
+        for data in gen:
+            for i in range(size):
+                ret[i].append(data[i])
+        return ret
 
     def process_step(self) -> bool:
         '''
@@ -37,7 +45,11 @@ class Map(Node):
             self._set_failed(msg)
             return True
 
-        output_map = dict((self._node_info.output_schema[i], outputs[i]) for i in range(len(self._node_info.output_schema)))
+        if isinstance(outputs, Generator):
+            outputs = self.get_frmo_gen(outputs, len(self._node_info.output_schema))
+
+        output_map = dict((self._node_info.output_schema[i], outputs[i])
+                          for i in range(len(self._node_info.output_schema)))
         datas.update(output_map)
         for out_que in self._output_ques:
             if not out_que.put_dict(datas):

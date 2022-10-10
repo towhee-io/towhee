@@ -19,7 +19,6 @@ from abc import ABC
 import traceback
 
 from towhee.runtime.data_queue import DataQueue
-from towhee.runtime.nodes.node_info import NodeInfo
 from towhee.utils.log import engine_log
 
 
@@ -78,10 +77,11 @@ class Node(ABC):
                                                 self._node_info.op_info.kwargs,
                                                 self._node_info.op_info.tag)
             return True
-        except Exception as e:
-            err = 'Create operator {}:{} with args {} failed'.format(hub_id,
-                                                                     self._node_info.op_info.tag,
-                                                                     str(self._node_info.op_info.kwargs))
+        except Exception as e:  # pylint: disable=broad-except
+            err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
+                                                                              self._node_info.op_info.tag,
+                                                                              str(self._node_info.op_info.kwargs),
+                                                                              str(e))
             engine_log.error(err)
             return False
 
@@ -100,7 +100,7 @@ class Node(ABC):
     def _set_finished(self) -> None:
         self._set_status(NodeStatus.FINISHED)
         for out in self._output_ques:
-            out.seal()        
+            out.seal()
 
     def _set_end_status(self, status: NodeStatus):
         self._set_status(status)

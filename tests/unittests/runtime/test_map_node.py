@@ -24,6 +24,10 @@ from towhee.engine.operator_pool import OperatorPool
 
 
 class TestMapNode(unittest.TestCase):
+    '''
+    map node test.
+    '''
+
     node_info = {
         'name': 'test_node',
         'type': 'map',
@@ -150,7 +154,7 @@ class TestMapNode(unittest.TestCase):
         self.assertTrue(out_que1.size == 0)
         self.assertTrue(out_que2.size == 0)
 
-    def test_multi_failed(self):
+    def test_failed(self):
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
         in_que.put(('test_url', 'a'))
         in_que.seal()
@@ -165,3 +169,131 @@ class TestMapNode(unittest.TestCase):
         self.assertTrue(out_que2.sealed)
         self.assertTrue(out_que1.size == 0)
         self.assertTrue(out_que2.size == 0)
+
+    def test_multi_output(self):
+        node_info = {
+            'name': 'test_node',
+            'type': 'map',
+            'input_schema': ('num', ),
+            'output_schema': ('vec1', 'vec2'),
+            'op_info': {
+                'hub_id': 'local',
+                'name': 'multi_output',
+                'tag': 'main',
+                'args': [],
+                'kwargs': {'factor': 10}
+            },
+            'config': {}
+        }
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1))
+        in_que.seal()
+        out_que1 = DataQueue([
+            ('url', ColumnType.SCALAR),
+            ('num', ColumnType.QUEUE),
+            ('vec1', ColumnType.QUEUE),
+            ('vec2', ColumnType.QUEUE)
+        ])
+        out_que2 = DataQueue([('url', ColumnType.SCALAR), ('vec2', ColumnType.QUEUE)])
+        node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+        self.assertEqual(out_que1.get_dict(),
+                         {
+                             'url': 'test_url',
+                             'num': 1,
+                             'vec1': 11,
+                             'vec2': 11                             
+                         })
+
+        self.assertEqual(out_que2.get_dict(),
+                         {
+                             'url': 'test_url',
+                             'vec2': 11
+                         })
+
+    def test_multi_output_cover(self):
+        node_info = {
+            'name': 'test_node',
+            'type': 'map',
+            'input_schema': ('num', ),
+            'output_schema': ('num', 'vec'),
+            'op_info': {
+                'hub_id': 'local',
+                'name': 'multi_output',
+                'tag': 'main',
+                'args': [],
+                'kwargs': {'factor': 10}
+            },
+            'config': {}
+        }
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1))
+        in_que.seal()
+        out_que1 = DataQueue([
+            ('url', ColumnType.SCALAR),
+            ('num', ColumnType.QUEUE),
+            ('vec', ColumnType.QUEUE),
+        ])
+        out_que2 = DataQueue([('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+        self.assertEqual(out_que1.get_dict(),
+                         {
+                             'url': 'test_url',
+                             'num': 11,
+                             'vec': 11
+                         })
+
+        self.assertEqual(out_que2.get_dict(),
+                         {
+                             'num': 11,
+                             'vec': 11
+                         })
+
+    def test_generator(self):
+        node_info = {
+            'name': 'test_node',
+            'type': 'map',
+            'input_schema': ('num', ),
+            'output_schema': ('vec1', 'vec2'),
+            'op_info': {
+                'hub_id': 'local',
+                'name': 'multi_gen',
+                'tag': 'main',
+                'args': [],
+                'kwargs': {}
+            },
+            'config': {}
+        }
+
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        in_que.put((4, ))
+        in_que.seal()
+        out_que1 = DataQueue([
+            ('num', ColumnType.QUEUE),
+            ('vec1', ColumnType.QUEUE),
+            ('vec2', ColumnType.QUEUE)
+        ])
+        node = create_node(node_info, self.op_pool, [in_que], [out_que1])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        print(node.err_msg)
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertEqual(out_que1.get_dict(),
+                         {
+                             'num': 4,
+                             'vec1': [0, 1, 2, 3],
+                             'vec2': [0, 1, 2, 3]
+                         })
