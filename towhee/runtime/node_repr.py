@@ -22,15 +22,10 @@ def check_keys(info: Dict[str, Any], essentials: Set[str]):
     Args:
         info (`Dict[str, Any]`): The info dictionary.
         essentials (`Set[str]`): The essential keys that node dictionary should contain.
-
-    Returns:
-        (`bool | raise`)
-            Return `True` if it is valid, else raise exception.
     """
     info_keys = set(info.keys())
     if not isinstance(info, dict) or not essentials.issubset(info_keys):
         raise ValueError(f'Node {str(info)} is not valid, lack attr {essentials - info_keys}')
-    return True
 
 
 class OperatorRepr:

@@ -12,9 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any
+from typing import Dict, Any, Set
 
 from towhee.runtime.node_repr import NodeRepr
+
+
+def check_set(base: Set[str], parent: Set[str], equal: bool = False):
+    """
+    Check if the src is a valid input and output.
+
+    Args:
+        base (`Dict[str, Any]`): The base set will be check.
+        parent (`Set[str]`): The parents set to check.
+        equal (`bool`): Whether to check if two sets are equal
+
+    Returns:
+        (`bool | raise`)
+            Return `True` if it is valid, else raise exception.
+    """
+    if equal and base != parent:
+        raise ValueError(f'The DAG Nodes inputs {str(base)} is not equal to the output: {parent}')
+    elif not base.issubset(parent):
+        raise ValueError(f'The DAG Nodes inputs {str(base)} is not valid, this is not declared: {base - parent}.')
 
 
 class DAGRepr:
@@ -40,20 +59,22 @@ class DAGRepr:
     @staticmethod
     def check_nodes(nodes: NodeRepr):
         if nodes.name != '_input':
-            raise ValueError(f'The DAG Nodes {str(nodes)} is not valid, it does not started with `_input`.')
+            raise ValueError(f'The DAG Nodes is not valid, it does not started with `_input`.')
+        check_set(set(nodes.inputs), set(nodes.outputs), equal=True)
+
         all_inputs = set(nodes.inputs)
+        nodes = nodes.next_node
         while nodes.next_node is not None:
             inputs = set(nodes.inputs)
-            if not inputs.issubset(all_inputs):
-                raise ValueError(f'The DAG Nodes {str(nodes)} is not valid, the outputs is not declared: {inputs - all_inputs}.')
+            check_set(inputs, all_inputs)
             for i in nodes.outputs:
                 all_inputs.add(i)
             nodes = nodes.next_node
+
         if nodes.name != '_output':
-            raise ValueError(f'The DAG Nodes {str(nodes)} is not valid, it does not ended with `_output`.')
-        else:
-            if nodes.inputs != nodes.outputs:
-                raise ValueError(f'The DAG _output Nodes {str(nodes)} is not valid, the input: {nodes.inputs} is not equal output: {nodes.outputs}.')
+            raise ValueError(f'The DAG Nodes is not valid, it does not ended with `_output`.')
+        check_set(set(nodes.inputs), all_inputs)
+        check_set(set(nodes.inputs), set(nodes.outputs), equal=True)
 
     @staticmethod
     def from_dict(dag: Dict[str, Any], dag_type: str = 'local'):
