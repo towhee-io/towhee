@@ -25,47 +25,65 @@ class TestNodeRepr(unittest.TestCase):
         node_input = {
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
-            'fn_type': '_input',
-            'iteration': 'map'
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            }
         }
         node = NodeRepr.from_dict('_input', node_input)
         self.assertEqual(node.name, '_input')
         self.assertEqual(node.inputs, ('a', 'b'))
         self.assertEqual(node.outputs, ('a', 'b'))
-        self.assertEqual(node.fn_type, '_input')
-        self.assertEqual(node.iteration, 'map')
+        self.assertEqual(node.iter_info.type, 'map')
+        self.assertEqual(node.iter_info.param, None)
 
     def test_op(self):
         node_op = {
-            'function': 'towhee.test',
-            'init_args': ('a',),
-            'init_kws': {'b': 'b'},
             'inputs': ('a', 'b'),
-            'outputs': 'd',
-            'fn_type': 'hub',
-            'iteration': 'filter',
+            'outputs': ('d',),
+            'iter_info': {
+                'type': 'filter',
+                'param': {'filter_columns': 'a'}
+            },
+            'op_info': {
+                'operator': 'towhee.test',
+                'type': 'hub',
+                'init_args': ('a',),
+                'init_kws': {'b': 'b'},
+                'tag': '1.1',
+            },
             'config': {'parallel': 3},
-            'tag': '1.1',
-            'param': {'filter_columns': 'a'}
         }
         node = NodeRepr.from_dict('test_dict', node_op)
         self.assertEqual(node.name, 'test_dict')
-        self.assertEqual(node.function, 'towhee.test')
-        self.assertEqual(node.init_args, ('a',))
-        self.assertEqual(node.init_kws, {'b': 'b'})
         self.assertEqual(node.inputs, ('a', 'b'))
-        self.assertEqual(node.outputs, 'd')
-        self.assertEqual(node.fn_type, 'hub')
-        self.assertEqual(node.iteration, 'filter')
+        self.assertEqual(node.outputs, ('d',))
+        self.assertEqual(node.iter_info.type, 'filter')
+        self.assertEqual(node.iter_info.param, {'filter_columns': 'a'})
+        self.assertEqual(node.op_info.operator, 'towhee.test')
+        self.assertEqual(node.op_info.type, 'hub')
+        self.assertEqual(node.op_info.init_args, ('a', ))
+        self.assertEqual(node.op_info.init_kws, {'b': 'b'})
+        self.assertEqual(node.op_info.tag, '1.1')
         self.assertEqual(node.config, {'parallel': 3})
-        self.assertEqual(node.tag, '1.1')
-        self.assertEqual(node.param, {'filter_columns': 'a'})
+        self.assertEqual(node.next_node, None)
 
-    def test_raise(self):
+    def test_raise_iter(self):
         node_input = {
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
-            'fn_type': '_input',
         }
         with self.assertRaises(ValueError):
             NodeRepr.from_dict('_input', node_input)
+
+    def test_raise_op(self):
+        node_input = {
+            'inputs': ('a', 'b'),
+            'outputs': ('a', 'b'),
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            }
+        }
+        with self.assertRaises(ValueError):
+            NodeRepr.from_dict('test_op', node_input)

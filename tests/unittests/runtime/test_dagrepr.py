@@ -14,45 +14,57 @@
 
 import unittest
 
-from towhee.runtime.dag_repr import DAGRepr, NodeRepr, SchemaRepr
+from towhee.runtime.dag_repr import DAGRepr, NodeRepr
 
 
 towhee_dag = {
     '_input': {
         'inputs': ('a', 'b'),
         'outputs': ('a', 'b'),
-        'fn_type': '_input',
-        'iteration': 'map'
+        'iter_info': {
+            'type': 'map',
+            'param': None
+        }
     },
     'e433a': {
-        'function': 'towhee.decode',
-        'init_args': ('a',),
-        'init_kws': {'b': 'b'},
-        'inputs': 'a',
-        'outputs': 'c',
-        'fn_type': 'hub',
-        'iteration': 'map',
+        'inputs': ('a',),
+        'outputs': ('c',),
+        'iter_info': {
+            'type': 'map',
+            'param': None
+        },
+        'op_info': {
+            'operator': 'towhee.decode',
+            'type': 'hub',
+            'init_args': ('a',),
+            'init_kws': {'b': 'b'},
+            'tag': 'main',
+        },
         'config': None,
-        'tag': 'main',
-        'param': None
     },
     'b1196': {
-        'function': 'towhee.test',
-        'init_args': ('a',),
-        'init_kws': {'b': 'b'},
         'inputs': ('a', 'b'),
-        'outputs': 'd',
-        'fn_type': 'hub',
-        'iteration': 'filter',
+        'outputs': ('d',),
+        'iter_info': {
+            'type': 'filter',
+            'param': {'filter_columns': 'a'}
+        },
+        'op_info': {
+            'operator': 'towhee.test',
+            'type': 'hub',
+            'init_args': ('a',),
+            'init_kws': {'b': 'b'},
+            'tag': '1.1',
+        },
         'config': {'parallel': 3},
-        'tag': '1.1',
-        'param': {'filter_columns': 'a'}
     },
     '_output': {
-        'inputs': 'd',
-        'outputs': 'd',
-        'fn_type': '_output',
-        'iteration': 'map'
+        'inputs': ('d',),
+        'outputs': ('d',),
+        'iter_info': {
+            'type': 'map',
+            'param': None
+        }
     },
 }
 dr = DAGRepr.from_dict(towhee_dag)
@@ -65,14 +77,29 @@ class TestDAGRepr(unittest.TestCase):
     def test_dag(self):
         self.assertEqual(dr.dag_type, 'local')
 
-        self.assertEqual(len(dr.nodes), 4)
-        self.assertTrue(isinstance(dr.nodes['_input'], NodeRepr))
-        self.assertTrue(isinstance(dr.nodes['e433a'], NodeRepr))
-        self.assertTrue(isinstance(dr.nodes['b1196'], NodeRepr))
-        self.assertTrue(isinstance(dr.nodes['_output'], NodeRepr))
+        node1 = dr.nodes
+        node2 = node1.next_node
+        node3 = node2.next_node
+        node4 = node3.next_node
+        self.assertTrue(isinstance(node1, NodeRepr))
+        self.assertTrue(isinstance(node2, NodeRepr))
+        self.assertTrue(isinstance(node3, NodeRepr))
+        self.assertTrue(isinstance(node4, NodeRepr))
 
-        self.assertEqual(len(dr.schemas), 4)
-        self.assertTrue(isinstance(dr.schemas['_input'], SchemaRepr))
-        self.assertTrue(isinstance(dr.schemas['e433a'], SchemaRepr))
-        self.assertTrue(isinstance(dr.schemas['b1196'], SchemaRepr))
-        self.assertTrue(isinstance(dr.schemas['_output'], SchemaRepr))
+    def test_check_input(self):
+        towhee_dag_test = towhee_dag
+        towhee_dag_test.pop('_input')
+        with self.assertRaises(ValueError):
+            DAGRepr.from_dict(towhee_dag_test)
+
+    def test_check_output(self):
+        towhee_dag_test = towhee_dag
+        towhee_dag_test['end'] = towhee_dag_test.pop('_output')
+        with self.assertRaises(ValueError):
+            DAGRepr.from_dict(towhee_dag_test)
+
+    def test_check_schema(self):
+        towhee_dag_test = towhee_dag
+        towhee_dag_test['b1196']['inputs'] = ('x', 'y')
+        with self.assertRaises(ValueError):
+            DAGRepr.from_dict(towhee_dag_test)
