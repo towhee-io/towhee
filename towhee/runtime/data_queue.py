@@ -43,10 +43,19 @@ class DataQueue:
         self._not_empty = threading.Condition(self._lock)
     
     def __repr__(self):
+        """
+        The str repr of DataQueue.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> repr(dq)
+            '<DataQueue SCHEMA[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 0>'
+        """
         names = self._schema.col_names
         types = self._schema.col_types
         content = ', '.join([i + ': ' + str(j) for i, j in zip(names, types)])
-        return f'<{self.__class__.__name__} {content}>'
+        return f'<{self.__class__.__name__} SCHEMA[{content}] SIZE {self.size}>'
 
     def put(self, inputs: Union[Tuple, List]) -> bool:
         assert len(inputs) == self._schema.size()
@@ -138,16 +147,31 @@ class DataQueue:
     
     @property
     def schema(self) -> List[str]:
-        return [(i, j) for i, j in zip(self._schema.col_names, self._schema.col_types)]
+        """
+        Return the schema of the DataQueue.
 
-    def copy(self):
-        dq_copy = DataQueue(self._schema, self._max_size)
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            >>> dq.schema
+            ['a', 'b']
+        """
+        return [i for i in self._schema.col_names]
+    
+    @property
+    def type_schema(self) -> List[str]:
+        """
+        Return the type of queues in the DataQueue.
 
-        with self._not_empty:
-            dq_copy._data = copy.deepcopy(self._data)
-            dq_copy._size = self._size
-
-        return dq_copy
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            >>> dq.type_schema
+            [<ColumnType.SCALAR: 2>, <ColumnType.QUEUE: 1>]
+        """
+        return [i for i in self._schema.col_types]
 
 
 class ColumnType(Enum):

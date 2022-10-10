@@ -16,14 +16,15 @@ import unittest
 from pathlib import Path
 from collections import namedtuple
 
+import towhee
 import towhee.functional.data_collection
 import towhee.functional.option
+import towhee.functional.new_dc
 
 from towhee import register
 from towhee import DataCollection
 from towhee import Entity
 
-import towhee
 
 public_path = Path(__file__).parent.parent.resolve()
 

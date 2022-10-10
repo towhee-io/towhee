@@ -11,8 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import copy
+from typing import Any
+
 from towhee.functional import Entity
 from towhee.functional.mixins import DisplayMixin
+
+
 # pylint: disable=protected-access
 class DataCollection(DisplayMixin):
     """
@@ -33,10 +38,12 @@ class DataCollection(DisplayMixin):
         >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
         >>> dq.put(('a', 'b1'))
         >>> DataCollection(dq)
-        <DataCollection a: ColumnType.SCALAR, b: ColumnType.QUEUE>
+        <DataCollection Schema[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 1>
     """
     def __init__(self, data):
-        self._data = data
+        self._schema = data.schema
+        self._type_schema = data.type_schema
+        self._iterable = [Entity.from_dict(dict(zip(self._schema, data.get()))) for _ in range(data.size)]
 
     def __iter__(self):
         """
@@ -52,10 +59,69 @@ class DataCollection(DisplayMixin):
             >>> [i for i in dc]
             [<Entity dict_keys(['a', 'b'])>, <Entity dict_keys(['a', 'b'])>]
         """
-        for _ in range(self._data.size):
-            vals = self._data.get()
-            keys = [k[0] for k in self._data.schema]
-            yield Entity.from_dict(dict(zip(keys, vals)))
+        return iter(self._iterable)
+
+    def __getitem__(self, index: int):
+        """
+        Get the item with given index.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> from towhee.functional.new_dc import DataCollection
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            >>> dc = DataCollection(dq)
+            >>> dc[0]
+            <Entity dict_keys(['a', 'b'])>
+        """
+        return self._iterable[index]
+
+    def __setitem__(self, index: int, value: Any):
+        """
+        Set the item to given value.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> from towhee.functional.new_dc import DataCollection
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            >>> dc = DataCollection(dq)
+            >>> dc[0] = 'a'
+            >>> dc[0]
+            'a'
+        """
+        self._iterable[index] = value
+
+    def __repr__(self) -> str:
+        """
+        String representation of the DataCollection.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> from towhee.functional.new_dc import DataCollection
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dc = DataCollection(dq)
+            >>> repr(dc)
+            '<DataCollection Schema[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 0>'
+        """
+        names = self._schema
+        types = self._type_schema
+        content = ', '.join([i + ': ' + str(j) for i, j in zip(names, types)])
+        return f'<{self.__class__.__name__} Schema[{content}] SIZE {len(self)}>'
+
+    def __len__(self):
+        """
+        Return the number of entities in the DataCollection.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> from towhee.functional.new_dc import DataCollection
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dc = DataCollection(dq)
+            >>> len(dc)
+            0
+        """
+        return len(self._iterable)
 
     def __add__(self, another: 'DataCollection') -> 'DataCollection':
         """
@@ -84,41 +150,10 @@ class DataCollection(DisplayMixin):
             >>> len(dc1 + dc2)
             2
         """
-        for entity in another:
-            self._data.put(list(entity.__dict__.values()))
+        new = copy.deepcopy(self)
+        new._iterable = self._iterable + another._iterable
 
-        return self
-
-    def __repr__(self) -> str:
-        """
-        String representation of the DataCollection.
-
-        Examples:
-            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
-            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
-            >>> dc = DataCollection(dq)
-            >>> repr(dc)
-            '<DataCollection a: ColumnType.SCALAR, b: ColumnType.QUEUE>'
-        """
-        names = self._data._schema.col_names
-        types = self._data._schema.col_types
-        content = ', '.join([i + ': ' + str(j) for i, j in zip(names, types)])
-        return f'<{self.__class__.__name__} {content}>'
-
-    def __len__(self):
-        """
-        Return the number of entities in the DataCollection.
-
-        Examples:
-            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
-            >>> from towhee.functional.new_dc import DataCollection
-            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
-            >>> dc = DataCollection(dq)
-            >>> len(dc)
-            0
-        """
-        return self._data.size
+        return new
 
     def to_list(self) -> list:
         """
@@ -135,8 +170,7 @@ class DataCollection(DisplayMixin):
         """
         return list(self)
 
-
-    def copy(self):
+    def copy(self, deep: bool = False):
         """
         Copy a DataCollection.
 
@@ -147,7 +181,17 @@ class DataCollection(DisplayMixin):
             >>> dq.put(('a', 'b1'))
             >>> dc = DataCollection(dq)
             >>> dc_copy = dc.copy()
+            >>> dc_dcopy = dc.copy(True)
             >>> id(dc) == id(dc_copy)
             False
+            >>> id(dc[0]) == id(dc_copy[0])
+            True
+            >>> id(dc) == id(dc_dcopy)
+            False
+            >>> id(dc[0]) == id(dc_dcopy[0])
+            False
         """
-        return DataCollection(self._data.copy())
+        if deep:
+            return copy.deepcopy(self)
+        else:
+            return copy.copy(self)

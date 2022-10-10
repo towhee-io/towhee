@@ -11,12 +11,12 @@
 # WITHOUT_ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import unittest
+import doctest
 import threading
 import time
 
+import towhee.runtime.data_queue
 from towhee.runtime.data_queue import DataQueue, ColumnType
 
 
