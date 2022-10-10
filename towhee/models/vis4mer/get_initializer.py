@@ -33,7 +33,7 @@ def get_initializer(name, activation=None):
     elif activation in ['gelu', 'swish', 'silu']:
         nonlinearity = 'relu' # Close to ReLU so approximate with ReLU's gain
     else:
-        raise NotImplementedError(f"get_initializer: activation {activation} not supported")
+        raise NotImplementedError(f'get_initializer: activation {activation} not supported')
 
     if name == 'uniform':
         initializer = partial(nn.init.kaiming_uniform_, nonlinearity=nonlinearity)
@@ -46,6 +46,6 @@ def get_initializer(name, activation=None):
     elif name == 'one':
         initializer = partial(nn.init.constant_, val=1)
     else:
-        raise NotImplementedError(f"get_initializer: initializer type {name} not supported")
+        raise NotImplementedError(f'get_initializer: initializer type {name} not supported')
 
     return initializer
