@@ -20,6 +20,9 @@ from collections import deque, namedtuple
 
 
 class DataQueue:
+    '''
+    Col-based storage.
+    '''
 
     def __init__(self, schema_info, max_size=0):
         self._max_size = max_size
@@ -29,8 +32,8 @@ class DataQueue:
             if col_type == ColumnType.QUEUE:
                 self._data.append(_QueueColumn())
             else:
-                self._data.append(_SCALARColumn())
-            
+                self._data.append(_ScalarColumn())
+
         self._sealed = False
         self._size = 0
         self._lock = threading.Lock()
@@ -127,6 +130,9 @@ class DataQueue:
 
 
 class ColumnType(Enum):
+    '''
+    ColumnType
+    '''
     QUEUE = auto()
     SCALAR = auto()
 
@@ -135,6 +141,10 @@ _ColumnInfo = namedtuple('_ColumnInfo', ['name', 'col_type'])
 
 
 class _Schema:
+    '''
+    schema_info.
+    '''
+
     def __init__(self, schema_info: List[Tuple]):
         self._cols = []
         for col in schema_info:
@@ -160,6 +170,10 @@ class _Schema:
 
 
 class _QueueColumn:
+    '''
+    Queue column.
+    '''
+
     def __init__(self):
         self._q = deque()
 
@@ -172,7 +186,11 @@ class _QueueColumn:
         self._q.append(data)
 
 
-class _SCALARColumn:
+class _ScalarColumn:
+    '''
+    Scalar column
+    '''
+
     def __init__(self):
         self._data = None
 

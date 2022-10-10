@@ -25,10 +25,10 @@ def create_node(node_info, op_pool, inputs, outputs):
         assert len(inputs) == 1
         return Map(info, op_pool, inputs, outputs)
     else:
-        engine_log.error('Unkown node type: %s' % str(info.type))
+        engine_log.error('Unkown node type: %s', str(info.type))
         return None
 
-all = [
+__all__ = [
     'NodeInfo',
     'NodeStatus',
     'create_node'

@@ -13,10 +13,12 @@
 # limitations under the License.
 
 
-from typing import Dict, List
-
-
 class NodeInfo:
+    '''
+    Node info.
+    TODO: use node_repr.
+    '''
+
     KEYS = ['name', 'type', 'op_info', 'config', 'input_schema', 'output_schema']
 
     def __init__(self, data):
@@ -33,9 +35,14 @@ class NodeInfo:
 
 
 class OpInfo:
+    '''
+    OpInfo
+    TODO: use node_repr
+    '''
+
     KEYS = ['hub_id', 'name', 'args', 'kwargs', 'tag']
 
-    def __init__(self, info: Dict):
+    def __init__(self, info):
         self._data = info
 
     def __getattr__(self, name: str):

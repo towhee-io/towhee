@@ -99,7 +99,7 @@ class TestMapNode(unittest.TestCase):
                                  'num': i,
                                  'vec': 10 + i
                              })
-        
+
         for i in range(size):
             self.assertEqual(out_que2.get_dict(),
                              {
@@ -207,7 +207,7 @@ class TestMapNode(unittest.TestCase):
                              'url': 'test_url',
                              'num': 1,
                              'vec1': 11,
-                             'vec2': 11                             
+                             'vec2': 11
                          })
 
         self.assertEqual(out_que2.get_dict(),
