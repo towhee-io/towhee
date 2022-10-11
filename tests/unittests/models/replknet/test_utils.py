@@ -13,16 +13,20 @@
 # limitations under the License.
 
 import unittest
+
+import torch
 from torch import nn
 
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from towhee.models.replknet import fuse_bn
+from towhee.models.replknet import fuse_bn, ConvFFN
 
 
 class TestUtils(unittest.TestCase):
     """
     Test RepMLP utils
     """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     def test_fuse_bn(self):
         conv_bn = Conv2dBNActivation(
             in_planes=4,
@@ -41,6 +45,17 @@ class TestUtils(unittest.TestCase):
         # print(k.shape, b.shape)
         self.assertTrue(k.shape == (3, 4, 2, 2))
         self.assertTrue(b.shape == (3,))
+
+    def test_convffn(self):
+        dummy_input = torch.rand(1, 3, 2, 2).to(self.device)
+        layer1 = ConvFFN(channels=3, internal_channels=4, drop_rate=0.).to(self.device)
+        layer2 = ConvFFN(channels=3, internal_channels=4, drop_rate=0.1).to(self.device)
+
+        outs1 = layer1(dummy_input)
+        outs2 = layer2(dummy_input)
+        # print(outs.shape)
+        self.assertTrue(outs1.shape == (1, 3, 2, 2))
+        self.assertTrue(outs2.shape == (1, 3, 2, 2))
 
 
 if __name__ == '__main__':
