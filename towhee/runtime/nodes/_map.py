@@ -19,21 +19,34 @@ from .node import Node
 
 
 class Map(Node):
-    '''
-    Map node impl
-    '''
+    '''Map operator.
 
-    def get_frmo_gen(self, gen, size):
-        ret = [ [] for _ in range(size)]
-        for data in gen:
-            for i in range(size):
-                ret[i].append(data[i])
-        return ret
+        Project each element of an input sequence into a new form.
+        two cases:
+           1. The operator return normal element.
+
+               ---1---2---3---4--->
+           [   map('input', 'output', lambda i: i + 1)    ]
+               ---2---4---6---8--->
+
+           2. The operator return a generator.
+
+           def func(i):
+                num = 0
+                while num < i:
+                    yield num
+                    num += 1
+
+               ---1---2---3---4--->
+           [   map('input', 'output', func)    ]
+               ---[0]---[0, 1]---[0, 1, 2]---[0, 1, 2, 3]--->
+    '''
 
     def process_step(self) -> bool:
         '''
-        If return True, means finished.
+        Called for each element.
         '''
+
         datas = self._in_ques[0].get_dict()
         if datas is None:
             self._set_finished()
@@ -46,7 +59,7 @@ class Map(Node):
             return True
 
         if isinstance(outputs, Generator):
-            outputs = self.get_frmo_gen(outputs, len(self._node_info.output_schema))
+            outputs = self._get_from_generator(outputs, len(self._node_info.output_schema))
 
         output_map = dict((self._node_info.output_schema[i], outputs[i])
                           for i in range(len(self._node_info.output_schema)))
@@ -55,5 +68,11 @@ class Map(Node):
             if not out_que.put_dict(datas):
                 self._set_stopped()
                 return True
-
         return False
+
+    def _get_from_generator(self, gen, size):
+        ret = [ [] for _ in range(size)]
+        for data in gen:
+            for i in range(size):
+                ret[i].append(data[i])
+        return ret
