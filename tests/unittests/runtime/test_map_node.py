@@ -55,7 +55,6 @@ class TestMapNode(unittest.TestCase):
         in_que.seal()
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
-        print(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
         node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -280,7 +279,7 @@ class TestMapNode(unittest.TestCase):
             'outputs': ('vec1', 'vec2'),
             'op_info': {
                 'type': 'local',
-                'operator': 'multi_gen',
+                'operator': 'local/multi_gen',
                 'tag': 'main',
                 'init_args': None,
                 'init_kws': {}
