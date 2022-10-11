@@ -52,7 +52,7 @@ class Node(ABC):
         },
         config: {}
     '''
-    def __init__(self, node_info: 'NodeInfo',
+    def __init__(self, node_info: 'NodeRepr',
                  op_pool: 'OperatorPool',
                  in_ques: List[DataQueue],
                  out_ques: List[DataQueue]):
