@@ -19,7 +19,7 @@ import subprocess
 from datetime import date, datetime
 from pathlib import Path
 from typing import Union, Any, List
-from setuptools import setup, find_packages
+from setuptools import setup
 
 from towhee import pipeline
 
@@ -92,7 +92,8 @@ class PackageCommand: # pragma: no cover
         repo_name = path.stem.replace('-', '_')
         package_name = f'towheeoperator_{self._args.namespace}_{repo_name}'
         packages = [package_name]
-        version = str(date.today()).replace('-', '.') +'.'+ str(3600*int(datetime.now().strftime('%H'))+60*int(datetime.now().strftime('%M'))+int(datetime.now().strftime('%S')))
+        version = str(date.today()).replace('-', '.') +'.'+ \
+            str(3600*int(datetime.now().strftime('%H'))+60*int(datetime.now().strftime('%M'))+int(datetime.now().strftime('%S')))
         requirements = self.read_requirements()
 
         sys.argv = ['setup.py', 'sdist', 'bdist_wheel']
