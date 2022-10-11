@@ -20,7 +20,7 @@ class LinearActivationTest(unittest.TestCase):
     model = LinearActivation(d_input=128, d_output=32, initializer='uniform')
 
     def test_model(self):
-        dummy_input = LinearActivation(d_input=128, d_output=32)
+        dummy_input = torch.rand(1, 128)
         out = self.model(dummy_input)
         self.assertEqual(out.shape, (1, 32))
 
