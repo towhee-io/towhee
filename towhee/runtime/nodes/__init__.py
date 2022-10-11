@@ -14,18 +14,18 @@
 
 
 from ._map import Map
-from .node_repr import NodeRepr
 from .node import NodeStatus
+from towhee.runtime.node_repr import NodeRepr
 from towhee.utils.log import engine_log
 
 
 def create_node(node_info, op_pool, inputs, outputs):
-    info = NodeRepr(node_info)
-    if info.type == 'map':
+    info = NodeRepr.from_dict(node_info)
+    if info.iter_info.type == 'map':
         assert len(inputs) == 1
         return Map(info, op_pool, inputs, outputs)
     else:
-        engine_log.error('Unkown node type: %s', str(info.type))
+        engine_log.error('Unknown node iteration type: %s', str(info.iter_info.type))
         return None
 
 

@@ -14,7 +14,7 @@
 
 import unittest
 
-from towhee.runtime.nodes.node_repr import NodeRepr
+from towhee.runtime.node_repr import NodeRepr
 
 
 class TestNodeRepr(unittest.TestCase):
@@ -23,6 +23,7 @@ class TestNodeRepr(unittest.TestCase):
     """
     def test_input(self):
         node_input = {
+            'name': '_input',
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
             'iter_info': {
@@ -31,7 +32,7 @@ class TestNodeRepr(unittest.TestCase):
             },
             'next_nodes': ['next']
         }
-        node = NodeRepr.from_dict('_input', node_input)
+        node = NodeRepr.from_dict(node_input)
         self.assertEqual(node.name, '_input')
         self.assertEqual(node.inputs, ('a', 'b'))
         self.assertEqual(node.outputs, ('a', 'b'))
@@ -41,6 +42,7 @@ class TestNodeRepr(unittest.TestCase):
 
     def test_op(self):
         node_op = {
+            'name': 'test_dict',
             'inputs': ('a', 'b'),
             'outputs': ('d',),
             'iter_info': {
@@ -57,7 +59,7 @@ class TestNodeRepr(unittest.TestCase):
             'config': {'parallel': 3},
             'next_nodes': ['next1', 'next2']
         }
-        node = NodeRepr.from_dict('test_dict', node_op)
+        node = NodeRepr.from_dict(node_op)
         self.assertEqual(node.name, 'test_dict')
         self.assertEqual(node.inputs, ('a', 'b'))
         self.assertEqual(node.outputs, ('d',))
@@ -73,14 +75,16 @@ class TestNodeRepr(unittest.TestCase):
 
     def test_raise_iter(self):
         node_input = {
+            'name': '_input',
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
         }
         with self.assertRaises(ValueError):
-            NodeRepr.from_dict('_input', node_input)
+            NodeRepr.from_dict(node_input)
 
     def test_raise_op(self):
         node_input = {
+            'name': 'test_op',
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
             'iter_info': {
@@ -89,4 +93,4 @@ class TestNodeRepr(unittest.TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            NodeRepr.from_dict('test_op', node_input)
+            NodeRepr.from_dict(node_input)

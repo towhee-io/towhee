@@ -28,6 +28,7 @@ def check_keys(info: Dict[str, Any], essentials: Set[str]):
         raise ValueError(f'Node {str(info)} is not valid, lack attr {essentials - info_keys}')
 
 
+# pylint: disable=redefined-builtin
 class OperatorRepr:
     """
     OperatorRepr for operator representations.
@@ -203,20 +204,20 @@ class NodeRepr:
         return self._out_edges
 
     @out_edges.setter
-    def in_edges(self, out_edges):
+    def out_edges(self, out_edges):
         self._out_edges = out_edges
 
     @staticmethod
-    def from_dict(name: str, node: Dict[str, Any]) -> 'NodeRepr':
+    def from_dict(node: Dict[str, Any]) -> 'NodeRepr':
         """Return a NodeRepr from a description dict.
 
         Args:
-            name (`str`): Name of the node, such as 'input', 'output' or id for the node.
             node (`Dict[str, Any]`): Dictionary about node info from dag.
 
         Returns:
             NodeRepr object.
         """
+        name = node['name']
         if name in ['_input', '_output']:
             check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
             iter_repr = IterationRepr.from_dict(node['iter_info'])
