@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+import torch
 from towhee.models.vis4mer.linearactivation import LinearActivation
 
 
