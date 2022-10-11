@@ -72,15 +72,15 @@ class Node(ABC):
         # Create multiple-operators to support parallelism.
         # Read the parallelism info by config.
         try:
-            hub_id = self._node_info.op_info.hub_id + '/' + self._node_info.op_info.name
+            hub_id = self._node_info.op_info.operator
             self._op = self._op_pool.acquire_op(hub_id,
-                                                self._node_info.op_info.kwargs,
+                                                self._node_info.op_info.init_kws,
                                                 self._node_info.op_info.tag)
             return True
         except Exception as e:  # pylint: disable=broad-except
             err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
                                                                               self._node_info.op_info.tag,
-                                                                              str(self._node_info.op_info.kwargs),
+                                                                              str(self._node_info.op_info.init_kws),
                                                                               str(e))
             engine_log.error(err)
             return False

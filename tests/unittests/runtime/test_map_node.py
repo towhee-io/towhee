@@ -27,20 +27,23 @@ class TestMapNode(unittest.TestCase):
     '''
     map node test.
     '''
-
     node_info = {
         'name': 'test_node',
-        'type': 'map',
-        'input_schema': ('num', ),
-        'output_schema': ('vec', ),
+        'inputs': ('num', ),
+        'outputs': ('vec', ),
         'op_info': {
-            'hub_id': 'local',
-            'name': 'add_operator',
+            'type': 'local',
+            'operator': 'local/add_operator',
             'tag': 'main',
-            'args': [],
-            'kwargs': {'factor': 10}
+            'init_args': None,
+            'init_kws': {'factor': 10}
         },
-        'config': {}
+        'iter_info': {
+            'type': 'map',
+            'param': None
+        },
+        'config': {},
+        'next_nodes': ['_output']
     }
 
     op_pool = OperatorPool()
@@ -52,6 +55,7 @@ class TestMapNode(unittest.TestCase):
         in_que.seal()
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
+        print(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
         node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -117,7 +121,7 @@ class TestMapNode(unittest.TestCase):
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
         out_que2 = DataQueue([('num', ColumnType.QUEUE)])
         node_info = copy.deepcopy(self.node_info)
-        node_info['output_schema'] = ('num', )
+        node_info['outputs'] = ('num', )
         node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -173,17 +177,21 @@ class TestMapNode(unittest.TestCase):
     def test_multi_output(self):
         node_info = {
             'name': 'test_node',
-            'type': 'map',
-            'input_schema': ('num', ),
-            'output_schema': ('vec1', 'vec2'),
+            'inputs': ('num', ),
+            'outputs': ('vec1', 'vec2'),
             'op_info': {
-                'hub_id': 'local',
-                'name': 'multi_output',
+                'type': 'local',
+                'operator': 'local/multi_output',
                 'tag': 'main',
-                'args': [],
-                'kwargs': {'factor': 10}
+                'init_args': None,
+                'init_kws': {'factor': 10}
             },
-            'config': {}
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
         in_que.put(('test_url', 1))
@@ -219,17 +227,21 @@ class TestMapNode(unittest.TestCase):
     def test_multi_output_cover(self):
         node_info = {
             'name': 'test_node',
-            'type': 'map',
-            'input_schema': ('num', ),
-            'output_schema': ('num', 'vec'),
+            'inputs': ('num', ),
+            'outputs': ('num', 'vec'),
             'op_info': {
-                'hub_id': 'local',
-                'name': 'multi_output',
+                'type': 'local',
+                'operator': 'local/multi_output',
                 'tag': 'main',
-                'args': [],
-                'kwargs': {'factor': 10}
+                'init_args': None,
+                'init_kws': {'factor': 10}
             },
-            'config': {}
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
         in_que.put(('test_url', 1))
@@ -264,16 +276,21 @@ class TestMapNode(unittest.TestCase):
         node_info = {
             'name': 'test_node',
             'type': 'map',
-            'input_schema': ('num', ),
-            'output_schema': ('vec1', 'vec2'),
+            'inputs': ('num', ),
+            'outputs': ('vec1', 'vec2'),
             'op_info': {
-                'hub_id': 'local',
-                'name': 'multi_gen',
+                'type': 'local',
+                'operator': 'multi_gen',
                 'tag': 'main',
-                'args': [],
-                'kwargs': {}
+                'init_args': None,
+                'init_kws': {}
             },
-            'config': {}
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
         }
 
         in_que = DataQueue([('num', ColumnType.QUEUE)])
