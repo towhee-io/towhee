@@ -61,9 +61,11 @@ class Conv2dBNActivation(nn.Sequential):
             activation_layer: Optional[Callable[..., nn.Module]] = None,
             **kwargs: Any,
     ) -> None:
+        if padding is None:
+            padding = kernel_size // 2
+        padding = _pair(padding)
         kernel_size = _pair(kernel_size)
         stride = _pair(stride)
-        padding = _pair(padding)
         if norm_layer is None:
             norm_layer = nn.Identity
         if activation_layer is None:
