@@ -21,7 +21,7 @@ class Entity:
     attribute name and type.
 
     Exampels:
-        >>> from towhee import Entity
+        >>> from towhee.datacollection.entity import Entity
         >>> e = Entity(a=1, b=2)
         >>> e
         <Entity dict_keys(['a', 'b'])>
@@ -45,7 +45,7 @@ class Entity:
             The repr of the entity.
 
         Examples:
-            >>> from towhee import Entity
+            >>> from towhee.datacollection.entity import Entity
             >>> e = Entity(a = 1, b = 2)
             >>> e
             <Entity dict_keys(['a', 'b'])>
@@ -61,7 +61,7 @@ class Entity:
             The string representation of the entity.
 
         Examples:
-            >>> from towhee import Entity
+            >>> from towhee.datacollection.entity import Entity
             >>> e = Entity(a = 1, b = 2)
             >>> str(e)
             "{'a': 1, 'b': 2}"
@@ -76,7 +76,7 @@ class Entity:
             entities (Entity): The entities to be added into self.
 
         Examples:
-            >>> from towhee import Entity
+            >>> from towhee.datacollection.entity import Entity
             >>> e = Entity(a = 1, b = 2)
             >>> b = Entity(c = 3, d = 4)
             >>> c = Entity(e = 5, f = 6)
@@ -97,11 +97,10 @@ class Entity:
                 The dict to create the Entity.
 
         Examples:
-
-        >>> from towhee import Entity
-        >>> d = {'a': 1, 'b': 2}
-        >>> str(Entity.from_dict(d))
-        "{'a': 1, 'b': 2}"
+            >>> from towhee.datacollection.entity import Entity
+            >>> d = {'a': 1, 'b': 2}
+            >>> str(Entity.from_dict(d))
+            "{'a': 1, 'b': 2}"
         """
         return cls(**tar)
 

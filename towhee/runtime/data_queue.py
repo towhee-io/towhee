@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple, Union, Dict, Optional
 import threading
 from enum import Enum, auto
+from typing import List, Tuple, Union, Dict, Optional
 
 from collections import deque, namedtuple
 
 
 class DataQueue:
-    '''
+    """
     Col-based storage.
-    '''
+    """
 
     def __init__(self, schema_info, max_size=0):
         self._max_size = max_size
@@ -128,11 +128,41 @@ class DataQueue:
     def sealed(self) -> bool:
         return self._sealed
 
+    @property
+    def schema(self) -> List[str]:
+        """
+        Return the schema of the DataQueue.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            True
+            >>> dq.schema
+            ['a', 'b']
+        """
+        return list(self._schema.col_names())
+
+    @property
+    def type_schema(self) -> List[str]:
+        """
+        Return the type of queues in the DataQueue.
+
+        Examples:
+            >>> from towhee.runtime.data_queue import DataQueue, ColumnType
+            >>> dq = DataQueue([('a', ColumnType.SCALAR), ('b', ColumnType.QUEUE)])
+            >>> dq.put(('a', 'b1'))
+            True
+            >>> dq.type_schema
+            [<ColumnType.SCALAR: 2>, <ColumnType.QUEUE: 1>]
+        """
+        return list(self._schema.col_types())
+
 
 class ColumnType(Enum):
-    '''
+    """
     ColumnType
-    '''
+    """
     QUEUE = auto()
     SCALAR = auto()
 
@@ -141,9 +171,9 @@ _ColumnInfo = namedtuple('_ColumnInfo', ['name', 'col_type'])
 
 
 class _Schema:
-    '''
+    """
     schema_info.
-    '''
+    """
 
     def __init__(self, schema_info: List[Tuple]):
         self._cols = []
@@ -170,9 +200,9 @@ class _Schema:
 
 
 class _QueueColumn:
-    '''
+    """
     Queue column.
-    '''
+    """
 
     def __init__(self):
         self._q = deque()
@@ -187,9 +217,9 @@ class _QueueColumn:
 
 
 class _ScalarColumn:
-    '''
+    """
     Scalar column
-    '''
+    """
 
     def __init__(self):
         self._data = None
