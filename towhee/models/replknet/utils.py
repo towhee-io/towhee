@@ -47,7 +47,8 @@ class ConvFFN(nn.Module):
         internal_channels (`int`): hidden dimension
         drop_rate (`float`): drop rate of drop path
     """
-    def __init__(self, channels, internal_channels,  drop_rate):
+
+    def __init__(self, channels, internal_channels, drop_rate):
         super().__init__()
         self.drop_path = DropPath(drop_rate) if drop_rate > 0. else nn.Identity()
         self.preffn_bn = nn.BatchNorm2d(channels)
@@ -84,6 +85,7 @@ class ReparamLargeKernelConv(nn.Module):
         small_kernel (`int`): small kernel size
         small_kernel_merged (`bool`): flag to merge
     """
+
     def __init__(self, in_channels, out_channels, kernel_size, stride, groups,
                  small_kernel, small_kernel_merged=False):
         super().__init__()
@@ -107,7 +109,7 @@ class ReparamLargeKernelConv(nn.Module):
                     'The kernel size for re-param cannot be larger than the large kernel!'
                 self.small_conv = Conv2dBNActivation(
                     in_planes=in_channels, out_planes=out_channels,
-                    kernel_size=small_kernel, stride=stride, padding=small_kernel//2, groups=groups, dilation=1,
+                    kernel_size=small_kernel, stride=stride, padding=small_kernel // 2, groups=groups, dilation=1,
                     norm_layer=nn.BatchNorm2d
                 )
 
@@ -142,3 +144,43 @@ class ReparamLargeKernelConv(nn.Module):
         self.__delattr__('lkb_origin')
         if hasattr(self, 'small_conv'):
             self.__delattr__('small_conv')
+
+
+class RepLKBlock(nn.Module):
+    """
+    RepLK Block.
+
+    Args:
+        in_channels (`int`): input dimension
+        dw_channels (`int`): output or input dimension used in depthwise conv layers
+        block_lk_size (`int`): kernel size of ReparamLargeKernelConv
+        small_kernel (`int`): small kernel size of ReparamLargeKernelConv
+        drop_rate (`float`): drop rate of drop path
+        small_kernel_merged (`bool`): flag to merge small kernels in ReparamLargeKernelConv
+    """
+    def __init__(self, in_channels, dw_channels, block_lk_size, small_kernel, drop_rate, small_kernel_merged=False):
+        super().__init__()
+        self.pw1 = Conv2dBNActivation(
+            in_planes=in_channels, out_planes=dw_channels,
+            kernel_size=1, stride=1, padding=0, groups=1, dilation=1,
+            norm_layer=nn.BatchNorm2d, activation_layer=nn.ReLU
+        )
+        self.pw2 = Conv2dBNActivation(
+            in_planes=dw_channels, out_planes=in_channels,
+            kernel_size=1, stride=1, padding=0, groups=1, dilation=1,
+            norm_layer=nn.BatchNorm2d
+        )
+        self.large_kernel = ReparamLargeKernelConv(
+            in_channels=dw_channels, out_channels=dw_channels, kernel_size=block_lk_size,
+            stride=1, groups=dw_channels, small_kernel=small_kernel, small_kernel_merged=small_kernel_merged)
+        self.lk_nonlinear = nn.ReLU()
+        self.prelkb_bn = nn.BatchNorm2d(in_channels)
+        self.drop_path = DropPath(drop_rate) if drop_rate > 0. else nn.Identity()
+
+    def forward(self, x):
+        out = self.prelkb_bn(x)
+        out = self.pw1(out)
+        out = self.large_kernel(out)
+        out = self.lk_nonlinear(out)
+        out = self.pw2(out)
+        return x + self.drop_path(out)
