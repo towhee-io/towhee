@@ -23,7 +23,7 @@ def create_node(node_repr, op_pool, inputs, outputs):
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs)
     else:
-        engine_log.error('Unknown node iteration type: %s', str(info.iter_info.type))
+        engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None
 
 
