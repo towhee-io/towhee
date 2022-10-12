@@ -52,17 +52,17 @@ class Map(Node):
             self._set_finished()
             return True
 
-        process_data = [datas.get(key) for key in self._node_info.inputs]
+        process_data = [datas.get(key) for key in self._node_repr.inputs]
         succ, outputs, msg = self._call(process_data)
         if not succ:
             self._set_failed(msg)
             return True
 
         if isinstance(outputs, Generator):
-            outputs = self._get_from_generator(outputs, len(self._node_info.outputs))
+            outputs = self._get_from_generator(outputs, len(self._node_repr.outputs))
 
-        output_map = dict((self._node_info.outputs[i], outputs[i])
-                          for i in range(len(self._node_info.outputs)))
+        output_map = dict((self._node_repr.outputs[i], outputs[i])
+                          for i in range(len(self._node_repr.outputs)))
         datas.update(output_map)
         for out_que in self._output_ques:
             if not out_que.put_dict(datas):
