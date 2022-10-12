@@ -18,7 +18,7 @@ import torch
 from torch import nn
 
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from towhee.models.replknet import fuse_bn, ConvFFN
+from towhee.models.replknet import fuse_bn, ConvFFN, ReparamLargeKernelConv
 
 
 class TestUtils(unittest.TestCase):
@@ -56,6 +56,44 @@ class TestUtils(unittest.TestCase):
         # print(outs.shape)
         self.assertTrue(outs1.shape == (1, 3, 2, 2))
         self.assertTrue(outs2.shape == (1, 3, 2, 2))
+
+    def test_reparam_large_kernel_conv(self):
+        x = torch.rand(1, 5, 3, 3).to(self.device)
+
+        layer0 = ReparamLargeKernelConv(
+            in_channels=5, out_channels=3, kernel_size=4, stride=1, groups=1,
+            small_kernel=None, small_kernel_merged=False
+        ).to(self.device)
+        self.assertTrue(hasattr(layer0, 'lkb_origin'))
+        self.assertFalse(hasattr(layer0, 'small_conv'))
+        outs0 = layer0(x)
+        self.assertTrue(outs0.shape == (1, 3, 4, 4))
+
+        layer0.merge_kernel()
+        self.assertTrue(hasattr(layer0, 'lkb_reparam'))
+        self.assertFalse(hasattr(layer0, 'lkb_origin'))
+
+        layer1 = ReparamLargeKernelConv(
+            in_channels=5, out_channels=3, kernel_size=4, stride=1, groups=1,
+            small_kernel=2, small_kernel_merged=False
+        ).to(self.device)
+        self.assertTrue(hasattr(layer1, 'lkb_origin'))
+        self.assertTrue(hasattr(layer1, 'small_conv'))
+        outs1 = layer1(x)
+        self.assertTrue(outs1.shape == (1, 3, 4, 4))
+
+        layer1.merge_kernel()
+        self.assertTrue(hasattr(layer1, 'lkb_reparam'))
+        self.assertFalse(hasattr(layer1, 'lkb_origin'))
+        self.assertFalse(hasattr(layer1, 'small_conv'))
+
+        layer2 = ReparamLargeKernelConv(
+            in_channels=5, out_channels=3, kernel_size=4, stride=1, groups=1,
+            small_kernel=None, small_kernel_merged=True
+        ).to(self.device)
+        self.assertTrue(hasattr(layer2, 'lkb_reparam'))
+        outs2 = layer2(x)
+        self.assertTrue(outs2.shape == (1, 3, 4, 4))
 
 
 if __name__ == '__main__':
