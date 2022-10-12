@@ -5,3 +5,4 @@ numpy
 pygit2
 pgzip
 pyarrow
+twine
