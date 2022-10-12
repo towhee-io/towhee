@@ -208,16 +208,16 @@ class NodeRepr:
         self._out_edges = out_edges
 
     @staticmethod
-    def from_dict(node: Dict[str, Any]) -> 'NodeRepr':
+    def from_dict(name: str, node: Dict[str, Any]) -> 'NodeRepr':
         """Return a NodeRepr from a description dict.
 
         Args:
+            name (`str`): Node name.
             node (`Dict[str, Any]`): Dictionary about node info from dag.
 
         Returns:
             NodeRepr object.
         """
-        name = node['name']
         if name in ['_input', '_output']:
             check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
             iter_repr = IterationRepr.from_dict(node['iter_info'])
