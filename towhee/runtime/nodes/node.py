@@ -52,12 +52,12 @@ class Node(ABC):
         },
         config: {}
     '''
-    def __init__(self, node_info: 'NodeInfo',
+    def __init__(self, node_repr: 'NodeRepr',
                  op_pool: 'OperatorPool',
                  in_ques: List[DataQueue],
                  out_ques: List[DataQueue]):
 
-        self._node_info = node_info
+        self._node_repr = node_repr
         self._op_pool = op_pool
         self._op = None
 
@@ -72,22 +72,22 @@ class Node(ABC):
         # Create multiple-operators to support parallelism.
         # Read the parallelism info by config.
         try:
-            hub_id = self._node_info.op_info.hub_id + '/' + self._node_info.op_info.name
+            hub_id = self._node_repr.op_info.operator
             self._op = self._op_pool.acquire_op(hub_id,
-                                                self._node_info.op_info.kwargs,
-                                                self._node_info.op_info.tag)
+                                                self._node_repr.op_info.init_kws,
+                                                self._node_repr.op_info.tag)
             return True
         except Exception as e:  # pylint: disable=broad-except
             err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
-                                                                              self._node_info.op_info.tag,
-                                                                              str(self._node_info.op_info.kwargs),
+                                                                              self._node_repr.op_info.tag,
+                                                                              str(self._node_repr.op_info.init_kws),
                                                                               str(e))
             engine_log.error(err)
             return False
 
     @property
     def name(self):
-        return self._node_info.name
+        return self._node_repr.name
 
     @property
     def status(self):

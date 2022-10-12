@@ -14,22 +14,20 @@
 
 
 from ._map import Map
-from .node_info import NodeInfo
 from .node import NodeStatus
 from towhee.utils.log import engine_log
 
 
-def create_node(node_info, op_pool, inputs, outputs):
-    info = NodeInfo(node_info)
-    if info.type == 'map':
+def create_node(node_repr, op_pool, inputs, outputs):
+    if node_repr.iter_info.type == 'map':
         assert len(inputs) == 1
-        return Map(info, op_pool, inputs, outputs)
+        return Map(node_repr, op_pool, inputs, outputs)
     else:
-        engine_log.error('Unkown node type: %s', str(info.type))
+        engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None
 
+
 __all__ = [
-    'NodeInfo',
     'NodeStatus',
     'create_node'
 ]
