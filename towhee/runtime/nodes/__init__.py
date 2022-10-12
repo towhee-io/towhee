@@ -15,12 +15,10 @@
 
 from ._map import Map
 from .node import NodeStatus
-from towhee.runtime.node_repr import NodeRepr
 from towhee.utils.log import engine_log
 
 
-def create_node(node_info, op_pool, inputs, outputs):
-    node_repr = NodeRepr.from_dict(node_info)
+def create_node(node_repr, op_pool, inputs, outputs):
     if node_repr.iter_info.type == 'map':
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs)

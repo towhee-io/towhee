@@ -18,6 +18,7 @@ import time
 import copy
 from concurrent.futures import ThreadPoolExecutor
 
+from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
 from towhee.runtime.data_queue import DataQueue, ColumnType
 from towhee.engine.operator_pool import OperatorPool
@@ -45,7 +46,7 @@ class TestMapNode(unittest.TestCase):
         'config': {},
         'next_nodes': ['_output']
     }
-
+    node_repr = NodeRepr.from_dict(node_info)
     op_pool = OperatorPool()
     thread_pool = ThreadPoolExecutor()
 
@@ -55,7 +56,7 @@ class TestMapNode(unittest.TestCase):
         in_que.seal()
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
-        node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -78,7 +79,7 @@ class TestMapNode(unittest.TestCase):
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
-        node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
 
@@ -121,7 +122,8 @@ class TestMapNode(unittest.TestCase):
         out_que2 = DataQueue([('num', ColumnType.QUEUE)])
         node_info = copy.deepcopy(self.node_info)
         node_info['outputs'] = ('num', )
-        node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node_repr = NodeRepr.from_dict(node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -147,7 +149,7 @@ class TestMapNode(unittest.TestCase):
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
         out_que2.seal()
-        node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -163,7 +165,7 @@ class TestMapNode(unittest.TestCase):
         in_que.seal()
         out_que1 = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         out_que2 = DataQueue([('vec', ColumnType.QUEUE)])
-        node = create_node(self.node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -202,7 +204,8 @@ class TestMapNode(unittest.TestCase):
             ('vec2', ColumnType.QUEUE)
         ])
         out_que2 = DataQueue([('url', ColumnType.SCALAR), ('vec2', ColumnType.QUEUE)])
-        node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node_repr = NodeRepr.from_dict(node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -251,7 +254,8 @@ class TestMapNode(unittest.TestCase):
             ('vec', ColumnType.QUEUE),
         ])
         out_que2 = DataQueue([('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
-        node = create_node(node_info, self.op_pool, [in_que], [out_que1, out_que2])
+        node_repr = NodeRepr.from_dict(node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -300,7 +304,8 @@ class TestMapNode(unittest.TestCase):
             ('vec1', ColumnType.QUEUE),
             ('vec2', ColumnType.QUEUE)
         ])
-        node = create_node(node_info, self.op_pool, [in_que], [out_que1])
+        node_repr = NodeRepr.from_dict(node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
