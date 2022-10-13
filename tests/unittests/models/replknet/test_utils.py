@@ -18,7 +18,7 @@ import torch
 from torch import nn
 
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from towhee.models.replknet import fuse_bn, ConvFFN, ReparamLargeKernelConv
+from towhee.models.replknet import fuse_bn, ConvFFN, ReparamLargeKernelConv, RepLKBlock
 
 
 class TestUtils(unittest.TestCase):
@@ -94,6 +94,23 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(hasattr(layer2, 'lkb_reparam'))
         outs2 = layer2(x)
         self.assertTrue(outs2.shape == (1, 3, 4, 4))
+
+    def test_replk_block(self):
+        x = torch.rand(1, 5, 4, 4).to(self.device)
+
+        layer1 = RepLKBlock(
+            in_channels=5, dw_channels=2, block_lk_size=7, small_kernel=3, drop_rate=0.
+        ).to(self.device)
+        outs1 = layer1(x)
+        # print(outs1.shape)
+        self.assertTrue(outs1.shape == (1, 5, 4, 4))
+
+        layer2 = RepLKBlock(
+            in_channels=5, dw_channels=2, block_lk_size=7, small_kernel=3, drop_rate=0.2
+        ).to(self.device)
+        outs2 = layer2(x)
+        # print(outs2.shape)
+        self.assertTrue(outs2.shape == (1, 5, 4, 4))
 
 
 if __name__ == '__main__':
