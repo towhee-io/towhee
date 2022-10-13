@@ -158,6 +158,7 @@ class RepLKBlock(nn.Module):
         drop_rate (`float`): drop rate of drop path
         small_kernel_merged (`bool`): flag to merge small kernels in ReparamLargeKernelConv
     """
+
     def __init__(self, in_channels, dw_channels, block_lk_size, small_kernel, drop_rate, small_kernel_merged=False):
         super().__init__()
         self.pw1 = Conv2dBNActivation(
@@ -184,3 +185,47 @@ class RepLKBlock(nn.Module):
         out = self.lk_nonlinear(out)
         out = self.pw2(out)
         return x + self.drop_path(out)
+
+
+class RepLKNetStage(nn.Module):
+    """
+    RepLKNet Stage using RepLK blocks.
+
+    Args:
+        channels (`int`): input dimensions and controls hidden & output dimensions as well
+        num_blocks (`int`): number of RepLK blocks
+        stage_lk_size (`int`): the large kernel size used in RepLK block
+        drop_rate (`float or List[float]`): drop rate or a list of drop rate of drop paths
+        small_kernel (`int`): the small kernel size
+        dw_ratio (`int`): times of dim over input dim in depthwise conv
+        ffn_ratio (`int`): times of internal dim over input dim in conv FFN
+        small_kernel_merged (`bool`): flag to merge small kernels in ReparamLargeKernelConv
+        norm_intermediate_features (`bool`): flag to return normalized features for downstream tasks
+    """
+
+    def __init__(self, channels, num_blocks, stage_lk_size, drop_rate,
+                 small_kernel, dw_ratio=1, ffn_ratio=4,
+                 small_kernel_merged=False,
+                 norm_intermediate_features=False):
+        super().__init__()
+        blks = []
+        for i in range(num_blocks):
+            block_drop_path = drop_rate[i] if isinstance(drop_rate, list) else drop_rate
+            # Assume all RepLK Blocks within a stage share the same lk_size. You may tune it on your own model.
+            replk_block = RepLKBlock(
+                in_channels=channels, dw_channels=int(channels * dw_ratio), block_lk_size=stage_lk_size,
+                small_kernel=small_kernel, drop_rate=block_drop_path, small_kernel_merged=small_kernel_merged)
+            convffn_block = ConvFFN(
+                channels=channels, internal_channels=int(channels * ffn_ratio), drop_rate=block_drop_path)
+            blks.append(replk_block)
+            blks.append(convffn_block)
+        self.blocks = nn.ModuleList(blks)
+        if norm_intermediate_features:
+            self.norm = nn.BatchNorm2d(channels)  # Only use this with RepLKNet-XL on downstream tasks
+        else:
+            self.norm = nn.Identity()
+
+    def forward(self, x):
+        for blk in self.blocks:
+            x = blk(x)
+        return x
