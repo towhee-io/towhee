@@ -61,8 +61,14 @@ class Map(Node):
         if isinstance(outputs, Generator):
             outputs = self._get_from_generator(outputs, len(self._node_repr.outputs))
 
-        output_map = dict((self._node_repr.outputs[i], outputs[i])
-                          for i in range(len(self._node_repr.outputs)))
+        size = len(self._node_repr.outputs)
+        if size > 1:
+            output_map = dict((self._node_repr.outputs[i], outputs[i])
+                              for i in range(size))
+        else:
+            output_map = {}
+            output_map[self._node_repr.outputs[0]] = outputs
+
         datas.update(output_map)
         for out_que in self._output_ques:
             if not out_que.put_dict(datas):

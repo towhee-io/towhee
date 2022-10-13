@@ -34,7 +34,7 @@ class TestMapNode(unittest.TestCase):
         'outputs': ('vec', ),
         'op_info': {
             'type': 'local',
-            'operator': 'local/add_operator',
+            'operator': 'local/add',
             'tag': 'main',
             'init_args': None,
             'init_kws': {'factor': 10}
