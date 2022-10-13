@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from towhee import register
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.nodes._window import _WindowBuffer, _WindowReader
+from towhee.runtime.nodes._window import _WindowBuffer
 from towhee.runtime.data_queue import DataQueue, ColumnType
 from towhee.engine.operator_pool import OperatorPool
 
@@ -115,28 +115,9 @@ class TestWindowBuffer(unittest.TestCase):
                 index += 1
             buf = buf.next()
 
-
-class TestReader(unittest.TestCase):
-    def test_window_reader(self):
-        q = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
-        for i in range(20):
-            q.put(('test', i))
-        q.seal()
-
-        reader = _WindowReader(2, 10, q)
-        outputs = [{'url': ['test', 'test'], 'num': [0, 1]}, {'url': ['test', 'test'], 'num': [10, 11]}]
-        index = 0
-        while True:
-            data = reader.read()
-            if data is None:
-                break
-            self.assertEqual(outputs[index], data)
-            index += 1
-
-
 class TestWindowNode(unittest.TestCase):
     '''
-    map node test.
+    Window
     '''
     node_info = {
         'name': 'test_node',
@@ -152,7 +133,7 @@ class TestWindowNode(unittest.TestCase):
         'iter_info': {
             'type': 'window',
             'param': {
-                'size': 4,
+                'size': 3,
                 'step': 3
             }
         },
@@ -163,46 +144,155 @@ class TestWindowNode(unittest.TestCase):
     op_pool = OperatorPool()
     thread_pool = ThreadPoolExecutor()
 
-    def test_normal(self):
+    def _test_function(self, node_info, exp_ret1, exp_ret2):
         in_que = DataQueue([('num1', ColumnType.SCALAR), ('num2', ColumnType.QUEUE)])
         in_que.put((1, 1))
         in_que.put((1, 2))
         in_que.put((1, 3))
+        in_que.put((1, 4))
         in_que.seal()
         out_que1 = DataQueue([('num1', ColumnType.SCALAR),
                               ('num2', ColumnType.QUEUE),
                               ('sum1', ColumnType.QUEUE),
                               ('sum2', ColumnType.QUEUE)])
+
         out_que2 = DataQueue([('num1', ColumnType.SCALAR),
                               ('sum1', ColumnType.QUEUE),
                               ('sum2', ColumnType.QUEUE)])
-        
-        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que1, out_que2])
+
+        node = create_node(NodeRepr.from_dict(node_info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
         self.assertTrue(node.status == NodeStatus.FINISHED)
         self.assertTrue(out_que1.sealed)
         self.assertTrue(out_que2.sealed)
-        while True:
-            if out_que1.size == 0:
-                break
-            print(out_que1.get_dict())
+        self.assertTrue(out_que1.size == 4)
+        self.assertTrue(out_que2.size == 2)
 
-        while True:
-            if out_que2.size == 0:
-                break
-            print(out_que2.get_dict())            
-            
-        # print(out_que2.get_dict())
-        # self.assertEqual(out_que1.get_dict(),
-        #                  {
-        #                      'url': 'test_url',
-        #                      'num': 1,
-        #                      'vec': 11
-        #                  })
+        ret = []
+        while out_que1.size > 0:
+            ret.append(out_que1.get_dict())
+        self.assertEqual(ret, exp_ret1)
 
-        # self.assertEqual(out_que2.get_dict(),
-        #                  {
-        #                      'vec': 11
-        #                  })    
+        ret = []
+        while out_que2.size > 0:
+            ret.append(out_que2.get_dict())
+        self.assertEqual(ret, exp_ret2)
+
+    def test_equal(self):
+        """
+        inputs:
+
+        num1: scalar  -----1----->
+        num2: queue   --1-2-3-4--->
+
+        params:
+            size: 3
+            step: 3
+
+        outputs:
+
+        que1:
+        num1: scalar   -----1----->
+        num2: queue    --1-2-3-4--->
+        sum1: queue    --3-1------>
+        sum2: queue    --6-4------>
+
+        que2:
+        num1: scalar   ------1------>
+        sum1: queue    --3-1------>
+        sum2: queue    --6-4------>
+        """
+        exp_ret1 = [
+            {'num1': 1, 'num2': 1, 'sum1': 3, 'sum2': 6},
+            {'num1': 1, 'num2': 2, 'sum1': 1, 'sum2': 4},
+            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
+            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+        ]
+
+        exp_ret2 = [
+            {'num1': 1, 'sum1': 3, 'sum2': 6},
+            {'num1': 1, 'sum1': 1, 'sum2': 4}
+        ]
+
+        self._test_function(self.node_info, exp_ret1, exp_ret2)
+
+    def test_small(self):
+        """
+        inputs:
+
+        num1: scalar  -----1----->
+        num2: queue   --1-2-3-4--->
+
+        params:
+            size: 3
+            step: 2
+
+        outputs:
+
+        que1:
+        num1: scalar   -----1----->
+        num2: queue    --1-2-3-4--->
+        sum1: queue    --3-2------>
+        sum2: queue    --6-7------>
+
+        que2:
+        num1: scalar   ------1------>
+        sum1: queue    --3-2------>
+        sum2: queue    --6-7------>
+        """
+
+        info = copy.deepcopy(self.node_info)
+        info['iter_info']['param']['step'] = 2
+        exp_ret1 = [
+            {'num1': 1, 'num2': 1, 'sum1': 3, 'sum2': 6},
+            {'num1': 1, 'num2': 2, 'sum1': 2, 'sum2': 7},
+            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
+            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+        ]
+
+        exp_ret2 = [
+            {'num1': 1, 'sum1': 3, 'sum2': 6},
+            {'num1': 1, 'sum1': 2, 'sum2': 7}
+        ]
+        self._test_function(info, exp_ret1, exp_ret2)
+
+    def test_large(self):
+        """
+        inputs:
+
+        num1: scalar  -----1----->
+        num2: queue   --1-2-3-4--->
+
+        params:
+            size: 2
+            step: 3
+
+        outputs:
+
+        que1:
+        num1: scalar   -----1----->
+        num2: queue    --1-2-3-4--->
+        sum1: queue    --2-1------>
+        sum2: queue    --3-4------>
+
+        que2:
+        num1: scalar   ------1------>
+        sum1: queue    --2-1------>
+        sum2: queue    --3-4------>
+        """
+        exp_ret1 = [
+            {'num1': 1, 'num2': 1, 'sum1': 2, 'sum2': 3},
+            {'num1': 1, 'num2': 2, 'sum1': 1, 'sum2': 4},
+            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
+            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+        ]
+
+        exp_ret2 = [
+            {'num1': 1, 'sum1': 2, 'sum2': 3},
+            {'num1': 1, 'sum1': 1, 'sum2': 4}
+        ]
+        info = copy.deepcopy(self.node_info)
+        info['iter_info']['param']['size'] = 2
+        self._test_function(info, exp_ret1, exp_ret2)

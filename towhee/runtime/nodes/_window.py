@@ -41,15 +41,53 @@ class Window(Node):
                  out_ques: List['DataQueue']):
 
         super().__init__(node_info, op_pool, in_ques, out_ques)
-        self._reader = _WindowReader(node_info.iter_info.param['size'],
-                                     node_info.iter_info.param['step'],
-                                     in_ques[0])
+        # self._reader = _WindowReader(node_info.iter_info.param['size'],
+        #                              node_info.iter_info.param['step'],
+        #                              in_ques[0])
+        self._size = node_info.iter_info.param['size']
+        self._step = node_info.iter_info.param['step']
+        self._cur_index = -1
+        self._input_que = in_ques[0]
+        self._schema = in_ques[0].schema
+        self._buffer = _WindowBuffer(self._size, self._step)
+        self._row_buffer = []
+
+    def _get_buffer(self):
+        while True:
+            data = self._input_que.get()
+            if data is None:
+                # end of the data_queue
+                if self._buffer is not None and self._buffer.data:
+                    ret = self._buffer.data
+                    self._buffer = self._buffer.next()
+                    return self._to_cols(ret)
+                else:
+                    return None
+
+            self._cur_index += 1
+            self._row_buffer.append(data)
+            if self._buffer(data, self._cur_index) and self._buffer.data:
+                ret = self._buffer.data
+                self._buffer = self._buffer.next()
+                return self._to_cols(ret)
+
+    def _to_cols(self, rows: List[List]):
+        cols = [[] for _ in self._schema]
+        for row in rows:
+            for i in range(len(self._schema)):
+                cols[i].append(row[i])
+        ret = {}
+        for i in range(len(self._schema)):
+            ret[self._schema[i]] = cols[i]
+        return ret
 
     def process_step(self) -> bool:
         """
         """
-        datas = self._reader.read()
+        datas = self._get_buffer()
         if datas is None:
+            if self._row_buffer:
+                pass
             self._set_finished()
             return True
 
@@ -67,55 +105,15 @@ class Window(Node):
             output_map = {}
             output_map[self._node_repr.outputs[0]] = [outputs]
 
-        datas.update(output_map)
+        cols = self._to_cols(self._row_buffer[:self._step])
+        cols.update(output_map)
+
         for out_que in self._output_ques:
-            if not out_que.batch_put_dict(datas):
+            if not out_que.batch_put_dict(cols):
                 self._set_stopped()
                 return True
+        self._row_buffer = self._row_buffer[self._step:]
         return False
-
-
-class _WindowReader:
-
-    def __init__(self, size, step, input_que: 'DataQueue'):
-        assert size > 0 and step > 0
-        self._size = size
-        self._step = step
-        self._cur_index = -1
-        self._input_que = input_que
-        self._schema = input_que.schema
-        self._buffer = _WindowBuffer(self._size, self._step)
-
-    def read(self):
-        while True:
-            if self._buffer is None:
-                return None
-
-            data = self._input_que.get()
-            if data is None:
-                # end of the data_queue
-                if self._buffer is not None and self._buffer.data:
-                    ret = self._buffer.data
-                    self._buffer = self._buffer.next()
-                    return self._to_cols(ret)
-                else:
-                    return None
-
-            self._cur_index += 1
-            if self._buffer(data, self._cur_index) and self._buffer.data:
-                ret = self._buffer.data
-                self._buffer = self._buffer.next()
-                return self._to_cols(ret)
-
-    def _to_cols(self, rows: List[List]):
-        cols = [[] for _ in self._schema]
-        for row in rows:
-            for i in range(len(self._schema)):
-                cols[i].append(row[i])
-        ret = {}
-        for i in range(len(self._schema)):
-            ret[self._schema[i]] = cols[i]
-        return ret
 
 
 class _WindowBuffer:
