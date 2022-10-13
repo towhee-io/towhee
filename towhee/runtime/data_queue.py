@@ -60,14 +60,20 @@ class DataQueue:
         data = [inputs.get(name, None) for name in self._schema.col_names()]
         return self.put(data)
 
-    def batch_put(self, batch_inputs: List[List]):
+    def batch_put(self, batch_inputs: List[List]) -> bool:
         assert len(batch_inputs) == self._schema.size()
         with self._not_full:
+            if self._sealed:
+                return False
+
             if self._max_size > 0:
                 while self.size >= self._max_size:
                     self._not_full.wait()
 
-            inc_size = max([len(col) for col in batch_inputs])
+            inc_size = max([len(batch_inputs[i])
+                            for i in range(len(batch_inputs))
+                            if self._schema.get_col_type(i) == ColumnType.QUEUE])
+                
             for col_index in range(self._schema.size()):
                 if self._schema.get_col_type(col_index) == ColumnType.SCALAR:
                     self._data[col_index].put(batch_inputs[col_index][0])
@@ -76,6 +82,11 @@ class DataQueue:
                         self._data[col_index].put(item)
             self._size += inc_size
             self._not_empty.notify(inc_size)
+            return True
+
+    def batch_put_dict(self, batch_inputs: Dict) -> bool:
+        datas = [batch_inputs.get(name, None) for name in self._schema.col_names()]
+        return self.batch_put(datas)
 
     def get(self) -> Optional[List]:
         with self._not_empty:

@@ -297,3 +297,24 @@ class TestDataQueue(unittest.TestCase):
             'other': 1
         }))
         self.assertEqual(input_que.size, 1)
+
+    def test_batch_put_dict(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('image', ColumnType.QUEUE),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1, 2],
+            'other': [1, 3, 9, 8, 8]
+        }))
+        self.assertEqual(input_que.size, 4)
+        
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1]
+        }))
+        self.assertEqual(input_que.size, 1)
