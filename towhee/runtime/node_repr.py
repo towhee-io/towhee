@@ -29,7 +29,6 @@ def check_keys(info: Dict[str, Any], essentials: Set[str]):
 
 
 # pylint: disable=redefined-builtin
-# pylint: disable=dangerous-default-value
 class OperatorRepr:
     """
     OperatorRepr for operator representations.
@@ -151,8 +150,8 @@ class NodeRepr:
             op_info: OperatorRepr,
             config: Dict[str, Any],
             next_nodes: List,
-            in_edges: List = [],
-            out_edges: List = [],
+            in_edges: List = None,
+            out_edges: List = None,
     ):
         self._name = name
         self._inputs = inputs

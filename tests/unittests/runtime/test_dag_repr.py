@@ -15,13 +15,15 @@ import copy
 import unittest
 
 from towhee.runtime.dag_repr import DAGRepr, NodeRepr
+from towhee.runtime.data_queue import ColumnType
+from towhee.runtime.schema_repr import SchemaRepr
 
 
 class TestDAGRepr(unittest.TestCase):
     """
     DAGRepr test
     """
-    towhee_dag = {
+    dag_dict = {
         '_input': {
             'inputs': ('a', 'b'),
             'outputs': ('a', 'b'),
@@ -29,26 +31,26 @@ class TestDAGRepr(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'next_nodes': ['e433a'],
+            'next_nodes': ['op1']
         },
-        'e433a': {
+        'op1': {
             'inputs': ('a',),
-            'outputs': ('c',),
+            'outputs': ('a', 'c'),
             'iter_info': {
-                'type': 'map',
+                'type': 'flat_map',
                 'param': None
             },
             'op_info': {
-                'operator': 'towhee.decode',
+                'operator': 'towhee/decode',
                 'type': 'hub',
-                'init_args': ('a',),
-                'init_kws': {'b': 'b'},
+                'init_args': ('x',),
+                'init_kws': {'y': 'y'},
                 'tag': 'main',
             },
             'config': None,
-            'next_nodes': ['b1196']
+            'next_nodes': ['op2']
         },
-        'b1196': {
+        'op2': {
             'inputs': ('a', 'b'),
             'outputs': ('d',),
             'iter_info': {
@@ -66,8 +68,8 @@ class TestDAGRepr(unittest.TestCase):
             'next_nodes': ['_output']
         },
         '_output': {
-            'inputs': ('d',),
-            'outputs': ('d',),
+            'inputs': ('d', 'c'),
+            'outputs': ('d', 'c'),
             'iter_info': {
                 'type': 'map',
                 'param': None
@@ -77,63 +79,95 @@ class TestDAGRepr(unittest.TestCase):
     }
 
     def test_dag(self):
-        dr = DAGRepr.from_dict(self.towhee_dag)
-        edges = dr.schema_edges
+        dr = DAGRepr.from_dict(self.dag_dict)
+        edges = dr.edges
+        nodes = dr.nodes
         self.assertEqual(len(edges), 3)
-        for node in dr.nodes:
+        self.assertEqual(len(nodes), 4)
+        for edge in edges.values():
+            for schema in edge['schema']:
+                self.assertTrue(isinstance(edge['schema'][schema], SchemaRepr))
+        for node in nodes:
             self.assertTrue(isinstance(dr.nodes[node], NodeRepr))
 
     def test_check_input(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
         towhee_dag_test.pop('_input')
         with self.assertRaises(ValueError):
             DAGRepr.from_dict(towhee_dag_test)
 
     def test_check_output(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
         towhee_dag_test.pop('_output')
         with self.assertRaises(ValueError):
             DAGRepr.from_dict(towhee_dag_test)
 
     def test_check_schema(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
-        towhee_dag_test['b1196']['inputs'] = ('x', 'y')
-        with self.assertRaises(ValueError):
-            DAGRepr.from_dict(towhee_dag_test)
-
-    def test_check_schema_equal(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
-        towhee_dag_test['_input']['inputs'] = ('x',)
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['op1']['inputs'] = ('x', 'y')
         with self.assertRaises(ValueError):
             DAGRepr.from_dict(towhee_dag_test)
 
     def test_check_schema_circle(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
-        towhee_dag_test['b1196'] = towhee_dag_test['e433a']
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['op2']['next_nodes'] = ['op1', '_output']
         with self.assertRaises(ValueError):
             DAGRepr.from_dict(towhee_dag_test)
 
     def test_edges(self):
-        towhee_dag_test = copy.deepcopy(self.towhee_dag)
-        towhee_dag_test['e433a']['next_nodes'] = ['add_node', 'b1196']
-        towhee_dag_test['add_node'] = {
-            'inputs': ('c',),
-            'outputs': ('e',),
-            'iter_info': {
-                'type': 'map',
-                'param': {}
-            },
-            'op_info': {
-                'operator': 'towhee.test',
-                'type': 'hub',
-                'init_args': ('a',),
-                'init_kws': {'b': 'b'},
-                'tag': 'main',
-            },
-            'config': {},
-            'next_nodes': ['_output']
-        }
-        towhee_dag_test['_output']['inputs'] = ('d', 'e')
-        towhee_dag_test['_output']['outputs'] = ('d', 'e')
+        """
+        _input(map)[(a, b)]->op1(flat_map)[(a,)-(a, c)]->op2(filter)[(a, b)-(d,)]->_output(map)[(d, c)]
+        """
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
         dr = DAGRepr.from_dict(towhee_dag_test)
-        self.assertEqual(len(dr.schema_edges), 5)
+        edges = dr.edges
+        nodes = dr.nodes
+        self.assertEqual(len(edges), 3)
+        self.assertEqual(len(nodes), 4)
+
+        edge0 = [('a', ColumnType.SCALAR), ('b', ColumnType.SCALAR)]
+        edge1 = [('a', ColumnType.QUEUE), ('c', ColumnType.QUEUE), ('b', ColumnType.SCALAR)]
+        edge2 = [('d', ColumnType.QUEUE), ('c', ColumnType.QUEUE)]
+        self.assertEqual(dict((s, t) for s, t in edges[0]['data']), dict((s, t) for s, t in edge0))
+        self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge1))
+        self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge2))
+
+        self.assertEqual(nodes['_input'].in_edges, [0])
+        self.assertEqual(nodes['_input'].out_edges, [0])
+        self.assertEqual(nodes['op1'].in_edges, [0])
+        self.assertEqual(nodes['op1'].out_edges, [1])
+        self.assertEqual(nodes['op2'].in_edges, [1])
+        self.assertEqual(nodes['op2'].out_edges, [2])
+        self.assertEqual(nodes['_output'].in_edges, [2])
+        self.assertEqual(nodes['_output'].out_edges, [2])
+
+    def test_multi_output(self):
+        """
+        _input[(a,b)]->op1[(a,)-(c,)]->_output[(c, d)]
+                |------>op2[(b,)-(d,)]----^
+        """
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['_input']['next_nodes'] = ['op1', 'op2']
+        towhee_dag_test['op1']['next_nodes'] = ['_output']
+        towhee_dag_test['op2']['inputs'] = ('b',)
+        towhee_dag_test['op2']['outputs'] = ('d',)
+        dr = DAGRepr.from_dict(towhee_dag_test)
+        edges = dr.edges
+        nodes = dr.nodes
+        self.assertEqual(len(edges), 5)
+        self.assertEqual(len(nodes), 4)
+
+        self.assertEqual(edges[0]['data'], [('a', ColumnType.SCALAR), ('b', ColumnType.SCALAR)])
+        self.assertEqual(edges[1]['data'], [('a', ColumnType.SCALAR)])
+        self.assertEqual(edges[2]['data'], [('b', ColumnType.SCALAR)])
+        self.assertEqual(edges[3]['data'], [('c', ColumnType.QUEUE)])
+        self.assertEqual(edges[4]['data'], [('d', ColumnType.SCALAR)])
+
+        self.assertEqual(nodes['_input'].in_edges, [0])
+        self.assertEqual(nodes['_input'].out_edges, [1, 2])
+        self.assertEqual(nodes['op1'].in_edges, [1])
+        self.assertEqual(nodes['op1'].out_edges, [3])
+        self.assertEqual(nodes['op2'].in_edges, [2])
+        self.assertEqual(nodes['op2'].out_edges, [4])
+        self.assertEqual(nodes['_output'].in_edges, [3, 4])
+        self.assertEqual(nodes['_output'].out_edges, [3, 4])
