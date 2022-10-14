@@ -205,6 +205,9 @@ class DataQueue:
             return min(que_size)
         return 1
 
+    def col_type(self, col_name):
+        return self.type_schema[self.schema.index(col_name)]
+
 
 class ColumnType(Enum):
     """

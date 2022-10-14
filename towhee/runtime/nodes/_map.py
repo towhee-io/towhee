@@ -19,7 +19,7 @@ from .node import Node
 
 
 class Map(Node):
-    '''Map operator.
+    """Map operator.
 
         Project each element of an input sequence into a new form.
         two cases:
@@ -40,12 +40,12 @@ class Map(Node):
                ---1---2---3---4--->
            [   map('input', 'output', func)    ]
                ---[0]---[0, 1]---[0, 1, 2]---[0, 1, 2, 3]--->
-    '''
+    """
 
     def process_step(self) -> bool:
-        '''
+        """
         Called for each element.
-        '''
+        """
 
         datas = self._in_ques[0].get_dict()
         if datas is None:

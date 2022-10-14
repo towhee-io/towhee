@@ -35,7 +35,7 @@ class NodeStatus(Enum):
 
 
 class Node(ABC):
-    '''
+    """
     node_info:
         name
         func_type: operator/lambda
@@ -51,7 +51,7 @@ class Node(ABC):
             tag: ''
         },
         config: {}
-    '''
+    """
     def __init__(self, node_repr: 'NodeRepr',
                  op_pool: 'OperatorPool',
                  in_ques: List[DataQueue],
@@ -79,11 +79,11 @@ class Node(ABC):
             return True
         except Exception as e:  # pylint: disable=broad-except
             err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
-                                                                              self._node_repr.op_info.tag,
-                                                                              str(self._node_repr.op_info.init_kws),
-                                                                              str(e))
+                                                                            self._node_repr.op_info.tag,
+                                                                            str(self._node_repr.op_info.init_kws),
+                                                                            str(e))
             engine_log.error(err)
-            return False
+        return False
 
     @property
     def name(self):
