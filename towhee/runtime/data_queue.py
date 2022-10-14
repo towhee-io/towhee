@@ -73,7 +73,7 @@ class DataQueue:
             inc_size = max([len(batch_inputs[i])
                             for i in range(len(batch_inputs))
                             if self._schema.get_col_type(i) == ColumnType.QUEUE])
-                
+
             for col_index in range(self._schema.size()):
                 if self._schema.get_col_type(col_index) == ColumnType.SCALAR:
                     self._data[col_index].put(batch_inputs[col_index][0])

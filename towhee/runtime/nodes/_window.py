@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import List, Dict, Optional
+from typing import List
 from .node import Node
 
 
@@ -41,9 +41,6 @@ class Window(Node):
                  out_ques: List['DataQueue']):
 
         super().__init__(node_info, op_pool, in_ques, out_ques)
-        # self._reader = _WindowReader(node_info.iter_info.param['size'],
-        #                              node_info.iter_info.param['step'],
-        #                              in_ques[0])
         self._size = node_info.iter_info.param['size']
         self._step = node_info.iter_info.param['step']
         self._cur_index = -1
@@ -83,6 +80,7 @@ class Window(Node):
 
     def process_step(self) -> bool:
         """
+        Process each window data.
         """
         datas = self._get_buffer()
         if datas is None:
@@ -122,6 +120,9 @@ class Window(Node):
 
 
 class _WindowBuffer:
+    '''
+    Collect data by size and step.
+    '''
     def __init__(self, size: int, step: int, start_index: int = 0):
         self._start_index = start_index
         self._end_index = start_index + size

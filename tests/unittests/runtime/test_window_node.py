@@ -18,7 +18,6 @@ import time
 import copy
 from concurrent.futures import ThreadPoolExecutor
 
-from towhee import register
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
 from towhee.runtime.nodes._window import _WindowBuffer
@@ -27,6 +26,9 @@ from towhee.engine.operator_pool import OperatorPool
 
 
 class TestWindowBuffer(unittest.TestCase):
+    """
+    Test for _WindowBuffer
+    """
     def test_count_window(self):
         """
         size == step
@@ -53,7 +55,7 @@ class TestWindowBuffer(unittest.TestCase):
         while buf is not None:
             if buf.data:
                 self.assertEqual(buf.data, ret[index])
-                index += 1            
+                index += 1
             buf = buf.next()
 
     def test_sliding_small(self):
@@ -343,8 +345,91 @@ class TestWindowNode(unittest.TestCase):
         while out_que1.size > 0:
             ret1.append(out_que1.get_dict())
         self.assertEqual(ret1, exp_ret1)
-        
+
         ret2 = []
         while out_que2.size > 0:
             ret2.append(out_que2.get_dict())
         self.assertEqual(ret2, exp_ret2)
+
+    def test_schema_cover(self):
+        in_que = DataQueue([('num1', ColumnType.SCALAR), ('num2', ColumnType.QUEUE)])
+        in_que.put((1, 1))
+        in_que.put((1, 2))
+        in_que.put((1, 3))
+        in_que.seal()
+        out_que1 = DataQueue([('num1', ColumnType.QUEUE),
+                              ('num2', ColumnType.QUEUE)])
+        out_que2 = DataQueue([('num1', ColumnType.QUEUE)])
+        info = copy.deepcopy(self.node_info)
+        info['iter_info']['param']['size'] = 2
+        info['iter_info']['param']['step'] = 2
+        info['outputs'] = ('num1', 'num2')
+        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+
+        exp_ret1 = [
+            {'num1': 2, 'num2': 3},
+            {'num1': 1, 'num2': 3},
+        ]
+
+        exp_ret2 = [
+            {'num1': 2},
+            {'num1': 1}
+        ]
+
+        ret1 = []
+        while out_que1.size > 0:
+            ret1.append(out_que1.get_dict())
+        self.assertEqual(ret1, exp_ret1)
+
+        ret2 = []
+        while out_que2.size > 0:
+            ret2.append(out_que2.get_dict())
+        self.assertEqual(ret2, exp_ret2)
+
+    def test_stopped(self):
+        in_que = DataQueue([('num1', ColumnType.SCALAR), ('num2', ColumnType.QUEUE)])
+        in_que.put((1, 1))
+
+        out_que1 = DataQueue([('num1', ColumnType.QUEUE),
+                              ('num2', ColumnType.QUEUE)])
+        out_que2 = DataQueue([('num1', ColumnType.QUEUE)])
+        info = copy.deepcopy(self.node_info)
+        info['iter_info']['param']['size'] = 2
+        info['iter_info']['param']['step'] = 2
+        info['outputs'] = ('num1', 'num2')
+        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        in_que.put((1, 2))
+        in_que.put((1, 3))
+        in_que.put((1, 1))
+        out_que2.seal()
+        in_que.seal()
+        f.result()
+        self.assertTrue(node.status == NodeStatus.STOPPED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+        self.assertTrue(out_que1.size == 0)
+        self.assertTrue(out_que2.size == 0)
+
+    def test_failed(self):
+        in_que = DataQueue([('num1', ColumnType.SCALAR), ('num2', ColumnType.QUEUE)])
+        in_que.put(('a', 1))
+        in_que.seal()
+        out_que1 = DataQueue([('num1', ColumnType.QUEUE),
+                              ('num2', ColumnType.QUEUE)])
+        out_que2 = DataQueue([('num1', ColumnType.QUEUE)])
+        info = copy.deepcopy(self.node_info)
+        info['outputs'] = ('num1', 'num2')
+        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FAILED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+        self.assertTrue(out_que1.size == 0)
+        self.assertTrue(out_que2.size == 0)
