@@ -18,7 +18,7 @@ import torch
 from torch import nn
 
 from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from towhee.models.replknet import fuse_bn, ConvFFN, ReparamLargeKernelConv, RepLKBlock
+from towhee.models.replknet import fuse_bn, ConvFFN, ReparamLargeKernelConv, RepLKBlock, RepLKNetStage
 
 
 class TestUtils(unittest.TestCase):
@@ -108,6 +108,29 @@ class TestUtils(unittest.TestCase):
         layer2 = RepLKBlock(
             in_channels=5, dw_channels=2, block_lk_size=7, small_kernel=3, drop_rate=0.2
         ).to(self.device)
+        outs2 = layer2(x)
+        # print(outs2.shape)
+        self.assertTrue(outs2.shape == (1, 5, 4, 4))
+
+    def test_replknet_stage(self):
+        x = torch.rand(1, 5, 4, 4).to(self.device)
+
+        layer1 = RepLKNetStage(
+            channels=5, num_blocks=2, stage_lk_size=7,
+            drop_rate=[0., 0.1], small_kernel=3, dw_ratio=1, ffn_ratio=4,
+            small_kernel_merged=False, norm_intermediate_features=False
+        ).to(self.device)
+        self.assertTrue(isinstance(layer1.norm, nn.Identity))
+        outs1 = layer1(x)
+        # print(outs1.shape)
+        self.assertTrue(outs1.shape == (1, 5, 4, 4))
+
+        layer2 = RepLKNetStage(
+            channels=5, num_blocks=2, stage_lk_size=7,
+            drop_rate=0.1, small_kernel=3, dw_ratio=1, ffn_ratio=4,
+            small_kernel_merged=True, norm_intermediate_features=True
+        ).to(self.device)
+        self.assertTrue(isinstance(layer2.norm, nn.BatchNorm2d))
         outs2 = layer2(x)
         # print(outs2.shape)
         self.assertTrue(outs2.shape == (1, 5, 4, 4))
