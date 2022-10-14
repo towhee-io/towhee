@@ -23,7 +23,7 @@ class TestNodeRepr(unittest.TestCase):
     """
     def test_input(self):
         node_input = {
-            'inputs': ('a', 'b'),
+            'inputs': None,
             'outputs': ('a', 'b'),
             'iter_info': {
                 'type': 'map',
@@ -33,7 +33,7 @@ class TestNodeRepr(unittest.TestCase):
         }
         node = NodeRepr.from_dict('_input', node_input)
         self.assertEqual(node.name, '_input')
-        self.assertEqual(node.inputs, ('a', 'b'))
+        self.assertEqual(node.inputs, None)
         self.assertEqual(node.outputs, ('a', 'b'))
         self.assertEqual(node.iter_info.type, 'map')
         self.assertEqual(node.iter_info.param, None)
@@ -73,7 +73,7 @@ class TestNodeRepr(unittest.TestCase):
 
     def test_raise_iter(self):
         node_input = {
-            'inputs': ('a', 'b'),
+            'inputs': None,
             'outputs': ('a', 'b'),
         }
         with self.assertRaises(ValueError):

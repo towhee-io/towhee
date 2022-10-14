@@ -14,20 +14,9 @@
 
 from typing import Dict, Any, Set, List, Tuple
 
+from towhee.utils.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
-
-
-def check_set(base: Set[str], parent: Set[str]):
-    """
-    Check if the src is a valid input and output.
-
-    Args:
-        base (`Dict[str, Any]`): The base set will be check.
-        parent (`Set[str]`): The parents set to check.
-    """
-    if not base.issubset(parent):
-        raise ValueError(f'The DAG Nodes inputs {str(base)} is not valid, which is not declared: {base - parent}.')
 
 
 class DAGRepr:
@@ -70,8 +59,10 @@ class DAGRepr:
             raise ValueError('The DAG is not valid, it does not ended with `_output`.')
 
         all_inputs = DAGRepr.get_all_inputs(nodes, top_sort)
-        for name in nodes:
-            check_set(set(nodes[name].inputs), set(all_inputs[name]))
+        for name in top_sort[1:]:
+            check_set(nodes[name].inputs, set(all_inputs[name]))
+            check_node_iter(nodes[name].iter_info.type, nodes[name].iter_info.param,
+                            nodes[name].inputs, nodes[name].outputs, set(all_inputs[name]))
 
     @staticmethod
     def get_top_sort(nodes: Dict[str, NodeRepr]):
@@ -84,6 +75,8 @@ class DAGRepr:
            List: Topological list.
         """
         graph = dict((name, nodes[name].next_nodes) for name in nodes)
+        if '_output' in graph:
+            graph['_output'] = []
         result = []
         while True:
             temp_list = {j for i in graph.values() for j in i}
@@ -105,8 +98,10 @@ class DAGRepr:
         Returns:
            Dict[str, Tuple]: Dict of the node and the all inputs of this node.
         """
-        all_inputs = dict((name, nodes['_input'].inputs) for name in nodes)
+        all_inputs = dict((name, nodes['_input'].outputs) for name in nodes)
         for name in top_sort[1:]:
+            if nodes[name].next_nodes is None:
+                continue
             for n in nodes[name].next_nodes:
                 all_inputs[n] = all_inputs[n] + nodes[name].outputs + all_inputs[name]
         return all_inputs
@@ -133,9 +128,10 @@ class DAGRepr:
             for x in common_schema:
                 ahead_schema.remove(x)
                 used_schema.add(x)
-            if len(ahead_schema) == 0:
-                break
             next_nodes = nodes[n].next_nodes
+            if len(ahead_schema) == 0 or next_nodes is None:
+                break
+
             for i in next_nodes[::-1]:
                 if i not in visited:
                     stack.append(i)
@@ -156,6 +152,8 @@ class DAGRepr:
         Returns:
            Dict[str, Dict]: A edge include data and schema.
         """
+        if inputs is None:
+            inputs = outputs
         if ahead_edges is None:
             edge_schemas = dict((d, SchemaRepr.from_dag(d, iter_type)) for d in schema)
             edge = {'schema': edge_schemas, 'data': [(s, t.type) for s, t in edge_schemas.items()]}
@@ -188,7 +186,7 @@ class DAGRepr:
             Dict[str, Dict]: The edges for the DAG.
         """
         out_id = 0
-        edges = {out_id: DAGRepr.get_edge_from_schema(nodes['_input'].inputs, nodes['_input'].inputs, nodes['_input'].outputs,
+        edges = {out_id: DAGRepr.get_edge_from_schema(nodes['_input'].outputs, nodes['_input'].inputs, nodes['_input'].outputs,
                                                       nodes['_input'].iter_info.type, None)}
         nodes['_input'].in_edges = [out_id]
 
@@ -198,7 +196,7 @@ class DAGRepr:
             nodes['_input'].out_edges = [out_id]
             nodes[input_next[0]].in_edges = [out_id]
             top_sort = top_sort[1:]
-        for name in top_sort:
+        for name in top_sort[:-1]:
             ahead_schema = set(nodes[name].outputs)
             for i in nodes[name].in_edges:
                 ahead_schema = ahead_schema | edges[i]['schema'].keys()
@@ -218,7 +216,6 @@ class DAGRepr:
                 else:
                     nodes[name].out_edges.append(out_id)
 
-        nodes['_output'].out_edges = nodes['_output'].in_edges
         return nodes, edges
 
     @staticmethod

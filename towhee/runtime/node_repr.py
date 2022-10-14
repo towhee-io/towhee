@@ -12,20 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any, Tuple, Union, Callable, Set, List
+from typing import Dict, Any, Tuple, Union, Callable, List
 
-
-def check_keys(info: Dict[str, Any], essentials: Set[str]):
-    """
-    Check if the src is a valid node dictionary to describe.
-
-    Args:
-        info (`Dict[str, Any]`): The info dictionary.
-        essentials (`Set[str]`): The essential keys that node dictionary should contain.
-    """
-    info_keys = set(info.keys())
-    if not isinstance(info, dict) or not essentials.issubset(info_keys):
-        raise ValueError(f'Node {str(info)} is not valid, lack attr {essentials - info_keys}')
+from towhee.utils.check_utils import check_keys
 
 
 # pylint: disable=redefined-builtin
@@ -218,12 +207,12 @@ class NodeRepr:
         Returns:
             NodeRepr object.
         """
+        check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
+        iter_repr = IterationRepr.from_dict(node['iter_info'])
+
         if name in ['_input', '_output']:
-            check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
-            iter_repr = IterationRepr.from_dict(node['iter_info'])
             return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, None, None, node['next_nodes'])
         else:
-            check_keys(node, {'inputs', 'outputs', 'iter_info', 'op_info', 'config', 'next_nodes'})
-            iter_repr = IterationRepr.from_dict(node['iter_info'])
+            check_keys(node, {'op_info', 'config'})
             op_repr = OperatorRepr.from_dict(node['op_info'])
             return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, op_repr, node['config'], node['next_nodes'])
