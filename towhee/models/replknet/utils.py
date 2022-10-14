@@ -38,6 +38,27 @@ def fuse_bn(conv: nn.Module, bn: nn.Module):
     return kernel * t, beta - running_mean * gamma / std
 
 
+def conv_bn(in_channels, out_channels, kernel_size, stride, padding, groups, dilation=1):
+    layer = Conv2dBNActivation(
+        in_planes=in_channels, out_planes=out_channels,
+        kernel_size=kernel_size, stride=stride, padding=padding, groups=groups,
+        dilation=dilation, bias=False,
+        norm_layer=nn.BatchNorm2d, eps=1e-05
+    )
+    return layer
+
+
+def conv_bn_relu(in_channels, out_channels, kernel_size, stride, padding, groups, dilation=1):
+    layer = Conv2dBNActivation(
+        in_planes=in_channels, out_planes=out_channels,
+        kernel_size=kernel_size, stride=stride, padding=padding, groups=groups,
+        dilation=dilation, bias=False,
+        norm_layer=nn.BatchNorm2d, eps=1e-05,
+        activation_layer=nn.ReLU
+    )
+    return layer
+
+
 class ConvFFN(nn.Module):
     """
     Convolutional FFN module.
@@ -52,15 +73,13 @@ class ConvFFN(nn.Module):
         super().__init__()
         self.drop_path = DropPath(drop_rate) if drop_rate > 0. else nn.Identity()
         self.preffn_bn = nn.BatchNorm2d(channels)
-        self.pw1 = Conv2dBNActivation(
-            in_planes=channels, out_planes=internal_channels,
-            kernel_size=1, stride=1, padding=0, groups=1,
-            norm_layer=nn.BatchNorm2d,
+        self.pw1 = conv_bn(
+            in_channels=channels, out_channels=internal_channels,
+            kernel_size=1, stride=1, padding=0, groups=1
         )
-        self.pw2 = Conv2dBNActivation(
-            in_planes=internal_channels, out_planes=channels,
-            kernel_size=1, stride=1, padding=0, groups=1,
-            norm_layer=nn.BatchNorm2d
+        self.pw2 = conv_bn(
+            in_channels=internal_channels, out_channels=channels,
+            kernel_size=1, stride=1, padding=0, groups=1
         )
         self.nonlinear = nn.GELU()
 
@@ -99,18 +118,16 @@ class ReparamLargeKernelConv(nn.Module):
                 in_channels=in_channels, out_channels=out_channels,
                 kernel_size=kernel_size, stride=stride, padding=padding, dilation=1, groups=groups, bias=True)
         else:
-            self.lkb_origin = Conv2dBNActivation(
-                in_planes=in_channels, out_planes=out_channels,
-                kernel_size=kernel_size, stride=stride, padding=padding, dilation=1, groups=groups,
-                norm_layer=nn.BatchNorm2d
+            self.lkb_origin = conv_bn(
+                in_channels=in_channels, out_channels=out_channels,
+                kernel_size=kernel_size, stride=stride, padding=padding, groups=groups
             )
             if small_kernel is not None:
                 assert small_kernel <= kernel_size, \
                     'The kernel size for re-param cannot be larger than the large kernel!'
-                self.small_conv = Conv2dBNActivation(
-                    in_planes=in_channels, out_planes=out_channels,
-                    kernel_size=small_kernel, stride=stride, padding=small_kernel // 2, groups=groups, dilation=1,
-                    norm_layer=nn.BatchNorm2d
+                self.small_conv = conv_bn(
+                    in_channels=in_channels, out_channels=out_channels,
+                    kernel_size=small_kernel, stride=stride, padding=small_kernel // 2, groups=groups
                 )
 
     def forward(self, inputs):
@@ -161,15 +178,13 @@ class RepLKBlock(nn.Module):
 
     def __init__(self, in_channels, dw_channels, block_lk_size, small_kernel, drop_rate, small_kernel_merged=False):
         super().__init__()
-        self.pw1 = Conv2dBNActivation(
-            in_planes=in_channels, out_planes=dw_channels,
-            kernel_size=1, stride=1, padding=0, groups=1, dilation=1,
-            norm_layer=nn.BatchNorm2d, activation_layer=nn.ReLU
+        self.pw1 = conv_bn_relu(
+            in_channels=in_channels, out_channels=dw_channels,
+            kernel_size=1, stride=1, padding=0, groups=1
         )
-        self.pw2 = Conv2dBNActivation(
-            in_planes=dw_channels, out_planes=in_channels,
-            kernel_size=1, stride=1, padding=0, groups=1, dilation=1,
-            norm_layer=nn.BatchNorm2d
+        self.pw2 = conv_bn(
+            in_channels=dw_channels, out_channels=in_channels,
+            kernel_size=1, stride=1, padding=0, groups=1
         )
         self.large_kernel = ReparamLargeKernelConv(
             in_channels=dw_channels, out_channels=dw_channels, kernel_size=block_lk_size,

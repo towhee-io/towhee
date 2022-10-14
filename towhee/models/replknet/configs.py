@@ -19,23 +19,43 @@
 # limitations under the License.
 
 def get_configs(model_name: str = None):
+    configs = {
+        'large_kernel_sizes': [31, 29, 27, 13],
+        'layers': [2, 2, 18, 2],
+        'channels': [128, 256, 512, 1024],
+        'small_kernel': 5,
+        'dw_ratio': 1,
+        'ffn_ratio': 4,
+        'in_channels': 3,
+        'drop_rate': 0.3,
+        'num_classes': 1000,
+        'out_indices': None,
+        'small_kernel_merged': False,
+        'norm_intermediate_features': False,
+        'deep_fuse': True
+    }
     if model_name is None:
-        configs = {
-            'large_kernel_sizes': [31, 29, 27, 13],
-            'layers': [2, 2, 18, 2],
-            'channels': [128, 256, 512, 1024],
-            'small_kernel': 5,
-            'dw_ratio': 1,
-            'ffn_ratio': 4,
-            'in_channels': 3,
-            'drop_rate': 0.3,
-            'num_classes': 1000,
-            'out_indices': None,
-            'small_kernel_merged': False,
-            'norm_intermediate_features': False,
-            'deep_fuse': True
-        }
+        pass
+    elif model_name == 'replk_31b_1k':
+        # todo: add url
+        pass
+    elif model_name == 'replk_31b_22k':
+        configs.update(num_classes=21841)
+    elif model_name == 'replk_31l_1k':
+        configs.update(
+            channels=[192, 384, 768, 1536],
+        )
+    elif model_name == 'replk_31l_22k':
+        configs.update(
+            channels=[192, 384, 768, 1536],
+            num_classes=21841
+        )
+    elif model_name == 'replk_xl':
+        configs.update(
+            large_kernel_sizes=[27, 27, 27, 13],
+            channels=[256, 512, 1024, 2048],
+            small_kernel=None, dw_ratio=1.5,
+        )
     else:
-        # todo: add configs for different model names
         raise AttributeError(f'Invalid model name "{model_name}".')
     return configs

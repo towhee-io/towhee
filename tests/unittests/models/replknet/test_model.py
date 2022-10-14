@@ -65,6 +65,34 @@ class TestModel(unittest.TestCase):
         self.assertEqual(str(e.exception),
                          'cannot specify both num_classes (for pretraining) and out_indices (for downstream tasks)')
 
+    def test_model_name(self):
+        replk_b = create_model(model_name='replk_31b_1k')
+        self.assertTrue(replk_b.large_kernel_sizes == [31, 29, 27, 13])
+        self.assertTrue(replk_b.channels == [128, 256, 512, 1024])
+        self.assertTrue(replk_b.num_classes == 1000)
+
+        replk_b_22k = create_model(model_name='replk_31b_22k')
+        self.assertTrue(replk_b_22k.large_kernel_sizes == [31, 29, 27, 13])
+        self.assertTrue(replk_b_22k.channels == [128, 256, 512, 1024])
+        self.assertTrue(replk_b_22k.num_classes == 21841)
+
+        replk_l = create_model(model_name='replk_31l_1k')
+        self.assertTrue(replk_l.large_kernel_sizes == [31, 29, 27, 13])
+        self.assertTrue(replk_l.channels == [192, 384, 768, 1536])
+        self.assertTrue(replk_l.num_classes == 1000)
+
+        replk_l_22k = create_model(model_name='replk_31l_22k')
+        self.assertTrue(replk_l_22k.large_kernel_sizes == [31, 29, 27, 13])
+        self.assertTrue(replk_l_22k.channels == [192, 384, 768, 1536])
+        self.assertTrue(replk_l_22k.num_classes == 21841)
+
+        replk_xl = create_model(model_name='replk_xl')
+        self.assertTrue(replk_xl.large_kernel_sizes == [27, 27, 27, 13])
+        self.assertTrue(replk_xl.channels == [256, 512, 1024, 2048])
+        self.assertTrue(replk_xl.num_classes == 1000)
+        self.assertTrue(replk_xl.dw_ratio == 1.5)
+        self.assertIsNone(replk_xl.small_kernel)
+
 
 if __name__ == '__main__':
     unittest.main()
