@@ -296,3 +296,55 @@ class TestWindowNode(unittest.TestCase):
         info = copy.deepcopy(self.node_info)
         info['iter_info']['param']['size'] = 2
         self._test_function(info, exp_ret1, exp_ret2)
+
+    def test_multithread(self):
+        in_que = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
+
+        out_que1 = DataQueue([('num1', ColumnType.QUEUE),
+                              ('num2', ColumnType.QUEUE),
+                              ('sum1', ColumnType.QUEUE),
+                              ('sum2', ColumnType.QUEUE)])
+
+        out_que2 = DataQueue([('sum2', ColumnType.QUEUE)])
+
+        info = copy.deepcopy(self.node_info)
+        info['iter_info']['param']['size'] = 2
+        info['iter_info']['param']['step'] = 5
+        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+
+        def write(size):
+            for i in range(size):
+                in_que.put((i + 1, i))
+                time.sleep(0.01)
+            in_que.seal()
+        size = 5
+        w_f = self.thread_pool.submit(write, size)
+        w_f.result()
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+
+        exp_ret1 = [
+            {'num1': 1, 'num2': 0, 'sum1': 3, 'sum2': 1},
+            {'num1': 2, 'num2': 1, 'sum1': None, 'sum2': None},
+            {'num1': 3, 'num2': 2, 'sum1': None, 'sum2': None},
+            {'num1': 4, 'num2': 3, 'sum1': None, 'sum2': None},
+            {'num1': 5, 'num2': 4, 'sum1': None, 'sum2': None}
+        ]
+
+        exp_ret2 = [
+            {'sum2': 1}
+        ]
+
+        ret1 = []
+        while out_que1.size > 0:
+            ret1.append(out_que1.get_dict())
+        self.assertEqual(ret1, exp_ret1)
+        
+        ret2 = []
+        while out_que2.size > 0:
+            ret2.append(out_que2.get_dict())
+        self.assertEqual(ret2, exp_ret2)

@@ -87,7 +87,12 @@ class Window(Node):
         datas = self._get_buffer()
         if datas is None:
             if self._row_buffer:
-                pass
+                cols = self._to_cols(self._row_buffer[:self._step])
+                for out_que in self._output_ques:
+                    if not out_que.batch_put_dict(cols):
+                        self._set_stopped()
+                        return True
+                self._row_buffer = []
             self._set_finished()
             return True
 

@@ -57,7 +57,7 @@ class DataQueue:
             return True
 
     def put_dict(self, inputs: Dict) -> bool:
-        data = [inputs.get(name, None) for name in self._schema.col_names()]
+        data = [inputs.get(name, _Empty()) for name in self._schema.col_names()]
         return self.put(data)
 
     def batch_put(self, batch_inputs: List[List]) -> bool:
@@ -85,8 +85,18 @@ class DataQueue:
             return True
 
     def batch_put_dict(self, batch_inputs: Dict) -> bool:
-        datas = [batch_inputs.get(name, None) for name in self._schema.col_names()]
-        return self.batch_put(datas)
+        need_put = False
+        cols = []
+        for name in self._schema.col_names():
+            col = batch_inputs.get(name)
+            if col is None:
+                cols.append([_Empty()])
+            else:
+                need_put = True
+                cols.append(col)
+        if need_put:
+            return self.batch_put(cols)
+        return True
 
     def get(self) -> Optional[List]:
         with self._not_empty:
@@ -210,6 +220,9 @@ class _Schema:
         return self._cols[index].col_type
 
 
+class _Empty:
+    pass
+
 class _QueueColumn:
     """
     Queue column.
@@ -224,6 +237,8 @@ class _QueueColumn:
         return self._q.popleft()
 
     def put(self, data) -> bool:
+        if isinstance(data, _Empty):
+            return
         self._q.append(data)
 
 
@@ -236,6 +251,8 @@ class _ScalarColumn:
         self._data = None
 
     def put(self, data):
+        if isinstance(data, _Empty):
+            return
         self._data = data
 
     def get(self):
