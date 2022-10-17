@@ -30,6 +30,7 @@ class DataQueue:
         self._data = []
         self._queue_index = []
         self._scalar_index = []
+        self._scalar_check = True
         for index in range(len(self._schema.col_types)):
             col_type = self._schema.col_types[index]
             if col_type == ColumnType.QUEUE:
@@ -58,11 +59,9 @@ class DataQueue:
             for i in range(len(inputs)):
                 self._data[i].put(inputs[i])
 
-            new_size = self._get_size()
-            inc_size = new_size - self._size
-            self._size = new_size
-            if inc_size > 0:
-                self._not_empty.notify()
+            self._size = self._get_size()
+            if self._size > 0:
+                self._not_empty.notify(self._size)
             return True
 
     def put_dict(self, inputs: Dict) -> bool:
@@ -86,11 +85,9 @@ class DataQueue:
                     for item in batch_inputs[col_index]:
                         self._data[col_index].put(item)
 
-            new_size = self._get_size()
-            inc_size = new_size - self._size
-            self._size = new_size
-            if inc_size > 0:
-                self._not_empty.notify(inc_size)
+            self._size = self._get_size()
+            if self._size > 0:
+                self._not_empty.notify(self._size)
             return True
 
     def batch_put_dict(self, batch_inputs: Dict) -> bool:
@@ -197,9 +194,11 @@ class DataQueue:
         return self._schema.col_types
 
     def _get_size(self):
-        for index in self._scalar_index:
-            if not self._data[index].has_data():
-                return 0
+        if self._scalar_check:
+            for index in self._scalar_index:
+                if not self._data[index].has_data():
+                    return 0
+            self._scalar_check = False
 
         que_size = [self._data[index].size() for index in self._queue_index]
         if que_size:
