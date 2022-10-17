@@ -143,6 +143,8 @@ class DataQueue:
 
     def clear_and_seal(self):
         with self._lock:
+            if self._sealed:
+                return
             self._size = 0
             self._sealed = True
             self._not_empty.notify_all()
@@ -150,6 +152,9 @@ class DataQueue:
 
     def seal(self):
         with self._lock:
+            if self._sealed:
+                return
+
             self._sealed = True
             if self._queue_index:
                 self._size = max([self._data[index].size()

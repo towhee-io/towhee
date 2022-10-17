@@ -128,9 +128,10 @@ class TestDataQueue(unittest.TestCase):
         size = 20
         ret = input_que.get()
         url = ret[0]
+        output_que.put_dict({'url': url})
         for i in range(size):
             image = 'image' + str(i)
-            output_que.put((url, image))
+            output_que.put_dict({'image': image})
         output_que.seal()
 
         self.assertEqual(output_que.size, size)
@@ -237,30 +238,37 @@ class TestDataQueue(unittest.TestCase):
             input_que.seal()
 
 
-        t = threading.Thread(target=write)
-        t.start()
+        t1 = threading.Thread(target=write)
+        t1.start()
 
-        while True:
-            ret = input_que.get()
-            if ret is None:
-                output_que.seal()
-                break
-            i = int(ret[1][len('image'):])
-            if i % 2 == 0:
-                continue
+        def filter_process():
+            while True:
+                ret = input_que.get()
+                if ret is None:
+                    break
+                i = int(ret[1][len('image'):])
+                if i % 2 == 0:
+                    output_que.put_dict({'url': ret[0], 'image': ret[1]})
+                    continue
 
-            url, image = ret
-            filter_image = 'filter_image' + str(i)
-            output_que.put((url, image, filter_image))
+                url, image = ret
+                filter_image = 'filter_image' + str(i)
+                output_que.put((url, image, filter_image))
 
+        t2 = threading.Thread(target=filter_process)
+        t2.start()
+
+        t1.join()
+        t2.join()
         self.assertEqual(output_que.size, size / 2)
-        while True:
-            ret = output_que.get()
-            if ret is None:
-                break
+        ret = []
+        while output_que.size > 0:
+            ret.append(output_que.get())
 
-            self.assertEqual(int(ret[1][len('image'):]), int(ret[2][len('filter_image'): ]))
-        t.join()
+        output_que.seal()
+        self.assertEqual(output_que.size, size / 2)
+        while output_que.size > 0:
+            ret.append(output_que.get())
 
     def test_seal(self):
         input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
