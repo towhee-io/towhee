@@ -28,11 +28,16 @@ class DataQueue:
         self._max_size = max_size
         self._schema = _Schema(schema_info)
         self._data = []
-        for col_type in self._schema.col_types():
+        self._queue_index = []
+        self._scalar_index = []
+        for index in range(len(self._schema.col_types)):
+            col_type = self._schema.col_types[index]
             if col_type == ColumnType.QUEUE:
                 self._data.append(_QueueColumn())
+                self._queue_index.append(index)
             else:
                 self._data.append(_ScalarColumn())
+                self._scalar_index.append(index)
 
         self._sealed = False
         self._size = 0
@@ -52,12 +57,16 @@ class DataQueue:
 
             for i in range(len(inputs)):
                 self._data[i].put(inputs[i])
-            self._size += 1
-            self._not_empty.notify()
+
+            new_size = self._get_size()
+            inc_size = new_size - self._size
+            self._size = new_size
+            if inc_size > 0:
+                self._not_empty.notify()
             return True
 
     def put_dict(self, inputs: Dict) -> bool:
-        data = [inputs.get(name, _Empty()) for name in self._schema.col_names()]
+        data = [inputs.get(name, _Empty()) for name in self._schema.col_names]
         return self.put(data)
 
     def batch_put(self, batch_inputs: List[List]) -> bool:
@@ -70,24 +79,24 @@ class DataQueue:
                 while self.size >= self._max_size:
                     self._not_full.wait()
 
-            inc_size = max([len(batch_inputs[i])
-                            for i in range(len(batch_inputs))
-                            if self._schema.get_col_type(i) == ColumnType.QUEUE])
-
             for col_index in range(self._schema.size()):
                 if self._schema.get_col_type(col_index) == ColumnType.SCALAR:
                     self._data[col_index].put(batch_inputs[col_index][0])
                 else:
                     for item in batch_inputs[col_index]:
                         self._data[col_index].put(item)
-            self._size += inc_size
-            self._not_empty.notify(inc_size)
+
+            new_size = self._get_size()
+            inc_size = new_size - self._size
+            self._size = new_size
+            if inc_size > 0:
+                self._not_empty.notify(inc_size)
             return True
 
     def batch_put_dict(self, batch_inputs: Dict) -> bool:
         need_put = False
         cols = []
-        for name in self._schema.col_names():
+        for name in self._schema.col_names:
             col = batch_inputs.get(name)
             if col is None:
                 cols.append([_Empty()])
@@ -119,7 +128,7 @@ class DataQueue:
             return None
 
         ret = {}
-        names = self._schema.col_names()
+        names = self._schema.col_names
         for i in range(len(names)):
             ret[names[i]] = data[i]
         return ret
@@ -142,6 +151,9 @@ class DataQueue:
     def seal(self):
         with self._lock:
             self._sealed = True
+            if self._queue_index:
+                self._size = max([self._data[index].size()
+                                  for index in self._queue_index])
             self._not_empty.notify_all()
             self._not_full.notify_all()
 
@@ -162,7 +174,7 @@ class DataQueue:
             >>> dq.schema
             ['a', 'b']
         """
-        return list(self._schema.col_names())
+        return self._schema.col_names
 
     @property
     def type_schema(self) -> List[str]:
@@ -177,7 +189,17 @@ class DataQueue:
             >>> dq.type_schema
             [<ColumnType.SCALAR: 2>, <ColumnType.QUEUE: 1>]
         """
-        return list(self._schema.col_types())
+        return self._schema.col_types
+
+    def _get_size(self):
+        for index in self._scalar_index:
+            if not self._data[index].has_data():
+                return 0
+
+        que_size = [self._data[index].size() for index in self._queue_index]
+        if que_size:
+            return min(que_size)
+        return 1
 
 
 class ColumnType(Enum):
@@ -205,9 +227,11 @@ class _Schema:
     def size(self):
         return self._size
 
+    @property
     def col_names(self):
         return [col.name for col in self._cols]
 
+    @property
     def col_types(self):
         return [col.col_type for col in self._cols]
 
@@ -241,6 +265,8 @@ class _QueueColumn:
             return
         self._q.append(data)
 
+    def size(self):
+        return len(self._q)
 
 class _ScalarColumn:
     """
@@ -257,3 +283,6 @@ class _ScalarColumn:
 
     def get(self):
         return self._data
+
+    def has_data(self):
+        return self._data is not None
