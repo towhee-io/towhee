@@ -329,7 +329,7 @@ class TestDataQueue(unittest.TestCase):
         }))
         self.assertEqual(input_que.size, 1)
         input_que.seal()
-        self.assertEqual(input_que.size, 1)        
+        self.assertEqual(input_que.size, 1)
 
     def test_all_scalar(self):
         input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])

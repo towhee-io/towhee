@@ -98,7 +98,7 @@ class DataQueue:
         cols = []
         for name in self._schema.col_names:
             col = batch_inputs.get(name)
-            if col is None:
+            if not col:
                 cols.append([_Empty()])
             else:
                 need_put = True

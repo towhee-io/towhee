@@ -82,10 +82,10 @@ class Window(Node):
         """
         Process each window data.
         """
-        datas = self._get_buffer()
-        if datas is None:
+        in_buffer = self._get_buffer()
+        if in_buffer is None:
             if self._row_buffer:
-                cols = self._to_cols(self._row_buffer[:self._step])
+                cols = self._to_cols(self._row_buffer)
                 for out_que in self._output_ques:
                     if not out_que.batch_put_dict(cols):
                         self._set_stopped()
@@ -94,7 +94,7 @@ class Window(Node):
             self._set_finished()
             return True
 
-        process_data = [datas.get(key) for key in self._node_repr.inputs]
+        process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
         succ, outputs, msg = self._call(process_data)
         if not succ:
             self._set_failed(msg)
@@ -108,14 +108,14 @@ class Window(Node):
             output_map = {}
             output_map[self._node_repr.outputs[0]] = [outputs]
 
-        cols = self._to_cols(self._row_buffer[:self._step])
+        cols = self._to_cols(self._row_buffer)
         cols.update(output_map)
 
         for out_que in self._output_ques:
             if not out_que.batch_put_dict(cols):
                 self._set_stopped()
                 return True
-        self._row_buffer = self._row_buffer[self._step:]
+        self._row_buffer = []
         return False
 
 
