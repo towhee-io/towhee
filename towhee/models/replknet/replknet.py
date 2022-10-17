@@ -24,8 +24,7 @@ import torch
 from torch import nn
 
 from towhee.models.utils.download import download_from_url
-from towhee.models.layers.conv_bn_activation import Conv2dBNActivation
-from towhee.models.replknet import RepLKNetStage, fuse_bn, get_configs
+from towhee.models.replknet import RepLKNetStage, fuse_bn, conv_bn_relu, get_configs
 
 
 class RepLKNet(nn.Module):
@@ -53,6 +52,12 @@ class RepLKNet(nn.Module):
                  small_kernel_merged=False, norm_intermediate_features=False, deep_fuse=True
                  ):
         super().__init__()
+        self.large_kernel_sizes = large_kernel_sizes
+        self.layers = layers
+        self.channels = channels
+        self.num_classes = num_classes
+        self.small_kernel = small_kernel
+        self.dw_ratio = dw_ratio
         self.deep_fuse = deep_fuse
 
         if num_classes is None and out_indices is None:
@@ -67,29 +72,21 @@ class RepLKNet(nn.Module):
         self.norm_intermediate_features = norm_intermediate_features
         self.num_stages = len(layers)
         self.stem = nn.ModuleList([
-            Conv2dBNActivation(
-                in_planes=in_channels, out_planes=base_width,
-                kernel_size=3, stride=2, padding=1, groups=1, dilation=1,
-                norm_layer=nn.BatchNorm2d,
-                activation_layer=nn.ReLU
+            conv_bn_relu(
+                in_channels=in_channels, out_channels=base_width,
+                kernel_size=3, stride=2, padding=1, groups=1
             ),
-            Conv2dBNActivation(
-                in_planes=base_width, out_planes=base_width,
-                kernel_size=3, stride=1, padding=1, groups=base_width, dilation=1,
-                norm_layer=nn.BatchNorm2d,
-                activation_layer=nn.ReLU
+            conv_bn_relu(
+                in_channels=base_width, out_channels=base_width,
+                kernel_size=3, stride=1, padding=1, groups=base_width
             ),
-            Conv2dBNActivation(
-                in_planes=base_width, out_planes=base_width,
-                kernel_size=1, stride=2, padding=0, groups=1, dilation=1,
-                norm_layer=nn.BatchNorm2d,
-                activation_layer=nn.ReLU
+            conv_bn_relu(
+                in_channels=base_width, out_channels=base_width,
+                kernel_size=1, stride=2, padding=0, groups=1
             ),
-            Conv2dBNActivation(
-                in_planes=base_width, out_planes=base_width,
-                kernel_size=3, stride=2, padding=1, groups=base_width, dilation=1,
-                norm_layer=nn.BatchNorm2d,
-                activation_layer=nn.ReLU
+            conv_bn_relu(
+                in_channels=base_width, out_channels=base_width,
+                kernel_size=3, stride=2, padding=1, groups=base_width
             )])
 
         # Stochastic depth. Set block-wise drop-path rate.
@@ -107,17 +104,13 @@ class RepLKNet(nn.Module):
             self.stages.append(layer)
             if stage_idx < len(layers) - 1:
                 transition = nn.Sequential(
-                    Conv2dBNActivation(
-                        in_planes=channels[stage_idx], out_planes=channels[stage_idx + 1],
-                        kernel_size=1, stride=1, padding=0, groups=1, dilation=1,
-                        norm_layer=nn.BatchNorm2d,
-                        activation_layer=nn.ReLU
+                    conv_bn_relu(
+                        in_channels=channels[stage_idx], out_channels=channels[stage_idx + 1],
+                        kernel_size=1, stride=1, padding=0, groups=1
                     ),
-                    Conv2dBNActivation(
-                        in_planes=channels[stage_idx + 1], out_planes=channels[stage_idx + 1],
-                        kernel_size=3, stride=2, padding=1, groups=channels[stage_idx + 1], dilation=1,
-                        norm_layer=nn.BatchNorm2d,
-                        activation_layer=nn.ReLU
+                    conv_bn_relu(
+                        in_channels=channels[stage_idx + 1], out_channels=channels[stage_idx + 1],
+                        kernel_size=3, stride=2, padding=1, groups=channels[stage_idx + 1]
                     ))
                 self.transitions.append(transition)
 
@@ -132,9 +125,9 @@ class RepLKNet(nn.Module):
             self.deep_fuse_bn()
 
         x = self.stem[0](x)
+
         for stem_layer in self.stem[1:]:
             x = stem_layer(x)
-
         if self.out_indices is None:
             # Just need the final output
             for stage_idx in range(self.num_stages):
@@ -212,7 +205,7 @@ def create_model(
         if checkpoint_path:
             local_path = checkpoint_path
         elif url:
-            cache_dir = os.path.expanduser('~/.cache/clip')
+            cache_dir = os.path.expanduser('~/.cache/towhee')
             local_path = download_from_url(url=url, root=cache_dir)
         else:
             raise AttributeError('No url or checkpoint_path is provided for pretrained model.')
@@ -222,3 +215,12 @@ def create_model(
         model.load_state_dict(state_dict)
     model.eval()
     return model
+
+
+# if __name__ == '__main__':
+#     import torch
+#     x = torch.ones(1, 3, 384, 384)
+#     model = create_model(model_name='replknet_31b_1k',
+#                          pretrained=True, checkpoint_path='path/to/checkpoint.pth')
+#     outs = model(x)
+#     print(outs.shape)
