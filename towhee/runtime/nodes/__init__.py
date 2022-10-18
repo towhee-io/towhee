@@ -19,6 +19,7 @@ from ._time_window import TimeWindow
 from ._window_all import WindowAll
 from ._concat import Concat
 from ._filter import Filter
+from ._flat_map import FlatMap
 from .node import NodeStatus
 from towhee.utils.log import engine_log
 
@@ -41,6 +42,9 @@ def create_node(node_repr, op_pool, inputs, outputs):
         return WindowAll(node_repr, op_pool, inputs, outputs)
     if node_repr.iter_info.type == 'concat':
         return Concat(node_repr, op_pool, inputs, outputs)
+    if node_repr.iter_info.type == 'flat_map':
+        assert len(inputs) == 1
+        return FlatMap(node_repr, op_pool, inputs, outputs)
     else:
         engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None
