@@ -25,9 +25,9 @@ from towhee.engine.operator_pool import OperatorPool
 
 
 class TestMapNode(unittest.TestCase):
-    '''
+    """
     map node test.
-    '''
+    """
     node_info = {
         'name': 'test_node',
         'inputs': ('num', ),
