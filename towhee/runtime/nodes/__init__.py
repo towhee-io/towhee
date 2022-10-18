@@ -14,6 +14,7 @@
 
 
 from ._map import Map
+from ._window import Window
 from .node import NodeStatus
 from towhee.utils.log import engine_log
 
@@ -22,6 +23,9 @@ def create_node(node_repr, op_pool, inputs, outputs):
     if node_repr.iter_info.type == 'map':
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs)
+    elif node_repr.iter_info.type == 'window':
+        assert len(inputs) == 1
+        return Window(node_repr, op_pool, inputs, outputs)
     else:
         engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None

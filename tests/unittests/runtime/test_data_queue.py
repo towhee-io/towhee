@@ -128,9 +128,10 @@ class TestDataQueue(unittest.TestCase):
         size = 20
         ret = input_que.get()
         url = ret[0]
-        for i in range(20):
+        output_que.put_dict({'url': url})
+        for i in range(size):
             image = 'image' + str(i)
-            output_que.put((url, image))
+            output_que.put_dict({'image': image})
         output_que.seal()
 
         self.assertEqual(output_que.size, size)
@@ -237,30 +238,37 @@ class TestDataQueue(unittest.TestCase):
             input_que.seal()
 
 
-        t = threading.Thread(target=write)
-        t.start()
+        t1 = threading.Thread(target=write)
+        t1.start()
 
-        while True:
-            ret = input_que.get()
-            if ret is None:
-                output_que.seal()
-                break
-            i = int(ret[1][len('image'):])
-            if i % 2 == 0:
-                continue
+        def filter_process():
+            while True:
+                ret = input_que.get()
+                if ret is None:
+                    break
+                i = int(ret[1][len('image'):])
+                if i % 2 == 0:
+                    output_que.put_dict({'url': ret[0], 'image': ret[1]})
+                    continue
 
-            url, image = ret
-            filter_image = 'filter_image' + str(i)
-            output_que.put((url, image, filter_image))
+                url, image = ret
+                filter_image = 'filter_image' + str(i)
+                output_que.put((url, image, filter_image))
 
+        t2 = threading.Thread(target=filter_process)
+        t2.start()
+
+        t1.join()
+        t2.join()
         self.assertEqual(output_que.size, size / 2)
-        while True:
-            ret = output_que.get()
-            if ret is None:
-                break
+        ret = []
+        while output_que.size > 0:
+            ret.append(output_que.get())
 
-            self.assertEqual(int(ret[1][len('image'):]), int(ret[2][len('filter_image'): ]))
-        t.join()
+        output_que.seal()
+        self.assertEqual(output_que.size, size / 2)
+        while output_que.size > 0:
+            ret.append(output_que.get())
 
     def test_seal(self):
         input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
@@ -297,3 +305,79 @@ class TestDataQueue(unittest.TestCase):
             'other': 1
         }))
         self.assertEqual(input_que.size, 1)
+
+    def test_batch_put_dict(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('image', ColumnType.QUEUE),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1, 2],
+            'other': [1, 3, 9, 8, 8]
+        }))
+        self.assertEqual(input_que.size, 2)
+        input_que.seal()
+        self.assertEqual(input_que.size, 4)
+
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1]
+        }))
+        self.assertEqual(input_que.size, 1)
+        input_que.seal()
+        self.assertEqual(input_que.size, 1)
+
+    def test_all_scalar(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        input_que.put_dict({'url': 1})
+        self.assertEqual(input_que.size, 0)
+        input_que.put_dict({'image': 1})
+        self.assertEqual(input_que.size, 1)
+        self.assertEqual(input_que.get(), [1, 1])
+        self.assertEqual(input_que.size, 0)
+        input_que.seal()
+        self.assertEqual(input_que.size, 0)
+
+
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        input_que.put_dict({'url': 1})
+        self.assertEqual(input_que.size, 0)
+        input_que.put_dict({'image': 1})
+        self.assertEqual(input_que.size, 1)
+        input_que.seal()
+        self.assertEqual(input_que.size, 1)
+        self.assertEqual(input_que.get(), [1, 1])
+        self.assertEqual(input_que.size, 0)
+
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        input_que.put_dict({'url': 1})
+        self.assertEqual(input_que.size, 0)
+        input_que.seal()
+        self.assertEqual(input_que.size, 0)
+        self.assertEqual(input_que.get(), None)
+        self.assertEqual(input_que.size, 0)
+
+    def test_all_scalar_multithread(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+
+        def write():
+            input_que.put_dict({'url': 1})
+            time.sleep(0.05)
+            input_que.put_dict({'image': 2})
+            input_que.seal()
+
+        t = threading.Thread(target=write)
+        t.start()
+
+        ret = []
+        while True:
+            data = input_que.get()
+            if data is None:
+                break
+            ret.append(data)
+        self.assertEqual(ret, [[1, 2]])
+        t.join()
