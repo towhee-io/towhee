@@ -330,4 +330,4 @@ class TestMapNode(unittest.TestCase):
                          {
                              'num': 1,
                              'vec': 11,
-                         })        
+                         })

@@ -35,17 +35,21 @@ class Window(Node):
       outputs:
         ----6-12-11---->
     """
-    def __init__(self, node_info: 'NodeInfo',
+
+    def __init__(self, node_repr: 'NodeRepr',
                  op_pool: 'OperatorPool',
                  in_ques: List['DataQueue'],
                  out_ques: List['DataQueue']):
 
-        super().__init__(node_info, op_pool, in_ques, out_ques)
-        self._size = node_info.iter_info.param['size']
-        self._step = node_info.iter_info.param['step']
+        super().__init__(node_repr, op_pool, in_ques, out_ques)
+        self._init()
+
+    def _init(self):
+        self._size = self._node_repr.iter_info.param['size']
+        self._step = self._node_repr.iter_info.param['step']
         self._cur_index = -1
-        self._input_que = in_ques[0]
-        self._schema = in_ques[0].schema
+        self._input_que = self._in_ques[0]
+        self._schema = self._in_ques[0].schema
         self._buffer = _WindowBuffer(self._size, self._step)
         self._row_buffer = []
 

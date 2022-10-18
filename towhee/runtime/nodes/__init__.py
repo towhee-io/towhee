@@ -15,6 +15,7 @@
 
 from ._map import Map
 from ._window import Window
+from ._time_window import TimeWindow
 from ._filter import Filter
 from .node import NodeStatus
 from towhee.utils.log import engine_log
@@ -30,6 +31,9 @@ def create_node(node_repr, op_pool, inputs, outputs):
     if node_repr.iter_info.type == 'filter':
         assert len(inputs) == 1
         return Filter(node_repr, op_pool, inputs, outputs)
+    if node_repr.iter_info.type == 'time_window':
+        assert len(inputs) == 1
+        return TimeWindow(node_repr, op_pool, inputs, outputs)
     else:
         engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None
