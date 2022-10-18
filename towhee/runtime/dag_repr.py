@@ -215,7 +215,7 @@ class DAGRepr:
                     nodes[name].out_edges = [out_id]
                 else:
                     nodes[name].out_edges.append(out_id)
-
+        nodes['_output'].out_edges = nodes['_output'].in_edges
         return nodes, edges
 
     @staticmethod

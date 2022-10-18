@@ -139,6 +139,7 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['op2'].in_edges, [1])
         self.assertEqual(nodes['op2'].out_edges, [2])
         self.assertEqual(nodes['_output'].in_edges, [2])
+        self.assertEqual(nodes['_output'].out_edges, [2])
 
     def test_multi_output(self):
         """
@@ -199,4 +200,5 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['op2'].in_edges, [2])
         self.assertEqual(nodes['op2'].out_edges, [4])
         self.assertEqual(nodes['_output'].in_edges, [3, 4])
+        self.assertEqual(nodes['_output'].out_edges, [3, 4])
 
