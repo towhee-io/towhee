@@ -30,7 +30,7 @@ class DataQueue:
         self._data = []
         self._queue_index = []
         self._scalar_index = []
-        self._scalar_check = True
+        self._has_all_scalars = False
         for index in range(len(self._schema.col_types)):
             col_type = self._schema.col_types[index]
             if col_type == ColumnType.QUEUE:
@@ -194,11 +194,11 @@ class DataQueue:
         return self._schema.col_types
 
     def _get_size(self):
-        if self._scalar_check:
+        if not self._has_all_scalars:
             for index in self._scalar_index:
                 if not self._data[index].has_data():
                     return 0
-            self._scalar_check = False
+            self._has_all_scalars = True
 
         que_size = [self._data[index].size() for index in self._queue_index]
         if que_size:
