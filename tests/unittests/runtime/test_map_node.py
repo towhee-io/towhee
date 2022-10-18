@@ -314,3 +314,20 @@ class TestMapNode(unittest.TestCase):
                              'vec1': [0, 1, 2, 3],
                              'vec2': [0, 1, 2, 3]
                          })
+
+    def test_all_scalar(self):
+        in_que = DataQueue([('num', ColumnType.SCALAR)])
+        in_que.put((1, ))
+        in_que.seal()
+        out_que = DataQueue([('num', ColumnType.SCALAR), ('vec', ColumnType.SCALAR)])
+        node = create_node(self.node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que.sealed)
+        self.assertEqual(out_que.get_dict(),
+                         {
+                             'num': 1,
+                             'vec': 11,
+                         })        
