@@ -29,7 +29,6 @@ class TestFilterNode(unittest.TestCase):
     Filter node test.
     """
     node_info = {
-        'name': 'test_node',
         'inputs': ('num', ),
         'outputs': ('larger_than_5', ),
         'op_info': {
@@ -46,7 +45,7 @@ class TestFilterNode(unittest.TestCase):
         'config': {},
         'next_nodes': ['_output']
     }
-    node_repr = NodeRepr.from_dict(node_info)
+    node_repr = NodeRepr.from_dict('test_node', node_info)
     op_pool = OperatorPool()
     thread_pool = ThreadPoolExecutor()
 
@@ -126,7 +125,7 @@ class TestFilterNode(unittest.TestCase):
         out_que2 = DataQueue([('num', ColumnType.QUEUE)])
         node_info = copy.deepcopy(self.node_info)
         node_info['outputs'] = ('num', )
-        node_repr = NodeRepr.from_dict(node_info)
+        node_repr = NodeRepr.from_dict('test_node', node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)

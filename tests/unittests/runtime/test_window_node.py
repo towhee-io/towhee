@@ -122,7 +122,6 @@ class TestWindowNode(unittest.TestCase):
     Window
     '''
     node_info = {
-        'name': 'test_node',
         'inputs': ('num1', 'num2'),
         'outputs': ('sum1', 'sum2'),
         'op_info': {
@@ -142,7 +141,7 @@ class TestWindowNode(unittest.TestCase):
         'config': {},
         'next_nodes': ['_output']
     }
-    node_repr = NodeRepr.from_dict(node_info)
+    node_repr = NodeRepr.from_dict('test_node', node_info)
     op_pool = OperatorPool()
     thread_pool = ThreadPoolExecutor()
 
@@ -162,7 +161,7 @@ class TestWindowNode(unittest.TestCase):
                               ('sum1', ColumnType.QUEUE),
                               ('sum2', ColumnType.QUEUE)])
 
-        node = create_node(NodeRepr.from_dict(node_info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -312,7 +311,7 @@ class TestWindowNode(unittest.TestCase):
         info = copy.deepcopy(self.node_info)
         info['iter_info']['param']['size'] = 2
         info['iter_info']['param']['step'] = 5
-        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
 
@@ -364,7 +363,7 @@ class TestWindowNode(unittest.TestCase):
         info['iter_info']['param']['size'] = 2
         info['iter_info']['param']['step'] = 2
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -400,7 +399,7 @@ class TestWindowNode(unittest.TestCase):
         info['iter_info']['param']['size'] = 2
         info['iter_info']['param']['step'] = 2
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         in_que.put((1, 2))
@@ -424,7 +423,7 @@ class TestWindowNode(unittest.TestCase):
         out_que2 = DataQueue([('num1', ColumnType.QUEUE)])
         info = copy.deepcopy(self.node_info)
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict(info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
