@@ -215,6 +215,11 @@ class DAGRepr:
                     nodes[name].out_edges = [out_id]
                 else:
                     nodes[name].out_edges.append(out_id)
+
+        final_edge = nodes['_output'].in_edges[0]
+        final_schema = edges[final_edge]['schema']
+        edges[final_edge]['data'] = [(s, final_schema[s].type) for s in nodes['_output'].inputs]
+
         nodes['_output'].out_edges = nodes['_output'].in_edges
         return nodes, edges
 
