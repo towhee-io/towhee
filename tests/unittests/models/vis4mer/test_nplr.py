@@ -21,9 +21,7 @@ class NPLRTest(unittest.TestCase):
 
     def test_model(self):
         w, p, p, b, v = nplr(measure='legs', n=2)
-        self.assertEqual(w.shape, 1)
         self.assertEqual(p.shape, (1, 1))
-        self.assertEqual(b.shape, 1)
         self.assertEqual(v.shape, (2, 1))
 
 
