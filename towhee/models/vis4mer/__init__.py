@@ -11,9 +11,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 
 try:
     import opt_einsum
 except ModuleNotFoundError:
     os.system("pip install opt_einsum")
+
+try:
+    import einops
+except ModuleNotFoundError:
+    os.system("pip install einops")
+
+try:  # Try CUDA extension
+    from extensions.cauchy.cauchy import cauchy_mult
+    has_cauchy_extension = True
+except:
+    log.warn(
+        "CUDA extension for cauchy multiplication not found. Install by going to extensions/cauchy/ "
+        "and running `python setup.py install`. This should speed up end-to-end training by 10-50%"
+    )
+    has_cauchy_extension = False
+
+try:  # Try pykeops
+    import pykeops
+    from pykeops.torch import Genred
+except ImportError:
+    os.system("pip install pykeops")
+    import pykeops
+    from pykeops.torch import Genred
