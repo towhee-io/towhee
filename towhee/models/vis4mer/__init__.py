@@ -11,9 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 
 try:
     import opt_einsum
 except ModuleNotFoundError:
     os.system("pip install opt_einsum")
+
+try:
+    import einops
+except ModuleNotFoundError:
+    os.system("pip install einops")
+
+has_cauchy_extension = False
+
+try:  # Try pykeops
+    import pykeops
+    from pykeops.torch import Genred
+except ImportError:
+    os.system("pip install pykeops")
+    import pykeops
+    from pykeops.torch import Genred
