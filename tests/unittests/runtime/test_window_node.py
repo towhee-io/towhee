@@ -22,7 +22,7 @@ from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
 from towhee.runtime.nodes._window import _WindowBuffer
 from towhee.runtime.data_queue import DataQueue, ColumnType
-from towhee.engine.operator_pool import OperatorPool
+from towhee.runtime.operator_manager import OperatorPool
 
 
 class TestWindowBuffer(unittest.TestCase):

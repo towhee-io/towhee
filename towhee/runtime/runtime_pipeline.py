@@ -15,7 +15,6 @@
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 
-from towhee.utils.log import engine_log
 from .operator_manager import OperatorPool
 from .data_queue import DataQueue
 from .dag_repr import DAGRepr
@@ -52,16 +51,14 @@ class Graph:
             self._node_runners.append(node)
 
     def result(self) -> any:
-        end_edge_num = self._nodes['_output'].out_edges[0]
-        res = self._data_queues[end_edge_num]
         for node in self._node_runners:
             if node.status != NodeStatus.FINISHED:
                 raise RuntimeError(node.err_msg)
+        end_edge_num = self._nodes['_output'].out_edges[0]
+        res = self._data_queues[end_edge_num]
         if res.size != 0:
-            return res.get()
-        else:
-            engine_log.warning('The pipeline runs successfully, but no data return')
-            return None
+            return res
+        return None
 
     def __call__(self, *inputs):
         self.initialize()
@@ -73,24 +70,23 @@ class Graph:
         _ = [f.result() for f in features]
         return self.result()
 
-    def release(self):
-        del self._data_queues
-        del self._node_runners
 
-
-class PipelineManager:
+class RuntimePipeline:
     """
     Manage the pipeline and runs it as a single instance.
 
 
     Args:
-        dag_repr(`Dict`): A DAGRepr or Dictionary from the user pipeline.
+        dag_dict(`Dict`): The DAG Dictionary from the user pipeline.
+        max_workers(`int`): The maximum number of threads.
     """
 
-    def __init__(self, dag_repr: Dict):
-        self._dag_repr = DAGRepr.from_dict(dag_repr)
+    def __init__(self, dag_dict: Dict, max_workers: int = None):
+        if max_workers is None:
+            max_workers = len(dag_dict) + 1
+        self._dag_repr = DAGRepr.from_dict(dag_dict)
         self._operator_pool = OperatorPool()
-        self._thread_pool = ThreadPoolExecutor()
+        self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
 
     def preload(self):
         """
@@ -105,5 +101,4 @@ class PipelineManager:
         """
         graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
         outputs = graph(inputs)
-        graph.release()
         return outputs

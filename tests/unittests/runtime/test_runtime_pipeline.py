@@ -15,7 +15,7 @@
 
 import unittest
 
-from towhee.runtime.pipeline_manager import PipelineManager
+from towhee.runtime.runtime_pipeline import RuntimePipeline
 
 
 class TestPipelineManager(unittest.TestCase):
@@ -81,12 +81,12 @@ class TestPipelineManager(unittest.TestCase):
         """
         _input(map)[(a, b, c)]->sub_op(map)[(a, b)-(d,)]->add_op(map)[(c,)-(e,)]->_output(map)[(d, e)]
         """
-        pipeline_manager = PipelineManager(self.dag_dict)
-        result1 = pipeline_manager(1, 2, 3)
+        pipeline_manager = RuntimePipeline(self.dag_dict)
+        result1 = pipeline_manager(1, 2, 3).get()
         self.assertEqual(result1[0].diff, -1)
         self.assertEqual(result1[1].sum, 13)
 
-        result2 = pipeline_manager(2, 2, -10)
+        result2 = pipeline_manager(2, 2, -10).get()
         self.assertEqual(result2[0].diff, 0)
         self.assertEqual(result2[1].sum, 0)
 
@@ -95,7 +95,7 @@ class TestPipelineManager(unittest.TestCase):
         """
         _input(map)[(a, b, c)]->sub_op(map)[(a, b)-(d,)]->add_op(map)[(c,)-(e,)]->_output(map)[(d, e)]
         """
-        pipeline_manager = PipelineManager(self.dag_dict)
+        pipeline_manager = RuntimePipeline(self.dag_dict)
         self.assertEqual(len(pipeline_manager._operator_pool._all_ops), 0)
         pipeline_manager.preload()
         self.assertEqual(len(pipeline_manager._operator_pool._all_ops), 4)
