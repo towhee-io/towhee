@@ -46,8 +46,7 @@ class Map(Node):
         """
         Called for each element.
         """
-        if self._in_ques == self._output_ques:
-            return True
+
         datas = self._in_ques[0].get_dict()
         if datas is None:
             self._set_finished()

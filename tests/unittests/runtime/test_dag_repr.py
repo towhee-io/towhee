@@ -82,7 +82,7 @@ class TestDAGRepr(unittest.TestCase):
         dr = DAGRepr.from_dict(self.dag_dict)
         edges = dr.edges
         nodes = dr.nodes
-        self.assertEqual(len(edges), 3)
+        self.assertEqual(len(edges), 5)
         self.assertEqual(len(nodes), 4)
         for edge in edges.values():
             for schema in edge['schema']:
@@ -122,28 +122,30 @@ class TestDAGRepr(unittest.TestCase):
         dr = DAGRepr.from_dict(towhee_dag_test)
         edges = dr.edges
         nodes = dr.nodes
-        self.assertEqual(len(edges), 3)
+        self.assertEqual(len(edges), 5)
         self.assertEqual(len(nodes), 4)
 
         edge0 = [('a', ColumnType.SCALAR), ('b', ColumnType.SCALAR), ('c', ColumnType.SCALAR)]
         edge1 = [('a', ColumnType.QUEUE), ('c', ColumnType.QUEUE), ('b', ColumnType.SCALAR)]
         edge2 = [('d', ColumnType.QUEUE), ('c', ColumnType.QUEUE)]
         self.assertEqual(dict((s, t) for s, t in edges[0]['data']), dict((s, t) for s, t in edge0))
-        self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge1))
-        self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge2))
+        self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge0))
+        self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge1))
+        self.assertEqual(dict((s, t) for s, t in edges[3]['data']), dict((s, t) for s, t in edge2))
+        self.assertEqual(dict((s, t) for s, t in edges[4]['data']), dict((s, t) for s, t in edge2))
 
         self.assertEqual(nodes['_input'].in_edges, [0])
-        self.assertEqual(nodes['_input'].out_edges, [0])
-        self.assertEqual(nodes['op1'].in_edges, [0])
-        self.assertEqual(nodes['op1'].out_edges, [1])
-        self.assertEqual(nodes['op2'].in_edges, [1])
-        self.assertEqual(nodes['op2'].out_edges, [2])
-        self.assertEqual(nodes['_output'].in_edges, [2])
-        self.assertEqual(nodes['_output'].out_edges, [2])
+        self.assertEqual(nodes['_input'].out_edges, [1])
+        self.assertEqual(nodes['op1'].in_edges, [1])
+        self.assertEqual(nodes['op1'].out_edges, [2])
+        self.assertEqual(nodes['op2'].in_edges, [2])
+        self.assertEqual(nodes['op2'].out_edges, [3])
+        self.assertEqual(nodes['_output'].in_edges, [3])
+        self.assertEqual(nodes['_output'].out_edges, [4])
 
-    def test_multi_output(self):
+    def test_concat(self):
         """
-        _input[(a,b)]->op1[(a,)-(c,)]->_output[(c, d)]
+        _input[(a,b)]->op1[(a,)-(c,)]->concat[(c, d)-(e,)]->_output[(e,)]
                 |------>op2[(b,)-(d,)]----^
         """
         towhee_dag_test = {
@@ -159,7 +161,7 @@ class TestDAGRepr(unittest.TestCase):
                 'iter_info': {'type': 'map', 'param': None},
                 'op_info': {'operator': 'test1', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
-                'next_nodes': ['_output']
+                'next_nodes': ['_concat']
             },
             'op2': {
                 'inputs': ('b',),
@@ -167,11 +169,18 @@ class TestDAGRepr(unittest.TestCase):
                 'iter_info': {'type': 'map', 'param': None},
                 'op_info': {'operator': 'test2', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
+                'next_nodes': ['_concat']
+            },
+            '_concat': {
+                'inputs': ('c', 'd'),
+                'outputs': ('e',),
+                'iter_info': {'type': 'map', 'param': None},
+                'config': None,
                 'next_nodes': ['_output']
             },
             '_output': {
-                'inputs': ('d', 'c'),
-                'outputs': ('d', 'c'),
+                'inputs': ('e',),
+                'outputs': ('e',),
                 'iter_info': {'type': 'map', 'param': None},
                 'next_nodes': None
             },
@@ -179,19 +188,22 @@ class TestDAGRepr(unittest.TestCase):
         dr = DAGRepr.from_dict(towhee_dag_test)
         edges = dr.edges
         nodes = dr.nodes
-        self.assertEqual(len(edges), 5)
-        self.assertEqual(len(nodes), 4)
+        self.assertEqual(len(edges), 7)
+        self.assertEqual(len(nodes), 5)
 
         edge0 = [('a', ColumnType.SCALAR), ('b', ColumnType.SCALAR)]
         edge1 = [('a', ColumnType.SCALAR)]
         edge2 = [('b', ColumnType.SCALAR)]
         edge3 = [('c', ColumnType.SCALAR)]
         edge4 = [('d', ColumnType.SCALAR)]
+        edge5 = [('e', ColumnType.SCALAR)]
         self.assertEqual(dict((s, t) for s, t in edges[0]['data']), dict((s, t) for s, t in edge0))
         self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge1))
         self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge2))
         self.assertEqual(dict((s, t) for s, t in edges[3]['data']), dict((s, t) for s, t in edge3))
         self.assertEqual(dict((s, t) for s, t in edges[4]['data']), dict((s, t) for s, t in edge4))
+        self.assertEqual(dict((s, t) for s, t in edges[5]['data']), dict((s, t) for s, t in edge5))
+        self.assertEqual(dict((s, t) for s, t in edges[6]['data']), dict((s, t) for s, t in edge5))
 
         self.assertEqual(nodes['_input'].in_edges, [0])
         self.assertEqual(nodes['_input'].out_edges, [1, 2])
@@ -199,6 +211,8 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['op1'].out_edges, [3])
         self.assertEqual(nodes['op2'].in_edges, [2])
         self.assertEqual(nodes['op2'].out_edges, [4])
-        self.assertEqual(nodes['_output'].in_edges, [3, 4])
-        self.assertEqual(nodes['_output'].out_edges, [3, 4])
+        self.assertEqual(nodes['_concat'].in_edges, [3, 4])
+        self.assertEqual(nodes['_concat'].out_edges, [5])
+        self.assertEqual(nodes['_output'].in_edges, [5])
+        self.assertEqual(nodes['_output'].out_edges, [6])
 

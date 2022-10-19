@@ -191,11 +191,6 @@ class DAGRepr:
         nodes['_input'].in_edges = [out_id]
 
         top_sort = DAGRepr.get_top_sort(nodes)
-        input_next = nodes['_input'].next_nodes
-        if len(nodes['_input'].next_nodes) == 1:
-            nodes['_input'].out_edges = [out_id]
-            nodes[input_next[0]].in_edges = [out_id]
-            top_sort = top_sort[1:]
         for name in top_sort[:-1]:
             ahead_schema = set(nodes[name].outputs)
             for i in nodes[name].in_edges:
@@ -216,11 +211,12 @@ class DAGRepr:
                 else:
                     nodes[name].out_edges.append(out_id)
 
+        out_id += 1
         final_edge = nodes['_output'].in_edges[0]
         final_schema = edges[final_edge]['schema']
-        edges[final_edge]['data'] = [(s, final_schema[s].type) for s in nodes['_output'].inputs]
+        edges[out_id] = {'schema': final_schema, 'data': [(s, final_schema[s].type) for s in nodes['_output'].inputs]}
 
-        nodes['_output'].out_edges = nodes['_output'].in_edges
+        nodes['_output'].out_edges = [out_id]
         return nodes, edges
 
     @staticmethod

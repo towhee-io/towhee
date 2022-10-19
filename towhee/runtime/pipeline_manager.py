@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 
@@ -24,27 +23,26 @@ from .nodes import create_node, NodeStatus
 from .node_repr import NodeRepr
 
 
-class PipelineThread(threading.Thread):
+class Graph:
     """
-    Pipeline thread.
+    Graph.
 
     Args:
         nodes(`Dict[str, NodeRepr]`): The pipeline nodes from DAGRepr.nodes.
         edges(Dict[str, List]`: The pipeline edges from DAGRepr.edges.
         operator_pool(`OperatorPool`): The operator pool.
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[str, Any], operator_pool: 'OperatorPool'):
-        super().__init__()
+    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[str, Any], operator_pool: 'OperatorPool', thread_pool: 'ThreadPoolExecutor'):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
-        self._thread_pool = ThreadPoolExecutor()
+        self._thread_pool = thread_pool
         self._node_runners = None
-        self._data_queues = dict((name, DataQueue(edge['data'])) for name, edge in self._edges.items())
-        self.setDaemon(True)
+        self._data_queues = None
 
     def initialize(self):
         self._node_runners = []
+        self._data_queues = dict((name, DataQueue(edge['data'])) for name, edge in self._edges.items())
         for name in DAGRepr.get_top_sort(self._nodes):
             in_queues = [self._data_queues[edge] for edge in self._nodes[name].in_edges]
             out_queues = [self._data_queues[edge] for edge in self._nodes[name].out_edges]
@@ -56,13 +54,12 @@ class PipelineThread(threading.Thread):
     def result(self) -> any:
         end_edge_num = self._nodes['_output'].out_edges[0]
         res = self._data_queues[end_edge_num]
+        for node in self._node_runners:
+            if node.status != NodeStatus.FINISHED:
+                raise RuntimeError(node.err_msg)
         if res.size != 0:
             return res.get()
         else:
-            # run failed, raise an exception
-            for node in self._node_runners:
-                if node.status == NodeStatus.FAILED:
-                    raise RuntimeError(node.err_msg)
             engine_log.warning('The pipeline runs successfully, but no data return')
             return None
 
@@ -70,8 +67,10 @@ class PipelineThread(threading.Thread):
         self.initialize()
         self._data_queues[0].put(*inputs)
         self._data_queues[0].seal()
+        features = []
         for node in self._node_runners:
-            self._thread_pool.submit(node.process)
+            features.append(self._thread_pool.submit(node.process))
+        _ = [f.result() for f in features]
         return self.result()
 
     def release(self):
@@ -91,19 +90,20 @@ class PipelineManager:
     def __init__(self, dag_repr: Dict):
         self._dag_repr = DAGRepr.from_dict(dag_repr)
         self._operator_pool = OperatorPool()
+        self._thread_pool = ThreadPoolExecutor()
 
     def preload(self):
         """
         Initialize the nodes.
         """
-        pipeline_context = PipelineThread(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool)
-        pipeline_context.initialize()
+        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
+        graph.initialize()
 
     def __call__(self, *inputs):
         """
         Output with ordering matching the input `DataQueue`.
         """
-        pipeline_context = PipelineThread(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool)
-        outputs = pipeline_context(inputs)
-        pipeline_context.release()
+        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
+        outputs = graph(inputs)
+        graph.release()
         return outputs

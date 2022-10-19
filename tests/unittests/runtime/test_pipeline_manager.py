@@ -24,7 +24,7 @@ class TestPipelineManager(unittest.TestCase):
     """
     dag_dict = {
         '_input': {
-            'inputs': None,
+            'inputs': ('a', 'b', 'c'),
             'outputs': ('a', 'b', 'c'),
             'iter_info': {
                 'type': 'map',
@@ -68,7 +68,7 @@ class TestPipelineManager(unittest.TestCase):
         },
         '_output': {
             'inputs': ('d', 'e'),
-            'outputs': None,
+            'outputs': ('d', 'e'),
             'iter_info': {
                 'type': 'map',
                 'param': None
