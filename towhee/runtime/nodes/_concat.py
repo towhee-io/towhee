@@ -30,17 +30,17 @@ class Concat(Node):
         return True
 
     def process_step(self) -> bool:
-        all_datas = {}
+        all_data = {}
         for q in self._in_ques:
             data = q.get_dict()
             if data:
-                all_datas.update(data)
-        if not all_datas:
+                all_data.update(data)
+        if not all_data:
             self._set_finished()
             return True
 
         for out_que in self._output_ques:
-            if not out_que.put_dict(all_datas):
+            if not out_que.put_dict(all_data):
                 self._set_stopped()
                 return True
         return False
