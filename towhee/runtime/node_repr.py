@@ -34,7 +34,7 @@ class OperatorRepr:
         operator: Union[str, Callable],
         type: str,
         init_args: Tuple,
-        init_kws: Dict[str, any],
+        init_kws: Dict[str, Any],
         tag: str = 'main'
     ):
         self._operator = operator

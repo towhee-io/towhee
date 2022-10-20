@@ -71,19 +71,27 @@ class Node(ABC):
         #TODO
         # Create multiple-operators to support parallelism.
         # Read the parallelism info by config.
-        try:
-            hub_id = self._node_repr.op_info.operator
-            self._op = self._op_pool.acquire_op(hub_id,
-                                                self._node_repr.op_info.init_kws,
-                                                self._node_repr.op_info.tag)
+        op_type = self._node_repr.op_info.type
+        if op_type == 'hub':
+            try:
+                hub_id = self._node_repr.op_info.operator
+                self._op = self._op_pool.acquire_op(hub_id,
+                                                    self._node_repr.op_info.init_kws,
+                                                    self._node_repr.op_info.tag)
+                return True
+            except Exception as e:  # pylint: disable=broad-except
+                err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
+                                                                                  self._node_repr.op_info.tag,
+                                                                                  str(self._node_repr.op_info.init_kws),
+                                                                                  str(e))
+                engine_log.error(err)
+                return False
+        elif op_type in ['lambda', 'callable']:
+            self._op = self._node_repr.op_info.operator
             return True
-        except Exception as e:  # pylint: disable=broad-except
-            err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
-                                                                            self._node_repr.op_info.tag,
-                                                                            str(self._node_repr.op_info.init_kws),
-                                                                            str(e))
-            engine_log.error(err)
-        return False
+        else:
+            engine_log.error("Unkown operator type: {}".format(op_type))
+            return False
 
     @property
     def name(self):
@@ -150,4 +158,5 @@ class Node(ABC):
         return 'Node-{}'.format(self.name)
 
     def __del__(self):
-        self._op_pool.release_op(self._op)
+        if self._node_repr.op_info.type == 'hub' and self._op:
+            self._op_pool.release_op(self._op)

@@ -32,7 +32,7 @@ class TestFilterNode(unittest.TestCase):
         'inputs': ('num', ),
         'outputs': ('larger_than_5', ),
         'op_info': {
-            'type': 'register',
+            'type': 'hub',
             'operator': 'local/filter_operator',
             'tag': 'main',
             'init_args': [],
