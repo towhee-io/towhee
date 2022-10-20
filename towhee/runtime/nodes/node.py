@@ -150,4 +150,5 @@ class Node(ABC):
         return 'Node-{}'.format(self.name)
 
     def __del__(self):
-        self._op_pool.release_op(self._op)
+        if self._op:
+            self._op_pool.release_op(self._op)
