@@ -65,6 +65,8 @@ class Map(Node):
         if size > 1:
             output_map = dict((self._node_repr.outputs[i], outputs[i])
                               for i in range(size))
+        elif size == 0:
+            output_map = {}
         else:
             output_map = {}
             output_map[self._node_repr.outputs[0]] = outputs

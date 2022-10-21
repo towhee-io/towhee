@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import copy
 import unittest
 
+from towhee.operator import PyOperator
 from towhee.runtime.runtime_pipeline import RuntimePipeline
+from towhee.runtime.operator_manager import OperatorRegistry
+
+register = OperatorRegistry.register
 
 
 class TestPipelineManager(unittest.TestCase):
@@ -41,9 +45,9 @@ class TestPipelineManager(unittest.TestCase):
             },
             'op_info': {
                 'operator': 'local/sub_operator',
-                'type': 'local',
-                'init_args': (),
-                'init_kws': {},
+                'type': 'hub',
+                'init_args': None,
+                'init_kws': None,
                 'tag': 'main',
             },
             'config': None,
@@ -58,8 +62,8 @@ class TestPipelineManager(unittest.TestCase):
             },
             'op_info': {
                 'operator': 'local/add_operator',
-                'type': 'local',
-                'init_args': (),
+                'type': 'hub',
+                'init_args': None,
                 'init_kws': {'factor': 10},
                 'tag': 'main',
             },
@@ -81,21 +85,60 @@ class TestPipelineManager(unittest.TestCase):
         """
         _input(map)[(a, b, c)]->sub_op(map)[(a, b)-(d,)]->add_op(map)[(c,)-(e,)]->_output(map)[(d, e)]
         """
-        pipeline_manager = RuntimePipeline(self.dag_dict)
-        result1 = pipeline_manager(1, 2, 3).get()
+        runtime_pipeline = RuntimePipeline(self.dag_dict)
+        result1 = runtime_pipeline(1, 2, 3).get()
         self.assertEqual(result1[0].diff, -1)
         self.assertEqual(result1[1].sum, 13)
 
-        result2 = pipeline_manager(2, 2, -10).get()
+        result2 = runtime_pipeline(2, 2, -10).get()
         self.assertEqual(result2[0].diff, 0)
         self.assertEqual(result2[1].sum, 0)
 
+    def test_return_none(self):
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['_output']['inputs'] = ()
+        towhee_dag_test['_output']['outputs'] = ()
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        result = runtime_pipeline(1, 2, 3).get()
+        self.assertEqual(result, [])
+
     def test_preload(self):
-        # pylint: disable=protected-access
-        """
-        _input(map)[(a, b, c)]->sub_op(map)[(a, b)-(d,)]->add_op(map)[(c,)-(e,)]->_output(map)[(d, e)]
-        """
-        pipeline_manager = RuntimePipeline(self.dag_dict)
-        self.assertEqual(len(pipeline_manager._operator_pool._all_ops), 0)
-        pipeline_manager.preload()
-        self.assertEqual(len(pipeline_manager._operator_pool._all_ops), 4)
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        runtime_pipeline.preload()
+        self.assertEqual(len(runtime_pipeline._operator_pool._all_ops), 4)  # pylint: disable=protected-access
+
+    def test_raise_preload(self):
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['op2']['op_info']['init_kws'] = None
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        with self.assertRaises(RuntimeError):
+            runtime_pipeline.preload()
+
+    def test_raise_run(self):
+        runtime_pipeline = RuntimePipeline(self.dag_dict)
+        with self.assertRaises(RuntimeError):
+            runtime_pipeline('a', 'b', 'c')
+
+    def test_registry_with_pipe(self):
+        # pylint: disable=unused-variable
+        @register(name='test_rp/add_operator')
+        class AddOperator(PyOperator):
+            def __init__(self, fac):
+                self.factor = fac
+
+            def __call__(self, x):
+                return self.factor + x
+
+        @register(name='test_rp/sub_operator')
+        def sub_operator(x, y):
+            return x - y
+
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['op1']['op_info']['operator'] = 'test-rp/sub-operator'
+        towhee_dag_test['op2']['op_info']['operator'] = 'test-rp/add-operator'
+        towhee_dag_test['op2']['op_info']['init_args'] = (1,)
+        towhee_dag_test['op2']['op_info']['init_kws'] = None
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        result = runtime_pipeline(1, 2, 3).get()
+        self.assertEqual(result, [-1, 4])

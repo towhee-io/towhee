@@ -211,7 +211,7 @@ class NodeRepr:
         iter_repr = IterationRepr.from_dict(node['iter_info'])
 
         if name in ['_input', '_output', '_concat']:
-            op_repr = OperatorRepr.from_dict({'operator': name, 'type': None, 'init_args': None, 'init_kws': None, 'tag': 'main'})
+            op_repr = OperatorRepr.from_dict({'operator': name, 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'})
             return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, op_repr, None, node['next_nodes'])
         else:
             check_keys(node, {'op_info', 'config'})

@@ -16,7 +16,8 @@ import types
 from collections import namedtuple
 from typing import Any, Dict, List
 
-from towhee.engine.uri import URI
+from towhee.operator import SharedType
+from .uri import URI
 
 
 class OperatorRegistry:
@@ -25,9 +26,6 @@ class OperatorRegistry:
     """
 
     REGISTRY: Dict[str, Any] = {}
-
-    def __init__(self) -> None:
-        pass
 
     @staticmethod
     def resolve(name: str) -> Any:
@@ -46,85 +44,11 @@ class OperatorRegistry:
     @staticmethod
     def register(
             name: str = None,
-            input_schema=None,  # TODO: parse input_schema from code @jie.hou
+            input_schema=None,  # TODO: parse input_schema from code @shiyu22
             output_schema=None,
             flag=None):
         """
         Register a class, function, or callable as a towhee operator.
-
-        Examples:
-
-        1. register a function as operator
-
-        >>> from towhee import register
-        >>> @register
-        ... def foo(x, y):
-        ...     return x+y
-
-        2. register a class as operator
-
-        >>> @register
-        ... class foo_cls():
-        ...     def __init__(self, x):
-        ...         self.x = x
-        ...     def __call__(self, y):
-        ...         return self.x + y
-
-        By default, function/class name is used as operator name,
-        which is used by the operator factory `towhee.ops` to invoke the operator.
-
-        >>> from towhee import ops
-        >>> op = ops.foo()
-        >>> op(1, 2)
-        3
-
-        >>> op = ops.foo_cls(x=2)
-        >>> op(3)
-        5
-
-        3. register operator with an alternative name:
-
-        >>> @register(name='my_foo')
-        ... def foo(x, y):
-        ...     return x+y
-        >>> ops.my_foo()(1,2)
-        3
-
-        Operator URI and Namespace: The URI (unique reference identifier) of an operator has two parts: namespace and name.
-        The namespace helps identify one operator and group the operators into various kinds.
-        We can specific the namespace when create an operator:
-
-        >>> ops.anon.my_foo()(1,2)
-        3
-
-        `anon` is the default namespace to which an operator is registered if no namespace is specified.
-        And it's also the default searching namespace for the operator factory.
-
-        You can also specific the fullname, including namespace when register an operator:
-
-        >>> @register(name='my_namespace/my_foo')
-        ... def foo(x, y):
-        ...     return x+y
-        >>> ops.my_namespace.my_foo()(1,2)
-        3
-
-        Flag: Each operator type, for example: NNOperator and PyOperator, has their own default `flag`:
-
-        >>> from towhee.operator.base import Operator, NNOperator, PyOperator
-        >>> from towhee.operator.base import OperatorFlag
-        >>> @register
-        ... class foo(NNOperator):
-        ...     pass
-        >>> foo().flag
-        <OperatorFlag.REUSEABLE|STATELESS: 6>
-
-        The default flag can be override by `register(flag=someflag)`:
-
-        >>> @register(flag=OperatorFlag.EMPTYFLAG)
-        ... class foo(NNOperator):
-        ...     pass
-        >>> foo().flag
-        <OperatorFlag.EMPTYFLAG: 1>
 
         Args:
             name (str, optional): operator name, will use the class/function name if None.
@@ -181,6 +105,8 @@ class OperatorRegistry:
                 cls.__call__ = wrapper_call
                 cls.__abstractmethods__ = set()
             cls.metainfo = metainfo
+            if not hasattr(cls, 'shared_type'):
+                cls.shared_type = SharedType.Shareable
             if flag is not None:
                 cls.flag = property(lambda _: flag)
             OperatorRegistry.REGISTRY[name] = cls

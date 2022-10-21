@@ -165,6 +165,4 @@ class OperatorLoader:
     def instance_operator(self, op, arg: List[Any], kws: Dict[str, Any]) -> Operator:
         if arg is None:
             arg = ()
-        if kws is None:
-            kws = {}
-        return op(*arg, **kws)
+        return op(*arg, **kws) if kws is not None else op(*arg)

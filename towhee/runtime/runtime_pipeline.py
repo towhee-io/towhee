@@ -28,21 +28,27 @@ class Graph:
 
     Args:
         nodes(`Dict[str, NodeRepr]`): The pipeline nodes from DAGRepr.nodes.
-        edges(Dict[str, List]`: The pipeline edges from DAGRepr.edges.
+        edges(`Dict[str, Any]`): The pipeline edges from DAGRepr.edges.
         operator_pool(`OperatorPool`): The operator pool.
+        thread_pool(`OperatorPool`): The ThreadPoolExecutor.
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[str, Any], operator_pool: 'OperatorPool', thread_pool: 'ThreadPoolExecutor'):
+    def __init__(self,
+                 nodes: Dict[str, NodeRepr],
+                 edges: Dict[str, Any],
+                 operator_pool: 'OperatorPool',
+                 thread_pool: 'ThreadPoolExecutor'):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
         self._thread_pool = thread_pool
         self._node_runners = None
         self._data_queues = None
+        self.initialize()
 
     def initialize(self):
         self._node_runners = []
         self._data_queues = dict((name, DataQueue(edge['data'])) for name, edge in self._edges.items())
-        for name in DAGRepr.get_top_sort(self._nodes):
+        for name in self._nodes:
             in_queues = [self._data_queues[edge] for edge in self._nodes[name].in_edges]
             out_queues = [self._data_queues[edge] for edge in self._nodes[name].out_edges]
             node = create_node(self._nodes[name], self._operator_pool, in_queues, out_queues)
@@ -56,12 +62,9 @@ class Graph:
                 raise RuntimeError(node.err_msg)
         end_edge_num = self._nodes['_output'].out_edges[0]
         res = self._data_queues[end_edge_num]
-        if res.size != 0:
-            return res
-        return None
+        return res
 
     def __call__(self, *inputs):
-        self.initialize()
         self._data_queues[0].put(*inputs)
         self._data_queues[0].seal()
         features = []
@@ -90,10 +93,9 @@ class RuntimePipeline:
 
     def preload(self):
         """
-        Initialize the nodes.
+        Preload the operators.
         """
-        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
-        graph.initialize()
+        _ = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
 
     def __call__(self, *inputs):
         """
