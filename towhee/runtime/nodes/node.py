@@ -76,16 +76,18 @@ class Node(ABC):
             try:
                 hub_id = self._node_repr.op_info.operator
                 self._op = self._op_pool.acquire_op(hub_id,
+                                                    self._node_repr.op_info.init_args,
                                                     self._node_repr.op_info.init_kws,
                                                     self._node_repr.op_info.tag)
                 return True
             except Exception as e:  # pylint: disable=broad-except
-                err = 'Create operator {}:{} with args {} failed, err: {}'.format(hub_id,
-                                                                                  self._node_repr.op_info.tag,
-                                                                                  str(self._node_repr.op_info.init_kws),
-                                                                                  str(e))
+                err = 'Create operator {}:{} with args {} and kws {} failed, err: {}'.format(hub_id,
+                                                                                             self._node_repr.op_info.tag,
+                                                                                             str(self._node_repr.op_info.init_args),
+                                                                                             str(self._node_repr.op_info.init_kws),
+                                                                                             str(e))
                 engine_log.error(err)
-                return False
+            return False
         elif op_type in ['lambda', 'callable']:
             self._op = self._node_repr.op_info.operator
             return True

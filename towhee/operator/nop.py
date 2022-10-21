@@ -30,3 +30,16 @@ class NOPOperator(PyOperator):
     def __call__(self, **args: Dict[str, Any]) -> NamedTuple:
         fields = [(name, type(val)) for name, val in args.items()]
         return NamedTuple('Outputs', fields)(**args)  # pylint: disable=not-callable
+
+
+class NOPNodeOperator(PyOperator):
+    """
+    DefaultOperator for _input and _output nodes.
+    """
+
+    def __init__(self):
+        #pylint: disable=useless-super-delegation
+        super().__init__()
+
+    def __call__(self, *args):
+        return args
