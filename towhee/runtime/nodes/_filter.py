@@ -20,6 +20,11 @@ class Filter(Node):
     Filter Operator.
 
     Filter the input columns based on the selected filter_columns and filter.
+
+    i.e.
+            ---1---2---3---4--->
+        [   filter('input', 'output', lambda i: i > 2)    ]
+            ---3---4--->
     """
     def process_step(self) -> bool:
         assert len(self._node_repr.outputs) == len(self._node_repr.inputs)

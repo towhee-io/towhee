@@ -20,7 +20,12 @@ class FlatMap(Node):
     """
     FlatMap Operator.
 
-    FlatMap transforms elements in one row into zero, one, or more elements, i.e. split elements, unnest iterables.
+    FlatMap transforms the iterable/nested outputs into one or more elements, i.e. split elements, unnest iterables.
+
+    i.e.
+            ---[0, 1, 2, 3]--->
+        [    FlatMap('input', 'output', lambda i: i)    ]
+            ---0---1---2---3--->
     """
     def process_step(self) -> List[Any]:
 
