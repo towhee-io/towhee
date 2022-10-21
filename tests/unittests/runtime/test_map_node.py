@@ -32,7 +32,7 @@ class TestMapNode(unittest.TestCase):
         'inputs': ('num', ),
         'outputs': ('vec', ),
         'op_info': {
-            'type': 'local',
+            'type': 'hub',
             'operator': 'local/add',
             'tag': 'main',
             'init_args': None,
@@ -179,7 +179,7 @@ class TestMapNode(unittest.TestCase):
             'inputs': ('num', ),
             'outputs': ('vec1', 'vec2'),
             'op_info': {
-                'type': 'local',
+                'type': 'hub',
                 'operator': 'local/multi_output',
                 'tag': 'main',
                 'init_args': None,
@@ -229,7 +229,7 @@ class TestMapNode(unittest.TestCase):
             'inputs': ('num', ),
             'outputs': ('num', 'vec'),
             'op_info': {
-                'type': 'local',
+                'type': 'hub',
                 'operator': 'local/multi_output',
                 'tag': 'main',
                 'init_args': None,
@@ -278,7 +278,7 @@ class TestMapNode(unittest.TestCase):
             'inputs': ('num', ),
             'outputs': ('vec1', 'vec2'),
             'op_info': {
-                'type': 'local',
+                'type': 'hub',
                 'operator': 'local/multi_gen',
                 'tag': 'main',
                 'init_args': None,
@@ -331,3 +331,26 @@ class TestMapNode(unittest.TestCase):
                              'num': 1,
                              'vec': 11,
                          })
+
+    def test_callable(self):
+        node_info = copy.deepcopy(self.node_info)
+        node_info['op_info']['type'] = 'lambda'
+        node_info['op_info']['operator'] = lambda x: x + 1
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        in_que.put((1, ))
+        in_que.put((2, ))
+        in_que.put((3, ))
+        in_que.put((4, ))
+        in_que.seal()
+        out_que = DataQueue([('vec', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que.sealed)
+        for i in range(out_que.size):
+            data = out_que.get()
+            self.assertEqual(data[0], i + 2)

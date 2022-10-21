@@ -24,7 +24,7 @@ from towhee.runtime.data_queue import DataQueue, ColumnType
 from towhee.engine.operator_pool import OperatorPool
 
 
-class TestWindowNode(unittest.TestCase):
+class TestWindowAll(unittest.TestCase):
     '''
     WindowAll
     '''
@@ -32,7 +32,7 @@ class TestWindowNode(unittest.TestCase):
         'inputs': ('num1', 'num2'),
         'outputs': ('sum1', 'sum2'),
         'op_info': {
-            'type': 'local',
+            'type': 'hub',
             'operator': 'local/sum2',
             'tag': 'main',
             'init_args': None,
