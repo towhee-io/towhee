@@ -354,3 +354,18 @@ class TestMapNode(unittest.TestCase):
         for i in range(out_que.size):
             data = out_que.get()
             self.assertEqual(data[0], i + 2)
+
+    def test_create_op_failed(self):
+        node_info = copy.deepcopy(self.node_info)
+        node_info['op_info']['operator'] = 'mock'
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [])
+        self.assertFalse(node.initialize())
+
+        node_info = copy.deepcopy(self.node_info)
+        node_info['op_info']['type'] = 'unkown'
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [])
+        self.assertFalse(node.initialize())
