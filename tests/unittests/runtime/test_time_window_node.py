@@ -105,7 +105,7 @@ class TestWindowNode(unittest.TestCase):
         'inputs': ('num1', 'num2'),
         'outputs': ('sum1', 'sum2'),
         'op_info': {
-            'type': 'local',
+            'type': 'hub',
             'operator': 'local/sum2',
             'tag': 'main',
             'init_args': None,
