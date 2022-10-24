@@ -20,7 +20,7 @@ from towhee.runtime.runtime_pipeline import RuntimePipeline
 from towhee.datacollection.data_collection import DataCollection
 
 
-class TestNodes(unittest.TestCase):
+class TestNodesWithFlatMap(unittest.TestCase):
     """
     Test Nodes
     """
@@ -124,4 +124,4 @@ class TestNodes(unittest.TestCase):
     def test_excpetion(self):
         pipe = RuntimePipeline(self.dag)
         with self.assertRaises(RuntimeError):
-            ret = pipe('x', [1])
+            pipe('x', [1])

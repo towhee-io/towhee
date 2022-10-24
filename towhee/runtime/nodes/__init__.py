@@ -13,6 +13,17 @@
 # limitations under the License.
 
 
+from towhee.runtime.constants import (
+    MapConst,
+    WindowAllConst,
+    WindowConst,
+    FilterConst,
+    TimeWindowConst,
+    FlatMapConst,
+    ConcatConst
+)
+from towhee.utils.log import engine_log
+
 from ._map import Map
 from ._window import Window
 from ._time_window import TimeWindow
@@ -21,29 +32,28 @@ from ._concat import Concat
 from ._filter import Filter
 from ._flat_map import FlatMap
 from .node import NodeStatus
-import towhee.runtime.constants as constants
-from towhee.utils.log import engine_log
+
 
 
 def create_node(node_repr, op_pool, inputs, outputs):
-    if node_repr.iter_info.type == constants.MapConst.name:
+    if node_repr.iter_info.type == MapConst.name:
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs)
-    elif node_repr.iter_info.type == constants.WindowConst.name:
+    elif node_repr.iter_info.type == WindowConst.name:
         assert len(inputs) == 1
         return Window(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == constants.FilterConst.name:
+    if node_repr.iter_info.type == FilterConst.name:
         assert len(inputs) == 1
         return Filter(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == constants.TimeWindowConst.name:
+    if node_repr.iter_info.type == TimeWindowConst.name:
         assert len(inputs) == 1
         return TimeWindow(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == constants.WindowAllConst.name:
+    if node_repr.iter_info.type == WindowAllConst.name:
         assert len(inputs) == 1
         return WindowAll(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == constants.ConcatConst.name:
+    if node_repr.iter_info.type == ConcatConst.name:
         return Concat(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == constants.FlatMapConst.name:
+    if node_repr.iter_info.type == FlatMapConst.name:
         assert len(inputs) == 1
         return FlatMap(node_repr, op_pool, inputs, outputs)
     else:

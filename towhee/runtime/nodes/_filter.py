@@ -14,6 +14,8 @@
 
 from typing import List
 
+from towhee.runtime.constants import FilterConst
+
 from .node import Node
 
 
@@ -44,7 +46,7 @@ class Filter(Node):
             self._set_finished()
             return True
 
-        process_data = [data.get(key) for key in self._node_repr.iter_info.param['filter_by']]
+        process_data = [data.get(key) for key in self._node_repr.iter_info.param[FilterConst.param.filter_by]]
         succ, outputs, msg = self._call(process_data)
         if not succ:
             self._set_failed(msg)

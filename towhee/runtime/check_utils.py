@@ -13,7 +13,11 @@
 # limitations under the License.
 
 from typing import Dict, Any, Set, Tuple
-import towhee.runtime.constants as constants
+from towhee.runtime.constants import (
+    WindowConst,
+    FilterConst,
+    TimeWindowConst
+)
 
 
 def check_keys(info: Dict[str, Any], essentials: Set[str]):
@@ -80,15 +84,15 @@ def check_node_iter(iter_type: str, iter_param: Dict[str, Any], inputs, outputs,
         outputs (`Tuple`): The inputs schema of the node.
         all_inputs (`Set[str]`): The all inputs schema in the DAG util the node.
     """
-    if iter_type == constants.FilterConst.name:
+    if iter_type == FilterConst.name:
         check_length(inputs, outputs)
-        check_set(iter_param[constants.FilterConst.param.filter_by], all_inputs)
-    elif iter_type == constants.TimeWindowConst.name:
+        check_set(iter_param[FilterConst.param.filter_by], all_inputs)
+    elif iter_type == TimeWindowConst.name:
         check_length(inputs, outputs)
-        check_set(iter_param[constants.TimeWindowConst.param.timestamp_col], all_inputs)
-        check_int(iter_param, [constants.TimeWindowConst.param.time_range_sec,
-                               constants.TimeWindowConst.param.time_step_sec])
-    elif iter_type == constants.WindowConst.name:
+        check_set(iter_param[TimeWindowConst.param.timestamp_col], all_inputs)
+        check_int(iter_param, [TimeWindowConst.param.time_range_sec,
+                               TimeWindowConst.param.time_step_sec])
+    elif iter_type == WindowConst.name:
         check_length(inputs, outputs)
-        check_int(iter_param, [constants.WindowConst.param.size,
-                               constants.WindowConst.param.step])
+        check_int(iter_param, [WindowConst.param.size,
+                               WindowConst.param.step])
