@@ -16,6 +16,8 @@
 from typing import List
 from .node import Node
 
+import towhee.runtime.constants as constants
+
 
 class Window(Node):
     """Window operator
@@ -45,8 +47,8 @@ class Window(Node):
         self._init()
 
     def _init(self):
-        self._size = self._node_repr.iter_info.param['size']
-        self._step = self._node_repr.iter_info.param['step']
+        self._size = self._node_repr.iter_info.param[constants.WindowConst.param.size]
+        self._step = self._node_repr.iter_info.param[constants.WindowConst.param.step]
         self._cur_index = -1
         self._input_que = self._in_ques[0]
         self._schema = self._in_ques[0].schema

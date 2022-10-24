@@ -381,3 +381,22 @@ class TestDataQueue(unittest.TestCase):
             ret.append(data)
         self.assertEqual(ret, [[1, 2]])
         t.join()
+
+    def test_empty(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        que.put_dict({})
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 0)
+
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        que.put_dict({})
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 0)
+
+        que = DataQueue([('url', ColumnType.QUEUE), ('image', ColumnType.QUEUE)])
+        que.put_dict({})
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 0)

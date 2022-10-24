@@ -14,7 +14,7 @@
 
 from typing import Dict, Any, Tuple, Union, Callable, List
 
-from towhee.utils.check_utils import check_keys
+from towhee.runtime.check_utils import check_keys
 
 
 # pylint: disable=redefined-builtin

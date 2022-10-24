@@ -21,28 +21,29 @@ from ._concat import Concat
 from ._filter import Filter
 from ._flat_map import FlatMap
 from .node import NodeStatus
+import towhee.runtime.constants as constants
 from towhee.utils.log import engine_log
 
 
 def create_node(node_repr, op_pool, inputs, outputs):
-    if node_repr.iter_info.type == 'map':
+    if node_repr.iter_info.type == constants.MapConst.name:
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs)
-    elif node_repr.iter_info.type == 'window':
+    elif node_repr.iter_info.type == constants.WindowConst.name:
         assert len(inputs) == 1
         return Window(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == 'filter':
+    if node_repr.iter_info.type == constants.FilterConst.name:
         assert len(inputs) == 1
         return Filter(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == 'time_window':
+    if node_repr.iter_info.type == constants.TimeWindowConst.name:
         assert len(inputs) == 1
         return TimeWindow(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == 'window_all':
+    if node_repr.iter_info.type == constants.WindowAllConst.name:
         assert len(inputs) == 1
         return WindowAll(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == 'concat':
+    if node_repr.iter_info.type == constants.ConcatConst.name:
         return Concat(node_repr, op_pool, inputs, outputs)
-    if node_repr.iter_info.type == 'flat_map':
+    if node_repr.iter_info.type == constants.FlatMapConst.name:
         assert len(inputs) == 1
         return FlatMap(node_repr, op_pool, inputs, outputs)
     else:

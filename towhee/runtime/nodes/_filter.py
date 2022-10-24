@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
+
 from .node import Node
 
 
@@ -26,6 +28,14 @@ class Filter(Node):
         [   filter('input', 'output', lambda i: i > 2)    ]
             ---3---4--->
     """
+    def __init__(self, node_repr: 'NodeRepr',
+                 op_pool: 'OperatorPool',
+                 in_ques: List['DataQueue'],
+                 out_ques: List['DataQueue']):
+        super().__init__(node_repr, op_pool, in_ques, out_ques)
+        self._key_map = dict(zip(self._node_repr.outputs, self._node_repr.inputs))
+        self._same_keys = list(set(self._key_map.keys()) & set(self._key_map.values()))
+
     def process_step(self) -> bool:
         assert len(self._node_repr.outputs) == len(self._node_repr.inputs)
 
@@ -41,15 +51,16 @@ class Filter(Node):
             return True
 
         if outputs:
-            output_map = {new_key: data[old_key] for new_key, old_key in zip(self._node_repr.outputs, self._node_repr.inputs)}
+            output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
             data.update(output_map)
 
-        for out_que in self._output_ques:
-            inter = set(out_que.schema) & set(list(data.keys()))
+        else:
+            for k in self._same_keys:
+                del data[k]
 
-            if inter:
-                if not out_que.put_dict(data):
-                    self._set_stopped()
-                    return True
+        for out_que in self._output_ques:
+            if not out_que.put_dict(data):
+                self._set_stopped()
+                return True
 
         return False
