@@ -176,7 +176,7 @@ if __name__ == '__main__':
     res = 0
     operator_tasks_path = path + '/operator-tasks'
     if not os.path.exists(operator_tasks_path):
-        res = os.system(f"cd {path} && git clone git@github.com/towhee-io/operator-tasks.git")
+        res = os.system(f"cd {path} && git clone https://github.com/towhee-io/operator-tasks.git")
     if 0 != res:
         logger.error("Fail to clone operator tasks, please check and retry")
     else:
