@@ -37,6 +37,22 @@ class Entity:
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
+    def __getitem__(self, key):
+        """
+        Get the item from an entity.
+
+        Examples:
+            >>> from towhee.datacollection.entity import Entity
+            >>> e = Entity(a=1, b=2)
+            >>> e
+            <Entity dict_keys(['a', 'b'])>
+            >>> e['a']
+            1
+            >>> e['b']
+            2
+        """
+        return getattr(self, key)
+
     def __repr__(self):
         """
         Define the representation of the Entity.
