@@ -4,10 +4,8 @@ name: Publish UT Image
 on:
   push:
     # file paths to consider in the event. Optional; defaults to all.
-    paths:
-      - 'Dockerfile'
-      - 'GPUDockerfile'
-      - '.github/workflows/publish_ut_image.yml'
+    branches:
+      - 'main'
   pull_request:
     # file paths to consider in the event. Optional; defaults to all.
     paths:
