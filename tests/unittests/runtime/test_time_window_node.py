@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
 from towhee.runtime.nodes._time_window import _TimeWindowBuffer
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -193,8 +193,8 @@ class TestWindowNode(unittest.TestCase):
         exp_ret1 = [
             {'num1': 1, 'num2': 1, 'sum1': 2, 'sum2': 3},
             {'num1': 1, 'num2': 2, 'sum1': 2, 'sum2': 7},
-            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -238,7 +238,7 @@ class TestWindowNode(unittest.TestCase):
             {'num1': 1, 'num2': 1, 'sum1': 2, 'sum2': 3},
             {'num1': 1, 'num2': 2, 'sum1': 3, 'sum2': 9},
             {'num1': 1, 'num2': 3, 'sum1': 1, 'sum2': 4},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -278,8 +278,8 @@ class TestWindowNode(unittest.TestCase):
         exp_ret1 = [
             {'num1': 1, 'num2': 1, 'sum1': 1, 'sum2': 1},
             {'num1': 1, 'num2': 2, 'sum1': 2, 'sum2': 7},
-            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [

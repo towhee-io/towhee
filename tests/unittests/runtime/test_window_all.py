@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -225,3 +225,49 @@ class TestWindowAll(unittest.TestCase):
         self.assertTrue(out_que2.sealed)
         self.assertTrue(out_que1.size == 0)
         self.assertTrue(out_que2.size == 0)
+
+    def test_diff_size(self):
+        in_que = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
+        in_que.put((1, 2))
+        in_que.put((1, Empty()))
+        in_que.put((1, 3))
+        in_que.seal()
+
+        out_que = DataQueue([
+            ('sum1', ColumnType.QUEUE),
+            ('sum2', ColumnType.QUEUE),
+            ('num1', ColumnType.QUEUE),
+            ('num2', ColumnType.QUEUE)
+        ])
+
+
+
+        node_info = {
+            'inputs': ('num1', 'num2'),
+            'outputs': ('sum1', 'sum2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y: (sum(x), sum(y)),
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'window_all',
+                'param': {
+                }
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+
+        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que.sealed)
+        self.assertTrue(out_que.size == 3)
+        sum1, sum2, _, _ = out_que.get()
+        self.assertEqual(sum1, 3)
+        self.assertEqual(sum2, 5)
