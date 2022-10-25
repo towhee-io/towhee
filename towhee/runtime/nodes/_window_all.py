@@ -47,7 +47,13 @@ class WindowAll(Node):
         self._schema = in_ques[0].schema
 
     def _get_buffer(self):
-        cols = [[] for _ in self._schema]
+        data = self._input_que.get()
+        if not data:
+            return None
+        else:
+            assert len(self._schema) == len(data)
+            cols = [[i] for i in data]
+
         while True:
             data = self._input_que.get()
             if data is None:
@@ -67,6 +73,9 @@ class WindowAll(Node):
         Process each window data.
         """
         in_buffer = self._get_buffer()
+        if in_buffer is None:
+            self._set_finished()
+            return True
 
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
         succ, outputs, msg = self._call(process_data)
