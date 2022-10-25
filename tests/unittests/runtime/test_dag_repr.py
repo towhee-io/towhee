@@ -55,7 +55,7 @@ class TestDAGRepr(unittest.TestCase):
             'outputs': ('d', 'e'),
             'iter_info': {
                 'type': 'filter',
-                'param': {'filter_columns': 'a'}
+                'param': {'filter_by': 'a'}
             },
             'op_info': {
                 'operator': 'towhee/op2',

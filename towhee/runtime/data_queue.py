@@ -203,7 +203,7 @@ class DataQueue:
         que_size = [self._data[index].size() for index in self._queue_index]
         if que_size:
             return min(que_size)
-        return 1
+        return 1 if len(self._scalar_index) > 0 else 0
 
     def col_type(self, col_name):
         return self.type_schema[self.schema.index(col_name)]

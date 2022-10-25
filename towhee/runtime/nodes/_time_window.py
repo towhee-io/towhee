@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+from towhee.runtime.constants import TimeWindowConst
+
 from ._window import Window
 
 
@@ -36,11 +38,11 @@ class TimeWindow(Window):
         ----6-----15------->
     """
     def _init(self):
-        self._time_range_sec = self._node_repr.iter_info.param['time_range_sec']
-        self._time_step_sec = self._node_repr.iter_info.param['time_step_sec']
+        self._time_range_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_range_sec]
+        self._time_step_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_step_sec]
         self._input_que = self._in_ques[0]
         self._schema = self._input_que.schema
-        self._timestamp_index = self._schema.index(self._node_repr.iter_info.param['timestamp_col'])
+        self._timestamp_index = self._schema.index(self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col])
         self._buffer = _TimeWindowBuffer(self._time_range_sec, self._time_step_sec)
         self._row_buffer = []
 

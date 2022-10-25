@@ -42,4 +42,6 @@ class NOPNodeOperator(PyOperator):
         super().__init__()
 
     def __call__(self, *args):
+        if len(args) == 1:
+            return args[0]
         return args

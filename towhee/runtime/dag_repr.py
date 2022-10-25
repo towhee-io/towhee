@@ -14,7 +14,7 @@
 
 from typing import Dict, Any, Set, List, Tuple
 
-from towhee.utils.check_utils import check_set, check_node_iter
+from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
 

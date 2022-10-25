@@ -99,8 +99,8 @@ class TestPipelineManager(unittest.TestCase):
         towhee_dag_test['_output']['inputs'] = ()
         towhee_dag_test['_output']['outputs'] = ()
         runtime_pipeline = RuntimePipeline(towhee_dag_test)
-        result = runtime_pipeline(1, 2, 3).get()
-        self.assertEqual(result, [])
+        result = runtime_pipeline(1, 2, 3)
+        self.assertEqual(result.size, 0)
 
     def test_preload(self):
         towhee_dag_test = copy.deepcopy(self.dag_dict)

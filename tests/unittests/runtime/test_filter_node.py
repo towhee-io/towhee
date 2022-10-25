@@ -133,7 +133,9 @@ class TestFilterNode(unittest.TestCase):
         self.assertTrue(node.status == NodeStatus.FINISHED)
         self.assertTrue(out_que1.sealed)
         self.assertTrue(out_que2.sealed)
-        for i in range(size):
+        self.assertEqual(out_que1.size, 4)
+        self.assertEqual(out_que2.size, 4)
+        for i in range(6, size):
             self.assertEqual(out_que1.get_dict(),
                             {
                                 'url': 'test_url',
@@ -143,6 +145,36 @@ class TestFilterNode(unittest.TestCase):
             self.assertEqual(out_que2.get_dict(),
                             {
                                 'num': i
+                            })
+
+
+    def test_schema_cover2(self):
+        in_que = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
+        size = 10
+        for i in range(size):
+            in_que.put((i, i + 1))
+        in_que.seal()
+        out_que1 = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
+        out_que2 = DataQueue([('num2', ColumnType.QUEUE)])
+        node_info = copy.deepcopy(self.node_info)
+        node_info['inputs'] = ('num1', 'num2')
+        node_info['outputs'] = ('num2', 'num1')
+        node_info['iter_info']['param']['filter_by'] = ['num1']
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertTrue(out_que2.sealed)
+        self.assertEqual(out_que1.size, 4)
+        self.assertEqual(out_que2.size, 4)
+        for i in range(6, size):
+            self.assertEqual(out_que1.get_dict(),
+                            {
+                                'num1': i + 1,
+                                'num2': i
                             })
 
     def test_output_with_scalar(self):

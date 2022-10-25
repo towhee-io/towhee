@@ -14,7 +14,7 @@
 
 import unittest
 
-from towhee.utils.check_utils import check_set, check_keys, check_node_iter
+from towhee.runtime.check_utils import check_set, check_keys, check_node_iter
 
 
 class TestCheckUtils(unittest.TestCase):
@@ -32,11 +32,11 @@ class TestCheckUtils(unittest.TestCase):
             check_set({1, 2, 3}, {1, 2, 6, 7})
 
     def test_node_iter(self):
-        check_node_iter('filter', {'filter_columns': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b', 'x'})
+        check_node_iter('filter', {'filter_by': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b', 'x'})
         with self.assertRaises(ValueError):
-            check_node_iter('filter', {'filter_columns': 'y'}, ('a', 'b'), ('c', 'd'), {'a', 'b', 'x'})
+            check_node_iter('filter', {'filter_by': 'y'}, ('a', 'b'), ('c', 'd'), {'a', 'b', 'x'})
         with self.assertRaises(ValueError):
-            check_node_iter('filter', {'filter_columns': 'x'}, ('a', 'b'), ('c',), {'a', 'b', 'x'})
+            check_node_iter('filter', {'filter_by': 'x'}, ('a', 'b'), ('c',), {'a', 'b', 'x'})
 
         check_node_iter('window', {'size': 3, 'step': 2}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
         with self.assertRaises(ValueError):
@@ -44,6 +44,6 @@ class TestCheckUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_node_iter('window', {'size': 0, 'step': -1}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
 
-        check_node_iter('time_window', {'size': 3, 'step': 2, 'timestamp_col': 'a'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
+        check_node_iter('time_window', {'time_range_sec': 3, 'time_step_sec': 2, 'timestamp_col': 'a'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
         with self.assertRaises(ValueError):
-            check_node_iter('time_window', {'size': 3, 'step': 2, 'timestamp_col': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
+            check_node_iter('time_window', {'time_range_sec': 3, 'time_step_sec': 2, 'timestamp_col': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
