@@ -15,6 +15,7 @@
 
 import unittest
 import copy
+import threading
 
 from towhee.runtime.runtime_pipeline import RuntimePipeline
 from towhee.datacollection.data_collection import DataCollection
@@ -125,3 +126,25 @@ class TestNodesWithFlatMap(unittest.TestCase):
         pipe = RuntimePipeline(self.dag)
         with self.assertRaises(RuntimeError):
             pipe('x', [1])
+
+    def test_multithread(self):
+        pipe = RuntimePipeline(self.dag)
+        pipe.preload()
+        def run(pipe):
+            nums = [1, 2, 3, 4, 5]
+            scalar_num = 4
+            ret = pipe(scalar_num, nums)
+            self.assertEqual(ret.size, 2)
+            self.assertEqual(ret.schema, ['sum'])
+            dc = DataCollection(ret)
+            self.assertEqual(
+                [item.sum for item in dc.to_list()],
+                list(filter(lambda x: x > 7, list(map(lambda x: x + scalar_num, nums))))
+            )
+        ts = []
+        for _ in range(10):
+            ts.append(threading.Thread(target=run, args=(pipe, )))
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
