@@ -24,7 +24,7 @@ def get_op_clone_address_list_from_yaml(descript_paths):
     op_link_list = []
     logger.debug(descript_paths)
     for descript_path in descript_paths:
-        with open(descript_path, encoding='utf-8')as file:
+        with open(descript_path, encoding='utf-8') as file:
             content = file.read()
             data = yaml.load(content, Loader=yaml.FullLoader)
             models = data.get("models")
@@ -59,6 +59,10 @@ def extract_python_code_from_op_readme(op_path, op_name):
     logger.debug("Readme for %s is \n" % op_path)
     logger.debug("%s" % lines)
 
+    # clear test case before extracted the latest
+    if os.path.exists(test_case_name):
+        os.system(f"rm {test_case_name}")
+
     for i in range(len(lines)):
         if ('```Python' in lines[i]) or ('```python' in lines[i]):
             for j in range(i + 1, len(lines)):
@@ -91,11 +95,13 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./animals.jpg', path + '/dataset/test.jpg')
                     elif "./hulk.jpg" in lines[j]:
                         lines[j] = lines[j].replace('./hulk.jpg', path + '/dataset/test.jpg')
+                    elif "./moon.jpeg" in lines[j]:
+                        lines[j] = lines[j].replace('./moon.jpeg', path + '/dataset/test.jpg')
                     elif "./jumpingjack.gif" in lines[j]:
                         lines[j] = lines[j].replace('./jumpingjack.gif', path + '/dataset/test.mp4')
                     elif "./demo_video.mp4" in lines[j]:
                         lines[j] = lines[j].replace('./demo_video.mp4', path + '/dataset/test.mp4')
-                    elif  "./archery.mp4" in lines[j]:
+                    elif "./archery.mp4" in lines[j]:
                         lines[j] = lines[j].replace('./archery.mp4', path + '/dataset/test.mp4')
                     elif "test.wav" in lines[j]:
                         lines[j] = lines[j].replace('test.wav', path + '/dataset/test.wav')
@@ -126,13 +132,15 @@ def execute_ops(op_clone_list):
     op_fail_list = []
     for op_address in op_clone_list:
         logger.debug("Running operator %s" % op_address)
-        #extract each operator name and its classification
+        # extract each operator name and its classification
         others, op_name = op_address.rsplit('/', 1)
         logger.debug("Operator name is: %s" % op_name)
         other, classification = others.rsplit('/', 1)
         op_name_single = classification + '-' + op_name
         logger.debug("Operator name with its classification is: %s" % op_name_single)
         op_single_path = path + '/' + op_name_single
+        if os.path.exists(op_single_path):
+            os.system(f"rm -rf {op_single_path}")
         if not os.path.exists(op_single_path):
             os.system(f"mkdir -p {op_single_path}")
         # os.system(f"cd {op_single_path} && git clone {op_address} {op_name_single}")
@@ -175,8 +183,9 @@ if __name__ == '__main__':
         os.system(f"mkdir -p {path}")
     res = 0
     operator_tasks_path = path + '/operator-tasks'
-    if not os.path.exists(operator_tasks_path):
-        res = os.system(f"cd {path} && git clone git@github.com:towhee-io/operator-tasks.git")
+    if os.path.exists(operator_tasks_path):
+        os.system(f"rm -rf {operator_tasks_path}")
+    res = os.system(f"cd {path} && git clone https://github.com/towhee-io/operator-tasks.git")
     if 0 != res:
         logger.error("Fail to clone operator tasks, please check and retry")
     else:
