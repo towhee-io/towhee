@@ -160,9 +160,17 @@ class NodeRepr:
     def inputs(self) -> Union[str, Tuple]:
         return self._inputs
 
+    @inputs.setter
+    def inputs(self, inputs):
+        self._inputs = inputs
+
     @property
     def outputs(self) -> Union[str, Tuple]:
         return self._outputs
+
+    @outputs.setter
+    def outputs(self, outputs):
+        self._outputs = outputs
 
     @property
     def iter_info(self) -> IterationRepr:
@@ -210,7 +218,7 @@ class NodeRepr:
         check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
         iter_repr = IterationRepr.from_dict(node['iter_info'])
 
-        if name in ['_input', '_output', '_concat']:
+        if name in ['_input', '_output'] or node['iter_info']['type'] == 'concat':
             op_repr = OperatorRepr.from_dict({'operator': name, 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'})
             return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, op_repr, None, node['next_nodes'])
         else:

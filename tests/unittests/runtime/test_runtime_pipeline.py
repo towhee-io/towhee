@@ -142,3 +142,53 @@ class TestPipelineManager(unittest.TestCase):
         runtime_pipeline = RuntimePipeline(towhee_dag_test)
         result = runtime_pipeline(1, 2, 3).get()
         self.assertEqual(result, [-1, 4])
+
+    def test_concat(self):
+        """
+        _input[(a, b, c)]->op1[(a, b)-(d,)]->op3(concat)->_output[(d, e)]
+                    |------>op2[(c,)-(e,)]----^
+        """
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['_input']['next_nodes'] = ['op1', 'op2']
+        towhee_dag_test['op1']['next_nodes'] = ['op3']
+        towhee_dag_test['op2']['next_nodes'] = ['op3']
+        towhee_dag_test['op3'] = {
+            'inputs': (),
+            'outputs': (),
+            'iter_info': {
+                'type': 'concat',
+                'param': None
+            },
+            'next_nodes': ['_output']
+        }
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        result = runtime_pipeline(2, 2, -10).get()
+        self.assertEqual(result[0].diff, 0)
+        self.assertEqual(result[1].sum, 0)
+
+    def test_concat_multi_output(self):
+        """
+        _input[(a, b, c)]->op1[(a, b)-(d,)]->op3(concat)->_output[(a, d, e)]
+                    |------>op2[(c,)-(e,)]----^
+        """
+        towhee_dag_test = copy.deepcopy(self.dag_dict)
+        towhee_dag_test['_input']['next_nodes'] = ['op1', 'op2']
+        towhee_dag_test['op1']['next_nodes'] = ['op3']
+        towhee_dag_test['op2']['next_nodes'] = ['op3']
+        towhee_dag_test['op3'] = {
+            'inputs': (),
+            'outputs': (),
+            'iter_info': {
+                'type': 'concat',
+                'param': None
+            },
+            'next_nodes': ['_output']
+        }
+        towhee_dag_test['_output']['inputs'] = ('a', 'd', 'e')
+        towhee_dag_test['_output']['outputs'] = ('a', 'd', 'e')
+
+        runtime_pipeline = RuntimePipeline(towhee_dag_test)
+        result = runtime_pipeline(2, 2, -10).get()
+        self.assertEqual(result[0], 2)
+        self.assertEqual(result[1].diff, 0)
+        self.assertEqual(result[2].sum, 0)

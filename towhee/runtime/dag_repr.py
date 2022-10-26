@@ -98,8 +98,16 @@ class DAGRepr:
         Returns:
            Dict[str, Tuple]: Dict of the node and the all inputs of this node.
         """
+        all_nodes = ['_input']
         all_inputs = dict((name, nodes['_input'].outputs) for name in nodes)
         for name in top_sort[1:]:
+            if nodes[name].iter_info.type == 'concat':
+                pre_name = all_nodes.pop()
+                while name in nodes[pre_name].next_nodes:
+                    nodes[name].inputs += nodes[pre_name].outputs
+                    pre_name = all_nodes.pop()
+                nodes[name].outputs = nodes[name].inputs
+            all_nodes.append(name)
             if nodes[name].next_nodes is None:
                 continue
             for n in nodes[name].next_nodes:
