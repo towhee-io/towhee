@@ -195,4 +195,3 @@ if __name__ == '__main__':
         op_clone_list = get_op_clone_address_list_from_yaml(descript_paths)
         execute_ops(op_clone_list)
 
-
