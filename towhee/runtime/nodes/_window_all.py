@@ -54,7 +54,7 @@ class WindowAll(Node):
                 break
 
             for i in range(len(self._schema)):
-                if not isinstance(data[i], Empty):
+                if data[i] is not Empty():
                     cols[i].append(data[i])
 
         ret = {}
