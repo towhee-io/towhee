@@ -145,7 +145,7 @@ class TestDAGRepr(unittest.TestCase):
 
     def test_concat(self):
         """
-        _input[(a,b)]->op1[(a,)-(c,)]->concat[(c, d)-(e,)]->_output[(e,)]
+        _input[(a,b)]->op1[(a,)-(c,)]->op3[(c, d)-(c, d)]->_output[(c, d)]
                 |------>op2[(b,)-(d,)]----^
         """
         towhee_dag_test = {
@@ -161,7 +161,7 @@ class TestDAGRepr(unittest.TestCase):
                 'iter_info': {'type': 'map', 'param': None},
                 'op_info': {'operator': 'test1', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
-                'next_nodes': ['_concat']
+                'next_nodes': ['op3']
             },
             'op2': {
                 'inputs': ('b',),
@@ -169,18 +169,18 @@ class TestDAGRepr(unittest.TestCase):
                 'iter_info': {'type': 'map', 'param': None},
                 'op_info': {'operator': 'test2', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
-                'next_nodes': ['_concat']
+                'next_nodes': ['op3']
             },
-            '_concat': {
-                'inputs': ('c', 'd'),
-                'outputs': ('e',),
-                'iter_info': {'type': 'map', 'param': None},
+            'op3': {
+                'inputs': (),
+                'outputs': (),
+                'iter_info': {'type': 'concat', 'param': None},
                 'config': None,
                 'next_nodes': ['_output']
             },
             '_output': {
-                'inputs': ('e',),
-                'outputs': ('e',),
+                'inputs': ('c', 'd'),
+                'outputs': ('c', 'd'),
                 'iter_info': {'type': 'map', 'param': None},
                 'next_nodes': None
             },
@@ -196,7 +196,7 @@ class TestDAGRepr(unittest.TestCase):
         edge2 = [('b', ColumnType.SCALAR)]
         edge3 = [('c', ColumnType.SCALAR)]
         edge4 = [('d', ColumnType.SCALAR)]
-        edge5 = [('e', ColumnType.SCALAR)]
+        edge5 = [('c', ColumnType.QUEUE), ('d', ColumnType.QUEUE)]
         self.assertEqual(dict((s, t) for s, t in edges[0]['data']), dict((s, t) for s, t in edge0))
         self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge1))
         self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge2))
@@ -211,8 +211,8 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['op1'].out_edges, [3])
         self.assertEqual(nodes['op2'].in_edges, [2])
         self.assertEqual(nodes['op2'].out_edges, [4])
-        self.assertEqual(nodes['_concat'].in_edges, [3, 4])
-        self.assertEqual(nodes['_concat'].out_edges, [5])
+        self.assertEqual(nodes['op3'].in_edges, [3, 4])
+        self.assertEqual(nodes['op3'].out_edges, [5])
         self.assertEqual(nodes['_output'].in_edges, [5])
         self.assertEqual(nodes['_output'].out_edges, [6])
 
