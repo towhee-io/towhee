@@ -46,4 +46,5 @@ jobs:
         python3 -m pip install --no-cache-dir -r requirements.text
         cd  /__w/towhee/towhee/tests/testcases/hub
         export TOWHEE_WORKER=True
+        rm -rf ~/.towhee/*
         python3 -W ignore execute_hub_operators.py
