@@ -53,8 +53,8 @@ class OperatorPool:
     `OperatorPool` manages `Operator` creation, acquisition, release, and garbage
     collection. Each `TaskExecutor` has one `OperatorPool`.
     """
-    def __init__(self, cache_path: str = None):
-        self._op_loader = OperatorLoader(cache_path)
+    def __init__(self):
+        self._op_loader = OperatorLoader()
         self._all_ops = {}
         self._lock = threading.Lock()
 

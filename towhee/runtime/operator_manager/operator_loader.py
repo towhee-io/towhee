@@ -23,7 +23,6 @@ from pkg_resources import DistributionNotFound
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
 from towhee.hub.file_manager import FileManager
-from towhee.engine import LOCAL_OPERATOR_CACHE
 from .operator_registry import OperatorRegistry
 
 
@@ -37,11 +36,6 @@ class OperatorLoader:
             Local cache path to use. If not specified, it will default to
             `$HOME/.towhee/operators`.
     """
-    def __init__(self, cache_path: str = None):
-        if cache_path is None:
-            self._cache_path = LOCAL_OPERATOR_CACHE
-        else:
-            self._cache_path = Path(cache_path)
 
     def _load_interal_op(self, op_name: str, arg: List[Any], kws: Dict[str, Any]): # pylint: disable=unused-argument
         if op_name in ['_input', '_output']:

@@ -376,7 +376,7 @@ class TestMapNode(unittest.TestCase):
             'outputs': (),
             'op_info': {
                 'type': 'lambda',
-                'operator': lambda x: print(x),
+                'operator': print,
                 'tag': 'main',
                 'init_args': None,
                 'init_kws': {}
@@ -393,7 +393,7 @@ class TestMapNode(unittest.TestCase):
         in_que.put((1, ))
         in_que.put((2, ))
         in_que.seal()
-        out_que = DataQueue([])        
+        out_que = DataQueue([])
         node = create_node(node_repr, self.op_pool, [in_que], [out_que])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-from pathlib import Path
 
 from towhee.operator import Operator
 from towhee.runtime.operator_manager import OperatorPool
@@ -25,8 +24,7 @@ class TestOperatorPool(unittest.TestCase):
     """
 
     def setUp(self):
-        cache_path = Path(__file__).parent.parent.resolve()
-        self._op_pool = OperatorPool(cache_path=cache_path)
+        self._op_pool = OperatorPool()
 
     def test_acquire_release(self):
         hub_op_id = 'local/add_operator'
