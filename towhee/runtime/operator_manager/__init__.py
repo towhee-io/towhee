@@ -14,10 +14,12 @@
 from .operator_pool import OperatorPool
 from .operator_loader import OperatorLoader
 from .operator_registry import OperatorRegistry
+from .operator_action import OperatorAction
 
 
 __all__ = [
     'OperatorPool',
     'OperatorLoader',
-    'OperatorRegistry'
+    'OperatorRegistry',
+    'OperatorAction',
 ]
