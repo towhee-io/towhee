@@ -38,9 +38,11 @@ def check_set(inputs: Tuple, all_inputs: Set[str]):
     Check if the inputs in all_inputs.
 
     Args:
-        inputs (`Set[str]`): The inputs schema.
+        inputs (`Tuple[str]`): The inputs schema.
         all_inputs (`Set[str]`): The all inputs schema in the DAG util the node.
     """
+    if isinstance(inputs, str):
+        inputs = (inputs,)
     inputs = set(inputs)
     if not inputs.issubset(all_inputs):
         raise ValueError(f'The DAG Nodes inputs {str(inputs)} is not valid, which is not declared: {inputs - all_inputs}.')
