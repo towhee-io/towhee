@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import weakref
 import unittest
 
 from towhee.operator import PyOperator
@@ -192,3 +193,38 @@ class TestPipelineManager(unittest.TestCase):
         self.assertEqual(result[0], 2)
         self.assertEqual(result[1].diff, 0)
         self.assertEqual(result[2].sum, 0)
+
+    def test_runtime_pipeline_release(self):
+        self.assertTrue('test-rp/sub-operator' in OperatorRegistry.op_names())
+        num = 0
+        pool_ref = callable
+        # pylint: disable=unused-variable
+        @register(name='add')
+        class AddOperator(PyOperator):
+            def __init__(self, fac):
+                self.factor = fac
+
+            def __call__(self, x):
+                return self.factor + x
+
+            def __del__(self):
+                nonlocal num
+                num += 1
+
+        def func():
+            towhee_dag_test = copy.deepcopy(self.dag_dict)
+            towhee_dag_test['op1']['op_info']['operator'] = 'test-rp/sub-operator'
+            towhee_dag_test['op2']['op_info']['operator'] = 'add'
+            towhee_dag_test['op2']['op_info']['init_args'] = (1,)
+            towhee_dag_test['op2']['op_info']['init_kws'] = None
+            runtime_pipeline = RuntimePipeline(towhee_dag_test)
+            nonlocal pool_ref
+            pool_ref = weakref.ref(runtime_pipeline._operator_pool)  # pylint: disable=protected-access
+            result = runtime_pipeline(1, 2, 3).get()
+            self.assertEqual(result, [-1, 4])
+            self.assertIsNotNone(pool_ref())
+
+        for i in range(10):
+            func()
+            self.assertIsNone(pool_ref())
+            self.assertEqual(num, i + 1)

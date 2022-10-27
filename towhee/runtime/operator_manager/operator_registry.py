@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import types
-from collections import namedtuple
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from towhee.operator import SharedType
 from .uri import URI
@@ -43,18 +42,12 @@ class OperatorRegistry:
 
     @staticmethod
     def register(
-            name: str = None,
-            input_schema=None,  # TODO: parse input_schema from code @shiyu22
-            output_schema=None,
-            flag=None):
+            name: str = None):
         """
         Register a class, function, or callable as a towhee operator.
 
         Args:
             name (str, optional): operator name, will use the class/function name if None.
-            input_schema(NamedTuple, optional): input schema for the operator. Defaults to None.
-            output_schema(NamedTuple, optional): output schema, will convert the operator output to NamedTuple if not None.
-            flag ([OperatorFlag], optional): operator flag. Defaults to OperatorFlag.EMPTYFLAG.
 
         Returns:
             [type]: [description]
@@ -65,22 +58,7 @@ class OperatorRegistry:
             cls = name
             return OperatorRegistry.register()(cls)
 
-        if output_schema is None:  # none output schema
-            output_schema = namedtuple('Output', 'col0')
-        if isinstance(output_schema, str):  # string schema 'col0 col1'
-            output_schema = output_schema.split()
-
-        # list schema ['col0', 'col1']
-        if isinstance(output_schema, List):
-            if len(output_schema) == 0 or isinstance(output_schema[0], str):
-                output_schema = namedtuple('Output', output_schema)
-        # list schema [(int, (1, )), (np.float32, (-1, -1, 3))] is for triton, do nothing.
-
         def wrapper(cls):
-            metainfo = dict(input_schema=input_schema,
-                            output_schema=output_schema,
-                            flag=flag)
-
             nonlocal name
             name = URI(cls.__name__ if name is None else name).resolve_repo('anon')
 
@@ -96,21 +74,14 @@ class OperatorRegistry:
                         '__doc__': func.__doc__,
                     })
 
-            if output_schema is not None:
-                old_call = cls.__call__
-
-                def wrapper_call(self, *args, **kws):
-                    return old_call(self, *args, **kws)
-
-                cls.__call__ = wrapper_call
-                cls.__abstractmethods__ = set()
-            cls.metainfo = metainfo
             if not hasattr(cls, 'shared_type'):
                 cls.shared_type = SharedType.Shareable
-            if flag is not None:
-                cls.flag = property(lambda _: flag)
             OperatorRegistry.REGISTRY[name] = cls
 
             return cls
 
         return wrapper
+
+    @staticmethod
+    def op_names():
+        return list(OperatorRegistry.REGISTRY.keys())

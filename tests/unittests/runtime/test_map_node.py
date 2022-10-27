@@ -369,3 +369,35 @@ class TestMapNode(unittest.TestCase):
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         node = create_node(node_repr, self.op_pool, [in_que], [])
         self.assertFalse(node.initialize())
+
+    def test_no_output(self):
+        node_info = {
+            'inputs': ('num', ),
+            'outputs': (),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x: print(x),
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        in_que.put((1, ))
+        in_que.put((2, ))
+        in_que.seal()
+        out_que = DataQueue([])        
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que.sealed)
+        self.assertEqual(out_que.size, 0)

@@ -148,3 +148,130 @@ class TestNodesWithFlatMap(unittest.TestCase):
             t.start()
         for t in ts:
             t.join()
+
+
+class TestLargeDataConcat(unittest.TestCase):
+    """
+    Test Nodes
+    """
+
+    dag = {
+        '_input': {
+            'inputs': ('scalar_num', 'nums'),
+            'outputs': ('scalar_num', 'nums'),
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'next_nodes': ['op1']
+        },
+        'op1': {
+            'inputs': ('nums', ),
+            'outputs': ('num', ),
+            'iter_info': {
+                'type': 'flat_map',
+                'param': None
+            },
+            'op_info': {
+                'operator': lambda x: x,
+                'type': 'lambda',
+                'init_args': None,
+                'init_kws': None,
+                'tag': 'main'
+            },
+            'config': None,
+            'next_nodes': ['op2-1', 'op2-2']
+        },
+        'op2-1': {
+            'inputs': ('scalar_num', 'num'),
+            'outputs': ('num1', ),
+            'iter_info': {
+                'type': 'map',
+                'param': None,
+            },
+            'op_info': {
+                'operator': lambda x, y: x + y,
+                'type': 'lambda',
+                'init_args': None,
+                'init_kws': None,
+                'tag': 'main'
+            },
+            'config': {},
+            'next_nodes': ['op3']
+        },
+        'op2-2': {
+            'inputs': ('num', ),
+            'outputs': ('num2', ),
+            'iter_info': {
+                'type': 'filter',
+                'param': {
+                    'filter_by': ('num', )
+                },
+            },
+            'op_info': {
+                'operator': lambda x: x > 2000,
+                'type': 'lambda',
+                'init_args': None,
+                'init_kws': None,
+                'tag': 'main'
+            },
+            'config': {},
+            'next_nodes': ['op3']
+        },
+        'op3': {
+            'inputs': (),
+            'outputs': (),
+            'iter_info': {
+                'type': 'concat',
+                'param': {}
+            },
+            'op_info': {
+                'operator': None,
+                'type': None,
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
+            'config': {},
+            'next_nodes': ['op4']
+        },
+        'op4': {
+            'inputs': ('num1', 'num2'),
+            'outputs': ('sum1', 'sum2'),
+            'iter_info': {
+                'type': 'window_all',
+                'param': None
+            },
+            'op_info': {
+                'operator': lambda x, y: (sum(x), sum(y)),
+                'type': 'lambda',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        },
+        '_output': {
+            'inputs': ('sum1', 'sum2'),
+            'outputs': ('sum1', 'sum2'),
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'next_nodes': None
+        },
+    }
+
+    def test_normal(self):
+        pipe = RuntimePipeline(self.dag)
+        nums = list(range(1000, 3000))
+        scalar_num = 4
+        ret = pipe(scalar_num, nums)
+        self.assertEqual(ret.size, 1)
+        self.assertEqual(ret.get_dict(),
+                         {
+                             'sum1': sum(range(1000, 3000)) + scalar_num * 2000,
+                             'sum2': sum(range(2001, 3000))
+                         }
+        )

@@ -22,7 +22,6 @@ from pkg_resources import DistributionNotFound
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
-from towhee.operator.concat_operator import ConcatOperator
 from towhee.hub.file_manager import FileManager
 from towhee.engine import LOCAL_OPERATOR_CACHE
 from .operator_registry import OperatorRegistry
@@ -44,11 +43,9 @@ class OperatorLoader:
         else:
             self._cache_path = Path(cache_path)
 
-    def _load_interal_op(self, op_name: str, arg: List[Any], kws: Dict[str, Any]):
+    def _load_interal_op(self, op_name: str, arg: List[Any], kws: Dict[str, Any]): # pylint: disable=unused-argument
         if op_name in ['_input', '_output']:
             return NOPNodeOperator()
-        elif op_name == '_concat':
-            return ConcatOperator(*arg, **kws)
         else:
             # Not a interal operator
             return None
