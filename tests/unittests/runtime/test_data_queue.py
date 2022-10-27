@@ -15,7 +15,7 @@ import unittest
 import threading
 import time
 
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 
 
 class TestDataQueue(unittest.TestCase):
@@ -213,7 +213,7 @@ class TestDataQueue(unittest.TestCase):
             if i < vec_size:
                 self.assertEqual(ret[2], 'vec')
             else:
-                self.assertEqual(ret[2], None)
+                self.assertIsInstance(ret[2], Empty)
             i += 1
         t.join()
 

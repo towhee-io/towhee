@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -69,7 +69,7 @@ class TestFilterNode(unittest.TestCase):
                             {
                                 'url': 'test_url',
                                 'num': i,
-                                'larger_than_5': i + 6 if i < 4 else None
+                                'larger_than_5': i + 6 if i < 4 else Empty()
                             })
             if i > 5:
                 self.assertEqual(out_que2.get_dict(),
@@ -103,7 +103,7 @@ class TestFilterNode(unittest.TestCase):
                              {
                                  'url': 'test_url',
                                  'num': i,
-                                 'larger_than_5': i + 6 if i < 4 else None
+                                 'larger_than_5': i + 6 if i < 4 else Empty()
                              })
             if i > 5:
                 self.assertEqual(out_que2.get_dict(),

@@ -14,7 +14,11 @@
 
 
 from typing import List
+
+from towhee.runtime.data_queue import Empty
+
 from .node import Node
+
 
 
 class WindowAll(Node):
@@ -50,7 +54,8 @@ class WindowAll(Node):
                 break
 
             for i in range(len(self._schema)):
-                cols[i].append(data[i])
+                if data[i] is not Empty():
+                    cols[i].append(data[i])
 
         ret = {}
         for i in range(len(self._schema)):

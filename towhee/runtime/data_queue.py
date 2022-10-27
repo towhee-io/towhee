@@ -65,7 +65,7 @@ class DataQueue:
             return True
 
     def put_dict(self, inputs: Dict) -> bool:
-        data = [inputs.get(name, _Empty()) for name in self._schema.col_names]
+        data = [inputs.get(name, Empty()) for name in self._schema.col_names]
         return self.put(data)
 
     def batch_put(self, batch_inputs: List[List]) -> bool:
@@ -96,7 +96,7 @@ class DataQueue:
         for name in self._schema.col_names:
             col = batch_inputs.get(name)
             if not col:
-                cols.append([_Empty()])
+                cols.append([Empty()])
             else:
                 need_put = True
                 cols.append(col)
@@ -251,8 +251,25 @@ class _Schema:
         return self._cols[index].col_type
 
 
-class _Empty:
-    pass
+class Empty:
+    """
+    Empty data.
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kw):
+        if cls._instance is None:
+            with cls._lock:
+                cls._instance = object.__new__(cls, *args, **kw)
+        return cls._instance
+
+    def __str__(self):
+        return 'Empty()'
+
+    def __repr__(self):
+        return 'Empty()'
+
 
 class _QueueColumn:
     """
@@ -264,11 +281,11 @@ class _QueueColumn:
 
     def get(self):
         if len(self._q) == 0:
-            return None
+            return Empty()
         return self._q.popleft()
 
     def put(self, data) -> bool:
-        if isinstance(data, _Empty):
+        if data is Empty():
             return
         self._q.append(data)
 
@@ -284,7 +301,7 @@ class _ScalarColumn:
         self._data = None
 
     def put(self, data):
-        if isinstance(data, _Empty):
+        if data is Empty():
             return
         self._data = data
 

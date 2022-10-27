@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -66,7 +66,7 @@ class TestFlatMapNode(unittest.TestCase):
             self.assertEqual(out_que1.get_dict(),
                             {
                                 'url': 'test_url',
-                                'num': [0,1,2] if i == 0 else None,
+                                'num': [0,1,2] if i == 0 else Empty(),
                                 'res': i + 1
                             })
 
@@ -100,7 +100,7 @@ class TestFlatMapNode(unittest.TestCase):
             self.assertEqual(out_que1.get_dict(),
                              {
                                  'url': 'test_url',
-                                 'num': range(i, i+3) if i < 5 else None,
+                                 'num': range(i, i+3) if i < 5 else Empty(),
                                  'res': i//3 + i%3 + 1
                              })
         for i in range(size * 3):
@@ -215,7 +215,7 @@ class TestFlatMapNode(unittest.TestCase):
             self.assertEqual(out_que1.get_dict(),
                             {
                                 'url': 'test_url',
-                                'num': [0, 1, 2] if i == 0 else None,
+                                'num': [0, 1, 2] if i == 0 else Empty(),
                                 'res1': i + 10,
                                 'res2': i + 10
                             })
@@ -310,7 +310,7 @@ class TestFlatMapNode(unittest.TestCase):
         for i in [1, 2]:
             self.assertEqual(out_que1.get_dict(),
                             {
-                                'num': [1, 2] if i == 1 else None,
+                                'num': [1, 2] if i == 1 else Empty(),
                                 'res1': i,
                                 'res2': i + 10
                             })
@@ -352,7 +352,7 @@ class TestFlatMapNode(unittest.TestCase):
         for i in range(2):
             self.assertEqual(out_que.get_dict(),
                             {
-                                'num1': [1, 2] if i == 0 else None,
-                                'num2': [1, 2] if i == 0 else None,
+                                'num1': [1, 2] if i == 0 else Empty(),
+                                'num2': [1, 2] if i == 0 else Empty(),
                                 'res': (i+1) * 2,
                             })

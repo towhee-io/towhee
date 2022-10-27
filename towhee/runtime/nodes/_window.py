@@ -16,6 +16,7 @@
 from typing import List
 
 from towhee.runtime.constants import WindowConst
+from towhee.runtime.data_queue import Empty
 
 from .node import Node
 
@@ -79,7 +80,8 @@ class Window(Node):
         cols = [[] for _ in self._schema]
         for row in rows:
             for i in range(len(self._schema)):
-                cols[i].append(row[i])
+                if row[i] is not Empty():
+                    cols[i].append(row[i])
         ret = {}
         for i in range(len(self._schema)):
             ret[self._schema[i]] = cols[i]

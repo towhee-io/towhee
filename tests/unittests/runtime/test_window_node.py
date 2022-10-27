@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
 from towhee.runtime.nodes._window import _WindowBuffer
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -208,8 +208,8 @@ class TestWindowNode(unittest.TestCase):
         exp_ret1 = [
             {'num1': 1, 'num2': 1, 'sum1': 3, 'sum2': 6},
             {'num1': 1, 'num2': 2, 'sum1': 1, 'sum2': 4},
-            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -249,8 +249,8 @@ class TestWindowNode(unittest.TestCase):
         exp_ret1 = [
             {'num1': 1, 'num2': 1, 'sum1': 3, 'sum2': 6},
             {'num1': 1, 'num2': 2, 'sum1': 2, 'sum2': 7},
-            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -286,8 +286,8 @@ class TestWindowNode(unittest.TestCase):
         exp_ret1 = [
             {'num1': 1, 'num2': 1, 'sum1': 2, 'sum2': 3},
             {'num1': 1, 'num2': 2, 'sum1': 1, 'sum2': 4},
-            {'num1': 1, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 1, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 1, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 1, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -330,10 +330,10 @@ class TestWindowNode(unittest.TestCase):
 
         exp_ret1 = [
             {'num1': 1, 'num2': 0, 'sum1': 3, 'sum2': 1},
-            {'num1': 2, 'num2': 1, 'sum1': None, 'sum2': None},
-            {'num1': 3, 'num2': 2, 'sum1': None, 'sum2': None},
-            {'num1': 4, 'num2': 3, 'sum1': None, 'sum2': None},
-            {'num1': 5, 'num2': 4, 'sum1': None, 'sum2': None}
+            {'num1': 2, 'num2': 1, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 3, 'num2': 2, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 4, 'num2': 3, 'sum1': Empty(), 'sum2': Empty()},
+            {'num1': 5, 'num2': 4, 'sum1': Empty(), 'sum2': Empty()}
         ]
 
         exp_ret2 = [
@@ -432,3 +432,58 @@ class TestWindowNode(unittest.TestCase):
         self.assertTrue(out_que2.sealed)
         self.assertTrue(out_que1.size == 0)
         self.assertTrue(out_que2.size == 0)
+
+    def test_diff_size(self):
+        in_que = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
+        in_que.put((1, 2))
+        in_que.put((1, Empty()))
+        in_que.put((1, 3))
+        in_que.put((3, 4))
+        in_que.put((5, Empty()))
+        in_que.seal()
+
+        out_que = DataQueue([
+            ('sum1', ColumnType.QUEUE),
+            ('sum2', ColumnType.QUEUE)
+        ])
+
+
+
+        node_info = {
+            'inputs': ('num1', 'num2'),
+            'outputs': ('sum1', 'sum2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y: (sum(x), sum(y)),
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'window',
+                'param': {
+                    'size': 2,
+                    'step': 2
+                }
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+
+        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que.sealed)
+        self.assertTrue(out_que.size == 3)
+        sum1, sum2 = out_que.get()
+        self.assertEqual(sum1, 2)
+        self.assertEqual(sum2, 5)
+        sum1, sum2 = out_que.get()
+        self.assertEqual(sum1, 4)
+        self.assertEqual(sum2, 4)
+
+        sum1, sum2 = out_que.get()
+        self.assertEqual(sum1, 5)
+        self.assertEqual(sum2, 0)
