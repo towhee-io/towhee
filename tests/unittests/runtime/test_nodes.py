@@ -209,7 +209,7 @@ class TestLargeDataConcat(unittest.TestCase):
                 },
             },
             'op_info': {
-                'operator': lambda x: x > 2000,
+                'operator': lambda x: x > 2500,
                 'type': 'lambda',
                 'init_args': None,
                 'init_kws': None,
@@ -265,13 +265,13 @@ class TestLargeDataConcat(unittest.TestCase):
 
     def test_normal(self):
         pipe = RuntimePipeline(self.dag)
-        nums = list(range(1000, 3000))
+        nums = list(range(3000))
         scalar_num = 4
         ret = pipe(scalar_num, nums)
         self.assertEqual(ret.size, 1)
         self.assertEqual(ret.get_dict(),
                          {
-                             'sum1': sum(range(1000, 3000)) + scalar_num * 2000,
-                             'sum2': sum(range(2001, 3000))
+                             'sum1': sum(range(3000)) + scalar_num * 3000,
+                             'sum2': sum(range(2501, 3000))
                          }
         )

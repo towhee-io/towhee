@@ -24,7 +24,7 @@ class DataQueue:
     Col-based storage.
     """
 
-    def __init__(self, schema_info, max_size=0):
+    def __init__(self, schema_info, max_size=1000):
         self._max_size = max_size
         self._schema = _Schema(schema_info)
         self._data = []
@@ -129,6 +129,18 @@ class DataQueue:
         for i in range(len(names)):
             ret[names[i]] = data[i]
         return ret
+
+    @property
+    def max_size(self):
+        return self._max_size
+
+    @max_size.setter
+    def max_size(self, max_size):
+        with self._not_full:
+            need_notify = self._max_size > max_size or max_size == 0
+            self._max_size = max_size
+            if need_notify:
+                self._not_full.notify_all()
 
     @property
     def size(self) -> int:

@@ -27,6 +27,8 @@ class Concat(Node):
     """
 
     def initialize(self) -> bool:
+        for q in self._in_ques:
+            q.max_size = 0
         return True
 
     def process_step(self) -> bool:
