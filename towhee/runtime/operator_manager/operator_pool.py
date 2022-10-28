@@ -58,18 +58,6 @@ class OperatorPool:
         self._all_ops = {}
         self._lock = threading.Lock()
 
-    @staticmethod
-    def _operator_id(hub_op_id: str, op_args: List, op_kws: Dict[str, any], tag: str):
-        if op_args:
-            args_tup = tuple(sorted(op_args))
-        else:
-            args_tup = ()
-        if op_kws:
-            kws_tup = tuple(sorted(op_kws.items()))
-        else:
-            kws_tup = ()
-        return (hub_op_id, tag) + args_tup + kws_tup
-
     def __len__(self):
         num = 0
         for _, op_storage in self._all_ops.items():
@@ -79,12 +67,13 @@ class OperatorPool:
     def clear(self):
         self._all_ops = {}
 
-    def acquire_op(self, hub_op_id: str, op_args: List, op_kws: Dict[str, any], tag: str) -> Operator:
+    def acquire_op(self, key, hub_op_id: str, op_args: List, op_kws: Dict[str, any], tag: str) -> Operator:
         """
         Instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
 
         Args:
+            key: (`str`)
             hub_op_id: (`str`)
             op_args: (`List`)
                 Operator init parameters with args
@@ -100,17 +89,16 @@ class OperatorPool:
 
         # Load the operator if the computed key does not exist in the operator
         # dictionary.
-        op_key = OperatorPool._operator_id(hub_op_id, op_args, op_kws, tag)
         with self._lock:
-            storage = self._all_ops.get(op_key, None)
+            storage = self._all_ops.get(key, None)
             if storage is None:
                 storage = _OperatorStorage()
-                self._all_ops[op_key] = storage
+                self._all_ops[key] = storage
 
             if not storage.op_available():
                 op = self._op_loader.load_operator(hub_op_id, op_args, op_kws, tag)
-                op.key = op_key
                 storage.put(op, True)
+                op.key = key
             return storage.get()
 
     def release_op(self, op: Operator):
