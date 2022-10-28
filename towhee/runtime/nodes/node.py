@@ -75,28 +75,40 @@ class Node(ABC):
         if op_type == 'hub':
             try:
                 hub_id = self._node_repr.op_info.operator
-                self._op = self._op_pool.acquire_op(hub_id,
-                                                    self._node_repr.op_info.init_args,
-                                                    self._node_repr.op_info.init_kws,
-                                                    self._node_repr.op_info.tag)
+                self._op = self._op_pool.acquire_op(
+                    self.id,
+                    hub_id,
+                    self._node_repr.op_info.init_args,
+                    self._node_repr.op_info.init_kws,
+                    self._node_repr.op_info.tag)
                 return True
             except Exception as e:  # pylint: disable=broad-except
-                err = 'Create operator {}:{} with args {} and kws {} failed, err: {}'.format(hub_id,
-                                                                                             self._node_repr.op_info.tag,
-                                                                                             str(self._node_repr.op_info.init_args),
-                                                                                             str(self._node_repr.op_info.init_kws),
-                                                                                             str(e))
-                engine_log.error(err)
+                st_err = '{}, {}'.format(str(e), traceback.format_exc())
+                err = 'Create {} operator {}:{} with args {} and kws {} failed, err: {}'.format(
+                    self.name,
+                    hub_id,
+                    self._node_repr.op_info.tag,
+                    str(self._node_repr.op_info.init_args),
+                    str(self._node_repr.op_info.init_kws),
+                    str(st_err))
+                self._set_failed(err)
             return False
         elif op_type in ['lambda', 'callable']:
             self._op = self._node_repr.op_info.operator
             return True
         else:
-            engine_log.error('Unkown operator type: %s', op_type)
+            err = 'Unkown callable type {}'.format(op_type)
+            self._set_failed(err)
             return False
 
     @property
     def name(self):
+        # TODO
+        # Can be named in config.
+        return self._node_repr.name
+
+    @property
+    def id(self):
         return self._node_repr.name
 
     @property

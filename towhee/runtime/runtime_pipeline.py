@@ -57,9 +57,13 @@ class Graph:
             self._node_runners.append(node)
 
     def result(self) -> any:
+        errs = ''
         for node in self._node_runners:
             if node.status != NodeStatus.FINISHED:
-                raise RuntimeError(node.err_msg)
+                if node.status ==NodeStatus.FAILED:
+                    errs += node.err_msg + '\n'
+        if errs:
+            raise RuntimeError(errs)
         end_edge_num = self._nodes['_output'].out_edges[0]
         res = self._data_queues[end_edge_num]
         return res

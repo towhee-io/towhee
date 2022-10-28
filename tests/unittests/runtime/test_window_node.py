@@ -16,6 +16,7 @@
 import unittest
 import time
 import copy
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
@@ -141,9 +142,11 @@ class TestWindowNode(unittest.TestCase):
         'config': {},
         'next_nodes': ['_output']
     }
-    node_repr = NodeRepr.from_dict('test_node', node_info)
-    op_pool = OperatorPool()
-    thread_pool = ThreadPoolExecutor()
+
+    def setUp(self):
+        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.op_pool = OperatorPool()
+        self.thread_pool = ThreadPoolExecutor()
 
     def _test_function(self, node_info, exp_ret1, exp_ret2):
         in_que = DataQueue([('num1', ColumnType.SCALAR), ('num2', ColumnType.QUEUE)])

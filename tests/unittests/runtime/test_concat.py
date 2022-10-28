@@ -15,6 +15,7 @@
 
 import unittest
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
@@ -44,9 +45,12 @@ class TestMapNode(unittest.TestCase):
         'config': {},
         'next_nodes': ['_output']
     }
-    node_repr = NodeRepr.from_dict('test_node', node_info)
-    op_pool = OperatorPool()
-    thread_pool = ThreadPoolExecutor()
+
+
+    def setUp(self):
+        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.op_pool = OperatorPool()
+        self.thread_pool = ThreadPoolExecutor()
 
     def test_normal(self):
         in_que1 = DataQueue([('url', ColumnType.SCALAR), ('num1', ColumnType.QUEUE)])
