@@ -19,6 +19,15 @@ from copy import deepcopy
 from towhee.runtime.operator_manager import OperatorAction
 from towhee.runtime.factory import _OperatorWrapper
 from towhee.runtime.runtime_pipeline import RuntimePipeline
+from towhee.runtime.constants import (
+    MapConst,
+    WindowAllConst,
+    WindowConst,
+    FilterConst,
+    TimeWindowConst,
+    FlatMapConst,
+    ConcatConst
+)
 
 
 class Pipeline:
@@ -134,7 +143,7 @@ class Pipeline:
             'inputs': (),
             'outputs': (),
             'iter_info': {
-                'type': 'concat',
+                'type': ConcatConst.name,
                 'param': None
             },
             'next_nodes': [],
@@ -171,7 +180,7 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'map',
+                'type': MapConst.name,
                 'param': None
             },
             'config': config,
@@ -208,7 +217,7 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'flat_map',
+                'type': FlatMapConst.name,
                 'param': None
             },
             'config': config,
@@ -244,8 +253,8 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'filter',
-                'param': {'filter_columns': filter_columns}
+                'type': FilterConst.name,
+                'param': {FilterConst.param.filter_by: filter_columns}
             },
             'config': config,
             'next_nodes': [],
@@ -282,8 +291,10 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'time_window',
-                'param': {'size': size, 'step': step, 'timestamp_col': timestamp_col}
+                'type': TimeWindowConst.name,
+                'param': {TimeWindowConst.param.time_range_sec: size,
+                          TimeWindowConst.param.time_step_sec: step,
+                          TimeWindowConst.param.timestamp_col: timestamp_col}
             },
             'config': config,
             'next_nodes': [],
@@ -319,8 +330,9 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'window',
-                'param': {'size': size, 'step': step}
+                'type': WindowConst.name,
+                'param': {WindowConst.param.size: size,
+                          WindowConst.param.step: step}
             },
             'config': config,
             'next_nodes': [],
@@ -354,7 +366,7 @@ class Pipeline:
             'outputs': output_schema,
             'op_info': fn_action.serialize(),
             'iter_info': {
-                'type': 'window_all',
+                'type': WindowAllConst.name,
                 'param': None,
             },
             'config': config,
