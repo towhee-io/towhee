@@ -24,9 +24,7 @@ jobs:
     - name: work around permission
       run: |
         git config --global --add safe.directory /__w/towhee/towhee
-    - uses: actions/checkout@v2.0.0
-      with:
-        lfs: true
+    - uses: actions/checkout@master
     - name: Generate coverage report
       run: |
         export TOWHEE_WORKER=True
