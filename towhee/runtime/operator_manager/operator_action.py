@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pickle
-import marshal
-
 
 # pylint: disable=protected-access
 class OperatorAction:
@@ -95,19 +92,9 @@ class OperatorAction:
                 'init_kws': self._op_kwargs if len(self._op_kwargs) != 0 else None,
                 'tag': self._tag
             }
-        elif self._type == 'lambda':
-            self._loaded_fn = marshal.dumps(self._fn.__code__)
+        elif self._type in ['lambda', 'callable']:
             return {
-                'operator': self._loaded_fn,
-                'type': self._type,
-                'init_args': None,
-                'init_kws': None,
-                'tag': None
-            }
-        elif self._type == 'callable':
-            self._loaded_fn = pickle.dumps(self._fn)
-            return {
-                'operator': self._loaded_fn,
+                'operator': self._fn,
                 'type': self._type,
                 'init_args': None,
                 'init_kws': None,

@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import types
+
+
 from typing import List
 from enum import Enum, auto
 from abc import ABC
 import traceback
-import pickle
-import marshal
 
 from towhee.runtime.data_queue import DataQueue
 from towhee.utils.log import engine_log
@@ -94,15 +93,11 @@ class Node(ABC):
                     str(st_err))
                 self._set_failed(err)
             return False
-        elif op_type == 'callable':
-            self._op = pickle.loads(self._node_repr.op_info.operator)
-            return True
-        elif op_type == 'lambda':
-            lambda_op = marshal.loads(self._node_repr.op_info.operator)
-            self._op = types.LambdaType(lambda_op, globals())
+        elif op_type in ['lambda', 'callable']:
+            self._op = self._node_repr.op_info.operator
             return True
         else:
-            err = 'Unknown callable type {}'.format(op_type)
+            err = 'Unkown callable type {}'.format(op_type)
             self._set_failed(err)
             return False
 

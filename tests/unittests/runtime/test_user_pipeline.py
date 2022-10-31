@@ -34,9 +34,6 @@ class AddOperator:
 def sub_operator(x, y):
     return x - y
 
-def func(x):
-    return x + 2
-
 
 class TestPipeline(unittest.TestCase):
     """
@@ -45,33 +42,35 @@ class TestPipeline(unittest.TestCase):
     def test_property(self):
         pipe1 = Pipeline.input('a', 'b').map('a', 'c', ops.towhee.test_op1('a'))
         self.assertEqual(len(pipe1.dag), 2)
-        self.assertEqual(pipe1.config, None)
+        self.assertEqual(pipe1.config, {'engine': None, 'parallel': None, 'jit': None, 'format_priority': None})
 
-        pipe2 = pipe1.set_config({'parallel': 4}).map('c', 'd', ops.test_op3())
+        pipe2 = pipe1.set_config(parallel=4).map('c', 'd', ops.test_op3())
         self.assertEqual(len(pipe2.dag), 3)
-        self.assertEqual(pipe2.config, {'parallel': 4})
+        self.assertEqual(pipe2.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
 
-        pipe3 = pipe1.map('a', 'c', ops.towhee.test_op3('a')).set_config({'parallel': 3})
+        pipe3 = pipe1.map('a', 'c', ops.towhee.test_op3('a')).set_config(parallel=3)
         self.assertEqual(len(pipe3.dag), 3)
-        self.assertEqual(pipe3.config, {'parallel': 3})
+        self.assertEqual(pipe3.config, {'engine': None, 'parallel': 3, 'jit': None, 'format_priority': None})
 
         with self.assertRaises(ValueError):
             pipe2.concat(pipe3)
-        pipe3.set_config({'parallel': 4})
+        pipe3.set_config(parallel=4)
         pipe4 = pipe2.concat(pipe3)
         self.assertEqual(len(pipe4.dag), 5)
-        self.assertEqual(pipe4.config, {'parallel': 4})
+        self.assertEqual(pipe4.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
 
-        pipe3.set_config(None)
+        pipe3.clean_config()
         pipe4 = pipe2.concat(pipe3)
         self.assertEqual(len(pipe4.dag), 5)
-        self.assertEqual(pipe4.config, {'parallel': 4})
+        self.assertEqual(pipe4.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
 
     def test_raise(self):
         with self.assertRaises(ValueError):
             Pipeline.input('a').map('a', 'c', 12).output('c')
 
     def test_callable(self):
+        def func(x):
+            return x + 2
         pipe = (Pipeline.input('a')
                 .map('a', 'c', func)
                 .output('c'))
@@ -80,7 +79,7 @@ class TestPipeline(unittest.TestCase):
 
     def test_lambda(self):
         pipe = (Pipeline.input('a')
-                .map('a', 'c', lambda x: x+2)
+                .map('a', 'c', lambda x: x + 2)
                 .output('c'))
         res = pipe(2).get()
         self.assertEqual(res[0], 4)
@@ -88,7 +87,7 @@ class TestPipeline(unittest.TestCase):
     # TODO: Add pipeline config test
     def test_local(self):
         pipe1 = (Pipeline.input('a')
-                 .set_config({'parallel': 3})
+                 .set_config(parallel=3)
                  .map('a', 'c', ops.local.add_operator(10))
                  .output('c'))
         c10, = pipe1(2).get()
@@ -139,28 +138,127 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(len(pipe3.dag), 4)
         self.assertIsInstance(pipe4, RuntimePipeline)
 
-    # TODO: Add more test with flat_map, filter, time_window, window, window_all
-    def test_flat_map(self):
+    def test_concat_multi_schema(self):
         pipe0 = Pipeline.input('a', 'b', 'c')
-        pipe1 = pipe0.flat_map('a', 'd', ops.test_op1())
-        self.assertEqual(pipe1.dag[pipe1._clo_node]['iter_info']['type'], 'flat_map')
+        pipe1 = pipe0.map('a', 'd', ops.add_operator(10))
+        pipe2 = pipe0.map(('b', 'c'), 'e', ops.sub_operator())
+        pipe3 = pipe2.concat(pipe1).output('a', 'b', 'c', 'd', 'e')
+        a, b, c, d, e = pipe3(1, 2, 3).get()
+        self.assertEqual(a, 1)
+        self.assertEqual(b, 2)
+        self.assertEqual(c, 3)
+        self.assertEqual(d, 11)
+        self.assertEqual(e, -1)
+
+    def test_concat_updated_schema1(self):
+        pipe0 = Pipeline.input('a', 'b', 'c')
+        pipe1 = pipe0.map('a', 'a', ops.add_operator(10))
+        pipe2 = pipe0.map(('b', 'c'), 'b', ops.sub_operator())
+        pipe3 = pipe1.concat(pipe2).output('a', 'b', 'c')
+        a, b, c = pipe3(1, 2, 3).get()
+        self.assertEqual(a, 1)
+        self.assertEqual(b, -1)
+        self.assertEqual(c, 3)
+
+        pipe3 = pipe2.concat(pipe1).output('a', 'b', 'c')
+        a, b, c = pipe3(1, 2, 3).get()
+        self.assertEqual(a, 11)
+        self.assertEqual(b, 2)
+        self.assertEqual(c, 3)
+
+    def test_concat_updated_schema2(self):
+        pipe0 = Pipeline.input('a', 'b', 'c')
+        pipe1 = pipe0.map('a', 'a', ops.add_operator(10))
+        pipe2 = pipe0.map(('b', 'c'), 'a', ops.sub_operator())
+        pipe3 = pipe2.concat(pipe1).output('a')
+        a, = pipe3(1, 2, 3).get()
+        self.assertEqual(a, 11)
+
+        pipe3 = pipe1.concat(pipe2).output('a')
+        a, = pipe3(1, 2, 3).get()
+        self.assertEqual(a, -1)
+
+    def test_concat_multi_pipe(self):
+        pipe0 = Pipeline.input('a', 'b', 'c')
+        pipe1 = pipe0.map('a', 'd', ops.add_operator(10))
+        pipe2 = pipe0.map(('b', 'c'), 'e', ops.sub_operator())
+        pipe3 = pipe0.map(('b', 'c'), 'f', lambda x, y: x * y)
+        pipe4 = pipe3.concat(pipe1, pipe2).output('d', 'e', 'f')
+
+        d, e, f = pipe4(1, 2, 3).get()
+        self.assertEqual(d, 11)
+        self.assertEqual(e, -1)
+        self.assertEqual(f, 6)
+
+    def test_flat_map(self):
+        pipe = (Pipeline.input('a')
+                .flat_map('a', 'b', ops.local.flat_operator())
+                .output('b'))
+        res = pipe([1, 2])
+        self.assertEqual(res.get()[0].num, 1)
+        self.assertEqual(res.get()[0].num, 2)
 
     def test_filter(self):
-        pipe0 = Pipeline.input('a', 'b', 'c')
-        pipe1 = pipe0.filter('a', 'd', 'c', ops.test_op1())
-        self.assertEqual(pipe1.dag[pipe1._clo_node]['iter_info']['type'], 'filter')
+        pipe = (Pipeline.input('a')
+                .filter('a', 'b', 'a', ops.local.filter_operator(5))
+                .output('b'))
+        res = pipe(5)
+        self.assertEqual(res.get(), None)
+        res = pipe(7)
+        self.assertEqual(res.get(), [7])
+
+    def test_multi_filter(self):
+        def filter_func(x, y):
+            return x > 10 and y > 5
+        pipe = (Pipeline.input('a', 'b', 'c')
+                .map('c', 'c', lambda x: x+1)
+                .filter('c', 'd', ('a', 'b'), filter_func)
+                .output('a', 'b', 'c', 'd'))
+        res = pipe(5, 6, 7)
+        self.assertEqual(res.get(), None)
+        res = pipe(15, 6, 7)
+        self.assertEqual(res.get(), [15, 6, 8, 8])
 
     def test_time_window(self):
-        pipe0 = Pipeline.input('a', 'b', 'c')
-        pipe1 = pipe0.time_window('a', 'd', 'c', 2, 2, ops.test_op1())
-        self.assertEqual(pipe1.dag[pipe1._clo_node]['iter_info']['type'], 'time_window')
+        """
+        data: [(0, 1, 0), (1, 2, 1000), (2, 3, 2000), (92, 93, 92000), (93, 94, 93000), (94, 95, 94000), (95, 96, 95000), (96, 97, 96000),
+                                                      (97, 98, 97000), (98, 99, 98000), (99, 100, 99000)]
+        window_data:
+        [(0, 1, 0), (1, 2, 1000), (2, 3, 2000),
+        (92, 93, 92000), (93, 94, 93000), (94, 95, 94000), (95, 96, 95000), (96, 97, 96000), (97, 98, 97000), (98, 99, 98000), (99, 100, 99000),
+        (95, 96, 95000), (96, 97, 96000), (97, 98, 97000), (98, 99, 98000), (99, 100, 99000)]
+        """
+        pipe = (Pipeline.input('d')
+                .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
+                .time_window(('n1', 'n2'), ('s1', 's2'), 't', 10, 5, ops.local.sum2())
+                .output('s1', 's2'))
+        data = [(i, i+1, i * 1000) for i in range(100) if i < 3 or i > 91]
+        res = pipe(data)
+        self.assertEqual(res.get(), [3, 6])
+        self.assertEqual(res.get(), [764, 772])
+        self.assertEqual(res.get(), [485, 490])
 
     def test_window(self):
-        pipe0 = Pipeline.input('a', 'b', 'c')
-        pipe1 = pipe0.window('a', 'd', 2, 2, ops.test_op1())
-        self.assertEqual(pipe1.dag[pipe1._clo_node]['iter_info']['type'], 'window')
+        pipe = (Pipeline.input('n1', 'n2')
+                .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: list(zip(x, y)))
+                .window(('n1', 'n2'), ('s1', 's2'), 2, 1, ops.local.sum2())
+                .output('s1', 's2'))
+        res = pipe([10, 20, 30, 40], [1, 2, 3, 4])
+        self.assertEqual(res.get(), [30, 3])
+        self.assertEqual(res.get(), [50, 5])
+
+        pipe = (Pipeline.input('n1', 'n2')
+                .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: list(zip(x, y)))
+                .window(('n1', 'n2'), ('s1', 's2'), 2, 2, ops.local.sum2())
+                .output('s1', 's2'))
+        res = pipe([10, 20, 30, 40], [1, 2, 3, 4])
+        self.assertEqual(res.get(), [30, 3])
+        self.assertEqual(res.get(), [70, 7])
 
     def test_window_all(self):
-        pipe0 = Pipeline.input('a', 'b', 'c')
-        pipe1 = pipe0.window_all('a', 'd', ops.test_op1())
-        self.assertEqual(pipe1.dag[pipe1._clo_node]['iter_info']['type'], 'window_all')
+        pipe = (Pipeline.input('n1', 'n2')
+                .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: list(zip(x, y)))
+                .window_all(('n1', 'n2'), ('s1', 's2'), ops.local.sum2())
+                .output('s1', 's2'))
+        res = pipe([1, 2, 3, 4], [2, 3, 4, 5])
+        self.assertEqual(res.get(), [10, 14])
