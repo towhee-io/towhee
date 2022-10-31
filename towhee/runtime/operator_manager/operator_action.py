@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pickle
+import marshal
+
+
 # pylint: disable=protected-access
 class OperatorAction:
     """
@@ -54,7 +58,7 @@ class OperatorAction:
         """Create an Action for lambda op.
 
         Args:
-            fn (lamda): The lambda function for op.
+            fn (lambda): The lambda function for op.
 
         Returns:
             Action: The action.
@@ -92,6 +96,20 @@ class OperatorAction:
                 'tag': self._tag
             }
         elif self._type == 'lambda':
-            raise ValueError('Lambda not supported yet.')
+            self._loaded_fn = marshal.dumps(self._fn.__code__)
+            return {
+                'operator': self._loaded_fn,
+                'type': self._type,
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            }
         elif self._type == 'callable':
-            raise ValueError('Callable not supported yet.')
+            self._loaded_fn = pickle.dumps(self._fn)
+            return {
+                'operator': self._loaded_fn,
+                'type': self._type,
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            }

@@ -34,6 +34,9 @@ class AddOperator:
 def sub_operator(x, y):
     return x - y
 
+def func(x):
+    return x + 2
+
 
 class TestPipeline(unittest.TestCase):
     """
@@ -63,6 +66,24 @@ class TestPipeline(unittest.TestCase):
         pipe4 = pipe2.concat(pipe3)
         self.assertEqual(len(pipe4.dag), 5)
         self.assertEqual(pipe4.config, {'parallel': 4})
+
+    def test_raise(self):
+        with self.assertRaises(ValueError):
+            Pipeline.input('a').map('a', 'c', 12).output('c')
+
+    def test_callable(self):
+        pipe = (Pipeline.input('a')
+                .map('a', 'c', func)
+                .output('c'))
+        res = pipe(1).get()
+        self.assertEqual(res[0], 3)
+
+    def test_lambda(self):
+        pipe = (Pipeline.input('a')
+                .map('a', 'c', lambda x: x+2)
+                .output('c'))
+        res = pipe(2).get()
+        self.assertEqual(res[0], 4)
 
     # TODO: Add pipeline config test
     def test_local(self):

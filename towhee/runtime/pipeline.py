@@ -383,6 +383,8 @@ class Pipeline:
             return OperatorAction.from_lambda(fn)
         elif callable(fn):
             return OperatorAction.from_callable(fn)
+        else:
+            raise ValueError('Unknown operator, please make sure it is lambda, callable or operator with ops.')
 
     @staticmethod
     def _concat_dag(dag1, dag2):
