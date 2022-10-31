@@ -216,21 +216,6 @@ class image_blur:
 class save_image:
     """
     Save image to specific directory with the uuid name.
-
-    Args:
-        dir (`str`):
-            The directory to save image.
-
-    Examples:
-
-    >>> import towhee
-    >>> (
-    ...     towhee.dc['path'](['https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'])
-    ...           .image_decode['path', 'img']()
-    ...           .save_image['img','path_new'](dir='temp/pic', format="jpg")
-    ...           .to_list()
-    ... )
-    [<Entity dict_keys(['path', 'img', 'path_new'])>]
     """
 
     def __init__(self, dir: str, format: str='.jpg'):
