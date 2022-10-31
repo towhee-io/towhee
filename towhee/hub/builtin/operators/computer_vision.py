@@ -215,7 +215,7 @@ class image_blur:
 @register(name='builtin/save_image')
 class save_image:
     """
-
+    Save image to specific directory with the uuid name.
     """
 
     def __init__(self, dir: str, format: str='.jpg'):
