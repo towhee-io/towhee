@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp
+from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp, Attention
 
 
 class TestUtils(unittest.TestCase):
@@ -37,6 +37,21 @@ class TestUtils(unittest.TestCase):
         model = Mlp(in_features=3, hidden_features=5, out_features=4).to(self.device)
         out = model(dummy_input, 4, 4)
         self.assertTrue(out.shape == (1, 16, 4))
+
+    def test_attention(self):
+        with self.assertRaises(AssertionError) as e:
+            Attention(dim=4, num_heads=3, qk_scale=1).to(self.device)
+        self.assertEqual(str(e.exception), 'dim 4 should be divisible by num_heads 3.')
+
+        input1 = torch.rand(1, 4, 4).to(self.device)
+        model1 = Attention(dim=4, num_heads=4, qk_scale=1, sr_ratio=2).to(self.device)
+        out1 = model1(input1, 2, 2)
+        self.assertTrue(out1.shape == (1, 4, 4))
+
+        input2 = torch.rand(1, 4, 6).to(self.device)
+        model2 = Attention(dim=6, num_heads=3, qkv_bias=True).to(self.device)
+        out2 = model2(input2, 2, 2)
+        self.assertTrue(out2.shape == (1, 4, 6))
 
 
 if __name__ == '__main__':
