@@ -16,6 +16,7 @@
 from typing import Generator
 
 from .node import Node
+from towhee.runtime.data_queue import Empty
 
 
 class Map(Node):
@@ -47,36 +48,37 @@ class Map(Node):
         Called for each element.
         """
 
-        datas = self._in_ques[0].get_dict()
-        if datas is None:
+        data = self._in_ques[0].get_dict()
+        if data is None:
             self._set_finished()
             return True
 
-        process_data = [datas.get(key) for key in self._node_repr.inputs]
-        succ, outputs, msg = self._call(process_data)
+        process_data = [data.get(key) for key in self._node_repr.inputs]
+        if Empty() not in process_data:
+            succ, outputs, msg = self._call(process_data)
+            if not succ:
+                self._set_failed(msg)
+                return True
+            if isinstance(outputs, Generator):
+                outputs = self._get_from_generator(outputs, len(self._node_repr.outputs))
 
-        if not succ:
-            self._set_failed(msg)
-            return True
+            size = len(self._node_repr.outputs)
+            if size > 1:
+                output_map = dict((self._node_repr.outputs[i], outputs[i])
+                                for i in range(size))
+            elif size == 0:
+                output_map = {}
+            else:
+                output_map = {}
+                output_map[self._node_repr.outputs[0]] = outputs
 
-        if isinstance(outputs, Generator):
-            outputs = self._get_from_generator(outputs, len(self._node_repr.outputs))
+            data.update(output_map)
 
-        size = len(self._node_repr.outputs)
-        if size > 1:
-            output_map = dict((self._node_repr.outputs[i], outputs[i])
-                              for i in range(size))
-        elif size == 0:
-            output_map = {}
-        else:
-            output_map = {}
-            output_map[self._node_repr.outputs[0]] = outputs
-
-        datas.update(output_map)
         for out_que in self._output_ques:
-            if not out_que.put_dict(datas):
+            if not out_que.put_dict(data):
                 self._set_stopped()
                 return True
+
         return False
 
     def _get_from_generator(self, gen, size):

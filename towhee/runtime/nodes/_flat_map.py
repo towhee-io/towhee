@@ -14,6 +14,7 @@
 from typing import List, Any
 
 from .node import Node
+from towhee.runtime.data_queue import Empty
 
 
 class FlatMap(Node):
@@ -35,27 +36,32 @@ class FlatMap(Node):
             return True
 
         process_data = [data.get(key) for key in self._node_repr.inputs]
-
-        succ, outputs, msg = self._call(process_data)
-        if not succ:
-            self._set_failed(msg)
-            return True
-
-        size = len(self._node_repr.outputs)
-
-        for output in outputs:
-            if size > 1:
-                output_map = {self._node_repr.outputs[i]: output[i] for i in range(size)}
-            else:
-                output_map = {self._node_repr.outputs[0]: output}
-
-            data.update(output_map)
-
+        if Empty() in process_data:
             for out_que in self._output_ques:
                 if not out_que.put_dict(data):
                     self._set_stopped()
                     return True
+        else:
+            succ, outputs, msg = self._call(process_data)
+            if not succ:
+                self._set_failed(msg)
+                return True
 
-            data = {}
+            size = len(self._node_repr.outputs)
+
+            for output in outputs:
+                if size > 1:
+                    output_map = {self._node_repr.outputs[i]: output[i] for i in range(size)}
+                else:
+                    output_map = {self._node_repr.outputs[0]: output}
+
+                data.update(output_map)
+
+                for out_que in self._output_ques:
+                    if not out_que.put_dict(data):
+                        self._set_stopped()
+                        return True
+
+                data = {}
 
         return False

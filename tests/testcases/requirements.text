@@ -2,8 +2,9 @@
 #pip install -U pip
 #pip cache purge
 Pillow
-towhee==0.8.2.dev31
-towhee.models==0.8.2.dev1
+pygit2<=1.10.1
+towhee==0.8.2.dev61
+towhee.models==0.8.2.dev2
 pandas 
 scikit-learn 
 opencv-python 

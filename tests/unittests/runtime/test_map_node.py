@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -451,3 +451,196 @@ class TestMapNode(unittest.TestCase):
         self.assertTrue(node.status == NodeStatus.FINISHED)
         self.assertTrue(out_que.sealed)
         self.assertEqual(out_que.size, 0)
+
+    def test_all_empty(self):
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('vec', ),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y: x + y,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1, 1))
+        in_que.put(('test_url', Empty(), Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue(
+            [
+                ('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE),
+                ('vec', ColumnType.QUEUE)
+            ]
+        )
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'some': 1,
+                                'vec': 2,
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': Empty(),
+                                'some': 1,
+                                'vec': Empty(),
+                            })
+
+    def test_scalar_empty(self):
+        node_info = {
+            'inputs': ('url', 'num', ),
+            'outputs': ('vec', ),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y : str(x) + str(y),
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1))
+        in_que.put(('test_url', Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'vec': 'test_url1',
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'vec': Empty(),
+                            })
+
+    def test_queue_empty(self):
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('vec', ),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y : x + y,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1))
+        in_que.put(('test_url', Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'vec': 2
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'vec': Empty()
+                            })
+
+
+    def test_empty_without_next(self):
+        def fn(x, y):
+            return x, y
+
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('res1', 'res2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': fn,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': None
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1, 1))
+        in_que.put(('test_url', Empty(),1, 1))
+        in_que.seal()
+        out_que = DataQueue(
+            [
+                ('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE),
+                ('res1', ColumnType.QUEUE), ('res2', ColumnType.QUEUE)
+            ]
+        )
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(node.status, NodeStatus.FINISHED)
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'some': 1,
+                                'res1': 1,
+                                'res2': 1
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'some': 1,
+                                'res1': Empty(),
+                                'res2': Empty()
+                            })
