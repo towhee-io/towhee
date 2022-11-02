@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # pylint: disable=protected-access
 class OperatorAction:
     """
@@ -54,7 +55,7 @@ class OperatorAction:
         """Create an Action for lambda op.
 
         Args:
-            fn (lamda): The lambda function for op.
+            fn (lambda): The lambda function for op.
 
         Returns:
             Action: The action.
@@ -91,7 +92,11 @@ class OperatorAction:
                 'init_kws': self._op_kwargs if len(self._op_kwargs) != 0 else None,
                 'tag': self._tag
             }
-        elif self._type == 'lambda':
-            raise ValueError('Lambda not supported yet.')
-        elif self._type == 'callable':
-            raise ValueError('Callable not supported yet.')
+        elif self._type in ['lambda', 'callable']:
+            return {
+                'operator': self._fn,
+                'type': self._type,
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            }

@@ -13,13 +13,8 @@
 # limitations under the License.
 
 import unittest
-from typing import Callable
 
 from towhee.runtime.operator_manager.operator_action import OperatorAction
-
-
-def f():
-    pass
 
 
 # pylint: disable=protected-access
@@ -39,17 +34,28 @@ class TestOperatorAction(unittest.TestCase):
         }
         self.assertEqual(op_action.serialize(), op_info)
 
-    # TODO: Support lambda and callable with more test
+    # pylint: disable=unnecessary-lambda-assignment
     def test_lambda(self):
-        op_action = OperatorAction.from_lambda(lambda x: x+1)
-        self.assertEqual(op_action._type, 'lambda')
-        self.assertIsInstance(op_action._loaded_fn, Callable)
-        with self.assertRaises(ValueError):
-            op_action.serialize()
+        f = lambda x: x+1
+        op_action = OperatorAction.from_lambda(f)
+        op_info = {
+            'operator': f,
+            'type': 'lambda',
+            'init_args': None,
+            'init_kws': None,
+            'tag': None
+        }
+        self.assertEqual(op_action.serialize(), op_info)
 
     def test_callable(self):
+        def f():
+            pass
         op_action = OperatorAction.from_callable(f)
-        self.assertEqual(op_action._type, 'callable')
-        self.assertIsInstance(op_action._loaded_fn, Callable)
-        with self.assertRaises(ValueError):
-            op_action.serialize()
+        op_info = {
+            'operator': f,
+            'type': 'callable',
+            'init_args': None,
+            'init_kws': None,
+            'tag': None
+        }
+        self.assertEqual(op_action.serialize(), op_info)

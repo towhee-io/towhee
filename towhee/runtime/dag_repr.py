@@ -17,6 +17,7 @@ from typing import Dict, Any, Set, List, Tuple
 from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
+from towhee.runtime.constants import FilterConst, TimeWindowConst
 
 
 class DAGRepr:
@@ -132,6 +133,14 @@ class DAGRepr:
         visited = [name]
         while stack:
             n = stack.pop()
+            used_col = DAGRepr.get_base_col(nodes[n])
+            if used_col is not None:
+                if isinstance(used_col, str):
+                    used_schema.add(used_col)
+                else:
+                    for c in used_col:
+                        used_schema.add(c)
+
             common_schema = set(nodes[n].inputs) & ahead_schema
             for x in common_schema:
                 ahead_schema.remove(x)
@@ -145,6 +154,14 @@ class DAGRepr:
                     stack.append(i)
                     visited.append(i)
         return used_schema
+
+    @staticmethod
+    def get_base_col(nodes: NodeRepr):
+        if nodes.iter_info.type == FilterConst.name:
+            return nodes.iter_info.param[FilterConst.param.filter_by]
+        if nodes.iter_info.type == TimeWindowConst.name:
+            return nodes.iter_info.param[TimeWindowConst.param.timestamp_col]
+        return None
 
     @staticmethod
     def get_edge_from_schema(schema: Tuple, inputs: Tuple, outputs: Tuple, iter_type: str, ahead_edges: List) -> Dict:
