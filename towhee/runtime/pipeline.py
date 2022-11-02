@@ -453,6 +453,6 @@ class Pipeline:
             dag2 = deepcopy(pipe.dag)
             same_nodes = dag1.keys() & dag2.keys()
             for name in same_nodes:
-                dag2[name]['next_nodes'] += dag1[name]['next_nodes']
+                dag2[name]['next_nodes'] = list(set(dag2[name]['next_nodes'] + dag1[name]['next_nodes']))
             dag1.update(dag2)
         return dag1
