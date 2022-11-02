@@ -59,8 +59,8 @@ class Pipeline:
             Pipeline: Pipeline ready to be chained.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = Pipeline.input('a', 'b', 'c')
+            >>> import towhee
+            >>> pipe = towhee.pipe.input('a', 'b', 'c')
         """
         dag_dict = {}
         output_schema = tuple(schema)
@@ -88,8 +88,8 @@ class Pipeline:
             RuntimePipeline: The runtime pipeline that can be called on inputs.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = Pipeline.input('a').map('a', 'b', lambda x: x+1).output('b')
+            >>> import towhee
+            >>> pipe = towhee.pipe.input('a').map('a', 'b', lambda x: x+1).output('b')
             >>> pipe(1).get()
             [2]
         """
@@ -126,8 +126,8 @@ class Pipeline:
             Pipeline: Pipeline with action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = Pipeline.input('a').map('a', 'b', lambda x: x+1).output('a', 'b')
+            >>> import towhee
+            >>> pipe = towhee.pipe.input('a').map('a', 'b', lambda x: x+1).output('a', 'b')
             >>> pipe(1).get()
             [1, 2]
         """
@@ -164,7 +164,7 @@ class Pipeline:
             Pipeline: Pipeline to be concated.
 
         Examples:
-            >>> pipe0 = Pipeline.input('a', 'b', 'c')
+            >>> pipe0 = towhee.pipe.input('a', 'b', 'c')
             >>> pipe1 = pipe0.map('a', 'd', lambda x: x+1)
             >>> pipe2 = pipe0.map(('b', 'c'), 'e', lambda x, y: x - y)
             >>> pipe3 = pipe2.concat(pipe1).output('d', 'e')
@@ -204,8 +204,8 @@ class Pipeline:
             Pipeline: Pipeline with flat_map action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = (Pipeline.input('a')
+            >>> import towhee
+            >>> pipe = (towhee.pipe.input('a')
             ...         .flat_map('a', 'b', lambda x: [y for y in x])
             ...         .output('b'))
             >>> res = pipe([1, 2, 3])
@@ -253,10 +253,10 @@ class Pipeline:
             Pipeline: Pipeline with filter action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
+            >>> import towhee
             >>> def filter_func(num):
             ...     return num > 10
-            >>> pipe = (Pipeline.input('a', 'c')
+            >>> pipe = (towhee.pipe.input('a', 'c')
             ...         .filter('c', 'd', 'a', filter_func)
             ...         .output('d'))
             >>> pipe(1, 12).get()
@@ -302,8 +302,8 @@ class Pipeline:
             Pipeline: Pipeline with window action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = (Pipeline.input('n1', 'n2')
+            >>> import towhee
+            >>> pipe = (towhee.pipe.input('n1', 'n2')
             ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
             ...         .window(('n1', 'n2'), ('s1', 's2'), 2, 1, lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
@@ -350,8 +350,8 @@ class Pipeline:
             Pipeline: Pipeline with window_all action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = (Pipeline.input('n1', 'n2')
+            >>> import towhee
+            >>> pipe = (towhee.pipe.input('n1', 'n2')
             ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
             ...         .window_all(('n1', 'n2'), ('s1', 's2'), lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
@@ -398,8 +398,8 @@ class Pipeline:
             Pipeline: Pipeline with time_window action added.
 
         Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = (Pipeline.input('d')
+            >>> import towhee
+            >>> pipe = (towhee.pipe.input('d')
             ...         .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
             ...         .time_window(('n1', 'n2'), ('s1', 's2'), 't', 3, 3, lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))

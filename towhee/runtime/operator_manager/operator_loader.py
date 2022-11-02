@@ -17,8 +17,8 @@ import sys
 import subprocess
 from pathlib import Path
 from typing import Any, List, Dict, Union
-import pkg_resources
-from pkg_resources import DistributionNotFound
+import re
+from importlib.util import find_spec
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
@@ -86,11 +86,11 @@ class OperatorLoader:
             with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
             for req in reqs:
-                try:
-                    pkg_resources.require(req)
-                except DistributionNotFound:
+                if not req:
+                    continue
+                pkg_name = re.split(r'(~|>|<|=|!| )', req)[0]
+                if find_spec(pkg_name) is None:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
-
         try:
             # support for ver1 operator API
             spec = importlib.util.spec_from_file_location(modname, path.resolve())

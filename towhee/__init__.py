@@ -26,6 +26,9 @@ from towhee.functional import (
     glob, glob_zip, read_csv, read_json, read_camera, read_video, read_audio, read_zip, dc, api, dummy_input, range, from_df
 )
 
+from towhee import dc2
+from towhee.dc2 import pipe
+
 
 # Place all functions that are meant to be called by towhee.func() here aftering importing them.
 __all__ = [
@@ -56,7 +59,10 @@ __all__ = [
     'update_default_cache',
     'add_cache_path',
     'cache_paths',
-    'default_cache'
+    'default_cache',
+    # the new interface
+    'pipe',
+    'dc2'
 ]
 
 __import__('pkg_resources').declare_namespace(__name__)
