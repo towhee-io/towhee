@@ -17,6 +17,7 @@ import unittest
 from towhee.runtime.pipeline import Pipeline
 from towhee.runtime.factory import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
+from towhee.runtime.data_queue import Empty
 
 
 # pylint: disable=protected-access
@@ -240,3 +241,20 @@ class TestPipeline(unittest.TestCase):
                 .output('s1', 's2'))
         res = pipe([1, 2, 3, 4], [2, 3, 4, 5])
         self.assertEqual(res.get(), [10, 14])
+
+    def test_concat_multi_types(self):
+        def f(x):
+            x = len(x)
+            return x, x + 1, x + 2
+
+        p2 = Pipeline.input('p').flat_map('p', 'f', lambda x: ((a, b) for a, b in x))
+        p3 = p2.map('f', 't', lambda x: x[1]).time_window('f', 'e', 't', 3, 3, lambda x: len(x))  # pylint: disable=unnecessary-lambda
+        p4 = p2.window_all('f', ('l', 's', 'v'), f)
+
+        pipe = p3.concat(p4).output('e', 'l', 's', 'v')
+        data = [(i, i * 1000) for i in range(10) if i < 3 or i > 7]
+        res = pipe(data)
+        self.assertEqual(res.get(), [3, 5, 6, 7])
+        self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
+        self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
+        self.assertEqual(res.get(), None)
