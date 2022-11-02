@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp, Attention
+from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp, Attention, Block
 
 
 class TestUtils(unittest.TestCase):
@@ -29,7 +29,8 @@ class TestUtils(unittest.TestCase):
         test_shape = (1, 3, 4, 4)
         fake_img = torch.rand(test_shape).to(self.device)
         model = OverlapPatchEmbed(img_size=test_shape[-1], patch_size=2, stride=1, embed_dim=5).to(self.device)
-        out = model(fake_img)
+        out, h, w = model(fake_img)
+        self.assertEqual(h, w, 5)
         self.assertTrue(out.shape == (1, 25, 5))
 
     def test_mlp(self):
@@ -52,6 +53,17 @@ class TestUtils(unittest.TestCase):
         model2 = Attention(dim=6, num_heads=3, qkv_bias=True).to(self.device)
         out2 = model2(input2, 2, 2)
         self.assertTrue(out2.shape == (1, 4, 6))
+
+    def test_block(self):
+        dummy_input = torch.rand(1, 4, 6).to(self.device)
+
+        model1 = Block(dim=6, num_heads=3).to(self.device)
+        outs1 = model1(dummy_input, 2, 2)
+        self.assertTrue(outs1.shape == (1, 4, 6))
+
+        model2 = Block(dim=6, num_heads=3, drop_path=0.2).to(self.device)
+        outs2 = model2(dummy_input, 2, 2)
+        self.assertTrue(outs2.shape == (1, 4, 6))
 
 
 if __name__ == '__main__':
