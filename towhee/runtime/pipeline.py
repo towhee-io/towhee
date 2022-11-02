@@ -14,7 +14,6 @@
 
 
 import uuid
-from typing import List, Union
 from copy import deepcopy
 
 from towhee.runtime.operator_manager import OperatorAction
@@ -39,69 +38,14 @@ class Pipeline:
     Args:
         dag (`dict`): The dag for the pipeline.
         clo_node (`str`): The close node in the pipeline dag, defaults to '_input'.
-        config (`dict`): The config for the pipeline, defaults to None.
     """
-    def __init__(self, dag, clo_node='_input', config=None):
+    def __init__(self, dag, clo_node='_input'):
         self._dag = dag
         self._clo_node = clo_node
-        if config is None:
-            self._engine = None
-            self._parallel = None
-            self._jit = None
-            self._format_priority = None
-        else:
-            self.set_config(**config)
 
     @property
     def dag(self) -> dict:
         return self._dag
-
-    @property
-    def config(self) -> dict:
-        return {
-            'engine': self._engine,
-            'parallel': self._parallel,
-            'jit': self._jit,
-            'format_priority': self._format_priority,
-        }
-
-    def clean_config(self):
-        """
-        Cleanup the config for a pipeline.
-        """
-        self._engine = None
-        self._parallel = None
-        self._jit = None
-        self._format_priority = None
-
-    def set_config(self,
-                   engine: str = None,
-                   parallel: int = None,
-                   jit: Union[str, dict] = None,
-                   format_priority: List[str] = None) -> 'Pipeline':
-        """
-        Set the config for a pipeline.
-
-        Args:
-            engine (`str`): The type of engine, defaults to None and run with local.
-            parallel (int, optional): Set the number of parallel execution for the following calls, defaults to None.
-            jit (Union[str, dict], optional): The parameter to just in time compile.
-            format_priority (List[str], optional): The priority list of formats, defaults to None.
-
-        Returns:
-            Pipeline: Pipeline with config.
-
-        Examples:
-            >>> from towhee.runtime.pipeline import Pipeline
-            >>> pipe = Pipeline.input('a').set_config(engine='local').map('a', 'b', lambda x: x+1)
-            >>> pipe.config
-            {'engine': 'local'}
-        """
-        self._engine = engine
-        self._parallel = parallel
-        self._jit = jit
-        self._format_priority = format_priority
-        return self
 
     @classmethod
     def input(cls, *schema) -> 'Pipeline':
@@ -164,9 +108,8 @@ class Pipeline:
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
 
-        if self._engine == 'local' or self._engine is None:
-            run_pipe = RuntimePipeline(dag_dict, self._parallel)
-            run_pipe.preload()
+        run_pipe = RuntimePipeline(dag_dict)
+        run_pipe.preload()
         return run_pipe
 
     def map(self, input_schema, output_schema, fn, config=None) -> 'Pipeline':
@@ -208,7 +151,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     def concat(self, *pipes: 'Pipeline') -> 'Pipeline':
         """
@@ -243,8 +186,7 @@ class Pipeline:
         for pipe in pipes:
             dag_dict[pipe._clo_node]['next_nodes'].append(uid)
 
-        config = self._concat_config(deepcopy(self.config), pipes)
-        return Pipeline(dag_dict, uid, config)
+        return Pipeline(dag_dict, uid)
 
     def flat_map(self, input_schema, output_schema, fn, config=None) -> 'Pipeline':
         """
@@ -294,7 +236,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     def filter(self, input_schema, output_schema, filter_columns, fn, config=None) -> 'Pipeline':
         """
@@ -342,7 +284,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     def window(self, input_schema, output_schema, size, step, fn, config=None) -> 'Pipeline':
         """
@@ -392,7 +334,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     def window_all(self, input_schema, output_schema, fn, config=None) -> 'Pipeline':
         """
@@ -436,7 +378,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     def time_window(self, input_schema, output_schema, timestamp_col, size, step, fn, config=None) -> 'Pipeline':
         """
@@ -492,7 +434,7 @@ class Pipeline:
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
-        return Pipeline(dag_dict, uid, self.config)
+        return Pipeline(dag_dict, uid)
 
     @staticmethod
     def _to_action(fn):
@@ -514,15 +456,3 @@ class Pipeline:
                 dag2[name]['next_nodes'] += dag1[name]['next_nodes']
             dag1.update(dag2)
         return dag1
-
-    @staticmethod
-    def _concat_config(conf1, pipes):
-        for pipe in pipes:
-            conf2 = pipe.config
-            for con_key in conf2.keys():
-                if conf2[con_key] is None:
-                    continue
-                elif conf1[con_key] != conf2[con_key]:
-                    raise ValueError('The config of each pipeline are inconsistent, please reset the config.')
-                conf1.update(conf2)
-        return conf1

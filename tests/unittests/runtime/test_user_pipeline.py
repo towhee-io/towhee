@@ -42,27 +42,6 @@ class TestPipeline(unittest.TestCase):
     def test_property(self):
         pipe1 = Pipeline.input('a', 'b').map('a', 'c', ops.towhee.test_op1('a'))
         self.assertEqual(len(pipe1.dag), 2)
-        self.assertEqual(pipe1.config, {'engine': None, 'parallel': None, 'jit': None, 'format_priority': None})
-
-        pipe2 = pipe1.set_config(parallel=4).map('c', 'd', ops.test_op3())
-        self.assertEqual(len(pipe2.dag), 3)
-        self.assertEqual(pipe2.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
-
-        pipe3 = pipe1.map('a', 'c', ops.towhee.test_op3('a')).set_config(parallel=3)
-        self.assertEqual(len(pipe3.dag), 3)
-        self.assertEqual(pipe3.config, {'engine': None, 'parallel': 3, 'jit': None, 'format_priority': None})
-
-        with self.assertRaises(ValueError):
-            pipe2.concat(pipe3)
-        pipe3.set_config(parallel=4)
-        pipe4 = pipe2.concat(pipe3)
-        self.assertEqual(len(pipe4.dag), 5)
-        self.assertEqual(pipe4.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
-
-        pipe3.clean_config()
-        pipe4 = pipe2.concat(pipe3)
-        self.assertEqual(len(pipe4.dag), 5)
-        self.assertEqual(pipe4.config, {'engine': None, 'parallel': 4, 'jit': None, 'format_priority': None})
 
     def test_raise(self):
         with self.assertRaises(ValueError):
@@ -87,7 +66,6 @@ class TestPipeline(unittest.TestCase):
     # TODO: Add pipeline config test
     def test_local(self):
         pipe1 = (Pipeline.input('a')
-                 .set_config(parallel=3)
                  .map('a', 'c', ops.local.add_operator(10))
                  .output('c'))
         c10, = pipe1(2).get()
