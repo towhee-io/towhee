@@ -17,6 +17,7 @@ from torch import nn
 
 from towhee.models.layers.patch_embed2d import PatchEmbed2D
 from towhee.models.layers.mlp import Mlp as ViTMlp
+from towhee.models.layers.droppath import DropPath
 from towhee.models.utils.init_vit_weights import init_vit_weights
 
 
@@ -39,6 +40,14 @@ class OverlapPatchEmbed(PatchEmbed2D):
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=stride,
                               padding=(patch_size // 2, patch_size // 2))
         self.apply(init_vit_weights)
+
+    def forward(self, x):
+        x = self.proj(x)
+        _, _, h, w = x.shape
+        x = x.flatten(2).transpose(1, 2)
+        x = self.norm(x)
+
+        return x, h, w
 
 
 class Mlp(ViTMlp):
@@ -165,5 +174,44 @@ class Attention(nn.Module):
                                 transpose(1, 2).view(b, c, h, w)).view(b, c, n).transpose(1, 2)
         x = self.proj(x)
         x = self.proj_drop(x)
+
+        return x
+
+
+class Block(nn.Module):
+    """
+    Block in Shunted Transformer
+
+    Args:
+        dim (`int`): feature dimension
+        num_heads (`int`): number of attention heads
+        mlp_ratio (`float`): number to scale hidden dimension in mlp
+        qkv_bias (`bool`): flag to use bias in qkv
+        qk_scale (`int`): number to scale qk
+        drop (`float`): drop rate of Mlp
+        attn_drop (`float`): drop rate of attention
+        drop_path (`float`): drop rate of drop path
+        act_layer (`nn.Module`): activation layer
+        norm_layer (`nn.Module`): normalization layer
+        sr_ratio (`int`): shunt rate
+    """
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(
+            dim,
+            num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
+            attn_drop=attn_drop, proj_drop=drop, sr_ratio=sr_ratio)
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+
+        self.apply(init_vit_weights)
+
+    def forward(self, x, h, w):
+        x = x + self.drop_path(self.attn(self.norm1(x), h, w))
+        x = x + self.drop_path(self.mlp(self.norm2(x), h, w))
 
         return x
