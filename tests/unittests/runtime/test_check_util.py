@@ -38,12 +38,12 @@ class TestCheckUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_node_iter('filter', {'filter_by': 'x'}, ('a', 'b'), ('c',), {'a', 'b', 'x'})
 
-        check_node_iter('window', {'size': 3, 'step': 2}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
+        check_node_iter('window', {'size': 3, 'step': 2}, ('a', 'b'), ('c',), {'a', 'b'})
         with self.assertRaises(ValueError):
             check_node_iter('window', {'size': 'size', 'step': 2}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
         with self.assertRaises(ValueError):
             check_node_iter('window', {'size': 0, 'step': -1}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
 
-        check_node_iter('time_window', {'time_range_sec': 3, 'time_step_sec': 2, 'timestamp_col': 'a'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
+        check_node_iter('time_window', {'time_range_sec': 3, 'time_step_sec': 2, 'timestamp_col': 'a'}, ('a', 'b'), ('c',), {'a', 'b'})
         with self.assertRaises(ValueError):
             check_node_iter('time_window', {'time_range_sec': 3, 'time_step_sec': 2, 'timestamp_col': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b'})
