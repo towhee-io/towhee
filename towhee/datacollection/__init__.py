@@ -13,4 +13,9 @@
 # limitations under the License.
 
 from .data_collection import DataCollection
-from .entity import Entity, EntityView
+from .entity import Entity
+
+__all__ = [
+    'DataCollection',
+    'Entity'
+]

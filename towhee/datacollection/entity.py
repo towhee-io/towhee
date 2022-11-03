@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from typing import  Dict, Any
 
 class Entity:
@@ -119,91 +120,3 @@ class Entity:
             "{'a': 1, 'b': 2}"
         """
         return cls(**tar)
-
-
-class EntityView:
-    """
-    The view to iterate DataFrames.
-
-    Args:
-        offset (`int`):
-            The offset of an Entity in the table.
-        table:
-            Which table stored in.
-
-    Examples:
-        >>> from towhee import Entity, DataFrame
-        >>> e = [Entity(a=a, b=b) for a,b in zip(range(3), range(3))]
-        >>> df = DataFrame(e)
-        >>> df = df.to_column()
-        >>> df.to_list()[0]
-        <EntityView dict_keys(['a', 'b'])>
-        >>> df.to_list()[0].a
-        0
-        >>> df.to_list()[0].b
-        0
-    """
-
-    def __init__(self, offset: int, table):
-        self._offset = offset
-        self._table = table
-
-    def __getattr__(self, name):
-        """
-        Get the value of the entity.
-
-        Args:
-            name (`str`):
-                The key string of the entity.
-
-        Returns:
-            Any: The value for that entity at the current offset.
-        """
-        value = self._table[name][self._offset]
-        try:
-            return value.as_py()
-        # pylint: disable=bare-except
-        except:
-            return value
-
-    def __setattr__(self, name, value):
-        """
-        Set the `name` entity at current offset.
-
-        Args:
-            name (`str`):
-                The entity name.
-            value (`Any`):
-                The entity value to be set.
-        """
-        if name in ('_table', '_offset'):
-            self.__dict__[name] = value
-            return
-        self._table.write(name, self._offset, value)
-
-        if self._offset == len(self._table) - 1:
-            self._table.seal()
-        self._table = self._table.prepare()
-
-    def __repr__(self):
-        """
-        Define the representation of the EntityView.
-
-        Returns (`str`):
-            The representation of the EntityView.
-
-        Examples:
-
-            >>> from towhee import Entity, DataFrame
-            >>> e = [Entity(a=a, b=b) for a,b in zip(range(5), range(5))]
-            >>> df = DataFrame(e)
-            >>> df = df.to_column()
-            >>> df.to_list()[0]
-            <EntityView dict_keys(['a', 'b'])>
-
-            >>> df = DataFrame(e)
-            >>> df = df.set_chunksize(2)
-            >>> df.to_list()[0]
-            <EntityView dict_keys(['a', 'b'])>
-        """
-        return f'<{self.__class__.__name__} dict_keys({self._table.column_names})>'

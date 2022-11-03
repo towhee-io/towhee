@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy
 from typing import Tuple
+
+import numpy
 
 from towhee._types import Image
 from towhee.types import AudioFrame
 from towhee.hparam import param_scope
-from towhee.datacollection.entity import Entity, EntityView
+from towhee.datacollection.entity import Entity
 # pylint: disable=dangerous-default-value
 
 
@@ -150,9 +151,6 @@ class DisplayMixin: # pragma: no cover
         if all(isinstance(x, Entity) for x in contents):
             header = tuple(contents[0].__dict__) if not header else header
             data = [list(x.__dict__.values()) for x in contents]
-        elif all(isinstance(x, EntityView) for x in contents):
-            header = tuple(contents[0]._table.column_names) if not header else header
-            data = [[getattr(x, n) for n in header] for x in contents]
         else:
             data = [[x] for x in contents]
 

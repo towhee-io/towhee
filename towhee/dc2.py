@@ -13,12 +13,13 @@
 # limitations under the License.
 
 
-from .factory import ops, register
-from .pipeline import Pipeline as pipe
+from towhee.runtime import register, pipe, ops
+from towhee.datacollection import DataCollection
 
 
 __all__ = [
-    'pipe',
     'register',
-    'ops'
+    'pipe',
+    'ops',
+    'DataCollection'
 ]
