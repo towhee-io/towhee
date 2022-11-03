@@ -18,7 +18,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, List, Dict, Union
 import re
-from importlib.util import find_spec
+import pkg_resources
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
@@ -82,6 +82,7 @@ class OperatorLoader:
         fname = Path(path).stem
         modname = 'towhee.operator.' + fname
 
+        all_pkg = [item.project_name for item in list(pkg_resources.WorkingSet())]
         if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
             with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
@@ -89,7 +90,7 @@ class OperatorLoader:
                 if not req:
                     continue
                 pkg_name = re.split(r'(~|>|<|=|!| )', req)[0]
-                if find_spec(pkg_name) is None:
+                if pkg_name not in all_pkg:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
         try:
             # support for ver1 operator API
