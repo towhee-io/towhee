@@ -54,6 +54,7 @@ class Map(Node):
 
         process_data = [datas.get(key) for key in self._node_repr.inputs]
         succ, outputs, msg = self._call(process_data)
+
         if not succ:
             self._set_failed(msg)
             return True
@@ -79,6 +80,8 @@ class Map(Node):
         return False
 
     def _get_from_generator(self, gen, size):
+        if size == 1:
+            return list(gen)
         ret = [ [] for _ in range(size)]
         for data in gen:
             for i in range(size):
