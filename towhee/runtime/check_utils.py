@@ -90,11 +90,9 @@ def check_node_iter(iter_type: str, iter_param: Dict[str, Any], inputs, outputs,
         check_length(inputs, outputs)
         check_set(iter_param[FilterConst.param.filter_by], all_inputs)
     elif iter_type == TimeWindowConst.name:
-        check_length(inputs, outputs)
         check_set(iter_param[TimeWindowConst.param.timestamp_col], all_inputs)
         check_int(iter_param, [TimeWindowConst.param.time_range_sec,
                                TimeWindowConst.param.time_step_sec])
     elif iter_type == WindowConst.name:
-        check_length(inputs, outputs)
         check_int(iter_param, [WindowConst.param.size,
                                WindowConst.param.step])
