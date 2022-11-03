@@ -1,4 +1,9 @@
-# Copyright 2021 Zilliz. All rights reserved.
+# Implementation of utils for Shunted Transform in the paper:
+#   [Shunted Self-Attention via Multi-Scale Token Aggregation](https://arxiv.org/abs/2111.15193)
+#
+# Inspired by original code from https://github.com/OliverRensu/Shunted-Transformer
+#
+# Additions & modifications are protected by Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,6 +52,33 @@ class OverlapPatchEmbed(PatchEmbed2D):
         x = x.flatten(2).transpose(1, 2)
         x = self.norm(x)
 
+        return x, h, w
+
+
+class HeadPatchEmbed(nn.Module):
+    """
+    The patch embedding layer at stage 0.
+
+    Args:
+        num (`int`): number of repeated sets of layers
+    """
+    def __init__(self, num):
+        super().__init__()
+        stem = [nn.Conv2d(3, 64, 7, 2, padding=3, bias=False), nn.BatchNorm2d(64), nn.ReLU(True)]
+        for _ in range(num):
+            stem.append(nn.Conv2d(64, 64, 3, 1, padding=1, bias=False))
+            stem.append(nn.BatchNorm2d(64))
+            stem.append(nn.ReLU(True))
+        stem.append(nn.Conv2d(64, 64, kernel_size=2, stride=2))
+        self.conv = nn.Sequential(*stem)
+        self.norm = nn.LayerNorm(64)
+        self.apply(init_vit_weights)
+
+    def forward(self, x):
+        x = self.conv(x)
+        _, _, h, w = x.shape
+        x = x.flatten(2).transpose(1, 2)
+        x = self.norm(x)
         return x, h, w
 
 
