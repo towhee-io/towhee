@@ -16,7 +16,7 @@
 import unittest
 import torch
 
-from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp, Attention, Block
+from towhee.models.shunted_transformer import OverlapPatchEmbed, Mlp, Attention, Block, HeadPatchEmbed
 
 
 class TestUtils(unittest.TestCase):
@@ -25,13 +25,20 @@ class TestUtils(unittest.TestCase):
     """
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    def test_patch_embed2d(self):
+    def test_overlap_patch(self):
         test_shape = (1, 3, 4, 4)
         fake_img = torch.rand(test_shape).to(self.device)
         model = OverlapPatchEmbed(img_size=test_shape[-1], patch_size=2, stride=1, embed_dim=5).to(self.device)
         out, h, w = model(fake_img)
         self.assertEqual(h, w, 5)
         self.assertTrue(out.shape == (1, 25, 5))
+
+    def test_head_patch(self):
+        fake_img = torch.rand(1, 3, 4, 4).to(self.device)
+        model = HeadPatchEmbed(1).to(self.device)
+        out, h, w = model(fake_img)
+        self.assertEqual(h, w, 1)
+        self.assertTrue(out.shape == (1, 1, 64))
 
     def test_mlp(self):
         dummy_input = torch.rand(1, 16, 3).to(self.device)
