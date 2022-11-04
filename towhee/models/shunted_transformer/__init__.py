@@ -13,4 +13,5 @@
 # limitations under the License.
 
 from .utils import *
+from .configs import *
 from .shunted_transformer import *
