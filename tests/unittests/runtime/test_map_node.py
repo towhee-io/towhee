@@ -275,7 +275,7 @@ class TestMapNode(unittest.TestCase):
                              'vec': 11
                          })
 
-    def test_generator(self):
+    def test_generator_multi_output(self):
         node_info = {
             'type': 'map',
             'inputs': ('num', ),
@@ -316,6 +316,53 @@ class TestMapNode(unittest.TestCase):
                              'num': 4,
                              'vec1': [0, 1, 2, 3],
                              'vec2': [0, 1, 2, 3]
+                         })
+
+    def test_generator_single_ouput(self):
+        def fun(num):
+            i = 0
+            while i < num:
+                yield i
+                i += 1
+
+        node_info = {
+            'type': 'map',
+            'inputs': ('num', ),
+            'outputs': ('nums', ),
+            'op_info': {
+                'type': 'callable',
+                'operator': fun,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'map',
+                'param': None
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+
+        in_que = DataQueue([('num', ColumnType.QUEUE)])
+        in_que.put((4, ))
+        in_que.seal()
+        out_que1 = DataQueue([
+            ('num', ColumnType.QUEUE),
+            ('nums', ColumnType.QUEUE),
+        ])
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que1])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        print(node.err_msg)
+        self.assertTrue(node.status == NodeStatus.FINISHED)
+        self.assertTrue(out_que1.sealed)
+        self.assertEqual(out_que1.get_dict(),
+                         {
+                             'num': 4,
+                             'nums': [0, 1, 2, 3]
                          })
 
     def test_all_scalar(self):
