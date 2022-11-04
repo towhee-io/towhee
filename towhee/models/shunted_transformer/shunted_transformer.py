@@ -22,7 +22,7 @@ from torch import nn
 
 from towhee.models.utils.download import download_from_url
 from towhee.models.utils.init_vit_weights import init_vit_weights
-from towhee.models.shunted_transformer import OverlapPatchEmbed, HeadPatchEmbed, Block
+from towhee.models.shunted_transformer import OverlapPatchEmbed, HeadPatchEmbed, Block, get_configs, convert_state_dict
 
 
 class ShuntedTransformer(nn.Module):
@@ -53,37 +53,42 @@ class ShuntedTransformer(nn.Module):
                  depths=None, sr_ratios=None, num_stages=4, num_conv=0):
         super().__init__()
         self.num_classes = num_classes
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.mlp_ratios = mlp_ratios
+        self.sr_ratios = sr_ratios
         self.depths = depths
         self.num_stages = num_stages
+        self.num_conv = num_conv
 
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(self.depths))]  # stochastic depth decay rule
         cur = 0
 
-        for i in range(num_stages):
+        for i in range(self.num_stages):
             if i == 0:
-                patch_embed = HeadPatchEmbed(num_conv, embed_dim=embed_dims[0])
+                patch_embed = HeadPatchEmbed(self.num_conv, embed_dim=self.embed_dims[0])
             else:
                 patch_embed = OverlapPatchEmbed(img_size=img_size // (2 ** (i + 1)),
                                                 patch_size=3,
                                                 stride=2,
-                                                in_chans=embed_dims[i - 1],
-                                                embed_dim=embed_dims[i])
+                                                in_chans=self.embed_dims[i - 1],
+                                                embed_dim=self.embed_dims[i])
 
             block = nn.ModuleList([Block(
-                dim=embed_dims[i], num_heads=num_heads[i], mlp_ratio=mlp_ratios[i], qkv_bias=qkv_bias,
+                dim=self.embed_dims[i], num_heads=self.num_heads[i], mlp_ratio=self.mlp_ratios[i], qkv_bias=qkv_bias,
                 qk_scale=qk_scale,
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + j], norm_layer=norm_layer,
-                sr_ratio=sr_ratios[i])
-                for j in range(depths[i])])
-            norm = norm_layer(embed_dims[i])
-            cur += depths[i]
+                sr_ratio=self.sr_ratios[i])
+                for j in range(self.depths[i])])
+            norm = norm_layer(self.embed_dims[i])
+            cur += self.depths[i]
 
             setattr(self, f'patch_embed{i + 1}', patch_embed)
             setattr(self, f'block{i + 1}', block)
             setattr(self, f'norm{i + 1}', norm)
 
         # classification head
-        self.head = nn.Linear(embed_dims[-1], num_classes) if num_classes > 0 else nn.Identity()
+        self.head = nn.Linear(self.embed_dims[-1], self.num_classes) if self.num_classes > 0 else nn.Identity()
 
         self.apply(init_vit_weights)
 
@@ -110,7 +115,7 @@ class ShuntedTransformer(nn.Module):
 
 
 def create_model(
-        # model_name: str = None,
+        model_name: str = None,
         pretrained: bool = False,
         checkpoint_path: str = None,
         device: str = None,
@@ -119,8 +124,7 @@ def create_model(
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # configs = get_configs(model_name)
-    configs = {}
+    configs = get_configs(model_name)
     configs.update(**kwargs)
     if 'url' in configs:
         url = configs['url']
@@ -137,6 +141,7 @@ def create_model(
         state_dict = torch.load(checkpoint_path, map_location=device)
         if 'model' in state_dict:
             state_dict = state_dict['model']
+        state_dict = convert_state_dict(state_dict)
         model.load_state_dict(state_dict)
 
     model.eval()

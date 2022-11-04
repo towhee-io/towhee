@@ -40,6 +40,30 @@ class TestModel(unittest.TestCase):
         outs2 = model2(dummy_img)
         self.assertTrue(outs2.shape == (1, 4))
 
+    def test_model_names(self):
+        with self.assertRaises(ValueError) as e:
+            create_model(model_name='test')
+        self.assertEqual(str(e.exception),
+                         'Invalid model name: test.')
+
+        model_b = create_model(model_name='shunted_b', pretrained=False)
+        self.assertTrue(model_b.depths == [3, 4, 24, 2])
+        self.assertTrue(model_b.num_conv == 2)
+        self.assertTrue(model_b.embed_dims == [64, 128, 256, 512])
+        self.assertTrue(model_b.num_heads == [2, 4, 8, 16])
+        self.assertTrue(model_b.mlp_ratios == [8, 8, 4, 4])
+        self.assertTrue(model_b.sr_ratios == [8, 4, 2, 1])
+        self.assertTrue(model_b.num_classes == 1000)
+        self.assertTrue(model_b.num_stages == 4)
+
+        model_t = create_model(model_name='shunted_t', pretrained=False)
+        self.assertTrue(model_t.depths == [1, 2, 4, 1])
+        self.assertTrue(model_t.num_conv == 0)
+
+        model_s = create_model(model_name='shunted_s', pretrained=False)
+        self.assertTrue(model_s.depths == [2, 4, 12, 1])
+        self.assertTrue(model_s.num_conv == 1)
+
 
 if __name__ == '__main__':
     unittest.main()
