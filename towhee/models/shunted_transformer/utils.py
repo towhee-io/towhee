@@ -62,16 +62,17 @@ class HeadPatchEmbed(nn.Module):
     Args:
         num (`int`): number of repeated sets of layers
     """
-    def __init__(self, num):
+    def __init__(self, num, patch_size=7, stride=2, in_chans=3, embed_dim=64):
         super().__init__()
-        stem = [nn.Conv2d(3, 64, 7, 2, padding=3, bias=False), nn.BatchNorm2d(64), nn.ReLU(True)]
+        stem = [nn.Conv2d(in_chans, embed_dim, patch_size, stride, padding=3, bias=False),
+                nn.BatchNorm2d(embed_dim), nn.ReLU(True)]
         for _ in range(num):
-            stem.append(nn.Conv2d(64, 64, 3, 1, padding=1, bias=False))
-            stem.append(nn.BatchNorm2d(64))
+            stem.append(nn.Conv2d(embed_dim, embed_dim, 3, 1, padding=1, bias=False))
+            stem.append(nn.BatchNorm2d(embed_dim))
             stem.append(nn.ReLU(True))
-        stem.append(nn.Conv2d(64, 64, kernel_size=2, stride=2))
+        stem.append(nn.Conv2d(embed_dim, embed_dim, kernel_size=2, stride=stride))
         self.conv = nn.Sequential(*stem)
-        self.norm = nn.LayerNorm(64)
+        self.norm = nn.LayerNorm(embed_dim)
         self.apply(init_vit_weights)
 
     def forward(self, x):
