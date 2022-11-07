@@ -20,8 +20,8 @@ import hashlib
 from configparser import ConfigParser, NoSectionError
 from botocore import UNSIGNED
 from botocore.config import Config
-from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
+from boto3.s3.transfer import TransferConfig
 
 def get_conf() -> dict:
     cf = ConfigParser()
