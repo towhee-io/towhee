@@ -54,7 +54,7 @@ class Map(Node):
             return True
 
         process_data = [data.get(key) for key in self._node_repr.inputs]
-        if Empty() not in process_data:
+        if not any((i is Empty() for i in process_data)):
             succ, outputs, msg = self._call(process_data)
             if not succ:
                 self._set_failed(msg)
