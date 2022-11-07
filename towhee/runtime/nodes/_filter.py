@@ -15,7 +15,7 @@
 from typing import List
 
 from towhee.runtime.constants import FilterConst
-
+from towhee.runtime.data_queue import Empty
 from .node import Node
 
 
@@ -47,18 +47,18 @@ class Filter(Node):
             return True
 
         process_data = [data.get(key) for key in self._node_repr.iter_info.param[FilterConst.param.filter_by]]
-        succ, outputs, msg = self._call(process_data)
-        if not succ:
-            self._set_failed(msg)
-            return True
+        if Empty() not in process_data:
+            succ, outputs, msg = self._call(process_data)
+            if not succ:
+                self._set_failed(msg)
+                return True
 
-        if outputs:
-            output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
-            data.update(output_map)
-
-        else:
-            for k in self._same_keys:
-                del data[k]
+            if outputs:
+                output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
+                data.update(output_map)
+            else:
+                for k in self._same_keys:
+                    del data[k]
 
         for out_que in self._output_ques:
             if not out_que.put_dict(data):

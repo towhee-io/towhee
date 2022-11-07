@@ -150,7 +150,6 @@ class TestFilterNode(unittest.TestCase):
                                 'num': i
                             })
 
-
     def test_schema_cover2(self):
         in_que = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
         size = 10
@@ -253,6 +252,200 @@ class TestFilterNode(unittest.TestCase):
         self.assertTrue(out_que2.sealed)
         self.assertTrue(out_que1.size == 0)
         self.assertTrue(out_que2.size == 0)
+
+    def test_all_empty(self):
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('vec', 'vec2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x: x < 2,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'filter',
+                'param': {'filter_by': ['num']}
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1, 1))
+        in_que.put(('test_url', Empty(), Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue(
+            [
+                ('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE),
+                ('vec', ColumnType.QUEUE)
+            ]
+        )
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'some': 1,
+                                'vec': 1,
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': Empty(),
+                                'some': 1,
+                                'vec': Empty(),
+                            })
+
+    def test_scalar_empty(self):
+        node_info = {
+            'inputs': ('url', 'num'),
+            'outputs': ('vec2', 'vec'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x: x < 2,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'filter',
+                'param': {'filter_by': ['num']}
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1))
+        in_que.put(('test_url', Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'vec': 1,
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'vec': Empty(),
+                            })
+
+    def test_queue_empty(self):
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('vec', 'vec2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x, y: x < 2 and y < 2,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'filter',
+                'param': {'filter_by': ['num', 'another']}
+            },
+            'config': {},
+            'next_nodes': ['_output']
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1))
+        in_que.put(('test_url', Empty(), 1))
+        in_que.seal()
+        out_que = DataQueue(
+            [
+                ('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('vec', ColumnType.QUEUE),
+                ('vec2', ColumnType.QUEUE)
+            ]
+        )
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'vec': 1,
+                                'vec2': 1
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'vec': Empty(),
+                                'vec2': Empty()
+                            })
+
+    def test_empty_without_next(self):
+        node_info = {
+            'inputs': ('num', 'another'),
+            'outputs': ('vec', 'vec2'),
+            'op_info': {
+                'type': 'lambda',
+                'operator': lambda x: x < 2,
+                'tag': 'main',
+                'init_args': None,
+                'init_kws': {}
+            },
+            'iter_info': {
+                'type': 'filter',
+                'param': {'filter_by': ['num']}
+            },
+            'config': {},
+            'next_nodes': None
+        }
+        node_repr = NodeRepr.from_dict('test_node', node_info)
+        in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
+        in_que.put(('test_url', 1, 1, 1))
+        in_que.put(('test_url', Empty(), 1, 1))
+        in_que.seal()
+        out_que = DataQueue(
+            [
+                ('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE),
+                ('vec', ColumnType.QUEUE)
+            ]
+        )
+        node = create_node(node_repr, self.op_pool, [in_que], [out_que])
+        self.assertTrue(node.initialize())
+        f = self.thread_pool.submit(node.process)
+        f.result()
+        self.assertEqual(node.status, NodeStatus.FINISHED)
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': 1,
+                                'another': 1,
+                                'some': 1,
+                                'vec': 1,
+                            })
+        self.assertEqual(out_que.get_dict(),
+                            {
+                                'url': 'test_url',
+                                'num': Empty(),
+                                'another': 1,
+                                'some': 1,
+                                'vec': Empty(),
+                            })
 
 
 if __name__ == '__main__':
