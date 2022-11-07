@@ -2,7 +2,7 @@ requests>=2.12.5
 tqdm>=4.59.0
 tabulate
 numpy
-pygit2
+pygit2<=1.10.1
 pgzip
 pyarrow
 twine
