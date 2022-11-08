@@ -14,7 +14,12 @@
 import unittest
 from towhee.command.s3 import S3Bucket
 
+# pylint: disable=C0103
+# pylint: disable=W0613
 class MockClient(object):
+    """
+    Mock s3 client
+    """
     def upload_file(self, file_upload, bucket_name, object_name, Config=None):
         return True
 
@@ -32,14 +37,12 @@ class MockClient(object):
         return True
 
     def list_objects_v2(self, Bucket, Prefix, MaxKeys=100):
-        list_key = list()
+        list_key = []
         list_key.append({'Key':'/test/test'})
         mock_list_content = {
             'Contents': list_key
         }
         return mock_list_content
-    
-
 
 class TestS3(unittest.TestCase):
     """
