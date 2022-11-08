@@ -22,6 +22,7 @@ from typing import Union, Any, List
 from setuptools import setup
 
 from towhee import pipeline
+from towhee.command.s3 import S3Bucket
 
 
 class ExecuteCommand: # pragma: no cover
@@ -156,3 +157,53 @@ class UploadCommand: # pragma: no cover
         install.add_argument('-ru', '--repositoryurl', required=False, \
                             help='The repository (package index) URL to upload the package to. This overrides --repository.' \
                                 '(Can also be set via TWINE_REPOSITORY_URL environment variable.)')
+
+class UploadS3Command: # pragma: no cover
+    """
+    Implementation for subcmd `towhee uploadS3`
+    """
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        s3 = S3Bucket()
+        if not s3.upload_files(self._args.pathbucket, self._args.pathlocal):
+            print('upload file to s3 error, please check command.')
+    @staticmethod
+    def install(subparsers):
+        install = subparsers.add_parser('uploadS3', help='uploadS3 command: upload model to S3')
+        install.add_argument('-pb', '--pathbucket', required=True, help='bucket path to save file')
+        install.add_argument('-pl', '--pathlocal', required=True, help='local path to upload file')
+
+class LsS3Command: # pragma: no cover
+    """
+    Implementation for subcmd `towhee lsS3`
+    """
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        s3 = S3Bucket()
+        files = s3.get_list_s3(self._args.path)
+        print(files)
+    @staticmethod
+    def install(subparsers):
+        install = subparsers.add_parser('lsS3', help='lsS3 command: show files in S3 path')
+        install.add_argument('-p', '--path', required=False, help='bucket path to show files')
+
+class DownloadS3Command:
+    """
+    Implementation for subcmd `towhee DownloadS3`
+    """
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        s3 = S3Bucket()
+        if not s3.download_files(self._args.pathbucket, self._args.pathlocal):
+            print('download files from s3 error, please check command.')
+    @staticmethod
+    def install(subparsers):
+        install = subparsers.add_parser('downloadS3', help='downloadS3 command: download files in S3 path')
+        install.add_argument('-pb', '--pathbucket', required=True, help='bucket path to download files')
+        install.add_argument('-pl', '--pathlocal', required=True, help='local path to download files')
