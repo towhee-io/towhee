@@ -85,6 +85,36 @@ def get_configs(model_name: str) -> Dict:
             vision_patch_size=32,
             multilingual_model="M-CLIP/XLM-Roberta-Large-Vit-B-32"
         ))
+    elif model_name == "clip_resnet_r50x4":
+        configs = base_configs()
+        configs.update(dict(
+            url=("https://openaipublic.azureedge.net/clip/models/"
+                 "7e526bd135e493cef0776de27d5f42653e6b4c8bf9e0f653bb11773263205fdd/RN50x4.pt"),
+        ))
+    elif model_name == "clip_resnet_r50x16":
+        configs = base_configs()
+        configs.update(dict(
+            url=("https://openaipublic.azureedge.net/clip/models/"
+                 "52378b407f34354e150460fe41077663dd5b39c54cd0bfd2b27167a4a06ec9aa/RN50x16.pt"),
+        ))
+    elif model_name == "clip_resnet_r50x64":
+        configs = base_configs()
+        configs.update(dict(
+            url=("https://openaipublic.azureedge.net/clip/models/"
+                 "be1cfb55d75a9666199fb2206c106743da0f6468c9d327f3e0d0a543a9919d9c/RN50x64.pt"),
+        ))
+    elif model_name == "clip_vit_l14":
+        configs = base_configs()
+        configs.update(dict(
+            url=("https://openaipublic.azureedge.net/clip/models/"
+                 "b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt"),
+        ))
+    elif model_name == "clip_vit_l14@336px":
+        configs = base_configs()
+        configs.update(dict(
+            url=("https://openaipublic.azureedge.net/clip/models/"
+                 "3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt"),
+        ))
     else:
         raise ValueError(f"Invalid model name '{model_name}'.")
     return configs
