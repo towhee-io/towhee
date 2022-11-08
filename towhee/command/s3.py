@@ -42,7 +42,7 @@ def get_conf() -> dict:
 
 class S3Bucket(object):
     """
-    need download boto3 module
+    S3 bucket upload ls download functions
     """
     def __init__(self):
         s3_conf = get_conf()
@@ -88,13 +88,14 @@ class S3Bucket(object):
                 real local path
         """
         # multipart upload
+        real_path = os.path.abspath(path_local)
         chunk_size = 52428800
-        source_size = os.stat(path_local).st_size
+        source_size = os.stat(real_path).st_size
         print('source_size=', source_size)
         chunk_count = int(math.ceil(source_size/float(chunk_size)))
         mpu = self.s3.create_multipart_upload(Bucket=self.bucket_name, Key=path_bucket)
         part_info = {'Parts': []}
-        with open(path_local, 'rb') as fp:
+        with open(real_path, 'rb') as fp:
             for i in range(chunk_count):
                 offset = chunk_size * i
                 remain_bytes = min(chunk_size, source_size-offset)
@@ -107,17 +108,17 @@ class S3Bucket(object):
                 except Exception as exc:  # pylint: disable=W0703
                     print('error occurred.', exc)
                     return False
-                print('uploading %s %s'%(path_local, str(i/chunk_count)))
+                print('uploading %s %s'%(real_path, str(i/chunk_count)))
                 parts={
                     'PartNumber': i+1,
                     'ETag':new_etag
                 }
                 part_info['Parts'].append(parts)
-        print('%s uploaded!' % (path_local))
+        print('%s uploaded!' % (real_path))
         self.s3.complete_multipart_upload(Bucket=self.bucket_name,Key=path_bucket,
                                           UploadId=mpu['UploadId'],
                                           MultipartUpload=part_info)
-        print('%s uploaded success!' % (path_local))
+        print('%s uploaded success!' % (real_path))
         return True
 
     def download_file(self, object_name, path_local):
@@ -138,7 +139,7 @@ class S3Bucket(object):
             file_name = os.path.join(path_local, os.path.basename(object_name))
         print(object_name, file_name)
         try:
-            self.s3.download_file(self.bucket_name,object_name,file_name,Config= config)
+            self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
         except Exception as exc:  # pylint: disable=W0703
             print('download single file error occurred.', exc)
             return False
@@ -159,7 +160,7 @@ class S3Bucket(object):
                 os.makedirs(path_local)
             file_name = os.path.join(path_local, name)
             try:
-                self.s3.download_file(self.bucket_name, object_name, file_name,Config= config)
+                self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
             except Exception as exc:  # pylint: disable=W0703
                 print('download files error occurred.', exc)
                 return False
