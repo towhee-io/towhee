@@ -36,7 +36,7 @@ class FlatMap(Node):
             return True
 
         process_data = [data.get(key) for key in self._node_repr.inputs]
-        if Empty() in process_data:
+        if any((i is Empty() for i in process_data)):
             for out_que in self._output_ques:
                 if not out_que.put_dict(data):
                     self._set_stopped()
