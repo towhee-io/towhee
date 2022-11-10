@@ -97,6 +97,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./hulk.jpg', path + '/dataset/test.jpg')
                     elif "./moon.jpeg" in lines[j]:
                         lines[j] = lines[j].replace('./moon.jpeg', path + '/dataset/test.jpg')
+                    elif "./image.jpg" in lines[j]:
+                        lines[j] = lines[j].replace('./image.jpg', path + '/dataset/test.jpg')
                     elif "./jumpingjack.gif" in lines[j]:
                         lines[j] = lines[j].replace('./jumpingjack.gif', path + '/dataset/test.mp4')
                     elif "./demo_video.mp4" in lines[j]:
