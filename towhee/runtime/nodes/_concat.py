@@ -29,12 +29,26 @@ class Concat(Node):
     def initialize(self) -> bool:
         for q in self._in_ques:
             q.max_size = 0
+
+        q_nums = len(self._in_ques)
+        all_cols = []
+        self.cols_every_que = []
+        while q_nums > 0:
+            cols = []
+            schema = self._in_ques[q_nums - 1].schema
+            for col in schema:
+                if col not in all_cols:
+                    cols.append(col)
+            self.cols_every_que.append(cols)
+            all_cols.extend(cols)
+            q_nums -= 1
+        self.cols_every_que.reverse()
         return True
 
     def process_step(self) -> bool:
         all_data = {}
-        for q in self._in_ques:
-            data = q.get_dict()
+        for i, q in enumerate(self._in_ques):
+            data = q.get_dict(self.cols_every_que[i])
             if data:
                 all_data.update(data)
         if not all_data:

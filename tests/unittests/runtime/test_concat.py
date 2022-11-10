@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.nodes import create_node, NodeStatus
-from towhee.runtime.data_queue import DataQueue, ColumnType
+from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 from towhee.runtime.operator_manager import OperatorPool
 
 
@@ -141,35 +141,50 @@ class TestMapNode(unittest.TestCase):
     def test_schema_cover(self):
         in_que1 = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE)])
         in_que2 = DataQueue([('num1', ColumnType.QUEUE), ('num3', ColumnType.QUEUE)])
+        in_que3 = DataQueue([('num3', ColumnType.QUEUE)])
         out_que1 = DataQueue([('num1', ColumnType.QUEUE), ('num2', ColumnType.QUEUE), ('num3', ColumnType.QUEUE)])
         out_que2 = DataQueue([('num1', ColumnType.QUEUE)])
-        node = create_node(self.node_repr, self.op_pool, [in_que1, in_que2], [out_que1, out_que2])
+        node = create_node(self.node_repr, self.op_pool, [in_que1, in_que2, in_que3], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
 
         in_que1.put((1, 1))
         in_que1.put((2, 2))
         in_que1.put((3, 3))
+        in_que1.put((Empty(), 4))
+        in_que1.put((Empty(), 5))
+        in_que1.put((Empty(), 6))
 
         in_que2.put((4, 4))
         in_que2.put((5, 5))
-        in_que2.put((6, 6))
+
+        in_que3.put((1,))
+        in_que3.put((2,))
+        in_que3.put((3,))
+        in_que3.put((4,))
+        in_que3.put((5,))
+
         in_que1.seal()
         in_que2.seal()
+        in_que3.seal()
         f.result()
         self.assertTrue(node.status == NodeStatus.FINISHED)
         self.assertTrue(out_que1.sealed)
         self.assertTrue(out_que2.sealed)
 
-        for i in range(3):
-            self.assertEqual(out_que1.get_dict(),
-                             {
-                                 'num1': i + 4,
-                                 'num2': i + 1,
-                                 'num3': i + 4
-                             })
+        for i in range(6):
+            if i < 5:
+                self.assertEqual(out_que1.get_dict(['num3']),
+                                 {
+                                     'num3': i + 1
+                                 })
+            else:
+                self.assertEqual(out_que1.get_dict(['num3']),
+                                 {
+                                     'num3': Empty()
+                                 })
 
-        for i in range(3):
+        for i in range(2):
             self.assertEqual(out_que2.get_dict(),
                              {
                                  'num1': i + 4

@@ -119,15 +119,20 @@ class DataQueue:
             self._not_full.notify()
             return ret
 
-    def get_dict(self) -> Optional[Dict]:
+    def get_dict(self, cols: List[str] = None) -> Optional[Dict]:
         data = self.get()
         if data is None:
             return None
 
         ret = {}
         names = self._schema.col_names
-        for i in range(len(names)):
-            ret[names[i]] = data[i]
+        if cols is None:
+            for i, name in enumerate(names):
+                ret[name] = data[i]
+        else:
+            for i, name in enumerate(names):
+                if name in cols:
+                    ret[name] = data[i]
         return ret
 
     @property
