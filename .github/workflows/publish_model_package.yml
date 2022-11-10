@@ -9,6 +9,8 @@ on:
   push:
     branches:
       - 'main'
+    paths:
+      - 'towhee/models/**'
 jobs:
   build-n-publish:
     name: Build and Publish Towhee.models to TestPyPI
@@ -38,7 +40,7 @@ jobs:
         --user
     - name: Build a binary wheel and a source tarball
       run: >-
-        python -m
+        python
         setup.py
         --models
         --sdist
