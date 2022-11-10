@@ -1,11 +1,5 @@
 name: Publish Towhee.models to TestPyPI
 on:
-  pull_request:
-    branches:
-      - main
-      # file paths to consider in the event
-    paths:
-      - '.github/workflows/publish_model_package.yml'
   push:
     branches:
       - 'main'
