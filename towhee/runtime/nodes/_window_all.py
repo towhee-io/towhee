@@ -18,7 +18,7 @@ from typing import List
 from towhee.runtime.data_queue import Empty
 
 from .node import Node
-
+from towhee.runtime.performance_profiler import Event
 
 
 class WindowAll(Node):
@@ -40,9 +40,10 @@ class WindowAll(Node):
     def __init__(self, node_info: 'NodeInfo',
                  op_pool: 'OperatorPool',
                  in_ques: List['DataQueue'],
-                 out_ques: List['DataQueue']):
+                 out_ques: List['DataQueue'],
+                 time_profiler: 'TimeProfiler'):
 
-        super().__init__(node_info, op_pool, in_ques, out_ques)
+        super().__init__(node_info, op_pool, in_ques, out_ques, time_profiler)
         self._input_que = in_ques[0]
         self._schema = in_ques[0].schema
 
@@ -72,13 +73,16 @@ class WindowAll(Node):
         """
         Process each window data.
         """
+        self._time_profiler.record(self.uid, Event.queue_in)
         in_buffer = self._get_buffer()
         if in_buffer is None:
             self._set_finished()
             return True
 
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
+        self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
+        self._time_profiler.record(self.uid, Event.process_out)
         if not succ:
             self._set_failed(msg)
             return True
@@ -92,6 +96,7 @@ class WindowAll(Node):
             output_map[self._node_repr.outputs[0]] = [outputs]
 
         in_buffer.update(output_map)
+        self._time_profiler.record(self.uid, Event.queue_out)
 
         for out_que in self._output_ques:
             if not out_que.batch_put_dict(in_buffer):

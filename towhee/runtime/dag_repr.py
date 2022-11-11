@@ -257,12 +257,10 @@ class DAGRepr:
             DAGRepr
         """
         def _get_name(val):
-            nonlocal lambda_index
             if val['op_info']['type'] == OPType.CALLABLE:
                 name = val['op_info']['operator'].__name__
             elif val['op_info']['type'] == OPType.LAMBDA:
-                name = 'lambda-' + str(lambda_index)
-                lambda_index += 1
+                name = 'lambda'
             elif val['op_info']['type'] == OPType.HUB:
                 fn = val['op_info']['operator']
                 if isinstance(fn, str):
@@ -273,8 +271,7 @@ class DAGRepr:
             return name
 
         nodes = {}
-        concat_index = 0
-        lambda_index = 0
+        node_index = 0
         for key, val in dag.items():
             # Deal with input and output.
             if key in ['_input', '_output']:
@@ -282,19 +279,21 @@ class DAGRepr:
 
             # Concat nodes does not have op_info.
             elif val['iter_info']['type'] == 'concat':
-                val['config'] = {'name': 'concat-' + str(concat_index)}
-                concat_index += 1
+                val['config'] = {'name': 'concat-' + str(node_index)}
+                node_index += 1
 
             # If config does not specified.
             elif 'config' not in val or not val['config']:
                 name = _get_name(val)
-                val['config'] = {'name': name}
+                val['config'] = {'name': name + '-' + str(node_index)}
+                node_index += 1
 
             # Process dict config.
             elif isinstance(val['config'], dict):
                 if 'name' not in val['config']:
                     name = _get_name(val)
-                    val['config']['name'] = name
+                    val['config']['name'] = name + '-' + str(node_index)
+                    node_index += 1
 
             nodes[key] = NodeRepr.from_dict(key, val)
 

@@ -78,12 +78,14 @@ class Pipeline:
         return cls(dag_dict)
 
     # TODO: Run with the configuration.
-    def output(self, *output_schema) -> 'RuntimePipeline':
+    def output(self, *output_schema, **config_kws) -> 'RuntimePipeline':
         """
         Close and preload the pipeline, and ready to run with it.
 
         Args:
             output_schema (tuple): Which columns to output.
+            config_kws (dict): The config for this pipeline.
+
 
         Returns:
             RuntimePipeline: The runtime pipeline that can be called on inputs.
@@ -109,7 +111,7 @@ class Pipeline:
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
 
-        run_pipe = RuntimePipeline(dag_dict)
+        run_pipe = RuntimePipeline(dag_dict, config=config_kws)
         run_pipe.preload()
         return run_pipe
 

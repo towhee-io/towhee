@@ -21,6 +21,7 @@ import traceback
 from towhee.runtime.data_queue import DataQueue
 from towhee.runtime.runtime_conf import set_runtime_config
 from towhee.runtime.constants import OPType
+from towhee.runtime.performance_profiler import Event, TimeProfiler
 from towhee.utils.log import engine_log
 
 
@@ -57,10 +58,15 @@ class Node(ABC):
     def __init__(self, node_repr: 'NodeRepr',
                  op_pool: 'OperatorPool',
                  in_ques: List[DataQueue],
-                 out_ques: List[DataQueue]):
+                 out_ques: List[DataQueue],
+                 time_profiler: 'TimeProfiler'):
 
         self._node_repr = node_repr
         self._op_pool = op_pool
+        if time_profiler is None:
+            self._time_profiler = TimeProfiler()
+        else:
+            self._time_profiler = time_profiler
         self._op = None
 
         self._in_ques = in_ques
@@ -78,12 +84,14 @@ class Node(ABC):
             try:
                 hub_id = self._node_repr.op_info.operator
                 with set_runtime_config(self._node_repr.config):
+                    self._time_profiler.record(self.uid, Event.init_in)
                     self._op = self._op_pool.acquire_op(
                         self.uid,
                         hub_id,
                         self._node_repr.op_info.init_args,
                         self._node_repr.op_info.init_kws,
                         self._node_repr.op_info.tag)
+                    self._time_profiler.record(self.uid, Event.init_out)
                     return True
             except Exception as e:  # pylint: disable=broad-except
                 st_err = '{}, {}'.format(str(e), traceback.format_exc())

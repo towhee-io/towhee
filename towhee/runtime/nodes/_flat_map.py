@@ -15,6 +15,7 @@ from typing import List, Any
 
 from .node import Node
 from towhee.runtime.data_queue import Empty
+from towhee.runtime.performance_profiler import Event
 
 
 class FlatMap(Node):
@@ -29,7 +30,7 @@ class FlatMap(Node):
             ---0---1---2---3--->
     """
     def process_step(self) -> List[Any]:
-
+        self._time_profiler.record(self.uid, Event.queue_in)
         data = self._in_ques[0].get_dict()
         if data is None:
             self._set_finished()
@@ -42,6 +43,7 @@ class FlatMap(Node):
                     self._set_stopped()
                     return True
         else:
+            self._time_profiler.record(self.uid, Event.process_in)
             succ, outputs, msg = self._call(process_data)
             if not succ:
                 self._set_failed(msg)
@@ -63,5 +65,7 @@ class FlatMap(Node):
                         return True
 
                 data = {}
+            self._time_profiler.record(self.uid, Event.process_out)
+            self._time_profiler.record(self.uid, Event.queue_out)
 
         return False

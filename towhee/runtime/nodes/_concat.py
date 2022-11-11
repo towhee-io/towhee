@@ -14,6 +14,7 @@
 
 
 from .node import Node
+from towhee.runtime.performance_profiler import Event
 
 
 class Concat(Node):
@@ -46,17 +47,24 @@ class Concat(Node):
         return True
 
     def process_step(self) -> bool:
+        self._time_profiler.record(self.uid, Event.queue_in)
         all_data = {}
         for i, q in enumerate(self._in_ques):
             data = q.get_dict(self.cols_every_que[i])
             if data:
                 all_data.update(data)
+
         if not all_data:
             self._set_finished()
+            self._time_profiler.record(self.uid, Event.queue_out)
             return True
+
+        self._time_profiler.record(self.uid, Event.process_in)
+        self._time_profiler.record(self.uid, Event.process_out)
 
         for out_que in self._output_ques:
             if not out_que.put_dict(all_data):
                 self._set_stopped()
                 return True
+
         return False
