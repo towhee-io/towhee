@@ -16,12 +16,16 @@
 
 from typing import Union, List, Dict
 from pkg_resources import packaging
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+from torchvision.transforms import InterpolationMode
 
 import torch
+import torchvision
 from torch import nn
 
 from .simple_tokenizer import SimpleTokenizer
 
+BICUBIC = InterpolationMode.BICUBIC
 
 def base_configs() -> Dict:
     return dict(
@@ -119,6 +123,30 @@ def get_configs(model_name: str) -> Dict:
         raise ValueError(f"Invalid model name '{model_name}'.")
     return configs
 
+def _transform(n_px):
+    return Compose([
+        Resize(n_px, interpolation=BICUBIC),
+        CenterCrop(n_px),
+        _convert_image_to_rgb,
+        ToTensor(),
+        Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    ])
+
+def get_transforms(model_name: str) -> torchvision.transforms.Compose:
+    pixels = {}
+    pixels["clip_resnet_r50"] = 224
+    pixels["clip_resnet_r101"] = 224
+    pixels["clip_vit_b16"] = 224
+    pixels["clip_vit_b32"] = 224
+    pixels["clip_resnet_r50x4"] = 288
+    pixels["clip_resnet_r50x16"] = 384
+    pixels["clip_resnet_r50x64"] = 448
+    pixels["clip_vit_l14"] = 224
+    pixels["clip_vit_l14@336px"] = 336
+    return _transform(pixels[model_name])
+
+def _convert_image_to_rgb(image):
+    return image.convert("RGB")
 
 def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: bool = False) \
         -> Union[torch.IntTensor, torch.LongTensor]:
