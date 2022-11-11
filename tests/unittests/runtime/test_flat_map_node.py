@@ -43,7 +43,7 @@ class TestFlatMapNode(unittest.TestCase):
         'type': 'flat_map',
         'param': {}
     },
-    'config': {},
+    'config': {'name': 'test'},
     'next_nodes': ['_output']
     }
     def setUp(self):
@@ -192,7 +192,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
@@ -242,7 +242,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
@@ -290,7 +290,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 
@@ -332,7 +332,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 
@@ -374,7 +374,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -424,7 +424,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -467,7 +467,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -513,7 +513,7 @@ class TestFlatMapNode(unittest.TestCase):
                 'type': 'flat_map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': None
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)

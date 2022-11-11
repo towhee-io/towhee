@@ -21,24 +21,6 @@ class TestNodeRepr(unittest.TestCase):
     """
     NodeRepr test
     """
-    def test_input(self):
-        node_input = {
-            'inputs': None,
-            'outputs': ('a', 'b'),
-            'iter_info': {
-                'type': 'map',
-                'param': None
-            },
-            'next_nodes': ['next']
-        }
-        node = NodeRepr.from_dict('_input', node_input)
-        self.assertEqual(node.name, '_input')
-        self.assertEqual(node.inputs, None)
-        self.assertEqual(node.outputs, ('a', 'b'))
-        self.assertEqual(node.iter_info.type, 'map')
-        self.assertEqual(node.iter_info.param, None)
-        self.assertEqual(node.next_nodes, ['next'])
-
     def test_op(self):
         node_op = {
             'inputs': ('a', 'b'),
@@ -54,11 +36,11 @@ class TestNodeRepr(unittest.TestCase):
                 'init_kws': {'b': 'b'},
                 'tag': '1.1',
             },
-            'config': {'parallel': 3},
+            'config': {'name': 'test'},
             'next_nodes': ['next1', 'next2']
         }
         node = NodeRepr.from_dict('test_dict', node_op)
-        self.assertEqual(node.name, 'test_dict')
+        self.assertEqual(node.name, 'test')
         self.assertEqual(node.inputs, ('a', 'b'))
         self.assertEqual(node.outputs, ('d',))
         self.assertEqual(node.iter_info.type, 'filter')
@@ -68,8 +50,8 @@ class TestNodeRepr(unittest.TestCase):
         self.assertEqual(node.op_info.init_args, ('a', ))
         self.assertEqual(node.op_info.init_kws, {'b': 'b'})
         self.assertEqual(node.op_info.tag, '1.1')
-        self.assertEqual(node.config, {'parallel': 3})
         self.assertEqual(node.next_nodes, ['next1', 'next2'])
+        self.assertEqual(node.config.name, 'test')
 
     def test_raise_iter(self):
         node_input = {

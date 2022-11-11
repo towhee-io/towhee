@@ -76,7 +76,7 @@ class Node(ABC):
             try:
                 hub_id = self._node_repr.op_info.operator
                 self._op = self._op_pool.acquire_op(
-                    self.id,
+                    self.uid,
                     hub_id,
                     self._node_repr.op_info.init_args,
                     self._node_repr.op_info.init_kws,
@@ -108,8 +108,8 @@ class Node(ABC):
         return self._node_repr.name
 
     @property
-    def id(self):
-        return self._node_repr.name
+    def uid(self):
+        return self._node_repr.uid
 
     @property
     def status(self):

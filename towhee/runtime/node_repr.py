@@ -15,6 +15,7 @@
 from typing import Dict, Any, Tuple, Union, Callable, List
 
 from towhee.runtime.check_utils import check_keys
+from towhee.runtime.node_config import NodeConfig
 
 
 # pylint: disable=redefined-builtin
@@ -132,7 +133,7 @@ class NodeRepr:
     """
     def __init__(
             self,
-            name: str,
+            uid: str,
             inputs: Tuple,
             outputs: Tuple,
             iter_info: IterationRepr,
@@ -142,7 +143,7 @@ class NodeRepr:
             in_edges: List = None,
             out_edges: List = None,
     ):
-        self._name = name
+        self._uid = uid
         self._inputs = inputs
         self._outputs = outputs
         self._iter_info = iter_info
@@ -153,8 +154,12 @@ class NodeRepr:
         self._out_edges = out_edges
 
     @property
+    def uid(self):
+        return self._uid
+
+    @property
     def name(self):
-        return self._name
+        return self._config.name
 
     @property
     def inputs(self) -> Union[str, Tuple]:
@@ -205,23 +210,26 @@ class NodeRepr:
         self._out_edges = out_edges
 
     @staticmethod
-    def from_dict(name: str, node: Dict[str, Any]) -> 'NodeRepr':
+    def from_dict(uid: str, node: Dict[str, Any]) -> 'NodeRepr':
         """Return a NodeRepr from a description dict.
 
         Args:
-            name (`str`): Node name.
+            id (`str`): Node id.
             node (`Dict[str, Any]`): Dictionary about node info from dag.
 
         Returns:
             NodeRepr object.
         """
+
         check_keys(node, {'inputs', 'outputs', 'iter_info', 'next_nodes'})
         iter_repr = IterationRepr.from_dict(node['iter_info'])
 
-        if name in ['_input', '_output'] or node['iter_info']['type'] == 'concat':
-            op_repr = OperatorRepr.from_dict({'operator': name, 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'})
-            return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, op_repr, None, node['next_nodes'])
+        config = NodeConfig.from_dict(node['config'])
+
+        if uid in ['_input', '_output'] or node['iter_info']['type'] == 'concat':
+            op_repr = OperatorRepr.from_dict({'operator': uid, 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'})
+            return NodeRepr(uid, node['inputs'], node['outputs'], iter_repr, op_repr, config, node['next_nodes'])
         else:
             check_keys(node, {'op_info', 'config'})
             op_repr = OperatorRepr.from_dict(node['op_info'])
-            return NodeRepr(name, node['inputs'], node['outputs'], iter_repr, op_repr, node['config'], node['next_nodes'])
+            return NodeRepr(uid, node['inputs'], node['outputs'], iter_repr, op_repr, config, node['next_nodes'])

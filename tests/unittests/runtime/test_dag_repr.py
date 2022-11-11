@@ -159,7 +159,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('a',),
                 'outputs': ('c',),
                 'iter_info': {'type': 'map', 'param': None},
-                'op_info': {'operator': 'test1', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
+                'op_info': {'operator': 'test1', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
                 'next_nodes': ['op3']
             },
@@ -167,7 +167,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('b',),
                 'outputs': ('d',),
                 'iter_info': {'type': 'map', 'param': None},
-                'op_info': {'operator': 'test2', 'type': 'local', 'init_args': None, 'init_kws': None, 'tag': 'main'},
+                'op_info': {'operator': 'test2', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
                 'next_nodes': ['op3']
             },
@@ -175,6 +175,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': (),
                 'outputs': (),
                 'iter_info': {'type': 'concat', 'param': None},
+                'op_info': {'operator': 'test3', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
                 'config': None,
                 'next_nodes': ['_output']
             },

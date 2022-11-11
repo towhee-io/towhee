@@ -44,7 +44,7 @@ class TestWindowAll(unittest.TestCase):
             'param': {
             }
         },
-        'config': {},
+        'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
 
@@ -260,7 +260,7 @@ class TestWindowAll(unittest.TestCase):
                 'param': {
                 }
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 
