@@ -18,12 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import torch
 from torch import nn
 
-from towhee.models.utils.download import download_from_url
+from towhee.models.utils import create_model as towhee_model
 from towhee.models.replknet import RepLKNetStage, fuse_bn, conv_bn_relu, get_configs
 
 
@@ -189,38 +187,18 @@ def create_model(
         pretrained: bool = False,
         checkpoint_path: str = None,
         device: str = None,
-        **kwargs):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        **kwargs
+        ):
     configs = get_configs(model_name)
-
-    url = None
-    if 'url' in configs:
-        url = configs['url']
-        del configs['url']
     configs.update(**kwargs)
 
-    model = RepLKNet(**configs).to(device)
-    if pretrained:
-        if checkpoint_path:
-            local_path = checkpoint_path
-        elif url:
-            cache_dir = os.path.expanduser('~/.cache/towhee')
-            local_path = download_from_url(url=url, root=cache_dir)
-        else:
-            raise AttributeError('No url or checkpoint_path is provided for pretrained model.')
-        state_dict = torch.load(local_path, map_location=device)
-        if 'model' in state_dict:
-            state_dict = state_dict['model']
-        model.load_state_dict(state_dict)
-    model.eval()
+    model = towhee_model(RepLKNet, configs=configs, pretrained=pretrained, checkpoint_path=checkpoint_path, device=device)
     return model
 
 
 # if __name__ == '__main__':
 #     import torch
 #     x = torch.ones(1, 3, 384, 384)
-#     model = create_model(model_name='replknet_31b_1k',
-#                          pretrained=True, checkpoint_path='path/to/checkpoint.pth')
+#     model = create_model(model_name='replk_31b_1k', pretrained=False)
 #     outs = model(x)
 #     print(outs.shape)
