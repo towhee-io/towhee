@@ -20,9 +20,9 @@
 import torch
 from torch import nn
 
-from towhee.models.utils.download import download_from_url
+from towhee.models.utils import create_model as towhee_model
 from towhee.models.utils.init_vit_weights import init_vit_weights
-from towhee.models.shunted_transformer import OverlapPatchEmbed, HeadPatchEmbed, Block, get_configs, convert_state_dict
+from towhee.models.shunted_transformer import OverlapPatchEmbed, HeadPatchEmbed, Block, get_configs
 
 
 class ShuntedTransformer(nn.Module):
@@ -119,31 +119,10 @@ def create_model(
         pretrained: bool = False,
         checkpoint_path: str = None,
         device: str = None,
-        **kwargs,
-):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+        **kwargs
+        ):
     configs = get_configs(model_name)
     configs.update(**kwargs)
-    if 'url' in configs:
-        url = configs['url']
-        del configs['url']
-    else:
-        url = None
 
-    model = ShuntedTransformer(**configs).to(device)
-
-    if pretrained:
-        if checkpoint_path is None:
-            assert url, 'No default url or weights path is provided for the pretrained model.'
-            checkpoint_path = download_from_url(url)
-        state_dict = torch.load(checkpoint_path, map_location=device)
-        if 'model' in state_dict:
-            state_dict = state_dict['model']
-        state_dict = convert_state_dict(state_dict)
-        model.load_state_dict(state_dict)
-
-    model.eval()
+    model = towhee_model(ShuntedTransformer, configs=configs, pretrained=pretrained, checkpoint_path=checkpoint_path, device=device)
     return model
-
