@@ -21,6 +21,7 @@ from torch import nn
 from towhee.models.convnext.utils import LayerNorm, Block
 from towhee.models.convnext.configs import get_configs
 from towhee.models.utils.weight_init import trunc_normal_
+from towhee.models.utils import create_model as towhee_model
 
 
 class ConvNeXt(nn.Module):
@@ -103,32 +104,12 @@ class ConvNeXt(nn.Module):
 def create_model(
         model_name: str = None,
         pretrained: bool = False,
-        weights_path: str = None,
+        checkpoint_path: str = None,
         device: str = None,
-        **kwargs,
-):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+        **kwargs
+        ):
     configs = get_configs(model_name)
     configs.update(**kwargs)
-    if 'url' in configs:
-        url = configs['url']
-        del configs['url']
-    else:
-        url = None
 
-    model = ConvNeXt(**configs).to(device)
-
-    if pretrained:
-        if weights_path is None:
-            assert url, 'No default url or weights path is provided for the pretrained model.'
-            state_dict = torch.hub.load_state_dict_from_url(url=url, map_location=device)
-        else:
-            state_dict = torch.load(weights_path, map_location=device)
-        if 'model' in state_dict:
-            state_dict = state_dict['model']
-        model.load_state_dict(state_dict)
-
-    model.eval()
+    model = towhee_model(ConvNeXt, configs=configs, pretrained=pretrained, checkpoint_path=checkpoint_path, device=device)
     return model
