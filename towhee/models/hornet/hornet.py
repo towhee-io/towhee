@@ -22,7 +22,7 @@ import torch
 from torch import nn
 
 from towhee.models.utils.weight_init import trunc_normal_
-from towhee.models.utils.download import download_from_url
+from towhee.models.utils import create_model as towhee_model
 from towhee.models.convnext.utils import LayerNorm
 from towhee.models.hornet import Block, GatedConv, get_configs
 
@@ -121,31 +121,12 @@ class HorNet(nn.Module):
 def create_model(
         model_name: str = None,
         pretrained: bool = False,
-        weights_path: str = None,
+        checkpoint_path: str = None,
         device: str = None,
-        **kwargs,
-):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+        **kwargs
+        ):
     configs = get_configs(model_name)
     configs.update(**kwargs)
-    if 'url' in configs:
-        url = configs['url']
-        del configs['url']
-    else:
-        url = None
 
-    model = HorNet(**configs).to(device)
-
-    if pretrained:
-        if weights_path is None:
-            assert url, 'No default url or weights path is provided for the pretrained model.'
-            weights_path = download_from_url(url)
-        state_dict = torch.load(weights_path, map_location=device)
-        if 'model' in state_dict:
-            state_dict = state_dict['model']
-        model.load_state_dict(state_dict)
-
-    model.eval()
+    model = towhee_model(HorNet, configs=configs, pretrained=pretrained, checkpoint_path=checkpoint_path, device=device)
     return model

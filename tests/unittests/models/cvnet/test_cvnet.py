@@ -29,7 +29,7 @@ class TestCVNet(unittest.TestCase):
             self.key_image = self.key_image.cuda()
         model = cvnet.create_model(
             model_name='CVNet_R101',
-            pretrained=False, reset_depth=101, reduction_dim=2048)
+            pretrained=False, resnet_depth=101, reduction_dim=2048)
         score = model(self.query_image, self.key_image).unsqueeze(-1)
         self.assertTrue(score.shape == (1, 1))
         global_descriptor = model.extract_global_descriptor(self.query_image)
@@ -47,7 +47,7 @@ class TestCVNet(unittest.TestCase):
             self.key_image = self.key_image.cuda()
         model = cvnet.create_model(
             model_name='CVNet_R50',
-            pretrained=False, reset_depth=50, reduction_dim=2048)
+            pretrained=False, resnet_depth=50, reduction_dim=2048)
         score = model(self.query_image, self.key_image).unsqueeze(-1)
         self.assertTrue(score.shape == (1, 1))
         global_descriptor = model.extract_global_descriptor(self.query_image)

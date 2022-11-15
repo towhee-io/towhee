@@ -18,8 +18,10 @@
 from typing import Tuple, Optional
 import torch
 from torch import nn
+
 from towhee.models.max_vit.max_vit_block import MaxViTStage
 from towhee.models.max_vit.configs import get_configs
+from towhee.models.utils import create_model as towhee_model
 
 
 class MaxViT(nn.Module):
@@ -195,41 +197,12 @@ class MaxViT(nn.Module):
 def create_model(
         model_name: str = None,
         pretrained: bool = False,
-        weights_path: str = None,
+        checkpoint_path: str = None,
         device: str = None,
         **kwargs
-) -> MaxViT:
-    """
-    Create a MaxViT model.
-    Args:
-        model_name (`str`):
-            MaxViT model name. It can be in 'max_vit_tiny', 'max_vit_small', 'max_vit_base', 'max_vit_large', 'max_vit_xlarge'.
-        pretrained (`bool`):
-            Whether load pretrained weights.
-        weights_path (`str`):
-            Useful when pretrained is True.
-        device (`str):
-            Cpu or cuda.
-    Returns:
-        (`MaxViT`):
-            MaxViT instance.
-    """
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    if pretrained and weights_path is None:
-        raise AssertionError("if pretrained is true, weights_path needs to be specified")
-    if model_name is None:
-        if pretrained:
-            raise AssertionError("Fail to load pretrained model: no model name is specified.")
-        model = MaxViT(**kwargs)
-    else:
-        configs = get_configs(model_name)
-        configs.update(kwargs)
-        model = MaxViT(**configs)
-        if pretrained:
-            state_dic = torch.load(weights_path, map_location=device)["model_state"]
-            model.load_state_dict(state_dic)
+        ):
+    configs = get_configs(model_name)
+    configs.update(**kwargs)
 
-    model.eval()
-    model.to(device)
+    model = towhee_model(MaxViT, configs=configs, pretrained=pretrained, checkpoint_path=checkpoint_path, device=device)
     return model
