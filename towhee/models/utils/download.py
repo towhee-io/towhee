@@ -21,6 +21,14 @@ from tqdm import tqdm
 
 
 def download_from_url(url: str, root: str = None, hash_prefix: str = None):
+    """
+    Download file from url.
+
+    Args:
+        url (`str`): url
+        root (`str`): root directory to save downloaded file, defaults to '~/.towhee/checkpoints'
+        hash_prefix (`str`): hash prefix to checksum for the downloaded file, only enabled when it has value
+    """
     if root is None:
         root = os.path.expanduser('~/.towhee/checkpoints')
     os.makedirs(root, exist_ok=True)
@@ -28,6 +36,8 @@ def download_from_url(url: str, root: str = None, hash_prefix: str = None):
         d = r.headers['content-disposition']
     if d:
         filename = d.split('=')[-1].split(' ')[-1]
+        if filename.startswith(('UTF-', 'utf-')):
+            filename = filename[5:]
         for char in ['\'', '"', '\\', ',']:
             filename = filename.replace(char, '')
     else:
@@ -75,6 +85,13 @@ def download_from_url(url: str, root: str = None, hash_prefix: str = None):
 
 
 def checksum(filepath, hash_prefix):
+    """
+    Check hash value of a file.
+
+    Args:
+        filepath (`str`): path of local file
+        hash_prefix (`str`): prefix of hash value to compare with
+    """
     with open(filepath, 'rb') as f:
         len_prefix = len(hash_prefix)
         data = f.read()

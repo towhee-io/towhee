@@ -37,21 +37,28 @@ def get_configs(model_name: str = None):
     if model_name is None:
         pass
     elif model_name == 'replk_31b_1k':
-        # todo: add url
-        pass
+        configs.update(
+            url='https://drive.google.com/uc?export=download&confirm=9_s_&id=1DslZ2voXZQR1QoFY9KnbsHAeF84hzS0s'
+        )
     elif model_name == 'replk_31b_22k':
-        configs.update(num_classes=21841)
+        configs.update(
+            url='https://drive.google.com/uc?export=download&confirm=9_s_&id=1PYJiMszZYNrkZOeYwjccvxX8UHMALB7z',
+            num_classes=21841
+        )
     elif model_name == 'replk_31l_1k':
         configs.update(
+            url='https://drive.google.com/uc?export=download&confirm=9_s_&id=1JYXoNHuRvC33QV1pmpzMTKEni1hpWfBl',
             channels=[192, 384, 768, 1536],
         )
     elif model_name == 'replk_31l_22k':
         configs.update(
+            url='https://drive.google.com/uc?export=download&confirm=9_s_&id=16jcPsPwo5rko7ojWS9k_W-svHX-iFknY',
             channels=[192, 384, 768, 1536],
             num_classes=21841
         )
     elif model_name == 'replk_xl':
         configs.update(
+            url='https://drive.google.com/uc?export=download&confirm=9_s_&id=1tPC60El34GntXByIRHb-z-Apm4Y5LX1T',
             large_kernel_sizes=[27, 27, 27, 13],
             channels=[256, 512, 1024, 2048],
             small_kernel=None, dw_ratio=1.5,
