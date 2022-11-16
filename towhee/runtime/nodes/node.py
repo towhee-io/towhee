@@ -19,6 +19,7 @@ from abc import ABC
 import traceback
 
 from towhee.runtime.data_queue import DataQueue
+from towhee.runtime.runtime_conf import set_runtime_config
 from towhee.runtime.constants import OPType
 from towhee.utils.log import engine_log
 
@@ -76,13 +77,14 @@ class Node(ABC):
         if op_type == OPType.HUB:
             try:
                 hub_id = self._node_repr.op_info.operator
-                self._op = self._op_pool.acquire_op(
-                    self.uid,
-                    hub_id,
-                    self._node_repr.op_info.init_args,
-                    self._node_repr.op_info.init_kws,
-                    self._node_repr.op_info.tag)
-                return True
+                with set_runtime_config(self._node_repr.config):
+                    self._op = self._op_pool.acquire_op(
+                        self.uid,
+                        hub_id,
+                        self._node_repr.op_info.init_args,
+                        self._node_repr.op_info.init_kws,
+                        self._node_repr.op_info.tag)
+                    return True
             except Exception as e:  # pylint: disable=broad-except
                 st_err = '{}, {}'.format(str(e), traceback.format_exc())
                 err = 'Create {} operator {}:{} with args {} and kws {} failed, err: {}'.format(

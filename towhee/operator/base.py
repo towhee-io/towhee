@@ -17,6 +17,7 @@ from abc import ABC
 from enum import Enum
 from enum import Flag, auto
 
+
 # NotShareable:
 #    Stateful & reusable operator.
 
@@ -59,6 +60,13 @@ class Operator(ABC):
         Raises:
             An exception during __init__ can terminate the graph run.
         """
+        from towhee.runtime import get_sys_config  # pylint: disable=import-outside-toplevel
+
+        sys_config = get_sys_config()
+        if sys_config is not None:
+            self._device_id = sys_config.device_id
+        else:
+            self._device_id = -1
         self._key = ''
 
     @abstractmethod
