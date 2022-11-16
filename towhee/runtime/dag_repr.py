@@ -17,7 +17,7 @@ from typing import Dict, Any, Set, List, Tuple
 from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
-from towhee.runtime.constants import FilterConst, TimeWindowConst
+from towhee.runtime.constants import FilterConst, TimeWindowConst, OPType
 
 
 class DAGRepr:
@@ -256,12 +256,12 @@ class DAGRepr:
         """
         def _get_name(val):
             nonlocal lambda_index
-            if val['op_info']['type'] == 'callable':
+            if val['op_info']['type'] == OPType.CALLABLE:
                 name = val['op_info']['operator'].__name__
-            elif val['op_info']['type'] == 'lambda':
+            elif val['op_info']['type'] == OPType.LAMBDA:
                 name = 'lambda-' + str(lambda_index)
                 lambda_index += 1
-            elif val['op_info']['type'] == 'hub':
+            elif val['op_info']['type'] == OPType.HUB:
                 fn = val['op_info']['operator']
                 if isinstance(fn, str):
                     name = fn
