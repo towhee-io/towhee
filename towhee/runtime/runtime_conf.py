@@ -41,17 +41,19 @@ class RuntimeConf:
 
 
 class SysConf:
+    """
+    sys conf
+    """
+
     def __init__(self, device_id: int=-1):
         self._device_id = device_id
 
     @property
     def device_id(self):
-        if self._device_id < 0:
-            return 'cpu'
         return self._device_id
 
 
-_RUNTIME_CONF_VAR = contextvars.ContextVar('runtime_conf')
+_RUNTIME_CONF_VAR: contextvars.ContextVar = contextvars.ContextVar('runtime_conf')
 
 
 @contextlib.contextmanager
