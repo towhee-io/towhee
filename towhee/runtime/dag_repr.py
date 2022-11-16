@@ -292,7 +292,7 @@ class DAGRepr:
             elif isinstance(val['config'], dict):
                 if 'name' not in val['config']:
                     name = _get_name(val)
-                    val['config'] = {'name': name}
+                    val['config']['name'] = name
 
             nodes[key] = NodeRepr.from_dict(key, val)
 

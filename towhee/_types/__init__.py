@@ -12,9 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee._types.image import Image
-
-
-equivalents = {
-    'towhee.newtypes.image.Image': 'towhee._types.Image',
-}
+from towhee.types.image import Image
