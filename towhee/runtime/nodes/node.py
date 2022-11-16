@@ -19,6 +19,7 @@ from abc import ABC
 import traceback
 
 from towhee.runtime.data_queue import DataQueue
+from towhee.runtime.constants import OPType
 from towhee.utils.log import engine_log
 
 
@@ -72,7 +73,7 @@ class Node(ABC):
         # Create multiple-operators to support parallelism.
         # Read the parallelism info by config.
         op_type = self._node_repr.op_info.type
-        if op_type == 'hub':
+        if op_type == OPType.HUB:
             try:
                 hub_id = self._node_repr.op_info.operator
                 self._op = self._op_pool.acquire_op(
@@ -93,7 +94,7 @@ class Node(ABC):
                     str(st_err))
                 self._set_failed(err)
             return False
-        elif op_type in ['lambda', 'callable']:
+        elif op_type in [OPType.LAMBDA, OPType.CALLABLE]:
             self._op = self._node_repr.op_info.operator
             return True
         else:
@@ -172,5 +173,5 @@ class Node(ABC):
         return 'Node-{}'.format(self.name)
 
     def __del__(self):
-        if self._node_repr.op_info.type == 'hub' and self._op:
+        if self._node_repr.op_info.type == OPType.HUB and self._op:
             self._op_pool.release_op(self._op)

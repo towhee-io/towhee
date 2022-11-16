@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from towhee.runtime.constants import OPType
 
 # pylint: disable=protected-access
 class OperatorAction:
@@ -84,7 +84,7 @@ class OperatorAction:
         return action
 
     def serialize(self):
-        if self._type == 'hub':
+        if self._type == OPType.HUB:
             return {
                 'operator': self._op_name,
                 'type': self._type,
@@ -92,7 +92,7 @@ class OperatorAction:
                 'init_kws': self._op_kwargs if len(self._op_kwargs) != 0 else None,
                 'tag': self._tag
             }
-        elif self._type in ['lambda', 'callable']:
+        elif self._type in [OPType.LAMBDA, OPType.CALLABLE]:
             return {
                 'operator': self._fn,
                 'type': self._type,
