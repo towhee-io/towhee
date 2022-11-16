@@ -54,3 +54,8 @@ class ConcatConst:
 
 class FlatMapConst:
     name = 'flat_map'
+
+# class OPType:
+#     HUB = 'hub'
+#     LAMBDA = 'lambda'
+#     CALLABLE = 'callable'

@@ -119,7 +119,7 @@ class TestWindowNode(unittest.TestCase):
                 'timestamp_col': 'timestamp'
             }
         },
-        'config': {},
+        'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
     node_repr = NodeRepr.from_dict('test_node', node_info)

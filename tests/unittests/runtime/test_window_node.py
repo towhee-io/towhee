@@ -139,7 +139,7 @@ class TestWindowNode(unittest.TestCase):
                 'step': 3
             }
         },
-        'config': {},
+        'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
 
@@ -469,7 +469,7 @@ class TestWindowNode(unittest.TestCase):
                     'step': 2
                 }
             },
-            'config': {},
+        'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 

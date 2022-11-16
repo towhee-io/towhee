@@ -254,7 +254,48 @@ class DAGRepr:
         Returns:
             DAGRepr
         """
-        nodes = dict((name, NodeRepr.from_dict(name, dag[name])) for name in dag)
+        def _get_name(val):
+            nonlocal lambda_index
+            if val['op_info']['type'] == 'callable':
+                name = val['op_info']['operator'].__name__
+            elif val['op_info']['type'] == 'lambda':
+                name = 'lambda-' + str(lambda_index)
+                lambda_index += 1
+            elif val['op_info']['type'] == 'hub':
+                fn = val['op_info']['operator']
+                if isinstance(fn, str):
+                    name = fn
+                else:
+                    name = fn.__class__.__name__
+
+            return name
+
+        nodes = {}
+        concat_index = 0
+        lambda_index = 0
+        for key, val in dag.items():
+            # Deal with input and output.
+            if key in ['_input', '_output']:
+                val['config'] = {'name': key}
+
+            # Concat nodes does not have op_info.
+            elif val['iter_info']['type'] == 'concat':
+                val['config'] = {'name': 'concat-' + str(concat_index)}
+                concat_index += 1
+
+            # If config does not specified.
+            elif 'config' not in val or not val['config']:
+                name = _get_name(val)
+                val['config'] = {'name': name}
+
+            # Process dict config.
+            elif isinstance(val['config'], dict):
+                if 'name' not in val['config']:
+                    name = _get_name(val)
+                    val['config'] = {'name': name}
+
+            nodes[key] = NodeRepr.from_dict(key, val)
+
         DAGRepr.check_nodes(nodes)
         dag_nodes, schema_edges = DAGRepr.set_edges(nodes)
         return DAGRepr(dag_nodes, schema_edges)

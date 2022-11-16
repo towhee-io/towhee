@@ -43,7 +43,7 @@ class TestFilterNode(unittest.TestCase):
             'type': 'filter',
             'param': {'filter_by': ['num']}
         },
-        'config': {},
+        'config': {'name': 'testa'},
         'next_nodes': ['_output']
     }
 
@@ -268,7 +268,7 @@ class TestFilterNode(unittest.TestCase):
                 'type': 'filter',
                 'param': {'filter_by': ['num']}
             },
-            'config': {},
+            'config': {'name': 'testa'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -318,7 +318,7 @@ class TestFilterNode(unittest.TestCase):
                 'type': 'filter',
                 'param': {'filter_by': ['num']}
             },
-            'config': {},
+            'config': {'name': 'testa'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -361,7 +361,7 @@ class TestFilterNode(unittest.TestCase):
                 'type': 'filter',
                 'param': {'filter_by': ['num', 'another']}
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -411,7 +411,7 @@ class TestFilterNode(unittest.TestCase):
                 'type': 'filter',
                 'param': {'filter_by': ['num']}
             },
-            'config': {},
+            'config': {'name': 'testa'},
             'next_nodes': None
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)

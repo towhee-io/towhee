@@ -96,3 +96,17 @@ def check_node_iter(iter_type: str, iter_param: Dict[str, Any], inputs, outputs,
     elif iter_type == WindowConst.name:
         check_int(iter_param, [WindowConst.param.size,
                                WindowConst.param.step])
+
+def check_config(info: Dict[str, Any], essentials: Set[str]):
+    """
+    Check if the src covers all the needed config info.
+
+    Args:
+        info (`Dict[str, Any]`):
+            The info dictionary.
+        essentials (`Set[str]`):
+            The essential keys that node config dictionary should contain.
+    """
+    info_keys = set(info.keys())
+    if not isinstance(info, dict) or not essentials.issubset(info_keys):
+        raise ValueError(f'Config {str(info)} is not valid, lack attr {essentials - info_keys}')

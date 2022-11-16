@@ -43,7 +43,7 @@ class TestMapNode(unittest.TestCase):
             'type': 'map',
             'param': None
         },
-        'config': {},
+        'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
 
@@ -192,7 +192,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
@@ -242,7 +242,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE)])
@@ -291,7 +291,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 
@@ -340,7 +340,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
 
@@ -435,7 +435,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -467,7 +467,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -517,7 +517,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -560,7 +560,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)
@@ -607,7 +607,7 @@ class TestMapNode(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
-            'config': {},
+            'config': {'name': 'test'},
             'next_nodes': None
         }
         node_repr = NodeRepr.from_dict('test_node', node_info)

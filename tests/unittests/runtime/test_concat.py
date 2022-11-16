@@ -42,7 +42,7 @@ class TestMapNode(unittest.TestCase):
             'type': 'concat',
             'param': None
         },
-        'config': {},
+        'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
 
