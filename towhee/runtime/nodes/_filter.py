@@ -35,13 +35,13 @@ class Filter(Node):
                  in_ques: List['DataQueue'],
                  out_ques: List['DataQueue']):
         super().__init__(node_repr, op_pool, in_ques, out_ques)
+        self._input_q = self._in_ques[0]
         self._key_map = dict(zip(self._node_repr.outputs, self._node_repr.inputs))
-        self._same_keys = list(set(self._key_map.keys()) & set(self._key_map.values()))
+        self._same_keys = list(set(self._input_q.schema) & set(self._node_repr.outputs))
 
     def process_step(self) -> bool:
-        assert len(self._node_repr.outputs) == len(self._node_repr.inputs)
 
-        data = self._in_ques[0].get_dict()
+        data = self._input_q.get_dict()
         if data is None:
             self._set_finished()
             return True

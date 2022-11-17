@@ -258,3 +258,8 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
         self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
         self.assertEqual(res.get(), None)
+
+    def test_filter_coverage(self):
+        p = Pipeline.input('a').map('a', 'b', lambda x: x + 1).filter('a', 'b', 'a', lambda x: x > 10).output('b')
+        self.assertIsNone(p(5).get())
+        self.assertEqual(p(11).get()[0], 11)
