@@ -202,7 +202,7 @@ class S3Bucket(object):
 
     def s3_md5sum(self, resource_name):
         try:
-            md5sum = boto3.client('s3').head_object(
+            md5sum = self.s3.head_object(
                 Bucket=self.bucket_name,
                 Key=resource_name
             )['ETag'][1:-1]
