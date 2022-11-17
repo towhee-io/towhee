@@ -138,6 +138,7 @@ class S3Bucket(object):
                 os.mkdir(path_local)
             file_name = os.path.join(path_local, os.path.basename(object_name))
         print(object_name, file_name)
+        print(self.s3_md5sum(object_name))
         if not self.md5_compare(file_name, self.s3_md5sum(object_name)):
             try:
                 self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
@@ -212,20 +213,27 @@ class S3Bucket(object):
         return md5sum
 
     def check_md5(self, file_path):
-        md5obj = hashlib.md5()
-        with open(file_path, 'rb') as fd:
-            for data in iter(lambda: fd.read(50 * 1024 * 1024), b''):
-                md5obj.update(data)
+        try:
+            md5obj = hashlib.md5()
+            with open(file_path, 'rb') as fd:
+                for data in iter(lambda: fd.read(50 * 1024 * 1024), b''):
+                    md5obj.update(data)
             local_md5 = md5obj.hexdigest()
+        except FileNotFoundError:
+            local_md5 = None
         return local_md5
 
     def etag_checksum(self, file_path, chunk_size=50 * 1024 * 1024):
-        md5s = []
-        with open(file_path, 'rb') as f:
-            for data in iter(lambda: f.read(chunk_size), b''):
-                md5s.append(hashlib.md5(data).digest())
-        m = hashlib.md5(b''.join(md5s))
-        return '{}-{}'.format(m.hexdigest(), len(md5s))
+        try:
+            md5s = []
+            with open(file_path, 'rb') as f:
+                for data in iter(lambda: f.read(chunk_size), b''):
+                    md5s.append(hashlib.md5(data).digest())
+            m = hashlib.md5(b''.join(md5s))
+            res = '{}-{}'.format(m.hexdigest(), len(md5s))
+        except FileNotFoundError:
+            res = None
+        return res
 
     def md5_compare(self, file_path, s3_file_md5):
         if s3_file_md5 is None:
