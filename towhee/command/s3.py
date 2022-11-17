@@ -228,7 +228,7 @@ class S3Bucket(object):
         return '{}-{}'.format(m.hexdigest(), len(md5s))
 
     def md5_compare(self, file_path, s3_file_md5):
-        if s3_file_md5 == None:
+        if s3_file_md5 is None:
             return False
         if '-' in s3_file_md5 and s3_file_md5 == self.etag_checksum(file_path):
             return True
