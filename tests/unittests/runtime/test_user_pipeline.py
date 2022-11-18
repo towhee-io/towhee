@@ -47,6 +47,10 @@ class TestPipeline(unittest.TestCase):
     def test_raise(self):
         with self.assertRaises(ValueError):
             Pipeline.input('a').map('a', 'c', 12).output('c')
+        with self.assertRaises(ValueError):
+            Pipeline.input({}).map({}, 'c', lambda x: x+1).output('c')
+        with self.assertRaises(ValueError):
+            Pipeline.input('a').map('a', 'c', lambda x: x+1).output({})
 
     def test_callable(self):
         def func(x):

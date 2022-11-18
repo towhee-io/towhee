@@ -64,7 +64,7 @@ class Pipeline:
             >>> pipe = towhee.pipe.input('a', 'b', 'c')
         """
         dag_dict = {}
-        output_schema = tuple(schema)
+        output_schema = cls._check_schema(schema)
         uid = '_input'
         dag_dict[uid] = {
             'inputs': output_schema,
@@ -94,7 +94,7 @@ class Pipeline:
             >>> pipe(1).get()
             [2]
         """
-        output_schema = tuple(output_schema)
+        output_schema = self._check_schema(output_schema)
 
         uid = '_output'
         dag_dict = deepcopy(self._dag)
@@ -132,10 +132,8 @@ class Pipeline:
             >>> pipe(1).get()
             [1, 2]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -217,10 +215,8 @@ class Pipeline:
             >>> res.get()
             [3]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -265,10 +261,8 @@ class Pipeline:
             >>> pipe(11, 12).get()
             [12]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -314,10 +308,8 @@ class Pipeline:
             >>> res.get()
             [5, 7]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -359,10 +351,8 @@ class Pipeline:
             >>> pipe([1, 2, 3, 4], [2, 3, 4, 5]).get()
             [10, 14]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -413,10 +403,8 @@ class Pipeline:
             >>> res.get() #(9, 10), (10, 11)
             [19, 21]
         """
-        if isinstance(output_schema, str):
-            output_schema = (output_schema,)
-        if isinstance(input_schema, str):
-            input_schema = (input_schema,)
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)
@@ -457,3 +445,17 @@ class Pipeline:
                 dag2[name]['next_nodes'] = list(set(dag2[name]['next_nodes'] + dag1[name]['next_nodes']))
             dag1.update(dag2)
         return dag1
+
+    @staticmethod
+    def _check_schema(schema):
+        if isinstance(schema, str):
+            return (schema,)
+        if schema is None:
+            return schema
+        if isinstance(schema, tuple):
+            for s in schema:
+                if not isinstance(s, str):
+                    raise ValueError(f'{s} is invalid, schema must be string.')
+            return schema
+        else:
+            raise ValueError(f'{schema} is invalid, schema must be string.')
