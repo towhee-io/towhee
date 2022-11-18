@@ -185,20 +185,25 @@ class S3Bucket(object):
             files (`List[str]`):
                 list of files' name in this path
         """
+        if self.bucket_name in obj_floder_path:
+            obj_floder_path = obj_floder_path.split(self.bucket_name,1)[1][1:]
         file_list = []
         response = self.s3.list_objects_v2(
             Bucket=self.bucket_name,
             Prefix=obj_floder_path,
             MaxKeys=1000,
            )
-        for file in response['Contents']:
-            s = str(file['Key'])
-            p = re.compile(r'.*/(.*)(\..*)')
-            if p.search(s):
-                s1 = p.search(s).group(1)
-                s2 = p.search(s).group(2)
-                result = s1 + s2
-                file_list.append(result)
+        try:
+            for file in response['Contents']:
+                s = str(file['Key'])
+                p = re.compile(r'.*/(.*)(\..*)')
+                if p.search(s):
+                    s1 = p.search(s).group(1)
+                    s2 = p.search(s).group(2)
+                    result = s1 + s2
+                    file_list.append(result)
+        except KeyError:
+            print('path %s is not exist'%obj_floder_path)
         return file_list
 
     def s3_md5sum(self, resource_name):
