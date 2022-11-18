@@ -138,12 +138,16 @@ class S3Bucket(object):
                 os.mkdir(path_local)
             file_name = os.path.join(path_local, os.path.basename(object_name))
         print(object_name, file_name)
-        try:
-            self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
-        except Exception as exc:  # pylint: disable=W0703
-            print('download single file error occurred.', exc)
-            return False
-        print('download ok', object_name)
+        print(self.s3_md5sum(object_name))
+        if not self.md5_compare(file_name, self.s3_md5sum(object_name)):
+            try:
+                self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
+            except Exception as exc:  # pylint: disable=W0703
+                print('download single file error occurred.', exc)
+                return False
+            print('download ok', object_name)
+        else:
+            print('files in local folder.')
         return True
 
     def download_files(self, path_prefix, path_local):
@@ -156,15 +160,19 @@ class S3Bucket(object):
         for key in list_content:
             name = os.path.basename(key['Key'])
             object_name = key['Key']
-            if not os.path.exists(path_local):
-                os.makedirs(path_local)
-            file_name = os.path.join(path_local, name)
-            try:
-                self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
-            except Exception as exc:  # pylint: disable=W0703
-                print('download files error occurred.', exc)
-                return False
-            print('download files %s in %s success!'%(name, path_local))
+            local_file = path_local+name
+            if not self.md5_compare(local_file, self.s3_md5sum(object_name)):
+                if not os.path.exists(path_local):
+                    os.makedirs(path_local)
+                file_name = os.path.join(path_local, name)
+                try:
+                    self.s3.download_file(self.bucket_name, object_name, file_name, Config=config)
+                except Exception as exc:  # pylint: disable=W0703
+                    print('download files error occurred.', exc)
+                    return False
+                print('download files %s in %s success!'%(name, path_local))
+            else:
+                print('files in local folder.')
         return True
 
     def get_list_s3(self, obj_floder_path):
@@ -192,3 +200,52 @@ class S3Bucket(object):
                 result = s1 + s2
                 file_list.append(result)
         return file_list
+
+    def s3_md5sum(self, resource_name):
+        try:
+            md5sum = self.s3.head_object(
+                Bucket=self.bucket_name,
+                Key=resource_name
+            )['ETag'][1:-1]
+        except ClientError:
+            md5sum = None
+            pass
+        return md5sum
+
+    def check_md5(self, file_path):
+        try:
+            md5obj = hashlib.md5()
+            with open(file_path, 'rb') as fd:
+                for data in iter(lambda: fd.read(50 * 1024 * 1024), b''):
+                    md5obj.update(data)
+            local_md5 = md5obj.hexdigest()
+        except FileNotFoundError:
+            local_md5 = None
+        return local_md5
+
+    def etag_checksum(self, file_path, chunk_size=50 * 1024 * 1024):
+        """
+        ETag check docs:
+            https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html
+        example:
+            https://stackoverflow.com/questions/26415923/boto-get-md5-s3-file
+        """
+        try:
+            md5s = []
+            with open(file_path, 'rb') as f:
+                for data in iter(lambda: f.read(chunk_size), b''):
+                    md5s.append(hashlib.md5(data).digest())
+            m = hashlib.md5(b''.join(md5s))
+            res = '{}-{}'.format(m.hexdigest(), len(md5s))
+        except FileNotFoundError:
+            res = None
+        return res
+
+    def md5_compare(self, file_path, s3_file_md5):
+        if s3_file_md5 is None:
+            return False
+        if '-' in s3_file_md5 and s3_file_md5 == self.etag_checksum(file_path):
+            return True
+        if '-' not in s3_file_md5 and s3_file_md5 == self.check_md5(file_path):
+            return True
+        return False

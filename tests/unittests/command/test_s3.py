@@ -30,6 +30,15 @@ class MockClient(object):
         mpu = {'UploadId':1}
         return mpu
 
+    def head_object(self, Bucket, Key):
+        return {'ETag': 'abcdefghijk'}
+
+    def md5_compare(self, file_name, md5):
+        return False
+
+    def s3_md5sum(self, file):
+        return None
+
     def download_file(self, bucket_name, object_name, file_name, Config=None):
         return True
 
