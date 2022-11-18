@@ -263,3 +263,10 @@ class TestPipeline(unittest.TestCase):
         p = Pipeline.input('a').map('a', 'b', lambda x: x + 1).filter('a', 'b', 'a', lambda x: x > 10).output('b')
         self.assertIsNone(p(5).get())
         self.assertEqual(p(11).get()[0], 11)
+
+    def test_concat_raise(self):
+        p1 = Pipeline.input('a').map('a', 'b', lambda x: x + 1)
+        with self.assertRaises(ValueError):
+            p1.concat().concat().output('b')
+        with self.assertRaises(ValueError):
+            p1.concat('a').output('b')

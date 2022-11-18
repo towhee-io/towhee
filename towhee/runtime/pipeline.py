@@ -172,6 +172,7 @@ class Pipeline:
             >>> pipe3(1, 2, 3).get()
             [2, -1]
         """
+        self._check_concat_pipe(pipes)
         uid = uuid.uuid4().hex
         dag_dict = self._concat_dag(deepcopy(self._dag), pipes)
         dag_dict[uid] = {
@@ -447,6 +448,14 @@ class Pipeline:
             return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws)
         else:
             raise ValueError('Unknown operator, please make sure it is lambda, callable or operator with ops.')
+
+    @staticmethod
+    def _check_concat_pipe(pipes):
+        if len(pipes) == 0:
+            raise ValueError('The parameter of concat cannot be None.')
+        for pipe in pipes:
+            if not isinstance(pipe, Pipeline):
+                raise ValueError(f'{pipe} is invalid, the parameter of concat must be Pipeline.')
 
     @staticmethod
     def _concat_dag(dag1, pipes):
