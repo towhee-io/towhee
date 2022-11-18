@@ -106,6 +106,8 @@ class DAGRepr:
                 pre_name = all_nodes.pop()
                 while name in nodes[pre_name].next_nodes:
                     nodes[name].inputs += nodes[pre_name].outputs
+                    if len(all_nodes) == 0:
+                        break
                     pre_name = all_nodes.pop()
                 nodes[name].outputs = nodes[name].inputs
             all_nodes.append(name)
