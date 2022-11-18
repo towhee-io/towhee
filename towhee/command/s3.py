@@ -224,6 +224,12 @@ class S3Bucket(object):
         return local_md5
 
     def etag_checksum(self, file_path, chunk_size=50 * 1024 * 1024):
+        """
+        ETag check docs:
+            https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html
+        example:
+            https://stackoverflow.com/questions/26415923/boto-get-md5-s3-file
+        """
         try:
             md5s = []
             with open(file_path, 'rb') as f:
