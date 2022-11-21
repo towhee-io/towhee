@@ -156,7 +156,13 @@ class S3Bucket(object):
         """
         gb = 1024**3
         config = TransferConfig(multipart_threshold=2*gb, max_concurrency=10, use_threads=True)
-        list_content = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=path_prefix)['Contents']
+        if self.bucket_name in path_prefix:
+            path_prefix = path_prefix.split(self.bucket_name,1)[1][1:]
+        try:
+            list_content = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=path_prefix)['Contents']
+        except KeyError:
+            print('no files in bucket folder')
+            return False
         for key in list_content:
             name = os.path.basename(key['Key'])
             object_name = key['Key']
