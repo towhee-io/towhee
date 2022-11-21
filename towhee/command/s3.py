@@ -156,7 +156,11 @@ class S3Bucket(object):
         """
         gb = 1024**3
         config = TransferConfig(multipart_threshold=2*gb, max_concurrency=10, use_threads=True)
-        list_content = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=path_prefix)['Contents']
+        try:
+            list_content = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=path_prefix)['Contents']
+        except KeyError:
+            print('path %s is not exist. please check path[name_space]/[operator_name]/[version]/[file]'%path_prefix)
+            return False
         for key in list_content:
             name = os.path.basename(key['Key'])
             object_name = key['Key']
@@ -185,8 +189,6 @@ class S3Bucket(object):
             files (`List[str]`):
                 list of files' name in this path
         """
-        if self.bucket_name in obj_floder_path:
-            obj_floder_path = obj_floder_path.split(self.bucket_name,1)[1][1:]
         file_list = []
         response = self.s3.list_objects_v2(
             Bucket=self.bucket_name,
@@ -203,7 +205,7 @@ class S3Bucket(object):
                     result = s1 + s2
                     file_list.append(result)
         except KeyError:
-            print('path %s is not exist'%obj_floder_path)
+            print('path %s is not exist. please check path[name_space]/[operator_name]/[version]/[file]'%obj_floder_path)
         return file_list
 
     def s3_md5sum(self, resource_name):
