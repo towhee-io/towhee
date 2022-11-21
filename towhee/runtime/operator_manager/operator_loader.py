@@ -23,6 +23,7 @@ import pkg_resources
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
 from towhee.hub.file_manager import FileManager
+from towhee.runtime.constants import InputConst, OutputConst
 from .operator_registry import OperatorRegistry
 
 
@@ -38,7 +39,7 @@ class OperatorLoader:
     """
 
     def _load_interal_op(self, op_name: str, arg: List[Any], kws: Dict[str, Any]): # pylint: disable=unused-argument
-        if op_name in ['_input', '_output']:
+        if op_name in [InputConst.name, OutputConst.name]:
             return NOPNodeOperator()
         else:
             # Not a interal operator

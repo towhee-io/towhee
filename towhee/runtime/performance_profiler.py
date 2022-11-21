@@ -62,8 +62,8 @@ class PipelineProfiler:
 
     def show(self):
         print('Input: ', self.data)
-        print('Total time:', round(self.time_out - self.time_in, 3))
-        headers = ['node', 'ncalls', 'total_time', 'init', 'wait_data', 'call_op', ' output_data']
+        print('Total time(s):', round(self.time_out - self.time_in, 3))
+        headers = ['node', 'ncalls', 'total_time(s)', 'init(s)', 'wait_data(s)', 'call_op(s)', ' output_data(s)']
         print(tabulate([report.values() for _, report in self.node_report.items()], headers=headers))
 
     def dump(self, file_path):
@@ -99,9 +99,8 @@ class PipelineProfiler:
                 profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': n_tracer['name'],
                                       'ts': total_in, 'cat': n_tracer['name'] + '_' + n_id})
                 continue
-
             profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': n_tracer['name'],
-                                  'ts': n_tracer['queue_out'][0] * 1000000, 'cat': n_tracer['name'] + '_' + n_id})
+                                  'ts': n_tracer['queue_out'][len(n_tracer['process_in'])-1] * 1000000, 'cat': n_tracer['name'] + '_' + n_id})
 
             if len(n_tracer['init_in']) != 0:
                 profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'init',
@@ -127,11 +126,11 @@ class PipelineProfiler:
     def check_tracer(self):
         try:
             for _, node in self.node_tracer.items():
-                if node['iter'] == WindowAllConst.name:
-                    node['queue_in'] = node['queue_in'][:1]
-                else:
+                if node['iter'] != WindowAllConst.name:
                     node['queue_in'].pop()
-                assert len(node['queue_in']) == len(node['queue_out']) == len(node['process_in']) == len(node['process_out'])
+
+                assert len(node['queue_in']) >= len(node['queue_out'])
+                assert len(node['process_in']) == len(node['process_out']) <= len(node['queue_in'])
                 assert len(node['init_in']) == len(node['init_out'])
                 assert len(node['init_in']) == 0 or len(node['init_in']) == 1
         except AssertionError as e:
@@ -142,7 +141,8 @@ class PipelineProfiler:
     def cal_time(list_in, list_out):
         if len(list_in) == 0:  # concat/func is no init
             return 0
-        total_time = sum(list_out) - sum(list_in)
+        num = min(len(list_in), len(list_out))
+        total_time = sum(list_out[0:num]) - sum(list_in[0:num])
         return round(total_time, 4)
 
 

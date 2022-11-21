@@ -19,6 +19,7 @@ from .node import Node
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.performance_profiler import Event
 
+
 class Map(Node):
     """Map operator.
 

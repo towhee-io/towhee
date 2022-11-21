@@ -16,7 +16,7 @@ from typing import Dict, Any, Tuple, Union, Callable, List
 
 from towhee.runtime.check_utils import check_keys
 from towhee.runtime.node_config import NodeConfig
-from towhee.runtime.constants import ConcatConst
+from towhee.runtime.constants import ConcatConst, InputConst, OutputConst
 
 
 # pylint: disable=redefined-builtin
@@ -227,7 +227,7 @@ class NodeRepr:
 
         config = NodeConfig.from_dict(node['config'])
 
-        if uid in ['_input', '_output'] or node['iter_info']['type'] == ConcatConst.name:
+        if uid in [InputConst.name, OutputConst.name] or node['iter_info']['type'] == ConcatConst.name:
             op_repr = OperatorRepr.from_dict({'operator': uid, 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'})
             return NodeRepr(uid, node['inputs'], node['outputs'], iter_repr, op_repr, config, node['next_nodes'])
         else:

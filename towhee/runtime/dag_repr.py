@@ -17,7 +17,7 @@ from typing import Dict, Any, Set, List, Tuple
 from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
-from towhee.runtime.constants import FilterConst, TimeWindowConst, OPType
+from towhee.runtime.constants import FilterConst, TimeWindowConst, OPType, InputConst, OutputConst
 
 
 class DAGRepr:
@@ -54,9 +54,9 @@ class DAGRepr:
         top_sort = DAGRepr.get_top_sort(nodes)
         if len(top_sort) != len(nodes):
             raise ValueError('The DAG is not valid, it has a circle.')
-        if top_sort[0] != '_input':
+        if top_sort[0] != InputConst.name:
             raise ValueError('The DAG is not valid, it does not started with `_input`.')
-        if top_sort[-1] != '_output':
+        if top_sort[-1] != OutputConst.name:
             raise ValueError('The DAG is not valid, it does not ended with `_output`.')
 
         all_inputs = DAGRepr.get_all_inputs(nodes, top_sort)
@@ -76,8 +76,8 @@ class DAGRepr:
            List: Topological list.
         """
         graph = dict((name, nodes[name].next_nodes) for name in nodes)
-        if '_output' in graph:
-            graph['_output'] = []
+        if OutputConst.name in graph:
+            graph[OutputConst.name] = []
         result = []
         while True:
             temp_list = {j for i in graph.values() for j in i}
@@ -99,8 +99,8 @@ class DAGRepr:
         Returns:
            Dict[str, Tuple]: Dict of the node and the all inputs of this node.
         """
-        all_nodes = ['_input']
-        all_inputs = dict((name, nodes['_input'].outputs) for name in nodes)
+        all_nodes = [InputConst.name]
+        all_inputs = dict((name, nodes[InputConst.name].outputs) for name in nodes)
         for name in top_sort[1:]:
             if nodes[name].iter_info.type == 'concat':
                 pre_name = all_nodes.pop()
@@ -213,9 +213,9 @@ class DAGRepr:
             Dict[str, Dict]: The edges for the DAG.
         """
         out_id = 0
-        edges = {out_id: DAGRepr.get_edge_from_schema(nodes['_input'].outputs, nodes['_input'].inputs, nodes['_input'].outputs,
-                                                      nodes['_input'].iter_info.type, None)}
-        nodes['_input'].in_edges = [out_id]
+        edges = {out_id: DAGRepr.get_edge_from_schema(nodes[InputConst.name].outputs, nodes[InputConst.name].inputs, nodes[InputConst.name].outputs,
+                                                      nodes[InputConst.name].iter_info.type, None)}
+        nodes[InputConst.name].in_edges = [out_id]
 
         top_sort = DAGRepr.get_top_sort(nodes)
         for name in top_sort[:-1]:
@@ -239,11 +239,11 @@ class DAGRepr:
                     nodes[name].out_edges.append(out_id)
 
         out_id += 1
-        final_edge = nodes['_output'].in_edges[0]
+        final_edge = nodes[OutputConst.name].in_edges[0]
         final_schema = edges[final_edge]['schema']
-        edges[out_id] = {'schema': final_schema, 'data': [(s, final_schema[s].type) for s in nodes['_output'].inputs]}
+        edges[out_id] = {'schema': final_schema, 'data': [(s, final_schema[s].type) for s in nodes[OutputConst.name].inputs]}
 
-        nodes['_output'].out_edges = [out_id]
+        nodes[OutputConst.name].out_edges = [out_id]
         return nodes, edges
 
     @staticmethod
@@ -274,7 +274,7 @@ class DAGRepr:
         node_index = 0
         for key, val in dag.items():
             # Deal with input and output.
-            if key in ['_input', '_output']:
+            if key in [InputConst.name, OutputConst.name]:
                 val['config'] = {'name': key}
 
             # Concat nodes does not have op_info.

@@ -71,6 +71,18 @@ class TestPerformanceProfiler(unittest.TestCase):
         pp.sort()[0].show()
         pp.max().show()
 
+    def test_tracer_flat_map(self):
+        pipe0 = (pipe.input('d')
+                 .flat_map('d', ('n1', 'n2'), lambda x: ((a, b) for a, b in x))
+                 .output('n1', 'n2', tracer=True))
+        data = [(i, i + 1) for i in range(10)]
+        pipe0(data)
+
+        pp = pipe0.profiler()
+        self.assertEqual(len(pp.pipes_profiler), 1)
+        self.assertEqual(len(pp.node_report), 3)
+        pp.show()
+
     def test_tracer_time_window(self):
         pipe0 = (pipe.input('d')
                  .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
@@ -94,9 +106,10 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .window_all(('n1', 'n2'), ('s1', 's2'), ops.local.sum2())
                  .output('s1', 's2', tracer=True))
         pipe0([1, 2, 3, 4], [2, 3, 4, 5])
+        pipe0([2, 2, 3, 4], [3, 3, 4, 5])
 
         pp = pipe0.profiler()
-        self.assertEqual(len(pp.pipes_profiler), 1)
+        self.assertEqual(len(pp.pipes_profiler), 2)
         self.assertEqual(len(pp.node_report), 5)
         pp.show()
 

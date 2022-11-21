@@ -20,10 +20,10 @@ from towhee.runtime.constants import (
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
-    ConcatConst
+    ConcatConst,
+    OutputConst
 )
 from towhee.utils.log import engine_log
-from towhee.runtime.performance_profiler import TimeProfiler
 
 from ._map import Map
 from ._window import Window
@@ -32,10 +32,14 @@ from ._window_all import WindowAll
 from ._concat import Concat
 from ._filter import Filter
 from ._flat_map import FlatMap
+from ._output import Output
 from .node import NodeStatus
 
 
 def create_node(node_repr, op_pool, inputs, outputs, time_profiler=None):
+    if node_repr.uid == OutputConst.name:
+        assert len(inputs) == 1
+        return Output(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == MapConst.name:
         assert len(inputs) == 1
         return Map(node_repr, op_pool, inputs, outputs, time_profiler)
