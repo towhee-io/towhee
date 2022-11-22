@@ -27,7 +27,9 @@ from towhee.runtime.constants import (
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
-    ConcatConst
+    ConcatConst,
+    InputConst,
+    OutputConst,
 )
 
 
@@ -40,7 +42,7 @@ class Pipeline:
         dag (`dict`): The dag for the pipeline.
         clo_node (`str`): The close node in the pipeline dag, defaults to '_input'.
     """
-    def __init__(self, dag, clo_node='_input'):
+    def __init__(self, dag, clo_node=InputConst.name):
         self._dag = dag
         self._clo_node = clo_node
 
@@ -65,7 +67,7 @@ class Pipeline:
         """
         dag_dict = {}
         output_schema = cls._check_schema(schema)
-        uid = '_input'
+        uid = InputConst.name
         dag_dict[uid] = {
             'inputs': output_schema,
             'outputs': output_schema,
@@ -78,12 +80,14 @@ class Pipeline:
         return cls(dag_dict)
 
     # TODO: Run with the configuration.
-    def output(self, *output_schema) -> 'RuntimePipeline':
+    def output(self, *output_schema, **config_kws) -> 'RuntimePipeline':
         """
         Close and preload the pipeline, and ready to run with it.
 
         Args:
             output_schema (tuple): Which columns to output.
+            config_kws (dict): The config for this pipeline.
+
 
         Returns:
             RuntimePipeline: The runtime pipeline that can be called on inputs.
@@ -96,7 +100,7 @@ class Pipeline:
         """
         output_schema = self._check_schema(output_schema)
 
-        uid = '_output'
+        uid = OutputConst.name
         dag_dict = deepcopy(self._dag)
         dag_dict[uid] = {
             'inputs': output_schema,
@@ -109,7 +113,7 @@ class Pipeline:
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
 
-        run_pipe = RuntimePipeline(dag_dict)
+        run_pipe = RuntimePipeline(dag_dict, config=config_kws)
         run_pipe.preload()
         return run_pipe
 

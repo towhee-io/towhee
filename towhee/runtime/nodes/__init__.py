@@ -20,7 +20,8 @@ from towhee.runtime.constants import (
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
-    ConcatConst
+    ConcatConst,
+    OutputConst
 )
 from towhee.utils.log import engine_log
 
@@ -31,31 +32,34 @@ from ._window_all import WindowAll
 from ._concat import Concat
 from ._filter import Filter
 from ._flat_map import FlatMap
+from ._output import Output
 from .node import NodeStatus
 
 
-
-def create_node(node_repr, op_pool, inputs, outputs):
+def create_node(node_repr, op_pool, inputs, outputs, time_profiler=None):
+    if node_repr.uid == OutputConst.name:
+        assert len(inputs) == 1
+        return Output(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == MapConst.name:
         assert len(inputs) == 1
-        return Map(node_repr, op_pool, inputs, outputs)
+        return Map(node_repr, op_pool, inputs, outputs, time_profiler)
     elif node_repr.iter_info.type == WindowConst.name:
         assert len(inputs) == 1
-        return Window(node_repr, op_pool, inputs, outputs)
+        return Window(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == FilterConst.name:
         assert len(inputs) == 1
-        return Filter(node_repr, op_pool, inputs, outputs)
+        return Filter(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == TimeWindowConst.name:
         assert len(inputs) == 1
-        return TimeWindow(node_repr, op_pool, inputs, outputs)
+        return TimeWindow(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == WindowAllConst.name:
         assert len(inputs) == 1
-        return WindowAll(node_repr, op_pool, inputs, outputs)
+        return WindowAll(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == ConcatConst.name:
-        return Concat(node_repr, op_pool, inputs, outputs)
+        return Concat(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == FlatMapConst.name:
         assert len(inputs) == 1
-        return FlatMap(node_repr, op_pool, inputs, outputs)
+        return FlatMap(node_repr, op_pool, inputs, outputs, time_profiler)
     else:
         engine_log.error('Unknown node iteration type: %s', str(node_repr.iter_info.type))
         return None

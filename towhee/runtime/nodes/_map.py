@@ -17,6 +17,7 @@ from typing import Generator
 
 from .node import Node
 from towhee.runtime.data_queue import Empty
+from towhee.runtime.performance_profiler import Event
 
 
 class Map(Node):
@@ -47,7 +48,7 @@ class Map(Node):
         """
         Called for each element.
         """
-
+        self._time_profiler.record(self.uid, Event.queue_in)
         data = self._in_ques[0].get_dict()
         if data is None:
             self._set_finished()
@@ -55,12 +56,14 @@ class Map(Node):
 
         process_data = [data.get(key) for key in self._node_repr.inputs]
         if not any((i is Empty() for i in process_data)):
+            self._time_profiler.record(self.uid, Event.process_in)
             succ, outputs, msg = self._call(process_data)
             if not succ:
                 self._set_failed(msg)
                 return True
             if isinstance(outputs, Generator):
                 outputs = self._get_from_generator(outputs, len(self._node_repr.outputs))
+            self._time_profiler.record(self.uid, Event.process_out)
 
             size = len(self._node_repr.outputs)
             if size > 1:
@@ -73,6 +76,7 @@ class Map(Node):
                 output_map[self._node_repr.outputs[0]] = outputs
 
             data.update(output_map)
+        self._time_profiler.record(self.uid, Event.queue_out)
 
         for out_que in self._output_ques:
             if not out_que.put_dict(data):

@@ -17,40 +17,17 @@ from .node import Node
 from towhee.runtime.performance_profiler import Event
 
 
-class Concat(Node):
-    """Concatenates all the pipelins
+class Output(Node):
+    """Output the data as input
 
        Examples:
-           p1 = towhee.pipe.input('url').map('url', 'image', ops.image_decode.cv2())
-           p2 = p1.map('image', 'vec1', ops.embedding.timm(model='resnet50'))
-           p3 = p1.map('image', 'vec2', ops.embedding.timm(model='resnet50'))
-           p1.concat(p2, p3).map(('vec1', 'vec2'), 'vec', ops.numpy_util.merge()).output('vec')
+           p1 = towhee.pipe.input('url').output('url')
     """
-
-    def initialize(self) -> bool:
-        for q in self._in_ques:
-            q.max_size = 0
-
-        q_nums = len(self._in_ques)
-        all_cols = []
-        self.cols_every_que = []
-        while q_nums > 0:
-            cols = []
-            schema = self._in_ques[q_nums - 1].schema
-            for col in schema:
-                if col not in all_cols:
-                    cols.append(col)
-            self.cols_every_que.append(cols)
-            all_cols.extend(cols)
-            q_nums -= 1
-        self.cols_every_que.reverse()
-        return True
-
     def process_step(self) -> bool:
         self._time_profiler.record(self.uid, Event.queue_in)
         all_data = {}
-        for i, q in enumerate(self._in_ques):
-            data = q.get_dict(self.cols_every_que[i])
+        for q in self._in_ques:
+            data = q.get_dict()
             if data:
                 all_data.update(data)
 

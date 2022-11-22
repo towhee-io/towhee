@@ -56,7 +56,19 @@ class FlatMapConst:
     name = 'flat_map'
 
 
+class InputConst:
+    name = '_input'
+
+
+class OutputConst:
+    name = '_output'
+
+
 class OPType:
     HUB = 'hub'
     LAMBDA = 'lambda'
     CALLABLE = 'callable'
+
+
+class TracerConst:
+    name = 'tracer'

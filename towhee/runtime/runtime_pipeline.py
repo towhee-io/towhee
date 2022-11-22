@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 
+from towhee.utils.log import engine_log
 from .operator_manager import OperatorPool
 from .data_queue import DataQueue
 from .dag_repr import DAGRepr
 from .nodes import create_node, NodeStatus
 from .node_repr import NodeRepr
+from .performance_profiler import PerformanceProfiler, TimeProfiler, Event
+from .constants import TracerConst
 
 
 class Graph:
@@ -36,11 +40,13 @@ class Graph:
                  nodes: Dict[str, NodeRepr],
                  edges: Dict[str, Any],
                  operator_pool: 'OperatorPool',
-                 thread_pool: 'ThreadPoolExecutor'):
+                 thread_pool: 'ThreadPoolExecutor',
+                 time_profiler: 'TimeProfiler' = None):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
         self._thread_pool = thread_pool
+        self._time_profiler = time_profiler
         self._node_runners = None
         self._data_queues = None
         self.initialize()
@@ -51,7 +57,7 @@ class Graph:
         for name in self._nodes:
             in_queues = [self._data_queues[edge] for edge in self._nodes[name].in_edges]
             out_queues = [self._data_queues[edge] for edge in self._nodes[name].out_edges]
-            node = create_node(self._nodes[name], self._operator_pool, in_queues, out_queues)
+            node = create_node(self._nodes[name], self._operator_pool, in_queues, out_queues, self._time_profiler)
             if not node.initialize():
                 raise RuntimeError(node.err_msg)
             self._node_runners.append(node)
@@ -74,6 +80,7 @@ class Graph:
         features = []
         for node in self._node_runners:
             features.append(self._thread_pool.submit(node.process))
+
         _ = [f.result() for f in features]
         return self.result()
 
@@ -88,12 +95,12 @@ class RuntimePipeline:
         max_workers(`int`): The maximum number of threads.
     """
 
-    def __init__(self, dag_dict: Dict, max_workers: int = None):
-        if max_workers is None:
-            max_workers = len(dag_dict) + 1
+    def __init__(self, dag_dict: Dict, max_workers: int = None, config: dict = None):
         self._dag_repr = DAGRepr.from_dict(dag_dict)
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
+        self._time_profiler_list = []
+        self._config = config
 
     def preload(self):
         """
@@ -105,6 +112,33 @@ class RuntimePipeline:
         """
         Output with ordering matching the input `DataQueue`.
         """
-        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
+        time_profiler = TimeProfiler()
+        if self._config is not None and TracerConst.name in self._config and self._config[TracerConst.name]:
+            time_profiler.enable()
+
+        time_profiler.record(Event.pipe_name, Event.pipe_in, inputs)
+        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, time_profiler)
         outputs = graph(inputs)
+        time_profiler.record(Event.pipe_name, Event.pipe_out)
+
+        self._time_profiler_list.append(time_profiler)
         return outputs
+
+    def profiler(self):
+        """
+        Report the performance results after running the pipeline, and please note that you need to set tracer to True when you declare a pipeline.
+        """
+        records = []
+        for time_profiler in self._time_profiler_list:
+            records += time_profiler.time_record
+        if len(records) == 0:
+            engine_log.warning('Please set tracer to True or you need to run it first, there is nothing to report.')
+            return None
+        performance_profiler = PerformanceProfiler(records, self._dag_repr)
+        return performance_profiler
+
+    def reset_tracer(self):
+        """
+        Reset the tracer, reset the record to None.
+        """
+        self._time_profiler_list = []

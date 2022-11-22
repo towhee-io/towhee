@@ -107,7 +107,7 @@ class TestPipelineManager(unittest.TestCase):
         towhee_dag_test = copy.deepcopy(self.dag_dict)
         runtime_pipeline = RuntimePipeline(towhee_dag_test)
         runtime_pipeline.preload()
-        self.assertEqual(len(runtime_pipeline._operator_pool._all_ops), 4)  # pylint: disable=protected-access
+        self.assertEqual(len(runtime_pipeline._operator_pool._all_ops), 4) # pylint: disable=protected-access
 
     def test_raise_preload(self):
         towhee_dag_test = copy.deepcopy(self.dag_dict)
