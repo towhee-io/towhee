@@ -594,10 +594,12 @@ class CLIP(nn.Module):
                 from multilingual_clip import pt_multilingual_clip  # pylint: disable=C0415
             except ModuleNotFoundError:
                 os.system("pip install multilingual-clip")
+                from multilingual_clip import pt_multilingual_clip  # pylint: disable=C0415
             try:
                 import transformers  # pylint: disable=C0415
             except ModuleNotFoundError:
                 os.system("pip install transformers")
+                import transformers  # pylint: disable=C0415
 
             tokenizer = transformers.AutoTokenizer.from_pretrained(self.multilingual_model)
             encoder = pt_multilingual_clip.MultilingualCLIP.from_pretrained(self.multilingual_model)
