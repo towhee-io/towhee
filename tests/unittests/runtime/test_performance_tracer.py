@@ -17,7 +17,7 @@ from pathlib import Path
 
 from towhee.dc2 import pipe
 from towhee.runtime.factory import ops, register
-from towhee.runtime.performance_profiler import TimeProfiler
+from towhee.runtime.performance_profiler import TimeProfiler, PerformanceProfiler
 
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -48,12 +48,12 @@ class TestPerformanceProfiler(unittest.TestCase):
     Unit test for PerformanceProfiler.
     """
     def test_check(self):
-        p = pipe.input('a').map('a', 'b', lambda x: x + 1).filter('a', 'b', 'a', lambda x: x > 10).output('b', tracer=True)
-        p(5).get()
-        p._time_profiler.record('_input', 'init_in')
-        p(15).get()
-        with self.assertRaises(AssertionError):
-            _ = p.profiler().pipes_profiler[0]
+        p = pipe.input('a').output('a', tracer=True)
+        _ = p(1)
+        time_profiler = p._time_profiler_list[0]
+        time_profiler.record('_run_pipe', 'pipe_out', None)
+        with self.assertRaises(BaseException):
+            _ = PerformanceProfiler(time_profiler.time_record, p._dag_repr)
 
     def test_tracer_concat(self):
         pipe0 = pipe.input('a', 'b', 'c')

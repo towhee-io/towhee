@@ -96,45 +96,49 @@ class RuntimePipeline:
     """
 
     def __init__(self, dag_dict: Dict, max_workers: int = None, config: dict = None):
-        if max_workers is None:
-            max_workers = len(dag_dict) + 1
         self._dag_repr = DAGRepr.from_dict(dag_dict)
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
-        self._time_profiler = TimeProfiler()
+        self._time_profiler_list = []
         self._config = config
 
     def preload(self):
         """
         Preload the operators.
         """
-        _ = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._time_profiler)
+        _ = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
 
     def __call__(self, *inputs):
         """
         Output with ordering matching the input `DataQueue`.
         """
+        time_profiler = TimeProfiler()
         if self._config is not None and TracerConst.name in self._config and self._config[TracerConst.name]:
-            self._time_profiler.enable()
+            time_profiler.enable()
 
-        self._time_profiler.record(Event.pipe_name, Event.pipe_in, inputs)
-        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._time_profiler)
+        time_profiler.record(Event.pipe_name, Event.pipe_in, inputs)
+        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, time_profiler)
         outputs = graph(inputs)
-        self._time_profiler.record(Event.pipe_name, Event.pipe_out)
+        time_profiler.record(Event.pipe_name, Event.pipe_out)
+
+        self._time_profiler_list.append(time_profiler)
         return outputs
 
     def profiler(self):
         """
         Report the performance results after running the pipeline, and please note that you need to set tracer to True when you declare a pipeline.
         """
-        if len(self._time_profiler.time_record) == 0:
+        records = []
+        for time_profiler in self._time_profiler_list:
+            records += time_profiler.time_record
+        if len(records) == 0:
             engine_log.warning('Please set tracer to True or you need to run it first, there is nothing to report.')
             return None
-        performance_profiler = PerformanceProfiler(self._time_profiler, self._dag_repr)
+        performance_profiler = PerformanceProfiler(records, self._dag_repr)
         return performance_profiler
 
     def reset_tracer(self):
         """
         Reset the tracer, reset the record to None.
         """
-        self._time_profiler.reset()
+        self._time_profiler_list = []

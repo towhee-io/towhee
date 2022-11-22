@@ -51,7 +51,7 @@ class PipelineProfiler:
         self.check_tracer()  # check and set node_tracer
         for node_id, tracer in self.node_tracer.items():
             self.node_report[node_id] = dict(
-                node=tracer['name'],
+                node=tracer['name'] + '(' + tracer['iter'] + ')',
                 ncalls=len(tracer['process_in']),
                 total_time=self.cal_time(tracer['queue_in'], tracer['queue_out']),
                 init=self.cal_time(tracer['init_in'], tracer['init_out']),
@@ -79,48 +79,48 @@ class PipelineProfiler:
             pipe_name = 'Pipeline'
         else:
             pipe_name = 'Pipeline:' + str(num)
-        profiler_json.append({'ph': 'M', 'pid': pipe_name, 'tid': pipe_name, 'id': pipe_name, 'name': 'process_name',
-                              'args': {'name': pipe_name}})
+        profiler_json.append({'ph': 'M', 'pid': pipe_name, 'tid': pipe_name, 'id': pipe_name, 'name': 'process_name', 'args': {'name': pipe_name}})
         profiler_json.append({'ph': 'b', 'pid': pipe_name, 'tid': pipe_name, 'id': pipe_name, 'name': pipe_name,
                               'ts': self.time_in*1000000, 'cat': 'Running Pipeline'})
         profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': pipe_name, 'id': pipe_name, 'name': pipe_name,
                               'ts': self.time_out*1000000, 'cat': 'Running Pipeline', 'args': {'input': self.data}})
 
         for n_id, n_tracer in self.node_tracer.items():
-            profiler_json.append({'ph': 'M', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id,  'name': n_tracer['name'],
-                                  'args': {'name': n_tracer['name']}})
+            profiler_json.append({'ph': 'M', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                  'name': n_tracer['name'], 'args': {'name': n_tracer['name']}})
             if len(n_tracer['init_in']) == 0:
                 total_in = n_tracer['queue_in'][0]*1000000
             else:
                 total_in = n_tracer['init_in'][0]*1000000
-            profiler_json.append({'ph': 'b', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': n_tracer['name'],
-                                  'ts': total_in, 'cat': n_tracer['name'] + '_' + n_id})
+            profiler_json.append({'ph': 'b', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                  'name': n_tracer['name'], 'ts': total_in, 'cat': n_tracer['name'] + '_' + n_id})
             if len(n_tracer['process_in']) == 0:
-                profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': n_tracer['name'],
-                                      'ts': total_in, 'cat': n_tracer['name'] + '_' + n_id})
+                profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': n_tracer['name'], 'ts': total_in, 'cat': n_tracer['name'] + '_' + n_id})
                 continue
-            profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': n_tracer['name'],
-                                  'ts': n_tracer['queue_out'][len(n_tracer['process_in'])-1] * 1000000, 'cat': n_tracer['name'] + '_' + n_id})
+            profiler_json.append({'ph': 'e', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                  'name': n_tracer['name'], 'ts': n_tracer['queue_out'][len(n_tracer['process_in'])-1] * 1000000,
+                                  'cat': n_tracer['name'] + '_' + n_id})
 
             if len(n_tracer['init_in']) != 0:
-                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'init',
-                                      'ts': n_tracer['init_in'][0]*1000000})
-                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'init',
-                                      'ts': n_tracer['init_out'][0]*1000000})
+                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'init', 'ts': n_tracer['init_in'][0]*1000000})
+                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'init', 'ts': n_tracer['init_out'][0]*1000000})
 
             for i in range(len(n_tracer['process_in'])):
-                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'wait_data',
-                                      'ts': n_tracer['queue_in'][i] * 1000000})
-                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'wait_data',
-                                      'ts': n_tracer['process_in'][i] * 1000000})
-                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'call_op',
-                                      'ts': n_tracer['process_in'][i]*1000000})
-                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'call_op',
-                                      'ts': n_tracer['process_out'][i]*1000000})
-                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'output_data',
-                                      'ts': n_tracer['process_out'][i]*1000000})
-                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'], 'id': n_id, 'name': 'output_data',
-                                      'ts': n_tracer['queue_out'][i]*1000000})
+                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'wait_data', 'ts': n_tracer['queue_in'][i] * 1000000})
+                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'wait_data', 'ts': n_tracer['process_in'][i] * 1000000})
+                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'call_op', 'ts': n_tracer['process_in'][i]*1000000})
+                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'call_op', 'ts': n_tracer['process_out'][i]*1000000})
+                profiler_json.append({'ph': 'B', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'output_data', 'ts': n_tracer['process_out'][i]*1000000})
+                profiler_json.append({'ph': 'E', 'pid': pipe_name, 'tid': n_tracer['name'] + '(' + n_tracer['iter'] + ')', 'id': n_id + str(num),
+                                      'name': 'output_data', 'ts': n_tracer['queue_out'][i]*1000000})
         return profiler_json
 
     def check_tracer(self):
@@ -128,12 +128,11 @@ class PipelineProfiler:
             for _, node in self.node_tracer.items():
                 if node['iter'] != WindowAllConst.name:
                     node['queue_in'].pop()
-
                 assert len(node['queue_in']) >= len(node['queue_out'])
                 assert len(node['process_in']) == len(node['process_out']) <= len(node['queue_in'])
                 assert len(node['init_in']) == len(node['init_out'])
                 assert len(node['init_in']) == 0 or len(node['init_in']) == 1
-        except AssertionError as e:
+        except Exception as e:
             engine_log.error('Node:{%s} failed, please reset the tracer with `pipe.reset_tracer` and rerun it.', node['name'])
             raise e
 
@@ -151,8 +150,8 @@ class PerformanceProfiler:
     PerformanceProfiler to analysis the time profiler.
     """
 
-    def __init__(self, time_profiler: 'TimeProfiler', dag: 'DAGRepr'):
-        self.time_profiler = time_profiler
+    def __init__(self, time_records: list, dag: 'DAGRepr'):
+        self.time_records = time_records
         self.dag = dag
         self.timing = None
         self.pipes_profiler = []
@@ -161,7 +160,7 @@ class PerformanceProfiler:
 
     def make_report(self):
         p_tracer = PipelineProfiler(self.dag)
-        for ts_info in self.time_profiler.time_record:
+        for ts_info in self.time_records:
             name, event, ts, data = ts_info.split('::')
             p_tracer.add_node_tracer(name, event, ts, data)
             if event == Event.pipe_out:

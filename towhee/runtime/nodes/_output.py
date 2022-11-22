@@ -26,7 +26,7 @@ class Output(Node):
     def process_step(self) -> bool:
         self._time_profiler.record(self.uid, Event.queue_in)
         all_data = {}
-        for i, q in enumerate(self._in_ques):
+        for q in self._in_ques:
             data = q.get_dict()
             if data:
                 all_data.update(data)
