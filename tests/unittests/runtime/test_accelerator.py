@@ -16,7 +16,9 @@
 import unittest
 
 import towhee
+import torch
 from towhee.dc2 import ops, register, accelerate
+from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 
 @accelerate
@@ -44,6 +46,27 @@ class MyAccOp:
         return self._mode(num)
 
 
+@accelerate
+class TorchModel:
+    """
+    Torch model.
+    """
+    def __call__(self, x, y):
+        return x + y
+
+
+@register
+class MyTorchOp:
+    """
+    Test torch op.
+    """
+    def __init__(self):
+        self._model = TorchModel()
+
+    def __call__(self, x, y):
+        return self._model(x, y)
+
+
 class TestAccelerator(unittest.TestCase):
     """
     Test accelerator
@@ -58,6 +81,22 @@ class TestAccelerator(unittest.TestCase):
              .map('a', 'c', ops.MyAccOp(10),
                   config={'acc_info': {'type': 'mock', 'params': None}})
              .output('c'))
-
         # the mock accelerator will do nothing
         self.assertEqual(p(10).get()[0], 10)
+
+    def test_torch(self):
+        p = (towhee.pipe.input('a')
+                .map(('a', 'a'), 'c', ops.MyTorchOp())
+                .output('c'))
+        self.assertTrue(torch.equal(p(torch.tensor([1, 2, 3, 4])).get()[0], torch.tensor([2, 4, 6, 8])))
+
+        def diff(x, y):
+            return x - y
+
+        pb_utils.InferenceRequest.set_model('diff', diff)
+
+        p = (towhee.pipe.input('a')
+                .map(('a', 'a'), 'c', ops.MyTorchOp(),
+                    config={'acc_info': {'type': 'triton', 'params': {'model_name': 'diff', 'inputs': ['a', 'b'], 'outputs': ['c']}}})
+                .output('c'))
+        self.assertTrue(torch.equal(p(torch.tensor([1, 2, 3, 4])).get()[0], torch.tensor([0, 0, 0, 0])))

@@ -33,7 +33,9 @@ class TestRuntimeConf(unittest.TestCase):
             'acc_info': {
                 'type': 'triton',
                 'params': {
-                    'model_name': 'resnet50'
+                    'model_name': 'resnet50',
+                    'inputs': ['in'],
+                    'outputs': ['out']
                 }
             }
         }
@@ -50,7 +52,9 @@ class TestRuntimeConf(unittest.TestCase):
             'acc_info': {
                 'type': 'unkown',
                 'params': {
-                    'model_name': 'resnet50'
+                    'model_name': 'resnet50',
+                    'inputs': ['in'],
+                    'outputs': ['out']
                 }
             }
         }
@@ -73,7 +77,9 @@ class TestRuntimeConf(unittest.TestCase):
                 'acc_info': {
                     'type': 'triton',
                     'params': {
-                        'model_name': str(i + 10)
+                        'model_name': str(i + 10),
+                        'inputs': ['in'],
+                        'outputs': ['out']
                     }
                 }
             }
@@ -102,7 +108,9 @@ class TestRuntimeConf(unittest.TestCase):
                 'acc_info': {
                     'type': 'triton',
                     'params': {
-                        'model_name': str(i + 10)
+                        'model_name': str(i + 10),
+                        'inputs': ['in'],
+                        'outputs': ['out']
                     }
                 }
             }
