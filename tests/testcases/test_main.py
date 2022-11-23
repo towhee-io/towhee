@@ -221,6 +221,17 @@ def data_collection_API_cases_runner():
             else:
                 print("%s FAIL" % func)
 
+    invalid_pipe_API_obj = TestPipeAPIsInvalid()
+    for func in dir(invalid_pipe_API_obj):
+        if not func.startswith("__"):
+            print("Testing %s" % func)
+            res = methodcaller(func)(invalid_pipe_API_obj)
+            if res == 1:
+                print("%s PASS" % func)
+            else:
+                print("%s FAIL" % func)
+
+
 def test_caller():
 
     pipeline_runner()
