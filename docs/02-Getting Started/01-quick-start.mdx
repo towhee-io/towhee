@@ -50,7 +50,7 @@ Towhee allows users to specify an image via URL:
 
 <KatacodaBlock>
   output =
-  p('https://github.com/towhee-io/towhee/raw/main/docs/02-Getting%20Started/towhee.jpeg')
+  p('https://raw.githubusercontent.com/towhee-io/towhee/main/docs/02-Getting%20Started/towhee.jpeg')
 </KatacodaBlock>
 
 That's it! The embedding vector for the corresponding input image (`towhee.jpeg`) is stored in the `output` variable:
@@ -63,7 +63,7 @@ Alternatively, we can use a local image instead. Let's grab one:
 
 <KatacodaBlock>
   wget
-  https://github.com/towhee-io/towhee/raw/main/docs/02-Getting%20Started/towhee.jpeg
+  https://raw.githubusercontent.com/towhee-io/towhee/main/docs/02-Getting%20Started/towhee.jpeg
 </KatacodaBlock>
 
 The default `image-embedding` pipeline supports both HTTP (via the `requests` library) and local paths. Run it through the pipeline as so:
