@@ -3,6 +3,7 @@ import sys
 sys.path.append("../../../tests")
 import yaml
 from loguru import logger
+from itertools import chain
 from common import common_func as cf
 
 path = '/workspace/towhee_CI/hub_operator'
@@ -10,6 +11,7 @@ log_path = path + "/log" + "/hub_op_readme.log"
 test_case_path = path + "/testcases"
 
 operator_path = path + '/operator-tasks'
+
 
 def get_op_clone_address_list_from_yaml(descript_paths):
     """
@@ -40,6 +42,36 @@ def get_op_clone_address_list_from_yaml(descript_paths):
     logger.debug(op_link_list)
 
     return op_link_list
+
+
+def get_all_models_of_op_from_yaml(op_address):
+    """
+    Extract all the models for a specific op
+    Parameters:
+        op_address - the specific op's address
+    Returns:
+        a list contains all the models for the specified op
+    """
+    all_models = []
+    descript_paths = cf.get_specific_file_path(operator_path, "description.yaml")
+    for descript_path in descript_paths:
+        with open(descript_path, encoding='utf-8')as file:
+            content = file.read()
+            data = yaml.load(content, Loader=yaml.FullLoader)
+            models = data.get("models")
+            if models is None:
+                continue
+            for model in models:
+                link = list(model.values())[0].get("op-link")
+                if link == op_address:
+                    if list(model.values())[0].get("pretrained-models"):
+                        all_models.append(list(model.values())[0].get("pretrained-models"))
+            file.close()
+    all_models = list(chain.from_iterable(all_models))
+    if len(all_models) <= 1:
+        all_models = []
+    return all_models
+
 
 def extract_python_code_from_op_readme(op_path, op_name):
     """
@@ -118,6 +150,37 @@ def extract_python_code_from_op_readme(op_path, op_name):
 
     return test_case_name
 
+
+def generate_specific_model_file(test_case_name_backup, model_name):
+    """
+    Generate the specific model file
+    Parameters:
+        test_case_name_backup - the python file of the model's op
+        model_name - name of the model
+    Returns:
+        the specific test file of the given model
+    """
+    prefix = test_case_name_backup.rsplit('.', 1)[0]
+    file_model_name = model_name.replace('/', '-')
+    single_model = prefix + '_' + file_model_name + '.py'
+    if os.path.exists(single_model):
+        os.system(f"rm {single_model}")
+    os.system(f"touch {single_model}")
+    with open(test_case_name_backup, 'r') as f:
+        lines = f.readlines()
+        f.close()
+    lines = [i.strip() for i in lines]
+    for i in range(len(lines)):
+        if 'model_name=' in lines[i]:
+            lines[i] = lines[i].replace('\"', '\'')
+            current_name = lines[i].rsplit('\'', 2)[1]
+            lines[i] = lines[i].replace(current_name, model_name)
+        with open(single_model, 'a') as f1:
+            f1.write(lines[i] + '\n')
+            f1.close()
+    return single_model
+
+
 def execute_ops(op_clone_list):
     """
     Extract the readme of all the ops
@@ -130,7 +193,10 @@ def execute_ops(op_clone_list):
     success = 0
     op_id = 1
     op_fail_list = []
+    model_fail_list = []
     for op_address in op_clone_list:
+        if op_address == 'https://towhee.io/image-text-embedding/ru_clip':
+            continue
         logger.debug("Running operator %s" % op_address)
         # extract each operator name and its classification
         others, op_name = op_address.rsplit('/', 1)
@@ -152,29 +218,53 @@ def execute_ops(op_clone_list):
         # extract python code from op readme
         test_case_name = extract_python_code_from_op_readme(op_single_path, op_name_single)
         if not os.path.exists(test_case_name):
-            logger.error("Fail to run readme for %d: operator %s" % (op_id, op_address))
+            logger.error("Fail to extracted readme for %d: operator %s" % (op_id, op_address))
             continue
         op_requirement = op_single_path + "/requirements.txt"
         logger.debug("Install requirements for %s" % op_single_path)
         os.system(f"pip install -r {op_requirement}")
-        # execute python code from op readme
-        logger.debug("Running extracted readme for %s" % op_single_path)
+        # extract all models of each op from yaml
+        logger.debug("Load all models of %s" % op_address)
+        all_models = get_all_models_of_op_from_yaml(op_address)
+        logger.debug("All models: %s" % all_models)
         test_case_name_backup = test_case_path + "/test_" + op_name_single + ".py"
-        res = os.system(f"python3 {test_case_name_backup} >> {log_path}")
-        if 0 != res:
-            logger.error("Fail to run readme for %d: operator %s" % (op_id, op_address))
+        # execute python code from op readme
+        if len(all_models) == 0:
+            logger.debug("Running extracted readme for %s" % op_single_path)
+            res = os.system(f"python3 {test_case_name_backup} >> {log_path}")
+            if 0 != res:
+                logger.error("Fail to run readme for %d: operator %s" % (op_id, op_address))
+                op_fail_list.append(op_address)
+            else:
+                logger.info("Success to run readme for %d: operator %s" % (op_id, op_address))
+                success += 1
+            op_id += 1
+            continue
+        is_succeed = True
+        for model in all_models:
+            model_name = model
+            if 'model_name' in model:
+                model_name = model.rsplit('\'', 2)[1]
+            logger.debug("Running extracted readme for %s - %s" % (op_single_path, model_name))
+            single_model_file = generate_specific_model_file(test_case_name_backup, model_name)
+            res = os.system(f"python3 {single_model_file} >> {log_path}")
+            if 0 != res:
+                logger.error("Fail to run readme for %d: operator %s - %s" % (op_id, op_address, model_name))
+                is_succeed = False
+                model_fail_list.append(op_address + ': ' + model_name)
+            else:
+                logger.info("Success to run readme for %d: operator %s - %s" % (op_id, op_address, model_name))
+        if is_succeed == False:
             op_fail_list.append(op_address)
         else:
-            logger.info("Success to run readme for %d: operator %s" % (op_id,op_address))
             success += 1
         op_id += 1
-
     if success != len(op_clone_list):
         logger.error("Fail to run readme for [%d] operators: [%s]" % (len(op_fail_list), op_fail_list))
+        logger.error("Failed models: [%s]" % model_fail_list)
         assert False
     else:
         logger.info("Success to run readme for all operators")
-
 
 
 if __name__ == '__main__':
@@ -182,6 +272,7 @@ if __name__ == '__main__':
     if not os.path.exists(path):
         os.system(f"mkdir -p {path}")
     res = 0
+    part = sys.argv[1]
     operator_tasks_path = path + '/operator-tasks'
     if os.path.exists(operator_tasks_path):
         os.system(f"rm -rf {operator_tasks_path}")
@@ -193,5 +284,8 @@ if __name__ == '__main__':
         logger.add(log_path)
         descript_paths = cf.get_specific_file_path(operator_path, "description.yaml")
         op_clone_list = get_op_clone_address_list_from_yaml(descript_paths)
-        execute_ops(op_clone_list)
-
+        #execute_ops(op_clone_list)
+        if part == "part1":
+            execute_ops(op_clone_list[:16])
+        if part == "part2":
+            execute_ops(op_clone_list[16:])

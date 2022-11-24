@@ -1,4 +1,4 @@
-name: Weekly CI
+name: Weekly GPU CI2
 
 on:
   schedule:
@@ -11,19 +11,19 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     #        │ │ │ │ │
-    - cron: "0 0 * * 6"
+    - cron: "0 1 * * 0"
   pull_request:
     # file paths to consider in the event
     paths:
-      - '.github/workflows/weekly_ci.yml'
+      - '.github/workflows/weekly_gpu_ci2.yml'
       - 'tests/testcases/hub/execute_hub_operators.py'
 
 jobs:
   test:
     name: Test
     runs-on: self-hosted
-    container: 
-      image: towhee/towhee-ut:latest
+    container:
+      image: towhee/towhee-ut:gpu-latest
       options: --user root
       volumes:
         - /__w/towhee/towhee:/__w/towhee/towhee
@@ -42,7 +42,6 @@ jobs:
       run: |
         cd  /__w/towhee/towhee/tests/testcases
         apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
-        apt-get install -y gcc g++
         apt-get install wget
         python3 -m pip install -U pip
         python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
@@ -52,4 +51,4 @@ jobs:
         export MKL_THREADING_LAYER=GNU
         export MKL_SERVICE_FORCE_INTEL=1
         rm -rf ~/.towhee/*
-        python3 -W ignore execute_hub_operators.py part1
+        python3 -W ignore execute_hub_operators.py part2

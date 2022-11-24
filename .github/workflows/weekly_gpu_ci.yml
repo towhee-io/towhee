@@ -52,4 +52,4 @@ jobs:
         export MKL_THREADING_LAYER=GNU
         export MKL_SERVICE_FORCE_INTEL=1
         rm -rf ~/.towhee/*
-        python3 -W ignore execute_hub_operators.py
+        python3 -W ignore execute_hub_operators.py part1
