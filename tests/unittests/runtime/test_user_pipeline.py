@@ -52,11 +52,25 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             Pipeline.input('a').map('a', 'c', lambda x: x+1).output({})
 
-    def test_callable(self):
+    def test_callable_func(self):
         def func(x):
             return x + 2
         pipe = (Pipeline.input('a')
                 .map('a', 'c', func)
+                .output('c'))
+        res = pipe(1).get()
+        self.assertEqual(res[0], 3)
+
+    def test_callable_class(self):
+        class CallableClass:
+            def __init__(self, x):
+                self._x = x
+
+            def __call__(self, x):
+                return self._x + x
+
+        pipe = (Pipeline.input('a')
+                .map('a', 'c', CallableClass(2))
                 .output('c'))
         res = pipe(1).get()
         self.assertEqual(res[0], 3)

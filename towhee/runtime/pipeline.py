@@ -15,7 +15,6 @@
 
 import uuid
 from copy import deepcopy
-import types
 
 from towhee.runtime.operator_manager import OperatorAction
 from towhee.runtime.factory import _OperatorWrapper
@@ -432,14 +431,13 @@ class Pipeline:
 
     @staticmethod
     def _to_action(fn):
+        if isinstance(fn, _OperatorWrapper):
+            return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws)
         if getattr(fn, '__name__', None) == '<lambda>':
             return OperatorAction.from_lambda(fn)
-        elif isinstance(fn, types.FunctionType):
+        if callable(fn):
             return OperatorAction.from_callable(fn)
-        elif isinstance(fn, _OperatorWrapper):
-            return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws)
-        else:
-            raise ValueError('Unknown operator, please make sure it is lambda, callable or operator with ops.')
+        raise ValueError('Unknown operator, please make sure it is lambda, callable or operator with ops.')
 
     @staticmethod
     def _check_concat_pipe(pipes):
