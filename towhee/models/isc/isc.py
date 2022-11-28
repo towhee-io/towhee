@@ -71,7 +71,7 @@ def create_model(timm_backbone=None, pretrained=False, checkpoint_path=None, dev
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     if timm_backbone:
         import timm  # pylint: disable=C0415
-        backbone = timm.create_model(timm_backbone, features_only=True, pretrained=pretrained)
+        backbone = timm.create_model(timm_backbone, features_only=True, pretrained=False)
         kwargs.update(backbone=backbone)
     model = ISCNet(**kwargs).to(device)
     if pretrained:
