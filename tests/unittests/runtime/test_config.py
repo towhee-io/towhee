@@ -31,6 +31,13 @@ class Add:
 def add(x):
     return x + 1
 
+class CAdd:
+    def __init__(self, x):
+        self._x = x
+
+    def __call__(self, x):
+        return self._x + x
+
 
 class TestConfig(unittest.TestCase):
     """
@@ -117,3 +124,15 @@ class TestConfig(unittest.TestCase):
         graph = Graph(pipe._dag_repr.nodes, pipe._dag_repr.edges, pipe._operator_pool, pipe._thread_pool)
         self.assertEqual([v.name for _, v in graph._nodes.items()], ['_input', 'add_1', 'add_1', 'add_2', '_output'])
         self.assertEqual(pipe(1).get(), [1, 2, 3, 2])
+
+    def test_callable(self):
+        pipe = (
+            towhee.pipe.input('a')
+                .map('a', 'b', CAdd(2))
+                .map('b', 'c', add)
+                .map('a', 'd', add)
+                .output('a', 'b', 'c', 'd')
+        )
+        graph = Graph(pipe._dag_repr.nodes, pipe._dag_repr.edges, pipe._operator_pool, pipe._thread_pool)
+        self.assertEqual([v.name for _, v in graph._nodes.items()], ['_input', 'CAdd-0', 'add-1', 'add-2', '_output'])
+        self.assertEqual(pipe(1).get(), [1, 3, 4, 2])

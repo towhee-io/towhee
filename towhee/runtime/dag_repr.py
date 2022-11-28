@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
 from typing import Dict, Any, Set, List, Tuple
 
 from towhee.runtime.check_utils import check_set, check_node_iter
@@ -258,7 +259,10 @@ class DAGRepr:
         """
         def _get_name(val):
             if val['op_info']['type'] == OPType.CALLABLE:
-                name = val['op_info']['operator'].__name__
+                if isinstance(val['op_info']['operator'], types.FunctionType):
+                    name = val['op_info']['operator'].__name__
+                else:
+                    name = type(val['op_info']['operator']).__name__
             elif val['op_info']['type'] == OPType.LAMBDA:
                 name = 'lambda'
             elif val['op_info']['type'] == OPType.HUB:
