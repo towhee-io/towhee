@@ -14,7 +14,7 @@
 
 
 from typing import List, Dict
-from towhee.serve.triton.bls.mock import mock_pb_util
+from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 
 class MockInferInput:
@@ -68,8 +68,8 @@ class MockTritonClient:
     def infer(self, model_name: str, inputs: List[MockInferInput]) -> 'InferResult':
         if model_name not in self._models:
             return None
-        request = mock_pb_util.MockInferenceRequest(
-            [mock_pb_util.MockTritonPythonBackendTensor(item.name(), item.data())
+        request = pb_utils.InferenceRequest(
+            [pb_utils.Tensor(item.name(), item.data())
              for item in inputs]
         )
 
@@ -82,8 +82,8 @@ class MockTritonClient:
 
     def async_stream_infer(self, model_name, inputs: List[MockInferInput]):
         assert self._callback is not None
-        request = mock_pb_util.MockInferenceRequest(
-            [mock_pb_util.MockTritonPythonBackendTensor(item.name(), item.data())
+        request = pb_utils.InferenceRequest(
+            [pb_utils.Tensor(item.name(), item.data())
              for item in inputs],
             self._callback
         )

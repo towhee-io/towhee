@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.utils.log import engine_log
@@ -95,8 +95,11 @@ class RuntimePipeline:
         max_workers(`int`): The maximum number of threads.
     """
 
-    def __init__(self, dag_dict: Dict, max_workers: int = None, config: dict = None):
-        self._dag_repr = DAGRepr.from_dict(dag_dict)
+    def __init__(self, dag: Union[Dict, DAGRepr], max_workers: int = None, config: dict = None):
+        if isinstance(dag, Dict):
+            self._dag_repr = DAGRepr.from_dict(dag)
+        else:
+            self._dag_repr = dag
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
         self._time_profiler_list = []
@@ -123,6 +126,10 @@ class RuntimePipeline:
 
         self._time_profiler_list.append(time_profiler)
         return outputs
+
+    @property
+    def dag_repr(self):
+        return self._dag_repr
 
     def profiler(self):
         """
