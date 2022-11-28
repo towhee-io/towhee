@@ -18,3 +18,4 @@ protobuf<=3.20.0
 PyWavelets
 nebullvm<=0.4.0
 twine
+dill
