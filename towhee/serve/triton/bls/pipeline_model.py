@@ -41,6 +41,7 @@ class TritonPythonModel:
         with open(fpath, 'rb') as f:
             dag_repr = pickle.load(f)
             self.pipe = RuntimePipeline(dag_repr)
+            self.pipe.preload()
 
     def _get_result(self, q):
         ret = []

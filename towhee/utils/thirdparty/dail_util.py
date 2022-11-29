@@ -13,7 +13,10 @@
 # limitations under the License.
 
 
-import os
-
-
-PIPELINE_MODEL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline_model.py')
+try:
+    # pylint: disable=unused-import
+    import dill
+except ModuleNotFoundError as e: # pragma: no cover
+    from towhee.utils.dependency_control import prompt_install
+    prompt_install('dill')
+    import dill # pylint: disable=ungrouped-imports
