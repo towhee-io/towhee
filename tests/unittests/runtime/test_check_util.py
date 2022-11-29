@@ -14,7 +14,7 @@
 
 import unittest
 
-from towhee.runtime.check_utils import check_set, check_keys, check_node_iter
+from towhee.runtime.check_utils import check_set, check_keys, check_node_iter, check_supported
 
 
 class TestCheckUtils(unittest.TestCase):
@@ -25,6 +25,9 @@ class TestCheckUtils(unittest.TestCase):
         check_keys({1: 1, 2: 2, 3: 3}, {1, 3})
         with self.assertRaises(ValueError):
             check_keys({1: 1, 2: 2, 3: 3}, {2, 5})
+        check_supported({1: 1, 8: 2, 3: 3}, {1, 3})
+        with self.assertRaises(ValueError):
+            check_supported(12, {2, 5})
 
     def test_set(self):
         check_set({1, 2, 3}, {1, 2, 3, 4})
