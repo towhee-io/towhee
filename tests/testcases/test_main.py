@@ -4,6 +4,7 @@ from test_image_embedding import *
 from test_pipeline import *
 from test_audio_embedding import *
 from test_data_collection import *
+from test_command import *
 
 def pipeline_register():
 
@@ -226,6 +227,14 @@ def data_collection_API_cases_runner():
         if not func.startswith("__"):
             print("Testing %s" % func)
             res = methodcaller(func)(invalid_pipe_API_obj)
+
+
+def command_cases_runner():
+    command_obj = TestCommandValid()
+    for func in dir(command_obj):
+        if not func.startswith("__"):
+            print("Testing %s" % func)
+            res = methodcaller(func)(command_obj)
             if res == 1:
                 print("%s PASS" % func)
             else:
@@ -239,6 +248,7 @@ def test_caller():
     data_collection_API_cases_runner()
     # skip audio tests for issue 463
     # audio_class_pipeline_runner()
+    command_cases_runner()
 
     return True
 
