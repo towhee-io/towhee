@@ -19,8 +19,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.optim import Optimizer
-from tqdm import tqdm
-
+from tqdm.auto import tqdm
 from towhee.utils.log import trainer_log
 from towhee.trainer.utils.trainer_utils import is_main_process
 from towhee.trainer.utils.file_utils import is_tensorboard_available
@@ -762,8 +761,8 @@ class ProgressBarCallBack(Callback):
             self.now_tqdm_train_dataloader.update(1)
             self.description = "[epoch {}/{}] loss={}, metric={}".format(logs["epoch"],
                                                                          int(self.total_epoch_num),
-                                                                         round(logs["epoch_loss"], 3),
-                                                                         round(logs["epoch_metric"], 3))
+                                                                         format(logs["epoch_loss"], ".3f"),
+                                                                         format(logs["epoch_metric"], ".3f"))
             self.now_tqdm_train_dataloader.set_description(self.description)
 
     def on_epoch_begin(self, epochs: int, logs: Dict) -> None:
@@ -771,13 +770,14 @@ class ProgressBarCallBack(Callback):
             self.now_tqdm_train_dataloader = None
             self.now_tqdm_train_dataloader = tqdm(self.raw_train_dataloader,
                                                   total=len(self.raw_train_dataloader),
-                                                  unit="step")  # , file=sys.stdout)
+                                                  unit="step",
+                                                  )  # , file=sys.stdout)
 
     def on_eval_batch_end(self, batch: Tuple, logs: Dict) -> None:
         if is_main_process():
             self.description = "[epoch {}/{}] loss={}, metric={}, eval_loss={}, eval_metric={}".format(
                 logs["epoch"],
                 int(self.total_epoch_num),
-                round(logs["epoch_loss"], 3),
-                round(logs["epoch_metric"], 3), round(logs["eval_epoch_loss"], 3), round(logs["eval_epoch_metric"], 3))
+                format(logs["epoch_loss"], ".3f"),
+                format(logs["epoch_metric"], ".3f"), format(logs["eval_epoch_loss"], ".3f"), format(logs["eval_epoch_metric"], ".3f"))
             self.now_tqdm_train_dataloader.set_description(self.description)
