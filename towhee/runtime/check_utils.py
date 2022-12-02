@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from typing import Dict, Any, Set, Tuple
+
+from towhee.utils.log import engine_log
 from towhee.runtime.constants import (
     WindowConst,
     FilterConst,
@@ -28,8 +30,10 @@ def check_keys(info: Dict[str, Any], essentials: Set[str]):
         info (`Dict[str, Any]`): The info dictionary.
         essentials (`Set[str]`): The essential keys that node dictionary should contain.
     """
+    if not isinstance(info, dict):
+        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
     info_keys = set(info.keys())
-    if not isinstance(info, dict) or not essentials.issubset(info_keys):
+    if not essentials.issubset(info_keys):
         raise ValueError(f'Node {str(info)} is not valid, lack attr {essentials - info_keys}')
 
 
@@ -97,6 +101,7 @@ def check_node_iter(iter_type: str, iter_param: Dict[str, Any], inputs, outputs,
         check_int(iter_param, [WindowConst.param.size,
                                WindowConst.param.step])
 
+
 def check_config(info: Dict[str, Any], essentials: Set[str]):
     """
     Check if the src covers all the needed config info.
@@ -107,6 +112,25 @@ def check_config(info: Dict[str, Any], essentials: Set[str]):
         essentials (`Set[str]`):
             The essential keys that node config dictionary should contain.
     """
+    if not isinstance(info, dict):
+        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
     info_keys = set(info.keys())
-    if not isinstance(info, dict) or not essentials.issubset(info_keys):
+    if not essentials.issubset(info_keys):
         raise ValueError(f'Config {str(info)} is not valid, lack attr {essentials - info_keys}')
+
+
+def check_supported(info: Dict[str, Any], essentials: Set[str]):
+    """
+    Check if the src is supported and logging warning.
+
+    Args:
+        info (`Dict[str, Any]`):
+            The info dictionary.
+        essentials (`Set[str]`):
+            The essential keys that node config dictionary can contain.
+    """
+    if not isinstance(info, dict):
+        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
+    info_keys = set(info.keys())
+    if not info_keys.issubset(essentials):
+        engine_log.warning('Config %s is not supported, please make sure the config is in %s', str(info_keys - essentials), essentials)

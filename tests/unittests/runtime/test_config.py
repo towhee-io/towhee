@@ -136,3 +136,23 @@ class TestConfig(unittest.TestCase):
         graph = Graph(pipe._dag_repr.nodes, pipe._dag_repr.edges, pipe._operator_pool, pipe._thread_pool)
         self.assertEqual([v.name for _, v in graph._nodes.items()], ['_input', 'CAdd-0', 'add-1', 'add-2', '_output'])
         self.assertEqual(pipe(1).get(), [1, 3, 4, 2])
+
+    def test_server_config(self):
+        pipe = towhee.pipe.input('a').map('a', 'b', lambda x: x + 1, config={
+            'server': {
+                'device_ids': [0, 1],
+                'max_batch_size': 128,
+                'batch_latency_micros': 100000,
+                'num_instances_per_device': 3,
+                'triton': {
+                    'preferred_batch_size': [8, 16],
+                }
+            }
+        }).output('a', 'b')
+        graph = Graph(pipe._dag_repr.nodes, pipe._dag_repr.edges, pipe._operator_pool, pipe._thread_pool)
+        server_conf = list(graph._nodes.values())[1].config.server_conf
+        self.assertEqual(server_conf.device_ids, [0, 1])
+        self.assertEqual(server_conf.max_batch_size, 128)
+        self.assertEqual(server_conf.batch_latency_micros, 100000)
+        self.assertEqual(server_conf.num_instances_per_device, 3)
+        self.assertEqual(server_conf.triton.preferred_batch_size, [8, 16])
