@@ -88,6 +88,8 @@ def accelerate(model):
             return model(*args, **kwargs)
         elif runtime_conf.accelerator.is_triton():
             return TritonClient(runtime_conf.accelerator.triton.model_name)
+        elif runtime_conf.accelerator.is_mock():
+            return MockModel()
         else:
             return None
     return _decorated
@@ -95,3 +97,8 @@ def accelerate(model):
 
 class TritonClient:
     pass
+
+class MockModel:
+    def __call__(self, data):
+        return data
+
