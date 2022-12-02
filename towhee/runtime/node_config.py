@@ -14,7 +14,7 @@
 
 from typing import Dict, Any, Optional
 
-from towhee.runtime.check_utils import check_config
+from towhee.runtime.check_utils import check_config, check_supported
 
 
 class NodeConfig:
@@ -23,10 +23,12 @@ class NodeConfig:
     """
     def __init__(self, *, name: str,
                  device: int,
-                 acc_info: Optional[Dict]):
+                 acc_info: Optional[Dict],
+                 server_info: Optional[Dict]):
         self._name = name
         self._device = device
         self._acc_conf = AcceleratorConf.from_dict(acc_info) if acc_info is not None else None
+        self._server_conf = ServerConf.from_dict(server_info) if server_info is not None else None
 
     @property
     def name(self):
@@ -40,6 +42,10 @@ class NodeConfig:
     def acc_conf(self):
         return self._acc_conf
 
+    @property
+    def server_conf(self):
+        return self._server_conf
+
     @staticmethod
     def from_dict(conf: Dict[str, Any]):
         essentials = {'name'}
@@ -47,7 +53,8 @@ class NodeConfig:
         return NodeConfig(
             name=conf['name'],
             device=conf.get('device', -1),
-            acc_info=conf.get('acc_info')
+            acc_info=conf.get('acc_info'),
+            server_info=conf.get('server')
         )
 
 
@@ -58,7 +65,7 @@ class AcceleratorConf:
     def __init__(self, acc_type: str, conf: Dict):
         self._type = acc_type
         if self._type == 'triton':
-            self._conf = TritonConf.from_dict(conf)
+            self._conf = TritonClientConf.from_dict(conf)
         else:
             raise ValueError(f'Unkown accelerator: {acc_type}')
 
@@ -74,7 +81,7 @@ class AcceleratorConf:
         return AcceleratorConf(acc_conf['type'], acc_conf['params'])
 
 
-class TritonConf:
+class TritonClientConf:
     """
     Triton client config.
     """
@@ -89,4 +96,68 @@ class TritonConf:
     def from_dict(conf):
         if 'model_name' not in conf:
             raise ValueError('Triton accelerator lost model_name config')
-        return TritonConf(conf['model_name'])
+        return TritonClientConf(conf['model_name'])
+
+
+class ServerConf:
+    """
+    ServerConf
+    """
+    def __init__(self, device_ids,
+                 max_batch_size,
+                 batch_latency_micros,
+                 num_instances_per_device,
+                 triton: 'TritonServerConf'):
+        self._device_ids = device_ids
+        self._max_batch_size = max_batch_size
+        self._batch_latency_micros = batch_latency_micros
+        self._num_instances_per_device = num_instances_per_device
+        self._triton = triton
+
+    @property
+    def device_ids(self):
+        return self._device_ids
+
+    @property
+    def max_batch_size(self):
+        return self._max_batch_size
+
+    @property
+    def batch_latency_micros(self):
+        return self._batch_latency_micros
+
+    @property
+    def num_instances_per_device(self):
+        return self._num_instances_per_device
+
+    @property
+    def triton(self):
+        return self._triton
+
+    @staticmethod
+    def from_dict(server_info: Dict[str, Any]):
+        check_supported(server_info, {'device_ids', 'max_batch_size', 'batch_latency_micros', 'num_instances_per_device', 'triton'})
+        triton_conf = TritonServerConf.from_dict(server_info.get('triton'))
+        return ServerConf(server_info.get('device_ids'), server_info.get('max_batch_size'), server_info.get('batch_latency_micros'),
+                          server_info.get('num_instances_per_device'), triton_conf)
+
+
+class TritonServerConf:
+    """
+    Triton server config.
+    """
+    def __init__(self, preferred_batch_size: str = None):
+        self._preferred_batch_size = preferred_batch_size
+
+    @property
+    def preferred_batch_size(self):
+        return self._preferred_batch_size
+
+    @staticmethod
+    def from_dict(triton_info: Dict[str, Any]):
+        if triton_info is None:
+            return TritonServerConf()
+        check_supported(triton_info, {'preferred_batch_size'})
+        if 'preferred_batch_size' not in triton_info:
+            return TritonServerConf()
+        return TritonServerConf(triton_info.get('preferred_batch_size'))

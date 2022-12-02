@@ -19,3 +19,4 @@ PyWavelets
 nebullvm<=0.4.0
 twine
 dill
+onnx
