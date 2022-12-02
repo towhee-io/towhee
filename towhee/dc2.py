@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from towhee.runtime import register, pipe, ops
+from towhee.runtime import register, pipe, ops, accelerate
 from towhee.datacollection import DataCollection
 
 
@@ -21,5 +21,6 @@ __all__ = [
     'register',
     'pipe',
     'ops',
+    'accelerate',
     'DataCollection'
 ]

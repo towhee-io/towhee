@@ -66,11 +66,16 @@ class AcceleratorConf:
         self._type = acc_type
         if self._type == 'triton':
             self._conf = TritonClientConf.from_dict(conf)
+        elif self._type == 'mock':
+            pass
         else:
             raise ValueError(f'Unkown accelerator: {acc_type}')
 
     def is_triton(self):
         return self._type == 'triton'
+
+    def is_mock(self):
+        return self._type == 'mock'
 
     @property
     def triton(self):

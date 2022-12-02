@@ -16,12 +16,13 @@
 from .factory import ops, register
 from .pipeline import Pipeline as pipe
 
-from .runtime_conf import get_sys_config
+from .runtime_conf import get_sys_config, accelerate
 
 
 __all__ = [
     'pipe',
     'register',
     'ops',
-    'get_sys_config'
+    'get_sys_config',
+    'accelerate'
 ]
