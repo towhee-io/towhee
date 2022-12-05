@@ -62,7 +62,8 @@ def create_modelconfig(model_name, max_batch_size, inputs, outputs, backend,
     '''
     config = 'name: "{}"\n'.format(model_name)
     config += 'backend: "{}"\n'.format(backend)
-    config += 'max_batch_size: {}\n'.format(max_batch_size)
+    if max_batch_size is not None:
+        config += 'max_batch_size: {}\n'.format(max_batch_size)
     if enable_dynamic_batching:
         config += '''
 dynamic_batching {
@@ -77,9 +78,10 @@ dynamic_batching {
 '''.format(max_queue_delay_microseconds)
         config += '''
 }\n'''
-    for input_name in inputs.keys():
-        data_type, shape = inputs[input_name]
-        config += '''
+    if inputs is not None:
+        for input_name in inputs.keys():
+            data_type, shape = inputs[input_name]
+            config += '''
 input [
   {{
     name: \"{}\"
@@ -87,9 +89,10 @@ input [
     dims: {}
   }}
 ]\n'''.format(input_name, data_type, shape)
-    for output_name in outputs.keys():
-        data_type, shape = outputs[output_name]
-        config += '''
+    if outputs is not None:
+        for output_name in outputs.keys():
+            data_type, shape = outputs[output_name]
+            config += '''
 output [
   {{
     name: \"{}\"
@@ -98,6 +101,7 @@ output [
   }}
 ]\n'''.format(output_name, data_type, shape)
 
+    instance_count = 1 if instance_count is None else instance_count
     if device_ids is not None:
         config += '''
 instance_group [

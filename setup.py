@@ -73,6 +73,7 @@ else:
               'console_scripts': [
                   'towhee=towhee.command.cmdline:main',
                   'triton_builder=towhee.serve.triton.builder:main',
+                  'triton_builder2=towhee.serve.triton.pipeline_builder:main',
               ],
           },
           long_description_content_type='text/markdown'

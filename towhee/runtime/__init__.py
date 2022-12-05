@@ -17,6 +17,7 @@ from .factory import ops, register
 from .pipeline import Pipeline as pipe
 
 from .runtime_conf import get_sys_config, accelerate
+from .node_config import AcceleratorConf
 
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     'register',
     'ops',
     'get_sys_config',
-    'accelerate'
+    'accelerate',
+    'AcceleratorConf'
 ]

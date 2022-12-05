@@ -42,6 +42,10 @@ class NodeConfig:
     def acc_conf(self):
         return self._acc_conf
 
+    @acc_conf.setter
+    def acc_conf(self, acc_conf):
+        self._acc_conf = acc_conf
+
     @property
     def server_conf(self):
         return self._server_conf
