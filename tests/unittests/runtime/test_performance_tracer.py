@@ -51,7 +51,7 @@ class TestPerformanceProfiler(unittest.TestCase):
         p = pipe.input('a').output('a', tracer=True)
         _ = p(1)
         time_profiler = p._time_profiler_list[0]
-        time_profiler.record('_run_pipe', 'pipe_out', None)
+        time_profiler.record('_run_pipe', 'pipe_out')
         with self.assertRaises(BaseException):
             _ = PerformanceProfiler(time_profiler.time_record, p._dag_repr)
 
@@ -144,6 +144,16 @@ class TestPerformanceProfiler(unittest.TestCase):
         path1.unlink()
         path2.unlink()
 
+    def test_in_batch(self):
+        pipe0 = (pipe.input('a', 'b', 'c')
+                 .map('c', 'c', lambda x: x + 1)
+                 .filter('c', 'd', ('a', 'b'), lambda x, y: x > 10)
+                 .output('a', 'b', 'c', 'd', tracer=True))
+        pipe0.batch([(5, 6, 7)] * 10)
+
+        pp = pipe0.profiler()
+        self.assertEqual(len(pp.pipes_profiler), 10)
+        self.assertEqual(len(pp.node_report), 4)
 
 class TestTimeProfiler(unittest.TestCase):
     """

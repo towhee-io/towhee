@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Tuple
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.utils.log import engine_log
@@ -26,7 +26,17 @@ from .performance_profiler import PerformanceProfiler, TimeProfiler, Event
 from .constants import TracerConst
 
 
-class Graph:
+class _GraphResult:
+    def __init__(self, graph: '_Graph'):
+        self._graph = graph
+
+    def result(self):
+        ret = self._graph.result()
+        del self._graph
+        return ret
+
+
+class _Graph:
     """
     Graph.
 
@@ -41,14 +51,16 @@ class Graph:
                  edges: Dict[str, Any],
                  operator_pool: 'OperatorPool',
                  thread_pool: 'ThreadPoolExecutor',
-                 time_profiler: 'TimeProfiler' = None):
+                 enable_trance: bool = False):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
         self._thread_pool = thread_pool
-        self._time_profiler = time_profiler
+        self._time_profiler = TimeProfiler(enable_trance)
         self._node_runners = None
         self._data_queues = None
+        self.features = None
+        self.time_profiler.record(Event.pipe_name, Event.pipe_in)
         self.initialize()
 
     def initialize(self):
@@ -63,6 +75,8 @@ class Graph:
             self._node_runners.append(node)
 
     def result(self) -> any:
+        for f in self.features:
+            f.result()
         errs = ''
         for node in self._node_runners:
             if node.status != NodeStatus.FINISHED:
@@ -72,17 +86,25 @@ class Graph:
             raise RuntimeError(errs)
         end_edge_num = self._nodes['_output'].out_edges[0]
         res = self._data_queues[end_edge_num]
+        self.time_profiler.record(Event.pipe_name, Event.pipe_out)
         return res
 
-    def __call__(self, *inputs):
-        self._data_queues[0].put(*inputs)
+    def async_call(self, inputs: Tuple):
+        self.time_profiler.inputs = inputs
+        self._data_queues[0].put(inputs)
         self._data_queues[0].seal()
-        features = []
+        self.features = []
         for node in self._node_runners:
-            features.append(self._thread_pool.submit(node.process))
+            self.features.append(self._thread_pool.submit(node.process))
+        return _GraphResult(self)
 
-        _ = [f.result() for f in features]
-        return self.result()
+    def __call__(self, inputs: Tuple):
+        f = self.async_call(inputs)
+        return f.result()
+
+    @property
+    def time_profiler(self):
+        return self._time_profiler
 
 
 class RuntimePipeline:
@@ -103,29 +125,40 @@ class RuntimePipeline:
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
         self._time_profiler_list = []
-        self._config = config
+        self._config = {} if config is None else config
+        self._enable_trace = self._config.get(TracerConst.name, False)
 
     def preload(self):
         """
         Preload the operators.
         """
-        _ = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
+        return _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
 
     def __call__(self, *inputs):
         """
         Output with ordering matching the input `DataQueue`.
         """
-        time_profiler = TimeProfiler()
-        if self._config is not None and TracerConst.name in self._config and self._config[TracerConst.name]:
-            time_profiler.enable()
+        graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._enable_trace)
+        if self._enable_trace:
+            self._time_profiler_list.append(graph.time_profiler)
+        return graph(inputs)
 
-        time_profiler.record(Event.pipe_name, Event.pipe_in, inputs)
-        graph = Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, time_profiler)
-        outputs = graph(inputs)
-        time_profiler.record(Event.pipe_name, Event.pipe_out)
+    def batch(self, batch_inputs):
+        graph_res = []
+        for inputs in batch_inputs:
+            gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._enable_trace)
+            if self._enable_trace:
+                self._time_profiler_list.append(gh.time_profiler)
+            if isinstance(inputs, tuple):
+                graph_res.append(gh.async_call(inputs))
+            else:
+                graph_res.append(gh.async_call((inputs, )))
 
-        self._time_profiler_list.append(time_profiler)
-        return outputs
+        rets = []
+        for gf in graph_res:
+            ret = gf.result()
+            rets.append(ret)
+        return rets
 
     @property
     def dag_repr(self):
@@ -135,13 +168,11 @@ class RuntimePipeline:
         """
         Report the performance results after running the pipeline, and please note that you need to set tracer to True when you declare a pipeline.
         """
-        records = []
-        for time_profiler in self._time_profiler_list:
-            records += time_profiler.time_record
-        if len(records) == 0:
+        if not self._enable_trace or not self._time_profiler_list:
             engine_log.warning('Please set tracer to True or you need to run it first, there is nothing to report.')
             return None
-        performance_profiler = PerformanceProfiler(records, self._dag_repr)
+
+        performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr)
         return performance_profiler
 
     def reset_tracer(self):

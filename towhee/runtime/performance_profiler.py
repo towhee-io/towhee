@@ -29,18 +29,16 @@ class PipelineProfiler:
         self.time_in = None
         self.time_out = None
         self.data = None
-        self.dag = dag
         self.node_tracer = {}
         self.node_report = {}
         for uid, node in dag.nodes.items():
             self.node_tracer[uid] = dict(name=node.name, iter=node.iter_info.type, init_in=[], init_out=[], queue_in=[], queue_out=[],
                                          process_in=[], process_out=[])
 
-    def add_node_tracer(self, name, event, ts, data):
+    def add_node_tracer(self, name, event, ts):
         ts = int(ts) / 1000000
         if event == Event.pipe_in:
             self.time_in = ts
-            self.data = data
         elif event == Event.pipe_out:
             self.time_out = ts
             self.set_node_report()
@@ -150,8 +148,8 @@ class PerformanceProfiler:
     PerformanceProfiler to analysis the time profiler.
     """
 
-    def __init__(self, time_records: list, dag: 'DAGRepr'):
-        self.time_records = time_records
+    def __init__(self, time_prfilers: list, dag: 'DAGRepr'):
+        self._time_prfilers = time_prfilers
         self.dag = dag
         self.timing = None
         self.pipes_profiler = []
@@ -159,13 +157,13 @@ class PerformanceProfiler:
         self.make_report()
 
     def make_report(self):
-        p_tracer = PipelineProfiler(self.dag)
-        for ts_info in self.time_records:
-            name, event, ts, data = ts_info.split('::')
-            p_tracer.add_node_tracer(name, event, ts, data)
-            if event == Event.pipe_out:
-                self.pipes_profiler.append(p_tracer)
-                p_tracer = PipelineProfiler(self.dag)
+        for tf in self._time_prfilers:
+            p_tracer = PipelineProfiler(self.dag)
+            p_tracer.data = tf.inputs
+            for ts_info in tf.time_record:
+                name, event, ts = ts_info.split('::')
+                p_tracer.add_node_tracer(name, event, ts)
+            self.pipes_profiler.append(p_tracer)
         self.set_node_report()
         self.timing = self.get_timing_report()
 
@@ -242,15 +240,16 @@ class TimeProfiler:
     """
     TimeProfiler to record the event and timestamp.
     """
-    def __init__(self):
-        self._enable = False
+    def __init__(self, enable=False):
+        self._enable = enable
         self.time_record = []
+        self.inputs = None
 
-    def record(self, uid, event, pipe_input=None):
+    def record(self, uid, event):
         if not self._enable:
             return
         timestamp = int(round(time.time() * 1000000))
-        self.time_record.append(f'{uid}::{event}::{timestamp}::{pipe_input}')
+        self.time_record.append(f'{uid}::{event}::{timestamp}')
 
     def enable(self):
         self._enable = True
