@@ -179,13 +179,14 @@ class PerformanceProfiler:
                 self.node_report[node_id]['output_data'] += node_tracer['output_data']
 
     def get_timing_report(self):
+        timeline = self.pipes_profiler[-1].time_out - self.pipes_profiler[0].time_in
         timing_list = []
         for p_tracer in self.pipes_profiler:
             timing_list.append(p_tracer.time_out - p_tracer.time_in)
         timing_list.sort()
         total_time = sum(timing_list)
         avg_time = total_time / len(timing_list)
-        return round(total_time, 4), round(avg_time, 4), round(timing_list[-1], 4), round(timing_list[0], 4)
+        return round(timeline, 4), round(avg_time, 4), round(timing_list[-1], 4), round(timing_list[0], 4)
 
     def show(self):
         print('Total count: ', len(self.pipes_profiler))
