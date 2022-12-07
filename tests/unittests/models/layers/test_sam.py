@@ -31,4 +31,3 @@ class TestOperator(unittest.TestCase):
     def test_sam(self):
         optimizer = SAM(self.model.parameters(), self.base_optimizer, lr=0.1, momentum=0.9)
         self.assertEqual(optimizer.base_optimizer.__class__, torch.optim.SGD)
-

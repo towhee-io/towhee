@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#pylint: disable=import-outside-toplevel
 import contextvars
 import contextlib
 import functools
-
 
 
 class RuntimeConf:
@@ -87,16 +87,15 @@ def accelerate(model):
         if runtime_conf.accelerator is None:
             return model(*args, **kwargs)
         elif runtime_conf.accelerator.is_triton():
-            return TritonClient(runtime_conf.accelerator.triton.model_name)
+            from towhee.serve.triton_client import TritonClient
+            triton_conf = runtime_conf.accelerator.triton
+            return TritonClient(triton_conf.model_name, triton_conf.inputs, triton_conf.outputs)
         elif runtime_conf.accelerator.is_mock():
             return MockModel()
         else:
             return None
     return _decorated
 
-
-class TritonClient:
-    pass
 
 class MockModel:
     def __call__(self, data):

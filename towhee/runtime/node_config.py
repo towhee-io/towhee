@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from towhee.runtime.check_utils import check_config, check_supported
 
@@ -90,18 +90,26 @@ class TritonClientConf:
     """
     Triton client config.
     """
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, inputs: List[str], outputs: List[str]):
         self._model_name = model_name
+        self._inputs = inputs
+        self._outputs = outputs
 
     @property
     def model_name(self):
         return self._model_name
 
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @property
+    def outputs(self):
+        return self._outputs
+
     @staticmethod
     def from_dict(conf):
-        if 'model_name' not in conf:
-            raise ValueError('Triton accelerator lost model_name config')
-        return TritonClientConf(conf['model_name'])
+        return TritonClientConf(conf['model_name'], conf['inputs'], conf['outputs'])
 
 
 class ServerConf:
