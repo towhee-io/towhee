@@ -87,7 +87,7 @@ def accelerate(model):
         if runtime_conf.accelerator is None:
             return model(*args, **kwargs)
         elif runtime_conf.accelerator.is_triton():
-            from towhee.serve.triton_client import TritonClient
+            from towhee.serve.triton.triton_client import TritonClient
             triton_conf = runtime_conf.accelerator.triton
             return TritonClient(triton_conf.model_name, triton_conf.inputs, triton_conf.outputs)
         elif runtime_conf.accelerator.is_mock():
