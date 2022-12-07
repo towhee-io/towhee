@@ -14,9 +14,9 @@
 
 
 import unittest
+import torch
 
 import towhee
-import torch
 from towhee.dc2 import ops, register, accelerate
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
@@ -100,3 +100,8 @@ class TestAccelerator(unittest.TestCase):
                     config={'acc_info': {'type': 'triton', 'params': {'model_name': 'diff', 'inputs': ['a', 'b'], 'outputs': ['c']}}})
                 .output('c'))
         self.assertTrue(torch.equal(p(torch.tensor([1, 2, 3, 4])).get()[0], torch.tensor([0, 0, 0, 0])))
+
+    def test_ops(self):
+        op = ops.MyTorchOp()
+        data = op(torch.tensor([1, 2, 3, 4]), torch.tensor([1, 2, 3, 4]))
+        self.assertTrue(torch.equal(data, torch.tensor([2, 4, 6, 8])))

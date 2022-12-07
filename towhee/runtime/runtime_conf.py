@@ -83,8 +83,8 @@ def get_accelerator():
 def accelerate(model):
     @functools.wraps(model)
     def _decorated(*args, **kwargs):
-        runtime_conf = _RUNTIME_CONF_VAR.get()
-        if runtime_conf.accelerator is None:
+        runtime_conf = _RUNTIME_CONF_VAR.get(None)
+        if runtime_conf is None or runtime_conf.accelerator is None:
             return model(*args, **kwargs)
         elif runtime_conf.accelerator.is_triton():
             from towhee.serve.triton.triton_client import TritonClient
