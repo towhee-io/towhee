@@ -11,20 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint:disable=protected-access
 import unittest
 
 import torch
-from towhee.serve.triton_client import TritonClient
+from towhee.serve.triton.triton_client import TritonClient
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 
 def normal(*args):
-    res = [arr for arr in args]
+    res = list(args)
     return res
 
 
 def fail(*args):
-    raise pb_utils.TritonModelException("Error test.")
+    raise pb_utils.TritonModelException('Error test.')
 
 
 pb_utils.InferenceRequest.set_model('normal', normal)
@@ -40,7 +42,7 @@ class TestTritonClient(unittest.TestCase):
         self.assertEqual(tmodel._model_name, 'normal')
         self.assertEqual(tmodel._input_names, ['in_a', 'in_b'])
         self.assertEqual(tmodel._output_names, ['out_a', 'out_b'])
-    
+
     def test_call(self):
         in_1 = torch.arange(4)
         in_2 = torch.arange(4)
@@ -56,5 +58,5 @@ class TestTritonClient(unittest.TestCase):
 
         tmodel = TritonClient(model_name='fail', input_names=['in_a', 'in_b'], output_names=['out_a', 'out_b'])
         with self.assertRaises(pb_utils.TritonModelException) as e:
-            res = tmodel(in_1, in_2)
+            _ = tmodel(in_1, in_2)
             self.assertEqual(e.message(), 'Error test.')
