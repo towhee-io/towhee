@@ -15,8 +15,8 @@
 from towhee.utils.log import engine_log
 from towhee.utils.onnx_utils import onnx
 from towhee.serve.triton import constant
-
-from .triton_files import TritonFiles
+from towhee.serve.triton.triton_config_builder import create_modelconfig
+from towhee.serve.triton.triton_files import TritonFiles
 
 
 class ModelToTriton:
@@ -24,20 +24,24 @@ class ModelToTriton:
     NNOp to triton model.
     """
 
-    def __init__(self, model_root: str, op: 'NNOperator', node_conf: 'NodeConf', server_conf: dict):
+    def __init__(self, model_root: str, op: 'NNOperator', model_name: str, node_conf: 'NodeConfig', server_conf: dict):
         self._model_root = model_root
         self._op = op
-        self._name = node_conf.name
+        self._name = model_name
         self._op_conf = node_conf.server_conf
         self._server_conf = server_conf
         self._triton_files = TritonFiles(model_root, self._name)
         self._model_format_priority = self._server_conf.get(constant.FORMAT_PRIORITY, [])
-        self._backend = 'python'
+        self._backend = None
 
     def _create_model_dir(self) -> bool:
-        self._triton_files.root.mkdir(parents=True, exist_ok=True)
-        self._triton_files.model_path.mkdir(parents=True, exist_ok=True)
+        self._triton_files.root.mkdir(parents=True, exist_ok=False)
+        self._triton_files.model_path.mkdir(parents=True, exist_ok=False)
         return True
+
+    def _rm_model_dir(self):
+        self._triton_files.model_path.rmdir()
+        self._triton_files.root.rmdir()
 
     def _prepare_config(self) -> bool:
         """
@@ -53,40 +57,42 @@ class ModelToTriton:
         }
         """
         if self._op_conf is None:
-            config_str = 'name: "{}"\n'.format(self._name)
-            config_str += 'backend: "{}"\n'.format(self._backend)
+            config_lines = create_modelconfig(self._name, None, None, None, self._backend, True, None, None, None, None)
         else:
-            enable_dynamic_batching = self._op_conf.triton.preferred_batch_size is not None or self._op_conf.batch_latency_micros is not None
-
-            config_str = self._create_model_config(
+            config_lines = create_modelconfig(
+                model_name=self._name,
                 max_batch_size=self._op_conf.max_batch_size,
-                instance_count=self._op_conf.num_instances_per_device,
-                device_ids=self._op_conf.device_ids,
-                enable_dynamic_batching=enable_dynamic_batching,
+                inputs=None,
+                outputs=None,
+                backend=self._backend,
+                enable_dynamic_batching=True,
                 preferred_batch_size=self._op_conf.triton.preferred_batch_size,
-                max_queue_delay_microseconds=self._op_conf.batch_latency_micros
+                max_queue_delay_microseconds=self._op_conf.batch_latency_micros,
+                instance_count=self._op_conf.num_instances_per_device,
+                device_ids=self._op_conf.device_ids
             )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
-            f.write(config_str)
+            f.writelines(config_lines)
             return True
 
     def _save_onnx_model(self):
-        succ = self._op.save_model('onnx', self._triton_files.onnx_model_file)
         self._backend = 'onnxruntime'
-        return succ
+        try:
+            if self._op.save_model('onnx', self._triton_files.onnx_model_file) and self._prepare_config():
+                return 1
+        except Exception as e:  # pylint: disable=broad-except
+            engine_log.error('Save the operator: %s with onnx model failed, error: %s', self._name, e)
+            return -1
 
     def _prepare_model(self):
-        succ = False
-        if len(self._model_format_priority) == 0:
-            self._model_format_priority = self._op.supported_formats
         for fmt in self._model_format_priority:
             if fmt in self._op.supported_formats:
                 if fmt == 'onnx':
                     return self._save_onnx_model()
-                else:
-                    engine_log.error('Unknown optimize %s', fmt)
-                    continue
-        return succ
+            else:
+                engine_log.warning('Unknown optimize %s', fmt)
+                continue
+        return 0
 
     def get_model_in_out(self):
         model = onnx.load(str(self._triton_files.onnx_model_file))
@@ -96,51 +102,15 @@ class ModelToTriton:
         outputs = [graph_output.name for graph_output in graph_outputs]
         return inputs, outputs
 
-    def to_triton(self) -> bool:
-        if self._create_model_dir() and self._prepare_model() and self._prepare_config():
-            return True
-        return False
-
-    def _create_model_config(self, max_batch_size,
-                             instance_count, device_ids,
-                             enable_dynamic_batching, preferred_batch_size, max_queue_delay_microseconds):
-        config = 'name: "{}"\n'.format(self._name)
-        config += 'backend: "{}"\n'.format(self._backend)
-        if max_batch_size is not None:
-            config += 'max_batch_size: {}\n'.format(max_batch_size)
-
-        if enable_dynamic_batching:
-            config += '''
-dynamic_batching {
-'''
-            if preferred_batch_size is not None:
-                config += '''
-    preferred_batch_size: {}
-'''.format(preferred_batch_size)
-            if max_queue_delay_microseconds is not None:
-                config += '''
-    max_queue_delay_microseconds: {}
-'''.format(max_queue_delay_microseconds)
-            config += '''
-}\n'''
-
-        if device_ids is not None:
-            instance_count = 1 if instance_count is None else instance_count
-            config += '''
-instance_group [
-    {{
-        kind: KIND_GPU
-        count: {}
-        gpus: {}
-    }}
-]\n'''.format(instance_count, device_ids)
-        elif instance_count is not None:
-            config += '''
-instance_group [
-    {{
-        kind: KIND_CPU
-        count: {}
-    }}
-]\n'''.format(instance_count)
-
-        return config
+    def to_triton(self) -> int:
+        """
+        save model in triton and return the status.
+        0 means do nothing, -1 means failed, 1 means successfully created the model repo.
+        """
+        if not self._create_model_dir():
+            self._rm_model_dir()
+            return -1
+        status = self._prepare_model()
+        if status in [-1, 0]:
+            self._rm_model_dir()
+        return status

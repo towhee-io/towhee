@@ -23,6 +23,7 @@ POSTPROCESS = 'postprocess'
 
 
 OP_CONFIG = 'op_config'
+SERVER_CONFIG = 'server_config'
 FORMAT_PRIORITY = 'format_priority'
 
 
@@ -30,3 +31,5 @@ FORMAT_PRIORITY = 'format_priority'
 
 OP_CONFIG_FILE = 'config.json'
 DC_CONFIG_FILE = 'dc_config.json'
+
+PIPELINE_NAME = 'pipeline'

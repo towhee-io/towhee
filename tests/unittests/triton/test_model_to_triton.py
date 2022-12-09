@@ -36,7 +36,7 @@ class Model:
     def save_model(self, model_type, output_file):
         if model_type != 'onnx':
             return False
-        dummy_input = torch.randn(10, 3, 224, 224)
+        dummy_input = torch.randn(1, 3, 224, 224)
         torch.onnx.export(self.model, dummy_input, output_file, input_names=['input0'], output_names=['output0'])
         return True
 
@@ -54,28 +54,36 @@ class TestModelToTriton(unittest.TestCase):
     Test ModelToTriton
     """
     def test_to_triton(self):
-        name = 'resnet18'
+        name = 'image-text-embedding/resnet-18'
         server_config = {'format_priority': ['onnx', 'tensorrt']}
         node_config = NodeConfig.from_dict({'name': name})
+        model_name = name.replace('/', '.')
         with TemporaryDirectory(dir='./') as root:
-            m = ModelToTriton(root, op, node_config, server_config)
-            self.assertTrue(m.to_triton())
+            m = ModelToTriton(root, op, model_name, node_config, server_config)
+            self.assertEqual(m.to_triton(), 1)
 
             inputs, outputs = m.get_model_in_out()
             self.assertTrue(inputs, ['input0'])
             self.assertTrue(outputs, ['output0'])
 
-            model_path = Path(root) / name
+            model_path = Path(root) / model_name
             path1 = model_path / 'config.pbtxt'
             with open(path1, encoding='utf-8') as f:
                 file_config = list(f.readlines())
-            pbtxt_config = ['name: "resnet18"\n',
-                            'backend: "onnxruntime"\n']
+            pbtxt_config = ['name: "image-text-embedding.resnet-18"\n',
+                            'backend: "onnxruntime"\n', '\n',
+                            'dynamic_batching {\n', '\n', '}\n', '\n',
+                            'instance_group [\n',
+                            '    {\n',
+                            '        kind: KIND_CPU\n',
+                            '        count: 1\n',
+                            '    }\n',
+                            ']\n']
             self.assertEqual(file_config, pbtxt_config)
             path2 = model_path / '1' / 'model.onnx'
             self.assertTrue(path2.exists())
 
-    def test_prepare_conf1(self):
+    def test_prepare(self):
         name = 'resnet18_conf1'
         server_config = {'format_priority': ['onnx', 'tensorrt']}
         node_config = NodeConfig.from_dict({
@@ -91,8 +99,8 @@ class TestModelToTriton(unittest.TestCase):
             }
         })
         with TemporaryDirectory(dir='./') as root:
-            m = ModelToTriton(root, op, node_config, server_config)
-            self.assertTrue(m.to_triton())
+            m = ModelToTriton(root, op, name, node_config, server_config)
+            self.assertEqual(m.to_triton(), 1)
 
             model_path = Path(root) / name
             path1 = model_path / 'config.pbtxt'
@@ -105,35 +113,47 @@ class TestModelToTriton(unittest.TestCase):
                             '    preferred_batch_size: [8, 16]\n', '\n',
                             '    max_queue_delay_microseconds: 100000\n', '\n',
                             '}\n', '\n',
-                            'instance_group [\n', '    {\n',
+                            'instance_group [\n',
+                            '    {\n',
                             '        kind: KIND_GPU\n',
                             '        count: 1\n',
-                            '        gpus: [0, 1]\n', '    }\n', ']\n']
+                            '        gpus: [0, 1]\n',
+                            '    }\n',
+                            ']\n']
             self.assertEqual(file_config, pbtxt_config)
             path2 = model_path / '1' / 'model.onnx'
             self.assertTrue(path2.exists())
 
-    def test_prepare_conf2(self):
+    def test_status(self):
         name = 'resnet18_conf2'
-        server_config = {'format_priority': ['onnx', 'tensorrt']}
+        server_config = {}
         node_config = NodeConfig.from_dict({
             'name': name,
             'server': {'num_instances_per_device': 3}
         })
         with TemporaryDirectory(dir='./') as root:
-            m = ModelToTriton(root, op, node_config, server_config)
-            self.assertTrue(m._create_model_dir())
-            self.assertTrue(m._prepare_config())
+            path2 = Path(root)
+            m = ModelToTriton(root, op, name, node_config, server_config)
+            self.assertEqual(m.to_triton(), 0)
+            self.assertFalse((path2 / name).exists())
 
-            model_path = Path(root) / name
-            path1 = model_path / 'config.pbtxt'
-            with open(path1, encoding='utf-8') as f:
-                file_config = list(f.readlines())
-            pbtxt_config = ['name: "resnet18_conf2"\n',
-                            'backend: "python"\n', '\n',
-                            'instance_group [\n', '    {\n',
-                            '        kind: KIND_CPU\n',
-                            '        count: 3\n',
-                            '    }\n', ']\n']
-            self.assertEqual(file_config, pbtxt_config)
+        name = 'resnet18_conf3'
+        server_config = {'format_priority': ['tensorrt']}
+        node_config = NodeConfig.from_dict({
+            'name': name,
+            'server': {'num_instances_per_device': 3}
+        })
+        with TemporaryDirectory(dir='./') as root:
+            path3 = Path(root)
+            m = ModelToTriton(root, op, name, node_config, server_config)
+            self.assertEqual(m.to_triton(), 0)
+            self.assertFalse((path3 / name).exists())
 
+        server_config = {'format_priority': ['onnx']}
+        op_tmp = Model()
+        op_tmp.save_model = lambda x: False
+        with TemporaryDirectory(dir='./') as root:
+            path4 = Path(root)
+            m = ModelToTriton(root, op_tmp, name, node_config, server_config)
+            self.assertEqual(m.to_triton(), -1)
+            self.assertFalse((path4 / name).exists())
