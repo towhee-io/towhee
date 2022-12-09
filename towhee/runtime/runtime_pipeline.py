@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import Dict, Any, Union, Tuple
+from typing import Dict, Any, Union, Tuple, List
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.utils.log import engine_log
@@ -62,6 +62,7 @@ class _Graph:
         self.features = None
         self.time_profiler.record(Event.pipe_name, Event.pipe_in)
         self.initialize()
+        self._input_q = self._data_queues[0]
 
     def initialize(self):
         self._node_runners = []
@@ -89,22 +90,26 @@ class _Graph:
         self.time_profiler.record(Event.pipe_name, Event.pipe_out)
         return res
 
-    def async_call(self, inputs: Tuple):
+    def async_call(self, inputs: Union[Tuple, List]):
         self.time_profiler.inputs = inputs
-        self._data_queues[0].put(inputs)
-        self._data_queues[0].seal()
+        self._input_q.put(inputs)
+        self._input_q.seal()
         self.features = []
         for node in self._node_runners:
             self.features.append(self._thread_pool.submit(node.process))
         return _GraphResult(self)
 
-    def __call__(self, inputs: Tuple):
+    def __call__(self, inputs: Union[Tuple, List]):
         f = self.async_call(inputs)
         return f.result()
 
     @property
     def time_profiler(self):
         return self._time_profiler
+
+    @property
+    def input_col_size(self):
+        return self._input_q.col_size
 
 
 class RuntimePipeline:
@@ -149,10 +154,9 @@ class RuntimePipeline:
             gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._enable_trace)
             if self._enable_trace:
                 self._time_profiler_list.append(gh.time_profiler)
-            if isinstance(inputs, tuple):
-                graph_res.append(gh.async_call(inputs))
-            else:
-                graph_res.append(gh.async_call((inputs, )))
+            if gh.input_col_size == 1:
+                inputs = (inputs, )
+            graph_res.append(gh.async_call(inputs))
 
         rets = []
         for gf in graph_res:
