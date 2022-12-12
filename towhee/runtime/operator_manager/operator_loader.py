@@ -25,6 +25,8 @@ from towhee.operator.nop import NOPNodeOperator
 from towhee.hub.file_manager import FileManager
 from towhee.runtime.constants import InputConst, OutputConst
 from .operator_registry import OperatorRegistry
+from towhee.utils.log import engine_log
+# pylint: disable=broad-except
 
 
 class OperatorLoader:
@@ -65,6 +67,34 @@ class OperatorLoader:
         except Exception:  # pylint: disable=broad-except
             return None
 
+    def _load_legacy_op(self, modname, path, fname):
+        # support old version operator API
+        spec = importlib.util.spec_from_file_location(modname, path.resolve())
+        # Create the module and then execute the module in its own namespace.
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[modname] = module
+        spec.loader.exec_module(module)
+        # Instantiate the operator object and return it to the caller for
+        # `load_operator`. By convention, the operator class is simply the CamelCase
+        # version of the snake_case operator.
+        op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
+        op = getattr(module, op_cls)
+
+        return op
+
+    def _load_op(self, modname, path, fname):
+        # support latest version operator API
+        init_path = path.parent / '__init__.py'
+        if not init_path.is_file():
+            return None
+        spec = importlib.util.spec_from_file_location(modname, init_path.resolve())
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[modname] = module
+        spec.loader.exec_module(module)
+        op = getattr(module, fname, None)
+
+        return op
+
     def load_operator_from_path(self, path: Union[str, Path], arg: List[Any], kws: Dict[str, Any]) -> Operator:
         """
         Load operator form local path.
@@ -94,27 +124,11 @@ class OperatorLoader:
                 pkg_name = pkg_name.replace('_', '-')
                 if pkg_name not in all_pkg:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
-        try:
-            # support for ver1 operator API
-            spec = importlib.util.spec_from_file_location(modname, path.resolve())
 
-            # Create the module and then execute the module in its own namespace.
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            # Instantiate the operator object and return it to the caller for
-            # `load_operator`. By convention, the operator class is simply the CamelCase
-            # version of the snake_case operator.
-            op_cls = ''.join(x.capitalize() or '_' for x in fname.split('_'))
-            op = getattr(module, op_cls)
-        except Exception:  # pylint: disable=broad-except
-            # support for ver2 operator API
-            path = path.parent / '__init__.py'
-            spec = importlib.util.spec_from_file_location(modname, path.resolve())
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[modname] = module
-            spec.loader.exec_module(module)
-            op = getattr(module, fname)
+        op = self._load_op(modname, path, fname)
+        if not op:
+            engine_log.warning('The operator\'s format is outdated.')
+            op = self._load_legacy_op(modname, path, fname)
 
         return self.instance_operator(op, arg, kws) if op is not None else None
 

@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .add import Add
 
-
-from .flat_gen import FlatGen
-
-def flat_gen(factor: int):
-    return FlatGen(factor)
+def new_format_op(factor):
+    return Add(factor)

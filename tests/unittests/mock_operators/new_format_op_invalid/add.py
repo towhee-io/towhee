@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=unused-import
+# pylint: disable=import-outside-toplevel
+from towhee.operator import PyOperator, SharedType
 
-from .flat_gen import FlatGen
 
-def flat_gen(factor: int):
-    return FlatGen(factor)
+class Add(PyOperator):
+    """
+    Stateful operator
+    """
+    def __init__(self, factor: int) -> None:
+        import NotExistPackage
+        super().__init__()
+        self._factor = factor
+
+    def __call__(self, num: int):
+        return self._factor + num
+
+    @property
+    def shared_type(self):
+        return SharedType.Shareable
