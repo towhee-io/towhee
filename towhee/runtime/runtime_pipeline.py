@@ -62,7 +62,7 @@ class _Graph:
         self.features = None
         self.time_profiler.record(Event.pipe_name, Event.pipe_in)
         self.initialize()
-        self._input_q = self._data_queues[0]
+        self._input_queue = self._data_queues[0]
 
     def initialize(self):
         self._node_runners = []
@@ -92,8 +92,8 @@ class _Graph:
 
     def async_call(self, inputs: Union[Tuple, List]):
         self.time_profiler.inputs = inputs
-        self._input_q.put(inputs)
-        self._input_q.seal()
+        self._input_queue.put(inputs)
+        self._input_queue.seal()
         self.features = []
         for node in self._node_runners:
             self.features.append(self._thread_pool.submit(node.process))
@@ -109,7 +109,7 @@ class _Graph:
 
     @property
     def input_col_size(self):
-        return self._input_q.col_size
+        return self._input_queue.col_size
 
 
 class RuntimePipeline:
