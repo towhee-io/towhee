@@ -51,12 +51,12 @@ class TestPipeToTriton(unittest.TestCase):
             pipe.initialize({})
 
             input_data = ([1, 2, 3], np.random.rand(3, 3))
-            triton_input = np.array([json.dumps(input_data, cls=NumpyArrayEncoder)], dtype=np.object_)
+            triton_input = np.array([[json.dumps(input_data, cls=NumpyArrayEncoder)]], dtype=np.object_)
             input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', triton_input)], [], '')
 
             res = pipe.execute([input_tensors])
             ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)
-            self.assertEqual(len(ret), 3)
-            for index, item in enumerate(ret, 1):
+            self.assertEqual(len(ret[0]), 3)
+            for index, item in enumerate(ret[0], 1):
                 self.assertTrue((item[0] == (input_data[1] + index)).all())
             pipe.finalize()

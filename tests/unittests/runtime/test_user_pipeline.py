@@ -289,7 +289,7 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             p1.concat('a').output('b')
 
-    def test_batch(self):
+    def test_batch_single_input(self):
         pipe = (Pipeline.input('a')
                 .map('a', 'c', lambda x: x + 2)
                 .output('c'))
@@ -297,6 +297,19 @@ class TestPipeline(unittest.TestCase):
         res = pipe.batch(batch_inputs)
         for idx, item in enumerate(res):
             self.assertEqual(item.get()[0], batch_inputs[idx] + 2)
+
+    def test_batch_multi_inputs(self):
+        pipe = (Pipeline.input('a', 'b')
+                .flat_map('a', 'c', lambda x: x)
+                .map(('c', 'b'), 'd', lambda x, y: x + y)
+                .window_all('d', 'd', sum)
+                .output('d'))
+
+        batch_inputs = [[[1, 2], 10], [[1, 2, 3], 1], [[1, 3, 5], 2]]
+        expect = [23, 9, 15]
+        res = pipe.batch(batch_inputs)
+        for idx, item in enumerate(res):
+            print(item.get()[0], expect[idx])
 
     def test_batch_with_exception(self):
         p1 = Pipeline.input('a').map('a', 'b', lambda x: x + 1).output()

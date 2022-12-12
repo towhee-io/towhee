@@ -27,7 +27,7 @@ class TritonPythonModel:
         input0 = {'name': 'INPUT0', 'data_type': 'TYPE_STRING', 'dims': [1]}
         output0 = {'name': 'OUTPUT0', 'data_type': 'TYPE_STRING', 'dims': [1]}
 
-        auto_complete_model_config.set_max_batch_size(0)
+        auto_complete_model_config.set_max_batch_size(8)
         auto_complete_model_config.add_input(input0)
         auto_complete_model_config.add_output(output0)
         return auto_complete_model_config
@@ -54,16 +54,23 @@ class TritonPythonModel:
 
     def execute(self, requests):
         responses = []
+        batch_inputs = []
         for request in requests:
-            in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            arg = in_0.as_numpy()[0]
-            inputs = json.loads(arg, cls=NumpyArrayDecoder)
-            q = self.pipe(*inputs)
-            ret = self._get_result(q)
-            ret_str = json.dumps(ret, cls=NumpyArrayEncoder)
+            in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0").as_numpy()
+            for item in in_0:
+                arg = item[0]
+                inputs = json.loads(arg, cls=NumpyArrayDecoder)
+                batch_inputs.append(inputs)
+
+            results = self.pipe.batch(batch_inputs)
+            outputs = []
+            for q in results:
+                ret = self._get_result(q)
+                outputs.append(ret)
+            ret_str = json.dumps(outputs, cls=NumpyArrayEncoder)
             out_tensor_0 = pb_utils.Tensor('OUTPUT0', np.array([ret_str], np.object_))
             responses.append(pb_utils.InferenceResponse([out_tensor_0]))
-        return responses
+        return responses    
 
     def finalize(self):
         pass
