@@ -55,10 +55,15 @@ class ISCNet(nn.Module):
 
     def forward(self, x):
         batch_size = x.shape[0]
+
         x = self.backbone(x)[-1]
         assert len(x.shape) == 4
+        _, _, height, width = x.shape
+        if torch.is_tensor(height):
+            height = height.item()
+            width = width.item()
         p = self.p if self.training else self.eval_p
-        x = nn.functional.avg_pool2d(x.clamp(min=1e-6).pow(p), (x.size(-2), x.size(-1))).pow(1./p)
+        x = nn.functional.avg_pool2d(x.clamp(min=1e-6).pow(p), (height, width)).pow(1./p)
         x = x.view(batch_size, -1)
         x = self.fc(x)
         x = self.bn(x)
