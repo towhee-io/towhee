@@ -30,6 +30,11 @@ class Client:
         >>> from towhee import triton_client
         >>> client = triton_client('<your-ip>:<your-port>')
         >>> res = client('your-data')
+        >>> client.close()
+
+        You can also run as following:
+        >>> with triton_client('<your-ip>:<your-port>') as client:
+        ...     res = client('your-data')
     """
     def __init__(self, url: str, model_name: str = PIPELINE_NAME):
         from towhee.utils.tritonclient_utils import httpclient  # pylint: disable=import-outside-toplevel
@@ -37,10 +42,18 @@ class Client:
         self._model_name = model_name
 
     def __call__(self, *args):
+        if len(args) > 1:
+            args = [args]
         inputs = self._solve_inputs(args)
         response = self._client.infer(self._model_name, inputs)
         outputs = self._solve_responses(response)
         return outputs
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):  # pylint: disable=redefined-builtin
+        self.close()
 
     def batch(self, args_list):
         inputs = self._solve_inputs(args_list, len(args_list))
