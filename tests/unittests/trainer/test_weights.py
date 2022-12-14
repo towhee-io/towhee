@@ -51,15 +51,15 @@ class TestWeights(unittest.TestCase):
                            datasets='use efficientnet test data')
 
     def test_with_trainer(self):
-        self.op.save('./test_save')
+        self.op.trainer.save('./test_save')
         filepath = Path('./test_save').joinpath(STATE_CHECKPOINT_NAME)
         self.assertTrue(Path(filepath).is_file())
 
         with self.assertRaises(FileExistsError):
-            self.op.save('./test_save', overwrite=False)
+            self.op.trainer.save('./test_save', overwrite=False)
 
         out1 = self.op(self.x)
-        self.op.load('./test_save')
+        self.op.trainer.load('./test_save')
         out2 = self.op(self.x)
         self.assertTrue((out1 == out2).all())
 

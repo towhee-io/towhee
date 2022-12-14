@@ -225,32 +225,6 @@ class NNOperator(Operator):
             if model_card is not None:
                 self._trainer.model_card = model_card
 
-    def load(self, path: str = None):
-        """
-        Load the model checkpoint into an operator.
-
-        Args:
-            path (`str`):
-                The folder path containing the model's checkpoints.
-        """
-        self.trainer.load(path)
-
-    def save(self, path: str, overwrite: bool = True):
-        """
-        Save the model checkpoint into the path.
-
-        Args:
-            path (`str`):
-                The folder path containing the model's checkpoints.
-            overwrite (`bool`):
-                If True, it will overwrite the same name path when existing.
-
-        Raises:
-            (`FileExistsError`)
-                If `overwrite` is False, when there already exists a path, it will raise Error.
-        """
-        self.trainer.save(path, overwrite)
-
 
 class PyOperator(Operator):
     """
