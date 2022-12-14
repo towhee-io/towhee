@@ -251,6 +251,10 @@ class NNOperator(Operator):
         """
         self.trainer.save(path, overwrite)
 
+    @property
+    def shared_type(self):
+        return SharedType.Shareable        
+
 
 class PyOperator(Operator):
     """
