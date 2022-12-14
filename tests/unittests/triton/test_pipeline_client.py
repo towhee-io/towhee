@@ -18,9 +18,12 @@ import struct
 import numpy as np
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from functools import partial
 
 from towhee.dc2 import pipe
-from towhee.serve.triton.pipeline_client import Client
+from towhee.serve.triton.constant import PIPELINE_NAME
+from towhee.serve.triton.pipeline_client import Client, StreamClient, UserData, completion_callback
+from towhee.utils.tritonclient_utils import InferenceServerException
 from towhee.utils.thirdparty.dail_util import dill as pickle
 from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
 import towhee.serve.triton.bls.pipeline_model as pipe_model
@@ -77,6 +80,58 @@ class MockHttpClient:
         pass
 
 
+class MockStreamClient(StreamClient):
+    """
+    mock stream client
+    """
+    def __init__(self, url: str, model_name: str = PIPELINE_NAME):
+        self._client = MockGrpcClient(url)
+        self._model_name = model_name
+        self.user_data = UserData()
+        self._client.start_stream(callback=partial(completion_callback, self.user_data))
+
+
+class MockGrpcClient:
+    """
+    mock grpc client
+    """
+    def __init__(self, url):
+        self._url = url
+        self._pipe = None
+        self._callback = None
+
+    def set_pipeline(self, pipeline):
+        with TemporaryDirectory(dir='./') as root:
+            pf = Path(root) / 'pipe.pickle'
+            with open(pf, 'wb') as f:
+                pickle.dump(pipeline.dag_repr, f)
+
+            self._pipe = pipe_model.TritonPythonModel()
+            self._pipe._load_pipeline(pf)
+            self._pipe.pipe.__call__ == self._pipe.pipe.batch  # pylint:disable=pointless-statement
+
+    def start_stream(self, callback):
+        self._callback = callback
+
+    def async_stream_infer(self, model_name, inputs, request_id):
+        in_data_list = deserialize_bytes_tensor(inputs[0]._raw_content)
+        if len(in_data_list) >= 8: #max batch size
+            self._callback(None, InferenceServerException('inference request batch-size must be <= 8 for \'pipeline\''))
+            return
+        json_data = []
+        for in_data in in_data_list:
+            input_data = json.loads(in_data, cls=NumpyArrayDecoder)
+            json_data.append([json.dumps(input_data, cls=NumpyArrayEncoder)])
+        triton_input = np.array(json_data, dtype=np.object_)
+        inputs = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', triton_input)], [], model_name)
+        outputs = self._pipe.execute([inputs])
+        res = MockRes(outputs)
+        self._callback(res, None)
+
+    def stop_stream(self):
+        pass
+
+
 class MockRes:
     """
     mock response class for triton client
@@ -111,6 +166,7 @@ class TestTritonClient(unittest.TestCase):
             for index, item in enumerate(res1[0], 0):
                 self.assertEqual(item, expect1[index])
 
+            # test with batch
             res2 = client.batch([1, 2, 3])
             self.assertEqual(len(res2), 3)
             expect2 = [[11], [22], [33]]
@@ -142,5 +198,62 @@ class TestTritonClient(unittest.TestCase):
             res2 = client.batch([[in0, in1], [in0, in1], [in0, in1], [in0, in1]])
             self.assertEqual(len(res2), 4)
             for single in res2:
+                for index, item in enumerate(single, 1):
+                    self.assertTrue((item[0] == (in1 + index)).all())
+
+    def test_stream_single_params(self):
+        p = (
+            pipe.input('num')
+            .map('num', 'arr', lambda x: x*10)
+            .map(('num', 'arr'), 'ret', lambda x, y: x + y)
+            .output('ret')
+        )
+
+        url = '127.0.0.1:8000'
+        with MockStreamClient(url) as client:
+            client._client.set_pipeline(p)
+
+            res1 = client(iter([1]))[0]
+            self.assertEqual(len(res1), 1)
+            expect1 = [[11]]
+            for index, item in enumerate(res1[0], 0):
+                self.assertEqual(item, expect1[index])
+
+            # test with batch
+            res2 = client(iter([[1, 2, 3]]), 3)[0]
+            self.assertEqual(len(res2), 3)
+            expect2 = [[11], [22], [33]]
+            for index, single in enumerate(res2):
+                for item in single:
+                    self.assertEqual(item, expect2[index])
+
+            # test with error
+            with self.assertRaises(Exception):
+                _ = client(iter([[1]*10]), 10)
+
+    def test_stream_multi_params(self):
+        p = (
+            pipe.input('nums', 'arr')
+            .flat_map('nums', 'num', lambda x: x)
+            .map(('num', 'arr'), 'ret', lambda x, y: x + y)
+            .output('ret')
+        )
+
+        url = '127.0.0.1:8000'
+        with MockStreamClient(url) as client:
+            client._client.set_pipeline(p)
+            in0 = [1, 2, 3]
+            in1 = np.random.rand(3, 3)
+            res1 = client(iter([[in0, in1]]))[0]
+            self.assertEqual(len(res1), 1)
+            self.assertEqual(len(res1[0]), 3)
+            for index, item in enumerate(res1[0], 1):
+                self.assertTrue((item[0] == (in1 + index)).all())
+
+            # test with batch
+            res2 = client(iter([[[in0, in1], [in0, in1]], [[in0, in1], [in0, in1]]]), 2)
+            self.assertEqual(len(res2), 2)
+            for single in res2:
+                single = single[0]
                 for index, item in enumerate(single, 1):
                     self.assertTrue((item[0] == (in1 + index)).all())
