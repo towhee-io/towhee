@@ -129,6 +129,10 @@ class NNOperator(Operator):
     def framework(self, framework: str):
         self._framework = framework
 
+    @property
+    def shared_type(self):
+        return SharedType.Shareable
+
     def save_model(self):
         """
         Save model to local.
