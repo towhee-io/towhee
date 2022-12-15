@@ -16,6 +16,7 @@
 # pylint: disable=import-outside-toplevel
 from typing import Union, List
 from pathlib import Path
+
 from towhee.engine import register
 from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES
 from towhee.hparam import param_scope
@@ -25,9 +26,8 @@ from towhee.functional import DataCollection, State, Entity, DataFrame
 from towhee.functional import (
     glob, glob_zip, read_csv, read_json, read_camera, read_video, read_audio, read_zip, dc, api, dummy_input, range, from_df
 )
-
 from towhee import dc2
-from towhee.dc2 import pipe
+from towhee.dc2 import pipe, build_docker_image_v2, build_pipeline_model
 from towhee.serve import triton_client
 
 

@@ -22,15 +22,20 @@ logger = logging.getLogger()
 
 def get_dockerfile(cuda_version: str) -> Path:
     if cuda_version == '11.3':
-        file_name = 'DockerfileCuda113'
+        file_name = 'DockerfileCuda11_v2'
     elif cuda_version == '11.4':
-        file_name = 'DockerfileCuda114'
+        file_name = 'DockerfileCuda114_v2'
     elif cuda_version == '11.6':
-        file_name = 'DockerfileCuda116'
-    elif cuda_version == 'dev':
+        file_name = 'DockerfileCuda116_v2'
+    elif cuda_version == '11.7':
+        file_name = 'DockerfileCuda117'
+    elif cuda_version == '114dev':
         # for QA to test towhee
         file_name = 'DockerfileCuda114dev'
+    elif cuda_version == '117dev':
+        # for QA to test towhee
+        file_name = 'DockerfileCuda117dev'
     else:
-        logger.error("Towhee serve doesn't support cuda %s, the support cuda: 11.3, 11.4, 11.6", cuda_version)
+        logger.error("Towhee serve doesn't support cuda %s, the support cuda: 11.3, 11.4, 11.6, 11.7", cuda_version)
         return None
     return Path(__file__).absolute().parent / file_name
