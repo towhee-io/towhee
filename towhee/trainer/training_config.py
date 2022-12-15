@@ -45,22 +45,31 @@ def dump_default_yaml(yaml_path):
     trainer_log.info("dump default yaml to %s", yaml_path)
 
 
-def get_config_help():
+def get_config_help() -> Dict:
     """
     Get config setting infos.
     Returns:
         (`dict`)
             The help dict.
     """
-    config_fields = fields(TrainingConfig)
+    return get_dataclasses_help(TrainingConfig)
+
+
+def get_dataclasses_help(cls) -> Dict:
+    """
+    Get dataclasses infos.
+    Returns:
+        (`dict`)
+            The help dict.
+    """
+    config_fields = fields(cls)
     help_dict = {}
+    default_dict = {}
     for config_field in config_fields:
-        metadata_dict = config_field.metadata
-        help_dict[config_field.name] = metadata_dict
+        default_dict[config_field.name] = config_field.default
+        help_dict[config_field.name] = config_field.metadata
     for field_name, metadata_dict in help_dict.items():
-        print("- " + field_name)
-        print(metadata_dict)
-        print("")
+        print(f"- {field_name} \n  default: {default_dict[field_name]} \n  metadata_dict: {metadata_dict} \n")
     return help_dict
 
 
