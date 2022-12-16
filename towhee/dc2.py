@@ -15,6 +15,7 @@
 
 from towhee.runtime import register, pipe, ops, accelerate
 from towhee.datacollection import DataCollection
+from towhee.serve import build_docker_image_v2, build_pipeline_model
 
 
 __all__ = [
@@ -22,5 +23,7 @@ __all__ = [
     'pipe',
     'ops',
     'accelerate',
-    'DataCollection'
+    'DataCollection',
+    'build_docker_image_v2',
+    'build_pipeline_model'
 ]

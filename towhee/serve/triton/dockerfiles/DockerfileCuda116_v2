@@ -1,0 +1,31 @@
+FROM nvcr.io/nvidia/tritonserver:22.04-py3
+
+RUN apt-get update          && \
+    apt-get install -y         \
+              zip              \
+              wget             \
+              unzip            \
+              python3.8        \
+              python3-pip      \
+              libgl1-mesa-glx
+
+RUN pip3 install -U pip
+
+RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+
+RUN pip3 install onnxruntime onnx
+
+RUN pip3 install towhee towhee.models
+
+RUN apt-get install git-lfs && \
+    git lfs install
+
+WORKDIR /workspace
+
+RUN mkdir -p /workspace/models
+
+COPY ./dag.pickle /workspace/dag.pickle
+
+COPY ./server_config.json /workspace/server_config.json
+
+RUN triton_builder2 /workspace/dag.pickle /workspace/models /workspace/server_config.json
