@@ -48,7 +48,14 @@ class TestTritonClient(unittest.TestCase):
         in_2 = torch.arange(4)
         tmodel = TritonClient(model_name='normal', input_names=['in_a', 'in_b'], output_names=['out_a', 'out_b'])
         res = tmodel(in_1, in_2)
+        for i, j in zip(res, [in_1, in_2]):
+            self.assertTrue(i.equal(j))
 
+        res = tmodel(in_1, in_b=in_2)
+        for i, j in zip(res, [in_1, in_2]):
+            self.assertTrue(i.equal(j))
+
+        res = tmodel(in_1=in_1, in_b=in_2)
         for i, j in zip(res, [in_1, in_2]):
             self.assertTrue(i.equal(j))
 

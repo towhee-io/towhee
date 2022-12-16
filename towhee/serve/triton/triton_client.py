@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from typing import List
 
@@ -34,11 +35,17 @@ class TritonClient:
         self._input_names = input_names
         self._output_names = output_names
 
-    def __call__(self, *args):
+    def _torch_tensor_to_pbtenor(self, name: str, array: 'Tensor'):
+        return pb_utils.Tensor(name, array.numpy() if array.device.type == 'cpu' else array.cpu().numpy())
+
+    def __call__(self, *args, **kwargs):
         inputs = [
-            pb_utils.Tensor(name, array.numpy() if array.device.type == 'cpu' else array.cpu().numpy())
-            for name, array in zip(self._input_names, args)
+            self._torch_tensor_to_pbtenor(name, array)
+            for array, name in zip(args, self._input_names)
         ]
+
+        for name, array in kwargs.items():
+            inputs.append(self._torch_tensor_to_pbtenor(name, array))
 
         inference_request = pb_utils.InferenceRequest(model_name=self._model_name, requested_output_names=self._output_names, inputs=inputs)
 
