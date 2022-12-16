@@ -193,7 +193,7 @@ class LsS3Command: # pragma: no cover
 
 class DownloadS3Command:
     """
-    Implementation for subcmd `towhee DownloadS3`
+    Implementation for subcmd `towhee downloadS3`
     """
     def __init__(self, args) -> None:
         self._args = args
@@ -207,3 +207,23 @@ class DownloadS3Command:
         install = subparsers.add_parser('downloadS3', help='downloadS3 command: download files in S3 path')
         install.add_argument('-pb', '--pathbucket', required=True, help='bucket path to download files')
         install.add_argument('-pl', '--pathlocal', required=True, help='local path to download files')
+
+class Md5Command:
+    """
+    Implementation for subcmd `towhee md5`
+    """
+    def __init__(self, args) -> None:
+        self._args = args
+
+    def __call__(self) -> None:
+        s3 = S3Bucket()
+        md5 = s3.etag_checksum(self._args.filepath)
+        print(md5)
+        file_name = str(self._args.filepath)+'.txt'
+        with open(file_name, 'w+', encoding='utf-8') as f:
+            f.write(md5)
+
+    @staticmethod
+    def install(subparsers):
+        install = subparsers.add_parser('md5', help='md5 command: make file md5 to txt')
+        install.add_argument('-f', '--filepath', required=True, help='md5 file path')
