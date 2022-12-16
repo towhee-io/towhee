@@ -13,6 +13,7 @@
 # limitations under the License.
 import json
 import queue
+import threading
 import numpy as np
 from functools import partial
 from typing import Iterable
@@ -32,7 +33,7 @@ class Client:
 
     Examples:
         >>> from towhee import triton_client
-        >>> client = triton_client('<your-ip>:<https-port>')
+        >>> client = triton_client('<your-ip>:<http-port>')
         >>> res = client('your-data')
         >>> client.close()
 
@@ -108,6 +109,7 @@ class StreamClient:
     Args:
         url(`string`): IP address and GRPCInferenceService port for the triton server, such as '<host>:<port>' and  '127.0.0.1:8001'.
         model_name(`string`): Model name in triton, defaults to 'pipeline'.
+        max_threads(`int`): The maximum number of threads that can be used to execute the given calls, defaults to 1.
 
     Examples:
         >>> from towhee import triton_stream_client
@@ -116,17 +118,16 @@ class StreamClient:
         >>> res = client(iter(data))
         >>> client.stop_stream()
 
-        You can also run with batch as following:
-        >>> data = [['your-data0', 'your-data1', 'your-data2']]
-        >>> with triton_stream_client('<your-ip>:<grpc-port>') as client:
-        ...     res = client(iter(data), batch_size=3)
+        You can also run with batch and multi threads as following:
+        >>> data = [['your-data0', 'your-data1', 'your-data2']*100]
+        >>> client = triton_stream_client('<your-ip>:<grpc-port>', max_threads=20)
+        >>> res = client(iter(data), batch_size=3)
     """
-    def __init__(self, url: str, model_name: str = PIPELINE_NAME):
-        from towhee.utils.tritonclient_utils import grpcclient  # pylint: disable=import-outside-toplevel
-        self._client = grpcclient.InferenceServerClient(url)
+    def __init__(self, url: str, model_name: str = PIPELINE_NAME, max_threads: int = 1):
+        self._url = url
         self._model_name = model_name
+        self._max_threads = max_threads
         self.user_data = UserData()
-        self._client.start_stream(callback=partial(completion_callback, self.user_data))
 
     def __call__(self, iterator: Iterable, batch_size: int = 1):
         """
@@ -136,13 +137,24 @@ class StreamClient:
             iterator(`Iterable`): The data to run.
             batch_size(`int`): The size for one batch, defaults to 1.
         """
-        count = self._async_stream_send(iterator, batch_size)
+        count = self._async_stream(iterator, batch_size)
         responses = self._get_data_responses(count)
         outputs = self._solve_responses(responses)
         return outputs
 
-    def _async_stream_send(self, values, batch_size=1):
+    def stream_client(self, inputs, count):
+        from towhee.utils.tritonclient_utils import grpcclient  # pylint: disable=import-outside-toplevel
+
+        with grpcclient.InferenceServerClient(self._url) as client:
+            client.start_stream(callback=partial(completion_callback, self.user_data))
+            client.async_stream_infer(model_name=self._model_name,
+                                      inputs=inputs,
+                                      request_id=str(count))
+
+    def _async_stream(self, values, batch_size=1):
         count = 1
+        threads_size = 0
+        threads = []
         for value in values:
             if not isinstance(value, list):
                 value = [value]
@@ -150,20 +162,19 @@ class StreamClient:
                 value = [value]
 
             inputs = self._solve_inputs(value, batch_size)
-            self._client.async_stream_infer(model_name=self._model_name,
-                                            inputs=inputs,
-                                            request_id=str(count))
+            if threads_size < self._max_threads:
+                threads.append(threading.Thread(target=self.stream_client,
+                                                args=(inputs, count)))
+                threads_size += 1
+            if threads_size == self._max_threads:
+                self._run_threads(threads)
+                threads = []
+                threads_size = 0
             count = count + 1
+
+        if len(threads) > 0:
+            self._run_threads(threads)
         return count
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):  # pylint: disable=redefined-builtin
-        self.stop_stream()
-
-    def stop_stream(self):
-        self._client.stop_stream()
 
     def _get_data_responses(self, count):
         responses = []
@@ -173,6 +184,13 @@ class StreamClient:
                 raise error
             responses.append(res)
         return responses
+
+    @staticmethod
+    def _run_threads(ts):
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
 
     @staticmethod
     def _solve_inputs(args, size=1):

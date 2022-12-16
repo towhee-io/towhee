@@ -17,10 +17,9 @@ import copy
 
 from towhee.utils.log import engine_log
 
-from .triton.pipeline_client import Client as triton_client
+from .triton.pipeline_client import Client as triton_client, StreamClient as triton_stream_client
 from .triton.pipeline_builder import Builder as TritonModelBuilder
 from .triton.docker_image_builder_v2 import DockerImageBuilder
-from .triton.pipeline_client import Client as triton_client, StreamClient as triton_stream_client
 
 
 def build_docker_image_v2(
