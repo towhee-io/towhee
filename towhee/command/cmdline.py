@@ -16,7 +16,7 @@ import sys
 import argparse
 
 from towhee.command.develop import SetupCommand, UninstallCommand
-from towhee.command.execute import ExecuteCommand, PackageCommand, UploadCommand, UploadS3Command, LsS3Command, DownloadS3Command
+from towhee.command.execute import ExecuteCommand, PackageCommand, UploadCommand, UploadS3Command, LsS3Command, DownloadS3Command, Md5Command
 from towhee.command.user import UserCommand, WhoCommand, LogoutCommand
 from towhee.command.repo import RepoCommand
 
@@ -37,7 +37,8 @@ def main_body(args):
         'login': UserCommand,
         'logout': LogoutCommand,
         'whoami': WhoCommand,
-        'create': RepoCommand
+        'create': RepoCommand,
+        'md5': Md5Command
     }
 
     for _, impl in actions.items():
