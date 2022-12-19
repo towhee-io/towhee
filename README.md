@@ -51,11 +51,62 @@ automatically optimize it for production-ready environments.
 
 ## What's New
 
+**v0.9.0 Dec. 2, 2022**
+* Added one video classification model:
+[*Vis4mer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/vis4mer)
+* Added three visual backbones:
+[*MCProp*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/mcprop), 
+[*RepLKNet*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/replknet), 
+[*Shunted Transformer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/shunted_transformer)
+* Add two code search operators:
+[*code_search.codebert*](https://towhee.io/code-search/codebert), 
+[*code_search.unixcoder*](https://towhee.io/code-search/unixcoder)
+* Add five image captioning operators: 
+[*image_captioning.expansionnet-v2*](https://towhee.io/image-captioning/expansionnet-v2), 
+[*image_captioning.magic*](https://towhee.io/image-captioning/magic),
+[*image_captioning.clip_caption_reward*](https://towhee.io/image-captioning/clip-caption-reward), 
+[*image_captioning.blip*](https://towhee.io/image-captioning/blip), 
+[*image_captioning.clipcap*](https://towhee.io/image-captioning/clipcap)
+* Add five image-text embedding operators: 
+[*image_text_embedding.albef*](https://towhee.io/image-text-embedding/albef), 
+[*image_text_embedding.ru_clip*](https://towhee.io/image-text-embedding/ru-clip), 
+[*image_text_embedding.japanese_clip*](https://towhee.io/image-text-embedding/japanese-clip),
+[*image_text_embedding.taiyi*](https://towhee.io/image-text-embedding/taiyi),
+[*image_text_embedding.slip*](https://towhee.io/image-text-embedding/slip)
+* Add one machine-translation operator: 
+[*machine_translation.opus_mt*](https://towhee.io/machine-translation/opus-mt)
+* Add one filter-tiny-segments operator:
+[*video-copy-detection.filter-tiny-segments*](https://towhee.io/video-copy-detection/filter-tiny-segments)
+* Add an advanced tutorial for audio fingerprinting: 
+[*Audio Fingerprint II: Music Detection with Temporal Localization*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_advanced.ipynb) (increased accuracy from 84% to 90%)
+
+**v0.8.1 Sep. 30, 2022**
+
+* Added four visual backbones:
+[*ISC*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/isc),
+[*MetaFormer*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/metaformer),
+[*ConvNext*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/convnext),
+[*HorNet*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/hornet)
+* Add two video de-copy operators:
+[*select-video*](https://towhee.io/video-copy-detection/select-video), 
+[*temporal-network*](https://towhee.io/video-copy-detection/temporal-network)
+* Add one image embedding operator specifically designed for image retrieval and video de-copy with SOTA performance on VCSL dataset:
+[*isc*](https://towhee.io/image-embedding/isc)
+* Add one audio embedding operator specified for audio fingerprint:
+[*audio_embedding.nnfp*](https://towhee.io/audio-embedding/nnfp) (with pretrained weights)
+* Add one tutorial for video de-copy: 
+[*How to Build a Video Segment Copy Detection System*](https://github.com/towhee-io/examples/blob/main/video/video_deduplication/segment_level/video_deduplication_at_segment_level.ipynb)
+* Add one beginner tutorial for audio fingerprint:
+[*Audio Fingerprint I: Build a Demo with Towhee & Milvus*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_beginner.ipynb)
+
+
 **v0.8.0 Aug. 16, 2022**
 
 * Towhee now supports generating an Nvidia Triton Server from a Towhee pipeline, with aditional support for GPU image decoding.
-* Added one audio fingerprinting model: [**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
-* Added two image embedding models: [**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
+* Added one audio fingerprinting model: 
+[*nnfp*](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
+* Added two image embedding models: 
+[*RepMLP*](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
 
 **v0.7.3 Jul. 27, 2022**
 * Added one multimodal (text/image) model:

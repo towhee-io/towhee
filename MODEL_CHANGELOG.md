@@ -6,6 +6,40 @@ All notable updates to Towhee models will be documented in this file.
 
 ### [Preview]  Latest
 
+### [0.9.0] Dec. 2, 2022
+
+Added 4 SOTA mdoels
+
+* **Vis4mer**
+  * paper: [*Long Movie Clip Classification with State-Space Video Models*](https://arxiv.org/abs/2204.01692)
+
+* **MCProp**
+  * paper: [*Transformer-Based Multi-modal Proposal and Re-Rank for Wikipedia Image-Caption Matching*](https://arxiv.org/abs/2206.10436)
+
+* **RepLKNet**
+  * paper: [*Scaling Up Your Kernels to 31x31: Revisiting Large Kernel Design in CNNs*](https://arxiv.org/abs/2203.06717)
+
+* **Shunted Transformer**
+  * paper: [*Shunted Self-Attention via Multi-Scale Token Aggregation*](https://arxiv.org/abs/2111.15193)
+
+
+### [0.8.1] Sep. 30, 2022
+
+Added 4 SOTA mdoels
+
+* **ISC**
+  * page: [*image-embedding/isc*](https://towhee.io/image-embedding/isc)
+  * paper: [*Contrastive Learning with Large Memory Bank and Negative Embedding Subtraction for Accurate Copy Detection*](https://arxiv.org/abs/2112.04323)
+
+* **MetaFormer**
+  * paper: [*MetaFormer Is Actually What You Need for Vision*](https://arxiv.org/abs/2111.11418)
+
+* **ConvNeXt**
+  * paper: [*A ConvNet for the 2020s*](https://arxiv.org/abs/2201.03545)
+
+* **HorNe**
+  * paper: [*HorNet: Efficient High-Order Spatial Interactions with Recursive Gated Convolutions*](https://arxiv.org/abs/2207.14284)
+  
 
 ### [0.8.0]  Aug. 16, 2022
 
