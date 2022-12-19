@@ -54,6 +54,55 @@
 
 ## 📰 近期动态
 
+**v0.9.0 2022年12月2日**
+* 新增一个视频分类模型:
+[*Vis4mer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/vis4mer)
+* 新增三个视觉骨干模型:
+[*MCProp*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/mcprop), 
+[*RepLKNet*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/replknet), 
+[*Shunted Transformer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/shunted_transformer)
+* 新增两个代码检索算子:
+[*code_search.codebert*](https://towhee.io/code-search/codebert), 
+[*code_search.unixcoder*](https://towhee.io/code-search/unixcoder)
+* 新增五个图像描述生成算子: 
+[*image_captioning.expansionnet-v2*](https://towhee.io/image-captioning/expansionnet-v2), 
+[*image_captioning.magic*](https://towhee.io/image-captioning/magic),
+[*image_captioning.clip_caption_reward*](https://towhee.io/image-captioning/clip-caption-reward), 
+[*image_captioning.blip*](https://towhee.io/image-captioning/blip), 
+[*image_captioning.clipcap*](https://towhee.io/image-captioning/clipcap)
+* 新增五个图文跨模态特征提取算子: 
+[*image_text_embedding.albef*](https://towhee.io/image-text-embedding/albef), 
+[*image_text_embedding.ru_clip*](https://towhee.io/image-text-embedding/ru-clip), 
+[*image_text_embedding.japanese_clip*](https://towhee.io/image-text-embedding/japanese-clip),
+[*image_text_embedding.taiyi*](https://towhee.io/image-text-embedding/taiyi),
+[*image_text_embedding.slip*](https://towhee.io/image-text-embedding/slip)
+* 新增一个机器翻译算子: 
+[*machine_translation.opus_mt*](https://towhee.io/machine-translation/opus-mt)
+* 新增一个片段过滤算子:
+[*video-copy-detection.filter-tiny-segments*](https://towhee.io/video-copy-detection/filter-tiny-segments)
+* 新增一个音频指纹相关的进阶教程: 
+[*Audio Fingerprint II: Music Detection with Temporal Localization*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_advanced.ipynb) (increased accuracy from 84% to 90%)
+
+**v0.8.1 2022年9月30日**
+
+* 新增四个视觉骨干模型:
+[*ISC*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/isc),
+[*MetaFormer*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/metaformer),
+[*ConvNext*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/convnext),
+[*HorNet*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/hornet)
+* 新增两个视频去重算子:
+[*select-video*](https://towhee.io/video-copy-detection/select-video), 
+[*temporal-network*](https://towhee.io/video-copy-detection/temporal-network)
+* 新增一个针对图片检索和视频去重的图像特征提取算子（在VCSL数据集上获得先进结果）:
+[*isc*](https://towhee.io/image-embedding/isc)
+* 新增一个针对音频指纹的音频特征提取算子:
+[*audio_embedding.nnfp*](https://towhee.io/audio-embedding/nnfp) (with pretrained weights)
+* 新增一个视频去重教程: 
+[*How to Build a Video Segment Copy Detection System*](https://github.com/towhee-io/examples/blob/main/video/video_deduplication/segment_level/video_deduplication_at_segment_level.ipynb)
+* 新增一个音频指纹相关的初级教程:
+[*Audio Fingerprint I: Build a Demo with Towhee & Milvus*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_beginner.ipynb)
+
+
 **v0.8.0 2022年8月16日**
 
 * 支持“一键生成”基于 Nvidia Triton 的 Pipeline，快速构建适用于生产环节的 Docker Image，支持使用 GPU 对图片进行解码。
