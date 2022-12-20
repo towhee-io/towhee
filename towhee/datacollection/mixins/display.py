@@ -11,128 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import Tuple
-
 import numpy
 
-from towhee._types import Image
+from towhee.types import Image
 from towhee.types import AudioFrame
-from towhee.hparam import param_scope
 from towhee.datacollection.entity import Entity
 # pylint: disable=dangerous-default-value
-
-
-def get_df_on_columns(self, index: Tuple[str]): # pragma: no cover
-    # pylint: disable=import-outside-toplevel
-    from towhee.utils.thirdparty.pandas_utils import pandas as pd
-
-    def inner(entity: Entity):
-        data = {}
-        for feature in index:
-            data[feature] = getattr(entity, feature)
-        return data
-
-    data = map(inner, self)
-    df = pd.DataFrame(data)
-    return df
-
-
-def calc_df(df, feature: str, target: str): # pragma: no cover
-    # pylint: disable=import-outside-toplevel
-    from towhee.utils.thirdparty.pandas_utils import pandas as pd
-    lst = []
-    df[feature] = df[feature].fillna('NULL')
-
-    if target:
-        for i in range(df[feature].nunique()):
-            val = list(df[feature].unique())[i]
-            lst.append([feature,                                                         # Variable
-                        val,                                                             # Value
-                        df[df[feature] == val].count()[feature],                         # All
-                        df[(df[feature] == val) & (df[target] == 0)].count()[feature],   # Good (think: Fraud == 0)
-                        df[(df[feature] == val) & (df[target] == 1)].count()[feature]])  # Bad (think: Fraud == 1)
-
-        data = pd.DataFrame(lst, columns=['Variable', 'Value', 'All', 'Good', 'Bad'])
-        data['Share'] = data['All'] / data['All'].sum()
-        data['Bad Rate'] = data['Bad'] / data['All']
-        data['Distribution Good'] = (data['All'] - data['Bad']) / (data['All'].sum() - data['Bad'].sum())
-        data['Distribution Bad'] = data['Bad'] / data['Bad'].sum()
-        data['WoE'] = numpy.log(data['Distribution Good'] / data['Distribution Bad'])
-
-        data = data.replace({'WoE': {numpy.inf: 0, -numpy.inf: 0}})
-        data['IV'] = data['WoE'] * (data['Distribution Good'] - data['Distribution Bad'])
-
-        data = data.sort_values(by=['Variable', 'Value'], ascending=[True, True])
-        data.index = range(len(data.index))
-
-        iv = data['IV'].sum()
-        print(f'Variable: {feature}\'s IV sum is: {iv}')
-        return data
-    else:
-        for i in range(df[feature].nunique()):
-            val = list(df[feature].unique())[i]
-            lst.append([feature,                                                         # Variable
-                        val,                                                             # Value
-                        df[df[feature] == val].count()[feature]])                        # All
-        data = pd.DataFrame(lst, columns=['Variable', 'Value', 'All'])
-        data['Share'] = data['All'] / data['All'].sum()
-        return data
-
-
-def _feature_summarize_callback(self): # pragma: no cover
-    # pylint: disable=import-outside-toplevel
-    from towhee.utils.thirdparty.pandas_utils import pandas as pd
-
-    def wrapper(_: str, index, *arg, **kws):
-        if isinstance(index, str):
-            index = (index,)
-        index = list(index)
-        if arg:
-            kws['target'], = arg
-
-        target = None
-        if 'target' in kws:
-            target = kws.pop('target')
-            index.append(target)
-
-        df = get_df_on_columns(self, index)
-        summarize = pd.DataFrame()
-        if target:
-            index.remove(target)
-        for feature in index:
-            data = calc_df(df, feature, target)
-            summarize = summarize.append(data)
-
-        # pylint: disable=import-outside-toplevel
-        from towhee.utils.thirdparty import ipython_utils
-        ipython_utils.display(summarize)
-
-    return wrapper
-
-
-def _plot_callback(self): # pragma: no cover
-    # pylint: disable=unused-argument
-    def wrapper(_: str, index, *arg, **kws):
-        if isinstance(index, str):
-            index = (index,)
-        df = get_df_on_columns(self, index)
-        if 'kind' not in kws:
-            kws.update(kind='hist')
-        df.plot(**kws)
-
-    return wrapper
 
 
 class DisplayMixin: # pragma: no cover
     """
     Mixin for displaying data.
     """
-
-    def __init__(self):
-        super().__init__()
-        self.feature_summarize = param_scope().dispatch(_feature_summarize_callback(self))
-        self.plot = param_scope().dispatch(_plot_callback(self))
 
     def as_str(self):
         return self._factory(map(str, self._iterable))
