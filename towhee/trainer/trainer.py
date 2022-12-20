@@ -808,6 +808,10 @@ class Trainer:
             self.configs.optimizer,
             model=self.model,
         )
+        if isinstance(self.configs.optimizer, dict) and "lr" in self.configs.optimizer:
+            trainer_log.warning(
+                "`lr=%s` in TrainingConfig directly will override `lr=%s` in optimizer construction of TrainingConfig.",
+                init_lr, self.configs.optimizer["lr"])
         for param in self.optimizer.param_groups:
             param.setdefault("initial_lr", init_lr)
         self.optimizer.lr = init_lr

@@ -117,7 +117,7 @@ class TrainingConfig:
         dataloader_num_workers (`int`):
             Number of subprocesses to use for data loading.
         lr (`float`):
-            The initial learning rate for AdamW.
+            The initial learning rate.
         metric (`str`):
             The metric to use to compare two different models.
         print_steps (`int`):
@@ -191,7 +191,7 @@ class TrainingConfig:
                 "train"
         },
     )
-    lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate for AdamW.", CATEGORY: "learning"})
+    lr: float = field(default=5e-5, metadata={HELP: "The initial learning rate.", CATEGORY: "learning"})
     metric: Optional[str] = field(default="Accuracy",
                                   metadata={HELP: "The metric to use to compare two different models.",
                                             CATEGORY: "metrics"})
