@@ -45,7 +45,7 @@ def op(operator_src: str,
     An `Operator` object is created with the init args(kwargs).
 
     Args:
-        operator_src (str): Operator name or python file location or class in notebook.
+        operator_src (str): Operator name or class in notebook.
         tag (str, optional): Which tag to use for operators on hub. Defaults to 'main'.
         arg (List[Any], optional): Operator `args` to pass in. Defaults to [].
         kwargs (Dict[str, Any], optional): Operator `kwargs` to pass in. Defaults to {}.
@@ -58,10 +58,7 @@ def op(operator_src: str,
         return class_op.__new__(class_op, **kwargs)
 
     loader = OperatorLoader()
-    if os.path.isfile(operator_src):
-        return loader.load_operator_from_path(operator_src, arg, kwargs)
-    else:
-        return loader.load_operator(operator_src, arg, kwargs, tag)
+    return loader.load_operator(operator_src, arg, kwargs, tag)
 
 
 class _OperatorLazyWrapper(  #

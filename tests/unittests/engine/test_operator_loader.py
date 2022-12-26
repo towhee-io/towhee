@@ -43,3 +43,9 @@ class TestOperatorLoader(unittest.TestCase):
         op = ops.local.old_format_op_inconsistent(10)
         with self.assertRaises(FileNotFoundError):
             op(10)
+
+    def test_op_name(self):
+        op1 = ops.local.cal_sum(10)
+        self.assertEqual(op1(10), 20)
+        op2 = ops.local.cal_diff(10)
+        self.assertEqual(op2(10), 0)

@@ -95,7 +95,7 @@ class OperatorLoader:
 
         return op
 
-    def load_operator_from_path(self, path: Union[str, Path], arg: List[Any], kws: Dict[str, Any]) -> Operator:
+    def load_operator_from_path(self, path: Union[str, Path], function: str, arg: List[Any], kws: Dict[str, Any]) -> Operator:
         """
         Load operator form local path.
         Args:
@@ -110,8 +110,9 @@ class OperatorLoader:
                 The `Operator` output.
         """
         path = Path(path)
-        fname = Path(path).stem
-        modname = 'towhee.operator.' + fname
+        fname = path.stem
+        op_name = function.replace('-', '_').replace('/', '.')
+        modname = 'towhee.operator.' + op_name
 
         all_pkg = [item.project_name for item in list(pkg_resources.working_set)]
         if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
@@ -144,7 +145,7 @@ class OperatorLoader:
         if path is None:
             raise FileExistsError('Cannot find operator.')
 
-        return self.load_operator_from_path(path, arg, kws)
+        return self.load_operator_from_path(path, function, arg, kws)
 
     def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:
         """

@@ -30,7 +30,7 @@ class TestOperatorLoader(unittest.TestCase):
         self.assertEqual(op(10), 20)
 
     def test_invalid_old(self):
-        op = ops.local.old_old_format_op_invalid(10)
+        op = ops.local.old_format_op_invalid(10)
         with self.assertRaises(RuntimeError) as e:
             op(10)
             self.assertEqual(e.msg, 'Loading operator with error:No module named \'NotExistPackage\'')
@@ -46,3 +46,9 @@ class TestOperatorLoader(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             op(10)
             self.assertIn('Loading operator with error:[Errno 2] No such file or directory:', e.msg)
+
+    def test_op_name(self):
+        op1 = ops.local.cal_sum(10)
+        self.assertEqual(op1(10), 20)
+        op2 = ops.local.cal_diff(10)
+        self.assertEqual(op2(10), 0)
