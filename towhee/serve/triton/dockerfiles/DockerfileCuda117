@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:22.05-py3
+FROM nvcr.io/nvidia/tritonserver:22.07-py3
 
 RUN apt-get update          && \
     apt-get install -y         \
