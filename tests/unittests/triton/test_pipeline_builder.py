@@ -35,11 +35,7 @@ class TestPipelineBuilder(unittest.TestCase):
             .output('embedding')
         )
         config = {
-            'image_name': 'image_embedding:v1',
-            'inference_server': 'triton',
-            'server_config': {
-                'format_priority': ['onnx'],
-            }
+            'format_priority': ['onnx']
         }
 
         dag_repr = copy.deepcopy(p.dag_repr)
@@ -68,11 +64,7 @@ class TestPipelineBuilder(unittest.TestCase):
             .output('ret')
         )
         config = {
-            'image_name': 'image_embedding:v1',
-            'inference_server': 'triton',
-            'server_config': {
-                'format_priority': ['onnx'],
-            }
+            'format_priority': ['onnx']
         }
 
         dag_repr = copy.deepcopy(p.dag_repr)
@@ -123,11 +115,7 @@ class TestPipelineBuilder(unittest.TestCase):
             },
         }
         config = {
-            'image_name': 'image_embedding:v1',
-            'inference_server': 'triton',
-            'server_config': {
-                'format_priority': ['onnx'],
-            }
+            'format_priority': ['onnx']
         }
         dag_repr = DAGRepr.from_dict(dag_dict)
 

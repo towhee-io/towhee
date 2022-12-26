@@ -29,7 +29,7 @@ class Builder:
 
     def __init__(self, dag_repr: 'DAGRepr', model_root: str, conf: Dict):
         self.dag_repr = dag_repr
-        self._server_conf = conf.get(constant.SERVER_CONFIG, {})
+        self._server_conf = conf
         self._model_root = model_root
 
     @staticmethod
