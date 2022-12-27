@@ -11,13 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import json
 import unittest
 
 import numpy as np
 
-from towhee.utils.np_format import NumpyArrayEncoder, NumpyArrayDecoder
+from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 
 
 class TestNPFormat(unittest.TestCase):
@@ -27,9 +25,9 @@ class TestNPFormat(unittest.TestCase):
     def test_normal(self):
         arr = np.random.rand(2, 4, 4)
         test_data = ['test', 1, arr, [1, 'a', [1, 2]], [arr] * 2, {'1': arr, 'b': [arr]}]
-        s = json.dumps(test_data, cls=NumpyArrayEncoder)
+        s = to_triton_data(test_data)
 
-        ret = json.loads(s, cls=NumpyArrayDecoder)
+        ret = from_triton_data(s)
 
         self.assertTrue((ret[2] == arr).all())
         self.assertTrue((ret[-1]['1'] == arr).all())
@@ -38,4 +36,4 @@ class TestNPFormat(unittest.TestCase):
         arr = np.random.rand(2, 4, 4)
         arr = arr.astype(np.float128)
         with self.assertRaises(ValueError):
-            json.dumps(arr, cls=NumpyArrayEncoder)
+            to_triton_data(arr)

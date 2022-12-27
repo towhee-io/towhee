@@ -15,14 +15,13 @@
 
 import unittest
 import os
-import json
 from tempfile import TemporaryDirectory
 
 import dill as pickle
 import numpy as np
 
 import towhee
-from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
+from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 import towhee.serve.triton.bls.pipeline_model as pipe_model
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
@@ -42,7 +41,7 @@ class TestPipelineTritonModel(unittest.TestCase):
 
         input_data = ([1, 2, 3], np.random.rand(3, 3))
 
-        json_data = json.dumps(input_data, cls=NumpyArrayEncoder)
+        json_data = to_triton_data(input_data)
         triton_input = np.array([[json_data]], dtype=np.object_)
         input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', triton_input)], [], '')
 
@@ -54,7 +53,7 @@ class TestPipelineTritonModel(unittest.TestCase):
             pipe = pipe_model.TritonPythonModel()
             pipe._load_pipeline(pf)  # pylint: disable=protected-access
             res = pipe.execute([input_tensors])
-            ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)[0]
+            ret = from_triton_data(res[0].output_tensors()[0].as_numpy()[0])[0]
             self.assertEqual(len(ret), 3)
             for index, item in enumerate(ret, 1):
                 self.assertTrue((item[0] == (input_data[1] + index)).all())
@@ -64,7 +63,7 @@ class TestPipelineTritonModel(unittest.TestCase):
             batch_triton_input = np.array([[json_data], [json_data], [json_data]], dtype=np.object_)
             batch_input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', batch_triton_input)], [], '')
             res = pipe.execute([batch_input_tensors])
-            ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)
+            ret = from_triton_data(res[0].output_tensors()[0].as_numpy()[0])
             self.assertEqual(len(ret), 3)
             for single in ret:
                 for index, item in enumerate(single, 1):
@@ -80,7 +79,7 @@ class TestPipelineTritonModel(unittest.TestCase):
 
         input_data = [1, 2, 3]
 
-        json_data = json.dumps(input_data, cls=NumpyArrayEncoder)
+        json_data = to_triton_data(input_data)
         triton_input = np.array([[json_data]], dtype=np.object_)
         input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', triton_input)], [], '')
 
@@ -92,7 +91,7 @@ class TestPipelineTritonModel(unittest.TestCase):
             pipe = pipe_model.TritonPythonModel()
             pipe._load_pipeline(pf)  # pylint: disable=protected-access
             res = pipe.execute([input_tensors])
-            ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)[0]
+            ret = from_triton_data(res[0].output_tensors()[0].as_numpy()[0])[0]
             self.assertEqual(len(ret), 3)
             expect = [[2], [3], [4]]
             for index, item in enumerate(ret, 0):
@@ -102,7 +101,7 @@ class TestPipelineTritonModel(unittest.TestCase):
             batch_triton_input = np.array([[json_data], [json_data]], dtype=np.object_)
             batch_input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', batch_triton_input)], [], '')
             res = pipe.execute([batch_input_tensors])
-            ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)
+            ret = from_triton_data(res[0].output_tensors()[0].as_numpy()[0])
             self.assertEqual(len(ret), 2)
             for single in ret:
                 for index, item in enumerate(single, 0):
