@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from towhee.runtime import pipe, ops
+from towhee.runtime import pipe, ops, ServerConf, TritonServerConf
 from towhee.runtime.dag_repr import DAGRepr
 from towhee.serve.triton.constant import PIPELINE_NAME
 from towhee.serve.triton.pipeline_builder import Builder
@@ -28,10 +28,15 @@ class TestPipelineBuilder(unittest.TestCase):
     test pipeline to triton model
     """
     def test_onnx(self):
+        server_conf = ServerConf(device_ids=[0],
+                                 max_batch_size=8,
+                                 batch_latency_micros=10000,
+                                 num_instances_per_device=1,
+                                 triton=TritonServerConf(preferred_batch_size=[4, 8]))
         p = (
             pipe.input('path')
             .map('path', 'img', ops.image_decode.cv2())
-            .map('img', 'embedding', ops.towhee.test_resnet18())
+            .map('img', 'embedding', ops.towhee.test_resnet18(), config={'server': server_conf})
             .output('embedding')
         )
         config = {
@@ -55,12 +60,18 @@ class TestPipelineBuilder(unittest.TestCase):
                 for _, node in dag_repr.nodes.items():
                     if node.config.acc_conf is not None:
                         self.assertEqual(node.config.acc_conf.triton.model_name, model_name)
+                        self.assertEqual(node.config.server_conf.device_ids, [0])
+                        self.assertEqual(node.config.server_conf.max_batch_size, 8)
+                        self.assertEqual(node.config.server_conf.batch_latency_micros, 10000)
+                        self.assertEqual(node.config.server_conf.num_instances_per_device, 1)
+                        self.assertEqual(node.config.server_conf.triton.preferred_batch_size, [4, 8])
 
     def test_normal(self):
+        server_conf = ServerConf(device_ids=[0])
         p = (
             pipe.input('nums', 'arr')
             .flat_map('nums', 'num', lambda x: x)
-            .map(('num', 'arr'), 'ret', lambda x, y: x + y)
+            .map(('num', 'arr'), 'ret', lambda x, y: x + y, config={'server': server_conf})
             .output('ret')
         )
         config = {

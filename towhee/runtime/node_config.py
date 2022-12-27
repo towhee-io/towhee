@@ -28,7 +28,10 @@ class NodeConfig:
         self._name = name
         self._device = device
         self._acc_conf = AcceleratorConf.from_dict(acc_info) if acc_info is not None else None
-        self._server_conf = ServerConf.from_dict(server_info) if server_info is not None else None
+        if isinstance(server_info, ServerConf):
+            self._server_conf = server_info
+        else:
+            self._server_conf = ServerConf.from_dict(server_info) if server_info is not None else None
 
     @property
     def name(self):
@@ -120,16 +123,19 @@ class ServerConf:
     """
     ServerConf
     """
-    def __init__(self, device_ids,
-                 max_batch_size,
-                 batch_latency_micros,
-                 num_instances_per_device,
-                 triton: 'TritonServerConf'):
+    def __init__(self, device_ids: list = None,
+                 max_batch_size: int = None,
+                 batch_latency_micros: int = None,
+                 num_instances_per_device: int = 1,
+                 triton: 'TritonServerConf' = None):
         self._device_ids = device_ids
         self._max_batch_size = max_batch_size
         self._batch_latency_micros = batch_latency_micros
         self._num_instances_per_device = num_instances_per_device
-        self._triton = triton
+        if triton is not None:
+            self._triton = triton
+        else:
+            self._triton = TritonServerConf()
 
     @property
     def device_ids(self):
@@ -163,7 +169,7 @@ class TritonServerConf:
     """
     Triton server config.
     """
-    def __init__(self, preferred_batch_size: str = None):
+    def __init__(self, preferred_batch_size: list = None):
         self._preferred_batch_size = preferred_batch_size
 
     @property
