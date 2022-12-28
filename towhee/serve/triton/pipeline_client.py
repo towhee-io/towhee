@@ -11,11 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import json
+import asyncio
+from typing import List
+
 import numpy as np
 
 from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
 from towhee.serve.triton.constant import PIPELINE_NAME
+from towhee.utils.log import engine_log
 
 
 class Client:
@@ -35,19 +40,56 @@ class Client:
         You can also run as following:
         >>> with triton_client('<your-ip>:<your-port>') as client:
         ...     res = client('your-data')
+
+        Batch interface.
+        >>> data = [data1, data2, data3, data4, data5]
+        >>> res = client(data, batch_size=4, safe=True)
+        >>> client.close()
+
+        You can also run as following:
+        >>> with triton_client('<your-ip>:<your-port>') as client:
+        ...     res = client(data, batch_size=4)
     """
+
     def __init__(self, url: str, model_name: str = PIPELINE_NAME):
-        from towhee.utils.tritonclient_utils import httpclient  # pylint: disable=import-outside-toplevel
-        self._client = httpclient.InferenceServerClient(url)
+        from towhee.utils.triton_httpclient import aio_httpclient  # pylint: disable=import-outside-toplevel
+        self._loop = asyncio.get_event_loop()
+        self._client = aio_httpclient.InferenceServerClient(url)
         self._model_name = model_name
 
-    def __call__(self, *args):
-        if len(args) > 1:
-            args = [args]
-        inputs = self._solve_inputs(args)
-        response = self._client.infer(self._model_name, inputs)
-        outputs = self._solve_responses(response)
-        return outputs
+    async def _safe_call(self, inputs):
+        try:
+            response = await self._client.infer(self._model_name, inputs)
+        except Exception as e:  # pylint: disable=broad-except
+            engine_log.error(str(e))
+            return [None] * inputs[0].shape()[0]
+        return json.loads(response.as_numpy('OUTPUT0')[0], cls=NumpyArrayDecoder)
+
+    async def _call(self, inputs):
+        response = await self._client.infer(self._model_name, inputs)
+        return json.loads(response.as_numpy('OUTPUT0')[0], cls=NumpyArrayDecoder)
+
+    async def _multi_call(self, caller, batch_inputs):
+        fs = []
+        for inputs in batch_inputs:
+            fs.append(caller(inputs))
+        return await asyncio.gather(*fs)
+
+    def __call__(self, *inputs):
+        if len(inputs) > 1:
+            inputs = [inputs]
+        inputs = self._solve_inputs(inputs)
+        return self._loop.run_until_complete(self._call(inputs))
+
+    def batch(self, pipe_inputs: List, batch_size=4, safe=False):
+        batch_inputs = [self._solve_inputs(pipe_inputs[i: i + batch_size]) for i in range(0, len(pipe_inputs), batch_size)]
+        caller = self._safe_call if safe else self._call
+        outputs = self._loop.run_until_complete(self._multi_call(caller, batch_inputs))
+        ret = []
+        for batch in outputs:
+            for single in batch:
+                ret.append(single)
+        return ret
 
     def __enter__(self):
         return self
@@ -55,28 +97,20 @@ class Client:
     def __exit__(self, type, value, traceback):  # pylint: disable=redefined-builtin
         self.close()
 
-    def batch(self, args_list):
-        inputs = self._solve_inputs(args_list, len(args_list))
-        response = self._client.infer(self._model_name, inputs)
-        outputs = self._solve_responses(response)
-        return outputs
-
     def close(self):
-        self._client.close()
+        self._loop.run_until_complete(self._client.close())
 
     @staticmethod
-    def _solve_inputs(args, size=1):
-        from towhee.utils.tritonclient_utils import httpclient  # pylint: disable=import-outside-toplevel
-        inputs = [httpclient.InferInput('INPUT0', [size, 1], 'BYTES')]
-        arg_list = []
-        for arg in args:
-            arg_list.append([json.dumps(arg, cls=NumpyArrayEncoder)])
-        data = np.array(arg_list, dtype=np.object_)
+    def _solve_inputs(pipe_inputs):
+        from towhee.utils.triton_httpclient import aio_httpclient  # pylint: disable=import-outside-toplevel
+        batch_size = len(pipe_inputs)
+        inputs = [aio_httpclient.InferInput('INPUT0', [batch_size, 1], 'BYTES')]
+        batch = []
+        for item in pipe_inputs:
+            batch.append([json.dumps(item, cls=NumpyArrayEncoder)])
+        data = np.array(batch, dtype=np.object_)
         inputs[0].set_data_from_numpy(data)
         return inputs
 
-    @staticmethod
-    def _solve_responses(response):
-        res = response.as_numpy('OUTPUT0')[0]
-        outputs = json.loads(res, cls=NumpyArrayDecoder)
-        return outputs
+    def __del__(self):
+        self.close()
