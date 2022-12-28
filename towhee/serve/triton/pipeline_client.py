@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import asyncio
 from typing import List
 
 import numpy as np
-
-from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
+from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 from towhee.serve.triton.constant import PIPELINE_NAME
 from towhee.utils.log import engine_log
 
@@ -63,11 +61,11 @@ class Client:
         except Exception as e:  # pylint: disable=broad-except
             engine_log.error(str(e))
             return [None] * inputs[0].shape()[0]
-        return json.loads(response.as_numpy('OUTPUT0')[0], cls=NumpyArrayDecoder)
+        return from_triton_data(response.as_numpy('OUTPUT0')[0])
 
     async def _call(self, inputs):
         response = await self._client.infer(self._model_name, inputs)
-        return json.loads(response.as_numpy('OUTPUT0')[0], cls=NumpyArrayDecoder)
+        return from_triton_data(response.as_numpy('OUTPUT0')[0])
 
     async def _multi_call(self, caller, batch_inputs):
         fs = []
@@ -107,7 +105,7 @@ class Client:
         inputs = [aio_httpclient.InferInput('INPUT0', [batch_size, 1], 'BYTES')]
         batch = []
         for item in pipe_inputs:
-            batch.append([json.dumps(item, cls=NumpyArrayEncoder)])
+            batch.append([to_triton_data(item)])
         data = np.array(batch, dtype=np.object_)
         inputs[0].set_data_from_numpy(data)
         return inputs

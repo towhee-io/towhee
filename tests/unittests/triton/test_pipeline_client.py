@@ -19,7 +19,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-
 from towhee.dc2 import pipe
 from towhee.serve.triton.pipeline_client import Client
 from towhee.utils.thirdparty.dail_util import dill as pickle

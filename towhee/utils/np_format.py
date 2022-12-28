@@ -11,39 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-import json
 import numpy as np
 
 
-class NumpyArrayEncoder(json.JSONEncoder):
+class NumpyFormat:
     """
-    Support numpy to json
-    """
-    def default(self, o):
-        if isinstance(o, np.ndarray):
-            return _NumpyFormat(o).to_dict()
-
-        return json.JSONEncoder.default(self, o)
-
-class NumpyArrayDecoder(json.JSONDecoder):
-    """
-    Load numpy from json
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(object_hook=self.object_hook, *args, **kwargs)
-
-    def object_hook(self, dct):  # pylint: disable=method-hidden
-        if '_NP' in dct:
-            return _NumpyFormat.from_dict(dct)
-        return dct
-
-
-
-class _NumpyFormat:
-    """
-    _NumpyFormat:
+    NumpyFormat:
     """
 
     def __init__(self, data: 'ndarray'):
@@ -52,13 +25,13 @@ class _NumpyFormat:
     def to_dict(self):
         return {
             '_NP': True,
-            'dtype': _NumpyFormat.from_numpyt_type(self._data.dtype),
+            'dtype': NumpyFormat.from_numpyt_type(self._data.dtype),
             'data': self._data.tolist()
         }
 
     @staticmethod
     def from_dict(dct):
-        return np.array(dct['data'], _NumpyFormat.to_numpy_type(dct['dtype']))
+        return np.array(dct['data'], NumpyFormat.to_numpy_type(dct['dtype']))
 
     @staticmethod
     def from_numpyt_type(dtype):

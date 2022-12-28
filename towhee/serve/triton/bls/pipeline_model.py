@@ -2,7 +2,6 @@
 # pylint: skip-file
 
 import logging
-import json
 from pathlib import Path
 
 import numpy as np
@@ -10,8 +9,7 @@ import dill as pickle
 
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 from towhee.runtime.runtime_pipeline import RuntimePipeline
-from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
-
+from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 
 
 logger = logging.getLogger()
@@ -59,7 +57,7 @@ class TritonPythonModel:
             in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0").as_numpy()
             for item in in_0:
                 arg = item[0]
-                inputs = json.loads(arg, cls=NumpyArrayDecoder)
+                inputs = from_triton_data(arg)
                 batch_inputs.append(inputs)
 
             results = self.pipe.batch(batch_inputs)
@@ -67,7 +65,7 @@ class TritonPythonModel:
             for q in results:
                 ret = self._get_result(q)
                 outputs.append(ret)
-            ret_str = json.dumps(outputs, cls=NumpyArrayEncoder)
+            ret_str = to_triton_data(outputs)
             out_tensor_0 = pb_utils.Tensor('OUTPUT0', np.array([ret_str], np.object_))
             responses.append(pb_utils.InferenceResponse([out_tensor_0]))
         return responses    

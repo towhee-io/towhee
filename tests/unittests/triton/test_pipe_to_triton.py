@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import json
 import unittest
 import importlib
 from tempfile import TemporaryDirectory
@@ -23,7 +22,7 @@ import numpy as np
 import towhee
 
 from towhee.serve.triton.pipe_to_triton import PipeToTriton
-from towhee.utils.np_format import NumpyArrayDecoder, NumpyArrayEncoder
+from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 
@@ -51,11 +50,11 @@ class TestPipeToTriton(unittest.TestCase):
             pipe.initialize({})
 
             input_data = ([1, 2, 3], np.random.rand(3, 3))
-            triton_input = np.array([[json.dumps(input_data, cls=NumpyArrayEncoder)]], dtype=np.object_)
+            triton_input = np.array([[to_triton_data(input_data)]], dtype=np.object_)
             input_tensors = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', triton_input)], [], '')
 
             res = pipe.execute([input_tensors])
-            ret = json.loads(res[0].output_tensors()[0].as_numpy()[0], cls=NumpyArrayDecoder)
+            ret = from_triton_data(res[0].output_tensors()[0].as_numpy()[0])
             self.assertEqual(len(ret[0]), 3)
             for index, item in enumerate(ret[0], 1):
                 self.assertTrue((item[0] == (input_data[1] + index)).all())
