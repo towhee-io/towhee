@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from towhee.runtime import pipe, ops
+from towhee.runtime import pipe, ops, AutoConfig
 from towhee.runtime.dag_repr import DAGRepr
 from towhee.serve.triton.constant import PIPELINE_NAME
 from towhee.serve.triton.pipeline_builder import Builder
@@ -28,20 +28,25 @@ class TestPipelineBuilder(unittest.TestCase):
     test pipeline to triton model
     """
     def test_onnx(self):
+        node_config = AutoConfig.TritonGPUConfig(device_ids=[0, 1],
+                                                 num_instances_per_device=3,
+                                                 max_batch_size=128,
+                                                 batch_latency_micros=100000,
+                                                 preferred_batch_size=[8, 16])
         p = (
             pipe.input('path')
             .map('path', 'img', ops.image_decode.cv2())
-            .map('img', 'embedding', ops.towhee.test_resnet18())
+            .map('img', 'embedding', ops.towhee.test_resnet18(), config=node_config)
             .output('embedding')
         )
-        config = {
+        server_config = {
             'format_priority': ['onnx']
         }
 
         dag_repr = copy.deepcopy(p.dag_repr)
         model_name = 'towhee.test-resnet18-1'
         with TemporaryDirectory(dir='.') as root:
-            self.assertTrue(Builder(dag_repr, root, config).build())
+            self.assertTrue(Builder(dag_repr, root, server_config).build())
 
             pipe_dag_file = root + '/' + PIPELINE_NAME + '/1/pipe.pickle'
             pipe_model_file = root + '/' + PIPELINE_NAME + '/1/model.py'
@@ -55,6 +60,11 @@ class TestPipelineBuilder(unittest.TestCase):
                 for _, node in dag_repr.nodes.items():
                     if node.config.acc_conf is not None:
                         self.assertEqual(node.config.acc_conf.triton.model_name, model_name)
+                        self.assertEqual(node.config.server_conf.device_ids, [0, 1])
+                        self.assertEqual(node.config.server_conf.num_instances_per_device, 3)
+                        self.assertEqual(node.config.server_conf.max_batch_size, 128)
+                        self.assertEqual(node.config.server_conf.batch_latency_micros, 100000)
+                        self.assertEqual(node.config.server_conf.triton.preferred_batch_size, [8, 16])
 
     def test_normal(self):
         p = (

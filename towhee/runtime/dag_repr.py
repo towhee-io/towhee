@@ -277,6 +277,14 @@ class DAGRepr:
         nodes = {}
         node_index = 0
         for key, val in dag.items():
+            # Deal with AutoConfig
+            if 'config' in val and val['config'] is not None and isinstance(val['config'], list):
+                dict_config = {}
+                for conf in val['config']:
+                    assert isinstance(conf, dict)
+                    dict_config.update(conf)
+                val['config'] = dict_config
+
             # Deal with input and output.
             if key in [InputConst.name, OutputConst.name]:
                 val['config'] = {'name': key}
@@ -300,7 +308,6 @@ class DAGRepr:
                     node_index += 1
 
             nodes[key] = NodeRepr.from_dict(key, val)
-
         DAGRepr.check_nodes(nodes)
         dag_nodes, schema_edges = DAGRepr.set_edges(nodes)
         return DAGRepr(dag_nodes, schema_edges)
