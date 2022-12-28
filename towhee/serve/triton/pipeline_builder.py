@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Dict
+from tqdm import tqdm
 
 from towhee.utils.log import engine_log
 from towhee.runtime import ops, AcceleratorConf
@@ -75,12 +76,17 @@ class Builder:
         return True
 
     def build(self) -> bool:
+        progress_bar = tqdm(total=len(self.dag_repr.nodes)+1, desc='Building model and pipeline')
         for node_id, node in self.dag_repr.nodes.items():
             if node_id in ['_input', '_output'] or node.op_info.type != 'hub':
+                progress_bar.update(1)
                 continue
             if not self._model_convert(node):
                 return False
-        return PipeToTriton(self.dag_repr, self._model_root, constant.PIPELINE_NAME).process()
+            progress_bar.update(1)
+        status = PipeToTriton(self.dag_repr, self._model_root, constant.PIPELINE_NAME).process()
+        progress_bar.update(1)
+        return status
 
 
 # pylint: disable=import-outside-toplevel
