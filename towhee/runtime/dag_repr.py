@@ -19,6 +19,7 @@ from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
 from towhee.runtime.constants import FilterConst, TimeWindowConst, OPType, InputConst, OutputConst
+from towhee.runtime.node_config import TowheeConfig
 
 
 class DAGRepr:
@@ -278,12 +279,9 @@ class DAGRepr:
         node_index = 0
         for key, val in dag.items():
             # Deal with AutoConfig
-            if 'config' in val and val['config'] is not None and isinstance(val['config'], list):
-                dict_config = {}
-                for conf in val['config']:
-                    assert isinstance(conf, dict)
-                    dict_config.update(conf)
-                val['config'] = dict_config
+            if 'config' in val and val['config'] is not None and isinstance(val['config'], TowheeConfig):
+                val['config'] = val['config'].config
+                assert isinstance(val['config'], dict)
 
             # Deal with input and output.
             if key in [InputConst.name, OutputConst.name]:

@@ -16,6 +16,7 @@
 import unittest
 
 from towhee.dc2 import AutoConfig
+from towhee.runtime.node_config import TowheeConfig
 
 
 class TestAutoConfig(unittest.TestCase):
@@ -25,13 +26,16 @@ class TestAutoConfig(unittest.TestCase):
 
     def test_local(self):
         conf1 = AutoConfig.LocalCPUConfig()
-        self.assertEqual(conf1, [{'device': -1}])
+        self.assertTrue(isinstance(conf1, TowheeConfig))
+        self.assertEqual(conf1.config, {'device': -1})
 
         conf2 = AutoConfig.LocalGPUConfig()
-        self.assertEqual(conf2, [{'device': 0}])
+        self.assertTrue(isinstance(conf2, TowheeConfig))
+        self.assertEqual(conf2.config, {'device': 0})
 
         conf3 = AutoConfig.LocalGPUConfig(device=1)
-        self.assertEqual(conf3, [{'device': 1}])
+        self.assertTrue(isinstance(conf3, TowheeConfig))
+        self.assertEqual(conf3.config, {'device': 1})
 
     def test_Triton(self):
         conf1 = AutoConfig.TritonCPUConfig()
@@ -46,7 +50,8 @@ class TestAutoConfig(unittest.TestCase):
                 }
             }
         }
-        self.assertEqual(conf1, [conf1_res])
+        self.assertTrue(isinstance(conf1, TowheeConfig))
+        self.assertEqual(conf1.config, conf1_res)
 
         conf2 = AutoConfig.TritonCPUConfig(num_instances_per_device=2,
                                            max_batch_size=128,
@@ -63,7 +68,8 @@ class TestAutoConfig(unittest.TestCase):
                 }
             }
         }
-        self.assertEqual(conf2, [conf2_res])
+        self.assertTrue(isinstance(conf2, TowheeConfig))
+        self.assertEqual(conf2.config, conf2_res)
 
         conf3 = AutoConfig.TritonGPUConfig()
         conf3_res = {
@@ -77,7 +83,8 @@ class TestAutoConfig(unittest.TestCase):
                 }
             }
         }
-        self.assertEqual(conf3, [conf3_res])
+        self.assertTrue(isinstance(conf3, TowheeConfig))
+        self.assertEqual(conf3.config, conf3_res)
 
         conf4 = AutoConfig.TritonGPUConfig(device_ids=[0, 1],
                                            num_instances_per_device=2,
@@ -95,12 +102,13 @@ class TestAutoConfig(unittest.TestCase):
                 }
             }
         }
-        self.assertEqual(conf4, [conf4_res])
+        self.assertTrue(isinstance(conf4, TowheeConfig))
+        self.assertEqual(conf4.config, conf4_res)
 
     def test_multi(self):
         conf1 = AutoConfig.LocalGPUConfig() + AutoConfig.TritonGPUConfig()
-        local_conf = {'device': 0}
-        triton_conf = {
+        dict_conf = {
+            'device': 0,
             'server': {
                 'device_ids': [0],
                 'num_instances_per_device': 1,
@@ -111,4 +119,5 @@ class TestAutoConfig(unittest.TestCase):
                 }
             }
         }
-        self.assertEqual(conf1, [local_conf, triton_conf])
+        self.assertTrue(isinstance(conf1, TowheeConfig))
+        self.assertEqual(conf1.config, dict_conf)

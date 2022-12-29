@@ -201,10 +201,7 @@ class AutoConfig:
             ...          .flat_map('a', 'b', lambda x: [y for y in x], config=AutoConfig.LocalCPUConfig())
             ...          .output('b'))
         """
-        device_info = {
-            'device': -1
-        }
-        return [device_info]
+        return TowheeConfig.set_local_config(device=-1)
 
     @classmethod
     def LocalGPUConfig(cls, device: int = 0):
@@ -222,10 +219,7 @@ class AutoConfig:
             ...          .output('vec')
             ... )
         """
-        device_info = {
-            'device': device
-        }
-        return [device_info]
+        return TowheeConfig.set_local_config(device=device)
 
     @classmethod
     def TritonCPUConfig(cls,
@@ -256,7 +250,7 @@ class AutoConfig:
 
             You can also to set the configuration:
             >>> from towhee.dc2 import pipe, AutoConfig
-            >>> config = AutoConfig.TritonGPUConfig(num_instances_per_device=3,
+            >>> config = AutoConfig.TritonCPUConfig(num_instances_per_device=3,
             ...                                     max_batch_size=128,
             ...                                     batch_latency_micros=100000,
             ...                                     preferred_batch_size=[8, 16])
@@ -266,18 +260,11 @@ class AutoConfig:
             ...          .output('vec')
             ... )
         """
-        server_info = {
-            'server': {
-                'device_ids': None,
-                'num_instances_per_device': num_instances_per_device,
-                'max_batch_size': max_batch_size,
-                'batch_latency_micros': batch_latency_micros,
-                'triton': {
-                    'preferred_batch_size': preferred_batch_size
-                }
-            }
-        }
-        return [server_info]
+        return TowheeConfig.set_triton_config(device_ids=None,
+                                              num_instances_per_device=num_instances_per_device,
+                                              max_batch_size=max_batch_size,
+                                              batch_latency_micros=batch_latency_micros,
+                                              preferred_batch_size=preferred_batch_size)
 
     @classmethod
     def TritonGPUConfig(cls,
@@ -324,7 +311,39 @@ class AutoConfig:
         """
         if device_ids is None:
             device_ids = [0]
-        server_info = {
+        return TowheeConfig.set_triton_config(device_ids=device_ids,
+                                              num_instances_per_device=num_instances_per_device,
+                                              max_batch_size=max_batch_size,
+                                              batch_latency_micros=batch_latency_micros,
+                                              preferred_batch_size=preferred_batch_size)
+
+
+class TowheeConfig:
+    """
+    TowheeConfig mapping for AutoConfig.
+    """
+    def __init__(self, config: Dict):
+        self._config = config
+
+    @property
+    def config(self) -> Dict:
+        return self._config
+
+    @classmethod
+    def set_local_config(cls, device: int) -> 'TowheeConfig':
+        config = {
+            'device': device
+        }
+        return cls(config)
+
+    @classmethod
+    def set_triton_config(cls,
+                          device_ids: list,
+                          num_instances_per_device: int,
+                          max_batch_size: int,
+                          batch_latency_micros: int,
+                          preferred_batch_size: list) -> 'TowheeConfig':
+        config = {
             'server': {
                 'device_ids': device_ids,
                 'num_instances_per_device': num_instances_per_device,
@@ -335,4 +354,11 @@ class AutoConfig:
                 }
             }
         }
-        return [server_info]
+        return cls(config)
+
+    def __add__(self, other: 'TowheeConfig') -> 'TowheeConfig':
+        if isinstance(self._config, dict):
+            self._config.update(other.config)
+        else:
+            self._config = other.config
+        return self
