@@ -11,3 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import unittest
+
+from towhee.utils.lazy_import import LazyImport
+
+
+class TestLazyImport(unittest.TestCase):
+    """
+    Test lazy import
+    """
+    def test_normal(self):
+        np = LazyImport('np', globals(), 'numpy')
+        self.assertEqual(np.zeros(1, dtype=int)[0], 0)
