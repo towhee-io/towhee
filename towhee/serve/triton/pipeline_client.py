@@ -20,6 +20,8 @@ from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 from towhee.serve.triton.constant import PIPELINE_NAME
 from towhee.utils.log import engine_log
 
+from towhee.utils.triton_httpclient import aio_httpclient
+
 
 class Client:
     """
@@ -50,7 +52,6 @@ class Client:
     """
 
     def __init__(self, url: str, model_name: str = PIPELINE_NAME):
-        from towhee.utils.triton_httpclient import aio_httpclient  # pylint: disable=import-outside-toplevel
         self._loop = asyncio.get_event_loop()
         self._client = aio_httpclient.InferenceServerClient(url)
         self._model_name = model_name
@@ -100,7 +101,6 @@ class Client:
 
     @staticmethod
     def _solve_inputs(pipe_inputs):
-        from towhee.utils.triton_httpclient import aio_httpclient  # pylint: disable=import-outside-toplevel
         batch_size = len(pipe_inputs)
         inputs = [aio_httpclient.InferInput('INPUT0', [batch_size, 1], 'BYTES')]
         batch = []

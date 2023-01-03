@@ -20,7 +20,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 from towhee.dc2 import pipe
-from towhee.serve.triton.pipeline_client import Client
+from towhee.serve.triton import triton_client
 from towhee.utils.thirdparty.dail_util import dill as pickle
 import towhee.serve.triton.bls.pipeline_model as pipe_model
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
@@ -110,7 +110,7 @@ class TestTritonClient(unittest.TestCase):
         MockInferenceServerClient.set_pipeline(p)
 
         url = '127.0.0.1:8000'
-        with Client(url) as client:
+        with triton_client.Client(url) as client:
             res1 = client(1)
             self.assertEqual(len(res1), 1)
             expect1 = [[11]]
@@ -135,7 +135,7 @@ class TestTritonClient(unittest.TestCase):
         )
         MockInferenceServerClient.set_pipeline(p)
         url = '127.0.0.1:8000'
-        with Client(url) as client:
+        with triton_client.Client(url) as client:
             in0 = [1, 2, 3]
             in1 = np.random.rand(3, 3)
             res1 = client(in0, in1)

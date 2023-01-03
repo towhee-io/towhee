@@ -15,7 +15,7 @@
 
 from towhee.runtime import register, pipe, ops, accelerate, AutoConfig
 from towhee.datacollection import DataCollection
-from towhee.serve import build_docker_image_v2, build_pipeline_model
+from towhee.serve.server_builder import build_docker_image_v2, build_pipeline_model
 
 
 __all__ = [
