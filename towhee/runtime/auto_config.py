@@ -14,12 +14,32 @@
 
 import threading
 from functools import wraps
+import contextvars
+import contextlib
 
 import towhee.runtime.pipeline_loader as pipe_loader
 import towhee.runtime.node_config as nd_conf
 from towhee.utils.log import engine_log
 
 
+_AUTO_CONFIG_VAR: contextvars.ContextVar = contextvars.ContextVar('auto_config_var')
+
+
+@contextlib.contextmanager
+def set_config_name(name: str):
+    token = _AUTO_CONFIG_VAR.set(name)
+    yield
+    _AUTO_CONFIG_VAR.reset(token)
+
+
+def get_config_name():
+    try:
+        return _AUTO_CONFIG_VAR.get()
+    except:  # pylint: disable=bare-except
+        return None
+
+
+# pylint: disable=invalid-name
 class AutoConfig:
 
     """
@@ -35,34 +55,30 @@ class AutoConfig:
         )
 
     @staticmethod
-    def register(name):
+    def register():
         def decorate(config):
             @wraps(config)
             def wrapper(*args, **kwargs):
                 return config(*args, **kwargs)
-            AutoConfig._REGISTERED_CONFIG[name] = wrapper
+
+            name = get_config_name()
+            if name is not None:
+                AutoConfig._REGISTERED_CONFIG[name] = wrapper
             return wrapper
         return decorate
 
     @staticmethod
-    def pipe_config(name: str, *args, **kwargs):
-        model_name = pipe_loader.PipelineLoader.model_name(name)
-        with AutoConfig._lock:
-            if model_name in AutoConfig._REGISTERED_CONFIG:
-                return AutoConfig._REGISTERED_CONFIG[model_name](*args, **kwargs)
-
-            pipe_loader.PipelineLoader.load_pipeline(name)
-            if model_name in AutoConfig._REGISTERED_CONFIG:
-                return AutoConfig._REGISTERED_CONFIG[model_name](*args, **kwargs)
-            engine_log.error("Can not found config: %s", name)
-            return None
-
-    @staticmethod
     def load_config(name: str, *args, **kwargs):
         with AutoConfig._lock:
-            if name not in AutoConfig._REGISTERED_CONFIG:
-                return None
-            return AutoConfig._REGISTERED_CONFIG[name](*args, **kwargs)
+            if name in AutoConfig._REGISTERED_CONFIG:
+                return AutoConfig._REGISTERED_CONFIG[name](*args, **kwargs)
+
+            with set_config_name(name):
+                pipe_loader.PipelineLoader.load_pipeline(name)
+            if name in AutoConfig._REGISTERED_CONFIG:
+                return AutoConfig._REGISTERED_CONFIG[name](*args, **kwargs)
+            engine_log.error('Can not found config: %s', name)
+            return None
 
     @staticmethod
     def LocalCPUConfig():

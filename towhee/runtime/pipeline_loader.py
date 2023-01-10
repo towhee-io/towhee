@@ -13,8 +13,11 @@
 # limitations under the License.
 
 
+import pathlib
+import hashlib
 import threading
 import importlib
+
 
 from towhee.pipelines import get_builtin_pipe_file
 
@@ -23,26 +26,39 @@ PIPELINE_NAMESPACE = 'towhee.pipeline'
 
 
 class PipelineLoader:
+    """
+    Load Predefined Pipelines
+    """
     _lock = threading.Lock()
-    
+
     @staticmethod
-    def model_name(name):
+    def module_name(name):
+        name = name.replace('/', '_')
         return PIPELINE_NAMESPACE + '.' + name
 
     @staticmethod
-    def _load_pipeline_from_file(name: str, file_path: str):
-        modname = PipelineLoader.model_name(name)
+    def _load_pipeline_from_file(name: str, file_path: 'Path'):
+        modname = PipelineLoader.module_name(name)
         spec = importlib.util.spec_from_file_location(modname, file_path.resolve())
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
     @staticmethod
-    def load_pipeline(name):
+    def _load_builtins(name: str) -> bool:
+        file_path = get_builtin_pipe_file(name)
+        if file_path is None:
+            return False
+        PipelineLoader._load_pipeline_from_file(name, file_path)
+        return True
+
+    @staticmethod
+    def load_pipeline(name: str):
         with PipelineLoader._lock:
-            file_path = get_builtin_pipe_file(name)
-            if file_path is not None:
-                PipelineLoader._load_pipeline_from_file(name, file_path)
+            file_path = pathlib.Path(name)
+            if file_path.is_file():
+                new_name = hashlib.sha256(name.encode('utf-8')).hexdigest()
+                PipelineLoader._load_pipeline_from_file(new_name, file_path)
             else:
-                # TODO load pipeline from hub
-                pass
-            
+                if not PipelineLoader._load_builtins(name):
+                    # TODO load pipeline from hub
+                    pass

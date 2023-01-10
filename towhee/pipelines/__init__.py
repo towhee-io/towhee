@@ -21,7 +21,7 @@ from towhee.utils.log import engine_log
 BUILT_IN_PIPES_ROOT = Path(__file__).absolute().parent
 
 
-def get_builtin_pipe_file(name: str) -> str:
+def get_builtin_pipe_file(name: str) -> Path:
     file_name = name + '.py'
     file_path = BUILT_IN_PIPES_ROOT / file_name
     if not file_path.is_file():

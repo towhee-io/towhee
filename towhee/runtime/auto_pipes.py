@@ -15,13 +15,35 @@
 from functools import wraps
 from typing import Optional
 import threading
+import contextvars
+import contextlib
+
 
 import towhee.runtime.pipeline_loader as pipe_loader
 from towhee.utils.log import engine_log
 
 
+_AUTO_PIPES_VAR: contextvars.ContextVar = contextvars.ContextVar('auto_pipes_var')
+
+
+@contextlib.contextmanager
+def set_pipe_name(name: str):
+    token = _AUTO_PIPES_VAR.set(name)
+    yield
+    _AUTO_PIPES_VAR.reset(token)
+
+
+def get_pipe_name():
+    try:
+        return _AUTO_PIPES_VAR.get()
+    except:  # pylint: disable=bare-except
+        return None
+
+
 class AutoPipes:
-    
+    """
+    Load Predefined pipeines.
+    """
     _PIPES_DEF = {}
     _lock = threading.Lock()
 
@@ -31,25 +53,27 @@ class AutoPipes:
         )
 
     @staticmethod
-    def register(name):
+    def register():
         def decorate(pipe_def):
             @wraps(pipe_def)
             def wrapper(*args, **kwargs):
                 return pipe_def(*args, **kwargs)
-            AutoPipes._PIPES_DEF[name] = wrapper
+            name = get_pipe_name()
+            if name is not None:
+                AutoPipes._PIPES_DEF[name] = wrapper
             return wrapper
         return decorate
 
     @staticmethod
-    def load_pipeline(name, *args, **kwargs) -> Optional['RuntimePipeline']:
+    def pipeline(name, *args, **kwargs) -> Optional['RuntimePipeline']:
         with AutoPipes._lock:
-            model_name = pipe_loader.PipelineLoader.model_name(name)
-            if model_name in AutoPipes._PIPES_DEF:
-                return AutoPipes._PIPES_DEF[model_name](*args, **kwargs)
+            if name in AutoPipes._PIPES_DEF:
+                return AutoPipes._PIPES_DEF[name](*args, **kwargs)
 
-            pipe_loader.PipelineLoader.load_pipeline(name)
-            if model_name in AutoPipes._PIPES_DEF:
-                return AutoPipes._PIPES_DEF[model_name](*args, **kwargs)
+            with set_pipe_name(name):
+                pipe_loader.PipelineLoader.load_pipeline(name)
+            if name in AutoPipes._PIPES_DEF:
+                return AutoPipes._PIPES_DEF[name](*args, **kwargs)
 
-            engine_log.error("Can not found the pipline %s", name)
+            engine_log.error('Can not found the pipline %s', name)
             return None
