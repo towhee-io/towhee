@@ -55,17 +55,15 @@ class AutoConfig:
         )
 
     @staticmethod
-    def register():
-        def decorate(config):
-            @wraps(config)
-            def wrapper(*args, **kwargs):
-                return config(*args, **kwargs)
+    def register(config):
+        @wraps(config)
+        def wrapper(*args, **kwargs):
+            return config(*args, **kwargs)
 
-            name = get_config_name()
-            if name is not None:
-                AutoConfig._REGISTERED_CONFIG[name] = wrapper
-            return wrapper
-        return decorate
+        name = get_config_name()
+        if name is not None:
+            AutoConfig._REGISTERED_CONFIG[name] = wrapper
+        return wrapper
 
     @staticmethod
     def load_config(name: str, *args, **kwargs):

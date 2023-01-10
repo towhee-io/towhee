@@ -53,16 +53,14 @@ class AutoPipes:
         )
 
     @staticmethod
-    def register():
-        def decorate(pipe_def):
-            @wraps(pipe_def)
-            def wrapper(*args, **kwargs):
-                return pipe_def(*args, **kwargs)
-            name = get_pipe_name()
-            if name is not None:
-                AutoPipes._PIPES_DEF[name] = wrapper
-            return wrapper
-        return decorate
+    def register(pipe_def):
+        @wraps(pipe_def)
+        def wrapper(*args, **kwargs):
+            return pipe_def(*args, **kwargs)
+        name = get_pipe_name()
+        if name is not None:
+            AutoPipes._PIPES_DEF[name] = wrapper
+        return wrapper
 
     @staticmethod
     def pipeline(name, *args, **kwargs) -> Optional['RuntimePipeline']:
