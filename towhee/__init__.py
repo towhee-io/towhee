@@ -27,8 +27,7 @@ from towhee.functional import (
     glob, glob_zip, read_csv, read_json, read_camera, read_video, read_audio, read_zip, dc, api, dummy_input, range, from_df
 )
 
-from towhee import dc2
-from towhee.dc2 import pipe, build_docker_image_v2, build_pipeline_model, AutoConfig
+from towhee.dc2 import pipe, build_docker_image_v2, build_pipeline_model, AutoConfig, AutoPipes
 
 from towhee.serve.triton import triton_client
 
@@ -65,9 +64,12 @@ __all__ = [
     'default_cache',
     # the new interface
     'pipe',
-    'dc2',
     'triton_client',
     'AutoConfig',
+    'build_docker_image_v2',
+    'build_pipeline_model',
+    'AutoConfig',
+    'AutoPipes'
 ]
 
 __import__('pkg_resources').declare_namespace(__name__)

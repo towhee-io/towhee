@@ -15,9 +15,11 @@
 
 from .factory import ops, register
 from .pipeline import Pipeline as pipe
+from .auto_pipes import AutoPipes
+from .auto_config import AutoConfig
 
 from .runtime_conf import get_sys_config, accelerate
-from .node_config import AcceleratorConf, AutoConfig
+from .node_config import AcceleratorConf
 
 
 __all__ = [
@@ -28,4 +30,6 @@ __all__ = [
     'accelerate',
     'AcceleratorConf',
     'AutoConfig',
+    'AutoPipes',
+    'AutoConfig'
 ]
