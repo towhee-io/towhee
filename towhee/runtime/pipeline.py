@@ -267,6 +267,7 @@ class Pipeline:
         """
         output_schema = self._check_schema(output_schema)
         input_schema = self._check_schema(input_schema)
+        filter_columns = self._check_schema(filter_columns)
 
         uid = uuid.uuid4().hex
         fn_action = self._to_action(fn)

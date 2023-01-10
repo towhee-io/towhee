@@ -270,7 +270,7 @@ class TestCompileMixin(unittest.TestCase):
         timm_func = self.transformers_jit(model_name)
         res = timm_func(data)
 
-        self.assertTrue(isinstance(res[0], np.ndarray))
+        self.assertTrue(isinstance(res, np.ndarray))
 
     def test_compile_numba(self):
         # pylint: disable=unused-import

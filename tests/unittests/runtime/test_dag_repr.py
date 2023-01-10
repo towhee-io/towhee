@@ -217,3 +217,74 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['_output'].in_edges, [5])
         self.assertEqual(nodes['_output'].out_edges, [6])
 
+    def test_filter(self):
+        """
+        _input[(u,)]->op1[(u,)-(i,)]->op2[(i,)-(b, c, s)]->op3[(i, b)-(i, b), filter:(b, )]->_output[(c, s, b)]
+        """
+        towhee_dag_test = {
+            '_input': {
+                'inputs': ('u',),
+                'outputs': ('u',),
+                'iter_info': {'type': 'map', 'param': None},
+                'next_nodes': ['op1']
+            },
+            'op1': {
+                'inputs': ('u',),
+                'outputs': ('i',),
+                'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'test1', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
+                'config': None,
+                'next_nodes': ['op2']
+            },
+            'op2': {
+                'inputs': ('i',),
+                'outputs': ('b', 'c', 's'),
+                'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'test2', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
+                'config': None,
+                'next_nodes': ['op3']
+            },
+            'op3': {
+                'inputs': ('i', 'b'),
+                'outputs': ('i', 'b'),
+                'iter_info': {'type': 'filter', 'param': {'filter_by': ('b',)}},
+                'op_info': {'operator': 'test3', 'type': 'hub', 'init_args': None, 'init_kws': None, 'tag': 'main'},
+                'config': None,
+                'next_nodes': ['_output']
+            },
+            '_output': {
+                'inputs': ('c', 's', 'b'),
+                'outputs': ('c', 's', 'b'),
+                'iter_info': {'type': 'map', 'param': None},
+                'next_nodes': None
+            },
+        }
+        dr = DAGRepr.from_dict(towhee_dag_test)
+        edges = dr.edges
+        nodes = dr.nodes
+        self.assertEqual(len(edges), 6)
+        self.assertEqual(len(nodes), 5)
+
+        edge0 = [('u', ColumnType.SCALAR)]
+        edge1 = [('u', ColumnType.SCALAR)]
+        edge2 = [('i', ColumnType.SCALAR)]
+        edge3 = [('i', ColumnType.SCALAR), ('b', ColumnType.SCALAR), ('c', ColumnType.SCALAR), ('s', ColumnType.SCALAR)]
+        edge4 = [('b', ColumnType.SCALAR), ('c', ColumnType.SCALAR), ('s', ColumnType.SCALAR)]
+        edge5 = [('b', ColumnType.SCALAR), ('c', ColumnType.SCALAR), ('s', ColumnType.SCALAR)]
+        self.assertEqual(dict((s, t) for s, t in edges[0]['data']), dict((s, t) for s, t in edge0))
+        self.assertEqual(dict((s, t) for s, t in edges[1]['data']), dict((s, t) for s, t in edge1))
+        self.assertEqual(dict((s, t) for s, t in edges[2]['data']), dict((s, t) for s, t in edge2))
+        self.assertEqual(dict((s, t) for s, t in edges[3]['data']), dict((s, t) for s, t in edge3))
+        self.assertEqual(dict((s, t) for s, t in edges[4]['data']), dict((s, t) for s, t in edge4))
+        self.assertEqual(dict((s, t) for s, t in edges[5]['data']), dict((s, t) for s, t in edge5))
+
+        self.assertEqual(nodes['_input'].in_edges, [0])
+        self.assertEqual(nodes['_input'].out_edges, [1])
+        self.assertEqual(nodes['op1'].in_edges, [1])
+        self.assertEqual(nodes['op1'].out_edges, [2])
+        self.assertEqual(nodes['op2'].in_edges, [2])
+        self.assertEqual(nodes['op2'].out_edges, [3])
+        self.assertEqual(nodes['op3'].in_edges, [3])
+        self.assertEqual(nodes['op3'].out_edges, [4])
+        self.assertEqual(nodes['_output'].in_edges, [4])
+        self.assertEqual(nodes['_output'].out_edges, [5])

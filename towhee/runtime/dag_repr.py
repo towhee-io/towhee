@@ -137,15 +137,15 @@ class DAGRepr:
         visited = [name]
         while stack:
             n = stack.pop()
+            check_schema = nodes[n].inputs
             used_col = DAGRepr.get_base_col(nodes[n])
             if used_col is not None:
                 if isinstance(used_col, str):
-                    used_schema.add(used_col)
+                    check_schema += (used_col,)
                 else:
-                    for c in used_col:
-                        used_schema.add(c)
+                    check_schema += tuple(used_col)
 
-            common_schema = set(nodes[n].inputs) & ahead_schema
+            common_schema = set(check_schema) & ahead_schema
             for x in common_schema:
                 ahead_schema.remove(x)
                 used_schema.add(x)
