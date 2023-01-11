@@ -18,7 +18,7 @@ from towhee.runtime import AutoPipes, AutoConfig
 
 
 @AutoConfig.register
-class TextEmbeddingConfig:
+class SentenceSimilarityConfig:
     """
     Config of pipeline
     """
@@ -36,7 +36,7 @@ class TextEmbeddingConfig:
         self.device = -1
 
 
-def _text_semantic_similarity(embedding_op, milvus_op=None, allow_triton=False, device=-1):
+def _sentence_similarity(embedding_op, milvus_op=None, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -83,7 +83,7 @@ def _get_embedding_op(config):
 
 
 @AutoPipes.register
-def text_semantic_similarity(config):
+def sentence_similarity(config):
     """
     Define pipeline
     """
@@ -93,4 +93,4 @@ def text_semantic_similarity(config):
         milvus_op = ops.ann_insert.milvus_client(host=config.host,
                                                  port=config.port,
                                                  collection_name=config.collection_name)
-    return _text_semantic_similarity(emb_op, milvus_op, allow_triton, config.device)
+    return _sentence_similarity(emb_op, milvus_op, allow_triton, config.device)
