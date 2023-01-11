@@ -13,23 +13,18 @@
 # limitations under the License.
 
 
-from .factory import ops, register
-from .pipeline import Pipeline as pipe
-from .auto_pipes import AutoPipes
-from .auto_config import AutoConfig
+from pathlib import Path
 
-from .runtime_conf import get_sys_config, accelerate
-from .node_config import AcceleratorConf
+from towhee.utils.log import engine_log
 
 
-__all__ = [
-    'pipe',
-    'register',
-    'ops',
-    'get_sys_config',
-    'accelerate',
-    'AcceleratorConf',
-    'AutoConfig',
-    'AutoPipes',
-    'AutoConfig'
-]
+BUILT_IN_PIPES_ROOT = Path(__file__).absolute().parent
+
+
+def get_builtin_pipe_file(name: str) -> Path:
+    file_name = name + '.py'
+    file_path = BUILT_IN_PIPES_ROOT / file_name
+    if not file_path.is_file():
+        engine_log.info('%s not a built-in pipeline', name)
+        return None
+    return file_path

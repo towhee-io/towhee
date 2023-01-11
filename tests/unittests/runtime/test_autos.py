@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import pathlib
 import unittest
 
-from towhee.dc2 import AutoConfig
+from towhee.dc2 import AutoConfig, AutoPipes
 from towhee.runtime.node_config import TowheeConfig
 
 
@@ -121,3 +121,23 @@ class TestAutoConfig(unittest.TestCase):
         }
         self.assertTrue(isinstance(conf1, TowheeConfig))
         self.assertEqual(conf1.config, dict_conf)
+
+
+class TestAutoPipes(unittest.TestCase):
+    """
+    Test load pipeline
+    """
+    def test_local(self):
+        file_path = str(pathlib.Path(__file__).parent / 'builtin_pipeline.py')
+        config = AutoConfig.load_config(file_path)
+        p = AutoPipes.pipeline(file_path, config)
+        ret = p(10).get()[0]
+        self.assertEqual(ret, 11)
+
+    def test_builtin(self):
+        conf = AutoConfig.load_config('_builtin_pipeline')
+
+        conf.param = 2
+        p = AutoPipes.pipeline('_builtin_pipeline', conf)
+        ret = p(10).get()[0]
+        self.assertEqual(ret, 12)

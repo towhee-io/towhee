@@ -13,23 +13,26 @@
 # limitations under the License.
 
 
-from .factory import ops, register
-from .pipeline import Pipeline as pipe
-from .auto_pipes import AutoPipes
-from .auto_config import AutoConfig
-
-from .runtime_conf import get_sys_config, accelerate
-from .node_config import AcceleratorConf
+from towhee.dc2 import pipe
+from towhee.runtime import AutoPipes, AutoConfig
 
 
-__all__ = [
-    'pipe',
-    'register',
-    'ops',
-    'get_sys_config',
-    'accelerate',
-    'AcceleratorConf',
-    'AutoConfig',
-    'AutoPipes',
-    'AutoConfig'
-]
+@AutoConfig.register
+class MyConfig:
+    """
+    For UT
+    """
+    def __init__(self):
+        self.param = 1
+
+
+@AutoPipes.register
+def pipeline(config):
+    """
+    For UT
+    """
+    return (
+        pipe.input('num')
+        .map('num', 'ret', lambda x: x + config.param)
+        .output('ret')
+    )
