@@ -23,7 +23,6 @@ class SentenceSimilarityConfig:
     Config of pipeline
     """
     def __init__(self):
-        self.model_provider = 'hf'  # 'hf' | 'openai' | 'sbert'
         self.model = 'all-MiniLM-L12-v2'
 
         self.openai_api_key = None
@@ -32,6 +31,8 @@ class SentenceSimilarityConfig:
         self.host= '127.0.0.1'
         self.port= '19530'
         self.collection_name = None
+
+        self.customize_op = None
 
         self.device = -1
 
@@ -64,22 +65,42 @@ def _sentence_similarity(embedding_op, milvus_op=None, allow_triton=False, devic
     return _to_milvus()
 
 
+_hf_models = ['sentence-t5-xxl', 'sentence-t5-xl', 'sentence-t5-large', 'paraphrase-mpnet-base-v2',
+              'gtr-t5-xxl', 'gtr-t5-large', 'gtr-t5-xl', 'paraphrase-multilingual-mpnet-base-v2',
+              'paraphrase-distilroberta-base-v2', 'all-mpnet-base-v1', 'all-roberta-large-v1',
+              'all-mpnet-base-v2', 'all-MiniLM-L12-v2', 'all-distilroberta-v1', 'all-MiniLM-L12-v1',
+              'gtr-t5-base', 'paraphrase-multilingual-MiniLM-L12-v2', 'paraphrase-MiniLM-L12-v2',
+              'all-MiniLM-L6-v1', 'paraphrase-TinyBERT-L6-v2', 'all-MiniLM-L6-v2', 'paraphrase-albert-small-v2',
+              'multi-qa-mpnet-base-cos-v1', 'paraphrase-MiniLM-L3-v2', 'multi-qa-distilbert-cos-v1',
+              'multi-qa-mpnet-base-dot-v1', 'msmarco-distilbert-base-v4', 'msmarco-distilbert-base-tas-b',
+              'distiluse-base-multilingual-cased-v2', 'multi-qa-MiniLM-L6-cos-v1', 'multi-qa-distilbert-dot-v1',
+              'distiluse-base-multilingual-cased-v1', 'msmarco-bert-base-dot-v5', 'paraphrase-MiniLM-L6-v2', 'multi-qa-MiniLM-L6-dot-v1',
+              'msmarco-distilbert-dot-v5', 'bert-base-nli-mean-tokens', 'bert-large-uncased-whole-word-masking',
+              'average_word_embeddings_komninos', 'realm-cc-news-pretrained-embedder', 'distilbert-base-uncased',
+              'average_word_embeddings_glove.6B.300d', 'dpr-ctx_encoder-multiset-base', 'dpr-ctx_encoder-single-nq-base',
+              'microsoft/deberta-xlarge', 'facebook/bart-large', 'bert-base-uncased', 'microsoft/deberta-xlarge-mnli',
+              'gpt2-xl', 'bert-large-uncased']
+_openai_models = ['text-embedding-ada-002', 'text-similarity-davinci-001',
+                  'text-similarity-curie-001', 'text-similarity-babbage-001',
+                  'text-similarity-ada-001']
+
+
 def _get_embedding_op(config):
     if config.device == -1:
         device = 'cpu'
     else:
         device = config.device
 
-    if config.model_provider == 'hf':
-        return True, ops.text_embedding.transformers(model_name=config.model,
-                                                     device=device)
-    if config.model_provider == 'openai':
+    if config.customize_op is not None:
+        return True, config.customize_op
+
+    if config.model in _hf_models:
+        return True, ops.sentence_embedding.transformers(model_name=config.model,
+                                                             device=device)
+    if config.model in _openai_models:
         return False, ops.text_embedding.openai(engine=config.model,
                                                 api_key=config.openai_api_key)
-    if config.model_provider == 'sbert':
-        return True, ops.text_embedding.sentence_transformers(model_name=config.model,
-                                                              device=device)
-    raise RuntimeError('Unkown model provider:%s, only support hf | openai | sbert' % (config.model_provider))
+    raise RuntimeError('Unkown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
 
 
 @AutoPipes.register

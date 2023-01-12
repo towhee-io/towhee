@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import traceback
 from towhee.utils.log import engine_log
 from towhee.utils.onnx_utils import onnx
 from towhee.serve.triton import constant
@@ -81,7 +83,8 @@ class ModelToTriton:
             if self._op.save_model('onnx', self._triton_files.onnx_model_file) and self._prepare_config():
                 return 1
         except Exception as e:  # pylint: disable=broad-except
-            engine_log.error('Save the operator: %s with onnx model failed, error: %s', self._name, e)
+            st_err = '{}, {}'.format(str(e), traceback.format_exc())
+            engine_log.error('Save the operator: %s with onnx model failed, error: %s', self._name, st_err)
             return -1
 
     def _prepare_model(self):
