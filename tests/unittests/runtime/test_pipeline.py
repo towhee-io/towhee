@@ -186,8 +186,8 @@ class TestWindowAllPipeline(unittest.TestCase):
     def test_normal(self):
         runtime_pipeline = RuntimePipeline(self.dag_dict)
         result = runtime_pipeline([1, 1, 1, 1, 1, 1])
-        for i in range(6):
-            self.assertEqual(result.get(), [1, 6 if i == 0 else Empty()])
+        for _ in range(6):
+            self.assertEqual(result.get(), [1, 6])
 
     def test_zero_data(self):
         runtime_pipeline = RuntimePipeline(self.dag_dict)
