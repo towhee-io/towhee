@@ -237,8 +237,8 @@ class TestWindowAll(unittest.TestCase):
         in_que.seal()
 
         out_que = DataQueue([
-            ('sum1', ColumnType.QUEUE),
-            ('sum2', ColumnType.QUEUE),
+            ('sum1', ColumnType.SCALAR),
+            ('sum2', ColumnType.SCALAR),
             ('num1', ColumnType.QUEUE),
             ('num2', ColumnType.QUEUE)
         ])
