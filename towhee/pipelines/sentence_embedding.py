@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-from towhee.dc2 import ops, pipe
-from towhee.runtime import AutoPipes, AutoConfig
+from typing import List
+from towhee.dc2 import ops, pipe, AutoPipes, AutoConfig
 
 
 @AutoConfig.register
@@ -24,45 +24,9 @@ class SentenceSimilarityConfig:
     """
     def __init__(self):
         self.model = 'all-MiniLM-L12-v2'
-
         self.openai_api_key = None
-
-        self.insert_to = None  # None | milvus
-        self.host= '127.0.0.1'
-        self.port= '19530'
-        self.collection_name = None
-
-        self.customize_op = None
-
+        self.customize_embedding_op = None
         self.device = -1
-
-
-def _sentence_similarity(embedding_op, milvus_op=None, allow_triton=False, device=-1):
-    op_config = {}
-    if allow_triton:
-        if device >= 0:
-            op_config = AutoConfig.TritonGPUConfig(device_ids=[device], max_batch_size=128)
-        else:
-            op_config = AutoConfig.TritonCPUConfig()
-
-    def _only_embedding():
-        return (
-            pipe.input('text')
-            .map('text', 'vec', embedding_op, config=op_config)
-            .output('vec')
-        )
-
-    def _to_milvus():
-        return (
-            pipe.input('text')
-            .map('text', 'vec', embedding_op, config=op_config)
-            .map(('text', 'vec'), (), milvus_op)
-            .output()
-        )
-
-    if milvus_op is None:
-        return _only_embedding()
-    return _to_milvus()
 
 
 _hf_models = ['sentence-t5-xxl', 'sentence-t5-xl', 'sentence-t5-large', 'paraphrase-mpnet-base-v2',
@@ -91,12 +55,12 @@ def _get_embedding_op(config):
     else:
         device = config.device
 
-    if config.customize_op is not None:
-        return True, config.customize_op
+    if config.customize_embedding_op is not None:
+        return True, config.customize_embedding_op
 
     if config.model in _hf_models:
         return True, ops.sentence_embedding.transformers(model_name=config.model,
-                                                             device=device)
+                                                         device=device)
     if config.model in _openai_models:
         return False, ops.text_embedding.openai(engine=config.model,
                                                 api_key=config.openai_api_key)
@@ -104,14 +68,22 @@ def _get_embedding_op(config):
 
 
 @AutoPipes.register
-def sentence_similarity(config):
+def sentence_embedding(config=None):
     """
     Define pipeline
     """
+    if config is None:
+        config = SentenceSimilarityConfig()
+
     allow_triton, emb_op = _get_embedding_op(config)
-    milvus_op = None
-    if config.insert_to is not None:
-        milvus_op = ops.ann_insert.milvus_client(host=config.host,
-                                                 port=config.port,
-                                                 collection_name=config.collection_name)
-    return _sentence_similarity(emb_op, milvus_op, allow_triton, config.device)
+    op_config = {}
+    if allow_triton:
+        if config.device >= 0:
+            op_config = AutoConfig.TritonGPUConfig(device_ids=[config.device], max_batch_size=128)
+        else:
+            op_config = AutoConfig.TritonCPUConfig()
+    return (
+        pipe.input('text')
+        .map('text', 'vec', emb_op, config=op_config)
+        .output('vec')
+    )
