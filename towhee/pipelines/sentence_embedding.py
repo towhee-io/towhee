@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-from typing import List
 from towhee.dc2 import ops, pipe, AutoPipes, AutoConfig
 
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-import towhee
 from towhee.dc2 import pipe, ops, AutoPipes, AutoConfig
 
 
@@ -40,7 +39,7 @@ def _get_embedding_op(config):
 
 def _image_embedding(emb_op, op_config):
     return (
-        towhee.pipe.input('url')
+        pipe.input('url')
         .map('url', 'image', ops.image_decode.cv2_rgb())
         .map('image', 'vec', emb_op, config=op_config)
         .output('vec')
@@ -49,7 +48,7 @@ def _image_embedding(emb_op, op_config):
 
 def _text_embedding(emb_op, op_config):
     return (
-        towhee.pipe.input('text')
+        pipe.input('text')
         .map('text', 'vec', emb_op, op_config)
         .output('vec')
     )
@@ -67,7 +66,7 @@ def text_image_embedding(config=None):
         op_config = AutoConfig.TritonGPUConfig(device_ids=[config.device], max_batch_size=128)
     else:
         op_config = AutoConfig.TritonCPUConfig()
-    
+
     if config.modality == 'image':
         return _image_embedding(emb_op, op_config)
     if config.modality == 'text':

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-from typing import List
 from towhee.dc2 import ops, pipe, AutoPipes, AutoConfig
 
 
@@ -28,7 +27,7 @@ class MilvusInsertConfig:
         self.collection_name = None
 
 
-@AutoPipes.register        
+@AutoPipes.register
 def milvus_insert_pipe(config):
     return (
         pipe.input('row')
