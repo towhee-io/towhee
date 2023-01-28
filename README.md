@@ -174,7 +174,7 @@ import towhee
 (
     towhee.glob['file_name']('./*.png')
           .image_decode['file_name', 'img']()
-          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_b32', modality='image')
+          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_base_patch32', modality='image')
           .tensor_normalize['vec','vec']()
           .to_faiss[('file_name', 'vec')](findex='./index.bin')
 )
@@ -182,7 +182,7 @@ import towhee
 # search image by text
 results = (
     towhee.dc['text'](['puppy Corgi'])
-          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
+          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_base_patch32', modality='text')
           .tensor_normalize['vec', 'vec']()
           .faiss_search['vec', 'results'](findex='./index.bin', k=3)
           .select['text', 'results']()
