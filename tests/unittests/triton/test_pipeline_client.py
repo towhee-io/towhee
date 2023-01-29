@@ -113,7 +113,7 @@ class TestTritonClient(unittest.TestCase):
         with triton_client.Client(url) as client:
             res1 = client(1)
             self.assertEqual(len(res1), 1)
-            expect1 = [[11]]
+            expect1 = [11]
             for index, item in enumerate(res1[0], 0):
                 self.assertEqual(item, expect1[index])
 
@@ -139,9 +139,8 @@ class TestTritonClient(unittest.TestCase):
             in0 = [1, 2, 3]
             in1 = np.random.rand(3, 3)
             res1 = client(in0, in1)
-            self.assertEqual(len(res1), 1)
-            self.assertEqual(len(res1[0]), 3)
-            for index, item in enumerate(res1[0], 1):
+            self.assertEqual(len(res1), 3)
+            for index, item in enumerate(res1, 1):
                 self.assertTrue((item[0] == (in1 + index)).all())
 
             # test with batch

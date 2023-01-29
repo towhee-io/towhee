@@ -78,7 +78,7 @@ class Client:
         if len(inputs) > 1:
             inputs = [inputs]
         inputs = self._solve_inputs(inputs)
-        return self._loop.run_until_complete(self._call(inputs))
+        return self._loop.run_until_complete(self._call(inputs))[0]
 
     def batch(self, pipe_inputs: List, batch_size=4, safe=False):
         batch_inputs = [self._solve_inputs(pipe_inputs[i: i + batch_size]) for i in range(0, len(pipe_inputs), batch_size)]
