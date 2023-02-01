@@ -23,6 +23,11 @@ class Output(Node):
        Examples:
            p1 = towhee.pipe.input('url').output('url')
     """
+    def initialize(self) -> bool:
+        for q in self._output_ques:
+            q.max_size = 0
+        return super().initialize()
+
     def process_step(self) -> bool:
         self._time_profiler.record(self.uid, Event.queue_in)
         all_data = {}
