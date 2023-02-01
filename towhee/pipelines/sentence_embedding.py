@@ -22,27 +22,13 @@ class SentenceSimilarityConfig:
     Config of pipeline
     """
     def __init__(self):
-        self.model = 'all-MiniLM-L12-v2'
+        self.model = 'all-MiniLM-L6-v2'
         self.openai_api_key = None
         self.customize_embedding_op = None
         self.device = -1
 
 
-_hf_models = ['sentence-t5-xxl', 'sentence-t5-xl', 'sentence-t5-large', 'paraphrase-mpnet-base-v2',
-              'gtr-t5-xxl', 'gtr-t5-large', 'gtr-t5-xl', 'paraphrase-multilingual-mpnet-base-v2',
-              'paraphrase-distilroberta-base-v2', 'all-mpnet-base-v1', 'all-roberta-large-v1',
-              'all-mpnet-base-v2', 'all-MiniLM-L12-v2', 'all-distilroberta-v1', 'all-MiniLM-L12-v1',
-              'gtr-t5-base', 'paraphrase-multilingual-MiniLM-L12-v2', 'paraphrase-MiniLM-L12-v2',
-              'all-MiniLM-L6-v1', 'paraphrase-TinyBERT-L6-v2', 'all-MiniLM-L6-v2', 'paraphrase-albert-small-v2',
-              'multi-qa-mpnet-base-cos-v1', 'paraphrase-MiniLM-L3-v2', 'multi-qa-distilbert-cos-v1',
-              'multi-qa-mpnet-base-dot-v1', 'msmarco-distilbert-base-v4', 'msmarco-distilbert-base-tas-b',
-              'distiluse-base-multilingual-cased-v2', 'multi-qa-MiniLM-L6-cos-v1', 'multi-qa-distilbert-dot-v1',
-              'distiluse-base-multilingual-cased-v1', 'msmarco-bert-base-dot-v5', 'paraphrase-MiniLM-L6-v2', 'multi-qa-MiniLM-L6-dot-v1',
-              'msmarco-distilbert-dot-v5', 'bert-base-nli-mean-tokens', 'bert-large-uncased-whole-word-masking',
-              'average_word_embeddings_komninos', 'realm-cc-news-pretrained-embedder', 'distilbert-base-uncased',
-              'average_word_embeddings_glove.6B.300d', 'dpr-ctx_encoder-multiset-base', 'dpr-ctx_encoder-single-nq-base',
-              'microsoft/deberta-xlarge', 'facebook/bart-large', 'bert-base-uncased', 'microsoft/deberta-xlarge-mnli',
-              'gpt2-xl', 'bert-large-uncased']
+_hf_models = ops.sentence_embedding.transformers().get_op().supported_model_names()
 _openai_models = ['text-embedding-ada-002', 'text-similarity-davinci-001',
                   'text-similarity-curie-001', 'text-similarity-babbage-001',
                   'text-similarity-ada-001']
