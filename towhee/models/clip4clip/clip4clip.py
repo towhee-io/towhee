@@ -111,7 +111,7 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
         if shaped is False:
             input_ids = input_ids.view(-1, input_ids.shape[-1])
         bs_pair = input_ids.size(0)
-        sequence_hidden = self.clip.encode_text(input_ids, clip4clip=True).float()
+        sequence_hidden = self.clip.encode_text(input_ids, clip4clip=True, device=input_ids.device).float()
         sequence_hidden = sequence_hidden.view(bs_pair, -1, sequence_hidden.size(-1))
 
         return sequence_hidden
