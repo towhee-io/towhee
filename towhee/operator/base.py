@@ -207,8 +207,15 @@ class NNOperator(Operator):
 
         """
         from towhee.trainer.trainer import Trainer  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
         if self._trainer is None:
-            self._trainer = Trainer(self.model,
+            if isinstance(self.model, torch.nn.Module):
+                training_model = self.model
+            elif hasattr(self, '_model') and isinstance(self._model, torch.nn.Module):
+                training_model = self._model
+            else:
+                raise AttributeError('There is no trainable model attr in this operator.')
+            self._trainer = Trainer(training_model,
                                     training_config,
                                     train_dataset,
                                     eval_dataset,
