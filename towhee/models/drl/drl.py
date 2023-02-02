@@ -202,7 +202,7 @@ class DRL(nn.Module):
             text_ids = text_ids.view(-1, text_ids.shape[-1])
 
         bs_pair = text_ids.size(0)
-        text_feat = self.clip.encode_text(text_ids, clip4clip=True, return_hidden=True)[1].float()
+        text_feat = self.clip.encode_text(text_ids, clip4clip=True, return_hidden=True, device=text_ids.device)[1].float()
         text_feat = text_feat.view(bs_pair, -1, text_feat.size(-1))
 
         return text_feat
