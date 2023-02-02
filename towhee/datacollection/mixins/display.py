@@ -13,8 +13,7 @@
 # limitations under the License.
 import numpy
 
-from towhee.types import Image
-from towhee.types import AudioFrame
+from towhee.types import Image, VideoFrame, AudioFrame
 from towhee.datacollection.entity import Entity
 # pylint: disable=dangerous-default-value
 
@@ -113,7 +112,7 @@ def to_plain_table(data, header, tablefmt):  # pragma: no cover
 def _to_plain_cell(data):  # pragma: no cover
     if isinstance(data, str):
         return _text_brief(data)
-    if isinstance(data, Image):
+    if isinstance(data, (Image, VideoFrame)):
         return _image_brief(data)
     elif isinstance(data, AudioFrame):
         return _audio_frame_brief(data)
@@ -123,7 +122,7 @@ def _to_plain_cell(data):  # pragma: no cover
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
             return _list_brief(data, _text_brief)
-        elif all(isinstance(x, Image) for x in data):
+        elif all(isinstance(x, (Image, VideoFrame)) for x in data):
             return _list_brief(data, _image_brief)
         elif all(isinstance(x, AudioFrame) for x in data):
             return _list_brief(data, _audio_frame_brief)
@@ -149,6 +148,7 @@ def to_html_table(data, header, formatter={}):  # pragma: no cover
         'text': _text_brief,
         'image': _image_to_html_cell,
         'audio_frame': _audio_frame_to_html_cell,
+        'video_frame': _image_to_html_cell,
         'video_path': _video_path_to_html_cell,
     }
 
@@ -184,7 +184,7 @@ def _to_html_td(data, callback=None):  # pragma: no cover
 
     if isinstance(data, str):
         return wrap_td_tag(_text_brief(data))
-    if isinstance(data, Image):
+    if isinstance(data, (Image, VideoFrame)):
         return wrap_td_tag(_image_to_html_cell(data))
     elif isinstance(data, AudioFrame):
         return wrap_td_tag(_audio_frame_to_html_cell(data))
@@ -194,7 +194,7 @@ def _to_html_td(data, callback=None):  # pragma: no cover
     elif isinstance(data, (list, tuple)):
         if all(isinstance(x, str) for x in data):
             return wrap_td_tag(_text_list_brief(data))
-        elif all(isinstance(x, Image) for x in data):
+        elif all(isinstance(x, (Image, VideoFrame)) for x in data):
             return wrap_td_tag(_images_to_html_cell(data), vertical_align='top')
         elif all(isinstance(x, AudioFrame) for x in data):
             return wrap_td_tag(_audio_frames_to_html_cell(data), vertical_align='top')
@@ -208,14 +208,21 @@ def _to_html_td(data, callback=None):  # pragma: no cover
 def _image_to_html_cell(img, width=128, height=128):  # pragma: no cover
     # pylint: disable=import-outside-toplevel
     from towhee.utils.cv2_utils import cv2
+    from towhee.utils.matplotlib_utils import plt
     import base64
-
-    _, img_encode = cv2.imencode('.JPEG', img)
-    src = 'src="data:image/jpeg;base64,' + base64.b64encode(img_encode).decode() + '" '
-    w = 'width = "' + str(width) + 'px" '
-    h = 'height = "' + str(height) + 'px" '
+    from io import BytesIO
+    plt.ioff()
+    fig = plt.figure(figsize=(width / 100, height / 100))
+    img = cv2.resize(img, (width, height))
+    fig.figimage(img)
+    plt.ion()
+    tmpfile = BytesIO()
+    fig.savefig(tmpfile, format='png')
+    data = base64.b64encode(tmpfile.getvalue()).decode('ascii')
+    src = 'src="data:image/png;base64,' + data + '" '
+    w = '128 = "' + str(128) + 'px" '
+    h = '128 = "' + str(128) + 'px" '
     style = 'style = "float:left; padding:2px"'
-
     return '<img ' + src + w + h + style + '>'
 
 
