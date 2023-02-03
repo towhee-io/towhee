@@ -84,7 +84,7 @@ class Builder:
             if not self._model_convert(node):
                 return False
             progress_bar.update(1)
-        status = PipeToTriton(self.dag_repr, self._model_root, constant.PIPELINE_NAME).process()
+        status = PipeToTriton(self.dag_repr, self._model_root, constant.PIPELINE_NAME, self._server_conf).process()
         progress_bar.update(1)
         return status
 
