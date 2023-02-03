@@ -18,7 +18,7 @@ import traceback
 from towhee.serve.triton.triton_files import TritonFiles
 from towhee.serve.triton.bls import PIPELINE_MODEL_FILE
 from towhee.serve.triton.triton_config_builder import create_modelconfig
-import towhee.serve.triton.constant as constant
+from towhee.serve.triton import constant
 
 from towhee.utils.log import engine_log
 
