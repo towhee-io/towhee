@@ -38,11 +38,11 @@ class TestPipeToTriton(unittest.TestCase):
             .output('ret')
         )
 
-
         with TemporaryDirectory(dir='./') as root:
-            self.assertTrue(PipeToTriton(p.dag_repr, root, 'ut_pipeline').process())
+            self.assertTrue(PipeToTriton(p.dag_repr, root, 'ut_pipeline', {'parallelism': 4}).process())
             self.assertTrue(os.path.isfile(os.path.join(root, 'ut_pipeline', '1', 'model.py')))
             self.assertTrue(os.path.isfile(os.path.join(root, 'ut_pipeline', '1', 'pipe.pickle')))
+            self.assertTrue(os.path.isfile(os.path.join(root, 'ut_pipeline', 'config.pbtxt')))
             module_spec = importlib.util.spec_from_file_location('py_model', os.path.join(root, 'ut_pipeline', '1', 'model.py'))
             module = importlib.util.module_from_spec(module_spec)
             module_spec.loader.exec_module(module)

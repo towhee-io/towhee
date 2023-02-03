@@ -16,15 +16,20 @@ import copy
 
 from .triton.docker_image_builder_v2 import DockerImageBuilder
 from .triton.pipeline_builder import Builder as TritonModelBuilder
+from .triton import constant
 from towhee.utils.log import engine_log
 
 
 def build_docker_image_v2(
         dc_pipeline: 'towhee.RuntimePipeline', image_name: str,
         cuda_version: str, format_priority: list,
+        parallelism: int = 8,
         inference_server: str = 'triton'):
 
-    server_config = {'format_priority' : format_priority}
+    server_config = {
+        constant.FORMAT_PRIORITY : format_priority,
+        constant.PARALLELISM: parallelism
+    }
     if inference_server == 'triton':
         DockerImageBuilder(dc_pipeline, image_name, server_config, cuda_version).build()
     else:
@@ -33,12 +38,13 @@ def build_docker_image_v2(
 
 
 def build_pipeline_model(dc_pipeline: 'towhee.RuntimePipeline', model_root: str,
-                         format_priority: list, server: str = 'triton'):
+                         format_priority: list, parallelism: int = 8, server: str = 'triton'):
 
     if server == 'triton':
         dag_repr = copy.deepcopy(dc_pipeline.dag_repr)
         server_conf = {
-            'format_priority': format_priority
+            constant.FORMAT_PRIORITY: format_priority,
+            constant.PARALLELISM: parallelism
         }
         builder = TritonModelBuilder(dag_repr, model_root, server_conf)
     else:

@@ -25,6 +25,7 @@ POSTPROCESS = 'postprocess'
 OP_CONFIG = 'op_config'
 SERVER_CONFIG = 'server_config'
 FORMAT_PRIORITY = 'format_priority'
+PARALLELISM = 'parallelism'
 
 
 # bls
