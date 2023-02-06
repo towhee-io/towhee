@@ -33,12 +33,8 @@ class VideoEmbeddingConfig:
     Config of pipeline
     """
     def __init__(self):
-        # decode op
-        self.sample_type = 'time_step_sample'
-        self.deocde_args = {'time_step': 1}
-
         # emb op
-        self.model = 'resnet34'  # 'resnet34' | 'isc'
+        self.model = 'isc'
 
         # milvus op
         self.milvus_host = '127.0.0.1'
@@ -84,11 +80,46 @@ def _get_embedding_op(config):
     else:
         device = config.device
 
-    if config.model == 'resnet34':
-        return True, ops.image_embedding.timm(model_name='resnet34', device=device)
-    if config.model_provider == 'isc':
+    model_list = [
+        'isc',
+        'gmixer_24_224',
+        'resmlp_24_224',
+        'resmlp_12_distilled_224',
+        'resmlp_12_224',
+        'coat_lite_mini',
+        'deit_small_patch16_224',
+        'resmlp_36_224',
+        'pit_xs_224',
+        'convit_small',
+        'resmlp_24_distilled_224',
+        'tnt_s_patch16_224',
+        'pit_ti_224',
+        'resmlp_36_distilled_224',
+        'twins_svt_small',
+        'convit_tiny',
+        'coat_lite_small',
+        'coat_lite_tiny',
+        'deit_tiny_patch16_224',
+        'coat_mini',
+        'gmlp_s16_224',
+        'cait_xxs24_224',
+        'cait_s24_224',
+        'levit_128',
+        'coat_tiny',
+        'cait_xxs36_224',
+        'levit_192',
+        'levit_256',
+        'levit_128s',
+        'vit_small_patch32_224',
+        'vit_small_patch32_384',
+        'vit_small_r26_s32_224',
+        'vit_small_patch16_224'
+    ]
+    if config.model == 'isc':
         return True, ops.image_embedding.isc(device=device)
-    raise RuntimeError('Unkown model provider:%s, only support resnet34 | isc' % (config.model_provider))
+    elif config.model in model_list:
+        return True, ops.image_embedding.timm(model_name=config.model, device=device)
+    raise RuntimeError(f'Unkown model: {config.model}, only support models in {model_list}.')
 
 
 @AutoPipes.register
@@ -97,11 +128,11 @@ def video_embedding(config):
     Define pipeline
     """
     allow_triton, emb_op = _get_embedding_op(config)
-    decode_op = ops.video_decode.ffmpeg(sample_type=config.sample_type, args=config.deocde_args)
-    milvus_op = ops.ann_insert.milvus(host=config.milvus_host, port=config.milvus_port, collection=config.collection)
+    decode_op = ops.video_decode.ffmpeg(sample_type='time_step_sample', args={'time_step': 1})
+    milvus_op = ops.ann_insert.milvus_client(host=config.milvus_host, port=config.milvus_port, collection_name=config.collection)
     if config.hbase_table:
         kv_op = ops.kvstorage.insert_hbase(host=config.hbase_host, port=config.hbase_port, table=config.hbase_table)
     if config.leveldb_path:
-        kv_op = ops.kvstorage.insert_leveldb(config.leveldb_path)
+        kv_op = ops.kvstorage.insert_leveldb(path=config.leveldb_path)
 
     return _video_embedding(decode_op, emb_op, milvus_op, kv_op, allow_triton, config.device)
