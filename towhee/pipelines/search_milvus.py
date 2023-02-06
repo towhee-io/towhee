@@ -25,6 +25,8 @@ class MilvusSearchConfig:
         self.host= '127.0.0.1'
         self.port= '19530'
         self.collection_name = None
+        self.user = None
+        self.password = None
         self.search_params = { 'output_fields': ['text']}
 
 
@@ -35,6 +37,8 @@ def milvus_insert_pipe(config):
         .map('vec', 'rows', ops.ann_search.milvus_client(host=config.host,
                                                          port=config.port,
                                                          collection_name=config.collection_name,
+                                                         user=config.user,
+                                                         password=config.password,
                                                          **config.search_params))
         .output('rows')
     )

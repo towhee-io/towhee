@@ -447,17 +447,17 @@ class FileManager():
                     return file_path
 
             # Check updates fro repo.
-            elif tag == 'main':
-                repo_path = file_path.parent
-                cwd = Path.cwd()
-                os.chdir(repo_path)
-                try:
-                    git = GitUtils(author, repo)
-                    if git.status() == 'behind':
-                        engine_log.warning('Your local operator %s is not up to date, tring to update to latest version...', file_name)
-                        git.pull()
-                except FileNotFoundError:
-                    pass
-                os.chdir(cwd)
+            # elif tag == 'main':
+            #     repo_path = file_path.parent
+            #     cwd = Path.cwd()
+            #     os.chdir(repo_path)
+            #     try:
+            #         git = GitUtils(author, repo)
+            #         if git.status() == 'behind':
+            #             engine_log.warning('Your local operator %s is not up to date, tring to update to latest version...', file_name)
+            #             git.pull()
+            #     except FileNotFoundError:
+            #         pass
+            #     os.chdir(cwd)
 
         return file_path
