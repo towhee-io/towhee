@@ -25,6 +25,7 @@ class SentenceSimilarityConfig:
         self.model = 'all-MiniLM-L6-v2'
         self.openai_api_key = None
         self.customize_embedding_op = None
+        self.normalize_vec = True
         self.device = -1
 
 
@@ -52,6 +53,11 @@ def _get_embedding_op(config):
     raise RuntimeError('Unkown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
 
 
+def normalize(vec):
+    import numpy as np  # pylint: disable=import-outside-toplevel
+    return vec / np.linalg.norm(vec)
+
+
 @AutoPipes.register
 def sentence_embedding(config=None):
     """
@@ -67,8 +73,11 @@ def sentence_embedding(config=None):
             op_config = AutoConfig.TritonGPUConfig(device_ids=[config.device], max_batch_size=128)
         else:
             op_config = AutoConfig.TritonCPUConfig()
-    return (
+    p = (
         pipe.input('text')
         .map('text', 'vec', emb_op, config=op_config)
-        .output('vec')
     )
+
+    if config.normalize_vec:
+        p = p.map('vec', 'vec', normalize)
+    return p.output('vec')

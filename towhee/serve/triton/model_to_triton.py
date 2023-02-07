@@ -80,7 +80,7 @@ class ModelToTriton:
     def _save_onnx_model(self):
         self._backend = 'onnxruntime'
         try:
-            if self._op.save_model('onnx', self._triton_files.onnx_model_file) and self._prepare_config():
+            if self._prepare_config() and self._op.save_model('onnx', self._triton_files.onnx_model_file):
                 return 1
         except Exception as e:  # pylint: disable=broad-except
             st_err = '{}, {}'.format(str(e), traceback.format_exc())
