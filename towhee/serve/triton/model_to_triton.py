@@ -41,10 +41,6 @@ class ModelToTriton:
         self._triton_files.model_path.mkdir(parents=True, exist_ok=False)
         return True
 
-    def _rm_model_dir(self):
-        self._triton_files.model_path.rmdir()
-        self._triton_files.root.rmdir()
-
     def _prepare_config(self) -> bool:
         """
         All model open with auto-generated model configuration, such as:
@@ -110,10 +106,8 @@ class ModelToTriton:
         save model in triton and return the status.
         0 means do nothing, -1 means failed, 1 means successfully created the model repo.
         """
+        if not set(self._model_format_priority) & set(self._op.supported_formats):
+            return 0
         if not self._create_model_dir():
-            self._rm_model_dir()
             return -1
-        status = self._prepare_model()
-        if status in [-1, 0]:
-            self._rm_model_dir()
-        return status
+        return self._prepare_model()
