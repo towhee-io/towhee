@@ -22,9 +22,11 @@ class MilvusInsertConfig:
     Config of pipeline
     """
     def __init__(self):
-        self.host= '127.0.0.1'
-        self.port= '19530'
+        self.host = '127.0.0.1'
+        self.port = '19530'
         self.collection_name = None
+        self.user = None
+        self.password = None
 
 
 @AutoPipes.register
@@ -33,6 +35,9 @@ def milvus_insert_pipe(config):
         pipe.input('row')
         .map('row', (), ops.ann_insert.milvus_client(host=config.host,
                                                      port=config.port,
-                                                     collection_name=config.collection_name))
+                                                     collection_name=config.collection_name,
+                                                     user=config.user,
+                                                     password=config.password
+                                                     ))
         .output()
     )
