@@ -400,3 +400,48 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(que.size, 0)
         que.seal()
         self.assertEqual(que.size, 0)
+
+    def test_to_list(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('image', ColumnType.QUEUE),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1, 2],
+            'other': [1, 3, 9, 8, 8]
+        }))
+        with self.assertRaises(RuntimeError):
+            input_que.to_list()
+
+        input_que.seal()
+        data = input_que.to_list()
+        self.assertEqual(4, len(data))
+        self.assertEqual(0, input_que.size)
+        self.assertEqual(data[0], ['1', 1, 1])
+        self.assertEqual(data[1], ['1', 2, 2])
+        self.assertEqual(data[2], ['1', 3, Empty()])
+        self.assertEqual(data[3], ['1', 4, Empty()])
+
+
+    def test_to_kv(self):
+        input_que = DataQueue([('url', ColumnType.SCALAR),
+                               ('image', ColumnType.QUEUE),
+                               ('vec', ColumnType.QUEUE)])
+        self.assertTrue(input_que.batch_put_dict({
+            'url': ['1'],
+            'image': [1, 2, 3, 4],
+            'vec': [1, 2],
+            'other': [1, 3, 9, 8, 8]
+        }))
+        with self.assertRaises(RuntimeError):
+            input_que.to_list()
+
+        input_que.seal()
+        data = input_que.to_list(True)
+        self.assertEqual(4, len(data))
+        self.assertEqual(0, input_que.size)
+        self.assertEqual(data[0], {'url': '1', 'image': 1, 'vec': 1})
+        self.assertEqual(data[1], {'url': '1', 'image': 2, 'vec': 2})
+        self.assertEqual(data[2], {'url': '1', 'image': 3, 'vec': Empty()})
+        self.assertEqual(data[3], {'url': '1', 'image': 4, 'vec': Empty()})

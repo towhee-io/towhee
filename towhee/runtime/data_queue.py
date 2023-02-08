@@ -135,6 +135,13 @@ class DataQueue:
                     ret[name] = data[i]
         return ret
 
+    def to_list(self, kv_format=False):
+        if not self.sealed:
+            raise RuntimeError('The queue is not sealed')
+        if not kv_format:
+            return [self.get() for _ in range(self.size)]
+        return [self.get_dict() for _ in range(self.size)]
+
     @property
     def max_size(self):
         return self._max_size
