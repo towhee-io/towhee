@@ -52,7 +52,7 @@ def _get_embedding_op(config):
         return True, ops.sentence_embedding.sbert(model_name=config.model,
                                                   device=device)
     if config.model in _openai_models:
-        return False, ops.text_embedding.openai(engine=config.model,
+        return False, ops.sentence_embedding.openai(model_name=config.model,
                                                 api_key=config.openai_api_key)
     raise RuntimeError('Unkown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
 
