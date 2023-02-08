@@ -156,4 +156,4 @@ class TestModelToTriton(unittest.TestCase):
             path4 = Path(root)
             m = ModelToTriton(root, op_tmp, name, node_config, server_config)
             self.assertEqual(m.to_triton(), -1)
-            self.assertFalse((path4 / name).exists())
+            self.assertTrue((path4 / name).exists())

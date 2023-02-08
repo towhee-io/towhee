@@ -25,9 +25,9 @@ class MilvusSearchConfig:
         self.host= '127.0.0.1'
         self.port= '19530'
         self.collection_name = None
+        self.search_params = {}
         self.user = None
         self.password = None
-        self.search_params = { 'output_fields': ['text']}
 
 
 @AutoPipes.register

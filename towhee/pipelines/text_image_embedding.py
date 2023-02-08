@@ -21,6 +21,7 @@ class TextImageEmbeddingConfig:
     def __init__(self):
         self.model = 'clip_vit_base_patch16'
         self.modality = 'image'
+        self.normalize_vec = True
         self.customize_embedding_op = None
         self.device = -1
 
@@ -42,7 +43,6 @@ def _image_embedding(emb_op, op_config):
         pipe.input('url')
         .map('url', 'image', ops.image_decode.cv2_rgb())
         .map('image', 'vec', emb_op, config=op_config)
-        .output('vec')
     )
 
 
@@ -50,8 +50,12 @@ def _text_embedding(emb_op, op_config):
     return (
         pipe.input('text')
         .map('text', 'vec', emb_op, op_config)
-        .output('vec')
     )
+
+
+def normalize(vec):
+    import numpy as np  # pylint: disable=import-outside-toplevel
+    return vec / np.linalg.norm(vec)
 
 
 @AutoPipes.register
@@ -68,7 +72,11 @@ def text_image_embedding(config=None):
         op_config = AutoConfig.TritonCPUConfig()
 
     if config.modality == 'image':
-        return _image_embedding(emb_op, op_config)
-    if config.modality == 'text':
-        return _text_embedding(emb_op, op_config)
-    raise RuntimeError('Unkown modality: %s, please use image | text' % config.modality)
+        p = _image_embedding(emb_op, op_config)
+    elif config.modality == 'text':
+        p = _text_embedding(emb_op, op_config)
+    else:
+        RuntimeError('Unkown modality: %s, please use image | text' % config.modality)
+    if config.normalize_vec:
+        p = p.map('vec', 'vec', normalize)
+    return p.output('vec')
