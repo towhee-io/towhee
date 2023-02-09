@@ -36,7 +36,7 @@ class DockerImageBuilder:
         from towhee.utils.thirdparty.dail_util import dill as pickle
         dag = self._towhee_pipeline.dag_repr
         with open(workspace / 'dag.pickle', 'wb') as f:
-            pickle.dump(dag, f)
+            pickle.dump(dag, f, recurse=True)
 
     def prepare_config(self, workspace: Path):
         config = self._server_config
