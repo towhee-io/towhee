@@ -91,7 +91,7 @@ class Builder:
 
 # pylint: disable=import-outside-toplevel
 def main():
-    from towhee.utils.thirdparty.dail_util import dill as pickle
+    from towhee.utils.thirdparty.dill_util import dill as pickle
     import sys
     import json
     if len(sys.argv) != 4:

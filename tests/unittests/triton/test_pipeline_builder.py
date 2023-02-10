@@ -20,7 +20,7 @@ from towhee.runtime import pipe, ops, AutoConfig
 from towhee.runtime.dag_repr import DAGRepr
 from towhee.serve.triton.constant import PIPELINE_NAME
 from towhee.serve.triton.pipeline_builder import Builder
-from towhee.utils.thirdparty.dail_util import dill as pickle
+from towhee.utils.thirdparty.dill_util import dill as pickle
 
 
 class TestPipelineBuilder(unittest.TestCase):
