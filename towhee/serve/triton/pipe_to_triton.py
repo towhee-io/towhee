@@ -70,7 +70,7 @@ class PipeToTriton:
             return False
 
     def _process_pipe(self) -> bool:
-        from towhee.utils.thirdparty.dail_util import dill as pickle  # pylint: disable=import-outside-toplevel
+        from towhee.utils.thirdparty.dill_util import dill as pickle  # pylint: disable=import-outside-toplevel
         try:
             with open(self._triton_files.pipe_pickle_path, 'wb') as f:
                 pickle.dump(self._dag_repr, f, recurse=True)

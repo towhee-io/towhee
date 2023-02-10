@@ -112,7 +112,7 @@ class ImageType:
             tensor2ndarray(data_placehoder),
             tensor2str(mode_placehoder)
         ]
-        return 'towhee._types.Image(' + ', '.join(init_args) + ')'
+        return 'towhee.types.Image(' + ', '.join(init_args) + ')'
 
 
 class VideoFrameType:
@@ -444,7 +444,7 @@ class StringType:
 def get_type_info(type_annotations: List[Tuple[Any, Tuple]]) -> List[TypeInfo]:
     # pylint: disable=protected-access
     callbacks = {
-        towhee._types.Image: ImageType.type_info,
+        towhee.types.Image: ImageType.type_info,
         towhee.types.VideoFrame: VideoFrameType.type_info,
         towhee.types.AudioFrame: AudioFrameType.type_info,
         numpy.uint8: NpUint8Type.type_info,
@@ -470,7 +470,7 @@ def get_type_info(type_annotations: List[Tuple[Any, Tuple]]) -> List[TypeInfo]:
 def get_init_code(type_annotations: List[Tuple[Any, Tuple]]) -> List[str]:
     # pylint: disable=protected-access
     callbacks = {
-        towhee._types.Image: lambda t, shape, is_list: ImageType.init_code(shape),
+        towhee.types.Image: lambda t, shape, is_list: ImageType.init_code(shape),
         towhee.types.VideoFrame: lambda t, shape, is_list: VideoFrameType.init_code(shape),
         towhee.types.AudioFrame: lambda t, shape, is_list: AudioFrameType.init_code(shape),
         numpy.uint8: lambda t, shape, is_list: NpUint8Type.init_code(shape),

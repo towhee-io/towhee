@@ -33,7 +33,7 @@ class DockerImageBuilder:
         self._cuda_version = cuda_version
 
     def prepare_dag(self, workspace: Path):
-        from towhee.utils.thirdparty.dail_util import dill as pickle
+        from towhee.utils.thirdparty.dill_util import dill as pickle
         dag = self._towhee_pipeline.dag_repr
         with open(workspace / 'dag.pickle', 'wb') as f:
             pickle.dump(dag, f, recurse=True)

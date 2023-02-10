@@ -17,7 +17,7 @@ import numpy as np
 
 import towhee.serve.triton.type_gen as tygen
 from towhee.serve.triton.python_model_builder import PyModelBuilder, gen_model_from_pickled_callable, gen_model_from_op
-from towhee._types import Image
+from towhee.types import Image
 from tempfile import TemporaryDirectory
 
 from . import EXPECTED_FILE_PATH
@@ -35,14 +35,14 @@ class TestPythonModelBuilder(unittest.TestCase):
         init_code = tygen.ImageType.init_code([512, 512, 3])
 
         lines = PyModelBuilder._from_tensor_to_obj(type_info, init_code, 'img', ['data_tensor', 'mode_tensor'])
-        expected_results = ['img = towhee._types.Image(data_tensor.as_numpy(), mode_tensor.as_numpy()[0].decode(\'utf-8\'))']
+        expected_results = ['img = towhee.types.Image(data_tensor.as_numpy(), mode_tensor.as_numpy()[0].decode(\'utf-8\'))']
 
         self.assertListEqual(expected_results, lines)
 
         type_info = tygen.ImageType.type_info(Image, [512, 512, 3], True)
         lines = PyModelBuilder._from_tensor_to_obj(type_info, init_code, 'img', ['data_tensor', 'mode_tensor'])
         expected_results = [
-            'img = [towhee._types.Image(arg0.as_numpy(), arg1.as_numpy()[0].decode(\'utf-8\')) for arg0, arg1 in zip(data_tensor, mode_tensor)]']
+            'img = [towhee.types.Image(arg0.as_numpy(), arg1.as_numpy()[0].decode(\'utf-8\')) for arg0, arg1 in zip(data_tensor, mode_tensor)]']
 
         self.assertListEqual(expected_results, lines)
 
