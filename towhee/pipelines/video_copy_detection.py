@@ -60,7 +60,7 @@ class VideoCopyDetectionConfig:
         self.device = -1
 
 
-def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, allow_triton=False, device=-1):
+def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -68,7 +68,7 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
         else:
             op_config = AutoConfig.TritonCPUConfig()
 
-    def _search():
+    def _norm():
         return (
             pipe.input('url')
                 .map('url', 'id', lambda x: x)
@@ -85,7 +85,23 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
                 .output('id', 'candidates', 'similar_segment', 'segment_score')
         )
 
-    return _search()
+    def _unnorm():
+        return (
+            pipe.input('url')
+                .map('url', 'id', lambda x: x)
+                .flat_map('url', 'frames', decode_op)
+                .map('frames', 'emb', emb_op, config=op_config)
+                .map('emb', 'res', milvus_op)
+                .window_all('res', 'res', lambda x:[i for y in x for i in y])
+                .map('res', ('retrieved_ids', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
+                .window_all('emb', 'video_emb', merge_ndarray)
+                .flat_map(('retrieved_ids','score'),'candidates', select_op)
+                .map('candidates', 'retrieved_emb', kv_op)
+                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
+                .output('id', 'candidates', 'similar_segment', 'segment_score')
+        )
+
+    return _unnorm() if not norm_op else _norm()
 
 
 def _get_embedding_op(config):
@@ -157,5 +173,6 @@ def video_copy_detection(config):
         kv_op = ops.kvstorage.from_leveldb(path=config.leveldb_path, is_ndarray=True)
     select_op = ops.video_copy_detection.select_video(top_k=config.top_k, reduce_function='sum', reverse=True)
     tn_op = ops.video_copy_detection.temporal_network(min_length=config.min_similar_length)
+    norm_op = None if config.model == 'isc' else normalize
 
-    return _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, allow_triton, config.device)
+    return _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, allow_triton, config.device)

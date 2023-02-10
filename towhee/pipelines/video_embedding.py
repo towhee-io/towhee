@@ -50,7 +50,7 @@ class VideoEmbeddingConfig:
         self.device = -1
 
 
-def _video_embedding(decode_op, emb_op, milvus_op, kv_op, allow_triton=False, device=-1):
+def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -58,7 +58,7 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, allow_triton=False, de
         else:
             op_config = AutoConfig.TritonCPUConfig()
 
-    def _insert():
+    def _norm():
         return (
             pipe.input('url')
                 .map('url', 'id', lambda x: x)
@@ -71,7 +71,19 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, allow_triton=False, de
                 .output()
         )
 
-    return _insert()
+    def _unnorm():
+        return (
+            pipe.input('url')
+                .map('url', 'id', lambda x: x)
+                .flat_map('url', 'frames', decode_op)
+                .map('frames', 'emb', emb_op, config=op_config)
+                .map(('id', 'emb'), 'milvus_res', milvus_op)
+                .window_all('emb', 'video_emb', merge_ndarray)
+                .map(('id', 'video_emb'), ('insert_status'), kv_op)
+                .output()
+        )
+
+    return _unnorm() if not norm_op else _norm()
 
 
 def _get_embedding_op(config):
@@ -134,5 +146,6 @@ def video_embedding(config):
         kv_op = ops.kvstorage.insert_hbase(host=config.hbase_host, port=config.hbase_port, table=config.hbase_table)
     if config.leveldb_path:
         kv_op = ops.kvstorage.insert_leveldb(path=config.leveldb_path)
+    norm_op = None if config.model == 'isc' else normalize
 
-    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, allow_triton, config.device)
+    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton, config.device)
