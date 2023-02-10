@@ -26,12 +26,3 @@ __all__ = [
     'VideoFrame',
     'TensorArray'
 ]
-
-equivalents = {
-    'towhee.types.image.Image': 'towhee.types.Image',
-    'towhee.types.audio_frame.AudioFrame': 'towhee.types.AudioFrame',
-    'towhee.types.video_frame.VideoFrame': 'towhee.types.VideoFrame',
-    'towhee.types.arg.arg': 'towhee.types.arg',
-    'towhee.types.arg.to_image_color': 'towhee.types.to_image_color',
-    'towhee.types.tensor_array.TensorArray': 'towhee.types.TensorArray'
-}

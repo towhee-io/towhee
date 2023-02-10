@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 
 from towhee.types import Image
-from towhee.types import Image as LegacyImage
+from towhee._types import Image as LegacyImage
 
 
 class TestImage(unittest.TestCase):
