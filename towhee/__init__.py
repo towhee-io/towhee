@@ -14,12 +14,13 @@
 
 # pylint: disable=redefined-builtin
 # pylint: disable=import-outside-toplevel
+
+import sys
 from typing import Union, List
 from pathlib import Path
 
 from towhee.engine import register
 from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES
-from towhee import types as _types  # legacy _types
 from towhee.hparam import param_scope
 from towhee.hparam import HyperParameter as Document
 from towhee.hub.file_manager import FileManagerConfig
@@ -31,6 +32,11 @@ from towhee.functional import (
 from towhee.dc2 import pipe, build_docker_image_v2, build_pipeline_model, AutoConfig, AutoPipes
 
 from towhee.serve.triton import triton_client
+
+# Legacy towhee._types
+from towhee import types
+_types = types  # pylint: disable=protected-access
+sys.modules['towhee._types'] = sys.modules['towhee.types']
 
 
 # Place all functions that are meant to be called by towhee.func() here aftering importing them.
@@ -63,6 +69,7 @@ __all__ = [
     'add_cache_path',
     'cache_paths',
     'default_cache',
+
     # the new interface
     'pipe',
     'triton_client',

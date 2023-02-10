@@ -15,6 +15,9 @@
 import unittest
 import numpy as np
 
+
+# from towhee._types import Image as LegacyImage
+import towhee
 from towhee.types import Image
 from towhee._types import Image as LegacyImage
 
@@ -49,6 +52,7 @@ class TestImage(unittest.TestCase):
     def test_image(self):
         self.towhee_image(Image)
         self.towhee_image(LegacyImage)
+        self.assertEqual(towhee.types.Image, towhee._types.Image)  # pylint: disable=protected-access
 
 
 if __name__ == '__main__':
