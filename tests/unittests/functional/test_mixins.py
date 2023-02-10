@@ -34,7 +34,7 @@ import towhee.functional.mixins.list
 import towhee.functional.mixins.stream
 from towhee import DataCollection, DataFrame, dc
 from towhee import Entity
-from towhee._types.image import Image
+from towhee.types.image import Image
 from towhee.utils.thirdparty.faiss_utils import faiss
 from towhee.utils.cv2_utils import cv2
 from towhee.functional.mixins.display import _ndarray_brief, to_printable_table

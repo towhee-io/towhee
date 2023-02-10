@@ -14,7 +14,7 @@
 
 
 import numpy as np
-from towhee._types import Image
+from towhee.types import Image
 from towhee.operator import NNOperator
 
 from .model import Model
