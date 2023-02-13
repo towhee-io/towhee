@@ -22,9 +22,21 @@ def merge_ndarray(x):
     return np.concatenate(x).reshape(-1, x[0].shape[0])
 
 
-def normalize(x):
-    import numpy as np
-    return x / np.linalg.norm(x, axis=0)
+class DuplicateFilter:
+    """
+    Duplicate Filter.
+    """
+    def __init__(self, threshold):
+        self._threshold = threshold
+
+    def __call__(self, segs, scores, src):
+        duration = src.shape[0]
+        weights = [0] * duration
+        for i, j in zip(segs, scores):
+            for idx in range(i[0], i[2] + 1):
+                weights[idx] = max(weights[idx], j)
+
+        return (sum(weights) / duration) > self._threshold
 
 
 @AutoConfig.register
@@ -33,8 +45,14 @@ class VideoCopyDetectionConfig:
     Config of pipeline
     """
     def __init__(self):
+        # decode op
+        # The range in the video to deocode
+        self.start_time = None
+        self.end_time = None
+
         # emb op
         self.model = 'isc'
+        self.img_size = 512
 
         # milvus op
         self.milvus_host = '127.0.0.1'
@@ -51,57 +69,73 @@ class VideoCopyDetectionConfig:
 
         # select video op
         # The number of nearest videos to return by the pipeline
-        self.top_k = 5
+        self.top_k = 100
 
         # tn op
-        # The minimal similar frame(s) that the return videos should contain 
+        # The minimal similar frame(s) that the return videos should contain
         self.min_similar_length = 1
+
+        # filter op
+        self.threshold = None
+
+        # tracer
+        self.tracer = False
 
         self.device = -1
 
 
-def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, allow_triton=False, device=-1):
+def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, tracer, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
             op_config = AutoConfig.TritonGPUConfig(device_ids=[device], max_batch_size=128)
         else:
             op_config = AutoConfig.TritonCPUConfig()
-
-    def _norm():
-        return (
+    if norm_op:
+        emb_pipe = (
             pipe.input('url')
-                .map('url', 'id', lambda x: x)
                 .flat_map('url', 'frames', decode_op)
                 .map('frames', 'emb', emb_op, config=op_config)
-                .map('emb', 'emb', normalize)
-                .map('emb', 'res', milvus_op)
-                .window_all('res', 'res', lambda x:[i for y in x for i in y])
-                .map('res', ('retrieved_ids', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
-                .window_all('emb', 'video_emb', merge_ndarray)
-                .flat_map(('retrieved_ids','score'),'candidates', select_op)
-                .map('candidates', 'retrieved_emb', kv_op)
-                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
-                .output('id', 'candidates', 'similar_segment', 'segment_score')
+                .map('emb', 'emb', norm_op)
         )
-
-    def _unnorm():
-        return (
+    else:
+        emb_pipe = (
             pipe.input('url')
-                .map('url', 'id', lambda x: x)
                 .flat_map('url', 'frames', decode_op)
                 .map('frames', 'emb', emb_op, config=op_config)
-                .map('emb', 'res', milvus_op)
-                .window_all('res', 'res', lambda x:[i for y in x for i in y])
-                .map('res', ('retrieved_ids', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
-                .window_all('emb', 'video_emb', merge_ndarray)
-                .flat_map(('retrieved_ids','score'),'candidates', select_op)
-                .map('candidates', 'retrieved_emb', kv_op)
-                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
-                .output('id', 'candidates', 'similar_segment', 'segment_score')
         )
 
-    return _unnorm() if not norm_op else _norm()
+    merge_pipe = (
+        emb_pipe.window_all('emb', 'video_emb', merge_ndarray)
+    )
+
+    search_pipe = (
+        emb_pipe.flat_map('emb', 'res', milvus_op)
+            .window_all('res', ('retrieved_urls', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
+            .flat_map(('retrieved_urls','score'),'candidates', select_op)
+            .map('candidates', 'retrieved_emb', kv_op)
+    )
+
+    if filter_op:
+        detect_pipe = (
+            search_pipe.concat(merge_pipe)
+                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
+                .filter(
+                    ('candidates', 'similar_segment', 'segment_score'),
+                    ('candidates', 'similar_segment', 'segment_score'),
+                    ('similar_segment', 'segment_score', 'video_emb'),
+                    filter_op
+                )
+                .output('url', 'candidates', 'similar_segment', 'segment_score', tracer=tracer)
+        )
+    else:
+        detect_pipe = (
+            search_pipe.concat(merge_pipe)
+                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
+                .output('url', 'candidates', 'similar_segment', 'segment_score', tracer=tracer)
+        )
+
+    return detect_pipe
 
 
 def _get_embedding_op(config):
@@ -146,7 +180,7 @@ def _get_embedding_op(config):
         'vit_small_patch16_224'
     ]
     if config.model == 'isc':
-        return True, ops.image_embedding.isc(device=device)
+        return True, ops.image_embedding.isc(img_size=config.img_size, device=device)
     elif config.model in model_list:
         return True, ops.image_embedding.timm(model_name=config.model, device=device)
     raise RuntimeError(f'Unkown model: {config.model}, only support models in {model_list}.')
@@ -158,7 +192,9 @@ def video_copy_detection(config):
     Define pipeline
     """
     allow_triton, emb_op = _get_embedding_op(config)
-    decode_op = ops.video_decode.ffmpeg(sample_type='time_step_sample', args={'time_step': 1})
+    decode_op = ops.video_decode.ffmpeg(
+        start_time=config.start_time, end_time=config.end_time, sample_type='time_step_sample', args={'time_step': 1}
+    )
     milvus_op = ops.ann_search.milvus_client(
         host=config.milvus_host,
         port=config.milvus_port,
@@ -173,6 +209,10 @@ def video_copy_detection(config):
         kv_op = ops.kvstorage.from_leveldb(path=config.leveldb_path, is_ndarray=True)
     select_op = ops.video_copy_detection.select_video(top_k=config.top_k, reduce_function='sum', reverse=True)
     tn_op = ops.video_copy_detection.temporal_network(min_length=config.min_similar_length)
-    norm_op = None if config.model == 'isc' else normalize
+    norm_op = None if config.model == 'isc' else ops.towhee.np_normalize()
+    filter_op = DuplicateFilter(config.threshold) if config.threshold else None
 
-    return _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, allow_triton, config.device)
+
+    return _video_copy_detection(
+        decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, config.tracer, allow_triton, config.device
+    )

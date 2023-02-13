@@ -22,19 +22,20 @@ def merge_ndarray(x):
     return np.concatenate(x).reshape(-1, x[0].shape[0])
 
 
-def normalize(x):
-    import numpy as np
-    return x / np.linalg.norm(x, axis=0)
-
-
 @AutoConfig.register
 class VideoEmbeddingConfig:
     """
     Config of pipeline
     """
     def __init__(self):
+        # decode op
+        # The range in the video to deocode
+        self.start_time = None
+        self.end_time = None
+
         # emb op
         self.model = 'isc'
+        self.img_size = 512
 
         # milvus op
         self.milvus_host = '127.0.0.1'
@@ -47,10 +48,13 @@ class VideoEmbeddingConfig:
         self.hbase_table = None
         self.leveldb_path = None
 
+        # tracer
+        self.tracer = False
+
         self.device = -1
 
 
-def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=False, device=-1):
+def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, tracer, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -64,11 +68,11 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=
                 .map('url', 'id', lambda x: x)
                 .flat_map('url', 'frames', decode_op)
                 .map('frames', 'emb', emb_op, config=op_config)
-                .map('emb', 'emb', normalize)
+                .map('emb', 'emb', norm_op)
                 .map(('id', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
                 .map(('id', 'video_emb'), ('insert_status'), kv_op)
-                .output()
+                .output(tracer=tracer)
         )
 
     def _unnorm():
@@ -80,11 +84,12 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=
                 .map(('id', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
                 .map(('id', 'video_emb'), ('insert_status'), kv_op)
-                .output()
+                .output(tracer=tracer)
         )
 
-    return _unnorm() if not norm_op else _norm()
-
+    if norm_op:
+        return _norm()
+    return _unnorm()
 
 def _get_embedding_op(config):
     if config.device == -1:
@@ -128,7 +133,7 @@ def _get_embedding_op(config):
         'vit_small_patch16_224'
     ]
     if config.model == 'isc':
-        return True, ops.image_embedding.isc(device=device)
+        return True, ops.image_embedding.isc(img_size=config.img_size, device=device)
     elif config.model in model_list:
         return True, ops.image_embedding.timm(model_name=config.model, device=device)
     raise RuntimeError(f'Unkown model: {config.model}, only support models in {model_list}.')
@@ -140,12 +145,14 @@ def video_embedding(config):
     Define pipeline
     """
     allow_triton, emb_op = _get_embedding_op(config)
-    decode_op = ops.video_decode.ffmpeg(sample_type='time_step_sample', args={'time_step': 1})
+    decode_op = ops.video_decode.ffmpeg(
+        start_time=config.start_time, end_time=config.end_time, sample_type='time_step_sample', args={'time_step': 1}
+    )
     milvus_op = ops.ann_insert.milvus_client(host=config.milvus_host, port=config.milvus_port, collection_name=config.collection)
     if config.hbase_table:
         kv_op = ops.kvstorage.insert_hbase(host=config.hbase_host, port=config.hbase_port, table=config.hbase_table)
     if config.leveldb_path:
         kv_op = ops.kvstorage.insert_leveldb(path=config.leveldb_path)
-    norm_op = None if config.model == 'isc' else normalize
+    norm_op = None if config.model == 'isc' else ops.towhee.np_normalize()
 
-    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton, config.device)
+    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, config.tracer, allow_triton, config.device)
