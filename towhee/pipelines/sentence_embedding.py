@@ -57,11 +57,6 @@ def _get_embedding_op(config):
     raise RuntimeError('Unkown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
 
 
-def normalize(vec):
-    import numpy as np  # pylint: disable=import-outside-toplevel
-    return vec / np.linalg.norm(vec)
-
-
 @AutoPipes.register
 def sentence_embedding(config=None):
     """
@@ -83,5 +78,5 @@ def sentence_embedding(config=None):
     )
 
     if config.normalize_vec:
-        p = p.map('vec', 'vec', normalize)
+        p = p.map('vec', 'vec', ops.towhee.np_normalize())
     return p.output('vec')
