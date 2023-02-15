@@ -53,11 +53,6 @@ def _text_embedding(emb_op, op_config):
     )
 
 
-def normalize(vec):
-    import numpy as np  # pylint: disable=import-outside-toplevel
-    return vec / np.linalg.norm(vec)
-
-
 @AutoPipes.register
 def text_image_embedding(config=None):
 
@@ -78,5 +73,5 @@ def text_image_embedding(config=None):
     else:
         RuntimeError('Unkown modality: %s, please use image | text' % config.modality)
     if config.normalize_vec:
-        p = p.map('vec', 'vec', normalize)
+        p = p.map('vec', 'vec', ops.towhee.np_normalize())
     return p.output('vec')
