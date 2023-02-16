@@ -71,7 +71,8 @@ def text_image_embedding(config=None):
     elif config.modality == 'text':
         p = _text_embedding(emb_op, op_config)
     else:
-        RuntimeError('Unkown modality: %s, please use image | text' % config.modality)
+        raise RuntimeError('Unknown modality: %s, please use image | text' % config.modality)
+
     if config.normalize_vec:
         p = p.map('vec', 'vec', ops.towhee.np_normalize())
     return p.output('vec')

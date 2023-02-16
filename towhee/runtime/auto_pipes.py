@@ -73,5 +73,5 @@ class AutoPipes:
             if name in AutoPipes._PIPES_DEF:
                 return AutoPipes._PIPES_DEF[name](*args, **kwargs)
 
-            engine_log.error('Can not found the pipline %s', name)
+            engine_log.error('Can not find the pipline %s', name)
             return None

@@ -75,7 +75,7 @@ class AutoConfig:
                 pipe_loader.PipelineLoader.load_pipeline(name)
             if name in AutoConfig._REGISTERED_CONFIG:
                 return AutoConfig._REGISTERED_CONFIG[name](*args, **kwargs)
-            engine_log.error('Can not found config: %s', name)
+            engine_log.error('Can not find config: %s', name)
             return None
 
     @staticmethod

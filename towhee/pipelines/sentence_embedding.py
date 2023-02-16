@@ -54,7 +54,7 @@ def _get_embedding_op(config):
     if config.model in _openai_models:
         return False, ops.sentence_embedding.openai(model_name=config.model,
                                                 api_key=config.openai_api_key)
-    raise RuntimeError('Unkown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
+    raise RuntimeError('Unknown model: [%s], only support: %s' % (config.model, _hf_models + _openai_models))
 
 
 @AutoPipes.register
