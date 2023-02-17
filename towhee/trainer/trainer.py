@@ -16,7 +16,6 @@
 import math
 import os
 import torch
-import torch.distributed as dist
 
 from typing import Union, Any, Optional
 from pathlib import Path
@@ -26,7 +25,6 @@ from torch import optim
 from torch.optim import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
-import torch.multiprocessing as mp
 
 from towhee.data.dataset.dataset import TowheeDataSet, TorchDataSet
 
@@ -216,55 +214,11 @@ class Trainer:
             resume_checkpoint_path (`int`):
                 The path to start resume training.
         """
-        if self.configs.device_str == "cuda":
-            self.distributed = True
-            self._spawn_train_process(resume_checkpoint_path)
-        else:
-            self.distributed = False
-            self.run_train(None, None, resume_checkpoint_path)
+        self._run_train(resume_checkpoint_path)
 
-    def _spawn_train_process(self, resume_checkpoint_path: Optional[str]):
-        world_size = torch.cuda.device_count()
-        mp.spawn(self.run_train,
-                 args=(world_size, resume_checkpoint_path),
-                 nprocs=world_size,  # opt.world_size,
-                 join=True)
-
-    def _init_distributed(self, rank: int, world_size: int):
-        if self.distributed:
-            if torch.cuda.is_available() is False:
-                raise EnvironmentError("not find GPU device for training.")
-            os.environ["MASTER_ADDR"] = "localhost"
-            os.environ["MASTER_PORT"] = "12355"
-            trainer_log.warning("_init_distributed(), rank=%s", rank)
-            torch.cuda.set_device(rank)
-            dist_backend = "nccl"
-            dist_url = "env://"
-            trainer_log.warning("| distributed init (rank %s): %s", rank, dist_url)
-            dist.init_process_group(backend=dist_backend, init_method=dist_url,
-                                    world_size=world_size, rank=rank)
-            dist.barrier()
-
-    def _load_before_train(self, resume_checkpoint_path: Optional[str], rank: Optional[int]):
-        sync_bn = self.configs.sync_bn
+    def _load_before_train(self, resume_checkpoint_path: Optional[str]):
         if resume_checkpoint_path is not None:
-            # weights_dict = torch.load(weights_path, map_location=device)
-            # load_weights_dict = {k: v for k, v in weights_dict.items()
-            #                      if model.state_dict()[k].numel() == v.numel()}
-            # model.load_state_dict(load_weights_dict, strict=False)
             self.load(resume_checkpoint_path)
-        else:  # if using multi gpu and not resume, must keep model replicas in all processes are the same
-            if self.distributed:
-                # checkpoint_path = os.path.join(tempfile.gettempdir(), TEMP_INIT_WEIGHTS)
-                checkpoint_path = TEMP_INIT_WEIGHTS
-                if rank == 0:
-                    torch.save(self.model.state_dict(), checkpoint_path)
-                dist.barrier()
-                self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.configs.device))
-        if self.distributed:
-            self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[rank])
-            if sync_bn:
-                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.configs.device)
 
     def _create_logs(self):
         logs = {"global_step": 0, "epoch": self.epoch}
@@ -275,26 +229,27 @@ class Trainer:
     def prepare_inputs(self, inputs: Any):
         return send_to_device(inputs, self.configs.device)
 
-    def run_train(self, rank: int = None, world_size: int = None, resume_checkpoint_path: str = None):
+    def _run_train(self, resume_checkpoint_path: str = None):
         """
         Main training entry point.
         It is not recommended for users to use it unless over rewriting Trainer.
         Instead, it is recommended to use `trainer.train()` to start training.
 
         Args:
-            rank (`int`):
-                Process rank when using multi gpus.
-            world_size (`int`):
-                Total processes count.
             resume_checkpoint_path (`str`):
                 Last checkpoint path.
         """
         set_seed(self.configs.seed)
-        self._init_distributed(rank, world_size)
-        self.model = self.model.to(self.configs.device)
-        model = self.model
+
         self.trainercontrol = TrainerControl()
-        self._load_before_train(resume_checkpoint_path, rank)
+        self._load_before_train(resume_checkpoint_path)
+
+        if self.configs.device_str == "cuda":
+            self.model = nn.DataParallel(self.model)
+        else:
+            self.model = self.model.to(self.configs.device)
+        model = self.model
+
         # Keeping track whether we can can len() on the dataset or not
         # train_dataset_is_sized = isinstance(self.train_dataset, collections.abc.Sized)
 
@@ -325,9 +280,6 @@ class Trainer:
             self.set_train_mode(model)
             self._reset_controller()
             self.optimizer.zero_grad()
-            # if self.distributed: # todo
-                # self.train_sampler.set_epoch(self.epoch)
-            # batch_loss_sum = 0.0
             self.callbacks.on_epoch_begin(self.epoch, logs)
             self.loss_metric.reset()
             self.metric.reset()
@@ -362,7 +314,6 @@ class Trainer:
                     overwrite=self.configs.overwrite_output_dir
                 )
         trainer_log.info("\nTraining completed.\n")
-        self._cleanup_distributed(rank)
         self.callbacks.on_train_end(logs)
         self.save(
             path=Path(self.configs.output_dir).joinpath("final_epoch"),
@@ -541,7 +492,6 @@ class Trainer:
                 Step logs which contains the step loss and metric infos.
         """
         step_loss = self.compute_loss(model, inputs)
-        step_loss = reduce_value(step_loss, average=True)
         step_loss.backward()
         step_loss = step_loss.detach()
 
@@ -552,15 +502,6 @@ class Trainer:
         self.optimizer.zero_grad()
         step_logs = {"step_loss": step_loss.item(), "epoch_loss": loss_metric, "epoch_metric": epoch_metric}
         return step_logs
-
-    def _cleanup_distributed(self, rank: int):
-        if self.distributed:
-            if rank == 0:
-                if Path(TEMP_INIT_WEIGHTS).exists() is True:
-                    os.remove(TEMP_INIT_WEIGHTS)
-            # if is_main_process():
-            # self.model = unwrap_model(self.model)
-            dist.destroy_process_group()
 
     def compute_loss(self, model: nn.Module, inputs: Any):
         """
@@ -687,30 +628,14 @@ class Trainer:
         if isinstance(self.train_dataset, TorchDataSet):
             self.train_dataset = self.train_dataset.dataset
         num_workers = self._get_num_workers()
-        # if isinstance(self.train_dataset, IterableDataset):
-        #     return DataLoader(
-        #         self.train_dataset,
-        #         batch_size=self.configs.train_batch_size,
-        #     )
-        if not self.distributed:
-            return DataLoader(
-                self.train_dataset,
-                batch_size=self.configs.train_batch_size,
-                shuffle=True,
-                num_workers=num_workers,  # self.configs.dataloader_num_workers,
-                pin_memory=self.configs.dataloader_pin_memory,
-                drop_last=self.configs.dataloader_drop_last
-            )
-        else:
-            # self.train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
-            train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_dataset)
-            train_batch_sampler = torch.utils.data.BatchSampler(
-                train_sampler, self.configs.batch_size, drop_last=True)
-            return torch.utils.data.DataLoader(self.train_dataset,
-                                               batch_sampler=train_batch_sampler,
-                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
-                                               pin_memory=self.configs.dataloader_pin_memory,
-                                               )
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.configs.train_batch_size,
+            shuffle=True,
+            num_workers=num_workers,  # self.configs.dataloader_num_workers,
+            pin_memory=self.configs.dataloader_pin_memory,
+            drop_last=self.configs.dataloader_drop_last
+        )
 
     def get_eval_dataloader(self) -> Optional[DataLoader]:
         """
@@ -727,29 +652,14 @@ class Trainer:
             return None
         if isinstance(self.eval_dataset, TorchDataSet):
             self.eval_dataset = self.eval_dataset.dataset
-        # if isinstance(self.eval_dataset, IterableDataset):
-        #     return DataLoader(
-        #         self.eval_dataset,
-        #         batch_size=self.configs.eval_batch_size,
-        #     )
         num_workers = self._get_num_workers()
-        if not self.distributed:
-            return DataLoader(
-                self.eval_dataset,
-                batch_size=self.configs.eval_batch_size,
-                num_workers=num_workers,  # self.configs.dataloader_num_workers,
-                pin_memory=self.configs.dataloader_pin_memory,
-                drop_last=self.configs.dataloader_drop_last
-            )
-        else:
-            eval_sampler = torch.utils.data.distributed.DistributedSampler(self.eval_dataset)
-            eval_batch_sampler = torch.utils.data.BatchSampler(
-                eval_sampler, self.configs.batch_size, drop_last=True)
-            return torch.utils.data.DataLoader(self.eval_dataset,
-                                               batch_sampler=eval_batch_sampler,
-                                               num_workers=num_workers,  # self.configs.dataloader_num_workers,
-                                               pin_memory=self.configs.dataloader_pin_memory,
-                                               )
+        return DataLoader(
+            self.eval_dataset,
+            batch_size=self.configs.eval_batch_size,
+            num_workers=num_workers,  # self.configs.dataloader_num_workers,
+            pin_memory=self.configs.dataloader_pin_memory,
+            drop_last=self.configs.dataloader_drop_last
+        )
 
     def setup_before_train(self, num_training_steps: int, init_lr: float):
         """
@@ -790,7 +700,7 @@ class Trainer:
                                         **self.configs.tensorboard))
 
     def _create_metric(self):
-        self.metric = get_metric_by_name(self.configs.metric)
+        self.metric = get_metric_by_name(self.configs.metric)  # , dist_sync_on_step=True)
         self.metric.to(self.configs.device)
         self.loss_metric = get_metric_by_name("MeanMetric")
         self.loss_metric.to(self.configs.device)
