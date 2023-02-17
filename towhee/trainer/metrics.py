@@ -183,10 +183,10 @@ class TMMetrics(Metrics):
 
         return list(cls._metrics_list.keys())
 
-    def __init__(self, metric_name: str):
+    def __init__(self, metric_name: str, **kwargs):
         super().__init__(metric_name)
         assert metric_name in TMMetrics._metrics_list
-        self._metric = TMMetrics._metrics_list[metric_name]()
+        self._metric = TMMetrics._metrics_list[metric_name](**kwargs)
 
     def update(self, *_: Any, **__: Any) -> None:
         self._metric.update(*_,**__)
@@ -231,7 +231,7 @@ def show_avaliable_metrics() -> Dict:
     global _metrics_meta
     return _metrics_meta
 
-def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics') -> Metrics:
+def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics', **kwargs) -> Metrics:
     """
     Get the `Metrics` class by metric names, and metric_impl should be the specific implementation class.
 
@@ -253,6 +253,6 @@ def get_metric_by_name(metric_name: str, metric_impl: str = 'TMMetrics') -> Metr
         True
     """
     global _metrics_impls
-    return _metrics_impls[metric_impl](metric_name)
+    return _metrics_impls[metric_impl](metric_name, **kwargs)
 
 _generate_meta_info()

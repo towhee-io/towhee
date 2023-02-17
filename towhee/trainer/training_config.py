@@ -140,8 +140,6 @@ class TrainingConfig:
             Linear warmup over warmup_ratio fraction of total steps.
         device_str (`str`):
             Device string.
-        sync_bn (`bool`):
-            It will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.
         freeze_bn (`bool`):
             It will completely freeze all BatchNorm layers during training.
     """
@@ -183,9 +181,9 @@ class TrainingConfig:
         default=0,
         metadata={
             HELP:
-                "Number of subprocesses to use for data loading."
-                "default 0 means that the data will be loaded in the main process."
-                "-1 means using all the cpu kernels,"
+                "Number of subprocesses to use for data loading. "
+                "Default 0 means that the data will be loaded in the main process. "
+                "-1 means using all the cpu kernels, "
                 "it will greatly improve the speed when distributed training.",
             CATEGORY:
                 "train"
@@ -199,7 +197,7 @@ class TrainingConfig:
     print_steps: Optional[int] = field(
         default=None,
         metadata={
-            HELP: "if None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`",
+            HELP: "If None, use the tqdm progress bar, otherwise it will print the logs on the screen every `print_steps`",
             CATEGORY: "logging"
         }
     )
@@ -241,17 +239,16 @@ class TrainingConfig:
         default=None,
         metadata={
             HELP:
-                ("None -> if there is a cuda env in the machine, it will use cuda:0, else cpu;"
-                 "`cpu` -> use cpu only;"
-                 "`cuda:2` -> use the No.2 gpu."),
+                ("None -> If there is a cuda env in the machine, it will use cuda:0, else cpu.\n"
+                 "`cpu` -> Use cpu only.\n"
+                 "`cuda:2` -> Use the No.2 gpu, the same for other numbers.\n"
+                 "`cuda` -> Use all available gpu, using data parallel. "
+                 "If you want to use several specified gpus to run, you can specify the environment variable "
+                 "`CUDA_VISIBLE_DEVICES` as the number of gpus you need before running your training script."),
             CATEGORY:
                 "device"
         }
     )
-    sync_bn: bool = field(default=False, metadata={
-        HELP: "will be work if device_str is `cuda`, the True sync_bn would make training slower but acc better.",
-        CATEGORY: "device"
-    })
     freeze_bn: bool = field(default=False,
                             metadata={HELP: "will completely freeze all BatchNorm layers during training.",
                                       CATEGORY: "train"})
