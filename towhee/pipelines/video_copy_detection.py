@@ -105,21 +105,17 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
                 .map('frames', 'emb', emb_op, config=op_config)
         )
 
-    merge_pipe = (
-        emb_pipe.window_all('emb', 'video_emb', merge_ndarray)
-    )
-
     search_pipe = (
         emb_pipe.flat_map('emb', 'res', milvus_op)
             .window_all('res', ('retrieved_urls', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
             .flat_map(('retrieved_urls','score'),'candidates', select_op)
             .map('candidates', 'retrieved_emb', kv_op)
+            .window_all('emb', 'video_emb', merge_ndarray)
     )
 
     if filter_op:
         detect_pipe = (
-            search_pipe.concat(merge_pipe)
-                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
+            search_pipe.map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
                 .filter(
                     ('candidates', 'similar_segment', 'segment_score'),
                     ('candidates', 'similar_segment', 'segment_score'),
@@ -130,8 +126,7 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
         )
     else:
         detect_pipe = (
-            search_pipe.concat(merge_pipe)
-                .map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
+            search_pipe.map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
                 .output('url', 'candidates', 'similar_segment', 'segment_score', tracer=tracer)
         )
 

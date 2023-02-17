@@ -51,10 +51,8 @@ class SchemaRepr:
         Returns:
             SchemaRepr object.
         """
-        if iter_type in ['flat_map', 'window', 'time_window']:
+        if iter_type in ['flat_map', 'window', 'time_window', 'concat']:
             col_type = ColumnType.QUEUE
-        elif iter_type == 'concat':
-            col_type = inputs_type[0]
         elif iter_type == 'window_all':
             col_type = ColumnType.SCALAR
         elif inputs_type is None:
