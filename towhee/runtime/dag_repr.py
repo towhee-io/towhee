@@ -150,13 +150,16 @@ class DAGRepr:
                 ahead_schema.remove(x)
                 used_schema.add(x)
             next_nodes = nodes[n].next_nodes
-            if len(ahead_schema) == 0 or next_nodes is None:
+            if len(ahead_schema) == 0:
                 break
+            if next_nodes is None:
+                continue
 
             for i in next_nodes[::-1]:
                 if i not in visited:
                     stack.append(i)
-                    visited.append(i)
+            visited.append(n)
+
         return used_schema
 
     @staticmethod

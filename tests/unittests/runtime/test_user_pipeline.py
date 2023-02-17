@@ -17,7 +17,6 @@ import unittest
 from towhee.runtime.pipeline import Pipeline
 from towhee.runtime.factory import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
-from towhee.runtime.data_queue import Empty
 
 
 # pylint: disable=protected-access
@@ -273,8 +272,8 @@ class TestPipeline(unittest.TestCase):
         data = [(i, i * 1000) for i in range(10) if i < 3 or i > 7]
         res = pipe(data)
         self.assertEqual(res.get(), [3, 5, 6, 7])
-        self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
-        self.assertEqual(res.get(), [1, Empty(), Empty(), Empty()])
+        self.assertEqual(res.get(), [1, 5, 6, 7])
+        self.assertEqual(res.get(), [1, 5, 6, 7])
         self.assertEqual(res.get(), None)
 
     def test_filter_coverage(self):

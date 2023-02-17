@@ -51,16 +51,17 @@ class SchemaRepr:
         Returns:
             SchemaRepr object.
         """
-        if iter_type in ['flat_map', 'window', 'time_window', 'concat']:
+        if iter_type in ['flat_map', 'window', 'time_window']:
             col_type = ColumnType.QUEUE
+        elif iter_type == 'concat':
+            col_type = inputs_type[0]
         elif iter_type == 'window_all':
             col_type = ColumnType.SCALAR
-        elif inputs_type is None:
-            col_type = ColumnType.SCALAR
         elif iter_type in ['map', 'filter']:
-            col_type = ColumnType.SCALAR
-            if ColumnType.QUEUE in inputs_type:
+            if inputs_type is not None and ColumnType.QUEUE in inputs_type:
                 col_type = ColumnType.QUEUE
+            else:
+                col_type = ColumnType.SCALAR
         else:
             engine_log.error('Unknown iteration type: %s', iter_type)
             raise ValueError(f'Unknown iteration type: {iter_type}')
