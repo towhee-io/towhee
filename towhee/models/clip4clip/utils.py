@@ -40,7 +40,7 @@ def convert_tokens_to_id(tokenizer: SimpleTokenizer, words: str, max_words: int 
     special_token = {"CLS_TOKEN": "<|startoftext|>", "SEP_TOKEN": "<|endoftext|>",
                      "MASK_TOKEN": "[MASK]", "UNK_TOKEN": "[UNK]", "PAD_TOKEN": "[PAD]"}
 
-    pairs_text = np.zeros((1, max_words), dtype=np.long)
+    pairs_text = np.zeros((1, max_words), dtype=np.int32)
 
     words = tokenize(words)
     words = [special_token["CLS_TOKEN"]] + words
