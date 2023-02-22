@@ -25,5 +25,6 @@ except ModuleNotFoundError:
 
 try:
     import torchmetrics
+    assert torchmetrics.__version__ == "0.7.0"
 except ModuleNotFoundError:
-    os.system("pip install torchmetrics")
+    os.system("pip install torchmetrics==0.7.0")
