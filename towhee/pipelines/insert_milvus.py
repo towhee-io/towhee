@@ -33,11 +33,11 @@ class MilvusInsertConfig:
 def milvus_insert_pipe(config):
     return (
         pipe.input('row')
-        .map('row', (), ops.ann_insert.milvus_client(host=config.host,
+        .map('row', 'mr', ops.ann_insert.milvus_client(host=config.host,
                                                      port=config.port,
                                                      collection_name=config.collection_name,
                                                      user=config.user,
                                                      password=config.password
                                                      ))
-        .output()
+        .output('mr')
     )
