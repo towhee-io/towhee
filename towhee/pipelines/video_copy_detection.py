@@ -108,9 +108,9 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
     search_pipe = (
         emb_pipe.flat_map('emb', 'res', milvus_op)
             .window_all('res', ('retrieved_urls', 'score'), lambda x: ([i[2] for i in x], [i[1] for i in x]))
+            .window_all('emb', 'video_emb', merge_ndarray)
             .flat_map(('retrieved_urls','score'),'candidates', select_op)
             .map('candidates', 'retrieved_emb', kv_op)
-            .window_all('emb', 'video_emb', merge_ndarray)
     )
 
     if filter_op:
@@ -159,12 +159,10 @@ def _get_embedding_op(config):
         'coat_lite_small',
         'coat_lite_tiny',
         'deit_tiny_patch16_224',
-        'coat_mini',
         'gmlp_s16_224',
         'cait_xxs24_224',
         'cait_s24_224',
         'levit_128',
-        'coat_tiny',
         'cait_xxs36_224',
         'levit_192',
         'levit_256',
