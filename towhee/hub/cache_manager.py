@@ -16,7 +16,6 @@ import os
 from pathlib import Path
 import threading
 
-from towhee.utils.log import engine_log
 from .downloader import download_operator, operator_tag_path
 
 DEFAULT_CACHE_DIR = '~/.towhee'
@@ -79,7 +78,7 @@ class CacheManager:
             raise ValueError('''Incorrect operator format, should be '<author>/<operator_repo>'.''')
         author, repo = operator_split
         op_path = self._op_cache_name(author, repo, tag)
-    
+
         if op_path.is_dir():
             return op_path
 

@@ -75,7 +75,7 @@ class _HubFiles:
         self._meta_infos = meta_infos
 
     @property
-    def files(self):
+    def file_path(self):
         files_dir = self._root / 'files'
         files_dir.mkdir(parents=True, exist_ok=True)
         return files_dir
@@ -89,7 +89,7 @@ class _HubFiles:
     @property
     def requirements(self):
         for item in self._meta_infos:
-            if item['type'] == 'blob' and item['path'] == 'requirements':
+            if item['type'] == 'blob' and item['path'] == 'requirements.txt':
                 return self.get_tag_path() / item['path']
         return None
 
@@ -106,7 +106,7 @@ class _HubFiles:
         for item in self._meta_infos:
             if item['type'] == 'tree':
                 continue
-            pair.append((Path(item['path']), self.files / item['sha']))
+            pair.append((Path(item['path']), self.file_path / item['sha']))
         return pair
 
     def local_url_pair(self):
@@ -114,11 +114,14 @@ class _HubFiles:
         for item in self._meta_infos:
             if item['type'] == 'tree':
                 continue
-            pair.append((self.files / item['sha'], item['downloadLink']))
+            pair.append((self.file_path / item['sha'], item['downloadLink']))
         return pair
 
 
 class _Downloader:
+    """
+    Download op
+    """
     def __init__(self, hub_files: 'HubFiles'):
         self._hub_files = hub_files
 
@@ -162,7 +165,7 @@ def download_operator(author: str, repo: str, tag: str, op_path: Path, install_r
     ht = HubUtils(author, repo, hub_url)
     meta = ht.branch_tree(tag)
     if meta is None:
-        raise RuntimeError("Fetch op {}/{}:{} info failed", author, repo, tag)
+        raise RuntimeError('Fetch op {}/{}:{} info failed'.format(author, repo, tag))
     fs = _HubFiles(op_path, tag, meta)
     _Downloader(fs).download()
     fs.symlink_files()
