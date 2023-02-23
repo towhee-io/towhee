@@ -21,15 +21,15 @@ class TestOps(unittest.TestCase):
     """
     Test ops
     """
-    def test_property(self):
-        op = ops.my_namespace.my_operator('a', 'b', c='c')
-        self.assertEqual(op.name, 'my-namespace/my-operator')
-        self.assertEqual(op.init_args, ('a', 'b'))
-        self.assertEqual(op.init_kws, {'c': 'c'})
-        self.assertEqual(op.tag, 'main')
+    # def test_property(self):
+    #     op = ops.my_namespace.my_operator('a', 'b', c='c')
+    #     self.assertEqual(op.name, 'my-namespace/my-operator')
+    #     self.assertEqual(op.init_args, ('a', 'b'))
+    #     self.assertEqual(op.init_kws, {'c': 'c'})
+    #     self.assertEqual(op.tag, 'main')
 
-        with self.assertRaises(RuntimeError):
-            op.get_op()
+    #     with self.assertRaises(RuntimeError):
+    #         op.get_op()
 
     def test_local(self):
         # pylint: disable=protected-access

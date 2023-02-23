@@ -11,3 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.s
+
+
+from .cache_manager import CacheManager, set_local_dir
+from .downloader import set_hub_url
+
+_CACHE_MANAGER = CacheManager()
+
+
+def get_operator(operator: str, tag: str, install_reqs: bool = True):
+    return _CACHE_MANAGER.get_operator(operator, tag, install_reqs)
+
+
+__all__ = [
+    'set_local_dir',
+    'set_hub_url',
+    'get_operator'
+]

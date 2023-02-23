@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests
 import random
+import traceback
+import requests
 from requests.exceptions import HTTPError
 from requests.auth import HTTPBasicAuth
+
+from towhee.utils.log import engine_log
 
 
 class HubUtils:
@@ -428,3 +431,13 @@ class HubUtils:
             file_text = file_text.replace(ori_str, tar_str)
         with open(new_file, 'w', encoding='utf-8') as f2:
             f2.write(file_text)
+
+    def branch_tree(self, tag):
+        url = f'{self._root}/towhee-api/v1/repos/{self._author}/{self._repo}/tree?recursive=true&ref={tag}'
+        try:
+            r = requests.get(url)
+            return r.json()
+        except Exception as e:  # pylint: disable=broad-except
+            err = '{}, {}'.format(str(e), traceback.format_exc())
+            engine_log.error(err)
+            return None
