@@ -147,7 +147,8 @@ class OperatorLoader:
             op = factory(function, arg, kws, tag)
             if op is not None:
                 return op
-        return None
+        if op is None:
+            raise RuntimeError('Load operator failed')
 
     def _instance_operator(self, op, arg: List[Any], kws: Dict[str, Any]) -> Operator:
         if arg is None:

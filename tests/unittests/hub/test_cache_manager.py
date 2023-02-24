@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import unittest
-from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from towhee.hub.cache_manager import CacheManager
 
@@ -29,4 +27,5 @@ class TestCacheManager(unittest.TestCase):
 
 
     def test_download_op(self):
-        CacheManager().get_operator('my-namespace/my-operator', 'main', True)
+        CacheManager().get_operator('image-decode/cv2-rgb', 'main', True)
+        CacheManager().get_operator('image-decode/cv2', 'main', True)

@@ -83,8 +83,7 @@ class TestDownloader(unittest.TestCase):
 
     def test_download_op(self):
         with TemporaryDirectory(dir='./') as root:
-            download_operator('my-namespace', 'my-operator', 'main', root)
-            op_root = Path(root) / 'my_namespace' / 'my_operator'
-            self.assertTrue(op_root.is_dir())
+            download_operator('image-decode', 'cv2-rgb', 'main', root)
+            op_root = Path(root)
             self.assertTrue((op_root / 'files').is_dir())
             self.assertTrue((op_root / 'versions' / 'main').is_dir())

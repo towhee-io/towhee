@@ -37,11 +37,9 @@ class TestFileManager(unittest.TestCase):
         fmc.remove_cache_path(Path('test_path'))
         self.assertNotIn(Path('test_path'), towhee.cache_paths)
 
-    def test_update_default(self):
         towhee.update_default_cache('test_path')
         self.assertEqual(towhee.cache_paths[-1], Path('test_path'))
         towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
 
-    def test_reset_cache_path(self):
         fmc.reset_cache_path()
         self.assertEqual(len(fmc.cache_paths), 1)
