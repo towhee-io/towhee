@@ -436,6 +436,7 @@ class HubUtils:
         url = f'{self._root}/towhee-api/v1/repos/{self._author}/{self._repo}/tree?recursive=true&ref={tag}'
         try:
             r = requests.get(url)
+            r.raise_for_status()
             return r.json()
         except Exception as e:  # pylint: disable=broad-except
             err = '{}, {}'.format(str(e), traceback.format_exc())
