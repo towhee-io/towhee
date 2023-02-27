@@ -94,7 +94,7 @@ class _HubFiles:
         return None
 
     def symlink_files(self):
-        tmp_dir = Path(tempfile.mkdtemp())
+        tmp_dir = Path(tempfile.mkdtemp(dir=self._root))
         for dst, src in self.symlink_pair():
             dst_file = tmp_dir / dst
             dst_file.parent.mkdir(parents=True, exist_ok=True)

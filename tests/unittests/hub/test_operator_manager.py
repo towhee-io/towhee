@@ -21,7 +21,7 @@ from towhee.utils.git_utils import GitUtils
 from towhee.hub.operator_manager import OperatorManager
 
 
-
+@unittest.skip('no git cmd')
 class TestOperatorManager(unittest.TestCase):
     """
     Unit test for OperatorManager.
