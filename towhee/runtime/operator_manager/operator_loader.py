@@ -112,7 +112,7 @@ class OperatorLoader:
 
         op = self._load_op(modname, path, fname)
         if not op:
-            engine_log.warning('The operator\'s format is outdated.')
+            engine_log.warning('Load operator %s:%s:%s failed, try to use the legacy type' , modname, path, fname)
             op = self._load_legacy_op(modname, path, fname)
 
         return self._instance_operator(op, arg, kws) if op is not None else None
