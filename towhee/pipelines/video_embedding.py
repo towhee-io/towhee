@@ -65,25 +65,23 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, tracer, allow
     def _norm():
         return (
             pipe.input('url')
-                .map('url', 'id', lambda x: x)
                 .flat_map('url', 'frames', decode_op)
                 .map('frames', 'emb', emb_op, config=op_config)
                 .map('emb', 'emb', norm_op)
-                .map(('id', 'emb'), 'milvus_res', milvus_op)
+                .map(('url', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
-                .map(('id', 'video_emb'), ('insert_status'), kv_op)
+                .map(('url', 'video_emb'), ('insert_status'), kv_op)
                 .output(tracer=tracer)
         )
 
     def _unnorm():
         return (
             pipe.input('url')
-                .map('url', 'id', lambda x: x)
                 .flat_map('url', 'frames', decode_op)
                 .map('frames', 'emb', emb_op, config=op_config)
-                .map(('id', 'emb'), 'milvus_res', milvus_op)
+                .map(('url', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
-                .map(('id', 'video_emb'), ('insert_status'), kv_op)
+                .map(('url', 'video_emb'), ('insert_status'), kv_op)
                 .output(tracer=tracer)
         )
 
