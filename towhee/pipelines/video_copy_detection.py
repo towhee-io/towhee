@@ -174,6 +174,8 @@ def video_copy_detection(config):
     """
     Define pipeline
     """
+    if config.start_time and config.end_time and config.start_time >= config.end_time:
+        raise ValueError('Start time should be earlier than end time in pipeline config.')
     allow_triton, emb_op = _get_embedding_op(config)
     decode_op = ops.video_decode.ffmpeg(
         start_time=config.start_time, end_time=config.end_time, sample_type='time_step_sample', args={'time_step': 1}
