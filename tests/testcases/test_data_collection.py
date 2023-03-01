@@ -308,6 +308,32 @@ class TestPipeAPIsInvalid:
 
         return True
 
+    def test_data_collection_batch_invalid(self):
+        """
+        target: test batch() API for invalid scenario
+        method: input invalid type(not list)
+        expected: raise exception
+        """
+        p = pipe.input('a').map('a', 'b', lambda x: x + 1).output('b')
+
+        # input 'int'
+        try:
+            p.batch(1)
+        except Exception as e:
+            assert "'int' object is not iterable" in str(e)
+
+        # input 'str'
+        try:
+            p.batch('a')
+        except Exception as e:
+            assert 'can only concatenate str (not "int") to str' in str(e)
+
+        # input 'dict'
+        try:
+            p.batch({'a': 1})
+        except Exception as e:
+            assert 'can only concatenate str (not "int") to str' in str(e)
+
 
 class TestDataCollectionAPIsValid:
     """ Test case of valid data collection interface """
@@ -846,3 +872,24 @@ class TestDataCollectionAPIsValid:
         assert p(10).get() == [11]
 
         return True
+
+    def test_data_collection_batch(self):
+        """
+        target: test batch() API for pipeline
+        method: input a list to Batch run the callable pipeline
+        expected: output successfully
+        """
+        p = pipe.input('a').map('a', 'b', lambda x: x + 1).output('b')
+        res = p.batch([1, 2, 3])
+        assert [r.get() for r in res] == [[2], [3], [4]]
+
+        def func(x, y):
+            return x + y, x - y
+        p = pipe.input('a', 'b').map(('a', 'b'), ('c', 'd'), func).output('c', 'd')
+        res = p.batch([[1, 1], [100, 100]])
+        assert [r.get() for r in res] == [[2, 0], [200, 0]]
+
+        # input 'tuple'
+        p = pipe.input('a').map('a', 'b', lambda x: x + 1).output('b')
+        res = p.batch((2, 3))
+        assert [r.get() for r in res] == [[3], [4]]
