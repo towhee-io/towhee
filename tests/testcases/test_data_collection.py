@@ -348,7 +348,7 @@ class TestDataCollectionAPIsValid:
         expected: return map successfully
         """
         data = []
-        dc =towhee.dc(data)
+        dc = towhee.dc(data)
         dc = dc.map(str)
         result = dc.to_list()
         assert result == data

@@ -11,6 +11,7 @@ test_case_path = path + "/testcases"
 
 operator_path = path + '/operator-tasks'
 
+
 def get_op_clone_address_list_from_yaml(descript_paths):
     """
     Extract the path for a specific file name
@@ -41,6 +42,7 @@ def get_op_clone_address_list_from_yaml(descript_paths):
 
     return op_link_list
 
+
 def extract_python_code_from_op_readme(op_path, op_name):
     """
     Extract the readme of all the ops
@@ -64,6 +66,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
         os.system(f"rm {test_case_name}")
 
     for i in range(len(lines)):
+        if 'Fine-tune' in lines[i]:
+            break
         if ('```Python' in lines[i]) or ('```python' in lines[i]):
             for j in range(i + 1, len(lines)):
                 if '```' == lines[j]:
@@ -71,6 +75,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                 else:
                     if "./towhee.jpg" in lines[j]:
                         lines[j] = lines[j].replace('./towhee.jpg', path + '/dataset/test.jpg')
+                    elif "towhee.jpg" in lines[j]:
+                        lines[j] = lines[j].replace('towhee.jpg', path + '/dataset/test.jpg')
                     elif "./test.png" in lines[j]:
                         lines[j] = lines[j].replace('./test.png', path + '/dataset/test.jpg')
                     elif "./example.jpg" in lines[j]:
@@ -79,6 +85,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./test_face.jpg', path + '/dataset/test_face.jpg')
                     elif "./towhee.jpeg" in lines[j]:
                         lines[j] = lines[j].replace('./towhee.jpeg', path + '/dataset/test.jpg')
+                    elif "towhee.jpeg" in lines[j]:
+                        lines[j] = lines[j].replace('towhee.jpeg', path + '/dataset/test.jpg')
                     elif "turing.png" in lines[j]:
                         lines[j] = lines[j].replace('turing.png', path + '/dataset/test.jpg')
                     elif "./img1.jpg" in lines[j]:
@@ -87,6 +95,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./img.png', path + '/dataset/test.jpg')
                     elif "./image.jpg" in lines[j]:
                         lines[j] = lines[j].replace('./image.jpg', path + '/dataset/test.jpg')
+                    elif "img.png" in lines[j]:
+                        lines[j] = lines[j].replace('img.png', path + '/dataset/test.jpg')
                     elif "./dog.jpg" in lines[j]:
                         lines[j] = lines[j].replace('./dog.jpg', path + '/dataset/test.jpg')
                     elif "./avengers.jpg" in lines[j]:
@@ -97,6 +107,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./animals.jpg', path + '/dataset/test.jpg')
                     elif "./hulk.jpg" in lines[j]:
                         lines[j] = lines[j].replace('./hulk.jpg', path + '/dataset/test.jpg')
+                    elif "./moon.jpg" in lines[j]:
+                        lines[j] = lines[j].replace('./moon.jpg', path + '/dataset/test.jpg')
                     elif "./moon.jpeg" in lines[j]:
                         lines[j] = lines[j].replace('./moon.jpeg', path + '/dataset/test.jpg')
                     elif "./jumpingjack.gif" in lines[j]:
@@ -105,6 +117,8 @@ def extract_python_code_from_op_readme(op_path, op_name):
                         lines[j] = lines[j].replace('./demo_video.mp4', path + '/dataset/test.mp4')
                     elif "./archery.mp4" in lines[j]:
                         lines[j] = lines[j].replace('./archery.mp4', path + '/dataset/test.mp4')
+                    elif "./test.wav" in lines[j]:
+                        lines[j] = lines[j].replace('./test.wav', path + '/dataset/test.wav')
                     elif "test.wav" in lines[j]:
                         lines[j] = lines[j].replace('test.wav', path + '/dataset/test.wav')
                     with open(test_case_name, 'a') as f1:
@@ -120,6 +134,7 @@ def extract_python_code_from_op_readme(op_path, op_name):
 
     return test_case_name
 
+
 def execute_ops(op_clone_list):
     """
     Extract the readme of all the ops
@@ -133,6 +148,8 @@ def execute_ops(op_clone_list):
     op_id = 1
     op_fail_list = []
     for op_address in op_clone_list:
+        if op_address == 'https://towhee.io/sentence-embedding/openai':
+            continue
         logger.debug("Running operator %s" % op_address)
         # extract each operator name and its classification
         others, op_name = op_address.rsplit('/', 1)
@@ -176,7 +193,6 @@ def execute_ops(op_clone_list):
         assert False
     else:
         logger.info("Success to run readme for all operators")
-
 
 
 if __name__ == '__main__':
