@@ -10,21 +10,22 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.s
+# limitations under the License.
+
+import unittest
+
+from towhee.hub.cache_manager import CacheManager
 
 
-from .cache_manager import CacheManager, set_local_dir
-from .downloader import set_hub_url
+class TestCacheManager(unittest.TestCase):
+    """
+    Simple hub download and run test.
+    """
+    def test_error_repo(self):
+        with self.assertRaises(RuntimeError):
+            CacheManager().get_operator('No-user/No-op', 'main', True)
 
-_CACHE_MANAGER = CacheManager()
 
-
-def get_operator(operator: str, tag: str, install_reqs: bool = True):
-    return _CACHE_MANAGER.get_operator(operator, tag, install_reqs)
-
-
-__all__ = [
-    'set_local_dir',
-    'set_hub_url',
-    'get_operator'
-]
+    def test_download_op(self):
+        CacheManager().get_operator('image-decode/cv2-rgb', 'main', True)
+        CacheManager().get_operator('image-decode/cv2', 'main', True)

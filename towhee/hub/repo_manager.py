@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 from towhee.utils.hub_utils import HubUtils
 from towhee.utils.log import engine_log
 
-REPO_TEMPLATE = {'pipeline': 'pipeline-template', 'pyoperator': 'pyop-template', 'nnoperator': 'nnop-template'}
+REPO_TEMPLATE = {'pipeline': 'pipeline-template', 'pyoperator': 'pyoperator-template', 'nnoperator': 'nnoperator-template'}
 
 class RepoManager:
     """

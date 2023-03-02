@@ -44,3 +44,7 @@ conf.cache_path = CACHE_PATH
 engine = Engine()
 if not engine.is_alive():
     engine.start()
+
+
+# dc2 op cache
+os.environ['TEST_CACHE'] = str(operator_cache)
