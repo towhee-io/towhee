@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import re
 import uuid
 from copy import deepcopy
 
@@ -29,6 +29,7 @@ from towhee.runtime.constants import (
     ConcatConst,
     InputConst,
     OutputConst,
+    OPName,
 )
 
 
@@ -67,15 +68,7 @@ class Pipeline:
         dag_dict = {}
         output_schema = cls._check_schema(schema)
         uid = InputConst.name
-        dag_dict[uid] = {
-            'inputs': output_schema,
-            'outputs': output_schema,
-            'iter_info': {
-                'type': 'map',
-                'param': None
-            },
-            'next_nodes': [],
-        }
+        dag_dict[uid] = cls._nop_node_dict(output_schema, output_schema)
         return cls(dag_dict)
 
     # TODO: Run with the configuration.
@@ -101,15 +94,7 @@ class Pipeline:
 
         uid = OutputConst.name
         dag_dict = deepcopy(self._dag)
-        dag_dict[uid] = {
-            'inputs': output_schema,
-            'outputs': output_schema,
-            'iter_info': {
-                'type': 'map',
-                'param': None
-            },
-            'next_nodes': None,
-        }
+        dag_dict[uid] = self._nop_node_dict(output_schema, output_schema)
         dag_dict[self._clo_node]['next_nodes'].append(uid)
 
         run_pipe = RuntimePipeline(dag_dict)
@@ -176,13 +161,16 @@ class Pipeline:
         self._check_concat_pipe(pipes)
         uid = uuid.uuid4().hex
         dag_dict = self._concat_dag(deepcopy(self._dag), pipes)
+        fn_action = self._to_action(ConcatConst.name)
         dag_dict[uid] = {
             'inputs': (),
             'outputs': (),
+            'op_info': fn_action.serialize(),
             'iter_info': {
                 'type': ConcatConst.name,
-                'param': None
+                'param': None,
             },
+            'config': None,
             'next_nodes': [],
         }
         dag_dict[self._clo_node]['next_nodes'].append(uid)
@@ -432,13 +420,33 @@ class Pipeline:
 
     @staticmethod
     def _to_action(fn):
+        if fn in [OPName.NOP, ConcatConst.name]:
+            return OperatorAction.from_builtin(fn)
         if isinstance(fn, _OperatorWrapper):
             return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws)
+        if isinstance(fn, RuntimePipeline):
+            return OperatorAction.from_pipeline(fn)
         if getattr(fn, '__name__', None) == '<lambda>':
             return OperatorAction.from_lambda(fn)
         if callable(fn):
             return OperatorAction.from_callable(fn)
         raise ValueError('Unknown operator, please make sure it is lambda, callable or operator with ops.')
+
+    @staticmethod
+    def _nop_node_dict(input_schema, output_schema):
+        fn_action = Pipeline._to_action(OPName.NOP)
+        node_dict = {
+            'inputs': input_schema,
+            'outputs': output_schema,
+            'op_info': fn_action.serialize(),
+            'iter_info': {
+                'type': MapConst.name,
+                'param': None,
+            },
+            'config': None,
+            'next_nodes': [],
+        }
+        return node_dict
 
     @staticmethod
     def _check_concat_pipe(pipes):
@@ -460,7 +468,14 @@ class Pipeline:
 
     @staticmethod
     def _check_schema(schema):
+        def _check_format(name):
+            pattern = r'^[a-z][a-z0-9_]*$'
+            match = re.search(pattern, name)
+            if not match:
+                raise ValueError(f'{name} is invalid, it does not conform to \'^[a-z][a-z0-9_]*$\' pattern.')
+
         if isinstance(schema, str):
+            _check_format(schema)
             return (schema,)
         if schema is None:
             return schema
@@ -468,6 +483,7 @@ class Pipeline:
             for s in schema:
                 if not isinstance(s, str):
                     raise ValueError(f'{s} is invalid, schema must be string.')
+                _check_format(s)
             return schema
         else:
             raise ValueError(f'{schema} is invalid, schema must be string.')

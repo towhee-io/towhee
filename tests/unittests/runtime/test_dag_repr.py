@@ -31,6 +31,13 @@ class TestDAGRepr(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': ['op1']
         },
         'op1': {
@@ -73,6 +80,13 @@ class TestDAGRepr(unittest.TestCase):
             'iter_info': {
                 'type': 'map',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': None
         },
@@ -153,6 +167,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('a', 'b'),
                 'outputs': ('a', 'b'),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': ['op1', 'op2']
             },
             'op1': {
@@ -183,6 +198,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('c', 'd'),
                 'outputs': ('c', 'd'),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': None
             },
         }
@@ -227,6 +243,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('a',),
                 'outputs': ('a',),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': ['op1']
             },
             'op1': {
@@ -273,6 +290,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('e', 'f'),
                 'outputs': ('e', 'f'),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': None
             },
         }
@@ -325,6 +343,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('u',),
                 'outputs': ('u',),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': ['op1']
             },
             'op1': {
@@ -355,6 +374,7 @@ class TestDAGRepr(unittest.TestCase):
                 'inputs': ('c', 's', 'b'),
                 'outputs': ('c', 's', 'b'),
                 'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in', 'init_args': None, 'init_kws': None, 'tag': None},
                 'next_nodes': None
             },
         }

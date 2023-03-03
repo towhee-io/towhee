@@ -24,7 +24,7 @@ import pkg_resources
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
 from towhee.hub import get_operator
-from towhee.runtime.constants import InputConst, OutputConst
+from towhee.runtime.constants import OPName
 from towhee.utils.log import engine_log
 from .operator_registry import OperatorRegistry
 
@@ -41,7 +41,7 @@ class OperatorLoader:
     """
 
     def _load_operator_from_internal(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
-        if function in [InputConst.name, OutputConst.name]:
+        if function == OPName.NOP:
             return NOPNodeOperator()
         else:
             return None
