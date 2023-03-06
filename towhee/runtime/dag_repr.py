@@ -34,9 +34,10 @@ class DAGRepr:
                               2: {'data': [(a, ColumnType.SCALAR), (c, ColumnType.SCALAR)], 'schema': {'a', SchemaRepr, 'c', SchemaRepr}}
                             }
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict]):
+    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None):
         self._nodes = nodes
         self._edges = edges
+        self._dag_dict = dag_dict
 
     @property
     def nodes(self) -> Dict:
@@ -45,6 +46,10 @@ class DAGRepr:
     @property
     def edges(self) -> Dict:
         return self._edges
+
+    @property
+    def dag_dict(self) -> Dict:
+        return self._dag_dict
 
     @staticmethod
     def check_nodes(nodes: Dict[str, NodeRepr]):
@@ -311,4 +316,4 @@ class DAGRepr:
             nodes[key] = NodeRepr.from_dict(key, val)
         DAGRepr.check_nodes(nodes)
         dag_nodes, schema_edges = DAGRepr.set_edges(nodes)
-        return DAGRepr(dag_nodes, schema_edges)
+        return DAGRepr(dag_nodes, schema_edges, dag)

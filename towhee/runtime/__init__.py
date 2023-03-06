@@ -31,5 +31,5 @@ __all__ = [
     'AcceleratorConf',
     'AutoConfig',
     'AutoPipes',
-    'AutoConfig'
+    'AutoConfig',
 ]

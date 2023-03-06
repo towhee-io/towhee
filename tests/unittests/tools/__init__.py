@@ -11,21 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from towhee.runtime import register, pipe, ops, accelerate, AutoConfig, AutoPipes
-from towhee.datacollection import DataCollection
-from towhee.serve.server_builder import build_docker_image_v2, build_pipeline_model
-
-
-__all__ = [
-    'register',
-    'pipe',
-    'ops',
-    'accelerate',
-    'DataCollection',
-    'build_docker_image_v2',
-    'build_pipeline_model',
-    'AutoConfig',
-    'AutoPipes',
-]
