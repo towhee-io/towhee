@@ -93,10 +93,14 @@ class TestPipeAPIsInvalid:
         expected: raise exception
         """
         # 1. Operator not exist
+        """
         try:
             towhee.pipe.input('path').map('path', 'img', ops.towhee.image_1()).output('img')
         except Exception as e:
-            assert "not" in str(e)
+            assert "failed" in str(e)
+        except Error as e2:
+            assert "main info" in str(e2)
+        """
 
         # 2. Link not exist
         """

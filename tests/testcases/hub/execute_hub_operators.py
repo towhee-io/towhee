@@ -8,7 +8,6 @@ from common import common_func as cf
 path = '/workspace/towhee_CI/hub_operator'
 log_path = path + "/log" + "/hub_op_readme.log"
 test_case_path = path + "/testcases"
-
 operator_path = path + '/operator-tasks'
 
 
@@ -169,6 +168,7 @@ def execute_ops(op_clone_list):
         os.system(f"cd {op_single_path} && wget {op_requirement_path_name}")
         # op_name_path = path + f"/{op_name_single}"
         # extract python code from op readme
+        os.system("pip uninstall -y protobuf")
         test_case_name = extract_python_code_from_op_readme(op_single_path, op_name_single)
         if not os.path.exists(test_case_name):
             logger.error("Fail to run readme for %d: operator %s" % (op_id, op_address))
