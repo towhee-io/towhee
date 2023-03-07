@@ -38,7 +38,7 @@ class DisplayMixin: # pragma: no cover
         contents = [x for i, x in enumerate(self) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
-            header = tuple(contents[0].__dict__) if not header else header
+            header = self._schema
             data = [list(x.__dict__.values()) for x in contents]
         else:
             data = [[x] for x in contents]

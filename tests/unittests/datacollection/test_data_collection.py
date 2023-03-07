@@ -15,6 +15,54 @@ import doctest
 import unittest
 
 import towhee.datacollection.data_collection
+from towhee.datacollection import DataCollection
+from towhee.dc2 import pipe
+
+
+class TestDataCollection(unittest.TestCase):
+    """
+    Unit test for DataCollection.
+    """
+    def test_normal(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+
+        res = p(1)
+        dc = DataCollection(res)
+        dc.show()
+
+        self.assertEqual(dc[0]['a'], 1)
+        self.assertEqual(dc[0]['b'], 2)
+
+    def test_no_schema(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output()
+        )
+
+        res = p(1)
+        dc = DataCollection(res)
+        dc.show()
+
+        self.assertEqual(len(dc), 0)
+
+    def test_no_data(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .filter(('a', 'b'), ('a', 'b'), 'a', lambda x: x > 5)
+                .output('a', 'b')
+        )
+
+        res = p(1)
+        dc = DataCollection(res)
+        dc.show()
+
+        self.assertEqual(len(dc), 0)
 
 
 def load_tests(loader, tests, ignore):
