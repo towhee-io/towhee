@@ -13,19 +13,8 @@
 # limitations under the License.
 
 
-from towhee.runtime import register, pipe, ops, accelerate, AutoConfig, AutoPipes
-from towhee.datacollection import DataCollection
-from towhee.serve.server_builder import build_docker_image_v2, build_pipeline_model
-
+from .visualizer import Visualizer
 
 __all__ = [
-    'register',
-    'pipe',
-    'ops',
-    'accelerate',
-    'DataCollection',
-    'build_docker_image_v2',
-    'build_pipeline_model',
-    'AutoConfig',
-    'AutoPipes',
+    'Visualizer'
 ]
