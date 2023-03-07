@@ -44,6 +44,11 @@ class Map(Node):
                ---[0]---[0, 1]---[0, 1, 2]---[0, 1, 2, 3]--->
     """
 
+    def __init__(self, node_repr, op_pool, in_ques, out_ques, time_profiler):
+        super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
+        self._input_q = self._in_ques[0]
+        self._side_by_keys = list(set(self._input_q.schema) - set(self._node_repr.outputs))
+
     def process_step(self) -> bool:
         """
         Called for each element.
@@ -53,6 +58,8 @@ class Map(Node):
         if data is None:
             self._set_finished()
             return True
+
+        side_by = dict((k, data[k]) for k in self._side_by_keys)
 
         process_data = [data.get(key) for key in self._node_repr.inputs]
         if not any((i is Empty() for i in process_data)):
@@ -68,18 +75,21 @@ class Map(Node):
             size = len(self._node_repr.outputs)
             if size > 1:
                 output_map = dict((self._node_repr.outputs[i], outputs[i])
-                                for i in range(size))
+                                  for i in range(size))
             elif size == 0:
                 output_map = {}
             else:
                 output_map = {}
                 output_map[self._node_repr.outputs[0]] = outputs
 
-            data.update(output_map)
+            side_by.update(output_map)
         self._time_profiler.record(self.uid, Event.queue_out)
 
+        if not side_by:
+            return False
+
         for out_que in self._output_ques:
-            if not out_que.put_dict(data):
+            if not out_que.put_dict(side_by):
                 self._set_stopped()
                 return True
 

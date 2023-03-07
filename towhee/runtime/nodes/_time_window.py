@@ -14,6 +14,7 @@
 
 
 from towhee.runtime.constants import TimeWindowConst
+from towhee.runtime.data_queue import Empty
 
 from ._window import Window
 
@@ -61,6 +62,10 @@ class TimeWindow(Window):
             self._row_buffer.append(data)
 
             timestamp = data[self._timestamp_index]
+            if timestamp is Empty():
+                # end of the timestamp col
+                continue
+
             if self._buffer(data, timestamp) and self._buffer.data:
                 ret = self._buffer.data
                 self._buffer = self._buffer.next()
