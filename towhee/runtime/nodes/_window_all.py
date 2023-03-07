@@ -82,7 +82,7 @@ class WindowAll(Node):
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
         if not any(process_data):
             return False
-            
+
         self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
         self._time_profiler.record(self.uid, Event.process_out)

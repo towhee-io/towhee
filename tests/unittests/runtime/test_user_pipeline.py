@@ -326,7 +326,7 @@ class TestPipeline(unittest.TestCase):
         p = (
             Pipeline.input('a')
             .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
-            .window('a', 'b', 3, 3, lambda x: sum(x))
+            .window('a', 'b', 3, 3, sum)
             .map('b', 'a', lambda x: x * 10)
             .output('a')
         )
@@ -338,7 +338,7 @@ class TestPipeline(unittest.TestCase):
             Pipeline.input('a')
             .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
             .filter('a', 'b', 'a', lambda x: x > 100)
-            .window_all('b', 'a', lambda x: sum(x))
+            .window_all('b', 'a', sum)
             .output('a')
         )
         res = p(4).to_list()
@@ -348,8 +348,8 @@ class TestPipeline(unittest.TestCase):
         p = (
             Pipeline.input('a')
             .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
-            .window('a', 'b', 3, 3, lambda x: sum(x))
-            .window('b', 'a', 3, 3, lambda x: sum(x))
+            .window('a', 'b', 3, 3, sum)
+            .window('b', 'a', 3, 3, sum)
             .output('a')
         )
         res = p(4).to_list()
@@ -365,17 +365,17 @@ class TestPipeline(unittest.TestCase):
         p = (
             p1.concat(p2)
             .map('a1', 'ts', lambda x: x * 1000)
-            .time_window('a1', 'b', 'ts', 3, 3, lambda x: sum(x))
+            .time_window('a1', 'b', 'ts', 3, 3, sum)
             .output('b', 'a2')
         )
         res = p(4).to_list()
         self.assertEqual(res, [[3, 1], [7, 2], [Empty(), 3], [Empty(), 4], [Empty(), 5], [Empty(), 6], [Empty(), 7]])
-        
+
     def test_flatmap_coverage(self):
         p = (
             Pipeline.input('a')
             .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
-            .window('a', 'b', 3, 3, lambda x: sum(x))
+            .window('a', 'b', 3, 3, sum)
             .flat_map('b', 'a', lambda x: [x * 10])
             .output('a')
         )
