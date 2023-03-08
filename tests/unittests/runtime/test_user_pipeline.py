@@ -15,6 +15,7 @@
 import unittest
 
 from towhee.runtime.pipeline import Pipeline
+from towhee.runtime.data_queue import Empty
 from towhee.runtime.factory import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
 
@@ -276,11 +277,6 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(res.get(), [1, 5, 6, 7])
         self.assertEqual(res.get(), None)
 
-    def test_filter_coverage(self):
-        p = Pipeline.input('a').map('a', 'b', lambda x: x + 1).filter('a', 'b', 'a', lambda x: x > 10).output('b')
-        self.assertIsNone(p(5).get())
-        self.assertEqual(p(11).get()[0], 11)
-
     def test_concat_raise(self):
         p1 = Pipeline.input('a').map('a', 'b', lambda x: x + 1)
         with self.assertRaises(ValueError):
@@ -314,3 +310,74 @@ class TestPipeline(unittest.TestCase):
         p1 = Pipeline.input('a').map('a', 'b', lambda x: x + 1).output()
         with self.assertRaises(RuntimeError) as e:
             p1.batch([1, 'a', 2])
+
+    def test_filter_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .map('a', 'b', lambda x: x + 1)
+            .filter('b', 'a', 'b', lambda x: x > 3)
+            .output('a')
+        )
+        self.assertEqual(p(4).to_list(), [[4], [5]])
+        self.assertEqual(p(8).to_list(), [[4], [5], [6], [7], [8], [9]])
+
+    def test_map_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .window('a', 'b', 3, 3, sum)
+            .map('b', 'a', lambda x: x * 10)
+            .output('a')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [[60], [40]])
+
+    def test_window_all_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .filter('a', 'b', 'a', lambda x: x > 100)
+            .window_all('b', 'a', sum)
+            .output('a')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [])
+
+    def test_window_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .window('a', 'b', 3, 3, sum)
+            .window('b', 'a', 3, 3, sum)
+            .output('a')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [[10]])
+
+    def test_time_window_coverage(self):
+        """
+        The size of timestamp col is less than a2 col.
+        """
+        p_start = Pipeline.input('a')
+        p1 = p_start.flat_map('a', 'a1', lambda x: list(range(1, x + 1)))
+        p2 = p_start.flat_map('a', 'a2', lambda x: list(range(1, x + 4)))
+        p = (
+            p1.concat(p2)
+            .map('a1', 'ts', lambda x: x * 1000)
+            .time_window('a1', 'b', 'ts', 3, 3, sum)
+            .output('b', 'a2')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [[3, 1], [7, 2], [Empty(), 3], [Empty(), 4], [Empty(), 5], [Empty(), 6], [Empty(), 7]])
+
+    def test_flatmap_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .window('a', 'b', 3, 3, sum)
+            .flat_map('b', 'a', lambda x: [x * 10])
+            .output('a')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [[60], [40]])
