@@ -200,7 +200,12 @@ class DAGRepr:
                 inputs_type = [ahead_schemas[inp].type for inp in inputs]
                 edge_schemas[d] = SchemaRepr.from_dag(d, iter_type, inputs_type)
             elif d in outputs:
-                edge_schemas[d] = SchemaRepr.from_dag(d, iter_type, [ahead_schemas[d].type])
+                if iter_type == 'concat':
+                    inputs_type = [ahead_schemas[d].type]
+                else:
+                    inputs_type = [ahead_schemas[inp].type for inp in inputs]
+                    inputs_type.append(ahead_schemas[d].type)
+                edge_schemas[d] = SchemaRepr.from_dag(d, iter_type, inputs_type)
             else:
                 edge_schemas[d] = SchemaRepr.from_dag(d, 'map', [ahead_schemas[d].type])
         edge = {'schema': edge_schemas, 'data': [(s, t.type) for s, t in edge_schemas.items()]}
