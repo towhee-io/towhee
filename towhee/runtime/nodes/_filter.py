@@ -39,7 +39,7 @@ class Filter(Node):
         super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
         self._input_q = self._in_ques[0]
         self._key_map = dict(zip(self._node_repr.outputs, self._node_repr.inputs))
-        self._same_keys = list(set(self._input_q.schema) & set(self._node_repr.outputs))
+        self._side_by_keys = list(set(self._input_q.schema) - set(self._node_repr.outputs))
 
     def process_step(self) -> bool:
         self._time_profiler.record(self.uid, Event.queue_in)
@@ -47,26 +47,25 @@ class Filter(Node):
         if data is None:
             self._set_finished()
             return True
+        side_by = dict((k, data[k]) for k in self._side_by_keys)
 
         process_data = [data.get(key) for key in self._node_repr.iter_info.param[FilterConst.param.filter_by]]
         if not any((i is Empty() for i in process_data)):
             self._time_profiler.record(self.uid, Event.process_in)
-            succ, outputs, msg = self._call(process_data)
+            succ, is_need, msg = self._call(process_data)
             self._time_profiler.record(self.uid, Event.process_out)
             if not succ:
                 self._set_failed(msg)
                 return True
 
-            if outputs:
+            if is_need:
                 output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
-                data.update(output_map)
-            else:
-                for k in self._same_keys:
-                    del data[k]
+                side_by.update(output_map)
+
         self._time_profiler.record(self.uid, Event.queue_out)
 
         for out_que in self._output_ques:
-            if not out_que.put_dict(data):
+            if not out_que.put_dict(side_by):
                 self._set_stopped()
                 return True
 
