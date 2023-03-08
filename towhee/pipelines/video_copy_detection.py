@@ -78,13 +78,10 @@ class VideoCopyDetectionConfig:
         # filter op
         self.threshold = None
 
-        # tracer
-        self.tracer = False
-
         self.device = -1
 
 
-def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, tracer, allow_triton=False, device=-1):
+def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -122,12 +119,12 @@ def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op,
                     ('similar_segment', 'segment_score', 'video_emb'),
                     filter_op
                 )
-                .output('url', 'candidates', 'similar_segment', 'segment_score', tracer=tracer)
+                .output('url', 'candidates', 'similar_segment', 'segment_score')
         )
     else:
         detect_pipe = (
             search_pipe.map(('video_emb', 'retrieved_emb'), ('similar_segment', 'segment_score'), tn_op)
-                .output('url', 'candidates', 'similar_segment', 'segment_score', tracer=tracer)
+                .output('url', 'candidates', 'similar_segment', 'segment_score')
         )
 
     return detect_pipe
@@ -199,5 +196,5 @@ def video_copy_detection(config):
 
 
     return _video_copy_detection(
-        decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, config.tracer, allow_triton, config.device
+        decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, allow_triton, config.device
     )

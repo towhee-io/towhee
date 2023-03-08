@@ -22,7 +22,6 @@ from .dag_repr import DAGRepr
 from .nodes import create_node, NodeStatus
 from .node_repr import NodeRepr
 from .performance_profiler import PerformanceProfiler, TimeProfiler, Event
-from .constants import TracerConst
 
 
 class _GraphResult:
@@ -50,12 +49,12 @@ class _Graph:
                  edges: Dict[str, Any],
                  operator_pool: 'OperatorPool',
                  thread_pool: 'ThreadPoolExecutor',
-                 enable_trance: bool = False):
+                 enable_profiler: bool = False):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
         self._thread_pool = thread_pool
-        self._time_profiler = TimeProfiler(enable_trance)
+        self._time_profiler = TimeProfiler(enable_profiler)
         self._node_runners = None
         self._data_queues = None
         self.features = None
@@ -121,7 +120,7 @@ class RuntimePipeline:
         max_workers(`int`): The maximum number of threads.
     """
 
-    def __init__(self, dag: Union[Dict, DAGRepr], max_workers: int = None, config: dict = None):
+    def __init__(self, dag: Union[Dict, DAGRepr], max_workers: int = None):
         if isinstance(dag, Dict):
             self._dag_repr = DAGRepr.from_dict(dag)
         else:
@@ -129,8 +128,6 @@ class RuntimePipeline:
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
         self._time_profiler_list = []
-        self._config = {} if config is None else config
-        self._enable_trace = self._config.get(TracerConst.name, False)
 
     def preload(self):
         """
@@ -142,16 +139,28 @@ class RuntimePipeline:
         """
         Output with ordering matching the input `DataQueue`.
         """
-        graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._enable_trace)
-        if self._enable_trace:
+        return self._call(*inputs, profiler=False)
+
+    def batch(self, batch_inputs):
+        return self._batch(batch_inputs, profiler=False)
+
+    def _call(self, *inputs, profiler: bool):
+        """
+        Run pipeline in debug mode.
+        """
+        graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, profiler)
+        if profiler:
             self._time_profiler_list.append(graph.time_profiler)
         return graph(inputs)
 
-    def batch(self, batch_inputs):
+    def _batch(self, batch_inputs, profiler: bool):
+        """
+        Run batch call in debug mode.
+        """
         graph_res = []
         for inputs in batch_inputs:
-            gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, self._enable_trace)
-            if self._enable_trace:
+            gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, profiler)
+            if profiler:
                 self._time_profiler_list.append(gh.time_profiler)
             if gh.input_col_size == 1:
                 inputs = (inputs, )
@@ -169,10 +178,12 @@ class RuntimePipeline:
 
     def profiler(self):
         """
-        Report the performance results after running the pipeline, and please note that you need to set tracer to True when you declare a pipeline.
+        Report the performance results after running the pipeline, note that you need to run pipeline in debug mode before calling profiler.
         """
-        if not self._enable_trace or not self._time_profiler_list:
-            engine_log.warning('Please set tracer to True or you need to run it first, there is nothing to report.')
+        if not self._time_profiler_list:
+            e_msg = 'Please run pipeline in debug mode via `RuntimePipeline.debug()`' \
+                    'or you need to debug it first, there is nothing to report.'
+            engine_log.warning(e_msg)
             return None
 
         performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr)
@@ -183,3 +194,18 @@ class RuntimePipeline:
         Reset the tracer, reset the record to None.
         """
         self._time_profiler_list = []
+
+    def debug(self, *inputs, batch: bool = False, profiler: bool = False):
+        """
+        Run pipeline in debug mode.
+
+        Args:
+            batch (`bool):
+                Whether to run in batch mode.
+            profiler (`bool`):
+                Whether to record the performance of the pipeline.
+        """
+        if not batch:
+            return self._call(*inputs, profiler=profiler)
+        else:
+            return self._batch(inputs[0], profiler=profiler)

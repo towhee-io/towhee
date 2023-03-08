@@ -68,7 +68,3 @@ class OPType:
     HUB = 'hub'
     LAMBDA = 'lambda'
     CALLABLE = 'callable'
-
-
-class TracerConst:
-    name = 'tracer'
