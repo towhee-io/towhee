@@ -47,7 +47,7 @@ class CacheManager:
             return Path(cache_root) / repo.replace('-', '_')
         else:
             cache_root = get_local_dir()
-            return operator_tag_path(Path(cache_root) / 'operators' / author.replace('-', '_') / repo.replace('-', '_'), tag)
+            return operator_tag_path(Path(cache_root) / 'operators' / author / repo, tag)
 
     def get_operator(self, operator: str, tag: str, install_reqs: bool) -> Path:
         """Obtain the path to the requested operator.

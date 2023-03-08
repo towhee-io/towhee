@@ -53,7 +53,7 @@ class WindowAll(Node):
             return None
         else:
             assert len(self._schema) == len(data)
-            cols = [[i] for i in data]
+            cols = [[i] if i is not Empty() else [] for i in data]
 
         while True:
             data = self._input_que.get()
@@ -80,6 +80,9 @@ class WindowAll(Node):
             return True
 
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
+        if not any(process_data):
+            return False
+
         self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
         self._time_profiler.record(self.uid, Event.process_out)

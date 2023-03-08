@@ -29,6 +29,11 @@ class FlatMap(Node):
         [    FlatMap('input', 'output', lambda i: i)    ]
             ---0---1---2---3--->
     """
+    def __init__(self, node_repr, op_pool, in_ques, out_ques, time_profiler):
+        super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
+        self._input_q = self._in_ques[0]
+        self._side_by_keys = list(set(self._input_q.schema) - set(self._node_repr.outputs))
+
     def process_step(self) -> List[Any]:
         self._time_profiler.record(self.uid, Event.queue_in)
         data = self._in_ques[0].get_dict()
@@ -36,10 +41,11 @@ class FlatMap(Node):
             self._set_finished()
             return True
 
+        side_by = dict((k, data[k]) for k in self._side_by_keys)
         process_data = [data.get(key) for key in self._node_repr.inputs]
         if any((i is Empty() for i in process_data)):
             for out_que in self._output_ques:
-                if not out_que.put_dict(data):
+                if not out_que.put_dict(side_by):
                     self._set_stopped()
                     return True
         else:
@@ -57,14 +63,14 @@ class FlatMap(Node):
                 else:
                     output_map = {self._node_repr.outputs[0]: output}
 
-                data.update(output_map)
+                side_by.update(output_map)
 
                 for out_que in self._output_ques:
-                    if not out_que.put_dict(data):
+                    if not out_que.put_dict(side_by):
                         self._set_stopped()
                         return True
 
-                data = {}
+                side_by = {}
             self._time_profiler.record(self.uid, Event.process_out)
             self._time_profiler.record(self.uid, Event.queue_out)
 
