@@ -14,6 +14,7 @@
 
 import unittest
 
+from towhee.operator.nop import NOPNodeOperator
 from towhee.runtime.pipeline import Pipeline
 from towhee.runtime.factory import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
@@ -21,6 +22,7 @@ from towhee.runtime.runtime_pipeline import RuntimePipeline
 
 # pylint: disable=protected-access
 # pylint: disable=unused-variable
+# pylint: disable=unnecessary-lambda
 @register(name='add_operator')
 class AddOperator:
     def __init__(self, factor):
@@ -251,6 +253,15 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(res.get(), [30, 3])
         self.assertEqual(res.get(), [70, 7])
 
+        p = (Pipeline.input('x')
+             .map('x', 'z', lambda x: [i+1 for i in range(x)])
+             .flat_map('z', 'x', NOPNodeOperator())
+             .window('x', 'y', 2, 1, lambda x: sum(x))
+             .map('y', 'z', lambda x: x * 10)
+             .output('z'))
+        res = p(4)
+        self.assertEqual(res.to_list(), [[30], [50], [70], [40]])
+
     def test_window_all(self):
         pipe = (Pipeline.input('n1', 'n2')
                 .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: list(zip(x, y)))
@@ -268,7 +279,7 @@ class TestPipeline(unittest.TestCase):
         p3 = p2.map('f', 't', lambda x: x[1]).time_window('f', 'e', 't', 3, 3, lambda x: len(x))  # pylint: disable=unnecessary-lambda
         p4 = p2.window_all('f', ('l', 's', 'v'), f)
 
-        pipe = p3.concat(p4).output('e', 'l', 's', 'v')
+        pipe = p4.concat(p3).output('e', 'l', 's', 'v')
         data = [(i, i * 1000) for i in range(10) if i < 3 or i > 7]
         res = pipe(data)
         self.assertEqual(res.get(), [3, 5, 6, 7])
