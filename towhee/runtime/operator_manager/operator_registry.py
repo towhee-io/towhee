@@ -45,7 +45,7 @@ class OperatorRegistry:
             name: str = None,
             input_schema=None,  # pylint: disable=unused-argument
             output_schema=None, # pylint: disable=unused-argument
-            flag=None # fpylint: disable=unused-argument
+            flag=None # pylint: disable=unused-argument
     ):
         """
         Register a class, function, or callable as a towhee operator.

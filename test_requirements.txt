@@ -16,3 +16,4 @@ PyWavelets
 twine
 dill
 onnx
+scipy

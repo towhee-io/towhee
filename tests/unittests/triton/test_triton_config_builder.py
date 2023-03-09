@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import unittest
-import numpy as np
 
-from towhee.types.image import Image
 from towhee.serve.triton.triton_config_builder import create_modelconfig
 
 from . import EXPECTED_FILE_PATH

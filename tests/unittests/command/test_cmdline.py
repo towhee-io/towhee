@@ -16,10 +16,7 @@ import unittest
 import argparse
 import os
 from pathlib import Path
-from unittest.mock import patch
-from io import StringIO
 
-import towhee.command.cmdline as cmd
 from towhee.command.develop import SetupCommand, UninstallCommand
 from towhee.command.repo import RepoCommand
 

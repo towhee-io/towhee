@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy
 import os
 import sys
 import subprocess
 from datetime import date, datetime
 from pathlib import Path
-from typing import Union, Any, List
+from typing import List
 from setuptools import setup
 
 
