@@ -271,6 +271,16 @@ class TestPipeline(unittest.TestCase):
         res = pipe([1, 2, 3, 4], [2, 3, 4, 5])
         self.assertEqual(res.get(), [10, 14])
 
+        pipe = (Pipeline.input('x')
+                        .map('x', 'z', lambda x: [i + 1 for i in range(x)])
+                        .flat_map('z', 'x', NOPNodeOperator())
+                        .window_all('x', 'y', lambda x: sum(x))
+                        .map('y', 'z', lambda x: x * 10)
+                        .map('z', 'x', NOPNodeOperator())
+                        .output('x'))
+        res = pipe(4)
+        self.assertEqual(res.get(), [100])
+
     def test_concat_multi_types(self):
         def f(x):
             x = len(x)
