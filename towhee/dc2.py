@@ -13,9 +13,33 @@
 # limitations under the License.
 
 
+from towhee.utils.lazy_import import LazyImport
 from towhee.runtime import register, pipe, ops, accelerate, AutoConfig, AutoPipes
-from towhee.datacollection import DataCollection
-from towhee.serve.server_builder import build_docker_image_v2, build_pipeline_model
+
+
+datacollection = LazyImport('datacollection', globals(), 'towhee.datacollection')
+server_builder = LazyImport('server_builder', globals(), 'towhee.serve.server_builder')
+
+
+def build_docker_image_v2(*args, **kwargs):
+    """
+    Wrapper for lazy import build_docker_image_v2
+    """
+    return server_builder.build_docker_image_v2(*args, **kwargs)
+
+
+def build_pipeline_model(*args, **kwargs):
+    """
+    Wrapper for lazy import build_pipeline_model
+    """
+    return server_builder.build_pipeline_model(*args, **kwargs)
+
+
+def DataCollection(*args, **kwargs):  # pylint: disable=invalid-name
+    """
+    Wrapper for lazy import DataCollection
+    """
+    return datacollection.DataCollection(*args, **kwargs)
 
 
 __all__ = [
