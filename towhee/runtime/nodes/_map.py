@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import Generator
 
 from .node import Node
@@ -60,7 +59,6 @@ class Map(Node):
             return True
 
         side_by = dict((k, data[k]) for k in self._side_by_keys)
-
         process_data = [data.get(key) for key in self._node_repr.inputs]
         if not any((i is Empty() for i in process_data)):
             self._time_profiler.record(self.uid, Event.process_in)

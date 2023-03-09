@@ -131,7 +131,7 @@ class PipelineProfiler:
                 assert len(node['init_in']) == len(node['init_out'])
                 assert len(node['init_in']) == 0 or len(node['init_in']) == 1
         except Exception as e:
-            engine_log.error('Node:{%s} failed, please reset the tracer with `pipe.reset_tracer` and rerun it.', node['name'])
+            engine_log.error('Node:{%s} failed, please reset the tracer with `pipe.reset_profiler` and rerun it.', node['name'])
             raise e
 
     @staticmethod
@@ -205,8 +205,8 @@ class PerformanceProfiler:
         return [self.pipes_profiler[i] for i in sorted_id]
 
     def max(self):
-        sorted_pipe_tracer = self.sort()
-        return sorted_pipe_tracer[-1]
+        sorted_pipe_profiler = self.sort()
+        return sorted_pipe_profiler[-1]
 
     def __getitem__(self, item):
         return self.pipes_profiler[item]

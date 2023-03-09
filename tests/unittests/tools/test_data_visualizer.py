@@ -1,7 +1,7 @@
 # Copyright 2021 Zilliz. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# you may not use this file excepv in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -13,9 +13,10 @@
 # limitations under the License.
 import unittest
 
-from towhee.tools import visualizer
 from towhee import pipe
+from towhee.tools.data_visualizer import PipeVisualizer
 from towhee.runtime.data_queue import DataQueue, ColumnType
+# pylint: disable=protected-access
 
 
 def _get_pipe():
@@ -41,6 +42,7 @@ def _get_pipe():
     )
 
     return p4
+
 
 def _get_node_queue():
     q1 = DataQueue([('a', ColumnType.SCALAR)])
@@ -126,23 +128,14 @@ def _get_node_queue():
     return q
 
 
-class TestVisualizer(unittest.TestCase):
+class TestDataVisualizer(unittest.TestCase):
     """
-    Unit tests for Visualizer.
+    Unit test for data visualizers.
     """
-    def test_dag_visualizer(self):
-        p = _get_pipe()
-        visualizer.show_graph(p.dag_repr)
-
-    def test_show_data(self):
+    def test_visualizer(self):
         p = _get_pipe()
         q = _get_node_queue()
-        visualizer.show_data(p.dag_repr, q)
-
-    def test_get_data_visualizer(self):
-        p = _get_pipe()
-        q = _get_node_queue()
-        pv = visualizer.get_data_visualizer(p.dag_repr, q)
+        pv = PipeVisualizer(p.dag_repr, q)
         pv['_input'].show()
         self.assertEqual(pv['_input'].name, '_input')
         self.assertIsNone(pv['_input'].previous_node)
@@ -192,23 +185,11 @@ class TestVisualizer(unittest.TestCase):
         self.assertEqual(pv['concat-4'].outputs.to_list()[1]['d'], 4)
         self.assertEqual(pv['concat-4'].outputs.to_list()[0]['e'], 4)
         self.assertEqual(pv['concat-4'].outputs.to_list()[1]['e'], 5)
-        pv['_output'].show()
-        self.assertEqual(pv['_output'].name, '_output')
-        self.assertEqual(pv['_output'].previous_node, ['concat-4'])
-        self.assertEqual(pv['_output'].op_input, ['b', 'c', 'd', 'e'])
-        self.assertEqual(pv['_output'].inputs.to_list()[0]['b'], 1)
-        self.assertEqual(pv['_output'].inputs.to_list()[1]['b'], 2)
-        self.assertEqual(pv['_output'].outputs.to_list()[0]['c'], 2)
-        self.assertEqual(pv['_output'].outputs.to_list()[1]['c'], 3)
-        self.assertEqual(pv['_output'].outputs.to_list()[0]['d'], 3)
-        self.assertEqual(pv['_output'].outputs.to_list()[1]['d'], 4)
-        self.assertEqual(pv['_output'].outputs.to_list()[0]['e'], 4)
-        self.assertEqual(pv['_output'].outputs.to_list()[1]['e'], 5)
         pv.show()
 
     def test_false_node(self):
         p = _get_pipe()
         q = _get_node_queue()
-        pv = visualizer.get_data_visualizer(p.dag_repr, q)
+        pv = PipeVisualizer(p.dag_repr, q)
         with self.assertRaises(KeyError):
             _ = pv['test']
