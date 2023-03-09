@@ -13,15 +13,6 @@
 # limitations under the License.
 
 
-EMPTY_OPS = ['dummy_input', 'end']
-NNOPERATOR = 'NNOperator'
-PYOPERATOR = 'PyOperator'
-
-
-PREPROCESS = 'preprocess'
-POSTPROCESS = 'postprocess'
-
-
 OP_CONFIG = 'op_config'
 SERVER_CONFIG = 'server_config'
 FORMAT_PRIORITY = 'format_priority'

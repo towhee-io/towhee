@@ -15,7 +15,7 @@
 import pathlib
 import unittest
 
-from towhee.dc2 import AutoConfig, AutoPipes
+from towhee import AutoConfig, AutoPipes
 from towhee.runtime.node_config import TowheeConfig
 
 

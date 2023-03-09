@@ -42,7 +42,11 @@ class OperatorRegistry:
 
     @staticmethod
     def register(
-            name: str = None):
+            name: str = None,
+            input_schema=None,  # for legacy op
+            output_schema=None, # for legacy op
+            flag=None # for legacy op
+    ):
         """
         Register a class, function, or callable as a towhee operator.
 
