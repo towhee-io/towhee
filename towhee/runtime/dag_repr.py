@@ -140,6 +140,7 @@ class DAGRepr:
         used_schema = set()
         stack = [name]
         visited = [name]
+        outputs_schema = ()
         while stack:
             n = stack.pop()
             check_schema = nodes[n].inputs
@@ -150,7 +151,7 @@ class DAGRepr:
                 else:
                     check_schema += tuple(used_col)
 
-            common_schema = set(check_schema) & ahead_schema
+            common_schema = (set(check_schema)-set(outputs_schema)) & ahead_schema
             for x in common_schema:
                 ahead_schema.remove(x)
                 used_schema.add(x)
@@ -164,6 +165,7 @@ class DAGRepr:
                 if i not in visited:
                     stack.append(i)
             visited.append(n)
+            outputs_schema += nodes[n].outputs
 
         return used_schema
 
