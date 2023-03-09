@@ -48,13 +48,10 @@ class VideoEmbeddingConfig:
         self.hbase_table = None
         self.leveldb_path = None
 
-        # tracer
-        self.tracer = False
-
         self.device = -1
 
 
-def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, tracer, allow_triton=False, device=-1):
+def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=False, device=-1):
     op_config = {}
     if allow_triton:
         if device >= 0:
@@ -71,7 +68,7 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, tracer, allow
                 .map(('url', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
                 .map(('url', 'video_emb'), ('insert_status'), kv_op)
-                .output(tracer=tracer)
+                .output()
         )
 
     def _unnorm():
@@ -82,7 +79,7 @@ def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, tracer, allow
                 .map(('url', 'emb'), 'milvus_res', milvus_op)
                 .window_all('emb', 'video_emb', merge_ndarray)
                 .map(('url', 'video_emb'), ('insert_status'), kv_op)
-                .output(tracer=tracer)
+                .output()
         )
 
     if norm_op:
@@ -143,4 +140,4 @@ def video_embedding(config):
         kv_op = ops.kvstorage.insert_leveldb(path=config.leveldb_path)
     norm_op = None if config.model == 'isc' else ops.towhee.np_normalize()
 
-    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, config.tracer, allow_triton, config.device)
+    return _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton, config.device)

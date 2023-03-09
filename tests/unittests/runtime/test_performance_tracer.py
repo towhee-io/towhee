@@ -48,8 +48,8 @@ class TestPerformanceProfiler(unittest.TestCase):
     Unit test for PerformanceProfiler.
     """
     def test_check(self):
-        p = pipe.input('a').output('a', tracer=True)
-        _ = p(1)
+        p = pipe.input('a').output('a')
+        _ = p.debug(1, profiler=True)
         time_profiler = p._time_profiler_list[0]
         time_profiler.record('_run_pipe', 'pipe_out')
         with self.assertRaises(BaseException):
@@ -60,10 +60,10 @@ class TestPerformanceProfiler(unittest.TestCase):
         pipe1 = pipe0.map('a', 'd', ops.add_operator(10))
         pipe2 = pipe0.map(('b', 'c'), 'e', ops.cal())
         pipe3 = pipe0.map(('b', 'c'), 'f', ops.cal())
-        pipe4 = pipe3.concat(pipe1, pipe2).output('d', 'e', 'f', tracer=True)
-        pipe4(1, 2, 3).get()
-        pipe4(2, 2, 3).get()
-        pipe4(8, 2, 3).get()
+        pipe4 = pipe3.concat(pipe1, pipe2).output('d', 'e', 'f')
+        pipe4.debug(1, 2, 3, profiler=True).get()
+        pipe4.debug(2, 2, 3, profiler=True).get()
+        pipe4.debug(8, 2, 3, profiler=True).get()
 
         pp = pipe4.profiler()
         self.assertEqual(len(pp.pipes_profiler), 3)
@@ -74,9 +74,9 @@ class TestPerformanceProfiler(unittest.TestCase):
     def test_tracer_flat_map(self):
         pipe0 = (pipe.input('d')
                  .flat_map('d', ('n1', 'n2'), lambda x: ((a, b) for a, b in x))
-                 .output('n1', 'n2', tracer=True))
+                 .output('n1', 'n2'))
         data = [(i, i + 1) for i in range(10)]
-        pipe0(data)
+        pipe0.debug(data, profiler=True)
 
         pp = pipe0.profiler()
         self.assertEqual(len(pp.pipes_profiler), 1)
@@ -87,9 +87,9 @@ class TestPerformanceProfiler(unittest.TestCase):
         pipe0 = (pipe.input('d')
                  .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
                  .time_window(('n1', 'n2'), ('s1', 's2'), 't', 10, 5, ops.local.sum2())
-                 .output('s1', 's2', tracer=True))
+                 .output('s1', 's2'))
         data = [(i, i + 1, i * 1000) for i in range(100) if i < 3 or i > 91]
-        pipe0(data)
+        pipe0.debug(data, profiler=True)
 
         pp = pipe0.profiler()
         self.assertEqual(len(pp.pipes_profiler), 1)
@@ -104,9 +104,9 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: list(zip(x, y)))
                  .map('n1', 'n2', lambda x: x+1)
                  .window_all(('n1', 'n2'), ('s1', 's2'), ops.local.sum2())
-                 .output('s1', 's2', tracer=True))
-        pipe0([1, 2, 3, 4], [2, 3, 4, 5])
-        pipe0([2, 2, 3, 4], [3, 3, 4, 5])
+                 .output('s1', 's2'))
+        pipe0.debug([1, 2, 3, 4], [2, 3, 4, 5], profiler=True)
+        pipe0.debug([2, 2, 3, 4], [3, 3, 4, 5], profiler=True)
 
         pp = pipe0.profiler()
         self.assertEqual(len(pp.pipes_profiler), 2)
@@ -120,9 +120,9 @@ class TestPerformanceProfiler(unittest.TestCase):
         pipe0 = (pipe.input('a', 'b', 'c')
                  .map('c', 'c', lambda x: x + 1)
                  .filter('c', 'd', ('a', 'b'), filter_func)
-                 .output('a', 'b', 'c', 'd', tracer=True))
-        pipe0(5, 6, 7)
-        pipe0(15, 6, 7)
+                 .output('a', 'b', 'c', 'd'))
+        pipe0.debug(5, 6, 7, profiler=True)
+        pipe0.debug(15, 6, 7, profiler=True)
 
         pp = pipe0.profiler()
         self.assertEqual(len(pp.pipes_profiler), 2)
@@ -148,8 +148,8 @@ class TestPerformanceProfiler(unittest.TestCase):
         pipe0 = (pipe.input('a', 'b', 'c')
                  .map('c', 'c', lambda x: x + 1)
                  .filter('c', 'd', ('a', 'b'), lambda x, y: x > 10)
-                 .output('a', 'b', 'c', 'd', tracer=True))
-        pipe0.batch([(5, 6, 7)] * 10)
+                 .output('a', 'b', 'c', 'd'))
+        pipe0.debug([(5, 6, 7)] * 10, batch=True, profiler=True)
 
         pp = pipe0.profiler()
         self.assertEqual(len(pp.pipes_profiler), 10)
