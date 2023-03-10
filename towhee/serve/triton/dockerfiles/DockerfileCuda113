@@ -1,12 +1,6 @@
 FROM nvcr.io/nvidia/tritonserver:21.06.1-py3
 
-
-RUN apt-key adv --fetch-keys \
-    https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub && \
-    apt-get update                                && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa         && \
-    apt-get update                                && \
+RUN apt-get update          && \
     apt-get install -y         \
               zip              \
               wget             \
@@ -19,9 +13,8 @@ RUN pip3 install -U pip
 
 RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
-RUN pip3 install pyarrow onnxruntime
+RUN pip3 install onnxruntime onnx
 
-RUN pip3 install towhee.compiler
 RUN pip3 install towhee towhee.models
 
 RUN apt-get install git-lfs && \
@@ -31,7 +24,8 @@ WORKDIR /workspace
 
 RUN mkdir -p /workspace/models
 
-COPY ./dag.json /workspace/dag.json
+COPY ./dag.pickle /workspace/dag.pickle
 
-RUN triton_builder /workspace/dag.json /workspace/models
- 
+COPY ./server_config.json /workspace/server_config.json
+
+RUN triton_builder2 /workspace/dag.pickle /workspace/models /workspace/server_config.json

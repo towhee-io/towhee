@@ -17,7 +17,7 @@ import unittest
 import torch
 
 import towhee
-from towhee.dc2 import ops, register, accelerate
+from towhee import ops, register, accelerate
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 

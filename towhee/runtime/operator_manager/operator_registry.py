@@ -42,12 +42,18 @@ class OperatorRegistry:
 
     @staticmethod
     def register(
-            name: str = None):
+            name: str = None,
+            input_schema=None,  # pylint: disable=unused-argument
+            output_schema=None, # pylint: disable=unused-argument
+            flag=None # pylint: disable=unused-argument
+    ):
         """
         Register a class, function, or callable as a towhee operator.
 
         Args:
             name (str, optional): operator name, will use the class/function name if None.
+
+            input_schema, output_schema, flag for legacy operators.
 
         Returns:
             [type]: [description]

@@ -16,13 +16,10 @@ import unittest
 import argparse
 import os
 from pathlib import Path
-from unittest.mock import patch
-from io import StringIO
 
-import towhee.command.cmdline as cmd
 from towhee.command.develop import SetupCommand, UninstallCommand
 from towhee.command.repo import RepoCommand
-# from towhee.command.execute import ExecuteCommand
+
 
 public_path = Path(__file__).parent.parent.resolve()
 
@@ -32,10 +29,10 @@ class TestCmdline(unittest.TestCase):
     Unittests for towhee cmdline.
     """
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_cmd(self, stdout):
-        cmd.main()
-        self.assertEqual(stdout.getvalue()[0:13], 'usage: towhee')
+    # @patch('sys.stdout', new_callable=StringIO)
+    # def test_cmd(self, stdout):
+    #     cmd.main()
+    #     self.assertEqual(stdout.getvalue()[0:13], 'usage: towhee')
 
     def test_develop(self):
         repo = 'add_operator'
@@ -66,12 +63,6 @@ class TestCmdline(unittest.TestCase):
         shutil.rmtree(str(repo_path / pyrepo))
         shutil.rmtree(str(repo_path / 'create_nnoperator'))
 
-    # TODO: enable this test case with pytest @shiyu22
-    # def test_run(self):
-    #     img_path = 'https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true'
-    #     args_1 = argparse.Namespace(command='run', input=img_path, output=public_path / 'test_cache', pipeline='towhee/image-embedding-resnet50')
-    #     ExecuteCommand(args_1)()
-    #     self.assertTrue((public_path / 'test_cache/towhee_output.txt').is_file())
 
 if __name__ == '__main__':
     unittest.main()

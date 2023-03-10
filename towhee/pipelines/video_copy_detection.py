@@ -14,7 +14,7 @@
 
 # pylint: disable = import-outside-toplevel
 
-from towhee.dc2 import ops, pipe, AutoPipes, AutoConfig
+from towhee import ops, pipe, AutoPipes, AutoConfig
 
 
 def merge_ndarray(x):
