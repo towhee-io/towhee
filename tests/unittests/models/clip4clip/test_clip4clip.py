@@ -30,7 +30,7 @@ class TestCLIP4Clip(unittest.TestCase):
     model = create_model(model_name="clip_vit_b32", context_length=32, pretrained=False, device=device)
 
     def test_forward(self):
-        input_ids = torch.randint(low=0, high=2, size=(2, 1, 32))
+        input_ids = torch.randint(low=0, high=2, size=(2, 1, 32)).to(self.device)
         video = torch.randn(2, 1, 12, 1, 3, 224, 224).to(self.device)
         video_mask = torch.randint(low=0, high=2, size=(2, 1, 12)).to(self.device)
         loss = self.model(input_ids, video, video_mask)
