@@ -40,7 +40,7 @@ class TestUtils(unittest.TestCase):
         outs1 = layer1(data)
         self.assertTrue(outs1.shape == (1, 3, 2, 2))
 
-        layer2 = Block(dim=3, drop_path=0.3)
+        layer2 = Block(dim=3, drop_path=0.3).to(self.device)
         outs2 = layer2(data)
         self.assertTrue(outs2.shape == (1, 3, 2, 2))
 
