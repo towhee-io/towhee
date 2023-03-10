@@ -20,10 +20,11 @@ from towhee.models.mcprop.imageextractor import ImageExtractor
 
 
 class ImageExtractorTest(unittest.TestCase):
-    model = ImageExtractor(image_model='clip_vit_b32', finetune=True)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = ImageExtractor(image_model='clip_vit_b32', finetune=True).to(device)
 
     def test_model(self):
-        dummy_img = torch.rand(1, 3, 224, 224)
+        dummy_img = torch.rand(1, 3, 224, 224).to(self.device)
         out = self.model.forward(dummy_img)
         self.assertEqual(out.shape, (1, 512))
 

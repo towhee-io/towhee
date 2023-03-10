@@ -31,11 +31,12 @@ class MatchingTest(unittest.TestCase):
     finetune_text_model = False
     image_model = 'clip_vit_b32'
     finetune_image_model = False
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     matcher = Matching(common_space_dim=common_space_dim, num_text_transformer_layers=num_text_transformer_layers,
                        img_feat_dim=img_feat_dim, txt_feat_dim=txt_feat_dim, image_disabled=image_disabled,
                        aggregate_tokens_depth=aggregate_tokens_depth, fusion_mode=fusion_mode, text_model=text_model,
                        finetune_text_model=finetune_text_model, image_model=image_model,
-                       finetune_image_model=finetune_image_model)
+                       finetune_image_model=finetune_image_model).to(device)
 
     def test_model(self):
         tokenizer = AutoTokenizer.from_pretrained(self.text_model)
@@ -60,11 +61,11 @@ class MatchingTest(unittest.TestCase):
         )
         url_ids = url_inputs['input_ids']
         url_mask = url_inputs['attention_mask']
-        url_ids = torch.tensor([url_ids], dtype=torch.long)
-        url_mask = torch.tensor([url_mask], dtype=torch.long)
-        caption_ids = torch.tensor([caption_ids], dtype=torch.long)
-        caption_mask = torch.tensor([caption_mask], dtype=torch.long)
-        dummy_img = torch.rand(1, 3, 224, 224)
+        url_ids = torch.tensor([url_ids], dtype=torch.long).to(self.device)
+        url_mask = torch.tensor([url_mask], dtype=torch.long).to(self.device)
+        caption_ids = torch.tensor([caption_ids], dtype=torch.long).to(self.device)
+        caption_mask = torch.tensor([caption_mask], dtype=torch.long).to(self.device)
+        dummy_img = torch.rand(1, 3, 224, 224).to(self.device)
         query_feats, caption_feats, alphas = self.matcher.compute_embeddings(img=dummy_img, url=url_ids,
                                                                              url_mask=url_mask,
                                                                             caption=caption_ids,
