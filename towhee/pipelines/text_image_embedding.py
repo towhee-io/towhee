@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from towhee.dc2 import pipe, ops, AutoPipes, AutoConfig
+from towhee import pipe, ops, AutoPipes, AutoConfig
 
 
 @AutoConfig.register

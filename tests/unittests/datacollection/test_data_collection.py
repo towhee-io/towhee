@@ -16,7 +16,7 @@ import unittest
 
 import towhee.datacollection.data_collection
 from towhee.datacollection import DataCollection
-from towhee.dc2 import pipe
+from towhee import pipe
 
 
 class TestDataCollection(unittest.TestCase):

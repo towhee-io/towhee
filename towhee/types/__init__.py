@@ -16,13 +16,12 @@ from towhee.types.image import Image
 from towhee.types.audio_frame import AudioFrame
 from towhee.types.video_frame import VideoFrame
 from towhee.types.arg import arg, to_image_color
-from towhee.types.tensor_array import TensorArray
+
 
 __all__ = [
     'Image',
     'AudioFrame',
     'arg',
     'to_image_color',
-    'VideoFrame',
-    'TensorArray'
+    'VideoFrame'
 ]

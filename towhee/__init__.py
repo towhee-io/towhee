@@ -16,22 +16,10 @@
 # pylint: disable=import-outside-toplevel
 
 import sys
-from typing import Union, List
-from pathlib import Path
 
-from towhee.engine import register
-from towhee.engine.factory import ops, pipeline, DEFAULT_PIPELINES
-from towhee.hparam import param_scope
-from towhee.hparam import HyperParameter as Document
-from towhee.hub.file_manager import FileManagerConfig
-from towhee.functional import DataCollection, State, Entity, DataFrame
-from towhee.functional import (
-    glob, glob_zip, read_csv, read_json, read_camera, read_video, read_audio, read_zip, dc, api, dummy_input, range, from_df
-)
-
-from towhee.dc2 import pipe, build_docker_image_v2, build_pipeline_model, AutoConfig, AutoPipes
-
+from towhee.runtime import register, pipe, ops, accelerate, AutoConfig, AutoPipes
 from towhee.serve.triton import triton_client
+from towhee.utils.lazy_import import LazyImport
 
 # Legacy towhee._types
 from towhee import types
@@ -39,42 +27,16 @@ _types = types  # pylint: disable=protected-access
 sys.modules['towhee._types'] = sys.modules['towhee.types']
 
 
-# Place all functions that are meant to be called by towhee.func() here aftering importing them.
-__all__ = [
-    'DEFAULT_PIPELINES',
-    'pipeline',
-    'ops',
-    'register',
-    'param_scope',
-    'dataset',
-    'Document',
-    'DataCollection',
-    'DataFrame',
-    'State',
-    'Entity',
-    'range',
-    'glob',
-    'glob_zip',
-    'from_df',
-    'read_audio',
-    'read_camera',
-    'read_csv',
-    'read_json',
-    'read_video',
-    'read_zip',
-    'dc',
-    'api',
-    'dummy_input',
-    'update_default_cache',
-    'add_cache_path',
-    'cache_paths',
-    'default_cache',
+datacollection = LazyImport('datacollection', globals(), 'towhee.datacollection')
+server_builder = LazyImport('server_builder', globals(), 'towhee.serve.server_builder')
 
-    # the new interface
+
+__all__ = [
+    'dataset',
     'pipe',
     'triton_client',
     'AutoConfig',
-    'build_docker_image_v2',
+    'build_docker_image',
     'build_pipeline_model',
     'AutoConfig',
     'AutoPipes'
@@ -83,17 +45,35 @@ __all__ = [
 __import__('pkg_resources').declare_namespace(__name__)
 
 
+def build_docker_image(*args, **kwargs):
+    """
+    Wrapper for lazy import build_docker_image
+    """
+    return server_builder.build_docker_image(*args, **kwargs)
+
+
+def build_pipeline_model(*args, **kwargs):
+    """
+    Wrapper for lazy import build_pipeline_model
+    """
+    return server_builder.build_pipeline_model(*args, **kwargs)
+
+
+def DataCollection(*args, **kwargs):  # pylint: disable=invalid-name
+    """
+    Wrapper for lazy import DataCollection
+    """
+    return datacollection.DataCollection(*args, **kwargs)
+
+
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     """Get a dataset by name, and pass into the custom params.
-
     Args:
         name (str): Name of a dataset.
         *args (any): Arguments of the dataset construct method.
         **kwargs (any): Keyword arguments of the dataset construct method.
-
     Returns:
         TorchDataSet: The corresponding `TorchDataSet`.
-
     Examples:
         >>> from towhee import dataset
         >>> type(dataset('fake', size=10))
@@ -109,47 +89,6 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     return TorchDataSet(torch_dataset)
 
 
-def update_default_cache(default_path: Union[str, Path]):
-    """Update default cache.
-
-    Args:
-        default_path (Union[str, Path]): The default cache path.
-
-    Examples:
-        >>> import towhee
-        >>> towhee.update_default_cache('mock/path')
-        >>> towhee.default_cache
-        PosixPath('mock/path')
-
-        >>> from towhee.engine import DEFAULT_LOCAL_CACHE_ROOT
-        >>> towhee.update_default_cache(DEFAULT_LOCAL_CACHE_ROOT)
-    """
-    fmc = FileManagerConfig()
-    fmc.update_default_cache(default_path)
 
 
-def add_cache_path(insert_path: Union[str, Path, List[Union[str, Path]]]):
-    """Add a cache location to the front.
 
-    Most recently added paths will be checked first.
-
-    Args:
-        insert_path (str | Path | list[str | Path]): The path that you are trying to add. Accepts multiple inputs at once.
-
-    Examples:
-        >>> import towhee
-        >>> towhee.add_cache_path('mock/path')
-        >>> towhee.cache_paths[0]
-        PosixPath('mock/path')
-    """
-    fmc = FileManagerConfig()
-    fmc.add_cache_path(insert_path)
-
-
-cache_paths = FileManagerConfig().cache_paths
-default_cache = FileManagerConfig().default_cache
-
-
-def build_docker_image(dc_pipeline, image_name, cuda, inference_server='triton'):  # pylint: disable=unused-argument
-    from towhee.serve.triton.docker_image_builder import DockerImageBuilder
-    DockerImageBuilder(dc_pipeline, image_name, cuda).build()

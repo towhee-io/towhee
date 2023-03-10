@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import unittest
-from towhee.dc2 import pipe, ops
+from towhee import pipe, ops
 from towhee.tools import Visualizer
 
 # pylint: disable=protected-access
