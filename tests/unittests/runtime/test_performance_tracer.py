@@ -15,7 +15,7 @@ import json
 import unittest
 from pathlib import Path
 
-from towhee.dc2 import pipe
+from towhee import pipe
 from towhee.runtime.factory import ops, register
 from towhee.runtime.performance_profiler import TimeProfiler, PerformanceProfiler
 

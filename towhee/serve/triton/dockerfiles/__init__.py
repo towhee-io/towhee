@@ -22,16 +22,13 @@ logger = logging.getLogger()
 
 def get_dockerfile(cuda_version: str) -> Path:
     if cuda_version == '11.3':
-        file_name = 'DockerfileCuda11_v2'
+        file_name = 'DockerfileCuda113'
     elif cuda_version == '11.4':
-        file_name = 'DockerfileCuda114_v2'
+        file_name = 'DockerfileCuda114'
     elif cuda_version == '11.6':
-        file_name = 'DockerfileCuda116_v2'
+        file_name = 'DockerfileCuda116'
     elif cuda_version == '11.7':
         file_name = 'DockerfileCuda117'
-    elif cuda_version == '114dev':
-        # for QA to test towhee
-        file_name = 'DockerfileCuda114dev'
     elif cuda_version == '117dev':
         # for QA to test towhee
         file_name = 'DockerfileCuda117dev'

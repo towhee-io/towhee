@@ -14,13 +14,13 @@
 
 import copy
 
-from .triton.docker_image_builder_v2 import DockerImageBuilder
+from .triton.docker_image_builder import DockerImageBuilder
 from .triton.pipeline_builder import Builder as TritonModelBuilder
 from .triton import constant
 from towhee.utils.log import engine_log
 
 
-def build_docker_image_v2(
+def build_docker_image(
         dc_pipeline: 'towhee.RuntimePipeline', image_name: str,
         cuda_version: str, format_priority: list,
         parallelism: int = 8,

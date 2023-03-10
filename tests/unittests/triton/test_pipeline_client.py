@@ -19,7 +19,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-from towhee.dc2 import pipe
+from towhee import pipe
 from towhee.serve.triton import triton_client
 from towhee.utils.thirdparty.dill_util import dill as pickle
 import towhee.serve.triton.bls.pipeline_model as pipe_model

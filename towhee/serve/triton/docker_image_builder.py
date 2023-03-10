@@ -19,35 +19,41 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from towhee.serve.triton.dockerfiles import get_dockerfile
-
+# pylint: disable=import-outside-toplevel
+# pylint: disable=unspecified-encoding
 
 class DockerImageBuilder:
     '''
     Build triton image
     '''
-    def __init__(self, towhee_pipeline: 'towhee.dc', image_name: str, cuda: str):
+    def __init__(self, towhee_pipeline: 'towhee.RuntimePipeline', image_name: str, server_config: dict, cuda_version: str):
         self._towhee_pipeline = towhee_pipeline
         self._image_name = image_name
-        self._cuda = cuda
+        self._server_config = server_config
+        self._cuda_version = cuda_version
 
     def prepare_dag(self, workspace: Path):
-        dag = self._towhee_pipeline.dag_info
-        for v in dag.values():
-            del v['call_args']
-        with open(workspace / 'dag.json', 'wt', encoding='utf-8') as f:
-            json.dump(dag, f)
+        from towhee.utils.thirdparty.dill_util import dill as pickle
+        dag = self._towhee_pipeline.dag_repr
+        with open(workspace / 'dag.pickle', 'wb') as f:
+            pickle.dump(dag, f, recurse=True)
+
+    def prepare_config(self, workspace: Path):
+        config = self._server_config
+        with open(workspace / 'server_config.json', 'w') as f:
+            json.dump(config, f)
 
     def build_image(self, workspace: Path):
-        cmd = 'cd {} && docker build -t {} .'.format(workspace,
-                                                     self._image_name)
+        cmd = 'cd {} && docker build -t {} .'.format(workspace, self._image_name)
         subprocess.run(cmd, shell=True, check=True)
 
     def docker_file(self) -> Path:
-        return get_dockerfile(self._cuda)
+        return get_dockerfile(self._cuda_version)
 
     def build(self) -> bool:
         with TemporaryDirectory(dir='./') as workspace:
             self.prepare_dag(Path(workspace))
+            self.prepare_config(Path(workspace))
             file_path = self.docker_file()
             if file_path is None:
                 return False
