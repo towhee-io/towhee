@@ -68,3 +68,9 @@ class OPType:
     HUB = 'hub'
     LAMBDA = 'lambda'
     CALLABLE = 'callable'
+    BUILTIN = 'built_in'
+    PIPELINE = 'pipeline'
+
+
+class OPName:
+    NOP = 'NOPNodeOperator'

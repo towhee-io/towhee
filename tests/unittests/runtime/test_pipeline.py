@@ -31,6 +31,13 @@ class TestWindowPipeline(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': ['op0']
         },
         'op0': {
@@ -76,6 +83,13 @@ class TestWindowPipeline(unittest.TestCase):
             'iter_info': {
                 'type': 'map',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': None
         },
@@ -136,6 +150,13 @@ class TestWindowAllPipeline(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': ['op0']
         },
         'op0': {
@@ -179,6 +200,13 @@ class TestWindowAllPipeline(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': None
         },
     }
@@ -211,6 +239,13 @@ class TestTimeWindowPipeline(unittest.TestCase):
             'iter_info': {
                 'type': 'map',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': ['op0']
         },
@@ -258,6 +293,13 @@ class TestTimeWindowPipeline(unittest.TestCase):
             'iter_info': {
                 'type': 'map',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': None
         },

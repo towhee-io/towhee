@@ -35,6 +35,13 @@ class TestPipelineManager(unittest.TestCase):
                 'type': 'map',
                 'param': None
             },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': ['op1']
         },
         'op1': {
@@ -77,6 +84,13 @@ class TestPipelineManager(unittest.TestCase):
             'iter_info': {
                 'type': 'map',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'NOPNodeOperator',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': None
         },
@@ -160,6 +174,13 @@ class TestPipelineManager(unittest.TestCase):
                 'type': 'concat',
                 'param': None
             },
+            'op_info': {
+                'operator': 'concat',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
+            },
             'next_nodes': ['_output']
         }
         runtime_pipeline = RuntimePipeline(towhee_dag_test)
@@ -182,6 +203,13 @@ class TestPipelineManager(unittest.TestCase):
             'iter_info': {
                 'type': 'concat',
                 'param': None
+            },
+            'op_info': {
+                'operator': 'concat',
+                'type': 'built_in',
+                'init_args': None,
+                'init_kws': None,
+                'tag': None
             },
             'next_nodes': ['_output']
         }

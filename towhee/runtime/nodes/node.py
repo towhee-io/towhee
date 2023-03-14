@@ -80,7 +80,7 @@ class Node(ABC):
         # Create multiple-operators to support parallelism.
         # Read the parallelism info by config.
         op_type = self._node_repr.op_info.type
-        if op_type == OPType.HUB:
+        if op_type in [OPType.HUB, OPType.BUILTIN]:
             try:
                 hub_id = self._node_repr.op_info.operator
                 with set_runtime_config(self._node_repr.config):
