@@ -66,14 +66,13 @@ else:
           extras_require={':python_version<\'3.7\'': 'importlib-resources'},
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(exclude=['*test*', 'towhee.models*']),
-          namespace_package = ['towhee'],
+          namespace_package=['towhee'],
           package_data={'towhee.tests.test_util': ['*.yaml'], 'towhee.serve.triton.dockerfiles': ['*']},
           license='http://www.apache.org/licenses/LICENSE-2.0',
           entry_points={
               'console_scripts': [
                   'towhee=towhee.command.cmdline:main',
-                  'triton_builder=towhee.serve.triton.builder:main',
-                  'triton_builder2=towhee.serve.triton.pipeline_builder:main',
+                  'triton_builder=towhee.serve.triton.pipeline_builder:main',
               ],
           },
           long_description_content_type='text/markdown'
