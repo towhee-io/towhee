@@ -30,4 +30,4 @@ COPY ./dag.pickle /workspace/dag.pickle
 
 COPY ./server_config.json /workspace/server_config.json
 
-RUN triton_builder2 /workspace/dag.pickle /workspace/models /workspace/server_config.json
+RUN triton_builder /workspace/dag.pickle /workspace/models /workspace/server_config.json
