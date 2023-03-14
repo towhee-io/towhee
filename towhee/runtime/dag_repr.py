@@ -351,8 +351,6 @@ class DAGRepr:
         sub_top_sort = op_info['top_sort']
         iter_type = iter_info['type']
         param = iter_info['param']
-        for _, node in sub_dag.items():
-            node['config'].pop('name')
 
         used_schemas = ()
         for _, node in dag.items():
@@ -384,6 +382,8 @@ class DAGRepr:
         elif iter_type == WindowAllConst.name:
             new_dag[sub_uid]['iter_info'] = {'type': WindowAllConst.name,
                                              'param': None}
+        for _, node in new_dag.items():
+            node['config']['name'] = str(sub_uid) + '-' + node['config']['name']
         dag.update(new_dag)
 
     @staticmethod
@@ -405,13 +405,13 @@ class DAGRepr:
     @staticmethod
     def _update_input(dag, input_schema, uid):
         input_info = dag.pop('_input')
-        dag[uid] = DAGRepr.get_nop_node_dict(input_schema, input_info['inputs'])
+        dag[uid] = DAGRepr.get_nop_node_dict(input_schema, input_info['inputs'], 'input')
         dag[uid]['next_nodes'] += input_info['next_nodes']
 
     @staticmethod
     def _update_output(dag, output_schema, uid, mark_node):
         output_info = dag.pop('_output')
-        dag[uid] = DAGRepr.get_nop_node_dict(output_info['outputs'], output_schema)
+        dag[uid] = DAGRepr.get_nop_node_dict(output_info['outputs'], output_schema, 'output')
         dag[mark_node]['next_nodes'].remove('_output')
         dag[mark_node]['next_nodes'].append(uid)
 
@@ -457,15 +457,13 @@ class DAGRepr:
 
     @staticmethod
     def _to_string(schema):
-        if isinstance(schema, str):
-            return ',' + schema + ','
         str_schema = ','
         for x in schema:
             str_schema += x + ','
         return str_schema
 
     @staticmethod
-    def get_nop_node_dict(input_schema, output_schema):
+    def get_nop_node_dict(input_schema, output_schema, name):
         fn_action = OperatorAction.from_builtin(OPName.NOP)
         nop_node = {
             'inputs': input_schema,
@@ -475,7 +473,9 @@ class DAGRepr:
                 'type': MapConst.name,
                 'param': None,
             },
-            'config': None,
+            'config': {
+                'name': name
+            },
             'next_nodes': [],
         }
         return nop_node
