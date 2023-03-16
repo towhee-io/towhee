@@ -1,6 +1,7 @@
 # coding : UTF-8
 from towhee import pipeline
 
+
 class TestPipelineInvalid:
     """ Test case of invalid pipeline interface """
 
@@ -26,6 +27,7 @@ class TestPipelineInvalid:
             embedding_pipeline = pipeline(wrong_pipeline)
         except Exception as e:
             print("Raise Exception: %s" % e)
+
 
 class TestPipelineValid:
     """ Test case of valid pipeline interface """

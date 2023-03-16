@@ -7,10 +7,8 @@ import threading
 import numpy as np
 import random
 import operator
-from towhee import pipeline
 from common import common_func as cf
-from towhee.functional import DataCollection
-from towhee.dc2 import pipe, ops
+from towhee import pipe, ops
 
 
 class TestDataCollectionAPIsInvalid:
@@ -95,8 +93,8 @@ class TestPipeAPIsInvalid:
         # 1. Operator not exist
         try:
             towhee.pipe.input('path').map('path', 'img', ops.towhee.image_1()).output('img')
-        except Exception as e:
-            assert "not" in str(e)
+        except RuntimeError as e:
+            assert "failed" in str(e)
 
         # 2. Link not exist
         """
@@ -335,9 +333,9 @@ class TestPipeAPIsInvalid:
             assert 'can only concatenate str (not "int") to str' in str(e)
 
 
-class TestDataCollectionAPIsValid:
+class TestOldDataCollectionAPIsValid:
     """ Test case of valid data collection interface """
-    
+
     def test_data_collection_map_lambda(self):
         """
         target: test filter() API for DataCollection 
@@ -703,6 +701,10 @@ class TestDataCollectionAPIsValid:
 
         return True
 
+
+class TestDataCollectionAPIsValid:
+    """ Test case of valid data collection interface """
+
     def test_data_collection_input_schema(self):
         """
         target: test input() API for pipeline
@@ -776,14 +778,14 @@ class TestDataCollectionAPIsValid:
                 with filter_columns,then output.
         expected: output successfully
         """
-        p = towhee.pipe.input('a').filter('a', 'b', 'a', lambda x: x > 10).output('b')
-        assert p(1).get() == None
+        p = towhee.pipe.input('a').filter('a', 'a', 'a', lambda x: x > 10).output('a')
+        assert p(1).get() is None
         assert p(11).get() == [11]
 
         # The order of filter() and map() can't be reversed here!
-        q = towhee.pipe.input('a').filter('a', 'b', 'a', lambda x: x > 10)\
+        q = towhee.pipe.input('a').filter('a', 'a', 'a', lambda x: x > 10)\
                                   .map('a', 'b', lambda x: x + 1).output('b')
-        assert q(5).get() == None
+        assert q(5).get() is None
         assert q(20).get() == [21]
         return True
 
