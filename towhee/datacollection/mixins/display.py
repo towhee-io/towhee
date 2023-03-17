@@ -56,7 +56,7 @@ class DisplayMixin: # pragma: no cover
         contents = [x for i, x in enumerate(self) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
-            header = [i + '(' + j.name  + ')' for i, j in zip(self._schema, self._type_schema)]
+            header = self._schema
             data = [list(x.__dict__.values()) for x in contents]
         else:
             data = [[x] for x in contents]
