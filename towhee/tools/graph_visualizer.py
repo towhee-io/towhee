@@ -24,13 +24,15 @@ class GraphVisualizer:
         """
         Get dag info from DAG.
         """
+        nodes = self._dag.nodes
+        edges = self._dag.edges
         return [[
-            self._dag.nodes[k].name + '(' + v['iter_info']['type'] + ')',
-            [i[0] + '(' + i[1].name + ')' for i in self._dag.edges[self._dag.nodes[k].in_edges[0]]['data'] if i[0] in self._dag.nodes[k].inputs],
-            [i[0] + '(' + i[1].name + ')' for i in self._dag.edges[self._dag.nodes[k].out_edges[0]]['data'] if i[0] in self._dag.nodes[k].outputs],
-            [i[0] + '(' + i[1].name + ')' for i in self._dag.edges[self._dag.nodes[k].in_edges[0]]['data']],
-            [i[0] + '(' + i[1].name + ')' for i in self._dag.edges[self._dag.nodes[k].out_edges[0]]['data']],
-            None if not v['next_nodes'] else [self._dag.nodes[i].name for i in v['next_nodes']],
+            nodes[k].name + '(' + v['iter_info']['type'] + ')',
+            [i[0] + ' (' + i[1].name[0] + ')' for i in edges[nodes[k].in_edges[0]]['data'] if i[0] in nodes[k].inputs],
+            [i[0] + ' (' + i[1].name[0] + ')' for i in edges[nodes[k].out_edges[0]]['data'] if i[0] in nodes[k].outputs],
+            [i[0] + ' (' + i[1].name[0] + ')' for i in edges[nodes[k].in_edges[0]]['data']],
+            [i[0] + ' (' + i[1].name[0] + ')' for i in edges[nodes[k].out_edges[0]]['data']],
+            None if not v['next_nodes'] else [nodes[i].name for i in v['next_nodes']],
             v['iter_info']['param']
         ] for k, v in self._dag.dag_dict.items()]
 
