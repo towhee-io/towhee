@@ -62,6 +62,7 @@ class _Graph:
         self.initialize()
         self._input_queue = self._data_queues[0]
 
+
     def initialize(self):
         self._node_runners = []
         self._data_queues = dict((name, DataQueue(edge['data'])) for name, edge in self._edges.items())
@@ -189,9 +190,9 @@ class RuntimePipeline:
         performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr)
         return performance_profiler
 
-    def reset_tracer(self):
+    def reset_profiler(self):
         """
-        Reset the tracer, reset the record to None.
+        Reset the profiler, reset the record to None.
         """
         self._time_profiler_list = []
 

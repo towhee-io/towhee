@@ -96,7 +96,7 @@ class TestPerformanceProfiler(unittest.TestCase):
         self.assertEqual(len(pp.node_report), 4)
         pp.show()
 
-        pipe0.reset_tracer()  # reset and warning
+        pipe0.reset_profiler()  # reset and warning
         pipe0.profiler()
 
     def test_tracer_window_all(self):

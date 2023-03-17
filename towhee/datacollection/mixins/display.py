@@ -26,19 +26,37 @@ class DisplayMixin: # pragma: no cover
     def as_str(self):
         return self._factory(map(str, self._iterable))
 
-    def show(self, limit=5, header=None, tablefmt='html', formatter={}):
+    def as_table(self, limit=5, header=None, tablefmt='plain', formatter={}):
+        contents = [x for i, x in enumerate(self) if i < limit]
+
+        if all(isinstance(x, Entity) for x in contents):
+            header = self._schema
+            data = [list(x.__dict__.values()) for x in contents]
+        else:
+            data = [[x] for x in contents]
+
+        return to_printable_table(data, header, tablefmt, formatter)
+
+    def show(self, limit=5, header=None, tablefmt=None, formatter={}):
         """Print the first n lines of a DataCollection.
 
         Args:
             limit (int, optional): The number of lines to print. Prints all if limit is negative. Defaults to 5.
             header (_type_, optional): The field names. Defaults to None.
-            tablefmt (str, optional): The format of the output, supports html, plain, grid.. Defaults to 'html'.
+            tablefmt (str, optional): The format of the output, supports html, plain, grid.
         """
         # pylint: disable=protected-access
+        if not tablefmt:
+            try:
+                _ = get_ipython().__class__.__name__
+                tablefmt = 'html'
+            except NameError:
+                tablefmt = 'grid'
+
         contents = [x for i, x in enumerate(self) if i < limit]
 
         if all(isinstance(x, Entity) for x in contents):
-            header = self._schema
+            header = [i + '(' + j.name  + ')' for i, j in zip(self._schema, self._type_schema)]
             data = [list(x.__dict__.values()) for x in contents]
         else:
             data = [[x] for x in contents]
