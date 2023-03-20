@@ -14,6 +14,7 @@
 import copy
 import unittest
 
+from towhee import pipe
 from towhee.runtime.dag_repr import DAGRepr, NodeRepr
 from towhee.runtime.data_queue import ColumnType
 from towhee.runtime.schema_repr import SchemaRepr
@@ -407,3 +408,80 @@ class TestDAGRepr(unittest.TestCase):
         self.assertEqual(nodes['op3'].out_edges, [4])
         self.assertEqual(nodes['_output'].in_edges, [4])
         self.assertEqual(nodes['_output'].out_edges, [5])
+
+    def test_to_json(self):
+
+        def add(x):
+            return x + 1
+
+        p = (
+            pipe.input('a')
+                .flat_map('a', 'b', lambda x: x)
+                .map('a', 'b', add)
+                .output('a', 'b')
+        )
+
+        edges = {
+            0: [{'name': 'a', 'type': 'SCALAR'}],
+            1: [{'name': 'a', 'type': 'SCALAR'}],
+            2: [{'name': 'a', 'type': 'SCALAR'}],
+            3: [{'name': 'a', 'type': 'SCALAR'}, {'name': 'b', 'type': 'SCALAR'}],
+            4: [{'name': 'a', 'type': 'SCALAR'}, {'name': 'b', 'type': 'SCALAR'}]
+        }
+
+        nodes = {
+            '_input': {
+                'name': '_input',
+                'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in'},
+                'next_nodes': ['mock_a'],
+                'inputs': [0],
+                'outputs': [1],
+                'op_input': ('a',),
+                'op_output': ('a',)
+            },
+            'mock_a': {
+                'name': 'lambda-0',
+                'iter_info': {'type': 'flat_map', 'param': None},
+                'op_info': {'operator': '<lambda>', 'type': 'lambda'},
+                'next_nodes': ['mock_b'],
+                'inputs': [1],
+                'outputs': [2],
+                'op_input': ('a',),
+                'op_output': ('b',)
+            },
+            'mock_b': {
+                'name': 'add-1',
+                'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'add', 'type': 'callable'},
+                'next_nodes': ['_output'],
+                'inputs': [2],
+                'outputs': [3],
+                'op_input': ('a',),
+                'op_output': ('b',)
+            },
+            '_output': {
+                'name': '_output',
+                'iter_info': {'type': 'map', 'param': None},
+                'op_info': {'operator': 'NOPNodeOperator', 'type': 'built_in'},
+                'next_nodes': [],
+                'inputs': [3],
+                'outputs': [4],
+                'op_input': ('a', 'b'),
+                'op_output': ('a', 'b')
+            }
+        }
+
+        for v1, v2 in zip(nodes.values(), p.dag_repr.to_dict()['nodes'].values()):
+            self.assertEqual(v1['name'], v2['name'])
+            self.assertEqual(v1['iter_info'], v2['iter_info'])
+            self.assertEqual(v1['inputs'], v2['inputs'])
+            self.assertEqual(v1['outputs'], v2['outputs'])
+            self.assertEqual(v1['op_input'], v2['op_input'])
+            self.assertEqual(v1['op_output'], v2['op_output'])
+
+        for v1, v2 in zip(edges.values(), p.dag_repr.to_dict()['edges'].values()):
+            for i in v1:
+                self.assertIn(i, v2)
+
+        p.dag_repr.to_json()

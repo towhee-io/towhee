@@ -14,6 +14,7 @@
 
 import types
 import uuid
+import json
 from copy import deepcopy
 from typing import Dict, Any, Set, List, Tuple
 
@@ -277,6 +278,35 @@ class DAGRepr:
 
         nodes[OutputConst.name].out_edges = [out_id]
         return nodes, edges
+
+    def to_dict(self):
+        info = {}
+        info['edges'] = {}
+        info['nodes'] = {}
+
+        for k, v in self._edges.items():
+            info['edges'][k] = []
+            for (name, ctype) in v['data']:
+                info['edges'][k].append({'name': name, 'type': ctype.name})
+
+        for k, v in self._nodes.items():
+            info['nodes'][k] = {}
+            info['nodes'][k]['name'] = v.name
+            info['nodes'][k]['iter_info'] = {'type': v.iter_info.type, 'param': v.iter_info.param}
+            info['nodes'][k]['op_info'] = {
+                'operator': v.op_info.operator.__name__ if callable(v.op_info.operator) else v.op_info.operator,
+                'type': v.op_info.type
+            }
+            info['nodes'][k]['next_nodes'] = v.next_nodes
+            info['nodes'][k]['inputs'] = v.in_edges
+            info['nodes'][k]['outputs'] = v.out_edges
+            info['nodes'][k]['op_input'] = v.inputs
+            info['nodes'][k]['op_output'] = v.outputs
+
+        return info
+
+    def to_json(self, **kws):
+        return json.dumps(self.to_dict(), **kws)
 
     @staticmethod
     def from_dict(dag: Dict[str, Any]):
