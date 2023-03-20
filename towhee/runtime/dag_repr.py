@@ -47,10 +47,14 @@ class DAGRepr:
                             }
         dag_dict(`Dict`): The dag dict.
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None):
+    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None, top_sort: list = None):
         self._nodes = nodes
         self._edges = edges
         self._dag_dict = dag_dict
+        if not top_sort:
+            self._top_sort = self.get_top_sort(nodes)
+        else:
+            self._top_sort = top_sort
 
     @property
     def nodes(self) -> Dict:
@@ -64,14 +68,18 @@ class DAGRepr:
     def dag_dict(self) -> Dict:
         return self._dag_dict
 
+    @property
+    def top_sort(self) -> list:
+        return self._top_sort
+
     @staticmethod
-    def check_nodes(nodes: Dict[str, NodeRepr]):
+    def check_nodes(nodes: Dict[str, NodeRepr], top_sort: list):
         """Check nodes if start with _input and ends with _output, and the schema has declared before using.
 
         Args:
             nodes (`Dict[str, NodeRepr]`): All the nodes from DAG.
+            top_sort (`list`): Topological list.
         """
-        top_sort = DAGRepr.get_top_sort(nodes)
         if len(top_sort) != len(nodes):
             raise ValueError('The DAG is not valid, it has a circle.')
         if top_sort[0] != InputConst.name:
@@ -232,11 +240,12 @@ class DAGRepr:
         return edge
 
     @staticmethod
-    def set_edges(nodes: Dict[str, NodeRepr]):
+    def set_edges(nodes: Dict[str, NodeRepr], top_sort: list):
         """Set in_edges and out_edges for the node, and return the nodes and edge.
 
         Args:
             nodes (`Dict[str, NodeRepr]`): All the nodes repr from DAG.
+            top_sort (`list`): Topological list.
 
         Returns:
             Dict[str, NodeRepr]: The nodes update in_edges and out_edges.
@@ -247,7 +256,6 @@ class DAGRepr:
                                                       nodes[InputConst.name].iter_info.type, None)}
         nodes[InputConst.name].in_edges = [out_id]
 
-        top_sort = DAGRepr.get_top_sort(nodes)
         for name in top_sort[:-1]:
             ahead_schema = set(nodes[name].outputs)
             for i in nodes[name].in_edges:
@@ -370,9 +378,10 @@ class DAGRepr:
                 node_index += 1
 
             nodes[key] = NodeRepr.from_dict(key, val)
-        DAGRepr.check_nodes(nodes)
-        dag_nodes, schema_edges = DAGRepr.set_edges(nodes)
-        return DAGRepr(dag_nodes, schema_edges, dag)
+        top_sort = DAGRepr.get_top_sort(nodes)
+        DAGRepr.check_nodes(nodes, top_sort)
+        dag_nodes, schema_edges = DAGRepr.set_edges(nodes, top_sort)
+        return DAGRepr(dag_nodes, schema_edges, dag, top_sort)
 
     @staticmethod
     def rebuild_dag(dag, sub_uid, op_info, iter_info, input_schema, output_schema):

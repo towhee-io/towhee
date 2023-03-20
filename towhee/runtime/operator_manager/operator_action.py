@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.runtime.dag_repr import DAGRepr
 from towhee.runtime.constants import OPType
 
 # pylint: disable=protected-access
@@ -83,7 +82,7 @@ class OperatorAction:
         """
         action = OperatorAction()
         action._dag_dict = fn.dag_repr.dag_dict
-        action._top_sort = DAGRepr.get_top_sort(fn.dag_repr.nodes)
+        action._top_sort = fn.dag_repr.top_sort
         action._type = OPType.PIPELINE
         return action
 

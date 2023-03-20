@@ -97,13 +97,27 @@ class TestDAGRepr(unittest.TestCase):
         dr = DAGRepr.from_dict(self.dag_dict)
         edges = dr.edges
         nodes = dr.nodes
+        dag_dict = dr.dag_dict
+        top_sort = dr.top_sort
         self.assertEqual(len(edges), 5)
         self.assertEqual(len(nodes), 4)
+        self.assertEqual(len(dag_dict), 4)
+        self.assertEqual(len(top_sort), 4)
         for edge in edges.values():
             for schema in edge['schema']:
                 self.assertTrue(isinstance(edge['schema'][schema], SchemaRepr))
         for node in nodes:
             self.assertTrue(isinstance(dr.nodes[node], NodeRepr))
+
+        dr = DAGRepr(nodes, edges)
+        edges = dr.edges
+        nodes = dr.nodes
+        dag_dict = dr.dag_dict
+        top_sort = dr.top_sort
+        self.assertEqual(len(edges), 5)
+        self.assertEqual(len(nodes), 4)
+        self.assertEqual(dag_dict, None)
+        self.assertEqual(len(top_sort), 4)
 
     def test_check_input(self):
         towhee_dag_test = copy.deepcopy(self.dag_dict)
