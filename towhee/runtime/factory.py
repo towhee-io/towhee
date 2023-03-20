@@ -90,6 +90,10 @@ class _OperatorWrapper:
     def init_kws(self):
         return self._init_kws
 
+    def revision(self, tag):
+        self._tag = tag
+        return self
+
     def get_op(self):
         if self._op is None:
             self.preload_op()

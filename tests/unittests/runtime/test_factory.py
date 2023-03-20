@@ -31,6 +31,15 @@ class TestOps(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             op.get_op()
 
+    def test_revision(self):
+        op0 = ops.test_revision()
+        self.assertEqual(op0.tag, 'main')
+        self.assertEqual(op0()[0], 'main')
+
+        op1 = ops.test_revision().revision('v1')
+        self.assertEqual(op1()[0], 'v1')
+
+
     def test_local(self):
         # pylint: disable=protected-access
         op = ops.local.add_operator(10)
