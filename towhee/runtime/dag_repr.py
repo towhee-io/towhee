@@ -22,9 +22,7 @@ from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
 from towhee.runtime.node_config import TowheeConfig
-from towhee.runtime.operator_manager import OperatorAction
 from towhee.runtime.constants import (
-    MapConst,
     WindowAllConst,
     WindowConst,
     FilterConst,
@@ -32,7 +30,6 @@ from towhee.runtime.constants import (
     FlatMapConst,
     InputConst,
     OutputConst,
-    OPName,
     OPType,
 )
 
@@ -368,7 +365,9 @@ class DAGRepr:
                 if 'name' not in val['config']:
                     name = _get_name(val)
                     val['config']['name'] = name + '-' + str(node_index)
-                    node_index += 1
+                elif val['config']['name'] in [InputConst.name, OutputConst.name]:
+                    val['config']['name'] = val['config']['name'] + '-' + str(node_index)
+                node_index += 1
 
             nodes[key] = NodeRepr.from_dict(key, val)
         DAGRepr.check_nodes(nodes)
@@ -414,7 +413,9 @@ class DAGRepr:
                                              'param': None}
 
         for _, node in new_dag.items():
-            if 'config' in node and 'name' in node['config']:
+            if node['config']['name'].startswith(InputConst.name) or node['config']['name'].startswith(OutputConst.name):
+                node['config']['name'] = node['config']['name'].split('-')[0]
+            else:
                 node['config'].pop('name')
         dag.update(new_dag)
 
@@ -437,13 +438,16 @@ class DAGRepr:
     @staticmethod
     def _update_input(dag, input_schema, uid):
         input_info = dag.pop('_input')
-        dag[uid] = DAGRepr.get_nop_node_dict(input_schema, input_info['inputs'])
-        dag[uid]['next_nodes'] += input_info['next_nodes']
+        input_info['outputs'] = input_info['inputs']
+        input_info['inputs'] = input_schema
+        dag[uid] = input_info
 
     @staticmethod
     def _update_output(dag, output_schema, uid, mark_node):
         output_info = dag.pop('_output')
-        dag[uid] = DAGRepr.get_nop_node_dict(output_info['outputs'], output_schema)
+        output_info['inputs'] = output_info['outputs']
+        output_info['outputs'] = output_schema
+        dag[uid] = output_info
         dag[mark_node]['next_nodes'].remove('_output')
         dag[mark_node]['next_nodes'].append(uid)
 
@@ -493,18 +497,3 @@ class DAGRepr:
         for x in schema:
             str_schema += x + ','
         return str_schema
-
-    @staticmethod
-    def get_nop_node_dict(input_schema, output_schema):
-        fn_action = OperatorAction.from_builtin(OPName.NOP)
-        nop_node = {
-            'inputs': input_schema,
-            'outputs': output_schema,
-            'op_info': fn_action.serialize(),
-            'iter_info': {
-                'type': MapConst.name,
-                'param': None,
-            },
-            'next_nodes': [],
-        }
-        return nop_node
