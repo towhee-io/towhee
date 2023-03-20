@@ -22,9 +22,7 @@ from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
 from towhee.runtime.schema_repr import SchemaRepr
 from towhee.runtime.node_config import TowheeConfig
-from towhee.runtime.operator_manager import OperatorAction
 from towhee.runtime.constants import (
-    MapConst,
     WindowAllConst,
     WindowConst,
     FilterConst,
@@ -32,7 +30,6 @@ from towhee.runtime.constants import (
     FlatMapConst,
     InputConst,
     OutputConst,
-    OPName,
     OPType,
 )
 
@@ -50,10 +47,14 @@ class DAGRepr:
                             }
         dag_dict(`Dict`): The dag dict.
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None):
+    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None, top_sort: list = None):
         self._nodes = nodes
         self._edges = edges
         self._dag_dict = dag_dict
+        if not top_sort:
+            self._top_sort = self.get_top_sort(nodes)
+        else:
+            self._top_sort = top_sort
 
     @property
     def nodes(self) -> Dict:
@@ -67,14 +68,18 @@ class DAGRepr:
     def dag_dict(self) -> Dict:
         return self._dag_dict
 
+    @property
+    def top_sort(self) -> list:
+        return self._top_sort
+
     @staticmethod
-    def check_nodes(nodes: Dict[str, NodeRepr]):
+    def check_nodes(nodes: Dict[str, NodeRepr], top_sort: list):
         """Check nodes if start with _input and ends with _output, and the schema has declared before using.
 
         Args:
             nodes (`Dict[str, NodeRepr]`): All the nodes from DAG.
+            top_sort (`list`): Topological list.
         """
-        top_sort = DAGRepr.get_top_sort(nodes)
         if len(top_sort) != len(nodes):
             raise ValueError('The DAG is not valid, it has a circle.')
         if top_sort[0] != InputConst.name:
@@ -235,11 +240,12 @@ class DAGRepr:
         return edge
 
     @staticmethod
-    def set_edges(nodes: Dict[str, NodeRepr]):
+    def set_edges(nodes: Dict[str, NodeRepr], top_sort: list):
         """Set in_edges and out_edges for the node, and return the nodes and edge.
 
         Args:
             nodes (`Dict[str, NodeRepr]`): All the nodes repr from DAG.
+            top_sort (`list`): Topological list.
 
         Returns:
             Dict[str, NodeRepr]: The nodes update in_edges and out_edges.
@@ -250,7 +256,6 @@ class DAGRepr:
                                                       nodes[InputConst.name].iter_info.type, None)}
         nodes[InputConst.name].in_edges = [out_id]
 
-        top_sort = DAGRepr.get_top_sort(nodes)
         for name in top_sort[:-1]:
             ahead_schema = set(nodes[name].outputs)
             for i in nodes[name].in_edges:
@@ -368,12 +373,15 @@ class DAGRepr:
                 if 'name' not in val['config']:
                     name = _get_name(val)
                     val['config']['name'] = name + '-' + str(node_index)
-                    node_index += 1
+                elif val['config']['name'] in [InputConst.name, OutputConst.name]:
+                    val['config']['name'] = val['config']['name'] + '-' + str(node_index)
+                node_index += 1
 
             nodes[key] = NodeRepr.from_dict(key, val)
-        DAGRepr.check_nodes(nodes)
-        dag_nodes, schema_edges = DAGRepr.set_edges(nodes)
-        return DAGRepr(dag_nodes, schema_edges, dag)
+        top_sort = DAGRepr.get_top_sort(nodes)
+        DAGRepr.check_nodes(nodes, top_sort)
+        dag_nodes, schema_edges = DAGRepr.set_edges(nodes, top_sort)
+        return DAGRepr(dag_nodes, schema_edges, dag, top_sort)
 
     @staticmethod
     def rebuild_dag(dag, sub_uid, op_info, iter_info, input_schema, output_schema):
@@ -412,8 +420,12 @@ class DAGRepr:
         elif iter_type == WindowAllConst.name:
             new_dag[sub_uid]['iter_info'] = {'type': WindowAllConst.name,
                                              'param': None}
+
         for _, node in new_dag.items():
-            node['config']['name'] = str(sub_uid) + '-' + node['config']['name']
+            if node['config']['name'].startswith(InputConst.name) or node['config']['name'].startswith(OutputConst.name):
+                node['config']['name'] = node['config']['name'].split('-')[0]
+            else:
+                node['config'].pop('name')
         dag.update(new_dag)
 
     @staticmethod
@@ -435,13 +447,16 @@ class DAGRepr:
     @staticmethod
     def _update_input(dag, input_schema, uid):
         input_info = dag.pop('_input')
-        dag[uid] = DAGRepr.get_nop_node_dict(input_schema, input_info['inputs'], 'input')
-        dag[uid]['next_nodes'] += input_info['next_nodes']
+        input_info['outputs'] = input_info['inputs']
+        input_info['inputs'] = input_schema
+        dag[uid] = input_info
 
     @staticmethod
     def _update_output(dag, output_schema, uid, mark_node):
         output_info = dag.pop('_output')
-        dag[uid] = DAGRepr.get_nop_node_dict(output_info['outputs'], output_schema, 'output')
+        output_info['inputs'] = output_info['outputs']
+        output_info['outputs'] = output_schema
+        dag[uid] = output_info
         dag[mark_node]['next_nodes'].remove('_output')
         dag[mark_node]['next_nodes'].append(uid)
 
@@ -491,21 +506,3 @@ class DAGRepr:
         for x in schema:
             str_schema += x + ','
         return str_schema
-
-    @staticmethod
-    def get_nop_node_dict(input_schema, output_schema, name):
-        fn_action = OperatorAction.from_builtin(OPName.NOP)
-        nop_node = {
-            'inputs': input_schema,
-            'outputs': output_schema,
-            'op_info': fn_action.serialize(),
-            'iter_info': {
-                'type': MapConst.name,
-                'param': None,
-            },
-            'config': {
-                'name': name
-            },
-            'next_nodes': [],
-        }
-        return nop_node

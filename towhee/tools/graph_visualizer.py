@@ -35,7 +35,7 @@ class GraphVisualizer:
             [i[0] + ' (' + i[1].name[0] + ')' for i in edges[nodes[k].out_edges[0]]['data']],
             None if not dag_dict[k]['next_nodes'] else [nodes[i].name for i in dag_dict[k]['next_nodes']],
             dag_dict[k]['iter_info']['param']
-        ] for k in self._dag.get_top_sort(nodes)]
+        ] for k in self._dag.top_sort]
 
     def show(self):
         headers = [
