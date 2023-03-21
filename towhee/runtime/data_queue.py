@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import threading
+import copy
 from enum import Enum, auto
 from typing import List, Tuple, Union, Dict, Optional
 
@@ -24,7 +25,7 @@ class DataQueue:
     Col-based storage.
     """
 
-    def __init__(self, schema_info, max_size=1000):
+    def __init__(self, schema_info, max_size=1000, keep_data=False):
         self._max_size = max_size
         self._schema = _Schema(schema_info)
         self._data = []
@@ -34,7 +35,7 @@ class DataQueue:
         for index in range(len(self._schema.col_types)):
             col_type = self._schema.col_types[index]
             if col_type == ColumnType.QUEUE:
-                self._data.append(_QueueColumn())
+                self._data.append(_QueueColumn() if not keep_data else _ListColumn())
                 self._queue_index.append(index)
             else:
                 self._data.append(_ScalarColumn())
@@ -232,6 +233,15 @@ class DataQueue:
     def col_type(self, col_name):
         return self.type_schema[self.schema.index(col_name)]
 
+    def reset_size(self):
+        """
+        For debug, read data repeatedly.
+        """
+        for col in self._data:
+            if isinstance(col, _ListColumn):
+                col.reset_size()
+        self._size = self._get_size()
+
 
 class ColumnType(Enum):
     """
@@ -315,6 +325,34 @@ class _QueueColumn:
 
     def size(self):
         return len(self._q)
+
+
+class _ListColumn:
+    """
+    List column, for debug.
+    """
+
+    def __init__(self):
+        self._q = []
+        self._index = 0
+
+    def get(self):
+        if len(self._q) == self._index:
+            return Empty()
+        self._index += 1
+        return copy.deepcopy(self._q[self._index - 1])
+
+    def put(self, data) -> bool:
+        if data is Empty():
+            return
+        self._q.append(data)
+
+    def size(self):
+        return len(self._q) - self._index
+
+    def reset_size(self):
+        self._index = 0
+
 
 class _ScalarColumn:
     """

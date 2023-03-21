@@ -14,18 +14,20 @@
 import unittest
 import threading
 import time
+from functools import partial
 
 from towhee.runtime.data_queue import DataQueue, ColumnType, Empty
 
 
+# pylint: disable=invalid-name
 class TestDataQueue(unittest.TestCase):
     '''
     DataQueue test
     '''
 
-    def test_max_size(self):
+    def _internal_max_size(self, DataQueueClass):
         max_size = 5
-        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)], max_size)
+        que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)], max_size)
 
         size = 20
         def write():
@@ -51,8 +53,8 @@ class TestDataQueue(unittest.TestCase):
         t.join()
         self.assertTrue(que.sealed)
 
-    def test_normal(self):
-        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+    def _internal_normal(self, DataQueueClass):
+        que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
         que.put(('http://towhee.io', 'image1', 'vec1'))
         self.assertEqual(que.size, 1)
         que.put(('http://towhee.io', 'image2', 'vec2'))
@@ -67,15 +69,15 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(ret[1], 'image2')
         self.assertEqual(que.size, 0)
 
-    def test_in_map(self):
+    def _internal_in_map(self, DataQueueClass):
         '''
         url, image -> url, image, vec
 
         input_schema: image
         output_schema: vec
         '''
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
 
         size = 20
 
@@ -112,18 +114,18 @@ class TestDataQueue(unittest.TestCase):
         t.join()
 
 
-    def test_in_flat_map(self):
+    def _internal_in_flat_map(self, DataQueueClass):
         '''
         url -> url, image
 
         input_schema: url
         output_schema: image
         '''
-        input_que = DataQueue([('url', ColumnType.SCALAR)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR)])
         input_que.put(('http://towhee.io', ))
         input_que.seal()
 
-        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
 
         size = 20
         ret = input_que.get()
@@ -144,15 +146,15 @@ class TestDataQueue(unittest.TestCase):
             self.assertEqual(ret[1], 'image' + str(i))
             i += 1
 
-    def test_in_window(self):
+    def _internal_in_window(self, DataQueueClass):
         '''
         url, image -> url, image, vec
 
         input_schema: image
         output_schema: vec
         '''
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
 
         size = 20
         def write():
@@ -218,7 +220,7 @@ class TestDataQueue(unittest.TestCase):
         t.join()
 
 
-    def test_in_filter(self):
+    def _internal_in_filter(self, DataQueueClass):
         '''
         url, image -> url, image, filter_image
 
@@ -227,8 +229,8 @@ class TestDataQueue(unittest.TestCase):
         filter_columns: image
         '''
 
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
-        output_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('filter_image', ColumnType.QUEUE)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        output_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('filter_image', ColumnType.QUEUE)])
 
         size = 20
         def write():
@@ -270,13 +272,13 @@ class TestDataQueue(unittest.TestCase):
         while output_que.size > 0:
             ret.append(output_que.get())
 
-    def test_seal(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+    def _internal_seal(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
         self.assertTrue(input_que.put(('1', '2')))
         input_que.seal()
         self.assertFalse(input_que.put(('1', '2')))
 
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
         self.assertTrue(input_que.put(('1', '2')))
         self.assertTrue(input_que.put(('1', '2')))
         self.assertEqual(input_que.size, 2)
@@ -286,8 +288,8 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(input_que.get(), None)
         self.assertEqual(input_que.get_dict(), None)
 
-    def test_get_dict(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+    def _internal_get_dict(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
         self.assertTrue(input_que.put(('1', '2')))
         self.assertEqual(input_que.size, 1)
         data = input_que.get_dict()
@@ -297,8 +299,8 @@ class TestDataQueue(unittest.TestCase):
         })
         self.assertEqual(input_que.size, 0)
 
-    def test_put_dict(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+    def _internal_put_dict(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
         self.assertTrue(input_que.put_dict({
             'url': '1',
             'image': 1,
@@ -306,8 +308,8 @@ class TestDataQueue(unittest.TestCase):
         }))
         self.assertEqual(input_que.size, 1)
 
-    def test_batch_put_dict(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR),
+    def _internal_batch_put_dict(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR),
                                ('image', ColumnType.QUEUE),
                                ('vec', ColumnType.QUEUE)])
         self.assertTrue(input_que.batch_put_dict({
@@ -320,7 +322,7 @@ class TestDataQueue(unittest.TestCase):
         input_que.seal()
         self.assertEqual(input_que.size, 4)
 
-        input_que = DataQueue([('url', ColumnType.SCALAR),
+        input_que = DataQueueClass([('url', ColumnType.SCALAR),
                                ('vec', ColumnType.QUEUE)])
         self.assertTrue(input_que.batch_put_dict({
             'url': ['1'],
@@ -331,8 +333,8 @@ class TestDataQueue(unittest.TestCase):
         input_que.seal()
         self.assertEqual(input_que.size, 1)
 
-    def test_all_scalar(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+    def _internal_all_scalar(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
         input_que.put_dict({'url': 1})
         self.assertEqual(input_que.size, 0)
         input_que.put_dict({'image': 1})
@@ -343,7 +345,7 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(input_que.size, 0)
 
 
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
         input_que.put_dict({'url': 1})
         self.assertEqual(input_que.size, 0)
         input_que.put_dict({'image': 1})
@@ -353,7 +355,7 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(input_que.get(), [1, 1])
         self.assertEqual(input_que.size, 0)
 
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
         input_que.put_dict({'url': 1})
         self.assertEqual(input_que.size, 0)
         input_que.seal()
@@ -361,8 +363,8 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(input_que.get(), None)
         self.assertEqual(input_que.size, 0)
 
-    def test_all_scalar_multithread(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+    def _internal_all_scalar_multithread(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
 
         def write():
             input_que.put_dict({'url': 1})
@@ -382,27 +384,27 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(ret, [[1, 2]])
         t.join()
 
-    def test_empty(self):
-        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+    def _internal_empty(self, DataQueueClass):
+        que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
         que.put_dict({})
         self.assertEqual(que.size, 0)
         que.seal()
         self.assertEqual(que.size, 0)
 
-        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
+        que = DataQueueClass([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE)])
         que.put_dict({})
         self.assertEqual(que.size, 0)
         que.seal()
         self.assertEqual(que.size, 0)
 
-        que = DataQueue([('url', ColumnType.QUEUE), ('image', ColumnType.QUEUE)])
+        que = DataQueueClass([('url', ColumnType.QUEUE), ('image', ColumnType.QUEUE)])
         que.put_dict({})
         self.assertEqual(que.size, 0)
         que.seal()
         self.assertEqual(que.size, 0)
 
-    def test_to_list(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR),
+    def _internal_to_list(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR),
                                ('image', ColumnType.QUEUE),
                                ('vec', ColumnType.QUEUE)])
         self.assertTrue(input_que.batch_put_dict({
@@ -424,8 +426,8 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(data[3], ['1', 4, Empty()])
 
 
-    def test_to_kv(self):
-        input_que = DataQueue([('url', ColumnType.SCALAR),
+    def _internal_to_kv(self, DataQueueClass):
+        input_que = DataQueueClass([('url', ColumnType.SCALAR),
                                ('image', ColumnType.QUEUE),
                                ('vec', ColumnType.QUEUE)])
         self.assertTrue(input_que.batch_put_dict({
@@ -445,3 +447,37 @@ class TestDataQueue(unittest.TestCase):
         self.assertEqual(data[1], {'url': '1', 'image': 2, 'vec': 2})
         self.assertEqual(data[2], {'url': '1', 'image': 3, 'vec': Empty()})
         self.assertEqual(data[3], {'url': '1', 'image': 4, 'vec': Empty()})
+
+
+    def test_data_queue(self):
+        for item in self.__dir__():
+            if item.startswith('_internal_'):
+                getattr(self, item)(DataQueue)
+
+    def test_debug_data_queue(self):
+        for item in self.__dir__():
+            if item.startswith('_internal_'):
+                getattr(self, item)(partial(DataQueue, keep_data=True))
+
+    def test_debug_data_queue_reset(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)], keep_data=True)
+        que.put(('http://towhee.io', [1], 'vec1'))
+        self.assertEqual(que.size, 1)
+        que.put(('http://towhee.io', [2], 'vec2'))
+        self.assertEqual(que.size, 2)
+        ret = que.get()
+        self.assertEqual(ret[1], [1])
+        ret[1].append(2)
+        self.assertEqual(que.size, 1)
+        ret = que.get()
+        self.assertEqual(ret[1], [2])
+        ret[1].append(3)
+        self.assertEqual(que.size, 0)
+
+        que.reset_size()
+        ret = que.get()
+        self.assertEqual(ret[1], [1])
+        self.assertEqual(que.size, 1)
+        ret = que.get()
+        self.assertEqual(ret[1], [2])
+        self.assertEqual(que.size, 0)
