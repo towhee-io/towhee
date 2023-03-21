@@ -406,3 +406,13 @@ class TestPipeline(unittest.TestCase):
         )
         res = p(4).to_list()
         self.assertEqual(res, [[60], [40]])
+
+    def test_revision_latest(self):
+        p = (
+            Pipeline.input('a')
+            .map('a', 'b', ops.test_revision().revision('v1').latest())
+            .map('b', ('c', 'd', 'e'), lambda x: x)
+            .output('c', 'd')
+        )
+        res = p(1).get()
+        self.assertEqual(res, ['v1', (1,)])

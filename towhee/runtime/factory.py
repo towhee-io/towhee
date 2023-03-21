@@ -67,9 +67,11 @@ class _OperatorWrapper:
                  name: str,
                  init_args: Tuple = None,
                  init_kws: Dict[str, Any] = None,
-                 tag: str = 'main'):
+                 tag: str = 'main',
+                 latest: bool = False):
         self._name = name.replace('.', '/').replace('_', '-')
         self._tag = tag
+        self._latest = latest
         self._init_args = init_args
         self._init_kws = init_kws
         self._op = None
@@ -90,6 +92,18 @@ class _OperatorWrapper:
     def init_kws(self):
         return self._init_kws
 
+    @property
+    def is_latest(self):
+        return self._latest
+
+    def revision(self, tag: str = 'main'):
+        self._tag = tag
+        return self
+
+    def latest(self):
+        self._latest = True
+        return self
+
     def get_op(self):
         if self._op is None:
             self.preload_op()
@@ -98,7 +112,7 @@ class _OperatorWrapper:
     def preload_op(self):
         try:
             loader = OperatorLoader()
-            self._op = loader.load_operator(self._name, self._init_args, self._init_kws, tag=self._tag)
+            self._op = loader.load_operator(self._name, self._init_args, self._init_kws, tag=self._tag, latest=self._latest)
         except Exception as e:
             err = f'Loading operator with error:{e}'
             engine_log.error(err)

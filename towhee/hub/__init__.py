@@ -19,8 +19,8 @@ from .downloader import set_hub_url
 _CACHE_MANAGER = CacheManager()
 
 
-def get_operator(operator: str, tag: str, install_reqs: bool = True):
-    return _CACHE_MANAGER.get_operator(operator, tag, install_reqs)
+def get_operator(operator: str, tag: str, install_reqs: bool = True, latest: bool = False):
+    return _CACHE_MANAGER.get_operator(operator, tag, install_reqs, latest)
 
 
 __all__ = [

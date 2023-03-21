@@ -49,7 +49,7 @@ class CacheManager:
             cache_root = get_local_dir()
             return operator_tag_path(Path(cache_root) / 'operators' / author / repo, tag)
 
-    def get_operator(self, operator: str, tag: str, install_reqs: bool) -> Path:
+    def get_operator(self, operator: str, tag: str, install_reqs: bool, latest: bool) -> Path:
         """Obtain the path to the requested operator.
 
         This function will obtain the first reference to the operator from the cache locations.
@@ -63,6 +63,8 @@ class CacheManager:
                 Which tag version to use of the opeartor. Will use 'main' if locally imported.
             install_reqs (`bool`):
                 Whether to download the python packages if a requirements.txt file is included in the repo.
+            latest (`bool`):
+                Whether to download the latest files.
 
         Returns:
             (Path | None)
@@ -79,12 +81,10 @@ class CacheManager:
         author, repo = operator_split
         op_path = self._op_cache_name(author, repo, tag)
 
-        if op_path.is_dir():
+        if op_path.is_dir() and not latest:
             return op_path
 
         with self._download_lock:
-            if op_path.is_dir():
-                return op_path
             download_path = op_path.parent.parent
-            download_operator(author, repo, tag, download_path, install_reqs)
+            download_operator(author, repo, tag, download_path, install_reqs, latest)
             return op_path

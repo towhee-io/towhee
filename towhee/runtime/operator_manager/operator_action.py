@@ -32,13 +32,15 @@ class OperatorAction:
         return self._type
 
     @staticmethod
-    def from_hub(name, args, kwargs):
+    def from_hub(name, args, kwargs, tag, latest):
         """Create an Action for hub op.
 
         Args:
             name (str): The op name or the path to an op.
             args (list): The op args.
             kwargs (dict): The op kwargs.
+            tag: (`str`): The tag of op.
+            latest (`bool`): Whether to download the latest op files.
 
         Returns:
             Action: The action.
@@ -47,11 +49,13 @@ class OperatorAction:
         action._op_name = name
         action._op_args = args
         action._op_kwargs = kwargs
+        action._tag = tag
+        action._latest = latest
         action._type = 'hub'
         return action
 
     @staticmethod
-    def from_builtin(name, args=None, kwargs=None):
+    def from_builtin(name, args=None, kwargs=None, tag=None, latest=False):
         """Create an Action for hub op.
 
         Args:
@@ -67,7 +71,8 @@ class OperatorAction:
         action._op_args = args
         action._op_kwargs = kwargs
         action._type = OPType.BUILTIN
-        action._tag = None
+        action._tag = tag
+        action._latest = latest
         return action
 
     @staticmethod
@@ -127,7 +132,8 @@ class OperatorAction:
                 'type': self._type,
                 'init_args': self._op_args if self._op_args and len(self._op_args) != 0 else None,
                 'init_kws': self._op_kwargs if self._op_kwargs and len(self._op_kwargs) != 0 else None,
-                'tag': self._tag
+                'tag': self._tag,
+                'latest': self._latest
             }
         elif self._type in [OPType.LAMBDA, OPType.CALLABLE]:
             return {
