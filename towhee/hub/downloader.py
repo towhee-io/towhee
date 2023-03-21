@@ -93,12 +93,14 @@ class _HubFiles:
                 return self.get_tag_path() / item['path']
         return None
 
-    def symlink_files(self):
+    def symlink_files(self, latest):
         tmp_dir = Path(tempfile.mkdtemp(dir=self._root))
         for dst, src in self.symlink_pair():
             dst_file = tmp_dir / dst
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             dst_file.symlink_to(src)
+        if latest:
+            shutil.rmtree(self.get_tag_path(True))
         tmp_dir.rename(self.get_tag_path(True))
 
     def symlink_pair(self):
@@ -160,7 +162,8 @@ class _Downloader:
 
 _DOWNLOAD_LOCK = threading.Lock()
 
-def download_operator(author: str, repo: str, tag: str, op_path: Path, install_reqs: bool = True):
+
+def download_operator(author: str, repo: str, tag: str, op_path: Path, install_reqs: bool = True, latest: bool = False):
     hub_url = get_hub_url()
     ht = HubUtils(author, repo, hub_url)
     meta = ht.branch_tree(tag)
@@ -168,7 +171,7 @@ def download_operator(author: str, repo: str, tag: str, op_path: Path, install_r
         raise RuntimeError('Fetch op {}/{}:{} info failed'.format(author, repo, tag))
     fs = _HubFiles(op_path, tag, meta)
     _Downloader(fs).download()
-    fs.symlink_files()
+    fs.symlink_files(latest)
 
     if install_reqs and fs.requirements:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', fs.requirements])

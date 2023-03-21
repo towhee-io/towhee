@@ -90,7 +90,9 @@ class Node(ABC):
                         hub_id,
                         self._node_repr.op_info.init_args,
                         self._node_repr.op_info.init_kws,
-                        self._node_repr.op_info.tag)
+                        self._node_repr.op_info.tag,
+                        self._node_repr.op_info.latest,
+                    )
                     self._time_profiler.record(self.uid, Event.init_out)
                     return True
             except Exception as e:  # pylint: disable=broad-except

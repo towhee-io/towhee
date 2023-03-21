@@ -423,7 +423,7 @@ class Pipeline:
         if fn in [OPName.NOP, ConcatConst.name]:
             return OperatorAction.from_builtin(fn)
         if isinstance(fn, _OperatorWrapper):
-            return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws)
+            return OperatorAction.from_hub(fn.name, fn.init_args, fn.init_kws, fn.tag, fn.is_latest)
         if isinstance(fn, RuntimePipeline):
             return OperatorAction.from_pipeline(fn)
         if getattr(fn, '__name__', None) == '<lambda>':

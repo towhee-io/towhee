@@ -24,13 +24,14 @@ class TestOperatorAction(unittest.TestCase):
     """
 
     def test_hub(self):
-        op_action = OperatorAction.from_hub('test/image-decode', (), {})
+        op_action = OperatorAction.from_hub('test/image-decode', (), {}, 'main', False)
         op_info = {
             'operator': 'test/image-decode',
             'type': 'hub',
             'init_args': None,
             'init_kws': None,
-            'tag': 'main'
+            'tag': 'main',
+            'latest': False
         }
         self.assertEqual(op_action.serialize(), op_info)
 

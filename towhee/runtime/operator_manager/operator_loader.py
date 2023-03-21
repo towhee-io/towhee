@@ -29,6 +29,7 @@ from towhee.utils.log import engine_log
 from .operator_registry import OperatorRegistry
 
 
+# pylint: disable=unused-argument
 class OperatorLoader:
     """
     Wrapper class used to load operators from either local cache or a remote
@@ -40,13 +41,13 @@ class OperatorLoader:
             `$HOME/.towhee/operators`.
     """
 
-    def _load_operator_from_internal(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+    def _load_operator_from_internal(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str, latest: bool) -> Operator:
         if function == OPName.NOP:
             return NOPNodeOperator()
         else:
             return None
 
-    def _load_operator_from_registry(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:  # pylint: disable=unused-argument
+    def _load_operator_from_registry(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str, latest: bool) -> Operator:
         op = OperatorRegistry.resolve(function)
         return self._instance_operator(op, arg, kws) if op is not None else None
 
@@ -117,11 +118,11 @@ class OperatorLoader:
 
         return self._instance_operator(op, arg, kws) if op is not None else None
 
-    def _load_operator_from_hub(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:
+    def _load_operator_from_hub(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str, latest: bool) -> Operator:
         if '/' not in function:
             function = 'towhee/'+function
         try:
-            path = get_operator(operator=function, tag=tag)
+            path = get_operator(operator=function, tag=tag, latest=latest)
         except Exception as e:  # pylint: disable=broad-except
             err = '{}, {}'.format(str(e), traceback.format_exc())
             engine_log.error(err)
@@ -129,7 +130,7 @@ class OperatorLoader:
 
         return self._load_operator_from_path(path, function, arg, kws)
 
-    def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str) -> Operator:
+    def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str, latest: bool) -> Operator:
         """
         Attempts to load an operator from cache. If it does not exist, looks up the
         operator in a remote location and downloads it to cache instead. By standard
@@ -144,7 +145,7 @@ class OperatorLoader:
         for factory in [self._load_operator_from_internal,
                         self._load_operator_from_registry,
                         self._load_operator_from_hub]:
-            op = factory(function, arg, kws, tag)
+            op = factory(function, arg, kws, tag, latest)
             if op is not None:
                 return op
         if op is None:

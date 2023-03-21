@@ -23,9 +23,9 @@ class TestCacheManager(unittest.TestCase):
     """
     def test_error_repo(self):
         with self.assertRaises(RuntimeError):
-            CacheManager().get_operator('No-user/No-op', 'main', True)
+            CacheManager().get_operator('No-user/No-op', 'main', True, False)
 
 
     def test_download_op(self):
-        CacheManager().get_operator('image-decode/cv2-rgb', 'main', True)
-        CacheManager().get_operator('image-decode/cv2', 'main', True)
+        CacheManager().get_operator('image-decode/cv2-rgb', 'main', True, True)
+        CacheManager().get_operator('image-decode/cv2', 'main', True, False)

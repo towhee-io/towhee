@@ -36,13 +36,15 @@ class OperatorRepr:
         type: str,
         init_args: Tuple,
         init_kws: Dict[str, any],
-        tag: str = 'main'
+        tag: str = 'main',
+        latest: bool = False
     ):
         self._operator = operator
         self._type = type
         self._init_args = init_args
         self._init_kws = init_kws
         self._tag = tag
+        self._latest = latest
 
     @property
     def operator(self):
@@ -64,6 +66,10 @@ class OperatorRepr:
     def tag(self) -> str:
         return self._tag
 
+    @property
+    def latest(self) -> bool:
+        return self._latest
+
     @staticmethod
     def from_dict(op_info: Dict[str, Any]) -> 'OperatorRepr':
         """Return a OperatorRepr from a description dict.
@@ -75,7 +81,9 @@ class OperatorRepr:
             OperatorRepr object.
         """
         check_keys(op_info, {'operator', 'type', 'init_args', 'init_kws', 'tag'})
-        return OperatorRepr(op_info['operator'], op_info['type'], op_info['init_args'], op_info['init_kws'], op_info['tag'])
+        if 'latest' not in op_info:  # for lambda and func
+            return OperatorRepr(op_info['operator'], op_info['type'], op_info['init_args'], op_info['init_kws'], op_info['tag'])
+        return OperatorRepr(op_info['operator'], op_info['type'], op_info['init_args'], op_info['init_kws'], op_info['tag'], op_info['latest'])
 
 
 class IterationRepr:

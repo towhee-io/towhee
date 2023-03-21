@@ -32,13 +32,18 @@ class TestOps(unittest.TestCase):
             op.get_op()
 
     def test_revision(self):
-        op0 = ops.test_revision()
+        op0 = ops.test_revision().revision()
         self.assertEqual(op0.tag, 'main')
         self.assertEqual(op0()[0], 'main')
 
         op1 = ops.test_revision().revision('v1')
+        self.assertEqual(op1.tag, 'v1')
         self.assertEqual(op1()[0], 'v1')
 
+    def test_latest(self):
+        op = ops.test_revision().latest()
+        self.assertTrue(op.is_latest)
+        self.assertEqual(op()[0], 'main')
 
     def test_local(self):
         # pylint: disable=protected-access

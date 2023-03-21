@@ -67,7 +67,7 @@ class OperatorPool:
     def clear(self):
         self._all_ops = {}
 
-    def acquire_op(self, key, hub_op_id: str, op_args: List, op_kws: Dict[str, any], tag: str) -> Operator:
+    def acquire_op(self, key, hub_op_id: str, op_args: List, op_kws: Dict[str, any], tag: str, latest: bool) -> Operator:
         """
         Instruct the `OperatorPool` to reserve and return the
         specified operator for use in the executor.
@@ -81,6 +81,8 @@ class OperatorPool:
                 Operator init parameters with kwargs
             tag: (`str`)
                 The tag of operator
+            latest (`bool`):
+                Whether to download the latest files.
 
         Returns:
             (`towhee.operator.Operator`)
@@ -96,7 +98,7 @@ class OperatorPool:
                 self._all_ops[key] = storage
 
             if not storage.op_available():
-                op = self._op_loader.load_operator(hub_op_id, op_args, op_kws, tag)
+                op = self._op_loader.load_operator(hub_op_id, op_args, op_kws, tag, latest)
                 storage.put(op, True)
                 op.key = key
             return storage.get()

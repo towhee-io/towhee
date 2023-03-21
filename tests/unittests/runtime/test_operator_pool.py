@@ -29,7 +29,7 @@ class TestOperatorPool(unittest.TestCase):
 
     def test_acquire_release(self):
         hub_op_id = 'local/add_operator'
-        op = self._op_pool.acquire_op(self._key, hub_op_id, [0], None, 'main')
+        op = self._op_pool.acquire_op(self._key, hub_op_id, [0], None, 'main', False)
 
         # Perform some simple operations.
         self.assertTrue(isinstance(op, Operator))
@@ -37,7 +37,7 @@ class TestOperatorPool(unittest.TestCase):
 
         # Release and re-acquire the operator.
         self._op_pool.release_op(op)
-        op = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main')
+        op = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main', False)
         # Perform more operations.
         self.assertEqual(op(-1).sum, -1)
         self.assertEqual(op(100).sum, 100)
@@ -46,8 +46,8 @@ class TestOperatorPool(unittest.TestCase):
         # Shareable operator only need one
         self._op_pool.clear()
         hub_op_id = 'local/add_operator'
-        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main')
-        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main')
+        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main', False)
+        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, {'factor': 0}, 'main', False)
 
         self.assertEqual(len(self._op_pool), 1)
         self._op_pool.release_op(op1)
@@ -59,19 +59,19 @@ class TestOperatorPool(unittest.TestCase):
         self._op_pool.clear()
         hub_op_id = 'local/generator_operator'
 
-        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
-        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
+        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
+        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
 
         self.assertEqual(len(self._op_pool), 0)
         self._op_pool.release_op(op1)
         self.assertEqual(len(self._op_pool), 1)
         self._op_pool.release_op(op2)
         self.assertEqual(len(self._op_pool), 2)
-        op3 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
+        op3 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
         self.assertEqual(len(self._op_pool), 1)
 
-        op4 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
-        op5 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
+        op4 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
+        op5 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
         self._op_pool.release_op(op3)
         self._op_pool.release_op(op4)
         self._op_pool.release_op(op5)
@@ -81,8 +81,8 @@ class TestOperatorPool(unittest.TestCase):
         self._op_pool.clear()
         hub_op_id = 'local/flat_operator'
 
-        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
-        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
+        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
+        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
         self.assertEqual(len(self._op_pool), 0)
         self._op_pool.release_op(op2)
         self.assertEqual(len(self._op_pool), 0)
@@ -94,8 +94,8 @@ class TestOperatorPool(unittest.TestCase):
         self._op_pool.clear()
         hub_op_id = 'local/flat_operator'
 
-        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
-        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main')
+        op1 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
+        op2 = self._op_pool.acquire_op(self._key, hub_op_id, None, None, 'main', False)
         self.assertEqual(len(self._op_pool), 0)
         self._op_pool.release_op(op2)
         self.assertEqual(len(self._op_pool), 0)
