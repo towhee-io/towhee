@@ -16,12 +16,6 @@ RUN pip3 install torch torchvision torchaudio --extra-index-url https://download
 
 RUN pip3 install onnxruntime onnx
 
-RUN pip install --no-cache-dir -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple towhee --pre
-RUN pip install --no-cache-dir -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple towhee.models --pre
-
-RUN apt-get install git-lfs && \
-    git lfs install
-
 WORKDIR /workspace
 
 RUN mkdir -p /workspace/models
@@ -29,5 +23,8 @@ RUN mkdir -p /workspace/models
 COPY ./dag.pickle /workspace/dag.pickle
 
 COPY ./server_config.json /workspace/server_config.json
+
+RUN pip install --no-cache-dir -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple towhee --pre
+RUN pip install --no-cache-dir -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple towhee.models --pre
 
 RUN triton_builder /workspace/dag.pickle /workspace/models /workspace/server_config.json
