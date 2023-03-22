@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:21.06.1-py3
+FROM nvcr.io/nvidia/tritonserver:22.07-py3
 
 RUN apt-get update          && \
     apt-get install -y         \
@@ -11,7 +11,7 @@ RUN apt-get update          && \
 
 RUN pip3 install -U pip
 
-RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
 
 RUN pip3 install onnxruntime onnx
 
@@ -25,4 +25,4 @@ COPY ./server_config.json /workspace/server_config.json
 
 RUN pip3 install towhee towhee.models
 
-RUN triton_builder /workspace/dag.pickle /workspace/models /workspace/server_config.json
+RUN triton_builder2 /workspace/dag.pickle /workspace/models /workspace/server_config.json
