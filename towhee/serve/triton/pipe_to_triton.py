@@ -32,7 +32,7 @@ class PipeToTriton:
     def __init__(self, dag_repr: 'dag_repr',
                  model_root: str,
                  model_name: str,
-                 server_conf: int):
+                 server_conf: dict):
         self._dag_repr = dag_repr
         self._model_root = model_root
         self._model_name = model_name
@@ -59,7 +59,7 @@ class PipeToTriton:
         )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.writelines(config_lines)
-            return True
+        return True
 
     def _gen_bls_model(self) -> bool:
         try:
