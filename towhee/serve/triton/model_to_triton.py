@@ -71,7 +71,7 @@ class ModelToTriton:
             )
         with open(self._triton_files.config_file, 'wt', encoding='utf-8') as f:
             f.writelines(config_lines)
-            return True
+        return True
 
     def _save_onnx_model(self):
         self._backend = 'onnxruntime'
