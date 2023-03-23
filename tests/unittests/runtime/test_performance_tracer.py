@@ -53,7 +53,7 @@ class TestPerformanceProfiler(unittest.TestCase):
         time_profiler = p._time_profiler_list[0]
         time_profiler.record('_run_pipe', 'pipe_out')
         with self.assertRaises(BaseException):
-            _ = PerformanceProfiler(time_profiler.time_record, p._dag_repr)
+            _ = PerformanceProfiler(time_profiler.time_record, p._dag_repr.to_dict().get('nodes'))
 
     def test_tracer_concat(self):
         pipe0 = pipe.input('a', 'b', 'c')

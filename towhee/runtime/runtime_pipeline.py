@@ -187,7 +187,7 @@ class RuntimePipeline:
             engine_log.warning(e_msg)
             return None
 
-        performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr)
+        performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr.to_dict().get('nodes'))
         return performance_profiler
 
     def reset_profiler(self):

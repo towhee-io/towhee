@@ -13,6 +13,7 @@
 # limitations under the License.
 import json
 import time
+from typing import Dict
 from tabulate import tabulate
 from copy import deepcopy
 from pathlib import Path
@@ -25,15 +26,15 @@ class PipelineProfiler:
     """
     PipelineProfiler to trace one pipeline.
     """
-    def __init__(self, dag: 'DAGRepr'):
+    def __init__(self, nodes: Dict[str, str]):
         self.time_in = None
         self.time_out = None
         self.data = None
         self.node_tracer = {}
         self.node_report = {}
-        for uid, node in dag.nodes.items():
-            self.node_tracer[uid] = dict(name=node.name, iter=node.iter_info.type, init_in=[], init_out=[], queue_in=[], queue_out=[],
-                                         process_in=[], process_out=[])
+        for uid, node in nodes.items():
+            self.node_tracer[uid] = dict(name=node.get('name'), iter=node.get('iter_info').get('type'), init_in=[], init_out=[], queue_in=[],
+                                         queue_out=[], process_in=[], process_out=[])
 
     def add_node_tracer(self, name, event, ts):
         ts = int(ts) / 1000000
@@ -148,9 +149,9 @@ class PerformanceProfiler:
     PerformanceProfiler to analysis the time profiler.
     """
 
-    def __init__(self, time_prfilers: list, dag: 'DAGRepr'):
+    def __init__(self, time_prfilers: list, nodes: Dict[str, str]):
         self._time_prfilers = time_prfilers
-        self.dag = dag
+        self._nodes = nodes
         self.timing = None
         self.pipes_profiler = []
         self.node_report = {}
@@ -158,7 +159,7 @@ class PerformanceProfiler:
 
     def make_report(self):
         for tf in self._time_prfilers:
-            p_tracer = PipelineProfiler(self.dag)
+            p_tracer = PipelineProfiler(self._nodes)
             p_tracer.data = tf.inputs
             for ts_info in tf.time_record:
                 name, event, ts = ts_info.split('::')
