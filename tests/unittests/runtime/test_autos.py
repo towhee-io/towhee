@@ -141,3 +141,15 @@ class TestAutoPipes(unittest.TestCase):
         p = AutoPipes.pipeline('_builtin_pipeline', conf)
         ret = p(10).get()[0]
         self.assertEqual(ret, 12)
+
+    def test_local_repo(self):
+        conf = AutoConfig.load_config('local/ci-test2')
+        conf.param = 1
+        p = AutoPipes.pipeline('local/ci-test2', conf)
+        self.assertEqual(p(1).get(), [2])
+
+    def test_hub_repo(self):
+        conf = AutoConfig.load_config('towhee/test-revision-pipeline')
+        conf.param = 10
+        p = AutoPipes.pipeline('towhee/test-revision-pipeline', conf)
+        self.assertEqual(p(1).get(), [11])

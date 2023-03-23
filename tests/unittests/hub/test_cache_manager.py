@@ -26,6 +26,8 @@ class TestCacheManager(unittest.TestCase):
             CacheManager().get_operator('No-user/No-op', 'main', True, False)
         with self.assertRaises(RuntimeError):
             CacheManager().get_pipeline('No-user/No-pipe', 'main', True)
+        with self.assertRaises(ValueError):
+            CacheManager().get_pipeline('No-pipe', 'main', True)
 
     def test_download_op(self):
         CacheManager().get_operator('image-decode/cv2-rgb', 'main', True, True)

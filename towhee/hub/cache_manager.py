@@ -43,7 +43,7 @@ class CacheManager:
 
     def _op_cache_name(self, author: str, repo: str, tag: str):
         if author == 'local':
-            cache_root = os.environ.get('TEST_CACHE')
+            cache_root = os.environ.get('TEST_OP_CACHE')
             return Path(cache_root) / repo.replace('-', '_')
         else:
             cache_root = get_local_dir()
@@ -51,7 +51,7 @@ class CacheManager:
 
     def _pipe_cache_name(self, author: str, repo: str, tag: str):
         if author == 'local':
-            cache_root = os.environ.get('TEST_CACHE')
+            cache_root = os.environ.get('TEST_PIPE_CACHE')
             return Path(cache_root) / repo.replace('-', '_')
         else:
             cache_root = get_local_dir()
