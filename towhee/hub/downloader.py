@@ -80,11 +80,8 @@ class _HubFiles:
         files_dir.mkdir(parents=True, exist_ok=True)
         return files_dir
 
-    def get_tag_path(self, create = False):
-        versions_dir = self._root / 'versions' / self._tag
-        if create:
-            versions_dir.mkdir(parents=True, exist_ok=True)
-        return versions_dir
+    def get_tag_path(self):
+        return self._root / 'versions' / self._tag
 
     @property
     def requirements(self):
@@ -99,7 +96,7 @@ class _HubFiles:
             dst_file = tmp_dir / dst
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             dst_file.symlink_to(src)
-        tmp_dir.rename(self.get_tag_path(True))
+        os.renames(tmp_dir, self.get_tag_path())
 
     def symlink_pair(self):
         pair = []
