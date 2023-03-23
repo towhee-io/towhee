@@ -177,5 +177,16 @@ def download_operator(author: str, repo: str, tag: str, op_path: Path, install_r
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', fs.requirements])
 
 
-def operator_tag_path(root: Path, tag: str):
+def download_pipeline(author: str, repo: str, tag: str, pipe_path: Path, latest: bool = False):
+    hub_url = get_hub_url()
+    ht = HubUtils(author, repo, hub_url)
+    meta = ht.branch_tree(tag)
+    if meta is None:
+        raise RuntimeError('Fetch pipeline {}/{}:{} info failed'.format(author, repo, tag))
+    fs = _HubFiles(pipe_path, tag, meta)
+    _Downloader(fs).download()
+    fs.symlink_files(latest)
+
+
+def repo_tag_path(root: Path, tag: str):
     return _HubFiles(root, tag).get_tag_path()

@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from towhee.hub.downloader import _HubFiles, download_operator, operator_tag_path
+from towhee.hub.downloader import _HubFiles, download_operator, repo_tag_path
 
 
 class TestDownloader(unittest.TestCase):
@@ -54,7 +54,7 @@ class TestDownloader(unittest.TestCase):
         with TemporaryDirectory(dir='./') as root:
             fs = _HubFiles(root, 'v1-0.1', meta)
             tag_path = fs.get_tag_path()
-            self.assertEqual(tag_path, operator_tag_path(root, 'v1-0.1'))
+            self.assertEqual(tag_path, repo_tag_path(root, 'v1-0.1'))
             self.assertEqual(tag_path.absolute(), (Path(root) / 'versions' / 'v1_0_1').absolute())
             self.assertFalse(tag_path.is_dir())
             tag_path = fs.get_tag_path(True)
