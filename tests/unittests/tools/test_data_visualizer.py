@@ -135,7 +135,7 @@ class TestDataVisualizer(unittest.TestCase):
     def test_visualizer(self):
         p = _get_pipe()
         q = _get_node_queue()
-        pv = PipeVisualizer(p.dag_repr, q)
+        pv = PipeVisualizer(p.dag_repr.to_dict().get('nodes'), q)
         pv['_input'].show()
         self.assertEqual(pv['_input'].name, '_input')
         self.assertIsNone(pv['_input'].previous_node)
@@ -190,6 +190,6 @@ class TestDataVisualizer(unittest.TestCase):
     def test_false_node(self):
         p = _get_pipe()
         q = _get_node_queue()
-        pv = PipeVisualizer(p.dag_repr, q)
+        pv = PipeVisualizer(p.dag_repr.to_dict().get('nodes'), q)
         with self.assertRaises(KeyError):
             _ = pv['test']

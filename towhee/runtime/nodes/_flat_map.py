@@ -15,7 +15,7 @@ from typing import List, Any
 
 from .node import Node
 from towhee.runtime.data_queue import Empty
-from towhee.runtime.performance_profiler import Event
+from towhee.runtime.time_profiler import Event
 
 
 class FlatMap(Node):

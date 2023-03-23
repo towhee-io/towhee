@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import time
-from typing import Dict
+from typing import Dict, List
 from tabulate import tabulate
 from copy import deepcopy
 from pathlib import Path
 
-from .constants import WindowAllConst
+from towhee.runtime.constants import WindowAllConst
+from towhee.runtime.time_profiler import Event
 from towhee.utils.log import engine_log
 
 
@@ -149,7 +149,7 @@ class PerformanceProfiler:
     PerformanceProfiler to analysis the time profiler.
     """
 
-    def __init__(self, time_prfilers: list, nodes: Dict[str, str]):
+    def __init__(self, time_prfilers: List['TimeProfiler'], nodes: Dict[str, str]):
         self._time_prfilers = time_prfilers
         self._nodes = nodes
         self.timing = None
@@ -224,40 +224,3 @@ class PerformanceProfiler:
         for i, p_profiler in enumerate(self.pipes_profiler):
             profiler_json += p_profiler.gen_profiler_json(i)
         return profiler_json
-
-
-class Event:
-    pipe_name = '_run_pipe'
-    pipe_in = 'pipe_in'
-    pipe_out = 'pipe_out'
-    init_in = 'init_in'
-    init_out = 'init_out'
-    process_in = 'process_in'
-    process_out = 'process_out'
-    queue_in = 'queue_in'
-    queue_out = 'queue_out'
-
-
-class TimeProfiler:
-    """
-    TimeProfiler to record the event and timestamp.
-    """
-    def __init__(self, enable=False):
-        self._enable = enable
-        self.time_record = []
-        self.inputs = None
-
-    def record(self, uid, event):
-        if not self._enable:
-            return
-        timestamp = int(round(time.time() * 1000000))
-        self.time_record.append(f'{uid}::{event}::{timestamp}')
-
-    def enable(self):
-        self._enable = True
-
-    def disable(self):
-        self._enable = False
-
-    def reset(self):
-        self.time_record = []

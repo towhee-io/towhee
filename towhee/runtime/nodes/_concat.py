@@ -14,7 +14,7 @@
 
 
 from .node import Node
-from towhee.runtime.performance_profiler import Event
+from towhee.runtime.time_profiler import Event
 
 
 class Concat(Node):
