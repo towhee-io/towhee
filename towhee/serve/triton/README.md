@@ -13,32 +13,43 @@ For example, we tested the performance of two CLIP pipelines on the same machine
 
 ## Example
 
-There is an example of using towhee to start a triton server with an [image embedding](https://towhee.io/tasks/detail/operator?field_name=Computer-Vision&task_name=Image-Embedding) pipeline, you can also refer to this to start your own pipeline.
+There is an example of using towhee to start a triton server with a text image search pipeline, you can also refer to this to start your own pipeline.
 
 - **Create Pipeline and Build Image**
 
-`dummy_input()` is used to create a pipeline with dummy inputs, and `as_function` can turn the pipeline into a function, which includes DAG information so that we can build triton docker image.
+When creating a pipeline, we can specify `config` with [AutoConfig](../../runtime/auto_config.py) to set the configuration. It will work when starting the Triton Model, and the following example shows how to create a pipeline in Triton with `config = AutoConfig.TritonGPUConfig()`.
 
 ```Python
-import towhee
-img_embedding_pipe = ( towhee.dummy_input()
-        .image_decode.cv2_rgb()
-        .image_embedding.timm(model_name='resnet50')
-        .as_function()
-        )
+from towhee import pipe, ops, AutoConfig
 
-towhee.build_docker_image(img_embedding_pipe, image_name='image_embedding:v1', cuda='11.4')
+p = (
+    pipe.input('url')
+    .map('url', 'image', ops.image_decode.cv2_rgb())
+    .map('image', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch16', modality='image'), config=AutoConfig.TritonGPUConfig())
+    .output('vec')
+)
+
+towhee.build_docker_image(
+    dc_pipeline=p,
+    image_name='clip:v1',
+    cuda_version='11.7', # '117dev' for developer
+    format_priority=['onnx'],
+    parallelism=4,
+    inference_server='triton'
+)
 ```
 
-Then we can run `docker images` command and will list the built **image_embedding:v1** image.
+Then we can run `docker images` command and will list the built **clip:v1** image.
 
 - **Start Triton Server**
 
 Run docker image with `tritonserver` command to start triton server.
 
 ```Bash
-$ docker run -td --gpus=all --shm-size=1g --net=host image_embedding:v1 \
-    tritonserver --model-repository=/workspace/models --grpc-port=8001
+$ docker run -td --gpus=all --shm-size=1g \
+    -p 8000:8000 -p 8001:8001 -p 8002:8002 \
+    clip:v1 \
+    tritonserver --model-repository=/workspace/models
 ```
 
 After starting the server, we can run `docker logs <container id>` to view the logs. When you see the following logs, it means that the server started successfully:
@@ -49,70 +60,36 @@ Started HTTPService at 0.0.0.0:8000
 Started Metrics Service at 0.0.0.0:8002
 ```
 
-- **Remote Serving with DC**
+- **Remote Serving**
 
-The we can use `remote` to request the result with the url.
+The we can use `triton_client` to request the result with the url.
 
 > The url format is your-ip-address:your-grpc-port, you need modify the ip according you env.
 
 ```Python
-import towhee
-res = towhee.dc(['https://github.com/towhee-io/towhee/blob/main/towhee_logo.png?raw=true']) \
-            .remote(url='172.16.70.4:8001', mode='infer', protocol='grpc')
+from towhee import triton_client
+
+# run with triton client
+client = triton_client.Client(url='localhost:8000')
+
+# run data
+data = 'https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'
+res = client(data)
 ```
 
 ## Advanced
 
-- **Pipeline Configuration**
+### Pipeline Configuration
 
-Using `pipeline_config` interface to set the Pipeline configuration, such as parallel, chunksize, jit and format_priority, it will works on this pipeline(all operators). 
+When building the image, we need to specify the following parameters:
 
-For example, this pipeline set the priority to optimize the model, first tensorrt then onnx:
+- `dc_pipeline`: towhee pipeline
+- `image_name`: the name of the image
+- `cuda_verion`: the version of CUDA
+- `format_priority`: the priority list of the model, defaults to ['onnx']
+- `inference_server`: the inference server, defaults to 'triton'
 
-```python
-clip_img_embedding_pipe = ( towhee.dummy_input()
-        .pipeline_config(format_priority=['tensorrt', 'onnx'])
-        .image_decode.cv2_rgb()
-        .image_text_embedding.clip_image()
-        .as_function()
-        )
-```
-
-- **Operator Configuration**
-
-Using `op_config` parameter in each Operator to set the configuration, such as `parallel`, `chunksize`, `jit`, `format_priority`, `dynamic_batching`, `device_ids` and `instance_count`. 
-
-For example, this pipeline set two instances to run `image_decode.cv2_rgb` operator, and set device (GPU0) to run `image_text_embedding.clip_image` operator:
-
-```python
-clip_img_embedding_pipe = ( towhee.dummy_input()
-        .image_decode.cv2_rgb(op_config={'instance_count': 2})
-        .image_text_embedding.clip_image(op_config={'device_ids': [0]})
-        .as_function()
-        )
-```
-
-And this pipeline will use [towhee.compiler](https://github.com/towhee-io/towhee-compiler) to JIT(just in time) compile the resnet50 model for speedup:
-
-```python
-img_embedding_pipe = ( towhee.dummy_input()
-        .image_decode.cv2_rgb()
-        .image_embedding.timm(model_name='resnet50', op_config={'jit': 'towhee'})
-        .as_function()
-        )
-```
-
-And we can also use the GPU to encode the image, just set the `image_decode` operator:
-
-```python
-img_embedding_pipe = ( towhee.dummy_input()
-        .image_decode.nvjpeg(op_config={'device_ids': [0]})
-        .image_embedding.timm(model_name='resnet50', op_config={'jit': 'towhee'})
-        .as_function()
-        )
-```
-
-- **Docker Configuration**
+### Docker Configuration
 
 You can set the [Docker Command Options](https://docs.docker.com/engine/reference/commandline/run/) when start triton server, such as set gpus and she-size.
 
