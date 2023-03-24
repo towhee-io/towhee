@@ -26,5 +26,7 @@ MODEL_RESOURCE = os.path.join(UNITTESTS_ROOT, 'models/resource')
 CACHE_PATH = Path(__file__).parent.resolve()
 
 operator_cache = (CACHE_PATH/'mock_operators')
+pipeline_cache = (CACHE_PATH/'mock_pipelines')
 # dc2 op cache
-os.environ['TEST_CACHE'] = str(operator_cache)
+os.environ['TEST_OP_CACHE'] = str(operator_cache)
+os.environ['TEST_PIPE_CACHE'] = str(pipeline_cache)

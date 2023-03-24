@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 import threading
 
-from .downloader import download_operator, operator_tag_path
+from .downloader import download_operator, download_pipeline, repo_tag_path
 
 DEFAULT_CACHE_DIR = '~/.towhee'
 ENV_TOWHEE_HOME = 'TOWHEE_HOME'
@@ -43,11 +43,19 @@ class CacheManager:
 
     def _op_cache_name(self, author: str, repo: str, tag: str):
         if author == 'local':
-            cache_root = os.environ.get('TEST_CACHE')
+            cache_root = os.environ.get('TEST_OP_CACHE')
             return Path(cache_root) / repo.replace('-', '_')
         else:
             cache_root = get_local_dir()
-            return operator_tag_path(Path(cache_root) / 'operators' / author / repo, tag)
+            return repo_tag_path(Path(cache_root) / 'operators' / author / repo, tag)
+
+    def _pipe_cache_name(self, author: str, repo: str, tag: str):
+        if author == 'local':
+            cache_root = os.environ.get('TEST_PIPE_CACHE')
+            return Path(cache_root) / repo.replace('-', '_')
+        else:
+            cache_root = get_local_dir()
+            return repo_tag_path(Path(cache_root) / 'pipelines' / author / repo, tag)
 
     def get_operator(self, operator: str, tag: str, install_reqs: bool, latest: bool) -> Path:
         """Obtain the path to the requested operator.
@@ -88,3 +96,41 @@ class CacheManager:
             download_path = op_path.parent.parent
             download_operator(author, repo, tag, download_path, install_reqs, latest)
             return op_path
+
+    def get_pipeline(self, pipeline: str, tag: str, latest: bool) -> Path:
+        """Obtain the path to the requested pipeline.
+
+        This function will obtain the first reference to the pipeline from the cache locations.
+        If no pipeline is found, this function will download it to the default cache location
+        from the Towhee hub.
+
+        Args:
+            pipeline (`str`):
+                The pipeline in 'author/repo' format. Author will be 'local' if locally imported.
+            tag (`str`):
+                Which tag version to use of the pipeline. Will use 'main' if locally imported.
+            latest (`bool`):
+                Whether to download the latest files.
+
+        Returns:
+            (Path | None)
+                Returns the path of the operator, None if a local operator isnt found.
+
+        Raises:
+            (`ValueError`):
+                Incorrect pipeline format.
+        """
+        operator_split = pipeline.split('/')
+        # For now assuming all piplines will be classifed as 'author/repo'.
+        if len(operator_split) != 2:
+            raise ValueError('''Incorrect operator format, should be '<author>/<operator_repo>'.''')
+        author, repo = operator_split
+        pipe_path = self._pipe_cache_name(author, repo, tag)
+
+        if pipe_path.is_dir() and not latest:
+            return pipe_path
+
+        with self._download_lock:
+            download_path = pipe_path.parent.parent
+            download_pipeline(author, repo, tag, download_path, latest)
+            return pipe_path
