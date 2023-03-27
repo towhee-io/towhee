@@ -61,6 +61,8 @@ class PipelineLoader:
                 PipelineLoader._load_pipeline_from_file(new_name, file_path)
             else:
                 if not PipelineLoader._load_builtins(name):
+                    if '/' not in name:
+                        name = 'towhee/' + name
                     path = get_pipeline(name, tag, latest)
                     pipe_name = name.replace('-', '_')
                     file_path = path / (pipe_name.split('/')[-1] + '.py')

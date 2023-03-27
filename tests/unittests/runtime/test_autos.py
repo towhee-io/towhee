@@ -149,7 +149,7 @@ class TestAutoPipes(unittest.TestCase):
         self.assertEqual(p(1).get(), [2])
 
     def test_hub_repo(self):
-        conf = AutoConfig.load_config('towhee/test-revision-pipeline')
+        conf = AutoConfig.load_config('test-revision-pipeline')
         conf.param = 10
-        p = AutoPipes.pipeline('towhee/test-revision-pipeline', conf)
+        p = AutoPipes.pipeline('test-revision-pipeline', conf)
         self.assertEqual(p(1).get(), [11])
