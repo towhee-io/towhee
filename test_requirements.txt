@@ -19,3 +19,7 @@ onnx
 scipy
 contextvars; python_version <= '3.6'
 tenacity
+fastapi
+uvicorn
+httpx
+sqlalchemy
