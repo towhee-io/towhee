@@ -17,7 +17,7 @@ from typing import List
 
 from towhee.runtime.constants import WindowConst
 from towhee.runtime.data_queue import Empty
-from towhee.runtime.performance_profiler import Event
+from towhee.runtime.time_profiler import Event
 from .node import Node
 
 

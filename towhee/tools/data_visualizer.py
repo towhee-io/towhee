@@ -85,11 +85,11 @@ class PipeVisualizer:
     """
     Visualize the data of the pipeline.
     """
-    def __init__(self, dag_repr: 'DagRepr', node_queues: Dict[str, Any]):
+    def __init__(self, nodes: Dict[str, Any], node_queues: Dict[str, Any]):
         self._node_collections = node_queues
-        self._dag_repr = dag_repr
-        for node in self._dag_repr.nodes.values():
-            if node.next_nodes:
+        self._nodes = nodes
+        for node in self._nodes.values():
+            if node['next_nodes']:
                 self._get_previous(node)
         for v in self._node_collections.values():
             if isinstance(v['in'], list):
@@ -99,12 +99,12 @@ class PipeVisualizer:
             v['out'] = DataCollection(v['out'])
 
     def _get_previous(self, node):
-        for i in node.next_nodes:
-            curr = self._dag_repr.nodes[i].name
+        for i in node['next_nodes']:
+            curr = self._nodes[i]['name']
             if 'previous' not in self._node_collections[curr].keys():
-                self._node_collections[curr]['previous'] = [node.name]
+                self._node_collections[curr]['previous'] = [node['name']]
             else:
-                self._node_collections[curr]['previous'].append(node.name)
+                self._node_collections[curr]['previous'].append(node['name'])
 
     def show(self, tablefmt=None):
         for k in self._node_collections.keys():

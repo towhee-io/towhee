@@ -15,13 +15,13 @@
 from typing import Dict, Any, Union, Tuple, List
 from concurrent.futures import ThreadPoolExecutor
 
-from towhee.utils.log import engine_log
+from towhee.tools import visualizers
 from .operator_manager import OperatorPool
 from .data_queue import DataQueue
 from .dag_repr import DAGRepr
 from .nodes import create_node, NodeStatus
 from .node_repr import NodeRepr
-from .performance_profiler import PerformanceProfiler, TimeProfiler, Event
+from .time_profiler import TimeProfiler, Event
 
 
 class _GraphResult:
@@ -147,7 +147,7 @@ class RuntimePipeline:
 
     def _call(self, *inputs, profiler: bool):
         """
-        Run pipeline in debug mode.
+        Run pipeline with debug option.
         """
         graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, profiler)
         if profiler:
@@ -156,7 +156,7 @@ class RuntimePipeline:
 
     def _batch(self, batch_inputs, profiler: bool):
         """
-        Run batch call in debug mode.
+        Run batch call with debug option.
         """
         graph_res = []
         for inputs in batch_inputs:
@@ -177,25 +177,6 @@ class RuntimePipeline:
     def dag_repr(self):
         return self._dag_repr
 
-    def profiler(self):
-        """
-        Report the performance results after running the pipeline, note that you need to run pipeline in debug mode before calling profiler.
-        """
-        if not self._time_profiler_list:
-            e_msg = 'Please run pipeline in debug mode via `RuntimePipeline.debug()`' \
-                    'or you need to debug it first, there is nothing to report.'
-            engine_log.warning(e_msg)
-            return None
-
-        performance_profiler = PerformanceProfiler(self._time_profiler_list, self._dag_repr.to_dict().get('nodes'))
-        return performance_profiler
-
-    def reset_profiler(self):
-        """
-        Reset the profiler, reset the record to None.
-        """
-        self._time_profiler_list = []
-
     def debug(self, *inputs, batch: bool = False, profiler: bool = False):
         """
         Run pipeline in debug mode.
@@ -207,6 +188,11 @@ class RuntimePipeline:
                 Whether to record the performance of the pipeline.
         """
         if not batch:
-            return self._call(*inputs, profiler=profiler)
+            res = self._call(*inputs, profiler=profiler)
         else:
-            return self._batch(inputs[0], profiler=profiler)
+            res = self._batch(inputs[0], profiler=profiler)
+
+        v = visualizers.Visualizer(result=res, time_profiler=self._time_profiler_list, nodes=self._dag_repr.to_dict().get('nodes'))
+        self._time_profiler_list = []
+
+        return v

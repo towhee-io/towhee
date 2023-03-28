@@ -17,7 +17,8 @@ from pathlib import Path
 
 from towhee import pipe
 from towhee.runtime.factory import ops, register
-from towhee.runtime.performance_profiler import TimeProfiler, PerformanceProfiler
+from towhee.runtime.time_profiler import TimeProfiler
+from towhee.tools.profilers import PerformanceProfiler
 
 
 public_path = Path(__file__).parent.parent.resolve()
@@ -49,8 +50,8 @@ class TestPerformanceProfiler(unittest.TestCase):
     """
     def test_check(self):
         p = pipe.input('a').output('a')
-        _ = p.debug(1, profiler=True)
-        time_profiler = p._time_profiler_list[0]
+        v = p.debug(1, profiler=True)
+        time_profiler = v.profiler._time_prfilers[0]
         time_profiler.record('_run_pipe', 'pipe_out')
         with self.assertRaises(BaseException):
             _ = PerformanceProfiler(time_profiler.time_record, p._dag_repr.to_dict().get('nodes'))
@@ -61,12 +62,12 @@ class TestPerformanceProfiler(unittest.TestCase):
         pipe2 = pipe0.map(('b', 'c'), 'e', ops.cal())
         pipe3 = pipe0.map(('b', 'c'), 'f', ops.cal())
         pipe4 = pipe3.concat(pipe1, pipe2).output('d', 'e', 'f')
-        pipe4.debug(1, 2, 3, profiler=True).get()
-        pipe4.debug(2, 2, 3, profiler=True).get()
-        pipe4.debug(8, 2, 3, profiler=True).get()
+        _ = pipe4.debug(1, 2, 3, profiler=True)
+        _ = pipe4.debug(2, 2, 3, profiler=True)
+        v = pipe4.debug(8, 2, 3, profiler=True)
 
-        pp = pipe4.profiler()
-        self.assertEqual(len(pp.pipes_profiler), 3)
+        pp = v.profiler
+        self.assertEqual(len(pp.pipes_profiler), 1)
         self.assertEqual(len(pp.node_report), 6)
         pp.sort()[0].show()
         pp.max().show()
@@ -76,9 +77,9 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .flat_map('d', ('n1', 'n2'), lambda x: ((a, b) for a, b in x))
                  .output('n1', 'n2'))
         data = [(i, i + 1) for i in range(10)]
-        pipe0.debug(data, profiler=True)
+        v = pipe0.debug(data, profiler=True)
 
-        pp = pipe0.profiler()
+        pp = v.profiler
         self.assertEqual(len(pp.pipes_profiler), 1)
         self.assertEqual(len(pp.node_report), 3)
         pp.show()
@@ -89,15 +90,12 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .time_window(('n1', 'n2'), ('s1', 's2'), 't', 10, 5, ops.local.sum2())
                  .output('s1', 's2'))
         data = [(i, i + 1, i * 1000) for i in range(100) if i < 3 or i > 91]
-        pipe0.debug(data, profiler=True)
+        v= pipe0.debug(data, profiler=True)
 
-        pp = pipe0.profiler()
+        pp = v.profiler
         self.assertEqual(len(pp.pipes_profiler), 1)
         self.assertEqual(len(pp.node_report), 4)
         pp.show()
-
-        pipe0.reset_profiler()  # reset and warning
-        pipe0.profiler()
 
     def test_tracer_window_all(self):
         pipe0 = (pipe.input('n1', 'n2')
@@ -105,11 +103,11 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .map('n1', 'n2', lambda x: x+1)
                  .window_all(('n1', 'n2'), ('s1', 's2'), ops.local.sum2())
                  .output('s1', 's2'))
-        pipe0.debug([1, 2, 3, 4], [2, 3, 4, 5], profiler=True)
-        pipe0.debug([2, 2, 3, 4], [3, 3, 4, 5], profiler=True)
+        _ = pipe0.debug([1, 2, 3, 4], [2, 3, 4, 5], profiler=True)
+        v = pipe0.debug([2, 2, 3, 4], [3, 3, 4, 5], profiler=True)
 
-        pp = pipe0.profiler()
-        self.assertEqual(len(pp.pipes_profiler), 2)
+        pp = v.profiler
+        self.assertEqual(len(pp.pipes_profiler), 1)
         self.assertEqual(len(pp.node_report), 5)
         pp.show()
 
@@ -121,25 +119,26 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .map('c', 'c', lambda x: x + 1)
                  .filter('c', 'd', ('a', 'b'), filter_func)
                  .output('a', 'b', 'c', 'd'))
-        pipe0.debug(5, 6, 7, profiler=True)
-        pipe0.debug(15, 6, 7, profiler=True)
+        v1 = pipe0.debug(5, 6, 7, profiler=True)
+        v2 = pipe0.debug(15, 6, 7, profiler=True)
 
-        pp = pipe0.profiler()
-        self.assertEqual(len(pp.pipes_profiler), 2)
-        self.assertEqual(len(pp.node_report), 4)
-        pp.show()
+        pp1 = v1.profiler
+        pp2 = v2.profiler
+        self.assertEqual(len(pp1.pipes_profiler), 1)
+        self.assertEqual(len(pp1.node_report), 4)
+        pp1.show()
 
-        path1 = public_path / 'all_pipe.json'
-        pp.dump(path1)
+        path1 = public_path / 'pipe1.json'
+        pp1.dump(path1)
         with open(path1, encoding='utf-8') as f:
             json_tracing2 = json.load(f)
-        self.assertEqual(len(json_tracing2), 78)
+        self.assertEqual(len(json_tracing2), 35)
 
-        path2 = public_path / 'pipe1.json'
-        pp[0].dump(path2)
+        path2 = public_path / 'pipe2.json'
+        pp2.dump(path2)
         with open(path2, encoding='utf-8') as f:
             json_tracing2 = json.load(f)
-        self.assertEqual(len(json_tracing2), 35)
+        self.assertEqual(len(json_tracing2), 43)
 
         path1.unlink()
         path2.unlink()
@@ -149,9 +148,9 @@ class TestPerformanceProfiler(unittest.TestCase):
                  .map('c', 'c', lambda x: x + 1)
                  .filter('c', 'd', ('a', 'b'), lambda x, y: x > 10)
                  .output('a', 'b', 'c', 'd'))
-        pipe0.debug([(5, 6, 7)] * 10, batch=True, profiler=True)
+        v = pipe0.debug([(5, 6, 7)] * 10, batch=True, profiler=True)
 
-        pp = pipe0.profiler()
+        pp = v.profiler
         self.assertEqual(len(pp.pipes_profiler), 10)
         self.assertEqual(len(pp.node_report), 4)
 
