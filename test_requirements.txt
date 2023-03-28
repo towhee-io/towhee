@@ -17,3 +17,6 @@ twine
 dill
 onnx
 scipy
+fastapi
+uvicorn
+httpx
