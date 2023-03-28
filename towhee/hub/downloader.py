@@ -80,11 +80,8 @@ class _HubFiles:
         files_dir.mkdir(parents=True, exist_ok=True)
         return files_dir
 
-    def get_tag_path(self, create = False):
-        versions_dir = self._root / 'versions' / self._tag
-        if create:
-            versions_dir.mkdir(parents=True, exist_ok=True)
-        return versions_dir
+    def get_tag_path(self):
+        return self._root / 'versions' / self._tag
 
     @property
     def requirements(self):
@@ -99,9 +96,10 @@ class _HubFiles:
             dst_file = tmp_dir / dst
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             dst_file.symlink_to(src)
-        if latest:
-            shutil.rmtree(self.get_tag_path(True))
-        tmp_dir.rename(self.get_tag_path(True))
+        tag_dir = self.get_tag_path()
+        if latest and tag_dir.exists():
+            shutil.rmtree(tag_dir)
+        os.renames(tmp_dir, tag_dir)
 
     def symlink_pair(self):
         pair = []
@@ -177,5 +175,16 @@ def download_operator(author: str, repo: str, tag: str, op_path: Path, install_r
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', fs.requirements])
 
 
-def operator_tag_path(root: Path, tag: str):
+def download_pipeline(author: str, repo: str, tag: str, pipe_path: Path, latest: bool = False):
+    hub_url = get_hub_url()
+    ht = HubUtils(author, repo, hub_url)
+    meta = ht.branch_tree(tag)
+    if meta is None:
+        raise RuntimeError('Fetch pipeline {}/{}:{} info failed'.format(author, repo, tag))
+    fs = _HubFiles(pipe_path, tag, meta)
+    _Downloader(fs).download()
+    fs.symlink_files(latest)
+
+
+def repo_tag_path(root: Path, tag: str):
     return _HubFiles(root, tag).get_tag_path()

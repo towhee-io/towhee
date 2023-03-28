@@ -14,7 +14,9 @@
 
 import unittest
 
+from .. import operator_cache
 from towhee.runtime import ops
+from towhee.runtime.operator_manager.operator_loader import OperatorLoader
 
 
 class TestOperatorLoader(unittest.TestCase):
@@ -52,3 +54,14 @@ class TestOperatorLoader(unittest.TestCase):
         self.assertEqual(op1(10), 20)
         op2 = ops.local.cal_diff(10)
         self.assertEqual(op2(10), 0)
+
+    def test_load_operator_from_path(self):
+        op1 = ops.test_revision()
+        self.assertEqual(op1()[0], 'main')
+
+        op1 = ops.test_revision().revision('no-init')
+        self.assertEqual(op1()[0], 'no-init')
+
+        path = operator_cache / 'add2'
+        op3 = OperatorLoader()._load_operator_from_path(path, 'towhee/add2', [1], {})  # pylint: disable=protected-access
+        self.assertEqual(op3([1, 2, 3]), [2, 3, 4])

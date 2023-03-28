@@ -14,9 +14,10 @@
 import unittest
 
 from towhee.tools import visualizer
+from towhee.tools.visualizer import Visualizer
 from towhee import pipe
 from towhee.runtime.data_queue import DataQueue, ColumnType
-
+# pylint: disable=protected-access
 
 def _get_pipe():
     p = (
@@ -132,17 +133,19 @@ class TestVisualizer(unittest.TestCase):
     """
     def test_dag_visualizer(self):
         p = _get_pipe()
-        visualizer.show_graph(p.dag_repr)
+        visualizer.show_graph(p)
 
     def test_show_data(self):
         p = _get_pipe()
         q = _get_node_queue()
-        visualizer.show_data(p.dag_repr, q)
+        v = Visualizer(nodes=p.dag_repr.to_dict().get('nodes'), tracer=q)
+        v.show_data()
 
     def test_get_data_visualizer(self):
         p = _get_pipe()
         q = _get_node_queue()
-        pv = visualizer.get_data_visualizer(p.dag_repr, q)
+        v = Visualizer(nodes=p.dag_repr.to_dict().get('nodes'), tracer=q)
+        pv = v.get_data_visualizer()
         pv['_input'].show()
         self.assertEqual(pv['_input'].name, '_input')
         self.assertIsNone(pv['_input'].previous_node)
@@ -209,6 +212,51 @@ class TestVisualizer(unittest.TestCase):
     def test_false_node(self):
         p = _get_pipe()
         q = _get_node_queue()
-        pv = visualizer.get_data_visualizer(p.dag_repr, q)
+        v = Visualizer(nodes=p.dag_repr.to_dict().get('nodes'), tracer=q)
+        pv = v.get_data_visualizer()
         with self.assertRaises(KeyError):
             _ = pv['test']
+
+    def test_result(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+
+        v = p.debug(1)
+        res = v.result.get()
+
+        self.assertIsInstance(v.result, DataQueue)
+        self.assertEqual(res[0], 1)
+        self.assertEqual(res[1], 2)
+
+    def test_profiler(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+
+        _ = p.debug(1, profiler=True)
+        _ = p.debug(2, profiler=True)
+        v = p.debug(3, profiler=True)
+        pp = v.profiler
+
+        self.assertEqual(len(pp._time_prfilers), 1)
+
+        pp.show()
+
+    def test_json(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+
+        v = p.debug(1, profiler=True)
+        v._result = None
+        info = v.to_json()
+
+        v1 =  Visualizer.from_json(info)
+        self.assertListEqual([i.time_record for i in v.time_profiler], [i.time_record for i in v1.time_profiler])

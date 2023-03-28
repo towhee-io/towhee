@@ -20,6 +20,7 @@ import importlib
 
 
 from towhee.pipelines import get_builtin_pipe_file
+from towhee.hub import get_pipeline
 
 
 PIPELINE_NAMESPACE = 'towhee.pipeline'
@@ -33,13 +34,13 @@ class PipelineLoader:
 
     @staticmethod
     def module_name(name):
-        name = name.replace('/', '_')
+        name = name.replace('/', '.')
         return PIPELINE_NAMESPACE + '.' + name
 
     @staticmethod
     def _load_pipeline_from_file(name: str, file_path: 'Path'):
         modname = PipelineLoader.module_name(name)
-        spec = importlib.util.spec_from_file_location(modname, file_path.resolve())
+        spec = importlib.util.spec_from_file_location(modname, file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -52,7 +53,7 @@ class PipelineLoader:
         return True
 
     @staticmethod
-    def load_pipeline(name: str):
+    def load_pipeline(name: str, tag: str = 'main', latest: bool = False):
         with PipelineLoader._lock:
             file_path = pathlib.Path(name)
             if file_path.is_file():
@@ -60,5 +61,10 @@ class PipelineLoader:
                 PipelineLoader._load_pipeline_from_file(new_name, file_path)
             else:
                 if not PipelineLoader._load_builtins(name):
-                    # TODO load pipeline from hub
-                    pass
+                    if '/' not in name:
+                        name = 'towhee/' + name
+                    path = get_pipeline(name, tag, latest)
+                    pipe_name = name.replace('-', '_')
+                    file_path = path / (pipe_name.split('/')[-1] + '.py')
+                    new_name = pipe_name + '.' + tag
+                    PipelineLoader._load_pipeline_from_file(new_name, file_path)

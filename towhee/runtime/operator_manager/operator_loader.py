@@ -20,6 +20,7 @@ from typing import Any, List, Dict, Union
 import re
 import traceback
 import pkg_resources
+import hashlib
 
 from towhee.operator import Operator
 from towhee.operator.nop import NOPNodeOperator
@@ -54,7 +55,7 @@ class OperatorLoader:
     def _load_legacy_op(self, modname, path, fname):
         # support old version operator API
         file_name = path / (fname + '.py')
-        spec = importlib.util.spec_from_file_location(modname, file_name.resolve())
+        spec = importlib.util.spec_from_file_location(modname, file_name)
         # Create the module and then execute the module in its own namespace.
 
         module = importlib.util.module_from_spec(spec)
@@ -80,7 +81,7 @@ class OperatorLoader:
 
         return op
 
-    def _load_operator_from_path(self, path: Union[str, Path], function: str, arg: List[Any], kws: Dict[str, Any]) -> Operator:
+    def _load_operator_from_path(self, path: Union[str, Path], function: str, arg: List[Any], kws: Dict[str, Any], tag: str = None) -> Operator:
         """
         Load operator form local path.
         Args:
@@ -97,7 +98,9 @@ class OperatorLoader:
         path = Path(path)
         fname = function.split('/')[1].replace('-', '_')
         op_name = function.replace('-', '_').replace('/', '.')
-        modname = 'towhee.operator.' + op_name
+        if not tag:
+            tag = hashlib.sha256(fname.encode('utf-8')).hexdigest()
+        modname = 'towhee.operator.' + op_name + '.' + tag
 
         all_pkg = [item.project_name for item in list(pkg_resources.working_set)]
         if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
@@ -128,7 +131,7 @@ class OperatorLoader:
             engine_log.error(err)
             return None
 
-        return self._load_operator_from_path(path, function, arg, kws)
+        return self._load_operator_from_path(path, function, arg, kws, tag)
 
     def load_operator(self, function: str, arg: List[Any], kws: Dict[str, Any], tag: str, latest: bool) -> Operator:
         """

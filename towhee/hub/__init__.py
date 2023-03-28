@@ -23,6 +23,10 @@ def get_operator(operator: str, tag: str, install_reqs: bool = True, latest: boo
     return _CACHE_MANAGER.get_operator(operator, tag, install_reqs, latest)
 
 
+def get_pipeline(operator: str, tag: str, latest: bool = False):
+    return _CACHE_MANAGER.get_pipeline(operator, tag, latest)
+
+
 __all__ = [
     'set_local_dir',
     'set_hub_url',

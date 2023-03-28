@@ -21,7 +21,7 @@ import traceback
 from towhee.runtime.data_queue import DataQueue
 from towhee.runtime.runtime_conf import set_runtime_config
 from towhee.runtime.constants import OPType
-from towhee.runtime.performance_profiler import Event, TimeProfiler
+from towhee.runtime.time_profiler import Event, TimeProfiler
 from towhee.utils.log import engine_log
 
 
