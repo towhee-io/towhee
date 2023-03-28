@@ -34,7 +34,7 @@ class NodeStatus(Enum):
 
     @staticmethod
     def is_end(status: 'NodeStatus') -> bool:
-        return status in [NodeStatus.FINISHED, NodeStatus.FAILED]
+        return status in [NodeStatus.FINISHED, NodeStatus.FAILED, NodeStatus.STOPPED]
 
 
 class Node(ABC):
@@ -166,17 +166,12 @@ class Node(ABC):
     def process(self):
         engine_log.info('Begin to run %s', str(self))
         self._set_status(NodeStatus.RUNNING)
-        while True:
-            if not self._need_stop:
-                try:
-                    if self.process_step():
-                        break
-                except Exception as e:  # pylint: disable=broad-except
-                    err = '{}, {}'.format(e, traceback.format_exc())
-                    self._set_failed(err)
-                    break
-            else:
-                self._set_finished()
+        while not self._need_stop and not NodeStatus.is_end(self.status):
+            try:
+                self.process_step()
+            except Exception as e:  # pylint: disable=broad-except
+                err = '{}, {}'.format(e, traceback.format_exc())
+                self._set_failed(err)
 
     def _set_status(self, status: NodeStatus) -> None:
         self._status = status

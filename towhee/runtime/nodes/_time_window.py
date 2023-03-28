@@ -41,32 +41,29 @@ class TimeWindow(Window):
     def _init(self):
         self._time_range_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_range_sec]
         self._time_step_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_step_sec]
-        self._input_que = self._in_ques[0]
-        self._schema = self._input_que.schema
-        self._timestamp_index = self._schema.index(self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col])
+        self._timestamp_index = self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col]
         self._buffer = _TimeWindowBuffer(self._time_range_sec, self._time_step_sec)
-        self._row_buffer = []
 
     def _get_buffer(self):
         while True:
-            data = self._input_que.get()
+            data = self.input_que.get_dict()
             if data is None:
                 # end of the data_queue
                 if self._buffer is not None and self._buffer.data:
                     ret = self._buffer.data
                     self._buffer = self._buffer.next()
                     return self._to_cols(ret)
-                else:
-                    return None
+                self._set_finished()
+                return None
 
-            self._row_buffer.append(data)
+            if not self.side_by_to_next(data):
+                return None
 
-            timestamp = data[self._timestamp_index]
-            if timestamp is Empty():
-                # end of the timestamp col
-                continue
+            process_data = dict((key, data.get(key)) for key in self._node_repr.inputs if data.get(key) is not Empty())
+            if not process_data or data[self._timestamp_index] is Empty():
+                continue            
 
-            if self._buffer(data, timestamp) and self._buffer.data:
+            if self._buffer(process_data, data[self._timestamp_index]) and self._buffer.data:
                 ret = self._buffer.data
                 self._buffer = self._buffer.next()
                 return self._to_cols(ret)

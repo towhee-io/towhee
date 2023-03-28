@@ -13,15 +13,17 @@
 # limitations under the License.
 
 
-from typing import List
+from typing import List, Dict
 
 from towhee.runtime.constants import WindowConst
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.performance_profiler import Event
+
 from .node import Node
+from .single_input import SingleInputMixin
 
 
-class Window(Node):
+class Window(Node, SingleInputMixin):
     """Window operator
 
       inputs: ---1-2-3-4-5-6--->
@@ -53,39 +55,39 @@ class Window(Node):
         self._size = self._node_repr.iter_info.param[WindowConst.param.size]
         self._step = self._node_repr.iter_info.param[WindowConst.param.step]
         self._cur_index = -1
-        self._input_que = self._in_ques[0]
-        self._schema = self._in_ques[0].schema
         self._buffer = _WindowBuffer(self._size, self._step)
-        self._row_buffer = []
 
     def _get_buffer(self):
         while True:
-            data = self._input_que.get()
+            data = self.input_que.get_dict()
             if data is None:
                 # end of the data_queue
                 if self._buffer is not None and self._buffer.data:
                     ret = self._buffer.data
                     self._buffer = self._buffer.next()
                     return self._to_cols(ret)
-                else:
-                    return None
+                self._set_finished()
+                return None
+
+            if not self.side_by_to_next(data):
+                return None
+
+            process_data = dict((key, data.get(key)) for key in self._node_repr.inputs if data.get(key) is not Empty())
+
+            if not process_data:
+                continue
 
             self._cur_index += 1
-            self._row_buffer.append(data)
-            if self._buffer(data, self._cur_index) and self._buffer.data:
+            if self._buffer(process_data, self._cur_index) and self._buffer.data:
                 ret = self._buffer.data
                 self._buffer = self._buffer.next()
                 return self._to_cols(ret)
 
-    def _to_cols(self, rows: List[List]):
-        cols = [[] for _ in self._schema]
+    def _to_cols(self, rows: List[Dict]):
+        ret = dict((key, []) for key in self._node_repr.inputs)
         for row in rows:
-            for i in range(len(self._schema)):
-                if row[i] is not Empty():
-                    cols[i].append(row[i])
-        ret = {}
-        for i in range(len(self._schema)):
-            ret[self._schema[i]] = cols[i]
+            for k, v in row.items():
+                ret[k].append(v)
         return ret
 
     def process_step(self) -> bool:
@@ -95,45 +97,26 @@ class Window(Node):
         self._time_profiler.record(self.uid, Event.queue_in)
         in_buffer = self._get_buffer()
         if in_buffer is None:
-            if self._row_buffer:
-                cols = self._to_cols(self._row_buffer)
-                for out_que in self._output_ques:
-                    if not out_que.batch_put_dict(cols):
-                        self._set_stopped()
-                        return True
-                self._row_buffer = []
-            self._set_finished()
-            return True
-
+            return
+        
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
-        if not any(process_data):
-            return False
-
         self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
         self._time_profiler.record(self.uid, Event.process_out)
-        if not succ:
-            self._set_failed(msg)
-            return True
+        assert succ, msg
 
         size = len(self._node_repr.outputs)
         if size > 1:
-            output_map = dict((self._node_repr.outputs[i], [outputs[i]])
+            output_map = dict((self._node_repr.outputs[i], outputs[i])
                               for i in range(size))
+        elif size == 1:
+            output_map = {}
+            output_map[self._node_repr.outputs[0]] = outputs
         else:
             output_map = {}
-            output_map[self._node_repr.outputs[0]] = [outputs]
 
-        cols = self._to_cols(self._row_buffer)
-        cols.update(output_map)
         self._time_profiler.record(self.uid, Event.queue_out)
-
-        for out_que in self._output_ques:
-            if not out_que.batch_put_dict(cols):
-                self._set_stopped()
-                return True
-        self._row_buffer = []
-        return False
+        self.data_to_next(output_map)
 
 
 class _WindowBuffer:

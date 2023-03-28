@@ -17,11 +17,13 @@ from typing import List
 
 from towhee.runtime.data_queue import Empty
 
-from .node import Node
 from towhee.runtime.performance_profiler import Event
 
+from .node import Node
+from .single_input import SingleInputMixin
 
-class WindowAll(Node):
+
+class WindowAll(Node, SingleInputMixin):
     """Window operator
 
       inputs: ---1-2-3-4-5-6--->
@@ -37,37 +39,19 @@ class WindowAll(Node):
       outputs:
         ----21---->
     """
-    def __init__(self, node_info: 'NodeInfo',
-                 op_pool: 'OperatorPool',
-                 in_ques: List['DataQueue'],
-                 out_ques: List['DataQueue'],
-                 time_profiler: 'TimeProfiler'):
-
-        super().__init__(node_info, op_pool, in_ques, out_ques, time_profiler)
-        self._input_que = in_ques[0]
-        self._schema = in_ques[0].schema
-
     def _get_buffer(self):
-        data = self._input_que.get()
-        if not data:
-            return None
-        else:
-            assert len(self._schema) == len(data)
-            cols = [[i] if i is not Empty() else [] for i in data]
-
+        ret = dict((key, []) for key in self._node_repr.inputs)
         while True:
-            data = self._input_que.get()
+            data = self.input_que.get_dict()
             if data is None:
-                break
+                return ret
 
-            for i in range(len(self._schema)):
-                if data[i] is not Empty():
-                    cols[i].append(data[i])
+            if not self.side_by_to_next(data):
+                return None
 
-        ret = {}
-        for i in range(len(self._schema)):
-            ret[self._schema[i]] = cols[i]
-        return ret
+            for key in self._node_repr.inputs:
+                if data.get(key) is not Empty():
+                    ret[key].append(data.get(key))
 
     def process_step(self) -> bool:
         """
@@ -76,34 +60,30 @@ class WindowAll(Node):
         self._time_profiler.record(self.uid, Event.queue_in)
         in_buffer = self._get_buffer()
         if in_buffer is None:
+            return
+
+        if all([False if col else True for col in in_buffer.values()]):
             self._set_finished()
-            return True
+            return
 
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
-        if not any(process_data):
-            return False
-
         self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
         self._time_profiler.record(self.uid, Event.process_out)
-        if not succ:
-            self._set_failed(msg)
-            return True
+        assert succ, msg
 
         size = len(self._node_repr.outputs)
         if size > 1:
-            output_map = dict((self._node_repr.outputs[i], [outputs[i]])
+            output_map = dict((self._node_repr.outputs[i], outputs[i])
                               for i in range(size))
+        elif size == 1:
+            output_map = {}
+            output_map[self._node_repr.outputs[0]] = outputs
         else:
             output_map = {}
-            output_map[self._node_repr.outputs[0]] = [outputs]
 
-        in_buffer.update(output_map)
         self._time_profiler.record(self.uid, Event.queue_out)
-
-        for out_que in self._output_ques:
-            if not out_que.batch_put_dict(in_buffer):
-                self._set_stopped()
-                return True
+        if not self.data_to_next(output_map):
+            return
         self._set_finished()
-        return True
+

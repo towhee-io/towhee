@@ -416,3 +416,77 @@ class TestPipeline(unittest.TestCase):
         )
         res = p(1).get()
         self.assertEqual(res, ['v1', (1,)])
+
+        
+
+class TestPipelineDiffColSize(unittest.TestCase):
+
+    def test_window(self):
+        p1 = Pipeline.input('a', 'b')
+        p2 = p1.flat_map('a', 'a1', lambda x: x)
+        p3 = p1.flat_map('b', 'b1', lambda x: x)
+        p = p3.concat(p2).window(('a1', 'b1'), 'c', 3, 3, lambda x, y: x + y).output('c')
+        self.assertEqual(p([1] * 10, [2] * 20).to_list(),
+                         [[[1, 1, 1, 2, 2, 2]],
+                          [[1, 1, 1, 2, 2, 2]],
+                          [[1, 1, 1, 2, 2, 2]],
+                          [[1, 2, 2, 2]],
+                          [[2, 2, 2]],
+                          [[2, 2, 2]],
+                          [[2, 2]]])
+
+    def test_map(self):
+        p1 = Pipeline.input('a', 'b')
+        p2 = p1.flat_map('a', 'a1', lambda x: x)
+        p3 = p1.flat_map('b', 'b1', lambda x: x)
+        p = p3.concat(p2).map(('a1', 'b1'), 'c', lambda x, y: x + y).output('c')
+        self.assertEqual(p([1] * 10, [2] * 20).to_list(), [[3]] * 10)
+
+
+    def test_filter(self):
+        p1 = Pipeline.input('a', 'b')
+        p2 = p1.flat_map('a', 'a1', lambda x: x)
+        p3 = p1.flat_map('b', 'b1', lambda x: x)
+        p = p3.concat(p2).filter(('a1', 'b1'), ('a1', 'b1'), 'a1', lambda x: x > 5).output('a1', 'b1')
+        print(p([1, 3, 5, 7, 9], [2] * 20).to_list())
+
+    def test_flatmap(self):
+        p1 = Pipeline.input('a', 'b')
+        p2 = p1.flat_map('a', 'a1', lambda x: x)
+        p3 = p1.flat_map('b', 'b1', lambda x: x)
+        p = p3.concat(p2).flat_map(('a1', 'b1'), 'c', lambda x, y: [x + y]).output('c')
+        self.assertEqual(p([1] * 10, [2] * 20).to_list(), [[3]] * 10)
+
+
+class TestPipelineNoOutputCol(unittest.TestCase):
+
+    def test_map(self):
+        p = (
+            Pipeline.input('a')
+            .map('a', (), lambda x: x)
+            .output('a')
+        )
+
+        self.assertEqual(p(1).to_list(), [[1]])
+
+
+    def test_window(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: x)
+            .window('a', (), 3, 3, sum)
+            .output('a')
+        )
+
+        self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])
+
+
+    def test_window_all(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: x)
+            .window_all('a', (), sum)
+            .output('a')
+        )
+
+        self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])        
