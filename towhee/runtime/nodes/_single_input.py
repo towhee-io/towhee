@@ -14,6 +14,10 @@
 
 
 class SingleInputMixin:
+    """
+    For single input node.
+    """
+
     @property
     def input_que(self):
         return self._in_ques[0]

@@ -16,10 +16,10 @@
 from towhee.runtime.constants import TimeWindowConst
 from towhee.runtime.data_queue import Empty
 
-from ._window import Window
+from ._window_base import WindowBase
 
 
-class TimeWindow(Window):
+class TimeWindow(WindowBase):
     """Window operator
 
       inputs:       ---1--2-3-----4-5-6--->
@@ -44,29 +44,11 @@ class TimeWindow(Window):
         self._timestamp_index = self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col]
         self._buffer = _TimeWindowBuffer(self._time_range_sec, self._time_step_sec)
 
-    def _get_buffer(self):
-        while True:
-            data = self.input_que.get_dict()
-            if data is None:
-                # end of the data_queue
-                if self._buffer is not None and self._buffer.data:
-                    ret = self._buffer.data
-                    self._buffer = self._buffer.next()
-                    return self._to_cols(ret)
-                self._set_finished()
-                return None
-
-            if not self.side_by_to_next(data):
-                return None
-
-            process_data = dict((key, data.get(key)) for key in self._node_repr.inputs if data.get(key) is not Empty())
-            if not process_data or data[self._timestamp_index] is Empty():
-                continue            
-
-            if self._buffer(process_data, data[self._timestamp_index]) and self._buffer.data:
-                ret = self._buffer.data
-                self._buffer = self._buffer.next()
-                return self._to_cols(ret)
+    def _window_index(self, data):
+        timestamp = data[self._timestamp_index]
+        if timestamp is Empty():
+            return -1
+        return timestamp
 
 
 class _TimeWindowBuffer:

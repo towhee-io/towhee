@@ -417,9 +417,11 @@ class TestPipeline(unittest.TestCase):
         res = p(1).get()
         self.assertEqual(res, ['v1', (1,)])
 
-        
 
 class TestPipelineDiffColSize(unittest.TestCase):
+    """
+    Test diff col size
+    """
 
     def test_window(self):
         p1 = Pipeline.input('a', 'b')
@@ -459,6 +461,9 @@ class TestPipelineDiffColSize(unittest.TestCase):
 
 
 class TestPipelineNoOutputCol(unittest.TestCase):
+    """
+    Test no outputs.
+    """
 
     def test_map(self):
         p = (
@@ -489,4 +494,4 @@ class TestPipelineNoOutputCol(unittest.TestCase):
             .output('a')
         )
 
-        self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])        
+        self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])

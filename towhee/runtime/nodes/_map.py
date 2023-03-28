@@ -18,7 +18,7 @@ from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
 
 from .node import Node
-from .single_input import SingleInputMixin
+from ._single_input import SingleInputMixin
 
 
 class Map(Node, SingleInputMixin):
@@ -72,7 +72,7 @@ class Map(Node, SingleInputMixin):
         elif size == 0:
             # ignore the op result
             # eg: ignore the milvus result
-            # .map('vec', (), ops.ann_insert.milvus()), 
+            # .map('vec', (), ops.ann_insert.milvus()),
             output_map = {}
         else:
             # Use one col to store all op result.

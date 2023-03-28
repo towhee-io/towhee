@@ -19,7 +19,7 @@ from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
 
 from .node import Node
-from .single_input import SingleInputMixin
+from ._single_input import SingleInputMixin
 
 
 class Filter(Node, SingleInputMixin):
@@ -45,7 +45,7 @@ class Filter(Node, SingleInputMixin):
         self._time_profiler.record(self.uid, Event.queue_in)
         data = self.read_row()
         if data is None or not self.side_by_to_next(data):
-            return None        
+            return None
 
         process_data = [data.get(key) for key in self._node_repr.iter_info.param[FilterConst.param.filter_by]]
         if any((i is Empty() for i in process_data)):

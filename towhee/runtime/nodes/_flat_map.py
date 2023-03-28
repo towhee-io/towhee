@@ -17,7 +17,7 @@ from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
 
 from .node import Node
-from .single_input import SingleInputMixin
+from ._single_input import SingleInputMixin
 
 
 class FlatMap(Node, SingleInputMixin):
@@ -41,7 +41,7 @@ class FlatMap(Node, SingleInputMixin):
         if any((item is Empty() for item in process_data)):
             return None
 
-        self._time_profiler.record(self.uid, Event.process_in)        
+        self._time_profiler.record(self.uid, Event.process_in)
         succ, outputs, msg = self._call(process_data)
         assert succ, msg
 
