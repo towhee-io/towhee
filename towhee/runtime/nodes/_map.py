@@ -45,7 +45,7 @@ class Map(Node, SingleInputMixin):
                ---[0]---[0, 1]---[0, 1, 2]---[0, 1, 2, 3]--->
     """
 
-    def process_step(self) -> bool:
+    def process_step(self):
         """
         Called for each element.
         """

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List, Any
 
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
@@ -31,7 +30,7 @@ class FlatMap(Node, SingleInputMixin):
         [    FlatMap('input', 'output', lambda i: i)    ]
             ---0---1---2---3--->
     """
-    def process_step(self) -> List[Any]:
+    def process_step(self):
         self._time_profiler.record(self.uid, Event.queue_in)
         data = self.read_row()
         if data is None or not self.side_by_to_next(data):

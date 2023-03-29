@@ -23,6 +23,7 @@ from towhee.runtime.constants import (
     MapConst,
     WindowAllConst,
     WindowConst,
+    ReduceConst,
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
@@ -356,6 +357,48 @@ class Pipeline:
             'op_info': fn_action.serialize(),
             'iter_info': {
                 'type': WindowAllConst.name,
+                'param': None,
+            },
+            'config': config,
+            'next_nodes': [],
+        }
+        dag_dict[self._clo_node]['next_nodes'].append(uid)
+        return Pipeline(dag_dict, uid)
+
+    def reduce(self, input_schema, output_schema, fn, config=None) -> 'Pipeline':
+        """
+        Reduce the sequence to a single value.
+
+        Args:
+            input_schema (tuple): The input column/s of fn.
+            output_schema (tuple): The output column/s of fn.
+            fn (Operation | lambda | callable): The action to perform on the input_schema after window all data.
+            config (dict, optional): Config for the window_all. Defaults to None
+
+        Returns:
+            Pipeline: Pipeline with reduce action added.
+
+        Examples:
+            >>> import towhee
+            >>> pipe = (towhee.pipe.input('n1', 'n2')
+            ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
+            ...         .reduce(('n1', 'n2'), ('s1', 's2'), lambda x, y: (sum(x), sum(y)))
+            ...         .output('s1', 's2'))
+            >>> pipe([1, 2, 3, 4], [2, 3, 4, 5]).get()
+            [10, 14]
+        """
+        output_schema = self._check_schema(output_schema)
+        input_schema = self._check_schema(input_schema)
+
+        uid = uuid.uuid4().hex
+        fn_action = self._to_action(fn)
+        dag_dict = deepcopy(self._dag)
+        dag_dict[uid] = {
+            'inputs': input_schema,
+            'outputs': output_schema,
+            'op_info': fn_action.serialize(),
+            'iter_info': {
+                'type': ReduceConst.name,
                 'param': None,
             },
             'config': config,

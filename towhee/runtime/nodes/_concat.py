@@ -46,7 +46,7 @@ class Concat(Node):
         self.cols_every_que.reverse()
         return True
 
-    def process_step(self) -> bool:
+    def process_step(self):
         self._time_profiler.record(self.uid, Event.queue_in)
         all_data = {}
         for i, q in enumerate(self._in_ques):
@@ -56,7 +56,7 @@ class Concat(Node):
 
         if not all_data:
             self._set_finished()
-            return True
+            return
 
         self._time_profiler.record(self.uid, Event.process_in)
         self._time_profiler.record(self.uid, Event.process_out)
@@ -64,6 +64,5 @@ class Concat(Node):
         for out_que in self._output_ques:
             if not out_que.put_dict(all_data):
                 self._set_stopped()
-                return True
+                return
         self._time_profiler.record(self.uid, Event.queue_out)
-        return False

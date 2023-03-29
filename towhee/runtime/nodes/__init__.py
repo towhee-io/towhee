@@ -17,6 +17,7 @@ from towhee.runtime.constants import (
     MapConst,
     WindowAllConst,
     WindowConst,
+    ReduceConst,
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
@@ -29,6 +30,7 @@ from ._map import Map
 from ._window import Window
 from ._time_window import TimeWindow
 from ._window_all import WindowAll
+from ._reduce import Reduce
 from ._concat import Concat
 from ._filter import Filter
 from ._flat_map import FlatMap
@@ -55,6 +57,9 @@ def create_node(node_repr, op_pool, inputs, outputs, time_profiler=None):
     if node_repr.iter_info.type == WindowAllConst.name:
         assert len(inputs) == 1
         return WindowAll(node_repr, op_pool, inputs, outputs, time_profiler)
+    if node_repr.iter_info.type == ReduceConst.name:
+        assert len(inputs) == 1
+        return Reduce(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == ConcatConst.name:
         return Concat(node_repr, op_pool, inputs, outputs, time_profiler)
     if node_repr.iter_info.type == FlatMapConst.name:
