@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from typing import List, Dict
+
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
 
@@ -19,35 +22,69 @@ from .node import Node
 from ._single_input import SingleInputMixin
 
 
-class WindowAll(Node, SingleInputMixin):
-    """Window operator
-
-      inputs: ---1-2-3-4-5-6--->
-
-      node definition:
-
-        [    window_all('input', 'output', callable=lambda i: sum(i))     ]
-
-      step:
-
-        callable([1, 2, 3, 4, 5, 6]) -> 21
-
-      outputs:
-        ----21---->
+class WindowBase(Node, SingleInputMixin):
     """
+    Window node.
+    """
+
+    def __init__(self, node_repr: 'NodeRepr',
+                 op_pool: 'OperatorPool',
+                 in_ques: List['DataQueue'],
+                 out_ques: List['DataQueue'],
+                 time_profiler: 'TimeProfiler'):
+
+        super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
+        self._init()
+
+    def _init(self):
+        raise NotImplementedError
+
+    @property
+    def buffer(self):
+        return self._buffer
+
+    @buffer.setter
+    def buffer(self, buf):
+        self._buffer = buf
+
+    def _window_index(self, data):  # pylint: disable=unused-argument
+        raise NotImplementedError
+
     def _get_buffer(self):
-        ret = dict((key, []) for key in self._node_repr.inputs)
         while True:
             data = self.input_que.get_dict()
             if data is None:
-                return ret
+                # end of the data_queue
+                if self.buffer is not None and self.buffer.data:
+                    ret = self.buffer.data
+                    self.buffer = self.buffer.next()
+                    return self._to_cols(ret)
+                self._set_finished()
+                return None
 
             if not self.side_by_to_next(data):
                 return None
 
-            for key in self._node_repr.inputs:
-                if data.get(key) is not Empty():
-                    ret[key].append(data.get(key))
+            process_data = dict((key, data.get(key)) for key in self._node_repr.inputs if data.get(key) is not Empty())
+
+            if not process_data:
+                continue
+
+            index = self._window_index(data)
+            if index < 0:
+                continue
+
+            if self.buffer(process_data, index) and self.buffer.data:
+                ret = self.buffer.data
+                self.buffer = self.buffer.next()
+                return self._to_cols(ret)
+
+    def _to_cols(self, rows: List[Dict]):
+        ret = dict((key, []) for key in self._node_repr.inputs)
+        for row in rows:
+            for k, v in row.items():
+                ret[k].append(v)
+        return ret
 
     def process_step(self) -> bool:
         """
@@ -56,10 +93,6 @@ class WindowAll(Node, SingleInputMixin):
         self._time_profiler.record(self.uid, Event.queue_in)
         in_buffer = self._get_buffer()
         if in_buffer is None:
-            return
-
-        if all(map(lambda x: len(x) == 0, in_buffer.values())):
-            self._set_finished()
             return
 
         process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
@@ -79,7 +112,4 @@ class WindowAll(Node, SingleInputMixin):
             output_map = {}
 
         self._time_profiler.record(self.uid, Event.queue_out)
-        if not self.data_to_next(output_map):
-            return
-        self._set_finished()
-
+        self.data_to_next(output_map)

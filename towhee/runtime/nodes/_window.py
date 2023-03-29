@@ -16,12 +16,12 @@
 from typing import List
 
 from towhee.runtime.constants import WindowConst
-from towhee.runtime.data_queue import Empty
-from towhee.runtime.time_profiler import Event
-from .node import Node
+
+from ._window_base import WindowBase
 
 
-class Window(Node):
+
+class Window(WindowBase):
     """Window operator
 
       inputs: ---1-2-3-4-5-6--->
@@ -40,100 +40,15 @@ class Window(Node):
         ----6-12-11---->
     """
 
-    def __init__(self, node_repr: 'NodeRepr',
-                 op_pool: 'OperatorPool',
-                 in_ques: List['DataQueue'],
-                 out_ques: List['DataQueue'],
-                 time_profiler: 'TimeProfiler'):
-
-        super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
-        self._init()
-
     def _init(self):
         self._size = self._node_repr.iter_info.param[WindowConst.param.size]
         self._step = self._node_repr.iter_info.param[WindowConst.param.step]
         self._cur_index = -1
-        self._input_que = self._in_ques[0]
-        self._schema = self._in_ques[0].schema
         self._buffer = _WindowBuffer(self._size, self._step)
-        self._row_buffer = []
 
-    def _get_buffer(self):
-        while True:
-            data = self._input_que.get()
-            if data is None:
-                # end of the data_queue
-                if self._buffer is not None and self._buffer.data:
-                    ret = self._buffer.data
-                    self._buffer = self._buffer.next()
-                    return self._to_cols(ret)
-                else:
-                    return None
-
-            self._cur_index += 1
-            self._row_buffer.append(data)
-            if self._buffer(data, self._cur_index) and self._buffer.data:
-                ret = self._buffer.data
-                self._buffer = self._buffer.next()
-                return self._to_cols(ret)
-
-    def _to_cols(self, rows: List[List]):
-        cols = [[] for _ in self._schema]
-        for row in rows:
-            for i in range(len(self._schema)):
-                if row[i] is not Empty():
-                    cols[i].append(row[i])
-        ret = {}
-        for i in range(len(self._schema)):
-            ret[self._schema[i]] = cols[i]
-        return ret
-
-    def process_step(self) -> bool:
-        """
-        Process each window data.
-        """
-        self._time_profiler.record(self.uid, Event.queue_in)
-        in_buffer = self._get_buffer()
-        if in_buffer is None:
-            if self._row_buffer:
-                cols = self._to_cols(self._row_buffer)
-                for out_que in self._output_ques:
-                    if not out_que.batch_put_dict(cols):
-                        self._set_stopped()
-                        return True
-                self._row_buffer = []
-            self._set_finished()
-            return True
-
-        process_data = [in_buffer.get(key) for key in self._node_repr.inputs]
-        if not any(process_data):
-            return False
-
-        self._time_profiler.record(self.uid, Event.process_in)
-        succ, outputs, msg = self._call(process_data)
-        self._time_profiler.record(self.uid, Event.process_out)
-        if not succ:
-            self._set_failed(msg)
-            return True
-
-        size = len(self._node_repr.outputs)
-        if size > 1:
-            output_map = dict((self._node_repr.outputs[i], [outputs[i]])
-                              for i in range(size))
-        else:
-            output_map = {}
-            output_map[self._node_repr.outputs[0]] = [outputs]
-
-        cols = self._to_cols(self._row_buffer)
-        cols.update(output_map)
-        self._time_profiler.record(self.uid, Event.queue_out)
-
-        for out_que in self._output_ques:
-            if not out_que.batch_put_dict(cols):
-                self._set_stopped()
-                return True
-        self._row_buffer = []
-        return False
+    def _window_index(self, data):  # pylint: disable=unused-argument
+        self._cur_index += 1
+        return self._cur_index
 
 
 class _WindowBuffer:

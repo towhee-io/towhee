@@ -138,6 +138,7 @@ class TestWindowPipeline(unittest.TestCase):
         result = runtime_pipeline([])
         self.assertEqual(result.size, 0)
 
+
 class TestWindowAllPipeline(unittest.TestCase):
     """
     Test pipelines contain different kinds of node.

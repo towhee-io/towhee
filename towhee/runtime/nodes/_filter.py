@@ -17,10 +17,12 @@ from typing import List
 from towhee.runtime.constants import FilterConst
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.time_profiler import Event
+
 from .node import Node
+from ._single_input import SingleInputMixin
 
 
-class Filter(Node):
+class Filter(Node, SingleInputMixin):
     """
     Filter Operator.
 
@@ -37,36 +39,25 @@ class Filter(Node):
                  out_ques: List['DataQueue'],
                  time_profiler: 'TimeProfiler'):
         super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
-        self._input_q = self._in_ques[0]
         self._key_map = dict(zip(self._node_repr.outputs, self._node_repr.inputs))
-        self._side_by_keys = list(set(self._input_q.schema) - set(self._node_repr.outputs))
 
     def process_step(self) -> bool:
         self._time_profiler.record(self.uid, Event.queue_in)
-        data = self._input_q.get_dict()
-        if data is None:
-            self._set_finished()
-            return True
-        side_by = dict((k, data[k]) for k in self._side_by_keys)
+        data = self.read_row()
+        if data is None or not self.side_by_to_next(data):
+            return None
 
         process_data = [data.get(key) for key in self._node_repr.iter_info.param[FilterConst.param.filter_by]]
-        if not any((i is Empty() for i in process_data)):
-            self._time_profiler.record(self.uid, Event.process_in)
-            succ, is_need, msg = self._call(process_data)
-            self._time_profiler.record(self.uid, Event.process_out)
-            if not succ:
-                self._set_failed(msg)
-                return True
+        if any((i is Empty() for i in process_data)):
+            return None
 
-            if is_need:
-                output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
-                side_by.update(output_map)
-
+        self._time_profiler.record(self.uid, Event.process_in)
+        succ, is_need, msg = self._call(process_data)
+        self._time_profiler.record(self.uid, Event.process_out)
+        assert succ, msg
         self._time_profiler.record(self.uid, Event.queue_out)
+        if is_need:
+            output_map = {new_key: data[old_key] for new_key, old_key in self._key_map.items()}
+            self.data_to_next(output_map)
 
-        for out_que in self._output_ques:
-            if not out_que.put_dict(side_by):
-                self._set_stopped()
-                return True
 
-        return False

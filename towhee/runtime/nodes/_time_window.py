@@ -16,10 +16,10 @@
 from towhee.runtime.constants import TimeWindowConst
 from towhee.runtime.data_queue import Empty
 
-from ._window import Window
+from ._window_base import WindowBase
 
 
-class TimeWindow(Window):
+class TimeWindow(WindowBase):
     """Window operator
 
       inputs:       ---1--2-3-----4-5-6--->
@@ -41,35 +41,14 @@ class TimeWindow(Window):
     def _init(self):
         self._time_range_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_range_sec]
         self._time_step_sec = self._node_repr.iter_info.param[TimeWindowConst.param.time_step_sec]
-        self._input_que = self._in_ques[0]
-        self._schema = self._input_que.schema
-        self._timestamp_index = self._schema.index(self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col])
+        self._timestamp_index = self._node_repr.iter_info.param[TimeWindowConst.param.timestamp_col]
         self._buffer = _TimeWindowBuffer(self._time_range_sec, self._time_step_sec)
-        self._row_buffer = []
 
-    def _get_buffer(self):
-        while True:
-            data = self._input_que.get()
-            if data is None:
-                # end of the data_queue
-                if self._buffer is not None and self._buffer.data:
-                    ret = self._buffer.data
-                    self._buffer = self._buffer.next()
-                    return self._to_cols(ret)
-                else:
-                    return None
-
-            self._row_buffer.append(data)
-
-            timestamp = data[self._timestamp_index]
-            if timestamp is Empty():
-                # end of the timestamp col
-                continue
-
-            if self._buffer(data, timestamp) and self._buffer.data:
-                ret = self._buffer.data
-                self._buffer = self._buffer.next()
-                return self._to_cols(ret)
+    def _window_index(self, data):
+        timestamp = data[self._timestamp_index]
+        if timestamp is Empty():
+            return -1
+        return timestamp
 
 
 class _TimeWindowBuffer:
