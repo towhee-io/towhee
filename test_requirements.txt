@@ -20,3 +20,4 @@ scipy
 fastapi
 uvicorn
 httpx
+sqlalchemy

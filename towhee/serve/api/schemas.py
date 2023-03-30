@@ -12,14 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=ungrouped-imports
-# pylint: disable=unused-import
+from typing import List, Union
 
-try:
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
-except ModuleNotFoundError as e:  # pragma: no cover
-    from towhee.utils.dependency_control import prompt_install
-    prompt_install('fastapi')
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+from towhee.utils.pydantic_utils import BaseModel
+
+
+class PipelineBase(BaseModel):
+    dag_json_str: str
+
+
+class PipelineCreate(PipelineBase):
+    name: str
+    description: Union[str, None] = None
+
+
+class PipelineUpdate(PipelineBase):
+    name: str
+
+
+class Info(PipelineBase):
+    id: int
+    meta_id: int
+    version: int
+    date: str
+
+    class Config:
+        orm_mode = True
+
+
+class Meta(PipelineBase):
+    id: int
+    name: str
+    description: Union[str, None] = None
+    info: List[Info] = []
+
+    class Config:
+        orm_mode = True

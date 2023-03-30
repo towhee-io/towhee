@@ -16,10 +16,8 @@
 # pylint: disable=unused-import
 
 try:
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+    from pydantic import BaseModel
 except ModuleNotFoundError as e:  # pragma: no cover
     from towhee.utils.dependency_control import prompt_install
     prompt_install('fastapi')
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+    from pydantic import BaseModel

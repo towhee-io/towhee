@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=ungrouped-imports
-# pylint: disable=unused-import
+from towhee.utils.sqlalchemy_utils import create_engine, declarative_base, sessionmaker
 
-try:
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
-except ModuleNotFoundError as e:  # pragma: no cover
-    from towhee.utils.dependency_control import prompt_install
-    prompt_install('fastapi')
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+Base = declarative_base()
+
+
+class SQLDataBase:
+    def __init__(self, url: str = 'sqlite:///./sql_app.db'):
+        self.url = url
+        self.engine = create_engine(
+            self.url, connect_args={'check_same_thread': False}
+        )
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)  # pylint: disable=invalid-name

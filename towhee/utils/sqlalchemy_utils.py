@@ -16,10 +16,12 @@
 # pylint: disable=unused-import
 
 try:
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+    from sqlalchemy import create_engine, Boolean, Column, ForeignKey, Integer, String, DateTime, func
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.orm import sessionmaker, relationship, Session
 except ModuleNotFoundError as e:  # pragma: no cover
     from towhee.utils.dependency_control import prompt_install
     prompt_install('fastapi')
-    from fastapi import Depends, FastAPI, HTTPException
-    from fastapi.testclient import TestClient
+    from sqlalchemy import create_engine, Boolean, Column, ForeignKey, Integer, String, DateTime, func
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.orm import sessionmaker, relationship, Session
