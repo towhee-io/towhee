@@ -38,11 +38,3 @@ class SingleInputMixin:
     def side_by_to_next(self, data):
         side_by = dict((k, data[k]) for k in self.side_by_cols)
         return self.data_to_next(side_by)
-
-    def data_to_next(self, data) -> bool:
-        for out_que in self._output_ques:
-            if not out_que.put_dict(data):
-                self._set_stopped()
-                return False
-            pass
-        return True

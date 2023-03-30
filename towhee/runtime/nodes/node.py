@@ -173,6 +173,14 @@ class Node(ABC):
                 err = '{}, {}'.format(e, traceback.format_exc())
                 self._set_failed(err)
 
+    def data_to_next(self, data) -> bool:
+        for out_que in self._output_ques:
+            if not out_que.put_dict(data):
+                self._set_stopped()
+                return False
+            pass
+        return True
+
     def _set_status(self, status: NodeStatus) -> None:
         self._status = status
 

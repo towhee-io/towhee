@@ -72,7 +72,6 @@ class Pipeline:
         dag_dict[uid] = cls._nop_node_dict(output_schema, output_schema)
         return cls(dag_dict)
 
-    # TODO: Run with the configuration.
     def output(self, *output_schema) -> 'RuntimePipeline':
         """
         Close and preload the pipeline, and ready to run with it.

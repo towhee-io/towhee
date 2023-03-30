@@ -80,7 +80,7 @@ class _Graph:
         errs = ''
         for node in self._node_runners:
             if node.status != NodeStatus.FINISHED:
-                if node.status ==NodeStatus.FAILED:
+                if node.status == NodeStatus.FAILED:
                     errs += node.err_msg + '\n'
         if errs:
             raise RuntimeError(errs)

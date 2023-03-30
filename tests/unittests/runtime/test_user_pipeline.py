@@ -346,6 +346,14 @@ class TestPipeline(unittest.TestCase):
         res = p(1).get()
         self.assertEqual(res, ['v1', (1,)])
 
+    def test_large_output(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'b', lambda x: x)
+            .output('b')
+        )
+        self.assertEqual(len(p([1] * 10000).to_list()), 10000)
+
 
 class TestPipelineColCoverage(unittest.TestCase):
     """

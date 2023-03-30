@@ -61,8 +61,6 @@ class Concat(Node):
         self._time_profiler.record(self.uid, Event.process_in)
         self._time_profiler.record(self.uid, Event.process_out)
 
-        for out_que in self._output_ques:
-            if not out_que.put_dict(all_data):
-                self._set_stopped()
-                return
+        if not self.data_to_next(all_data):
+            return
         self._time_profiler.record(self.uid, Event.queue_out)
