@@ -386,6 +386,9 @@ class Pipeline:
             >>> pipe([1, 2, 3, 4], [2, 3, 4, 5]).get()
             [10, 14]
         """
+        if isinstance(fn, RuntimePipeline):
+            raise RuntimeError("Reduce node doesn't support pipeline fn")
+
         output_schema = self._check_schema(output_schema)
         input_schema = self._check_schema(input_schema)
 

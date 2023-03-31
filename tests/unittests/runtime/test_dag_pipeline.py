@@ -236,3 +236,24 @@ class TestDAGPipeline(unittest.TestCase):
 
         res = p_3(1, 2, 3).to_list()
         self.assertEqual(res, [[3, 5]])
+
+    def test_reduce(self):
+        p_in = (
+            pipe.input('x')
+            .flat_map('x', 'x', lambda x: x)
+            .reduce('x', 'x', sum)
+            .output('x')
+        )
+        p = (pipe.input('x')
+                 .map('x', 'x', p_in)
+                 .output('x'))
+
+        res = p([2] * 10).to_list()
+        self.assertEqual(res, [[20]])
+
+        with self.assertRaises(RuntimeError):
+            p = (
+                pipe.input('x')
+                .reduce('x', 'x', p_in)
+                .output('x')
+            )
