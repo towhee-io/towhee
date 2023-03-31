@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.utils.sqlalchemy_utils import create_engine, declarative_base, sessionmaker
+from sqlalchemy.orm import Session
 
-Base = declarative_base()
+from .base_crud import BaseCRUD
+from towhee.serve.api_server.models.pipeline_meta import PipelineMeta
 
 
-class SQLDataBase:
-    def __init__(self, url: str = 'sqlite:///./sql_app.db'):
-        self.url = url
-        self.engine = create_engine(
-            self.url, connect_args={'check_same_thread': False}
-        )
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)  # pylint: disable=invalid-name
+class PipelineMetaCRUD(BaseCRUD):
+    def get_list(self, db: Session, skip: int = 0, limit: int = 1000):
+        return db.query(self.model.name, self.model.description).filter(self.model.state == 0).offset(skip).limit(limit).all()
+
+    def get_by_name(self, db: Session, name: str):
+        return db.query(self.model).filter(self.model.name == name).filter(self.model.state == 0).first()
+
+
+pipeline_meta = PipelineMetaCRUD(PipelineMeta)

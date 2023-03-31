@@ -11,38 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from towhee.utils.sqlalchemy_utils import Column, ForeignKey, Integer, String, DateTime, relationship
 from datetime import datetime
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 
-from .database import Base
-
-
-class Meta(Base):
-    """
-    pipeline_meta Table
-    """
-    __tablename__ = 'pipeline_meta'
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    state = Column(Integer, default=0)
-
-    info = relationship('Info', back_populates='meta')
+from .base import Base
 
 
-class Info(Base):
+class PipelineInfo(Base):
     """
     pipeline_info Table
     """
     __tablename__ = 'pipeline_info'
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     meta_id = Column(Integer, ForeignKey('pipeline_meta.id'))
     version = Column(Integer, nullable=False)
     dag_json_str = Column(String, nullable=False)
     date = Column(DateTime, default=datetime.now)
-    state = Column(Integer, default=0)
 
-    meta = relationship('Meta', back_populates='info')
+    meta = relationship('PipelineMeta', back_populates='info')

@@ -11,13 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# pylint: disable=ungrouped-imports
-# pylint: disable=unused-import
-
-try:
-    from pydantic import BaseModel
-except ModuleNotFoundError as e:  # pragma: no cover
-    from towhee.utils.dependency_control import prompt_install
-    prompt_install('fastapi')
-    from pydantic import BaseModel

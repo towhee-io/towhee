@@ -14,8 +14,8 @@
 import unittest
 import os
 
-from towhee.utils.thirdparty.fastapi_utils import TestClient
-from towhee.serve.api.main import app
+from fastapi.testclient import TestClient
+from towhee.serve.api_server.main import app
 
 client = TestClient(app)
 pipeline_name = 'pipe0'
@@ -25,15 +25,28 @@ class TestAPI(unittest.TestCase):
     """
     Test api.
     """
-    def test_1_create_pipeline(self):
+    @classmethod
+    def setUpClass(cls) -> None:
         response = client.post('/pipeline/create',
                                json={
                                    'dag_json_str': 'test_dag',
                                    'name': pipeline_name,
                                    'description': 'test p0'
                                     })
+        cls().assertEqual(response.status_code, 200)
+        res = response.json()
+        cls().assertEqual(res['status_code'], 0)
+
+    def test_1_create_pipeline(self):
+        response = client.post('/pipeline/create',
+                               json={
+                                   'dag_json_str': 'test_dag',
+                                   'name': pipeline_name,
+                                   'description': 'test p0'
+                               })
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'status': 200, 'msg': 'Successfully create pipeline.'})
+        res = response.json()
+        self.assertEqual(res['status_code'], -1)
 
     def test_2_update_pipeline(self):
         response = client.post('/pipeline/update',
@@ -42,27 +55,60 @@ class TestAPI(unittest.TestCase):
                                    'name': pipeline_name
                                     })
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'status': 200, 'msg': 'Successfully update pipeline.'})
+        res = response.json()
+        self.assertEqual(res['status_code'], 0)
+
+        response = client.post('/pipeline/update',
+                               json={
+                                   'dag_json_str': 'new_test_dag',
+                                   'name': 'none_pipeline_name'
+                               })
+        self.assertEqual(response.status_code, 200)
+        res = response.json()
+        self.assertEqual(res['status_code'], -1)
 
     def test_3_get_pipelines(self):
-        response = client.get('/pipelines')
+        response = client.get('/pipeline/list')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'status': 200, 'msg': {pipeline_name: 'test p0'}})
+        res = response.json()
+        self.assertEqual(res['status_code'], 0)
+        self.assertEqual(res['data'], {pipeline_name: 'test p0'})
 
     def test_4_get_pipeline_info(self):
-        response = client.get(f'/{pipeline_name}/info')
+        response = client.get(f'/pipeline/{pipeline_name}/info')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(list(response.json()['msg'].keys()), ['0', '1'])
+        res = response.json()
+        self.assertEqual(res['status_code'], 0)
+        self.assertEqual(list(res['data'].keys()), ['0', '1'])
+
+        response = client.get(f'/pipeline/none_pipeline_name/info')
+        self.assertEqual(response.status_code, 200)
+        res = response.json()
+        self.assertEqual(res['status_code'], -1)
 
     def test_5_get_pipeline_dag(self):
-        response = client.get(f'/{pipeline_name}/{1}/dag')
+        response = client.get(f'/pipeline/{pipeline_name}/{1}/dag')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'status': 200, 'msg': 'new_test_dag'})
+        res = response.json()
+        self.assertEqual(res['status_code'], 0)
+        self.assertEqual(res['data']['dag_str'], 'new_test_dag')
+
+        response = client.get(f'/pipeline/none_pipeline_name/{1}/dag')
+        self.assertEqual(response.status_code, 200)
+        res = response.json()
+        self.assertEqual(res['status_code'], -1)
+
+    def test_6_delete_pipeline(self):
+        response = client.delete(f'/pipeline/none_pipeline_name')
+        self.assertEqual(response.status_code, 200)
+        res = response.json()
+        self.assertEqual(res['status_code'], -1)
 
     @classmethod
     def tearDownClass(cls):
-        response = client.delete(f'/{pipeline_name}')
+        response = client.delete(f'/pipeline/{pipeline_name}')
         cls().assertEqual(response.status_code, 200)
-        cls().assertEqual(response.json(), {'status': 200, 'msg': 'Successfully deleted the pipeline.'})
+        res = response.json()
+        cls().assertEqual(res['status_code'], 0)
 
         os.remove('sql_app.db')
