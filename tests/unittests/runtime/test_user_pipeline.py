@@ -336,6 +336,29 @@ class TestPipeline(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             p1.batch([1, 'a', 2])
 
+    def test_revision_latest(self):
+        p = (
+            Pipeline.input('a')
+            .map('a', 'b', ops.test_revision().revision('v1').latest())
+            .map('b', ('c', 'd', 'e'), lambda x: x)
+            .output('c', 'd')
+        )
+        res = p(1).get()
+        self.assertEqual(res, ['v1', (1,)])
+
+    def test_large_output(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'b', lambda x: x)
+            .output('b')
+        )
+        self.assertEqual(len(p([1] * 10000).to_list()), 10000)
+
+
+class TestPipelineColCoverage(unittest.TestCase):
+    """
+    Coverage
+    """
     def test_filter_coverage(self):
         p = (
             Pipeline.input('a')
@@ -368,6 +391,17 @@ class TestPipeline(unittest.TestCase):
         )
         res = p(4).to_list()
         self.assertEqual(res, [])
+
+    def test_reduce_coverage(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: list(range(1, x + 1)))
+            .filter('a', 'b', 'a', lambda x: x > 100)
+            .reduce('b', 'a', sum)
+            .output('a')
+        )
+        res = p(4).to_list()
+        self.assertEqual(res, [[0]])
 
     def test_window_coverage(self):
         p = (
@@ -406,16 +440,6 @@ class TestPipeline(unittest.TestCase):
         )
         res = p(4).to_list()
         self.assertEqual(res, [[60], [40]])
-
-    def test_revision_latest(self):
-        p = (
-            Pipeline.input('a')
-            .map('a', 'b', ops.test_revision().revision('v1').latest())
-            .map('b', ('c', 'd', 'e'), lambda x: x)
-            .output('c', 'd')
-        )
-        res = p(1).get()
-        self.assertEqual(res, ['v1', (1,)])
 
 
 class TestPipelineDiffColSize(unittest.TestCase):
@@ -459,6 +483,13 @@ class TestPipelineDiffColSize(unittest.TestCase):
         p = p3.concat(p2).flat_map(('a1', 'b1'), 'c', lambda x, y: [x + y]).output('c')
         self.assertEqual(p([1] * 10, [2] * 20).to_list(), [[3]] * 10)
 
+    def test_reduce(self):
+        p1 = Pipeline.input('a', 'b')
+        p2 = p1.flat_map('a', 'a1', lambda x: x)
+        p3 = p1.flat_map('b', 'b1', lambda x: x)
+        p = p3.concat(p2).reduce(('a1', 'b1'), ('c', 'd'), ops.local.reduce_op()).output('c', 'd')
+        self.assertEqual(p([1] * 10, [2] * 100).to_list(), [[10, 200]])
+
 
 class TestPipelineNoOutputCol(unittest.TestCase):
     """
@@ -494,4 +525,13 @@ class TestPipelineNoOutputCol(unittest.TestCase):
             .output('a')
         )
 
+        self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])
+
+    def test_reduce(self):
+        p = (
+            Pipeline.input('a')
+            .flat_map('a', 'a', lambda x: x)
+            .reduce('a', (), sum)
+            .output('a')
+        )
         self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])

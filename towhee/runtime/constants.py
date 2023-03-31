@@ -48,6 +48,10 @@ class WindowAllConst:
     name = 'window_all'
 
 
+class ReduceConst:
+    name = 'reduce'
+
+
 class ConcatConst:
     name = 'concat'
 

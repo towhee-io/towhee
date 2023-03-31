@@ -15,6 +15,16 @@
 from typing import List
 
 from towhee.runtime.data_queue import ColumnType
+from towhee.runtime.constants import (
+    WindowAllConst,
+    WindowConst,
+    ReduceConst,
+    FilterConst,
+    TimeWindowConst,
+    FlatMapConst,
+    ConcatConst,
+    MapConst
+)
 from towhee.utils.log import engine_log
 
 
@@ -51,13 +61,13 @@ class SchemaRepr:
         Returns:
             SchemaRepr object.
         """
-        if iter_type in ['flat_map', 'window', 'time_window']:
+        if iter_type in [FlatMapConst.name, WindowConst.name, TimeWindowConst.name]:
             col_type = ColumnType.QUEUE
-        elif iter_type == 'concat':
+        elif iter_type == ConcatConst.name:
             col_type = inputs_type[0]
-        elif iter_type == 'window_all':
+        elif iter_type in [WindowAllConst.name, ReduceConst.name]:
             col_type = ColumnType.SCALAR
-        elif iter_type in ['map', 'filter']:
+        elif iter_type in [MapConst.name, FilterConst.name]:
             if inputs_type is not None and ColumnType.QUEUE in inputs_type:
                 col_type = ColumnType.QUEUE
             else:

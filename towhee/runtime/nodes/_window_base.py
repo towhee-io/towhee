@@ -86,7 +86,7 @@ class WindowBase(Node, SingleInputMixin):
                 ret[k].append(v)
         return ret
 
-    def process_step(self) -> bool:
+    def process_step(self):
         """
         Process each window data.
         """

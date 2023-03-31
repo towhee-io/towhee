@@ -41,7 +41,7 @@ class Filter(Node, SingleInputMixin):
         super().__init__(node_repr, op_pool, in_ques, out_ques, time_profiler)
         self._key_map = dict(zip(self._node_repr.outputs, self._node_repr.inputs))
 
-    def process_step(self) -> bool:
+    def process_step(self):
         self._time_profiler.record(self.uid, Event.queue_in)
         data = self.read_row()
         if data is None or not self.side_by_to_next(data):

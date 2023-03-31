@@ -49,7 +49,7 @@ class WindowAll(Node, SingleInputMixin):
                 if data.get(key) is not Empty():
                     ret[key].append(data.get(key))
 
-    def process_step(self) -> bool:
+    def process_step(self):
         """
         Process each window data.
         """

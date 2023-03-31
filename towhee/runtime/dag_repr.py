@@ -25,6 +25,9 @@ from towhee.runtime.node_config import TowheeConfig
 from towhee.runtime.constants import (
     WindowAllConst,
     WindowConst,
+    ConcatConst,
+    MapConst,
+    ReduceConst,
     FilterConst,
     TimeWindowConst,
     FlatMapConst,
@@ -130,7 +133,7 @@ class DAGRepr:
         all_nodes = [InputConst.name]
         all_inputs = dict((name, nodes[InputConst.name].outputs) for name in nodes)
         for name in top_sort[1:]:
-            if nodes[name].iter_info.type == 'concat':
+            if nodes[name].iter_info.type == ConcatConst.name:
                 pre_name = all_nodes.pop()
                 while name in nodes[pre_name].next_nodes:
                     nodes[name].inputs += nodes[pre_name].outputs
@@ -228,14 +231,14 @@ class DAGRepr:
                 inputs_type = [ahead_schemas[inp].type for inp in inputs]
                 edge_schemas[d] = SchemaRepr.from_dag(d, iter_type, inputs_type)
             elif d in outputs:
-                if iter_type == 'concat':
+                if iter_type == ConcatConst.name:
                     inputs_type = [ahead_schemas[d].type]
                 else:
                     inputs_type = [ahead_schemas[inp].type for inp in inputs]
                     inputs_type.append(ahead_schemas[d].type)
                 edge_schemas[d] = SchemaRepr.from_dag(d, iter_type, inputs_type)
             else:
-                edge_schemas[d] = SchemaRepr.from_dag(d, 'map', [ahead_schemas[d].type])
+                edge_schemas[d] = SchemaRepr.from_dag(d, MapConst.name, [ahead_schemas[d].type])
         edge = {'schema': edge_schemas, 'data': [(s, t.type) for s, t in edge_schemas.items()]}
         return edge
 
@@ -358,7 +361,7 @@ class DAGRepr:
                 val['config'] = {'name': key}
 
             # Concat nodes does not have op_info.
-            elif val['iter_info']['type'] == 'concat':
+            elif val['iter_info']['type'] == ConcatConst.name:
                 val['config'] = {'name': 'concat-' + str(node_index)}
                 node_index += 1
 
@@ -419,6 +422,9 @@ class DAGRepr:
                                                        TimeWindowConst.param.timestamp_col: param[TimeWindowConst.param.timestamp_col]}}
         elif iter_type == WindowAllConst.name:
             new_dag[sub_uid]['iter_info'] = {'type': WindowAllConst.name,
+                                             'param': None}
+        elif iter_type == ReduceConst.name:
+            new_dag[sub_uid]['iter_info'] = {'type': ReduceConst.name,
                                              'param': None}
 
         for _, node in new_dag.items():
