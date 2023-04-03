@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import re
 from typing import Dict, Any, Union, Tuple, List
 from concurrent.futures import ThreadPoolExecutor
 
 from towhee.tools import visualizers
+from towhee.utils.log import engine_log
 from .operator_manager import OperatorPool
 from .data_queue import DataQueue
 from .dag_repr import DAGRepr
@@ -49,23 +50,29 @@ class _Graph:
                  edges: Dict[str, Any],
                  operator_pool: 'OperatorPool',
                  thread_pool: 'ThreadPoolExecutor',
-                 enable_profiler: bool = False):
+                 time_profiler: 'TimeProfiler' = None,
+                 trace_edges: list = None):
         self._nodes = nodes
         self._edges = edges
         self._operator_pool = operator_pool
         self._thread_pool = thread_pool
-        self._time_profiler = TimeProfiler(enable_profiler)
+        self._time_profiler = time_profiler
+        self._trace_edges = trace_edges
         self._node_runners = None
         self._data_queues = None
         self.features = None
-        self.time_profiler.record(Event.pipe_name, Event.pipe_in)
+        self._time_profiler.record(Event.pipe_name, Event.pipe_in)
         self.initialize()
         self._input_queue = self._data_queues[0]
 
-
     def initialize(self):
         self._node_runners = []
-        self._data_queues = dict((name, DataQueue(edge['data'])) for name, edge in self._edges.items())
+        self._data_queues = dict(
+            (
+                name,
+                DataQueue(edge['data'], keep_data=(self._trace_edges and self._trace_edges.get(name, False)))
+            ) for name, edge in self._edges.items()
+        )
         for name in self._nodes:
             in_queues = [self._data_queues[edge] for edge in self._nodes[name].in_edges]
             out_queues = [self._data_queues[edge] for edge in self._nodes[name].out_edges]
@@ -110,6 +117,10 @@ class _Graph:
     def input_col_size(self):
         return self._input_queue.col_size
 
+    @property
+    def data_queues(self):
+        return self._data_queues
+
 
 class RuntimePipeline:
     """
@@ -128,41 +139,46 @@ class RuntimePipeline:
             self._dag_repr = dag
         self._operator_pool = OperatorPool()
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
-        self._time_profiler_list = []
 
     def preload(self):
         """
         Preload the operators.
         """
-        return _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool)
+        return _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, TimeProfiler(False))
 
     def __call__(self, *inputs):
         """
         Output with ordering matching the input `DataQueue`.
         """
-        return self._call(*inputs, profiler=False)
+        return self._call(*inputs, profiler=False, tracer=False)[0]
 
     def batch(self, batch_inputs):
-        return self._batch(batch_inputs, profiler=False)
+        return self._batch(batch_inputs, profiler=False, tracer=False)[0]
 
-    def _call(self, *inputs, profiler: bool):
+    def _call(self, *inputs, profiler: bool, tracer: bool, trace_edges: list = None):
         """
         Run pipeline with debug option.
         """
-        graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, profiler)
-        if profiler:
-            self._time_profiler_list.append(graph.time_profiler)
-        return graph(inputs)
+        time_profiler = TimeProfiler(True) if profiler else TimeProfiler(False)
+        graph = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, time_profiler, trace_edges)
 
-    def _batch(self, batch_inputs, profiler: bool):
+        return graph(inputs), [graph.time_profiler] if profiler else None, [graph.data_queues] if tracer else None
+
+    def _batch(self, batch_inputs, profiler: bool, tracer: bool, trace_edges: list = None):
         """
         Run batch call with debug option.
         """
         graph_res = []
+        time_profilers = []
+        data_queues = []
         for inputs in batch_inputs:
-            gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, profiler)
+            time_profiler = TimeProfiler(False) if time_profilers is None else TimeProfiler(True)
+            gh = _Graph(self._dag_repr.nodes, self._dag_repr.edges, self._operator_pool, self._thread_pool, time_profiler, trace_edges)
+
             if profiler:
-                self._time_profiler_list.append(gh.time_profiler)
+                time_profilers.append(gh.time_profiler)
+            if tracer:
+                data_queues.append(gh.data_queues)
             if gh.input_col_size == 1:
                 inputs = (inputs, )
             graph_res.append(gh.async_call(inputs))
@@ -171,28 +187,82 @@ class RuntimePipeline:
         for gf in graph_res:
             ret = gf.result()
             rets.append(ret)
-        return rets
+        return rets, time_profilers if time_profilers else None, data_queues if data_queues else None
 
     @property
     def dag_repr(self):
         return self._dag_repr
 
-    def debug(self, *inputs, batch: bool = False, profiler: bool = False):
+    def _get_trace_nodes(self, include, exclude):
+        def _find_match(patterns, x):
+            return any(re.search(pattern, x) for pattern in patterns)
+
+        include = [include] if isinstance(include, str) else include
+        exclude = [exclude] if isinstance(exclude, str) else exclude
+        include = [node.name for node in self._dag_repr.nodes.values() if _find_match(include, node.name)] if include else []
+        exclude = [node.name for node in self._dag_repr.nodes.values() if _find_match(exclude, node.name)] if exclude else []
+        trace_nodes = list(set(include) - set(exclude)) if include \
+            else list(set(node.name for node in self._dag_repr.nodes.values()) - set(exclude))
+
+        return trace_nodes
+
+    def _get_trace_edges(self, trace_nodes):
+        def _set_false(idx):
+            trace_edges[idx] = False
+
+        trace_edges = dict((id, True) for id in self.dag_repr.edges)
+        for node in self.dag_repr.nodes.values():
+            if node.name not in trace_nodes:
+                _ = [_set_false(i) for i in node.out_edges]
+
+        return trace_edges
+
+    def debug(
+        self,
+        *inputs,
+        batch: bool = False,
+        profiler: bool = False,
+        tracer: bool = False,
+        include: Union[List[str], str] = None,
+        exclude: Union[List[str], str] = None
+    ):
         """
         Run pipeline in debug mode.
+
+        One can record the running time of each operator by setting `profiler` to `True`, or record the data of itermediate nodes
+        by setting `tracer` to True. Note that one should at least specify one of `profiler` and `tracer` options to True.
+        When debug with `tracer` option, one can specify which nodes to include or exclude.
 
         Args:
             batch (`bool):
                 Whether to run in batch mode.
             profiler (`bool`):
                 Whether to record the performance of the pipeline.
+            tracer (`bool`):
+                Whether to record the data from intermediate nodes.
+            include (`Union[List[str], str]`):
+                The nodes not to trace.
+            exclude (`Union[List[str], str]`):
+                The nodes to trace.
         """
-        if not batch:
-            res = self._call(*inputs, profiler=profiler)
-        else:
-            res = self._batch(inputs[0], profiler=profiler)
+        if not profiler and not tracer:
+            e_msg = 'You should set at least one of `profiler` or `tracer` to `True` when debug.'
+            engine_log.error(e_msg)
+            raise ValueError(e_msg)
 
-        v = visualizers.Visualizer(result=res, time_profiler=self._time_profiler_list, nodes=self._dag_repr.to_dict().get('nodes'))
-        self._time_profiler_list = []
+        trace_nodes = self._get_trace_nodes(include, exclude)
+        trace_edges = self._get_trace_edges(trace_nodes)
+
+        time_profilers = [] if profiler else None
+        data_queues = [] if tracer else None
+
+        if not batch:
+            res, time_profilers, data_queues = self._call(*inputs, profiler=profiler, tracer=tracer, trace_edges=trace_edges)
+        else:
+            res, time_profilers, data_queues = self._batch(inputs[0], profiler=profiler, tracer=tracer, trace_edges=trace_edges)
+
+        v = visualizers.Visualizer(
+            result=res, time_profiler=time_profilers, data_queues=data_queues ,nodes=self._dag_repr.to_dict().get('nodes'), trace_nodes=trace_nodes
+        )
 
         return v
