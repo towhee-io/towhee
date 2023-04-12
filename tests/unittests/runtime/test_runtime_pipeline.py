@@ -16,7 +16,10 @@ import copy
 import weakref
 import unittest
 
+from towhee import pipe
 from towhee.operator import PyOperator
+from towhee.tools.data_visualizer import DataVisualizer
+from towhee.tools.profilers import PerformanceProfiler
 from towhee.runtime.runtime_pipeline import RuntimePipeline
 from towhee.runtime.operator_manager import OperatorRegistry
 
@@ -256,3 +259,42 @@ class TestPipelineManager(unittest.TestCase):
             func()
             self.assertIsNone(pool_ref())
             self.assertEqual(num, i + 1)
+
+    def test_debug(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+        v0 = p.debug(3, tracer=True, profiler=True, include=['lambda'])
+        v0.tracer.show()
+        v0.profiler.show()
+
+        self.assertIsInstance(v0.tracer, DataVisualizer)
+        self.assertEqual(len(v0.tracer), 1)
+        self.assertIsInstance(v0.profiler, PerformanceProfiler)
+        self.assertEqual(len(v0.profiler), 1)
+
+        self.assertEqual(v0.tracer[0]['lambda-0'].next_node, ['_output'])
+        self.assertEqual(v0.tracer[0]['lambda-0'].previous_node, ['_input'])
+
+        self.assertEqual(v0.tracer[0].nodes, ['lambda-0'])
+
+    def test_batch_debug(self):
+        p = (
+            pipe.input('a')
+                .map('a', 'b', lambda x: x + 1)
+                .output('a', 'b')
+        )
+        v0 = p.debug([1,2,3], batch=True, tracer=True, profiler=True, exclude=['input', 'output'])
+        v0.tracer.show()
+        v0.tracer.show(limit=-1)
+        v0.tracer.show(limit=5)
+        v0.profiler.show()
+
+        self.assertIsInstance(v0.tracer, DataVisualizer)
+        self.assertEqual(len(v0.tracer), 3)
+        self.assertIsInstance(v0.profiler, PerformanceProfiler)
+        self.assertEqual(len(v0.profiler), 3)
+
+        self.assertEqual(v0.tracer[1].nodes, ['lambda-0'])

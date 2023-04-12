@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, Any
+import re
+from typing import Dict, Any, List
 
 from towhee.utils.log import engine_log
-from towhee.datacollection import DataCollection
 
 
 class NodeVisualizer:
@@ -25,7 +25,8 @@ class NodeVisualizer:
         self._name = name
         self._in = data['in']
         self._out = data['out']
-        self._previous = data.get('previous', None)
+        self._previous = data.get('previous')
+        self._next = data.get('next')
         self._op_input = data['op_input']
 
     @property
@@ -45,27 +46,30 @@ class NodeVisualizer:
         return self._previous
 
     @property
+    def next_node(self):
+        return self._next
+
+    @property
     def op_input(self):
         return self._op_input
 
     def _show_base(self):
         print('Node:', self._name)
         print('Previous Node:', self._previous)
+        print('Next Node:', self._next)
         print('Op_Input:', self._op_input)
 
     def _show_inputs(self, tablefmt):
-        if isinstance(self._in, list):
+        if self._previous:
             for idx, i in enumerate(self._in):
                 print('Input from', self._previous[idx] + ':')
                 i.show(tablefmt=tablefmt)
-        else:
-            if self._previous:
-                print('Input from', self._previous[0] + ':')
-            self._in.show(tablefmt=tablefmt)
 
     def _show_outputs(self, tablefmt):
-        print('Output:')
-        self._out.show(tablefmt=tablefmt)
+        if self._next:
+            for idx, i in enumerate(self._out):
+                print('Output to', self._next[idx] + ':')
+                i.show(tablefmt=tablefmt)
 
     def show_inputs(self, tablefmt=None):
         self._show_base()
@@ -83,40 +87,60 @@ class NodeVisualizer:
 
 class PipeVisualizer:
     """
-    Visualize the data of the pipeline.
+    Visualize the data from single pipeline execution.
     """
-    def __init__(self, nodes: Dict[str, Any], node_queues: Dict[str, Any]):
-        self._node_collections = node_queues
+    def __init__(self, nodes: Dict[str, Any], node_collection: Dict[str, Any]):
+        self._node_collection = node_collection
         self._nodes = nodes
-        for node in self._nodes.values():
-            if node['next_nodes']:
-                self._get_previous(node)
-        for v in self._node_collections.values():
-            if isinstance(v['in'], list):
-                v['in'] = [DataCollection(i) for i in v['in']]
-            else:
-                v['in'] = DataCollection(v['in'])
-            v['out'] = DataCollection(v['out'])
-
-    def _get_previous(self, node):
-        for i in node['next_nodes']:
-            curr = self._nodes[i]['name']
-            if 'previous' not in self._node_collections[curr].keys():
-                self._node_collections[curr]['previous'] = [node['name']]
-            else:
-                self._node_collections[curr]['previous'].append(node['name'])
 
     def show(self, tablefmt=None):
-        for k in self._node_collections.keys():
-            NodeVisualizer(k, self._node_collections[k]).show(tablefmt=tablefmt)
+        for k, v in self._node_collection.items():
+            NodeVisualizer(k, v).show(tablefmt=tablefmt)
             print()
 
     @property
     def nodes(self):
-        return list(self._node_collections.keys())
+        return list(self._node_collection.keys())
 
     def __getitem__(self, name: str):
-        if name not in self._node_collections.keys():
-            engine_log.error('Node %s does not exist. This pipeline contains following nodes: %s', name, self.nodes)
-            raise KeyError('Node %s does not exist. This pipeline contains following nodes: %s' % (name, self.nodes))
-        return NodeVisualizer(name, self._node_collections[name])
+        candidates = []
+        for node in self.nodes:
+            if re.search(name, node):
+                candidates.append(node)
+
+        if not candidates:
+            engine_log.error('Node %s does not match any existing nodes. This pipeline contains following nodes: %s', name, self.nodes)
+            raise KeyError('Node %s does not match any existing nodes. This pipeline contains following nodes: %s' % (name, self.nodes))
+        if len(candidates) == 1:
+            return NodeVisualizer(candidates[0], self._node_collection[candidates[0]])
+        else:
+            return [NodeVisualizer(i, self._node_collection[i]) for i in candidates]
+
+
+class DataVisualizer:
+    """
+    DataVisualizer contains the data for a pipeline from one or several execution(s).
+    """
+    def __init__(self, nodes: Dict[str, Any], node_collection_list: List[Dict[str, Any]]):
+        self._nodes = nodes
+        self._node_collection_list = node_collection_list
+        self._visualizers = [PipeVisualizer(nodes, i) for i in node_collection_list]
+
+    def show(self, limit=1, tablefmt=None):
+        limit = limit if limit > 0 else len(self._node_collection_list)
+        for v in self._visualizers[:limit]:
+            v.show(tablefmt=tablefmt)
+
+    def __getitem__(self, idx):
+        return self._visualizers[idx]
+
+    def __len__(self):
+        return len(self._visualizers)
+
+    @property
+    def visualizers(self):
+        return self._visualizers
+
+    @property
+    def nodes(self):
+        return list(self._visualizers[0].nodes)

@@ -212,6 +212,9 @@ class PerformanceProfiler:
     def __getitem__(self, item):
         return self.pipes_profiler[item]
 
+    def __len__(self):
+        return len(self.pipes_profiler)
+
     def dump(self, file_path):
         file_path = Path(file_path)
         profiler_json = self.gen_profiler_json()

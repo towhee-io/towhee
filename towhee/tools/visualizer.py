@@ -16,7 +16,9 @@ from typing import Union, List, Dict, Any
 
 from towhee.runtime.time_profiler import TimeProfiler
 from towhee.tools.profilers import PerformanceProfiler
+from towhee.datacollection import DataCollection
 from towhee.utils.lazy_import import LazyImport
+from towhee.utils.log import engine_log
 
 
 graph_visualizer = LazyImport('graph_visualizer', globals(), 'towhee.tools.graph_visualizer')
@@ -36,14 +38,66 @@ class Visualizer:
         self,
         result: Union['DataQueue', List[Any]]=None,
         time_profiler: List[Any]=None,
-        tracer: Dict[str, Any]=None,
-        nodes:Dict[str, Any]=None,
+        data_queues: List[Dict[str, Any]]=None,
+        nodes: Dict[str, Any]=None,
+        trace_nodes: List[str]=None
     ):
         self._result = result
         self._time_profiler = time_profiler
-        self._tracer = tracer
+        self._data_queues = data_queues
+        self._trace_nodes = trace_nodes
         self._nodes = nodes
+        self._node_collection = [self._get_collection(i) for i in self._get_node_queues()] if self._data_queues else None
         self._profiler = None
+        self._tracer = None
+
+    def _get_node_queues(self):
+        """
+        Get node queue with given graph data queues.
+        """
+        node_queues = []
+        for data_queue in self._data_queues:
+            node_queue = {}
+            for node in self._nodes.values():
+                if node['name'] not in self._trace_nodes:
+                    continue
+                node_queue[node['name']] = {}
+                node_queue[node['name']]['in'] = [data_queue[edge] for edge in node['inputs']]
+                node_queue[node['name']]['out'] = [data_queue[edge] for edge in node['outputs']]
+                node_queue[node['name']]['op_input'] = node['op_input']
+                node_queue[node['name']]['next'] = [self._nodes[i]['name'] for i in node['next_nodes']]
+            self._set_previous(node_queue)
+            node_queues.append(node_queue)
+
+        return node_queues
+
+    def _set_previous(self, node_queue):
+        for node in self._nodes.values():
+            for i in node['next_nodes']:
+                next_node = self._nodes[i]['name']
+                if next_node not in self._trace_nodes:
+                    continue
+                if 'previous' not in node_queue[next_node]:
+                    node_queue[next_node]['previous'] = [node['name']]
+                else:
+                    node_queue[next_node]['previous'].append(node['name'])
+
+    @staticmethod
+    def _get_collection(node_info):
+
+        def _to_collection(x):
+            for idx, q in enumerate(x):
+                if not q.size:
+                    q.reset_size()
+                tmp = DataCollection(q)
+                q.reset_size()
+                x[idx] = tmp
+
+        for v in node_info.values():
+            _to_collection(v['in'])
+            _to_collection(v['out'])
+
+        return node_info
 
     @property
     def result(self):
@@ -51,25 +105,36 @@ class Visualizer:
 
     @property
     def profiler(self):
+        if not self._time_profiler:
+            w_msg = 'Please set `profiler` to `True` when debug, there is nothing to report.'
+            engine_log.warning(w_msg)
+            return None
         if not self._profiler:
             self._profiler = PerformanceProfiler(self._time_profiler, self._nodes)
 
         return self._profiler
 
     @property
+    def tracer(self):
+        if not self._node_collection:
+            w_msg = 'Please set `tracer` to `True` when debug, there is nothing to report.'
+            engine_log.warning(w_msg)
+            return None
+        if not self._tracer:
+            self._tracer = data_visualizer.DataVisualizer(self._nodes, self._node_collection)
+        return self._tracer
+
+    @property
     def time_profiler(self):
         return self._time_profiler
 
     @property
+    def node_collection(self):
+        return self._node_collection
+
+    @property
     def nodes(self):
         return self._nodes
-
-    def show_data(self):
-        pv = data_visualizer.PipeVisualizer(self._nodes, self._tracer)
-        pv.show()
-
-    def get_data_visualizer(self):
-        return data_visualizer.PipeVisualizer(self._nodes, self._tracer)
 
     def _to_dict(self):
         info = {}
@@ -77,8 +142,6 @@ class Visualizer:
             info['result'] = self._result
         if self._time_profiler:
             info['time_record'] = [i.time_record for i in self._time_profiler]
-        if self._tracer:
-            info['tracer'] = self._tracer
         if self._nodes:
             info['nodes'] = self._nodes
 
@@ -93,6 +156,5 @@ class Visualizer:
         return Visualizer(
             result=info_dict.get('result'),
             time_profiler=[TimeProfiler(enable=True, time_record=i) for i in info_dict.get('time_record')],
-            tracer=info_dict.get('tracer'),
             nodes=info_dict.get('nodes')
         )
