@@ -167,9 +167,15 @@ class TestVisualizer(unittest.TestCase):
                 .output('a', 'b')
         )
 
-        v = p.debug(1, profiler=True)
-        v._result = None
-        info = v.to_json()
+        v0 = p.debug(1, profiler=True, tracer=True)
+        v0._result = None
+        info = v0.to_json()
 
-        v1 =  Visualizer.from_json(info)
-        self.assertListEqual([i.time_record for i in v.time_profiler], [i.time_record for i in v1.time_profiler])
+        v1 = Visualizer.from_json(info)
+        v2 = p.debug(1, profiler=True, tracer=True)
+        self.assertListEqual([i.time_record for i in v0.time_profiler], [i.time_record for i in v1.time_profiler])
+        for i, j in zip(v2._node_collection, v1._node_collection):
+            self.assertListEqual([m['next'] for m in i.values()], [n['next'] for n in j.values()])
+            self.assertListEqual([m.get('previous') for m in i.values()], [n.get('previous') for n in j.values()])
+            self.assertListEqual([m.get('in')[0].to_dict() for m in i.values()], [n.get('in')[0].to_dict() for n in j.values()])
+            self.assertListEqual([m.get('out')[0].to_dict() for m in i.values()], [n.get('out')[0].to_dict() for n in j.values()])
