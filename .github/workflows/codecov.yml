@@ -30,7 +30,7 @@ jobs:
       run: |
         export TOWHEE_WORKER=True
         rm -rf ./coverage.xml
-        pip install coverage codecov pytest pytest-xdist
+        pip install coverage pytest pytest-cov pytest-xdist
         pip install -r test_requirements.txt
         coverage erase
         coverage run -m pytest
