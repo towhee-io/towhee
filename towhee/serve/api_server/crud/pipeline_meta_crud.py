@@ -12,18 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base_crud import BaseCRUD
 from towhee.serve.api_server.models.pipeline_meta import PipelineMeta
 
 
 class PipelineMetaCRUD(BaseCRUD):
-    def get_list(self, db: Session, skip: int = 0, limit: int = 1000):
-        return db.query(self.model.name, self.model.description).filter(self.model.state == 0).offset(skip).limit(limit).all()
+    async def get_list(self, db: AsyncSession, skip: int = 0, limit: int = 1000):
+        stmt = select(self.model.name, self.model.description).filter(self.model.state == 0).offset(skip).limit(limit)
+        res = await db.execute(stmt)
+        return res.all()
 
-    def get_by_name(self, db: Session, name: str):
-        return db.query(self.model).filter(self.model.name == name).filter(self.model.state == 0).first()
+    async def get_by_name(self, db: AsyncSession, name: str):
+        stmt = select(self.model).filter(self.model.name == name).filter(self.model.state == 0)
+        res = await db.execute(stmt)
+        return res.first()
 
 
 pipeline_meta = PipelineMetaCRUD(PipelineMeta)

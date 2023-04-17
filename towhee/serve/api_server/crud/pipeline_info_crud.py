@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base_crud import BaseCRUD
 
@@ -25,24 +25,29 @@ class PipelineInfoCRUD(BaseCRUD):
     """
     pipeline_info CRUD
     """
-    def get_by_name(self, db: Session, name: str):
-        res = db.query(self.model).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
-                .filter(self.model.state == 0).all()
-        return res
+    async def get_by_name(self, db: AsyncSession, name: str):
+        stmt = select(self.model).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
+                .filter(self.model.state == 0)
+        res = await db.execute(stmt)
+        return res.all()
 
-    def get_dag_by_name_version(self, db: Session, name: str, version: int):
-        res = db.query(self.model.dag_json_str).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
-                .filter(self.model.state == 0).filter(self.model.version == version).scalar()
-        return res
+    async def get_dag_by_name_version(self, db: AsyncSession, name: str, version: int):
+        stmt = select(self.model.dag_json_str).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
+                .filter(self.model.state == 0).filter(self.model.version == version)
+        res = await db.execute(stmt)
+        return res.scalar()
 
-    def count_pipeline_by_name(self, db: Session, name: str):
-        res = db.query(func.count(self.model.id)).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
-                .filter(self.model.state == 0).scalar()
-        return res
+    # pylint: disable=not-callable
+    async def count_pipeline_by_name(self, db: AsyncSession, name: str):
+        stmt = select(func.count(self.model.id)).join(PipelineMeta).filter(PipelineMeta.name == name).filter(PipelineMeta.state == 0) \
+                .filter(self.model.state == 0)
+        res = await db.execute(stmt)
+        return res.scalar()
 
-    def update_state(self, db: Session, model_id: int, state: int = 1):
-        db.query(self.model).filter(self.model.meta_id == model_id).update({'state': state})
-        db.commit()
+    async def update_state(self, db: AsyncSession, model_id: int, state: int = 1):
+        stmt = update(self.model).filter(self.model.meta_id == model_id).values(state=state)
+        await db.execute(stmt)
+        await db.commit()
 
 
 pipeline_info = PipelineInfoCRUD(PipelineInfo)

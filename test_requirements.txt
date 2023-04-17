@@ -23,3 +23,5 @@ fastapi
 uvicorn
 httpx
 sqlalchemy
+sqlmodel
+aiosqlite

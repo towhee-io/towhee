@@ -25,15 +25,14 @@ router = APIRouter()
 
 # pylint: disable=broad-except
 @router.post('/create', response_model=ReturnBase)
-def create_pipeline(pipeline: PipelineCreate, db: Session = Depends(get_db)):
+async def create_pipeline(pipeline: PipelineCreate, db: Session = Depends(get_db)):
     try:
-        p = pipeline_meta.get_by_name(db, name=pipeline.name)
+        p = await pipeline_meta.get_by_name(db, name=pipeline.name)
         if p:
             raise HTTPException(status_code=400, detail=f'Pipeline: {pipeline.name} already exists, please rename it.')
+        meta = await pipeline_meta.create(db, name=pipeline.name, description=pipeline.description)
 
-        meta = pipeline_meta.create(db, name=pipeline.name, description=pipeline.description)
-
-        _ = pipeline_info.create(db, meta_id=meta.id, dag_json_str=pipeline.dag_json_str, version=0)
+        await pipeline_info.create(db, meta_id=meta.id, dag_json_str=pipeline.dag_json_str, version=0)
         return ReturnBase(status_code=0, msg='Successfully create pipeline.')
     except HTTPException as e:
         return ReturnBase(status_code=-1, msg=e.detail)
@@ -42,13 +41,13 @@ def create_pipeline(pipeline: PipelineCreate, db: Session = Depends(get_db)):
 
 
 @router.post('/update', response_model=ReturnBase)
-def update_pipeline(pipeline: PipelineUpdate, db: Session = Depends(get_db)):
+async def update_pipeline(pipeline: PipelineUpdate, db: Session = Depends(get_db)):
     try:
-        meta = pipeline_meta.get_by_name(db, name=pipeline.name)
+        meta = await pipeline_meta.get_by_name(db, name=pipeline.name)
         if not meta:
             raise HTTPException(status_code=404, detail=f'Pipeline: {pipeline.name} not exist, please create it first.')
-        count = pipeline_info.count_pipeline_by_name(db, name=pipeline.name)
-        _ = pipeline_info.create(db, meta_id=meta.id, dag_json_str=pipeline.dag_json_str, version=count)
+        count = await pipeline_info.count_pipeline_by_name(db, name=pipeline.name)
+        await pipeline_info.create(db, meta_id=meta[0].id, dag_json_str=pipeline.dag_json_str, version=count)
         return ReturnBase(status_code=0, msg='Successfully update pipeline.')
     except HTTPException as e:
         return ReturnBase(status_code=-1, msg=e.detail)
@@ -57,9 +56,9 @@ def update_pipeline(pipeline: PipelineUpdate, db: Session = Depends(get_db)):
 
 
 @router.get('/list', response_model=ReturnBase)
-def get_pipelines(db: Session = Depends(get_db)):
+async def get_pipelines(db: Session = Depends(get_db)):
     try:
-        pipe_list = pipeline_meta.get_list(db)
+        pipe_list = await pipeline_meta.get_list(db)
         if not pipe_list:
             raise HTTPException(status_code=404, detail='There is no pipeline.')
         result = dict((p[0], p[1]) for p in pipe_list)
@@ -71,12 +70,12 @@ def get_pipelines(db: Session = Depends(get_db)):
 
 
 @router.get('/{pipeline_name}/info', response_model=ReturnBase)
-def get_pipeline_info(pipeline_name: str, db: Session = Depends(get_db)):
+async def get_pipeline_info(pipeline_name: str, db: Session = Depends(get_db)):
     try:
-        infos = pipeline_info.get_by_name(db, name=pipeline_name)
+        infos = await pipeline_info.get_by_name(db, name=pipeline_name)
         if not infos:
             raise HTTPException(status_code=404, detail=f'Pipeline: {pipeline_name} not exist, please create it first.')
-        result = dict((i.version, i.date) for i in infos)
+        result = dict((i[0].version, i[0].date) for i in infos)
         return ReturnBase(status_code=0, msg=f'Successfully get the {pipeline_name} info.', data=result)
     except HTTPException as e:
         return ReturnBase(status_code=-1, msg=e.detail)
@@ -85,9 +84,9 @@ def get_pipeline_info(pipeline_name: str, db: Session = Depends(get_db)):
 
 
 @router.get('/{pipeline_name}/{version}/dag', response_model=ReturnBase)
-def get_pipeline_dag(pipeline_name: str, version: int, db: Session = Depends(get_db)):
+async def get_pipeline_dag(pipeline_name: str, version: int, db: Session = Depends(get_db)):
     try:
-        dag = pipeline_info.get_dag_by_name_version(db, name=pipeline_name, version=version)
+        dag = await pipeline_info.get_dag_by_name_version(db, name=pipeline_name, version=version)
         if not dag:
             raise HTTPException(status_code=404, detail=f'Pipeline: {pipeline_name} not exist, please create it first.')
         return ReturnBase(status_code=0, msg=f'Successfully get the dag for {pipeline_name} with version {version}.', data={'dag_str': dag})
@@ -98,13 +97,13 @@ def get_pipeline_dag(pipeline_name: str, version: int, db: Session = Depends(get
 
 
 @router.delete('/{pipeline_name}', response_model=ReturnBase)
-def delete_pipeline(pipeline_name: str, db: Session = Depends(get_db)):
+async def delete_pipeline(pipeline_name: str, db: Session = Depends(get_db)):
     try:
-        meta = pipeline_meta.get_by_name(db, name=pipeline_name)
+        meta = await pipeline_meta.get_by_name(db, name=pipeline_name)
         if not meta:
             raise HTTPException(status_code=404, detail=f'Pipeline: {pipeline_name} not exist.')
-        pipeline_meta.update_state(db, model_id=meta.id)
-        pipeline_info.update_state(db, model_id=meta.id)
+        await pipeline_meta.update_state(db, model_id=meta[0].id)
+        await pipeline_info.update_state(db, model_id=meta[0].id)
         return ReturnBase(status_code=0, msg=f'Successfully delete the {pipeline_name}.')
     except HTTPException as e:
         return ReturnBase(status_code=-1, msg=e.detail)

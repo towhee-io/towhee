@@ -12,10 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from towhee.serve.api_server.models.base import Base
-from .session import engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
+from towhee.serve.api_server.config import SQL_URL
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+engine = create_async_engine(SQL_URL,
+                             echo=True,
+                             )
+
+# pylint: disable=invalid-name
+SessionLocal = sessionmaker(autocommit=False,
+                            autoflush=False,
+                            bind=engine,
+                            class_=AsyncSession,
+                            expire_on_commit=False)

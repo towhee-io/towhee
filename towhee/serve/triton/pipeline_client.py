@@ -52,9 +52,18 @@ class Client:
     """
 
     def __init__(self, url: str, model_name: str = PIPELINE_NAME):
-        self._loop = asyncio.get_event_loop()
+        self._loop = self.get_loop()
         self._client = aio_httpclient.InferenceServerClient(url)
         self._model_name = model_name
+
+    def get_loop(self):
+        try:
+            return asyncio.get_event_loop()
+        except RuntimeError:
+            return asyncio.new_event_loop()
+        except Exception as e:  # pylint: disable=broad-except
+            engine_log.error('Failed to get event loop with Error: %s', str(e))
+            raise e
 
     async def _safe_call(self, inputs):
         try:

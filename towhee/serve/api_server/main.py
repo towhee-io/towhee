@@ -12,22 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import uvicorn
+import asyncio
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from .api.v1 import api_router as api_router_v1
+from towhee.serve.api_server.database.init_db import init_db
+from towhee.serve.api_server.api.v1 import api_router as api_router_v1
 
 
-# TODO: async run
+async def init_data() -> None:
+    await init_db()
+
+asyncio.run(init_data())
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 # Add Routers
-app.include_router(api_router_v1)
+app.include_router(api_router_v1, prefix='/v1')
+
+if __name__ == '__main__':
+    uvicorn.run(app=app, host='0.0.0.0', port=5000)
