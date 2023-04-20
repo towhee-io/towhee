@@ -15,6 +15,7 @@ import copy
 from typing import Any
 
 from towhee.datacollection.entity import Entity
+from towhee.runtime.data_queue import ColumnType
 from towhee.datacollection.mixins.display import DisplayMixin
 
 
@@ -42,9 +43,14 @@ class DataCollection(DisplayMixin):
         <DataCollection Schema[a: ColumnType.SCALAR, b: ColumnType.QUEUE] SIZE 1>
     """
     def __init__(self, data):
-        self._schema = data.schema
-        self._type_schema = data.type_schema
-        self._iterable = [Entity.from_dict(dict(zip(self._schema, data.get()))) for _ in range(data.size)]
+        if isinstance(data, dict):
+            self._schema = data['schema']
+            self._type_schema = [ColumnType[type] for type in data['type_schema']]
+            self._iterable = [Entity.from_dict(dict(zip(data['schema'], entity))) for entity in data['iterable']]
+        else:
+            self._schema = data.schema
+            self._type_schema = data.type_schema
+            self._iterable = [Entity.from_dict(dict(zip(self._schema, data.get()))) for _ in range(data.size)]
 
     def __iter__(self):
         """
@@ -204,3 +210,15 @@ class DataCollection(DisplayMixin):
             return copy.deepcopy(self)
         else:
             return copy.copy(self)
+
+    def to_dict(self):
+        ret = {}
+        ret['schema'] = self._schema
+        ret['type_schema'] = [type.name for type in self._type_schema]
+        ret['iterable'] = [[getattr(entity, col) for col in self._schema] for entity in self._iterable]
+
+        return ret
+
+    @staticmethod
+    def from_dict(data):
+        return DataCollection(data)

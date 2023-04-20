@@ -19,6 +19,7 @@ from towhee.tools.profilers import PerformanceProfiler
 from towhee.datacollection import DataCollection
 from towhee.utils.lazy_import import LazyImport
 from towhee.utils.log import engine_log
+from towhee.serve.triton.serializer import TritonSerializer, TritonParser
 
 
 graph_visualizer = LazyImport('graph_visualizer', globals(), 'towhee.tools.graph_visualizer')
@@ -40,14 +41,17 @@ class Visualizer:
         time_profiler: List[Any]=None,
         data_queues: List[Dict[str, Any]]=None,
         nodes: Dict[str, Any]=None,
-        trace_nodes: List[str]=None
+        trace_nodes: List[str]=None,
+        node_collection: List[Dict[str, Any]]=None
     ):
         self._result = result
         self._time_profiler = time_profiler
         self._data_queues = data_queues
         self._trace_nodes = trace_nodes
         self._nodes = nodes
-        self._node_collection = [self._get_collection(i) for i in self._get_node_queues()] if self._data_queues else None
+        self._node_collection = node_collection if node_collection \
+                                else [self._get_collection(i) for i in self._get_node_queues()] if self._data_queues \
+                                else None
         self._profiler = None
         self._tracer = None
 
@@ -136,6 +140,20 @@ class Visualizer:
     def nodes(self):
         return self._nodes
 
+    def _collcetion_to_dict(self):
+        #pylint: disable=not-an-iterable
+        for info in self._node_collection:
+            for node in info.values():
+                node['in'] = [i.to_dict() for i in node['in']]
+                node['out'] = [i.to_dict() for i in node['out']]
+
+    @staticmethod
+    def _dict_to_collcetion(data):
+        for info in data['node_collection']:
+            for node in info.values():
+                node['in'] = [DataCollection.from_dict(i) for i in node['in']]
+                node['out'] = [DataCollection.from_dict(i) for i in node['out']]
+
     def _to_dict(self):
         info = {}
         if self._result:
@@ -144,17 +162,26 @@ class Visualizer:
             info['time_record'] = [i.time_record for i in self._time_profiler]
         if self._nodes:
             info['nodes'] = self._nodes
+        if self._trace_nodes:
+            info['trace_nodes'] = self._trace_nodes
+        if self._data_queues:
+            self._collcetion_to_dict()
+            info['node_collection'] = self._node_collection
 
         return info
 
     def to_json(self, **kws):
-        return json.dumps(self._to_dict(), **kws)
+        return json.dumps(self._to_dict(), cls=TritonSerializer, **kws)
 
     @staticmethod
     def from_json(info):
-        info_dict = json.loads(info)
+        info_dict = json.loads(info, cls=TritonParser)
+        Visualizer._dict_to_collcetion(info_dict)
+
         return Visualizer(
             result=info_dict.get('result'),
             time_profiler=[TimeProfiler(enable=True, time_record=i) for i in info_dict.get('time_record')],
-            nodes=info_dict.get('nodes')
+            nodes=info_dict.get('nodes'),
+            trace_nodes=info_dict.get('trace_nodes'),
+            node_collection=info_dict.get('node_collection')
         )
