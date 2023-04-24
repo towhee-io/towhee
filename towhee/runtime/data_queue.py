@@ -179,8 +179,7 @@ class DataQueue:
 
             self._sealed = True
             if self._queue_index:
-                self._size = max([self._data[index].size()
-                                  for index in self._queue_index])
+                self._size = self._get_size()
             self._not_empty.notify_all()
             self._not_full.notify_all()
 
@@ -226,8 +225,9 @@ class DataQueue:
             self._has_all_scalars = True
 
         que_size = [self._data[index].size() for index in self._queue_index]
+
         if que_size:
-            return min(que_size)
+            return max(que_size) if self._sealed else min(que_size)
         return 1 if len(self._scalar_index) > 0 else 0
 
     def col_type(self, col_name):
