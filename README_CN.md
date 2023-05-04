@@ -54,6 +54,13 @@
 
 ## 📰 近期动态
 
+**v1.0.0rc1 2023年5月4日**
+* 新增一些模型支持微调。
+[*timm*](https://towhee.io/image-embedding/timm), [*isc*](https://towhee.io/image-embedding/isc), [*transformers*](https://towhee.io/text-embedding/transformers), [*clip*](https://towhee.io/image-text-embedding/clip)
+* 新增GPU视频解码算子: 
+[*VPF*](https://towhee.io/video-decode/VPF)
+* 所有的Pipeline均能够转换成Nvidia Triton 服务。
+
 **v0.9.0 2022年12月2日**
 * 新增一个视频分类模型:
 [*Vis4mer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/vis4mer)
@@ -171,25 +178,40 @@ pip install towhee towhee.models
 安装就绪后，就能够创建你的第一个 AI 流水线啦。下面示例中，我们使用 15 行左右的代码，来创建一个基于 CLIP 的跨模态检索流水线。
 
 ```python
-import towhee
+from glob import glob
+from towhee import ops, pipe, DataCollection
 
-# 创建 image embeddings 并构建索引
-(
-    towhee.glob['file_name']('./*.png')
-          .image_decode['file_name', 'img']()
-          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_b32', modality='image')
-          .tensor_normalize['vec','vec']()
-          .to_faiss[('file_name', 'vec')](findex='./index.bin')
+
+# create image embeddings and build index
+p = (
+    pipe.input('file_name')
+    .map('file_name', 'img', ops.image_decode.cv2())
+    .map('img', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='image'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    .map(('vec', 'file_name'), (), ops.ann_insert.faiss_index('./faiss', 512))
+    .output()
 )
 
-# 通过指定文本进行内容检索
-results = (
-    towhee.dc['text'](['puppy Corgi'])
-          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_b32', modality='text')
-          .tensor_normalize['vec', 'vec']()
-          .faiss_search['vec', 'results'](findex='./index.bin', k=3)
-          .select['text', 'results']()
+for f_name in glob('./*.png'):
+    p(f_name)
+
+# Delete the pipeline object, make sure the faiss data is written to disk. 
+del p
+
+
+# search image by text
+decode = ops.image_decode.cv2('rgb')
+p = (
+    pipe.input('text')
+    .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    # faiss op result format:  [[id, score, [file_name], ...]
+    .map('vec', 'row', ops.ann_search.faiss_index('./faiss', 3))
+    .map('row', 'images', lambda x: [decode(item[2][0]) for item in x])
+    .output('text', 'images')
 )
+
+DataCollection(p('a cat')).show()
 ```
 
 程序执行完毕，结果如下：
