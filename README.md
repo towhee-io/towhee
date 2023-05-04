@@ -50,6 +50,13 @@ automatically optimize it for production-ready environments.
 :snake:&emsp;**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
 ## What's New
+**v1.0.0rc1 May. 4, 2023**
+* Add trainer to operators: 
+[*timm*](https://towhee.io/image-embedding/timm), [*isc*](https://towhee.io/image-embedding/isc), [*transformers*](https://towhee.io/text-embedding/transformers), [*clip*](https://towhee.io/image-text-embedding/clip)
+* Add GPU video decoder: 
+[*VPF*](https://towhee.io/video-decode/VPF)
+* All towhee pipelines can be converted into Nvidia Triton services.
+
 
 **v0.9.0 Dec. 2, 2022**
 * Added one video classification model:
@@ -168,25 +175,41 @@ If you run into any pip-related install problems, please try to upgrade pip with
 Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
 
 ```python
-import towhee
+from glob import glob
+from towhee import ops, pipe, DataCollection
+
 
 # create image embeddings and build index
-(
-    towhee.glob['file_name']('./*.png')
-          .image_decode['file_name', 'img']()
-          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_base_patch32', modality='image')
-          .tensor_normalize['vec','vec']()
-          .to_faiss[('file_name', 'vec')](findex='./index.bin')
+p = (
+    pipe.input('file_name')
+    .map('file_name', 'img', ops.image_decode.cv2())
+    .map('img', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='image'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    .map(('vec', 'file_name'), (), ops.ann_insert.faiss_index('./faiss', 512))
+    .output()
 )
 
+for f_name in glob('./*.png'):
+    p(f_name)
+
+# Delete the pipeline object, make sure the faiss data is written to disk. 
+del p
+
+
 # search image by text
-results = (
-    towhee.dc['text'](['puppy Corgi'])
-          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_base_patch32', modality='text')
-          .tensor_normalize['vec', 'vec']()
-          .faiss_search['vec', 'results'](findex='./index.bin', k=3)
-          .select['text', 'results']()
+decode = ops.image_decode.cv2('rgb')
+p = (
+    pipe.input('text')
+    .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    # faiss op result format:  [[id, score, [file_name], ...]
+    .map('vec', 'row', ops.ann_search.faiss_index('./faiss', 3))
+    .map('row', 'images', lambda x: [decode(item[2][0]) for item in x])
+    .output('text', 'images')
 )
+
+DataCollection(p('a cat')).show()
+
 ```
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
