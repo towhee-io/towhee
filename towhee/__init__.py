@@ -18,6 +18,7 @@
 import sys
 
 from towhee.runtime import register, pipe, ops, accelerate, AutoConfig, AutoPipes
+from towhee.data_loader import DataLoader
 from towhee.serve.triton import triton_client
 from towhee.utils.lazy_import import LazyImport
 
@@ -39,7 +40,8 @@ __all__ = [
     'build_docker_image',
     'build_pipeline_model',
     'AutoConfig',
-    'AutoPipes'
+    'AutoPipes',
+    'DataLoader'
 ]
 
 __import__('pkg_resources').declare_namespace(__name__)
