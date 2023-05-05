@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import abstractmethod
-from abc import ABC
+from abc import abstractmethod, ABC
 from enum import Enum
 from enum import Flag, auto
 
@@ -30,6 +29,7 @@ from enum import Flag, auto
 SharedType = Enum('SharedType', ('NotShareable', 'NotReusable', 'Shareable'))
 
 
+# legacy class
 class OperatorFlag(Flag):
     EMPTYFLAG = auto()
     STATELESS = auto()
@@ -95,10 +95,6 @@ class Operator(ABC):
     def key(self, value):
         self._key = value
 
-    @property
-    def flag(self):
-        return OperatorFlag.STATELESS|OperatorFlag.REUSEABLE
-
 
 class NNOperator(Operator):
     """
@@ -116,10 +112,6 @@ class NNOperator(Operator):
         self.model = None
         self.model_card = None
         self._trainer = None
-
-    @property
-    def flag(self):
-        return OperatorFlag.STATELESS|OperatorFlag.REUSEABLE
 
     @property
     def framework(self):
@@ -247,5 +239,5 @@ class PyOperator(Operator):
         pass
 
     @property
-    def flag(self):
-        return OperatorFlag.EMPTYFLAG
+    def shared_type(self):
+        return SharedType.NotShareable
