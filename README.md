@@ -191,7 +191,9 @@ p = (
     .output()
 )
 
-for f_name in glob('./*.png'):
+for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog1.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog2.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
     p(f_name)
 
 # Delete the pipeline object, make sure the faiss data is written to disk. 
@@ -215,7 +217,7 @@ DataCollection(p('a cat')).show()
 ```
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
-Learn more examples from the [Towhee Bootcamp](https://codelabs.towhee.io/).
+Learn more examples from the [Towhee Examples](https://github.com/towhee-io/examples).
 
 ## Core Concepts
 
