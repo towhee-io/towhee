@@ -1,8 +1,8 @@
-DataCollection
---------------
+Api
+---------------
 
 .. automodule:: towhee
-   :members: DataCollection
+   :members: ops, register
    :show-inheritance:
    :special-members:
    :member-order: bysource

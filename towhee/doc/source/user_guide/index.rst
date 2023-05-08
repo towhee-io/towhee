@@ -4,4 +4,5 @@ User Guide
 
 .. toctree::
 
-   10-minutes-to-data-collection.md
+   readme.md
+   10-minutes-to-towhee.md
