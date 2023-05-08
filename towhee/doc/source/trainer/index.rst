@@ -4,4 +4,4 @@ trainer
 .. toctree::
    :maxdepth: 4
 
-   trainer
+   trainer.rst
