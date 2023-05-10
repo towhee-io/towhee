@@ -16,8 +16,8 @@ import asyncio
 from typing import List
 
 import numpy as np
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
 from towhee.serve.triton.constant import PIPELINE_NAME
+from towhee.utils.serializer import to_triton_data, from_triton_data
 from towhee.utils.log import engine_log
 
 from towhee.utils.triton_httpclient import aio_httpclient

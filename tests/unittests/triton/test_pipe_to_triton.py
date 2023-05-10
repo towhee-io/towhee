@@ -22,7 +22,7 @@ import numpy as np
 import towhee
 
 from towhee.serve.triton.pipe_to_triton import PipeToTriton
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_triton_data, from_triton_data
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 
 

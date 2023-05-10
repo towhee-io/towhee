@@ -21,7 +21,7 @@ import dill as pickle
 import numpy as np
 
 import towhee
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_triton_data, from_triton_data
 import towhee.serve.triton.bls.pipeline_model as pipe_model
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 

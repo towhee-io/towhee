@@ -17,7 +17,7 @@ import json
 
 import numpy as np
 from towhee.runtime.data_queue import Empty
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_triton_data, from_triton_data
 
 class TestSerializer(unittest.TestCase):
     """

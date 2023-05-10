@@ -19,7 +19,7 @@ from towhee.tools.profilers import PerformanceProfiler
 from towhee.datacollection import DataCollection
 from towhee.utils.lazy_import import LazyImport
 from towhee.utils.log import engine_log
-from towhee.serve.triton.serializer import TritonSerializer, TritonParser
+from towhee.utils.serializer import TritonSerializer, TritonParser
 
 
 graph_visualizer = LazyImport('graph_visualizer', globals(), 'towhee.tools.graph_visualizer')
@@ -66,9 +66,12 @@ class Visualizer:
                 if node['name'] not in self._trace_nodes:
                     continue
                 node_queue[node['name']] = {}
+                node_queue[node['name']]['type'] = node['iter_info']['type']
+                node_queue[node['name']]['operator'] = node['op_info']['operator']
                 node_queue[node['name']]['in'] = [data_queue[edge] for edge in node['inputs']]
                 node_queue[node['name']]['out'] = [data_queue[edge] for edge in node['outputs']]
                 node_queue[node['name']]['op_input'] = node['op_input']
+                node_queue[node['name']]['op_output'] = node['op_output']
                 node_queue[node['name']]['next'] = [self._nodes[i]['name'] for i in node['next_nodes']]
             self._set_previous(node_queue)
             node_queues.append(node_queue)

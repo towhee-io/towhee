@@ -26,8 +26,13 @@ class DisplayMixin: # pragma: no cover
     def as_str(self):
         return self._factory(map(str, self._iterable))
 
-    def as_table(self, limit=5, header=None, tablefmt='plain', formatter={}):
-        contents = [x for i, x in enumerate(self) if i < limit]
+    def as_table(self, limit=5, header=None, tablefmt=None, formatter={}):
+        if tablefmt is None:
+            tablefmt = 'grid'
+        if limit > 0:
+            contents = [x for i, x in enumerate(self) if i < limit]
+        else:
+            contents = [x for i, x in enumerate(self)]
 
         if all(isinstance(x, Entity) for x in contents):
             header = self._schema
@@ -52,16 +57,7 @@ class DisplayMixin: # pragma: no cover
                 tablefmt = 'html'
             except NameError:
                 tablefmt = 'grid'
-
-        contents = [x for i, x in enumerate(self) if i < limit]
-
-        if all(isinstance(x, Entity) for x in contents):
-            header = self._schema
-            data = [list(x.__dict__.values()) for x in contents]
-        else:
-            data = [[x] for x in contents]
-
-        table_display(to_printable_table(data, header, tablefmt, formatter), tablefmt)
+        table_display(self.as_table(limit, header, tablefmt, formatter), tablefmt)
 
 
 def table_display(table, tablefmt='html'):  # pragma: no cover

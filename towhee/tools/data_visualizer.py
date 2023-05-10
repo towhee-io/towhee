@@ -14,6 +14,8 @@
 import re
 from typing import Dict, Any, List
 
+from tabulate import tabulate
+
 from towhee.utils.log import engine_log
 
 
@@ -22,11 +24,19 @@ class NodeVisualizer:
     Visualize the data of a node.
     """
     def __init__(self, name, data: Dict[str, Any]):
+        self._meta = tabulate([
+            ['NodeName', name],
+            ['NodeType', data.get('type')],
+            ['InputSchema', data.get('op_input')],
+            ['OutputSchema', data.get('op_output')],
+            ['Operator', data.get('operator')]
+        ], tablefmt='grid')
+
         self._name = name
-        self._in = data['in']
-        self._out = data['out']
         self._previous = data.get('previous')
         self._next = data.get('next')
+        self._in = data['in']
+        self._out = data['out']
         self._op_input = data['op_input']
 
     @property
@@ -53,36 +63,68 @@ class NodeVisualizer:
     def op_input(self):
         return self._op_input
 
-    def _show_base(self):
-        print('Node:', self._name)
-        print('Previous Node:', self._previous)
-        print('Next Node:', self._next)
-        print('Op_Input:', self._op_input)
+    def _meta_table(self):
+        return tabulate([[self._meta]], tablefmt='grid')
 
-    def _show_inputs(self, tablefmt):
-        if self._previous:
-            for idx, i in enumerate(self._in):
-                print('Input from', self._previous[idx] + ':')
-                i.show(tablefmt=tablefmt)
+    def _inputs_table(self):
+        headers = self._previous if self._previous else ['PipeInput']
+        return tabulate([[dc.as_table(-1) for dc in self._in]],
+                        headers=headers, tablefmt='grid')
 
-    def _show_outputs(self, tablefmt):
-        if self._next:
-            for idx, i in enumerate(self._out):
-                print('Output to', self._next[idx] + ':')
-                i.show(tablefmt=tablefmt)
+    def _outputs_table(self):
+        headers = self._next if self._next else ['PipeOutput']
+        return tabulate([[dc.as_table(-1) for dc in self._out]],
+                        headers=headers, tablefmt='grid')
 
-    def show_inputs(self, tablefmt=None):
-        self._show_base()
-        self._show_inputs(tablefmt)
+    def show_inputs(self):
+        try:
+            # check is ipython
+            get_ipython()
+            self._show_html(False, True)
+        except NameError:
+            print(tabulate([
+                [
+                    self._meta_table(),
+                    self._inputs_table()
+                ]], headers=['Node', 'Inputs', 'Outputs']))
 
-    def show_outputs(self, tablefmt=None):
-        self._show_base()
-        self._show_outputs(tablefmt)
+    def show_outputs(self):
+        try:
+            # check is ipython
+            get_ipython()
+            self._show_html(False, True)
+        except NameError:
+            print(tabulate([
+                [
+                    self._meta_table(),
+                    self._outputs_table()
+                ]], headers=['Node', 'Outputs']))
 
-    def show(self, tablefmt=None):
-        self._show_base()
-        self._show_inputs(tablefmt)
-        self._show_outputs(tablefmt)
+    def _show_table(self):
+        print(tabulate([
+            [
+                self._meta_table(),
+                self._inputs_table(),
+                self._outputs_table()
+            ]], headers=['Node', 'Inputs', 'Outputs']
+        ))
+
+    def _show_html(self, show_input: bool, show_outputs: bool):
+        print(self._meta_table())
+        if show_input:
+            for item in self._in:
+                item.show()
+        if show_outputs:
+            for item in self._out:
+                item.show()
+
+    def show(self):
+        try:
+            # check is ipython
+            get_ipython()
+            self._show_html(True, True)
+        except NameError:
+            self._show_table()
 
 
 class PipeVisualizer:
@@ -93,9 +135,9 @@ class PipeVisualizer:
         self._node_collection = node_collection
         self._nodes = nodes
 
-    def show(self, tablefmt=None):
+    def show(self):
         for k, v in self._node_collection.items():
-            NodeVisualizer(k, v).show(tablefmt=tablefmt)
+            NodeVisualizer(k, v).show()
             print()
 
     @property
@@ -126,10 +168,10 @@ class DataVisualizer:
         self._node_collection_list = node_collection_list
         self._visualizers = [PipeVisualizer(nodes, i) for i in node_collection_list]
 
-    def show(self, limit=1, tablefmt=None):
+    def show(self, limit=1):
         limit = limit if limit > 0 else len(self._node_collection_list)
         for v in self._visualizers[:limit]:
-            v.show(tablefmt=tablefmt)
+            v.show()
 
     def __getitem__(self, idx):
         return self._visualizers[idx]
