@@ -288,6 +288,13 @@ class DAGRepr:
         return nodes, edges
 
     def to_dict(self):
+        def get_op(node):
+            if node.op_info.type == OPType.LAMBDA:
+                return 'lambda'
+            if node.op_info.type == OPType.CALLABLE:
+                return node.op_info.operator.__name__
+            return node.op_info.operator
+
         info = {}
         info['edges'] = {}
         info['nodes'] = {}
@@ -302,7 +309,7 @@ class DAGRepr:
             info['nodes'][k]['name'] = v.name
             info['nodes'][k]['iter_info'] = {'type': v.iter_info.type, 'param': v.iter_info.param}
             info['nodes'][k]['op_info'] = {
-                'operator': v.op_info.operator.__name__ if callable(v.op_info.operator) else v.op_info.operator,
+                'operator': get_op(v),
                 'type': v.op_info.type
             }
             info['nodes'][k]['next_nodes'] = v.next_nodes

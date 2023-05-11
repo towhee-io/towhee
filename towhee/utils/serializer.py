@@ -15,8 +15,92 @@ import json
 
 import numpy as np
 from towhee.runtime.data_queue import Empty
-from towhee.utils.np_format import NumpyFormat
-from towhee.utils.empty_format import EmptyFormat
+
+
+class EmptyFormat:
+    """
+    EmptyFormat:
+    """
+    def to_dict(self):
+        return {
+            '_EMP': True,
+        }
+
+    @staticmethod
+    def from_dict():
+        return Empty()
+
+
+class NumpyFormat:
+    """
+    NumpyFormat:
+    """
+
+    def __init__(self, data: 'ndarray'):
+        self._data = data
+
+    def to_dict(self):
+        return {
+            '_NP': True,
+            'dtype': NumpyFormat.from_numpyt_type(self._data.dtype),
+            'data': self._data.tolist()
+        }
+
+    @staticmethod
+    def from_dict(dct):
+        return np.array(dct['data'], NumpyFormat.to_numpy_type(dct['dtype']))
+
+    @staticmethod
+    def from_numpyt_type(dtype):
+        if dtype == np.uint8:
+            return 1
+        if dtype == np.uint16:
+            return 2
+        if dtype == np.uint32:
+            return 3
+        if dtype == np.uint64:
+            return 4
+        if dtype == np.int8:
+            return 5
+        if dtype == np.int16:
+            return 6
+        if dtype == np.int32:
+            return 7
+        if dtype == np.int64:
+            return 8
+        if dtype == np.float16:
+            return 9
+        if dtype == np.float32:
+            return 10
+        if dtype == np.float64:
+            return 11
+        raise ValueError('Unsupport numpy type: %s ' % str(dtype))
+
+    @staticmethod
+    def to_numpy_type(dtype):
+        if dtype == 1:
+            return np.uint8
+        if dtype == 2:
+            return np.uint16
+        if dtype == 3:
+            return np.uint32
+        if dtype == 4:
+            return np.uint64
+        if dtype == 5:
+            return np.int8
+        if dtype == 6:
+            return np.int16
+        if dtype == 7:
+            return np.int32
+        if dtype == 8:
+            return np.int64
+        if dtype == 9:
+            return np.float16
+        if dtype == 10:
+            return np.float32
+        if dtype == 11:
+            return np.float64
+        raise ValueError('Unsupport numpy type code %s' % dtype)
 
 
 class TritonSerializer(json.JSONEncoder):
