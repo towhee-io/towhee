@@ -15,7 +15,7 @@ import unittest
 
 import numpy as np
 
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_triton_data, from_triton_data
 
 
 class TestNPFormat(unittest.TestCase):

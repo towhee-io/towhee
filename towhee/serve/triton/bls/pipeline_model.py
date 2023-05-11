@@ -9,7 +9,7 @@ import dill as pickle
 
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
 from towhee.runtime.runtime_pipeline import RuntimePipeline
-from towhee.serve.triton.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_triton_data, from_triton_data
 
 
 logger = logging.getLogger()
