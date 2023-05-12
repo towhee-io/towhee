@@ -32,8 +32,8 @@ class VioletTest(unittest.TestCase):
         for i in range(0, 1):
             mask.append(mask_i)
         img = torch.from_numpy(np.array(img, dtype=np.float32))
-        txt = torch.from_numpy(np.array(txt, dtype=np.int))
-        mask = torch.from_numpy(np.array(mask, dtype=np.int))
+        txt = torch.from_numpy(np.array(txt, dtype=np.int64))
+        mask = torch.from_numpy(np.array(mask, dtype=np.int64))
 
         md = VioletBase()
         feat_img, _, _, _ = md.go_feat(img, txt, mask)
