@@ -6,55 +6,55 @@
 Welcome to Towhee's documentation!
 ==========================================
 
-.. mdinclude:: ../../../README.md
-   :start-line: 6
+Getting Started
+=======
 
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
 
-User Guide
+   user_guide/index.rst
+
+operator
+=========
+
+.. toctree::
+   :maxdepth: 2
+
+   operator/index
+
+pipeline
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   pipeline/index
+
+
+triton server
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   triton/index
+
+Funtuning
 ==========
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide:
 
-   user_guide/index.rst
+   trainer/index
 
-User API
-========
-
-.. toctree::
-   :maxdepth: 3
-   :caption: User API:
-
-   towhee/towhee
-   data_collection/index
-   builtin operators/index
-
-Developer API
-=============
+GPU
+=========
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Developer API:
-   
-   towhee/towhee_operator
+   :maxdepth: 2
 
-   trainer/trainer
-   trainer/trainer.optimization
-   trainer/trainer.utils
+   GPU/index
 
-Full API
-=============
-.. toctree::
-   :caption: Full API:
-
-   _autosummary/towhee
-
-Indices and tables
-==================
 
 * :ref:`genindex`
 * :ref:`modindex`
