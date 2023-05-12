@@ -24,7 +24,7 @@ copyright = '2022, Towhee Team'
 author = 'Towhee Team'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.6.0'
+release = 'v1.0.0'
 show_authors = True
 
 # -- General configuration ---------------------------------------------------
@@ -40,7 +40,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
+    'sphinx.ext.viewcode'
 ]
 
 myst_enable_extensions = [
@@ -64,6 +64,8 @@ source_suffix = {
     '.ipynb': 'myst-nb',
     '.md': 'myst-nb',
 }
+
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
