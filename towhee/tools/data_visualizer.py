@@ -14,8 +14,6 @@
 import re
 from typing import Dict, Any, List
 
-from tabulate import tabulate
-
 from towhee.utils.log import engine_log
 
 
@@ -24,14 +22,7 @@ class NodeVisualizer:
     Visualize the data of a node.
     """
     def __init__(self, name, data: Dict[str, Any]):
-        self._meta = tabulate([
-            ['NodeName', name],
-            ['NodeType', data.get('type')],
-            ['InputSchema', data.get('op_input')],
-            ['OutputSchema', data.get('op_output')],
-            ['Operator', data.get('operator')]
-        ], tablefmt='grid')
-
+        self._data = data
         self._name = name
         self._previous = data.get('previous')
         self._next = data.get('next')
@@ -63,68 +54,62 @@ class NodeVisualizer:
     def op_input(self):
         return self._op_input
 
-    def _meta_table(self):
-        return tabulate([[self._meta]], tablefmt='grid')
+    def _prepare_data(self, show_inputs: bool, show_outputs: bool):
+        headers = ['NodeInfo']
+        data = [{
+                'headers': ['item', 'info'],
+                'data': [
+                    ['NodeName', self._name],
+                    ['NodeType', self._data.get('type')],
+                    ['InputSchema', self._data.get('op_input')],
+                    ['OutputSchema', self._data.get('op_output')],
+                    ['Operator', self._data.get('operator')]
+                ]
+            }]
 
-    def _inputs_table(self):
-        headers = self._previous if self._previous else ['PipeInput']
-        return tabulate([[dc.as_table(-1) for dc in self._in]],
-                        headers=headers, tablefmt='grid')
-
-    def _outputs_table(self):
-        headers = self._next if self._next else ['PipeOutput']
-        return tabulate([[dc.as_table(-1) for dc in self._out]],
-                        headers=headers, tablefmt='grid')
+        if show_inputs:
+            headers.append('Inputs')
+            data.append({
+                'headers': self._previous if self._previous else ['PipeInput'],
+                'data': [[dc.prepare_table_data(-1) for dc in self._in]],
+            })
+        if show_outputs:
+            headers.append('Outputs')
+            data.append({
+                'headers': self._next if self._next else ['PipeOutput'],
+                'data': [[dc.prepare_table_data(-1) for dc in self._out]],
+            })
+        return {'headers': headers, 'data': [data]}
 
     def show_inputs(self):
         try:
             # check is ipython
             get_ipython()
-            self._show_html(False, True)
+            from towhee.utils.html_table import NestedHTMLTable # pylint: disable=import-outside-toplevel
+            NestedHTMLTable(self._prepare_data(True, False)).show()
         except NameError:
-            print(tabulate([
-                [
-                    self._meta_table(),
-                    self._inputs_table()
-                ]], headers=['Node', 'Inputs', 'Outputs']))
+            from towhee.utils.console_table import NestedConsoleTable # pylint: disable=import-outside-toplevel
+            NestedConsoleTable(self._prepare_data(True, False)).show()
 
     def show_outputs(self):
         try:
             # check is ipython
             get_ipython()
-            self._show_html(False, True)
+            from towhee.utils.html_table import NestedHTMLTable # pylint: disable=import-outside-toplevel
+            NestedHTMLTable(self._prepare_data(False, True)).show()
         except NameError:
-            print(tabulate([
-                [
-                    self._meta_table(),
-                    self._outputs_table()
-                ]], headers=['Node', 'Outputs']))
-
-    def _show_table(self):
-        print(tabulate([
-            [
-                self._meta_table(),
-                self._inputs_table(),
-                self._outputs_table()
-            ]], headers=['Node', 'Inputs', 'Outputs']
-        ))
-
-    def _show_html(self, show_input: bool, show_outputs: bool):
-        print(self._meta_table())
-        if show_input:
-            for item in self._in:
-                item.show()
-        if show_outputs:
-            for item in self._out:
-                item.show()
+            from towhee.utils.console_table import NestedConsoleTable # pylint: disable=import-outside-toplevel
+            NestedConsoleTable(self._prepare_data(False, True)).show()
 
     def show(self):
         try:
             # check is ipython
             get_ipython()
-            self._show_html(True, True)
+            from towhee.utils.html_table import NestedHTMLTable # pylint: disable=import-outside-toplevel
+            NestedHTMLTable(self._prepare_data(True, True)).show()
         except NameError:
-            self._show_table()
+            from towhee.utils.console_table import NestedConsoleTable # pylint: disable=import-outside-toplevel
+            NestedConsoleTable(self._prepare_data(True, True)).show()
 
 
 class PipeVisualizer:
@@ -138,7 +123,6 @@ class PipeVisualizer:
     def show(self):
         for k, v in self._node_collection.items():
             NodeVisualizer(k, v).show()
-            print()
 
     @property
     def nodes(self):
