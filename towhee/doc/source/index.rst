@@ -30,6 +30,14 @@ pipeline
 
    pipeline/index
 
+debug
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   debug/index
+
 
 triton server
 ===========
