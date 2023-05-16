@@ -1,15 +1,15 @@
 api
 =====================
 
-.. automodule:: towhee
-   :members: pipe, accelerate, AutoConfig, AutoPipes
+.. automodule:: towhee.runtime.runtime_pipeline
+   :members: RuntimePipeline
    :show-inheritance:
    :special-members:
    :undoc-members:
    :member-order: bysource
 
-.. automodule:: towhee.runtime.pipeline
-   :members: Pipeline
+.. automodule:: tools.visualizer
+   :members: Visualizer
    :show-inheritance:
    :special-members:
    :undoc-members:
