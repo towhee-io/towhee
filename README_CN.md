@@ -197,6 +197,7 @@ p = (
 for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog1.png',
                'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog2.png',
                'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
+    p(f_name)
 
 # Delete the pipeline object, make sure the faiss data is written to disk. 
 del p
