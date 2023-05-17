@@ -103,16 +103,19 @@ class OperatorLoader:
         modname = 'towhee.operator.' + op_name + '.' + tag
 
         all_pkg = [item.project_name for item in list(pkg_resources.working_set)]
-        if 'requirements.txt' in (i.name for i in path.parent.iterdir()):
-            with open(path.parent / 'requirements.txt', 'r', encoding='utf-8') as f:
+        if 'requirements.txt' in (i.name for i in path.iterdir()):
+            with open(path / 'requirements.txt', 'r', encoding='utf-8') as f:
                 reqs = f.read().split('\n')
             for req in reqs:
+                need_install = []
                 if not req:
                     continue
-                pkg_name = re.split(r'(~|>|<|=|!| )', req)[0]
+                pkg_name = re.split(r'(~|>|<|=|!|\]|\[| )', req)[0]
                 pkg_name = pkg_name.replace('_', '-')
                 if pkg_name not in all_pkg:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', req])
+                    need_install.append(req)
+            if need_install:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', *need_install])
 
         op = self._load_op(modname, path, fname)
         if not op:

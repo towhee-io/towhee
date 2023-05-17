@@ -17,11 +17,16 @@ import sys
 import tempfile
 import shutil
 from pathlib import Path
-import threading
 from concurrent.futures import ThreadPoolExecutor
 import subprocess
+
 import requests
 from tqdm import tqdm
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from towhee.utils.hub_utils import HubUtils
 
@@ -126,6 +131,7 @@ class _Downloader:
         self._hub_files = hub_files
 
     @staticmethod
+    @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(3))
     def download_url_to_file(url: str, dst: str, file_size: int = None) -> bool:
         """Download file at the given URL to a local path.
         Args:
@@ -156,9 +162,6 @@ class _Downloader:
                 if not local_file.is_file():
                     futures.append(pool.submit(_Downloader.download_url_to_file, url, local_file))
             _ = [i.result() for i in futures]
-
-
-_DOWNLOAD_LOCK = threading.Lock()
 
 
 def download_operator(author: str, repo: str, tag: str, op_path: Path, install_reqs: bool = True, latest: bool = False):
