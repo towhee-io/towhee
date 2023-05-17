@@ -3,4 +3,5 @@ tqdm>=4.59.0
 tabulate
 numpy
 twine
+tenacity
 contextvars; python_version <= '3.6'
