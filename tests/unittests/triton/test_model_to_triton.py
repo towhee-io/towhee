@@ -56,7 +56,7 @@ class TestModelToTriton(unittest.TestCase):
     def test_to_triton(self):
         name = 'image-text-embedding/resnet-18'
         server_config = {'format_priority': ['onnx', 'tensorrt']}
-        node_config = NodeConfig.from_dict({'name': name})
+        node_config = NodeConfig(name=name)
         model_name = name.replace('/', '.')
         with TemporaryDirectory(dir='./') as root:
             m = ModelToTriton(root, op, model_name, node_config, server_config)
@@ -86,9 +86,9 @@ class TestModelToTriton(unittest.TestCase):
     def test_prepare(self):
         name = 'resnet18_conf1'
         server_config = {'format_priority': ['onnx', 'tensorrt']}
-        node_config = NodeConfig.from_dict({
-            'name': name,
-            'server': {
+        node_config = NodeConfig(
+            name=name,
+            server={
                 'device_ids': [0, 1],
                 'max_batch_size': 128,
                 'batch_latency_micros': 100000,
@@ -97,7 +97,7 @@ class TestModelToTriton(unittest.TestCase):
                     'preferred_batch_size': [8, 16],
                 }
             }
-        })
+        )
         with TemporaryDirectory(dir='./') as root:
             m = ModelToTriton(root, op, name, node_config, server_config)
             self.assertEqual(m.to_triton(), 1)
@@ -127,7 +127,7 @@ class TestModelToTriton(unittest.TestCase):
     def test_status(self):
         name = 'resnet18_conf2'
         server_config = {}
-        node_config = NodeConfig.from_dict({
+        node_config = NodeConfig(**{
             'name': name,
             'server': {'num_instances_per_device': 3}
         })
@@ -139,7 +139,7 @@ class TestModelToTriton(unittest.TestCase):
 
         name = 'resnet18_conf3'
         server_config = {'format_priority': ['tensorrt']}
-        node_config = NodeConfig.from_dict({
+        node_config = NodeConfig(**{
             'name': name,
             'server': {'num_instances_per_device': 3}
         })

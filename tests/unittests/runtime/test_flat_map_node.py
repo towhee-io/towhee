@@ -47,7 +47,7 @@ class TestFlatMapNode(unittest.TestCase):
     'next_nodes': ['_output']
     }
     def setUp(self):
-        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.node_repr = NodeRepr(uid=uuid.uuid4().hex, **self.node_info)
         self.op_pool = OperatorPool()
         self.thread_pool = ThreadPoolExecutor()
 
@@ -123,7 +123,7 @@ class TestFlatMapNode(unittest.TestCase):
         out_que2 = DataQueue([('num', ColumnType.QUEUE)])
         node_info = copy.deepcopy(self.node_info)
         node_info['outputs'] = ('num', )
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -205,7 +205,7 @@ class TestFlatMapNode(unittest.TestCase):
             ('res2', ColumnType.QUEUE)
         ])
         out_que2 = DataQueue([('url', ColumnType.SCALAR), ('res2', ColumnType.QUEUE)])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -254,7 +254,7 @@ class TestFlatMapNode(unittest.TestCase):
             ('res', ColumnType.QUEUE),
         ])
         out_que2 = DataQueue([('num', ColumnType.QUEUE), ('res', ColumnType.QUEUE)])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -302,7 +302,7 @@ class TestFlatMapNode(unittest.TestCase):
             ('res1', ColumnType.QUEUE),
             ('res2', ColumnType.QUEUE)
         ])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -344,7 +344,7 @@ class TestFlatMapNode(unittest.TestCase):
             ('num2', ColumnType.QUEUE),
             ('res', ColumnType.QUEUE),
         ])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -377,7 +377,7 @@ class TestFlatMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1, 1))
         in_que.put(('test_url', Empty(), Empty(), 1))
@@ -427,7 +427,7 @@ class TestFlatMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1))
         in_que.put(('test_url', Empty(), 1))
@@ -470,7 +470,7 @@ class TestFlatMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1))
         in_que.put(('test_url', Empty(), 1))
@@ -516,7 +516,7 @@ class TestFlatMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': None
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1, 1))
         in_que.put(('test_url', Empty(), Empty(), 1))

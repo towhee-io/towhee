@@ -48,7 +48,7 @@ class TestMapNode(unittest.TestCase):
 
 
     def setUp(self):
-        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.node_repr = NodeRepr(uid=uuid.uuid4().hex, **self.node_info)
         self.op_pool = OperatorPool()
         self.thread_pool = ThreadPoolExecutor()
 

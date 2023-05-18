@@ -151,7 +151,7 @@ class AutoConfig:
                                                       num_instances_per_device=num_instances_per_device,
                                                       max_batch_size=max_batch_size,
                                                       batch_latency_micros=batch_latency_micros,
-                                              preferred_batch_size=preferred_batch_size)
+                                                      preferred_batch_size=preferred_batch_size)
 
     @staticmethod
     def TritonGPUConfig(device_ids: list = None,

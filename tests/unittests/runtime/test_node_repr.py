@@ -14,6 +14,8 @@
 
 import unittest
 
+from pydantic import ValidationError
+
 from towhee.runtime.node_repr import NodeRepr
 
 
@@ -39,7 +41,7 @@ class TestNodeRepr(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['next1', 'next2']
         }
-        node = NodeRepr.from_dict('test_dict', node_op)
+        node = NodeRepr(uid='test_dict', **node_op)
         self.assertEqual(node.name, 'test')
         self.assertEqual(node.inputs, ('a', 'b'))
         self.assertEqual(node.outputs, ('d',))
@@ -58,8 +60,8 @@ class TestNodeRepr(unittest.TestCase):
             'inputs': None,
             'outputs': ('a', 'b'),
         }
-        with self.assertRaises(ValueError):
-            NodeRepr.from_dict('_input', node_input)
+        with self.assertRaises(ValidationError):
+            NodeRepr(uid='_input', **node_input)
 
     def test_raise_op(self):
         node_input = {
@@ -70,5 +72,5 @@ class TestNodeRepr(unittest.TestCase):
                 'param': None
             }
         }
-        with self.assertRaises(ValueError):
-            NodeRepr.from_dict('test_op', node_input)
+        with self.assertRaises(ValidationError):
+            NodeRepr(uid='test_op', **node_input)

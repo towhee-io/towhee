@@ -149,7 +149,7 @@ class TestConfig(unittest.TestCase):
             }
         }).output('a', 'b')
         graph = pipe.preload()
-        server_conf = list(graph._nodes.values())[1].config.server_conf
+        server_conf = list(graph._nodes.values())[1].config.server
         self.assertEqual(server_conf.device_ids, [0, 1])
         self.assertEqual(server_conf.max_batch_size, 128)
         self.assertEqual(server_conf.batch_latency_micros, 100000)

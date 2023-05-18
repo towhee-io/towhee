@@ -50,7 +50,7 @@ class TestReduce(unittest.TestCase):
     }
 
     def setUp(self):
-        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.node_repr = NodeRepr(uid=uuid.uuid4().hex, **self.node_info)
         self.op_pool = OperatorPool()
         self.thread_pool = ThreadPoolExecutor()
 
@@ -70,7 +70,7 @@ class TestReduce(unittest.TestCase):
                               ('sum1', ColumnType.SCALAR),
                               ('sum2', ColumnType.SCALAR)])
 
-        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **node_info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -112,7 +112,7 @@ class TestReduce(unittest.TestCase):
 
         out_que2 = DataQueue([('sum2', ColumnType.SCALAR)])
 
-        node = create_node(NodeRepr.from_dict('test_node', self.node_info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **self.node_info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
 
@@ -164,7 +164,7 @@ class TestReduce(unittest.TestCase):
         info = copy.deepcopy(self.node_info)
 
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -196,7 +196,7 @@ class TestReduce(unittest.TestCase):
         out_que2 = DataQueue([('num1', ColumnType.SCALAR)])
         info = copy.deepcopy(self.node_info)
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         in_que.put((1, 2))
@@ -221,7 +221,7 @@ class TestReduce(unittest.TestCase):
         out_que2 = DataQueue([('num1', ColumnType.SCALAR)])
         info = copy.deepcopy(self.node_info)
         info['outputs'] = ('num1', 'num2')
-        node = create_node(NodeRepr.from_dict('test_node', info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **info), self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -264,7 +264,7 @@ class TestReduce(unittest.TestCase):
             'next_nodes': ['_output']
         }
 
-        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que])
+        node = create_node(NodeRepr(uid='test_node', **node_info), self.op_pool, [in_que], [out_que])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()
@@ -330,7 +330,7 @@ class TestReduce(unittest.TestCase):
         }
 
         num_size = 10000
-        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que])
+        node = create_node(NodeRepr(uid='test_node', **node_info), self.op_pool, [in_que], [out_que])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         for i in range(num_size):

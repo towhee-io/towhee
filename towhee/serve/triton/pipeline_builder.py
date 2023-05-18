@@ -72,7 +72,7 @@ class Builder:
                 return True
             inputs, outputs = converter.get_model_in_out()
             acc_conf = {'model_name': model_name, 'inputs': inputs, 'outputs': outputs}
-            node_repr.config.acc_conf = AcceleratorConf(acc_type='triton', conf=acc_conf)
+            node_repr.config.acc_info = AcceleratorConf(type='triton', params=acc_conf)
         return True
 
     def build(self) -> bool:
