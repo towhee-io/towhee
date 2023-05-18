@@ -153,10 +153,10 @@ p = (
 	pipe.input('num', 'timestamp')
 		.flat_map(('num', 'timestamp'), ('num', 'timestamp'), lambda x,y: [(i, j) for i, j in zip(x, y)])
 		.time_window('num', 'nums', 'timestamp', 2, 1, lambda x: x)
-		.output('num', 'timestamp', 'nums')
+		.output('nums')
 )
 
-res = p([1, 2, 3, 4, 5], [0, 1000, 2000, 4000, 5000])
+res = p([0, 1, 2, 4, 5], [0, 1000, 2000, 4000, 5000])
 print(res.to_list())
 # [[[0, 1]], [[1, 2]], [[2]], [[4]], [[4, 5]], [[5]]]
 
@@ -270,7 +270,7 @@ ops.add_x(x=1)(2)
 
 ### Run Operator with `Pipeline`
 
-When an operator is uploaded to the Towhee hub or registered with @register, we can call the operato directly on a Pipeline:
+When an operator is uploaded to the Towhee hub or registered with @register, we can call the operator directly on a Pipeline:
 ```python
 from towhee import ops, pipe
 p = (
