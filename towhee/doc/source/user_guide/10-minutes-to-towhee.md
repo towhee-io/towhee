@@ -8,7 +8,7 @@ This section is a short introduction to `Pipeline`, an unstructured data process
 The latest version of `towhee` can be installed with `pip`, or `python -m pip` if `pip` is not presented in your `PATH`:
 
 ```shell
-$ pip install towhee==1.0.0rc1
+$ pip install towhee
 ```
 
 
