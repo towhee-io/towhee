@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import List
+from pydantic import BaseModel
 
 from towhee.runtime.data_queue import ColumnType
 from towhee.runtime.constants import (
@@ -25,11 +26,10 @@ from towhee.runtime.constants import (
     ConcatConst,
     MapConst
 )
-from towhee.utils.log import engine_log
 
 
 # pylint: disable=redefined-builtin
-class SchemaRepr:
+class SchemaRepr(BaseModel):
     """
     A `SchemaRepr` represents the data queue schema.
 
@@ -37,17 +37,8 @@ class SchemaRepr:
         name (`str`): The name column data.
         type (`ColumnType`): The type of the column data, such as ColumnType.SCALAR or ColumnType.QUEUE.
     """
-    def __init__(self, name: str, type: 'ColumnType'):
-        self._name = name
-        self._type = type
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def type(self) -> 'ColumnType':
-        return self._type
+    name: str
+    type: ColumnType
 
     @staticmethod
     def from_dag(col_name: str, iter_type: str, inputs_type: List = None):
@@ -73,6 +64,5 @@ class SchemaRepr:
             else:
                 col_type = ColumnType.SCALAR
         else:
-            engine_log.error('Unknown iteration type: %s', iter_type)
             raise ValueError(f'Unknown iteration type: {iter_type}')
-        return SchemaRepr(col_name, col_type)
+        return SchemaRepr(name=col_name, type=col_type)

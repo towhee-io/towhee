@@ -30,7 +30,7 @@ class ModelToTriton:
         self._model_root = model_root
         self._op = op
         self._name = model_name
-        self._op_conf = node_conf.server_conf
+        self._op_conf = node_conf.server
         self._server_conf = server_conf
         self._triton_files = TritonFiles(model_root, self._name)
         self._model_format_priority = self._server_conf.get(constant.FORMAT_PRIORITY, [])

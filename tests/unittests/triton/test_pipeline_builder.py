@@ -58,13 +58,13 @@ class TestPipelineBuilder(unittest.TestCase):
             with open(str(pipe_dag_file), 'rb') as f_dag:
                 dag_repr = pickle.load(f_dag)
                 for _, node in dag_repr.nodes.items():
-                    if node.config.acc_conf is not None:
-                        self.assertEqual(node.config.acc_conf.triton.model_name, model_name)
-                        self.assertEqual(node.config.server_conf.device_ids, [0, 1])
-                        self.assertEqual(node.config.server_conf.num_instances_per_device, 3)
-                        self.assertEqual(node.config.server_conf.max_batch_size, 128)
-                        self.assertEqual(node.config.server_conf.batch_latency_micros, 100000)
-                        self.assertEqual(node.config.server_conf.triton.preferred_batch_size, [8, 16])
+                    if node.config.acc_info is not None:
+                        self.assertEqual(node.config.acc_info.triton.model_name, model_name)
+                        self.assertEqual(node.config.server.device_ids, [0, 1])
+                        self.assertEqual(node.config.server.num_instances_per_device, 3)
+                        self.assertEqual(node.config.server.max_batch_size, 128)
+                        self.assertEqual(node.config.server.batch_latency_micros, 100000)
+                        self.assertEqual(node.config.server.triton.preferred_batch_size, [8, 16])
 
     def test_normal(self):
         p = (

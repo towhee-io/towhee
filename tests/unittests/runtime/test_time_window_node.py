@@ -122,7 +122,7 @@ class TestWindowNode(unittest.TestCase):
         'config': {'name': 'test'},
         'next_nodes': ['_output']
     }
-    node_repr = NodeRepr.from_dict('test_node', node_info)
+    node_repr = NodeRepr(uid='test_node', **node_info)
     op_pool = OperatorPool()
     thread_pool = ThreadPoolExecutor()
 
@@ -146,7 +146,9 @@ class TestWindowNode(unittest.TestCase):
                               ('sum1', ColumnType.QUEUE),
                               ('sum2', ColumnType.QUEUE)])
 
-        node = create_node(NodeRepr.from_dict('test_node', node_info), self.op_pool, [in_que], [out_que1, out_que2])
+        node = create_node(NodeRepr(uid='test_node', **node_info), self.op_pool, [in_que], [out_que1, out_que2])
+        node.initialize()
+        print(node.err_msg)
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
         f.result()

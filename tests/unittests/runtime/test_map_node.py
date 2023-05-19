@@ -48,7 +48,7 @@ class TestMapNode(unittest.TestCase):
     }
 
     def setUp(self):
-        self.node_repr = NodeRepr.from_dict(uuid.uuid4().hex, self.node_info)
+        self.node_repr = NodeRepr(uid=uuid.uuid4().hex, **self.node_info)
         self.op_pool = OperatorPool()
         self.thread_pool = ThreadPoolExecutor()
 
@@ -124,7 +124,7 @@ class TestMapNode(unittest.TestCase):
         out_que2 = DataQueue([('num', ColumnType.QUEUE)])
         node_info = copy.deepcopy(self.node_info)
         node_info['outputs'] = ('num', )
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -205,7 +205,7 @@ class TestMapNode(unittest.TestCase):
             ('vec2', ColumnType.QUEUE)
         ])
         out_que2 = DataQueue([('url', ColumnType.SCALAR), ('vec2', ColumnType.QUEUE)])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -254,7 +254,7 @@ class TestMapNode(unittest.TestCase):
             ('vec', ColumnType.QUEUE),
         ])
         out_que2 = DataQueue([('num', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1, out_que2])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -303,7 +303,7 @@ class TestMapNode(unittest.TestCase):
             ('vec1', ColumnType.QUEUE),
             ('vec2', ColumnType.QUEUE)
         ])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -351,7 +351,7 @@ class TestMapNode(unittest.TestCase):
             ('num', ColumnType.QUEUE),
             ('nums', ColumnType.QUEUE),
         ])
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         node = create_node(node_repr, self.op_pool, [in_que], [out_que1])
         self.assertTrue(node.initialize())
         f = self.thread_pool.submit(node.process)
@@ -386,7 +386,7 @@ class TestMapNode(unittest.TestCase):
         node_info = copy.deepcopy(self.node_info)
         node_info['op_info']['type'] = 'lambda'
         node_info['op_info']['operator'] = lambda x: x + 1
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
 
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         in_que.put((1, ))
@@ -408,14 +408,14 @@ class TestMapNode(unittest.TestCase):
     def test_create_op_failed(self):
         node_info = copy.deepcopy(self.node_info)
         node_info['op_info']['operator'] = 'mock'
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         node = create_node(node_repr, self.op_pool, [in_que], [])
         self.assertFalse(node.initialize())
 
         node_info = copy.deepcopy(self.node_info)
         node_info['op_info']['type'] = 'unkown'
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         node = create_node(node_repr, self.op_pool, [in_que], [])
         self.assertFalse(node.initialize())
@@ -438,7 +438,7 @@ class TestMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         in_que.put((1, ))
         in_que.put((2, ))
@@ -470,7 +470,7 @@ class TestMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1, 1))
         in_que.put(('test_url', Empty(), Empty(), 1))
@@ -520,7 +520,7 @@ class TestMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1))
         in_que.put(('test_url', Empty(), 1))
@@ -563,7 +563,7 @@ class TestMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': ['_output']
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1))
         in_que.put(('test_url', Empty(), 1))
@@ -610,7 +610,7 @@ class TestMapNode(unittest.TestCase):
             'config': {'name': 'test'},
             'next_nodes': None
         }
-        node_repr = NodeRepr.from_dict('test_node', node_info)
+        node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('url', ColumnType.SCALAR), ('num', ColumnType.QUEUE), ('another', ColumnType.QUEUE), ('some', ColumnType.QUEUE)])
         in_que.put(('test_url', 1, 1, 1))
         in_que.put(('test_url', Empty(),1, 1))

@@ -37,7 +37,7 @@ class RuntimeConf:
     @staticmethod
     def from_node_config(node_conf: 'NodeConfig'):
         sys_conf = SysConf(node_conf.device)
-        return RuntimeConf(sys_conf, node_conf.acc_conf)
+        return RuntimeConf(sys_conf, node_conf.acc_info)
 
 
 class SysConf:

@@ -387,7 +387,7 @@ class DAGRepr:
                     val['config']['name'] = val['config']['name'] + '-' + str(node_index)
                 node_index += 1
 
-            nodes[key] = NodeRepr.from_dict(key, val)
+            nodes[key] = NodeRepr(uid=key, **val)
         top_sort = DAGRepr.get_top_sort(nodes)
         DAGRepr.check_nodes(nodes, top_sort)
         dag_nodes, schema_edges = DAGRepr.set_edges(nodes, top_sort)

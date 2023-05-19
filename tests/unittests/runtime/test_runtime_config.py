@@ -40,7 +40,7 @@ class TestRuntimeConf(unittest.TestCase):
             }
         }
 
-        r_conf = RuntimeConf.from_node_config(NodeConfig.from_dict(conf))
+        r_conf = RuntimeConf.from_node_config(NodeConfig(**conf))
         self.assertEqual(r_conf.sys_config.device_id, 1)
         self.assertTrue(r_conf.accelerator.is_triton())
         self.assertTrue(r_conf.accelerator.triton.model_name, 'resnet50')
@@ -60,7 +60,7 @@ class TestRuntimeConf(unittest.TestCase):
         }
 
         with self.assertRaises(ValueError):
-            RuntimeConf.from_node_config(NodeConfig.from_dict(conf))
+            RuntimeConf.from_node_config(NodeConfig(**conf))
 
     def test_data_trans(self):
 
@@ -84,7 +84,7 @@ class TestRuntimeConf(unittest.TestCase):
                 }
             }
 
-            with set_runtime_config(NodeConfig.from_dict(conf)):
+            with set_runtime_config(NodeConfig(**conf)):
                 inner(i, str(i + 10))
 
     def test_in_multiplethread(self):
@@ -97,7 +97,7 @@ class TestRuntimeConf(unittest.TestCase):
             assert acc.triton.model_name == model_name
 
         def wrapper_func(device_id, model_name, conf):
-            with set_runtime_config(NodeConfig.from_dict(conf)):
+            with set_runtime_config(NodeConfig(**conf)):
                 inner(device_id, model_name)
 
         fs = []
