@@ -14,25 +14,17 @@
 
 import unittest
 
-from towhee.runtime.check_utils import check_set, check_keys, check_node_iter, check_supported
+from towhee.runtime.check_utils import check_set, check_node_iter
 
 
 class TestCheckUtils(unittest.TestCase):
     """
     Unit test for check utils.
     """
-    def test_keys(self):
-        check_keys({1: 1, 2: 2, 3: 3}, {1, 3})
-        with self.assertRaises(ValueError):
-            check_keys({1: 1, 2: 2, 3: 3}, {2, 5})
-        check_supported({1: 1, 8: 2, 3: 3}, {1, 3})
-        with self.assertRaises(ValueError):
-            check_supported(12, {2, 5})
-
     def test_set(self):
-        check_set({1, 2, 3}, {1, 2, 3, 4})
+        check_set({'1', '2', '3'}, {'1', '2', '3', '4'})
         with self.assertRaises(ValueError):
-            check_set({1, 2, 3}, {1, 2, 6, 7})
+            check_set({'1', '2', '3'}, {'1', '2', '6', '7'})
 
     def test_node_iter(self):
         check_node_iter('filter', {'filter_by': 'x'}, ('a', 'b'), ('c', 'd'), {'a', 'b', 'x'})

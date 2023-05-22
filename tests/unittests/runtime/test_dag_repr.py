@@ -109,7 +109,7 @@ class TestDAGRepr(unittest.TestCase):
         for node in nodes:
             self.assertTrue(isinstance(dr.nodes[node], NodeRepr))
 
-        dr = DAGRepr(nodes, edges)
+        dr = DAGRepr(nodes=nodes, edges=edges)
         edges = dr.edges
         nodes = dr.nodes
         dag_dict = dr.dag_dict
