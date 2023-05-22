@@ -16,7 +16,8 @@ import types
 import uuid
 import json
 from copy import deepcopy
-from typing import Dict, Any, Set, List, Tuple
+from typing import Dict, Any, Set, List, Tuple, Optional
+from pydantic import BaseModel
 
 from towhee.runtime.check_utils import check_set, check_node_iter
 from towhee.runtime.node_repr import NodeRepr
@@ -37,43 +38,30 @@ from towhee.runtime.constants import (
 )
 
 
-class DAGRepr:
+class DAGRepr(BaseModel):
     """
     A `DAGRepr` represents a complete DAG.
 
     Args:
         nodes (`Dict[str, NodeRepr]`): All nodes in the dag, which start with _input and end with _output node.
-        edges (`Dict[str, List]`): The edges about data queue schema, such as:
+        edges (`Dict[int, List]`): The edges about data queue schema, such as:
                             { 0: {'data': [(a, ColumnType.SCALAR), (b, ColumnType.SCALAR)], 'schema': {'a', SchemaRepr, 'b', SchemaRepr}}
                               1: {'data': [(b, ColumnType.SCALAR), (c, ColumnType.SCALAR)], 'schema': {'b', SchemaRepr, 'c', SchemaRepr}}
                               2: {'data': [(a, ColumnType.SCALAR), (c, ColumnType.SCALAR)], 'schema': {'a', SchemaRepr, 'c', SchemaRepr}}
                             }
         dag_dict(`Dict`): The dag dict.
     """
-    def __init__(self, nodes: Dict[str, NodeRepr], edges: Dict[int, Dict], dag_dict: Dict[str, Any] = None, top_sort: list = None):
-        self._nodes = nodes
-        self._edges = edges
-        self._dag_dict = dag_dict
-        if not top_sort:
-            self._top_sort = self.get_top_sort(nodes)
-        else:
-            self._top_sort = top_sort
-
-    @property
-    def nodes(self) -> Dict:
-        return self._nodes
-
-    @property
-    def edges(self) -> Dict:
-        return self._edges
-
-    @property
-    def dag_dict(self) -> Dict:
-        return self._dag_dict
+    nodes: Dict[str, NodeRepr]
+    edges: Dict[int, Dict]
+    dag_dict: Optional[Dict[str, Any]]
+    top_list: Optional[List[str]]
 
     @property
     def top_sort(self) -> list:
-        return self._top_sort
+        if self.top_list:
+            return self.top_list
+        else:
+            return self.get_top_sort(self.nodes)
 
     @staticmethod
     def check_nodes(nodes: Dict[str, NodeRepr], top_sort: list):
@@ -299,12 +287,12 @@ class DAGRepr:
         info['edges'] = {}
         info['nodes'] = {}
 
-        for k, v in self._edges.items():
+        for k, v in self.edges.items():
             info['edges'][k] = []
             for (name, ctype) in v['data']:
                 info['edges'][k].append({'name': name, 'type': ctype.name})
 
-        for k, v in self._nodes.items():
+        for k, v in self.nodes.items():
             info['nodes'][k] = {}
             info['nodes'][k]['name'] = v.name
             info['nodes'][k]['iter_info'] = {'type': v.iter_info.type, 'param': v.iter_info.param}
@@ -391,7 +379,7 @@ class DAGRepr:
         top_sort = DAGRepr.get_top_sort(nodes)
         DAGRepr.check_nodes(nodes, top_sort)
         dag_nodes, schema_edges = DAGRepr.set_edges(nodes, top_sort)
-        return DAGRepr(dag_nodes, schema_edges, dag, top_sort)
+        return DAGRepr(nodes=dag_nodes, edges=schema_edges, dag_dict=dag, top_list=top_sort)
 
     @staticmethod
     def rebuild_dag(dag, sub_uid, op_info, iter_info, input_schema, output_schema):

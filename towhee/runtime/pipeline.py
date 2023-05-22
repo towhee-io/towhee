@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import uuid
 from copy import deepcopy
 
+from towhee.runtime.check_utils import TupleForm
 from towhee.runtime.operator_manager import OperatorAction
 from towhee.runtime.factory import _OperatorWrapper
 from towhee.runtime.runtime_pipeline import RuntimePipeline
@@ -513,22 +513,4 @@ class Pipeline:
 
     @staticmethod
     def _check_schema(schema):
-        def _check_format(name):
-            pattern = r'^[a-z][a-z0-9_]*$'
-            match = re.search(pattern, name)
-            if not match:
-                raise ValueError(f'{name} is invalid, it does not conform to \'^[a-z][a-z0-9_]*$\' pattern.')
-
-        if isinstance(schema, str):
-            _check_format(schema)
-            return (schema,)
-        if schema is None:
-            return schema
-        if isinstance(schema, tuple):
-            for s in schema:
-                if not isinstance(s, str):
-                    raise ValueError(f'{s} is invalid, schema must be string.')
-                _check_format(s)
-            return schema
-        else:
-            raise ValueError(f'{schema} is invalid, schema must be string.')
+        return TupleForm(schema_data=schema).schema_data

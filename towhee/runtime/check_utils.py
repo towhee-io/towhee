@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, Any, Set, Tuple
+from typing import Dict, Any, Set, Tuple, Optional
+from pydantic import BaseModel, constr, validator
 
-from towhee.utils.log import engine_log
 from towhee.runtime.constants import (
     WindowConst,
     FilterConst,
@@ -22,19 +22,38 @@ from towhee.runtime.constants import (
 )
 
 
-def check_keys(info: Dict[str, Any], essentials: Set[str]):
-    """
-    Check if the src is a valid node dictionary to describe.
+# pylint: disable=no-self-argument
+class IntForm(BaseModel):
+    data: int
 
-    Args:
-        info (`Dict[str, Any]`): The info dictionary.
-        essentials (`Set[str]`): The essential keys that node dictionary should contain.
-    """
-    if not isinstance(info, dict):
-        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
-    info_keys = set(info.keys())
-    if not essentials.issubset(info_keys):
-        raise ValueError(f'Node {str(info)} is not valid, lack attr {essentials - info_keys}')
+    @validator('data')
+    def must_larger_than_zero(cls, v):
+        if v <= 0:
+            raise ValueError(f'The iteration param is not valid, the [{v}]<=0.')
+        return v
+
+
+class TupleForm(BaseModel):
+    data: Optional[Tuple[str, ...]]
+    schema_data: Optional[Tuple[constr(regex='^[a-z][a-z0-9_]*$'), ...]]
+
+    @validator('*', pre=True)
+    def must_be_tuple(cls, v):
+        if isinstance(v, str):
+            return (v,)
+        return v
+
+
+class SetForm(BaseModel):
+    data: Set[str]
+
+    @validator('data', pre=True)
+    def must_be_set(cls, v):
+        if isinstance(v, str):
+            return {v}
+        if not isinstance(v, set):
+            return set(v)
+        return v
 
 
 def check_set(inputs: Tuple, all_inputs: Set[str]):
@@ -45,9 +64,7 @@ def check_set(inputs: Tuple, all_inputs: Set[str]):
         inputs (`Tuple[str]`): The inputs schema.
         all_inputs (`Set[str]`): The all inputs schema in the DAG util the node.
     """
-    if isinstance(inputs, str):
-        inputs = (inputs,)
-    inputs = set(inputs)
+    inputs = SetForm(data=inputs).data
     if not inputs.issubset(all_inputs):
         raise ValueError(f'The DAG Nodes inputs {str(inputs)} is not valid, which is not declared: {inputs - all_inputs}.')
 
@@ -61,10 +78,7 @@ def check_int(info: Dict[str, Any], checks: list):
         checks (`list`): The list to check.
     """
     for name in checks:
-        if not isinstance(info[name], int):
-            raise ValueError(f'The iteration param:{info} is not valid, the type of {name} is not int.')
-        if info[name] <= 0:
-            raise ValueError(f'The iteration param:{info} is not valid, the [{name}]<=0.')
+        IntForm(data=info[name])
 
 
 def check_length(inputs: Tuple, outputs: Tuple):
@@ -100,37 +114,3 @@ def check_node_iter(iter_type: str, iter_param: Dict[str, Any], inputs, outputs,
     elif iter_type == WindowConst.name:
         check_int(iter_param, [WindowConst.param.size,
                                WindowConst.param.step])
-
-
-def check_config(info: Dict[str, Any], essentials: Set[str]):
-    """
-    Check if the src covers all the needed config info.
-
-    Args:
-        info (`Dict[str, Any]`):
-            The info dictionary.
-        essentials (`Set[str]`):
-            The essential keys that node config dictionary should contain.
-    """
-    if not isinstance(info, dict):
-        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
-    info_keys = set(info.keys())
-    if not essentials.issubset(info_keys):
-        raise ValueError(f'Config {str(info)} is not valid, lack attr {essentials - info_keys}')
-
-
-def check_supported(info: Dict[str, Any], essentials: Set[str]):
-    """
-    Check if the src is supported and logging warning.
-
-    Args:
-        info (`Dict[str, Any]`):
-            The info dictionary.
-        essentials (`Set[str]`):
-            The essential keys that node config dictionary can contain.
-    """
-    if not isinstance(info, dict):
-        raise ValueError(f'Config {str(info)} is not valid, it must be dict.')
-    info_keys = set(info.keys())
-    if not info_keys.issubset(essentials):
-        engine_log.warning('Config %s is not supported, please make sure the config is in %s', str(info_keys - essentials), essentials)
