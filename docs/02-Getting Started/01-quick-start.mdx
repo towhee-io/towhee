@@ -17,10 +17,10 @@ The browser-based terminal you just brought up is a completely clean environment
 
 First, install Towhee:
 
-<KatacodaBlock>pip3 install towhee</KatacodaBlock>
+<KatacodaBlock>pip3 install towhee==1.0.0rc1</KatacodaBlock>
 
 If you want to install models in towhee, just run:
-<KatacodaBlock>pip3 install towhee.models</KatacodaBlock>
+<KatacodaBlock>pip3 install towhee.models==1.0.0rc1</KatacodaBlock>
 
 <!--First, download the source code from [Github](https://github.com/towhee-io/towhee): <KatacodaBlock>git clone https://github.com/towhee-io/towhee.git</KatacodaBlock>
 
@@ -40,17 +40,17 @@ Now it's time to generate your first embedding with Towhee! Open up a `python` t
 
 Data transformations are central to Towhee; Pipelines are simply a series of transformations connected together in a directed acyclic graph. All pre-built Towhee pipelines are given names that are representative of the task at hand. To create a pipeline, import the `pipeline` function from `towhee`:
 
-<KatacodaBlock>from towhee import pipeline</KatacodaBlock>
+<KatacodaBlock>from towhee import AutoPipes</KatacodaBlock>
 
 Now let's instantiate an image embedding pipeline:
 
-<KatacodaBlock>p = pipeline('image-embedding')</KatacodaBlock>
+<KatacodaBlock>p = AutoPipes.pipeline('image-embedding')</KatacodaBlock>
 
 Towhee allows users to specify an image via URL:
 
 <KatacodaBlock>
   output =
-  p('https://raw.githubusercontent.com/towhee-io/towhee/main/docs/02-Getting%20Started/towhee.jpeg')
+  p('https://raw.githubusercontent.com/towhee-io/towhee/main/docs/02-Getting%20Started/towhee.jpeg').get()
 </KatacodaBlock>
 
 That's it! The embedding vector for the corresponding input image (`towhee.jpeg`) is stored in the `output` variable:
@@ -68,25 +68,13 @@ Alternatively, we can use a local image instead. Let's grab one:
 
 The default `image-embedding` pipeline supports both HTTP (via the `requests` library) and local paths. Run it through the pipeline as so:
 
-<KatacodaBlock>output = p('towhee.jpeg')</KatacodaBlock>
+<KatacodaBlock>output = p('towhee.jpeg').get()</KatacodaBlock>
 
-Note that the default model used by `image-embedding` is `ResNet50` (you can find the corresponding mapping for default pipelines [here](https://github.com/towhee-io/towhee/blob/main/towhee/__init__.py#L25)). The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding-resnet50); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
-
-## Prototyping ML applications
-
-Towhee also provides `DataCollection` - Pythonic method-chaining API for developing applications and running pipelines in just a couple lines of code. Let's import it first:
-
-<KatacodaBlock>from towhee.functional import DataCollection</KatacodaBlock>
-
-Now let's get the list of all numbers divisible by 7 between 0 and 99:
-
-<KatacodaBlock>DataCollection.range(100).filter(lambda x: x % 7 == 0).to_list()</KatacodaBlock>
-
-It's as easy as that! Feel free to continue trying - we have more examples here.
+Note that the default model used by `image-embedding` is `ResNet50`. The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
 
 ## Cleaning up
 
-Once you're finished, be sure to quit out of the enviroment using:
+Once you're finished, be sure to quit out of the environment using:
 
 <KatacodaBlock>quit()</KatacodaBlock>
 
