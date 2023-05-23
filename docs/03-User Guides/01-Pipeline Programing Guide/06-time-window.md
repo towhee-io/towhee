@@ -4,7 +4,7 @@
 
 The time window node is used to batch rows that have a time sequence, for example, audio or video frames.
 
-`time_window` is similar to `window`, but the batching rule is applied based on a timestamp column `timestamp_col`. `size` is the time interval of each window, and `step` determines how long a window moves from the previous one. Note that if `step` is less than `size`, the windows will overlap. Refer to [time_window API](../../04-API Reference/01-Pipeline API/07-time-window.md) for more details.
+`time_window` is similar to `window`, but the batching rule is applied based on a timestamp column `timestamp_col`. `size` is the time interval of each window, and `step` determines how long a window moves from the previous one. Note that if `step` is less than `size`, the windows will overlap. Refer to [time_window API](/04-API%20Reference/01-Pipeline%20API/07-time-window.md) for more details.
 
 The figure below shows the relationship between `size`, `step`, input rows, and windows. Note that `size` and `step` are both measured by time units. In addition, the video frames may vary in length, so the number of frames in each window can be different.
 
