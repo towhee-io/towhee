@@ -14,4 +14,4 @@ Such a network takes only **71** lines using Towhee's Layer subframework instead
 
 **Architecture of Swin Transformer**
 
-![img](./swin_arch.png)
+![img](https://github.com/towhee-io/data/blob/main/image/docs/swin_arch.png?raw=true)
