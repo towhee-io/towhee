@@ -11,7 +11,7 @@ If you're a conda user, you can install Towhee with the following lines:
 ```shell
 $ conda create -n towhee_env python=3.7  # create a conda environment for Towhee
 $ conda activate towhee_env  # activate your newly created conda environment
-$ conda install -c towhee-io towhee==1.0.0rc1   # install Towhee via the `towhee-io` channel
+$ conda install -c towhee-io towhee   # install Towhee via the `towhee-io` channel
 ```
 
 ### Install Towhee with pip
@@ -22,8 +22,8 @@ As with `conda`, we highly recommend first activating a [virtual environment](ht
 $ python3 -m venv towhee_env  # create a virtual environment
 $ source towhee_env/bin/activate  # activate your newly created virtual environment
 $ pip3 install -U pip  # we recommend updating pip first before installing Towhee
-$ pip3 install -U towhee==1.0.0rc1  # install Towhee
-$ pip3 install -U towhee.models==1.0.0rc1  #install towhee.models
+$ pip3 install -U towhee  # install Towhee
+$ pip3 install -U towhee.models  #install towhee.models
 ```
 
 Alternatively, if you are on Windows, install Python>=3.7 first, either through the Windows Store or through one of the [official releases](https://www.python.org/downloads/windows). You can then install Towhee as follows:
@@ -31,8 +31,8 @@ Alternatively, if you are on Windows, install Python>=3.7 first, either through 
 ```console
 c:\> python -m venv towhee_env
 c:\> source towhee_env/Scripts/Activate
-c:\> pip3 install -U towhee==1.0.0rc1
-c:\> pip3 install -U towhee.models==1.0.0rc1
+c:\> pip3 install -U towhee
+c:\> pip3 install -U towhee.models
 ```
 
 ### Install Towhee from source
