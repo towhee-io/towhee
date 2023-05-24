@@ -8,7 +8,7 @@ The figure below illustrates how `map` applies the transformation to each row of
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/map_intro.png?raw=true)
 
-## Examples
+## Example
 
 We use the `map(input_schema, output_schema, fn, config=None)` interface to create a map node. 
 
@@ -24,7 +24,7 @@ Now let's take an text feature extraction pipeline as an example to demonstrate 
 
 This example defines a pipeline for text feature extraction.
 
-> When running the pipeline, you can use [batch (batch_inputs)](../../04-API Reference/01-Pipeline API/10-batch.md) to insert multiple rows of data at a time.
+> When running the pipeline, you can use [batch (batch_inputs)](/04-API%20Reference/01-Pipeline%20API/10-batch.md) to insert multiple rows of data at a time.
 
 ```Python
 from towhee import pipe, ops

@@ -1,6 +1,6 @@
 ---
 sidebar_label: Release Notes
-slug: /
+slug: /release-notes
 ---
 
 # Release Notes

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A window all node batches all input rows into one, and returns the result by applying a function to the window. Refer to [window_all API](../../04-API Reference/01-Pipeline API/08-window-all.md) for more details.
+A window all node batches all input rows into one, and returns the result by applying a function to the window. Refer to [window_all API](/04-API%20Reference/01-Pipeline%20API/08-window-all.md) for more details.
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/window_all_intro.png?raw=true)
 

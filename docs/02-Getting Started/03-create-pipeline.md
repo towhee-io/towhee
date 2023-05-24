@@ -6,7 +6,7 @@ A pipeline connects multiple function nodes to provide a full set of data proces
 
 This tutorial walks you through how to create a pipeline and provides some examples. 
 
-> Refer to [Node Types](../03-User Guides/01-Pipeline Programing Guide/01-node-types.md) for more information about nodes.
+> Refer to [Node Types](/03-User%20Guides/01-Pipeline%20Programing%20Guide/01-node-types.md) for more information about nodes.
 
 ## Create a simple pipeline 
 
