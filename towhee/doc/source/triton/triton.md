@@ -15,7 +15,7 @@ For example, we tested the performance of two CLIP pipelines on the same machine
 
 There is an example of using towhee to start a triton server with a text image search pipeline, you can also refer to this to start your own pipeline.
 
-- **Create Pipeline and Build Image**
+**Create Pipeline**
 
 When creating a pipeline, we can specify `config` with [AutoConfig](../../../runtime/auto_config.py) to set the configuration. It will work when starting the Triton Model, and the following example shows how to create a pipeline in Triton with `config = AutoConfig.TritonGPUConfig()`.
 
@@ -24,10 +24,15 @@ from towhee import pipe, ops, AutoConfig
 
 p = (
     pipe.input('url')
-    .map('url', 'image', ops.image_decode.cv2_rgb())
-    .map('image', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch16', modality='image'), config=AutoConfig.TritonGPUConfig())
-    .output('vec')
+        .map('url', 'image', ops.image_decode.cv2_rgb())
+        .map('image', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch16', modality='image'), config=AutoConfig.TritonGPUConfig())
+        .output('vec')
 )
+```
+
+**Build Image**
+```python
+import towhee
 
 towhee.build_docker_image(
     dc_pipeline=p,
@@ -41,7 +46,7 @@ towhee.build_docker_image(
 
 Then we can run `docker images` command and will list the built **clip:v1** image.
 
-- **Start Triton Server**
+**Start Triton Server**
 
 Run docker image with `tritonserver` command to start triton server.
 
@@ -60,9 +65,66 @@ Started HTTPService at 0.0.0.0:8000
 Started Metrics Service at 0.0.0.0:8002
 ```
 
-- **Remote Serving**
+**Create model in your own server**
 
-The we can use `triton_client` to request the result with the url.
+In addition, we can create models from a pipeline. This is a step in the building docker image, but we can also do independently to get the models in our own server. We take a triton's official inference server as an example:
+
+- Start the Triton Inference Server container
+    ```shell
+    docker run --shm-size=1g --ulimit memlock=-1 -p 8000:8000 -p 8001:8001 -p 8002:8002 --ulimit stack=67108864 -ti nvcr.io/nvidia/tritonserver:<xx.yy>-py3
+    ```
+    Replace <xx.yy> with the Triton version (e.g. 21.05).
+- Inside the container, install twohee
+    ```shell
+    pip install towhee
+    ```
+- Create models
+    ```python
+    import towhee
+    from towhee import pipe, ops, AutoConfig
+
+    p = (
+        pipe.input('url')
+            .map('url', 'image', ops.image_decode.cv2_rgb())
+            .map('image', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch16', modality='image'), config=AutoConfig.TritonGPUConfig())
+            .output('vec')
+    )
+
+    towhee.build_pipeline_model(
+        dc_pipeline=p,
+        model_root='models',
+        format_priority=['onnx'],
+        parallelism=4,
+        server='triton'
+    )
+    ```
+    We can find `models` folder in CWD with following structure:
+    ```shell
+    models
+    ├── image-text-embedding.clip-1
+    │   ├── 1
+    │   │   └── model.onnx
+    │   └── config.pbtxt
+    └── pipeline
+        ├── 1
+        │   ├── model.py
+        │   └── pipe.pickle
+        └── config.pbtxt
+    ```
+- Start the Triton server
+    ```shell
+    tritonserver --model-repository `pwd`/models
+    ```
+Then we should see the same info as in the previous step.
+```shell
+Started GRPCInferenceService at 0.0.0.0:8001
+Started HTTPService at 0.0.0.0:8000
+Started Metrics Service at 0.0.0.0:8002
+```
+
+**Remote Serving**
+
+Then we can use `triton_client` to request the result with the url.
 
 > The url format is your-ip-address:your-grpc-port, you need modify the ip according you env.
 
@@ -75,6 +137,10 @@ client = triton_client.Client(url='localhost:8000')
 # run data
 data = 'https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'
 res = client(data)
+
+# run batch data
+data = ['https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'] * 3
+res = client.batch(data)
 ```
 
 ## Advanced
@@ -102,5 +168,3 @@ You can set the [Docker Command Options](https://docs.docker.com/engine/referenc
 2. **How to debug my pipeline in triton?**
 
    Once you have started triton server, you can run into the container to modify the code with `docker exec -ti <container_id> bash` command, and then manually start the triton service in container with `tritonserver --model-repository=/workspace/models --grpc-port=<your-port>`.
-
-   

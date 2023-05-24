@@ -47,25 +47,112 @@ __all__ = [
 __import__('pkg_resources').declare_namespace(__name__)
 
 
-def build_docker_image(*args, **kwargs):
+def build_docker_image(
+        dc_pipeline: 'towhee.RuntimePipeline',
+        image_name: str,
+        cuda_version: str,
+        format_priority: list,
+        parallelism: int = 8,
+        inference_server: str = 'triton',
+    ):
     """
-    Wrapper for lazy import build_docker_image
+    Wrapper for lazy import build_docker_image.
+
+    Args:
+        dc_pipeline ('towhee.RuntimPipeline'):
+            The pipeline to build as a model in the docker image.
+        image_name (`str`):
+            The name of the docker image.
+        cuda_version (`str`):
+            Cuda version.
+        format_priority (`list`):
+            The priority order of the model format.
+        parallelism (`int`):
+            The parallel number.
+        inference_server (`str`):
+            The inference server.
+
+    Examples:
+        >>> import towhee
+        >>> from towhee import pipe, ops
+
+        >>> p = (
+        ...     pipe.input('url')
+        ...         .map('url', 'image', ops.image_decode.cv2_rgb())
+        ...         .map('image', 'vec', ops.image_embedding.timm(model_name='resnet50'))
+        ...         .output('vec')
+        ... )
+
+        >>> towhee.build_docker_image(
+        ...     dc_pipeline=p,
+        ...     image_name='clip:v1',
+        ...     cuda_version='11.7',
+        ...     format_priority=['onnx'],
+        ...     parallelism=4,
+        ...     inference_server='triton'
+        ... )
     """
-    return server_builder.build_docker_image(*args, **kwargs)
+    return server_builder.build_docker_image(dc_pipeline, image_name, cuda_version, format_priority, parallelism, inference_server)
 
 
-def build_pipeline_model(*args, **kwargs):
+def build_pipeline_model(
+        dc_pipeline: 'towhee.RuntimePipeline',
+        model_root: str,
+        format_priority: list,
+        parallelism: int = 8,
+        server: str = 'triton'
+    ):
     """
-    Wrapper for lazy import build_pipeline_model
+    Wrapper for lazy import build_pipeline_model.
+
+    Args:
+        dc_pipeline ('towhee.RuntimePipeline'):
+            The piepline to build as a model.
+        model_root (`str`):
+            The model root path.
+        format_priority (`list`):
+            The priority order of the model format.
+        parallelism (`int`):
+            The parallel number.
+        server (`str`):
+            The server type.
+
+    Examples:
+        >>> import towhee
+        >>> from towhee import pipe, ops
+
+        >>> p = (
+        ...     pipe.input('url')
+        ...         .map('url', 'image', ops.image_decode.cv2_rgb())
+        ...         .map('image', 'vec', ops.image_embedding.timm(model_name='resnet50'))
+        ...         .output('vec')
+        ... )
+
+        >>> towhee.build_pipeline_model(
+        ...     dc_pipeline=p,
+        ...     model_root='models',
+        ...     format_priority=['onnx'],
+        ...     parallelism=4,
+        ...     server='triton'
+        ... )
     """
-    return server_builder.build_pipeline_model(*args, **kwargs)
+    return server_builder.build_pipeline_model(dc_pipeline, model_root, format_priority, parallelism, server)
 
 
-def DataCollection(*args, **kwargs):  # pylint: disable=invalid-name
+def DataCollection(data):  # pylint: disable=invalid-name
     """
     Wrapper for lazy import DataCollection
+
+    DataCollection is a pythonic computation and processing framework for unstructured
+    data in machine learning and data science. It allows a data scientist or researcher
+    to assemble data processing pipelines and do their model work (embedding,
+    transforming, or classification) with a method-chaining style API.
+
+    Args:
+        data ('towhee.runtime.DataQueue'):
+            The data to be stored in DataColletion in the form of DataQueue.
     """
-    return datacollection.DataCollection(*args, **kwargs)
+    return datacollection.DataCollection(data)
 
 
 def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
