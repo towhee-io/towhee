@@ -51,7 +51,6 @@ If you run into any pip-related install problems, please try to upgrade pip with
 Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
 
 ```python
-from glob import glob
 from towhee import ops, pipe, DataCollection
 
 
@@ -65,7 +64,10 @@ p = (
     .output()
 )
 
-for f_name in glob('./*.png'):
+for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog1.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog2.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
+
     p(f_name)
 
 # Delete the pipeline object, make sure the faiss data is written to disk. 

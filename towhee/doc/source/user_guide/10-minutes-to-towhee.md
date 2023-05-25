@@ -78,7 +78,7 @@ p = (
 
 res = p([1, 2, 3])
 print(res.to_list())
-# [[1], [2], [3]]
+# [[2], [4], [6]]
 ```
 
   
@@ -272,7 +272,7 @@ ops.add_x(x=1)(2)
 
 When an operator is uploaded to the Towhee hub or registered with @register, we can call the operato directly on a Pipeline:
 ```python
-from towhee import ops, pipe
+from towhee import ops, pipe, DataCollection
 p = (
 	pipe.input('url')
 		.map('url', 'image', ops.image_decode.cv2('rgb'))
