@@ -4,7 +4,7 @@
 
 A flat map node flattens the results after applying the function to every row of input, and returns the flattened data respectively.
 
-The returned data can have the same count or more number of rows compared with the input. This is one of the major differences between `flat_map` and `map`, where `map` always returns the same number of rows as input. Refer to [flat_map API](/04-API%20Reference/01-Pipeline%20API/04-flat-map.md) for more details.
+The returned data can have the same count or more number of rows compared with the input. This is one of the major differences between `flat_map` and `map`, where `map` always returns the same number of rows as input. Refer to [flat_map API](/05-API%20Reference/01-Pipeline%20API/04-flat-map.md) for more details.
 
 The figure below illustrates how `flat_map` applies the transformation to each row of inputs.
 

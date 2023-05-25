@@ -4,7 +4,7 @@
 
 A concat node concats multiple pipelines' intermediate results, and groups all the pipelines into a bigger one. 
 
-The concat node does not apply functions for data processing. Instead, this node only merges the outputs of multiple pipelines. Refer to [concat API](/04-API%20Reference/01-Pipeline%20API/09-concat.md) for more details.
+The concat node does not apply functions for data processing. Instead, this node only merges the outputs of multiple pipelines. Refer to [concat API](/05-API%20Reference/01-Pipeline%20API/09-concat.md) for more details.
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/concat_intro.png?raw=true)
 

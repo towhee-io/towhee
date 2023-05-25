@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The window node batches the input rows into multiple rows based on the specified window size (`size`) and steps (`step`). The `size` determines the window length, and `step` determines how long a window moves from the previous one. Note that if `step` is less than `size`, the windows will overlap. The window node applies a function `func` to each of the windowed data, and returns the results - one row of results for each of the windows. Refer to [window API](/04-API%20Reference/01-Pipeline%20API/06-window.md) for more details.
+The window node batches the input rows into multiple rows based on the specified window size (`size`) and steps (`step`). The `size` determines the window length, and `step` determines how long a window moves from the previous one. Note that if `step` is less than `size`, the windows will overlap. The window node applies a function `func` to each of the windowed data, and returns the results - one row of results for each of the windows. Refer to [window API](/05-API%20Reference/01-Pipeline%20API/06-window.md) for more details.
 
 This figure shows the relationship between `size`, `step`, input rows, and windows：
 

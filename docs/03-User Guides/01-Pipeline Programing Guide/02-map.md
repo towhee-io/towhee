@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A map node applies a given function to each of its inputs and returns the transformed data. `map` returns one row for every row of input. Refer to [map API](../../04-API Reference/01-Pipeline API/03-map.md) for more details.
+A map node applies a given function to each of its inputs and returns the transformed data. `map` returns one row for every row of input. Refer to [map API](../../05-API%20Reference/01-Pipeline%20API/03-map.md) for more details.
 
 The figure below illustrates how `map` applies the transformation to each row of inputs.
 
@@ -24,7 +24,7 @@ Now let's take an text feature extraction pipeline as an example to demonstrate 
 
 This example defines a pipeline for text feature extraction.
 
-> When running the pipeline, you can use [batch (batch_inputs)](/04-API%20Reference/01-Pipeline%20API/10-batch.md) to insert multiple rows of data at a time.
+> When running the pipeline, you can use [batch (batch_inputs)](/05-API%20Reference/01-Pipeline%20API/10-batch.md) to insert multiple rows of data at a time.
 
 ```Python
 from towhee import pipe, ops

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A filter node filters rows based on the return values (T/F) of a given function `func` and takes `filter_columns` as input. The transformation only takes effect on the columns specified by the `input_schema`. Refer to [filter API](/04-API%20Reference/01-Pipeline%20API/05-filter.md) for more details.
+A filter node filters rows based on the return values (T/F) of a given function `func` and takes `filter_columns` as input. The transformation only takes effect on the columns specified by the `input_schema`. Refer to [filter API](/05-API%20Reference/01-Pipeline%20API/05-filter.md) for more details.
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/filter_intro.png?raw=true)
 
