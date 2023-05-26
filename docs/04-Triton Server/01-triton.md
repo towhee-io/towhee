@@ -17,7 +17,7 @@ There is an example of using towhee to start a triton server with a text image s
 
 **Create Pipeline**
 
-When creating a pipeline, we can specify `config` with [AutoConfig](../../towhee/runtime/auto_config.py) to set the configuration. It will work when starting the Triton Model, and the following example shows how to create a pipeline in Triton with `config = AutoConfig.TritonGPUConfig()`.
+When creating a pipeline, we can specify `config` with [AutoConfig](/05-API%20Reference/02-AutoConfig%20API/TritonGPUConfig/) to set the configuration. It will work when starting the Triton Model, and the following example shows how to create a pipeline in Triton with `config = AutoConfig.TritonGPUConfig()`.
 
 ```Python
 from towhee import pipe, ops, AutoConfig
