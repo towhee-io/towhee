@@ -174,7 +174,7 @@ If you run into any pip-related install problems, please try to upgrade pip with
 
 Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline.
 
-The example needs towhee 1.0.0rc1, which can be installed with pip install towhee==1.0.0rc1, The latest usage [documentation](https://towhee.readthedocs.io/en/main/index.html).
+The example needs towhee 1.0.0, which can be installed with `pip install towhee==1.0.0`, The latest usage [documentation](https://towhee.readthedocs.io/en/main/index.html).
 
 ```python
 
