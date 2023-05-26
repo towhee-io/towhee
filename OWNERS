@@ -3,7 +3,6 @@ filters:
     reviewers:
       - GuoRentong
       - Chiiizzzy
-      - oneseer
       - junjiejiangjjj
       - fzliu
       - filip-halt
@@ -11,14 +10,11 @@ filters:
       - shiyu22
       - jaelgu
       - zc277584121
-      - reiase
 
     approvers:
       - GuoRentong
       - junjiejiangjjj
       - fzliu
-      - oneseer
-      - reiase
 
   "tests":
     reviewers:
