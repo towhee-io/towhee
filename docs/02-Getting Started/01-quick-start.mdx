@@ -28,49 +28,30 @@ Go into the towhee directory: <KatacodaBlock>cd towhee</KatacodaBlock>
 
 Run the provided setup script: <KatacodaBlock>python3 setup.py install</KatacodaBlock>-->
 
-## Some prep work
-
-Once Towhee is installed, let's move onto a bit of prep work.
-
 ## Running your first pipeline
 
 Now it's time to generate your first embedding with Towhee! Open up a `python` terminal:
 
 <KatacodaBlock>python3</KatacodaBlock>
 
-Data transformations are central to Towhee; Pipelines are simply a series of transformations connected together in a directed acyclic graph. All pre-built Towhee pipelines are given names that are representative of the task at hand. To create a pipeline, import the `pipeline` function from `towhee`:
+Data transformations are central to Towhee; Pipelines are simply a series of transformations connected together in a directed acyclic graph. All pre-built Towhee pipelines are given names that are representative of the task at hand. To create a pipeline, import the `AutoPipes` function from `towhee`:
 
 <KatacodaBlock>from towhee import AutoPipes</KatacodaBlock>
 
-Now let's instantiate an image embedding pipeline:
+Now let's instantiate a sentence embedding pipeline:
 
-<KatacodaBlock>p = AutoPipes.pipeline('image-embedding')</KatacodaBlock>
+<KatacodaBlock>p = AutoPipes.pipeline('sentence_embedding')</KatacodaBlock>
 
-Towhee allows users to specify an image via URL:
+Then run the pipeline:
 
 <KatacodaBlock>
   output =
-  p('https://raw.githubusercontent.com/towhee-io/towhee/main/towhee_logo.png').get()
+  p('Hello World.').get()
 </KatacodaBlock>
 
-That's it! The embedding vector for the corresponding input image (`towhee.jpeg`) is stored in the `output` variable:
+That's it! The embedding vector for the corresponding input sentence is stored in the `output` variable:
 
 <KatacodaBlock>print(output)</KatacodaBlock>
-
-## Using a local image
-
-Alternatively, we can use a local image instead. Let's grab one:
-
-<KatacodaBlock>
-  wget
-  https://raw.githubusercontent.com/towhee-io/towhee/main/towhee_logo.png
-</KatacodaBlock>
-
-The default `image-embedding` pipeline supports both HTTP (via the `requests` library) and local paths. Run it through the pipeline as so:
-
-<KatacodaBlock>output = p('towhee.jpeg').get()</KatacodaBlock>
-
-Note that the default model used by `image-embedding` is `ResNet50`. The default repository for this pipeline is located on the [Towhee hub](https://towhee.io/towhee/image-embedding); following the link will take you to a README page describing the pipeline, the model(s) used, and a simple diagram explaining how data flows through the pipeline.
 
 ## Cleaning up
 

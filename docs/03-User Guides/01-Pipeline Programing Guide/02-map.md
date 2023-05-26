@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A map node applies a given function to each of its inputs and returns the transformed data. `map` returns one row for every row of input. Refer to [map API](../../05-API%20Reference/01-Pipeline%20API/03-map.md) for more details.
+A map node applies a given function to each of its inputs and returns the transformed data. `map` returns one row for every row of input. Refer to [map API](/05-API%20Reference/01-Pipeline%20API/03-map.md) for more details.
 
 The figure below illustrates how `map` applies the transformation to each row of inputs.
 
