@@ -177,7 +177,7 @@ pip install towhee towhee.models
 
 安装就绪后，就能够创建你的第一个 AI 流水线啦。下面示例中，我们来创建一个基于 CLIP 的跨模态检索流水线。
 
-示例使用了towhee 1.0.0rc1的接口，请使用`pip install towhee==1.0.0rc1`安装. 最新的[使用文档](https://towhee.readthedocs.io/en/main/index.html).
+示例使用了towhee 1.0.0的接口，请使用`pip install towhee==1.0.0`安装. 最新的[使用文档](https://towhee.readthedocs.io/en/main/index.html).
 
 ```python
 from glob import glob

@@ -69,11 +69,11 @@ Started Metrics Service at 0.0.0.0:8002
 
 In addition, we can create models from a pipeline. This is a step in the building docker image, but we can also do independently to get the models in our own server. We take a triton's official inference server as an example:
 
-- Start the Triton Inference Server container
+- Start the Triton Inference Server container, **here we take tritonsever `22.07` as an example, replace it with proper version according to your cuda version**. 
     ```shell
-    docker run --shm-size=1g --ulimit memlock=-1 -p 8000:8000 -p 8001:8001 -p 8002:8002 --ulimit stack=67108864 -ti nvcr.io/nvidia/tritonserver:<xx.yy>-py3
+    docker run --shm-size=1g --ulimit memlock=-1 -p 8000:8000 -p 8001:8001 -p 8002:8002 --ulimit stack=67108864 -ti nvcr.io/nvidia/tritonserver:22.07-py3
     ```
-    Replace <xx.yy> with the Triton version (e.g. 21.05).
+    Replace `22.07` with proper version according to your cuda version, refer to [Nvidia](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)
 - Inside the container, install twohee
     ```shell
     pip install towhee

@@ -3,8 +3,8 @@
 #pip cache purge
 Pillow
 pygit2<=1.10.1
-towhee==1.0.0rc1
-towhee.models==1.0.0rc1
+towhee==1.0.0
+towhee.models==1.0.0
 pandas 
 scikit-learn 
 opencv-python 
