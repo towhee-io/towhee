@@ -50,6 +50,13 @@ automatically optimize it for production-ready environments.
 :snake:&emsp;**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
 ## What's New
+**v1.0.0rc1 May. 4, 2023**
+* Add trainer to operators: 
+[*timm*](https://towhee.io/image-embedding/timm), [*isc*](https://towhee.io/image-embedding/isc), [*transformers*](https://towhee.io/text-embedding/transformers), [*clip*](https://towhee.io/image-text-embedding/clip)
+* Add GPU video decoder: 
+[*VPF*](https://towhee.io/video-decode/VPF)
+* All towhee pipelines can be converted into Nvidia Triton services.
+
 
 **v0.9.0 Dec. 2, 2022**
 * Added one video classification model:
@@ -165,32 +172,52 @@ pip install towhee towhee.models
 
 If you run into any pip-related install problems, please try to upgrade pip with `pip install -U pip`.
 
-Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
+Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline.
+
 
 ```python
-import towhee
+
+from glob import glob
+from towhee import ops, pipe, DataCollection
+
 
 # create image embeddings and build index
-(
-    towhee.glob['file_name']('./*.png')
-          .image_decode['file_name', 'img']()
-          .image_text_embedding.clip['img', 'vec'](model_name='clip_vit_base_patch32', modality='image')
-          .tensor_normalize['vec','vec']()
-          .to_faiss[('file_name', 'vec')](findex='./index.bin')
+p = (
+    pipe.input('file_name')
+    .map('file_name', 'img', ops.image_decode.cv2())
+    .map('img', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='image'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    .map(('vec', 'file_name'), (), ops.ann_insert.faiss_index('./faiss', 512))
+    .output()
 )
 
+for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog1.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog2.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
+    p(f_name)
+
+# Delete the pipeline object, make sure the faiss data is written to disk. 
+del p
+
+
 # search image by text
-results = (
-    towhee.dc['text'](['puppy Corgi'])
-          .image_text_embedding.clip['text', 'vec'](model_name='clip_vit_base_patch32', modality='text')
-          .tensor_normalize['vec', 'vec']()
-          .faiss_search['vec', 'results'](findex='./index.bin', k=3)
-          .select['text', 'results']()
+decode = ops.image_decode.cv2('rgb')
+p = (
+    pipe.input('text')
+    .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
+    .map('vec', 'vec', ops.towhee.np_normalize())
+    # faiss op result format:  [[id, score, [file_name], ...]
+    .map('vec', 'row', ops.ann_search.faiss_index('./faiss', 3))
+    .map('row', 'images', lambda x: [decode(item[2][0]) for item in x])
+    .output('text', 'images')
 )
+
+DataCollection(p('a cat')).show()
+
 ```
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
-Learn more examples from the [Towhee Bootcamp](https://codelabs.towhee.io/).
+Learn more examples from the [Towhee Examples](https://github.com/towhee-io/examples).
 
 ## Core Concepts
 
@@ -215,6 +242,7 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
 <a href="https://github.com/GuoRentong"><img src="https://avatars.githubusercontent.com/u/57477222?v=4" width="30px" /></a>
 <a href="https://github.com/NicoYuan1986"><img src="https://avatars.githubusercontent.com/u/109071306?v=4" width="30px" /></a>
+<a href="https://github.com/Opdoop"><img src="https://avatars.githubusercontent.com/u/21202514?v=4" width="30px" /></a>
 <a href="https://github.com/Tumao727"><img src="https://avatars.githubusercontent.com/u/20420181?v=4" width="30px" /></a>
 <a href="https://github.com/YuDongPan"><img src="https://avatars.githubusercontent.com/u/88148730?v=4" width="30px" /></a>
 <a href="https://github.com/binbinlv"><img src="https://avatars.githubusercontent.com/u/83755740?v=4" width="30px" /></a>
@@ -243,7 +271,6 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/zc277584121"><img src="https://avatars.githubusercontent.com/u/17022025?v=4" width="30px" /></a>
 <a href="https://github.com/zengxiang68"><img src="https://avatars.githubusercontent.com/u/68835157?v=4" width="30px" /></a>
 <a href="https://github.com/zhousicong"><img src="https://avatars.githubusercontent.com/u/7541863?v=4" width="30px" /></a>
-<a href="https://github.com/zhujiming"><img src="https://avatars.githubusercontent.com/u/18031320?v=4" width="30px" /></a>
 <br><!-- Do not remove end of hero-bot --><br>
 
 Looking for a database to store and index your embedding vectors? Check out [Milvus](https://github.com/milvus-io/milvus).
