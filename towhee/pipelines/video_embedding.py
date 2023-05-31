@@ -14,6 +14,9 @@
 
 # pylint: disable = import-outside-toplevel
 
+from typing import Optional
+from pydantic import BaseModel
+
 from towhee import ops, pipe, AutoPipes, AutoConfig
 
 
@@ -23,32 +26,31 @@ def merge_ndarray(x):
 
 
 @AutoConfig.register
-class VideoEmbeddingConfig:
+class VideoEmbeddingConfig(BaseModel):
     """
     Config of pipeline
     """
-    def __init__(self):
-        # decode op
-        # The range in the video to deocode
-        self.start_time = None
-        self.end_time = None
+    # decode op
+    # The range in the video to deocode
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
-        # emb op
-        self.model = 'isc'
-        self.img_size = 512
+    # emb op
+    model: Optional[str] = 'isc'
+    img_size: Optional[int] = 512
 
-        # milvus op
-        self.milvus_host = '127.0.0.1'
-        self.milvus_port = '19530'
-        self.collection = None
+    # milvus op
+    milvus_host: Optional[str] = '127.0.0.1'
+    milvus_port: Optional[str] = '19530'
+    collection: Optional[str] = None
 
-        # kv op
-        self.hbase_host = '127.0.0.1'
-        self.hbase_port = 9090
-        self.hbase_table = None
-        self.leveldb_path = None
+    # kv op
+    hbase_host: Optional[str] = '127.0.0.1'
+    hbase_port: Optional[int] = 9090
+    hbase_table: Optional[str] = None
+    leveldb_path: Optional[str] = None
 
-        self.device = -1
+    device: Optional[int] = -1
 
 
 def _video_embedding(decode_op, emb_op, milvus_op, kv_op, norm_op, allow_triton=False, device=-1):

@@ -12,21 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+from pydantic import BaseModel
 
 from towhee import ops, pipe, AutoPipes, AutoConfig
 
 
 @AutoConfig.register
-class MilvusInsertConfig:
+class MilvusInsertConfig(BaseModel):
     """
     Config of pipeline
     """
-    def __init__(self):
-        self.host = '127.0.0.1'
-        self.port = '19530'
-        self.collection_name = None
-        self.user = None
-        self.password = None
+    host: Optional[str] = '127.0.0.1'
+    port: Optional[str] = '19530'
+    collection_name: Optional[str] = 'chatbot'
+    user: Optional[str] = None
+    password: Optional[str] = None
 
 
 @AutoPipes.register

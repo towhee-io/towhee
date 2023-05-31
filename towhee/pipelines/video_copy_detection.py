@@ -14,6 +14,9 @@
 
 # pylint: disable = import-outside-toplevel
 
+from typing import Optional
+from pydantic import BaseModel
+
 from towhee import ops, pipe, AutoPipes, AutoConfig
 
 
@@ -40,45 +43,44 @@ class DuplicateFilter:
 
 
 @AutoConfig.register
-class VideoCopyDetectionConfig:
+class VideoCopyDetectionConfig(BaseModel):
     """
     Config of pipeline
     """
-    def __init__(self):
-        # decode op
-        # The range in the video to deocode
-        self.start_time = None
-        self.end_time = None
+    # decode op
+    # The range in the video to decode
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
 
-        # emb op
-        self.model = 'isc'
-        self.img_size = 512
+    # emb op
+    model: Optional[str] = 'isc'
+    img_size: Optional[int] = 512
 
-        # milvus op
-        self.milvus_host = '127.0.0.1'
-        self.milvus_port = '19530'
-        self.collection = None
-        # The number of embeddings return from milvus search op
-        self.milvus_search_limit = 64
+    # milvus op
+    milvus_host: Optional[str] = '127.0.0.1'
+    milvus_port: Optional[str] = '19530'
+    collection: Optional[str] = None
+    # The number of embeddings return from milvus search op
+    milvus_search_limit: Optional[int] = 64
 
-        # kv op
-        self.hbase_host = '127.0.0.1'
-        self.hbase_port = 9090
-        self.hbase_table = None
-        self.leveldb_path = None
+    # kv op
+    hbase_host: Optional[str] = '127.0.0.1'
+    hbase_port: Optional[int] = 9090
+    hbase_table: Optional[str] = None
+    leveldb_path: Optional[str] = None
 
-        # select video op
-        # The number of nearest videos to return by the pipeline
-        self.top_k = 100
+    # select video op
+    # The number of nearest videos to return by the pipeline
+    top_k: Optional[int] = 100
 
-        # tn op
-        # The minimal similar frame(s) that the return videos should contain
-        self.min_similar_length = 1
+    # tn op
+    # The minimal similar frame(s) that the return videos should contain
+    min_similar_length: Optional[int] = 1
 
-        # filter op
-        self.threshold = None
+    # filter op
+    threshold: Optional[float] = None
 
-        self.device = -1
+    device: Optional[int] = -1
 
 
 def _video_copy_detection(decode_op, emb_op, milvus_op, kv_op, select_op, tn_op, norm_op, filter_op, allow_triton=False, device=-1):

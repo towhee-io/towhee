@@ -12,21 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Any
+from pydantic import BaseModel
 
 from towhee import ops, pipe, AutoPipes, AutoConfig
 
 
 @AutoConfig.register
-class SentenceSimilarityConfig:
+class SentenceSimilarityConfig(BaseModel):
     """
     Config of pipeline
     """
-    def __init__(self):
-        self.model = 'all-MiniLM-L6-v2'
-        self.openai_api_key = None
-        self.customize_embedding_op = None
-        self.normalize_vec = True
-        self.device = -1
+    model: Optional[str] = 'all-MiniLM-L6-v2'
+    openai_api_key: Optional[str] = None
+    customize_embedding_op: Optional[Any] = None
+    normalize_vec: Optional[bool] = True
+    device: Optional[int] = -1
 
 
 _hf_models = ops.sentence_embedding.transformers().get_op().supported_model_names()
