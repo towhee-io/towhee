@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Any
+from pydantic import BaseModel
 
 from towhee import pipe, ops, AutoPipes, AutoConfig
 
 
 @AutoConfig.register
-class TextImageEmbeddingConfig:
-    def __init__(self):
-        self.model = 'clip_vit_base_patch16'
-        self.modality = 'image'
-        self.normalize_vec = True
-        self.customize_embedding_op = None
-        self.device = -1
+class TextImageEmbeddingConfig(BaseModel):
+    model: Optional[str] = 'clip_vit_base_patch16'
+    modality: Optional[str] = 'image'
+    customize_embedding_op: Optional[Any] = None
+    normalize_vec: Optional[bool] = True
+    device: Optional[int] = -1
 
 
 def _get_embedding_op(config):
