@@ -25,7 +25,7 @@ class MilvusInsertConfig(BaseModel):
     """
     host: Optional[str] = '127.0.0.1'
     port: Optional[str] = '19530'
-    collection_name: Optional[str] = 'chatbot'
+    collection_name: Optional[str] = None
     user: Optional[str] = None
     password: Optional[str] = None
 

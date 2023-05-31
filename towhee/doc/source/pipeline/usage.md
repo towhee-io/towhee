@@ -1,4 +1,4 @@
-# Pipeline
+# Usage
 A pipeline is composed of several operators interconnected in the form of a DAG (directed acyclic graph). This DAG can direct complex functionalities, such as embedding feature extraction, data tagging, and cross modal data analysis.
 
 ## A Simple Pipeline 
@@ -23,8 +23,8 @@ This node defines the pipeline's input schema，which contains a single variable
 The map node will apply the lambda x: x + 1 to each of the input value.
 
 3. output('y')
-  This node defines the pipeline's output schema. The output ends the pipeline definition. Once called, a pipeline instance will be created and returned.
-In line 9, we pass an input value 0 to the pipeline, and will get a return value 1. 
+    This node defines the pipeline's output schema. The output ends the pipeline definition. Once called, a pipeline instance will be created and returned.
+    In line 9, we pass an input value 0 to the pipeline, and will get a return value 1. 
 
 Of cause, you can also use a function in a pipeline definition, as illustrate below:
 
@@ -72,7 +72,7 @@ res = img_embedding(url).get()
 This pipeline contains four nodes:
 
 1. input('url')
-  This node defines the pipeline's input schema，which contains a single variable url.
+    This node defines the pipeline's input schema，which contains a single variable url.
 
 2. map('url', 'img', ops.image_decode.cv2())
 This node takes each url as input. It will fetch the image, and use OpenCV for image decoding. The output img is the decoded image data.
@@ -84,12 +84,27 @@ This node takes each img as input. It uses the resnet50 model from TIMM to gener
 
 This node defines the pipeline's output schema.
 
-## pre-defined pipelines
+## Pipeline Act as Node
+
+Pipelines can also be added to a pipeline as a node (pipeline_node) by the `pipe` method. As shown in below, the `img_embedding` pipeline above is used as a second node to generate the embedding of the image, and the next node is used to insert the embedding into the Milvus vector database.
+
+```python
+from towhee import pipe
+
+img_insert = (
+        pipe.input('url')
+            .map('url', 'embedding', img_embedding)
+            .map('embedding', 'mr', ops.ann_insert.milvus_client(host='127.0.0.1', port='19530', collection_name='test_collection'))
+            .output('mr')
+        )
+```
+
+## Pre-defined Pipelines
+
 Towhee also provides some predefined pipelines that users can load through the [AutoPipe](https://github.com/towhee-io/towhee/blob/main/towhee/runtime/auto_pipes.py) and [AutoConfig](https://github.com/towhee-io/towhee/blob/main/towhee/runtime/auto_config.py) interfaces.
 
-All available pipelines are under [towhee/pipelines](https://github.com/towhee-io/towhee/tree/main/towhee/pipelines).
-In the future, we will put the predefined pipelines on the [Towhee Hub](https://towhee.io/).
-This is an example of sentence embedding.
+Some available pipelines are under [towhee/pipelines](https://github.com/towhee-io/towhee/tree/main/towhee/pipelines). There is an example about sentence embedding.
+
 ```python
 from towhee import AutoPipes, AutoConfig
 
@@ -100,4 +115,14 @@ config.device = 0
 
 embed_pipe = AutoPipes.pipeline('sentence_embedding', config)
 print(embed_pipe('How are you?').to_list())
+```
+
+And we also put the predefined pipelines on the [Towhee Hub](https://towhee.io/). There is an example about [image embedding](https://towhee.io/towhee/image-embedding) in Hub.
+
+```python
+from towhee import AutoPipes
+
+p = AutoPipes.pipeline('image-embedding')
+res = p('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png')
+res.get()
 ```

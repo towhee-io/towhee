@@ -67,6 +67,14 @@ class AutoConfig:
 
     @staticmethod
     def load_config(name: str, *args, **kwargs):
+        """
+        Load config from pre-defined pipeline.
+
+        Examples:
+            >>> from towhee import AutoConfig
+            >>> config = AutoConfig.load_config('sentence_embedding')
+            SentenceSimilarityConfig(model='all-MiniLM-L6-v2', openai_api_key=None, customize_embedding_op=None, normalize_vec=True, device=-1)
+        """
         with AutoConfig._lock:
             if name in AutoConfig._REGISTERED_CONFIG:
                 return AutoConfig._REGISTERED_CONFIG[name](*args, **kwargs)
@@ -136,6 +144,7 @@ class AutoConfig:
             ... )
 
             You can also to set the configuration:
+
             >>> from towhee import pipe, AutoConfig
             >>> config = AutoConfig.TritonCPUConfig(num_instances_per_device=3,
             ...                                     max_batch_size=128,
@@ -183,6 +192,7 @@ class AutoConfig:
             ... )
 
             You can also to set the configuration:
+
             >>> from towhee import pipe, AutoConfig
             >>> config = AutoConfig.TritonGPUConfig(device_ids=[0, 1],
             ...                                     num_instances_per_device=3,
