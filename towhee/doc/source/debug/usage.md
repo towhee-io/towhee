@@ -30,7 +30,33 @@ v.profiler.show()
 
 **exclude**: str/list, the nodes not to trace, defaults to None.
 
-***Notes***: Users can specify include/exclude nodes by partial names, note that all the nodes that contains the partial name will be regraded include/exclude. For example, we have a pipeline including two embedding nodes, which use text embedding operator and image embedding operator respectively, when we set `include='embedding'`, both the text_embedding and image_embedding nodes will be traced in the pipeline.
+## details for include/exclude
+
+Users are allowed to specify which nodes to include/exclude for tracing. When executing a video embedding task, the video decoder operator will output a large number of video frames, which we are not interested in, so we want to exclude them. On the other hand, sometimes we are particularly concerned about the information of a single operator and don't care about the others, so we only want to include this operator only. Thus we provide `include/exclude` parameters in `debug()`:
+
+```python
+from towhee import pipe, ops
+
+p = (
+	pipe.input('url', 'title')
+        .map('title', 'text_embedding', ops.text_embedding.data2vec())
+		.flat_map('url', 'frames', ops.video_decode.ffmpeg())
+		.map('frames', 'video_embedding', ops.image_embedding.timm(model_name='resnet34'))
+		.output('text_embedding', 'video_embedding')
+)
+```
+***Exclude decode node by partial name***
+```python
+res = p.debug('your_video_path', tracer=True, exclude='decode')
+```
+
+***Include embedding nodes only***
+```python
+res = p.debug('your_video_path', tracer=True, include=['embedding'])
+```
+
+***Notes***: Users can specify include/exclude nodes by partial names, note that all the nodes that contains the partial name will be regraded include/exclude. In the example above, we set `include=['embedding']`, both the text_embedding and image_embedding nodes will be traced in the pipeline.
+
 
 ## show tracer
 
