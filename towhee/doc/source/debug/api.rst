@@ -1,4 +1,4 @@
-api
+API
 =====================
 
 .. automodule:: towhee.runtime.runtime_pipeline

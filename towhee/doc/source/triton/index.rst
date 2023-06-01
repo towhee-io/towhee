@@ -1,4 +1,4 @@
-triton server
+Triton Server
 =====================
 
 

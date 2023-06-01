@@ -1,4 +1,4 @@
-# Debug
+# Usage
 
 Towhee now provides a `debug` api for `pipe` to support profiling and tracing. Users can check the execution efficiency of intermediate nodes as well as their outputs by running a pipeline via `debug`. Also, users are allowed to specify the nodes to trace or not to trace by passing `include` or `exclude` args in debug.
 

@@ -42,7 +42,16 @@ def get_pipe_name():
 
 class AutoPipes:
     """
-    Load Predefined pipeines.
+    Load pre-defined pipelines. Some available pipelines are under [towhee/pipelines](https://github.com/towhee-io/towhee/tree/main/towhee/pipelines).
+    And also put the predefined pipelines on the [Towhee Hub](https://towhee.io/).
+
+    Examples:
+        >>> from towhee import AutoPipes, AutoConfig
+        >>> # config for sentence_embedding pipeline
+        >>> config = AutoConfig.load_config('sentence_embedding')
+        >>> config.model = 'all-MiniLM-L6-v2'
+        >>> embed_pipe = AutoPipes.pipeline('sentence_embedding', config=config)
+        >>> print(embed_pipe('How are you?').to_list())
     """
     _PIPES_DEF = {}
     _lock = threading.Lock()

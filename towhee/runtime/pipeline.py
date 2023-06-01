@@ -63,8 +63,8 @@ class Pipeline:
             Pipeline: Pipeline ready to be chained.
 
         Examples:
-            >>> import towhee
-            >>> pipe = towhee.pipe.input('a', 'b', 'c')
+            >>> from towhee import pipe
+            >>> p = pipe.input('a', 'b', 'c')
         """
         dag_dict = {}
         output_schema = cls._check_schema(schema)
@@ -85,9 +85,9 @@ class Pipeline:
             RuntimePipeline: The runtime pipeline that can be called on inputs.
 
         Examples:
-            >>> import towhee
-            >>> pipe = towhee.pipe.input('a').map('a', 'b', lambda x: x+1).output('b')
-            >>> pipe(1).get()
+            >>> from towhee import pipe
+            >>> p = pipe.input('a').map('a', 'b', lambda x: x+1).output('b')
+            >>> p(1).get()
             [2]
         """
         output_schema = self._check_schema(output_schema)
@@ -115,9 +115,9 @@ class Pipeline:
             Pipeline: Pipeline with action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = towhee.pipe.input('a').map('a', 'b', lambda x: x+1).output('a', 'b')
-            >>> pipe(1).get()
+            >>> from towhee import pipe
+            >>> p = pipe.input('a').map('a', 'b', lambda x: x+1).output('a', 'b')
+            >>> p(1).get()
             [1, 2]
         """
         output_schema = self._check_schema(output_schema)
@@ -151,11 +151,12 @@ class Pipeline:
             Pipeline: Pipeline to be concated.
 
         Examples:
-            >>> pipe0 = towhee.pipe.input('a', 'b', 'c')
-            >>> pipe1 = pipe0.map('a', 'd', lambda x: x+1)
-            >>> pipe2 = pipe0.map(('b', 'c'), 'e', lambda x, y: x - y)
-            >>> pipe3 = pipe2.concat(pipe1).output('d', 'e')
-            >>> pipe3(1, 2, 3).get()
+            >>> from towhee import pipe
+            >>> p0 = pipe.input('a', 'b', 'c')
+            >>> p1 = p0.map('a', 'd', lambda x: x+1)
+            >>> p2 = p0.map(('b', 'c'), 'e', lambda x, y: x - y)
+            >>> p3 = p2.concat(p1).output('d', 'e')
+            >>> p3(1, 2, 3).get()
             [2, -1]
         """
         self._check_concat_pipe(pipes)
@@ -195,11 +196,11 @@ class Pipeline:
             Pipeline: Pipeline with flat_map action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = (towhee.pipe.input('a')
+            >>> from towhee import pipe
+            >>> p = (pipe.input('a')
             ...         .flat_map('a', 'b', lambda x: [y for y in x])
             ...         .output('b'))
-            >>> res = pipe([1, 2, 3])
+            >>> res = p([1, 2, 3])
             >>> res.get()
             [1]
             >>> res.get()
@@ -242,15 +243,15 @@ class Pipeline:
             Pipeline: Pipeline with filter action added.
 
         Examples:
-            >>> import towhee
+            >>> from towhee import pipe
             >>> def filter_func(num):
             ...     return num > 10
-            >>> pipe = (towhee.pipe.input('a', 'c')
+            >>> p = (pipe.input('a', 'c')
             ...         .filter('c', 'd', 'a', filter_func)
             ...         .output('d'))
-            >>> pipe(1, 12).get()
+            >>> p(1, 12).get()
             None
-            >>> pipe(11, 12).get()
+            >>> p(11, 12).get()
             [12]
         """
         output_schema = self._check_schema(output_schema)
@@ -290,12 +291,12 @@ class Pipeline:
             Pipeline: Pipeline with window action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = (towhee.pipe.input('n1', 'n2')
+            >>> from towhee import pipe
+            >>> p = (pipe.input('n1', 'n2')
             ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
             ...         .window(('n1', 'n2'), ('s1', 's2'), 2, 1, lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
-            >>> res = pipe([1, 2, 3, 4], [2, 3, 4, 5])
+            >>> res = p([1, 2, 3, 4], [2, 3, 4, 5])
             >>> res.get()
             [3, 5]
             >>> res.get()
@@ -336,12 +337,12 @@ class Pipeline:
             Pipeline: Pipeline with window_all action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = (towhee.pipe.input('n1', 'n2')
+            >>> from towhee import pipe
+            >>> p = (pipe.input('n1', 'n2')
             ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
             ...         .window_all(('n1', 'n2'), ('s1', 's2'), lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
-            >>> pipe([1, 2, 3, 4], [2, 3, 4, 5]).get()
+            >>> p([1, 2, 3, 4], [2, 3, 4, 5]).get()
             [10, 14]
         """
         output_schema = self._check_schema(output_schema)
@@ -378,12 +379,12 @@ class Pipeline:
             Pipeline: Pipeline with reduce action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = (towhee.pipe.input('n1', 'n2')
+            >>> from towhee import pipe
+            >>> p = (pipe.input('n1', 'n2')
             ...         .flat_map(('n1', 'n2'), ('n1', 'n2'), lambda x, y: [(a, b) for a, b in zip(x, y)])
             ...         .reduce(('n1', 'n2'), ('s1', 's2'), lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
-            >>> pipe([1, 2, 3, 4], [2, 3, 4, 5]).get()
+            >>> p([1, 2, 3, 4], [2, 3, 4, 5]).get()
             [10, 14]
         """
         if isinstance(fn, RuntimePipeline):
@@ -427,13 +428,13 @@ class Pipeline:
             Pipeline: Pipeline with time_window action added.
 
         Examples:
-            >>> import towhee
-            >>> pipe = (towhee.pipe.input('d')
+            >>> from towhee import pipe
+            >>> p = (pipe.input('d')
             ...         .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
             ...         .time_window(('n1', 'n2'), ('s1', 's2'), 't', 3, 3, lambda x, y: (sum(x), sum(y)))
             ...         .output('s1', 's2'))
             >>> data = [(i, i+1, i * 1000) for i in range(11) if i < 3 or i > 7] #[(0, 1), (1, 2), (2, 3), (8, 9), (9, 10), (10, 11)]
-            >>> res = pipe(data)
+            >>> res = p(data)
             >>> res.get() #[(0, 1), (1, 2), (2, 3)]
             [3, 6]
             >>> res.get() #(8, 9)

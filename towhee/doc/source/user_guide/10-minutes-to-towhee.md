@@ -31,7 +31,7 @@ print(res.to_list())
 
 ## Nodes
 
-### map
+### Map
 
 Usage:
 
@@ -41,7 +41,7 @@ map(input_schema, output_schema, fn, config=None)
 
 Map node get the specified data by input_schema from each element as input, apply it to a function, then specify the schema of output as output_schema.
 
-![Image](./map_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/map_intro.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -56,7 +56,7 @@ print(res.to_list())
 # [[2]]
 ```
 
-  
+
 ### FlatMap
 
 Usage:
@@ -67,7 +67,7 @@ flat_map(input_schema, output_schema, fn, config=None)
 
 Flat Map get the specified data by input_schema from each element as input, apply it to a function, then flatten the results, and specify the schema of output as output_schema.
 
-![Image](./flat_map_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/flat_map_intro.png?raw=true)
 ```python
 from towhee import pipe
 p = (
@@ -81,8 +81,6 @@ print(res.to_list())
 # [[1], [2], [3]]
 ```
 
-  
-
 ### Filter
 
 Usage:
@@ -92,7 +90,7 @@ filter(input_schema, output_schema, filter_columns, fn, config=None)
 ```
 
 Filter only select elements that satisfy the predicate, it will check the function with filter_columns as input. And the input_schema and out_schema are the data before and after the filter node, so their lengths are required to be equal.
-![Image](./filter_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/filter_intro.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -118,7 +116,7 @@ window(input_schema, output_schema, size, step, fn, config=None)
 ```
 
 Assign all the elements into windows of finite size, over which to apply computations(fn). The size of each window is configured by the size parameter, the step parameter controls how frequently a window is started.
-![Image](./window_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/window_intro_2.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -145,7 +143,7 @@ time_window(input_schema, output_schema, timestamp_col, size, step, fn, config=N
 
 Assign all the elements into time windows of finite size based on the timestamp_col column, over which we can apply computations(fn). The time interval of each time window is configured by the size parameter, and the step parameter controls the time frequency at which a time window starts.
 
-![Image](./time_window_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/time_window_intro_2.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -177,7 +175,7 @@ window_all(input_schema, output_schema, fn, config=None)
 
 Assign all the elements into one window, over which we can apply computations(fn).
 
-![Image](./window_all.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/window_all_intro.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -204,7 +202,7 @@ concat(*pipeline)
 
 Concat one or more pipelines to the existing pipeline and update all data from each pipeline.
 
-![Image](./concat_node.png)
+![Image](https://github.com/towhee-io/data/blob/main/image/docs/concat_intro.png?raw=true)
 
 ```python
 from towhee import pipe
@@ -268,9 +266,9 @@ class add_x:
 ops.add_x(x=1)(2)
 ```
 
-### Run Operator with `Pipeline`
+### Run Operator with `pipe`
 
-When an operator is uploaded to the Towhee hub or registered with @register, we can call the operator directly on a Pipeline:
+When an operator is uploaded to the Towhee hub or registered with `@register`, we can call the operator directly on a Pipeline:
 ```python
 from towhee import ops, pipe
 p = (
@@ -284,7 +282,7 @@ DataCollection(p('1.jpg')).show()
 
 ## Complete Example
 
-Here we show a complete example of towhee `Pipeline` that implements a image embedding task
+Here we show a complete example of towhee `pipe` that implements a image embedding task
 ```python
 # image embedding with resnet50
 from towhee import ops, pipe
