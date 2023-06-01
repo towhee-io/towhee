@@ -95,6 +95,15 @@ class Operator(ABC):
     def key(self, value):
         self._key = value
 
+    def flush(self):
+        """
+        This method is triggered by RuntimePipeline.flush().
+
+        After the pipeline runs, some operators may need to trigger some additional operations,
+        such as the to_faiss operator needing to trigger data storage.
+        """
+        pass
+
 
 class NNOperator(Operator):
     """

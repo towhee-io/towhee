@@ -187,6 +187,10 @@ class Node(ABC):
     def __str__(self) -> str:
         return 'Node-{}'.format(self.name)
 
-    def __del__(self):
-        if self._node_repr.op_info.type == OPType.HUB and self._op:
+    def release_op(self):
+        if self._op and self._node_repr.op_info.type == OPType.HUB:
             self._op_pool.release_op(self._op)
+            self._op = None
+
+    def __del__(self):
+        self.release_op()
