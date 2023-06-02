@@ -15,17 +15,17 @@
 import unittest
 
 from towhee.operator.nop import NOPNodeOperator
+from towhee.operator import PyOperator
 from towhee.runtime.pipeline import Pipeline
 from towhee.runtime.data_queue import Empty
 from towhee.runtime.factory import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
 
-
 # pylint: disable=protected-access
 # pylint: disable=unused-variable
 # pylint: disable=unnecessary-lambda
 @register(name='add_operator')
-class AddOperator:
+class AddOperator(PyOperator):
     def __init__(self, factor):
         self.factor = factor
 
@@ -535,3 +535,29 @@ class TestPipelineNoOutputCol(unittest.TestCase):
             .output('a')
         )
         self.assertEqual(p([1, 2, 3, 4]).to_list(), [[1], [2], [3], [4]])
+
+    def test_flush(self):
+
+        flush_data = 0
+
+        @register(name='flush_test')
+        class FlushTest(PyOperator):
+            def __init__(self, factor):
+                self.factor = factor
+
+            def __call__(self, x):
+                return self.factor + x
+
+            def flush(self):
+                nonlocal flush_data
+                flush_data = 10
+
+        p = (
+            Pipeline.input('a')
+            .map('a', 'a', ops.flush_test(10))
+            .output('a')
+        )
+        self.assertEqual(p(1).to_list(), [[11]])
+        self.assertEqual(flush_data, 0)
+        p.flush()
+        self.assertEqual(flush_data, 10)

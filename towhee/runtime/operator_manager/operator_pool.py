@@ -44,6 +44,11 @@ class _OperatorStorage:
         if force_put or self._shared_type == SharedType.NotShareable:
             self._ops.append(op)
 
+    def flush(self):
+        for op in self._ops:
+            if hasattr(op, 'flush'):
+                op.flush()
+
     def __len__(self):
         return len(self._ops)
 
@@ -115,3 +120,7 @@ class OperatorPool:
         with self._lock:
             storage = self._all_ops[op.key]
             storage.put(op)
+
+    def flush(self):
+        for _, storage in self._all_ops.items():
+            storage.flush()

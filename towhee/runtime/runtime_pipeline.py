@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import re
 from typing import Dict, Any, Union, Tuple, List
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +32,7 @@ class _GraphResult:
 
     def result(self):
         ret = self._graph.result()
+        self._graph.release_op()
         del self._graph
         return ret
 
@@ -62,10 +64,10 @@ class _Graph:
         self._data_queues = None
         self.features = None
         self._time_profiler.record(Event.pipe_name, Event.pipe_in)
-        self.initialize()
+        self._initialize()
         self._input_queue = self._data_queues[0]
 
-    def initialize(self):
+    def _initialize(self):
         self._node_runners = []
         self._data_queues = dict(
             (
@@ -104,6 +106,10 @@ class _Graph:
         for node in self._node_runners:
             self.features.append(self._thread_pool.submit(node.process))
         return _GraphResult(self)
+
+    def release_op(self):
+        for node in self._node_runners:
+            node.release_op()
 
     def __call__(self, inputs: Union[Tuple, List]):
         f = self.async_call(inputs)
@@ -154,6 +160,12 @@ class RuntimePipeline:
 
     def batch(self, batch_inputs):
         return self._batch(batch_inputs, profiler=False, tracer=False)[0]
+
+    def flush(self):
+        """
+        Call the flush interface of ops.
+        """
+        self._operator_pool.flush()
 
     def _call(self, *inputs, profiler: bool, tracer: bool, trace_edges: list = None):
         """
