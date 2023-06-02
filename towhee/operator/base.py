@@ -45,9 +45,8 @@ class Operator(ABC):
             def __init__(self, factor: int):
                 self._factor = factor
 
-            def __call__(self, num) -> NamedTuple("Outputs", [("sum", int)]):
-                Outputs = NamedTuple("Outputs", [("sum", int)])
-                return Outputs(self._factor + num)
+            def __call__(self, num)
+                return self._factor + num
     """
 
     @abstractmethod
