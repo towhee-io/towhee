@@ -21,7 +21,11 @@ class DataLoader:
 
     Args:
         data_source (`Uniton[Iterable, Callable]`)
-        parser (`Callable`)
+            If it is a Callable type, after the Callable object is executed, it returns an Iterable.
+
+        parser (`Callable`)：
+            Convert the data read from the data source into input for the pipeline.
+
         batch_size (`int`)
 
 
@@ -34,6 +38,7 @@ class DataLoader:
         [{'ret': 3}]
         [{'ret': 4}]
     """
+
     def __init__(self, data_source: Union[Iterable, Callable], parser: Callable = None, batch_size: int = None):
         self._ds = data_source
         self._parser = parser if parser is not None else lambda x: x
