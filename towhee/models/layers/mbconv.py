@@ -17,8 +17,9 @@
 # limitations under the License.
 from typing import Type
 import torch
+from timm.layers import SqueezeExcite
+from timm.models._efficientnet_blocks import DepthwiseSeparableConv
 from torch import nn
-from timm.models.efficientnet_blocks import SqueezeExcite, DepthwiseSeparableConv
 from towhee.models.layers.droppath import DropPath
 from towhee.models.utils.gelu_ignore_parameters import gelu_ignore_parameters
 
@@ -73,7 +74,7 @@ class MBConv(nn.Module):
             norm_layer(in_channels),
             DepthwiseSeparableConv(in_chs=in_channels, out_chs=out_channels, stride=2 if downscale else 1,
                                    act_layer=act_layer, norm_layer=norm_layer, drop_path_rate=drop_path),
-            SqueezeExcite(in_chs=out_channels, rd_ratio=0.25),
+            SqueezeExcite(out_channels, rd_ratio=0.25),
             nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(1, 1))
         )
         # Make skip path
