@@ -112,14 +112,14 @@ def _image_to_html_cell(img, width=128, height=128):  # pragma: no cover
     plt.ioff()
     fig = plt.figure(figsize=(width / 100, height / 100))
     img = cv2.resize(img, (width, height))
-    fig.figimage(img)
+    fig.figimage(img, resize=True)
     plt.ion()
     tmpfile = BytesIO()
     fig.savefig(tmpfile, format='png')
     data = base64.b64encode(tmpfile.getvalue()).decode('ascii')
     src = 'src="data:image/png;base64,' + data + '" '
-    w = '128 = "' + str(128) + 'px" '
-    h = '128 = "' + str(128) + 'px" '
+    w = 'width = "' + str(128) + 'px" '
+    h = 'height = "' + str(128) + 'px" '
     style = 'style = "float:left; padding:2px"'
     return '<img ' + src + w + h + style + '>'
 
