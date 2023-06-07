@@ -30,6 +30,14 @@ pipeline
 
    pipeline/index
 
+data source
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   data_source/index
+
 debug
 ===========
 
