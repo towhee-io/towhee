@@ -21,13 +21,13 @@ class DataLoader:
 
     Args:
         data_source (`Uniton[Iterable, Callable]`)
-            If it is a Callable type, after the Callable object is executed, it returns an Iterable.
+            Read data from a data_source (can be an iterable or a callable)
 
-        parser (`Callable`)：
-            Convert the data read from the data source into input for the pipeline.
+        parser (`Callable`):
+            Parse the read data through the parser function to get the input that the pipeline can process.
 
         batch_size (`int`)
-
+            If batch_size is specified, batch the read data into batches of size batch_size, otherwise yield single data directly
 
     Examples:
         >>> from towhee import DataLoader, pipe, ops
