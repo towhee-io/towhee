@@ -2,8 +2,7 @@ Quick Started
 =======
 2vec, Towhee is all you need!
 
-
-<div class="column" align="left">
+<div class="column">
   <a href="https://slack.towhee.io">
     <img src="https://img.shields.io/badge/join-slack-orange?style=flat" alt="join-slack"/>
   </a>
@@ -14,31 +13,33 @@ Quick Started
     <img src="https://img.shields.io/badge/license-apache2.0-green?style=flat" alt="license"/>
   </a>
   <a href="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml">
-    <img src="https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=flat" alt="github actions"/>
+    <img src="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml/badge.svg" alt="github actions"/>
+  </a>
+  <a href="https://pypi.org/project/towhee/">
+    <img src="https://img.shields.io/pypi/v/towhee?label=Release&color&logo=Python" alt="github actions"/>
   </a>
   <a href="https://app.codecov.io/gh/towhee-io/towhee">
     <img src="https://img.shields.io/codecov/c/github/towhee-io/towhee?style=flat" alt="coverage"/>
   </a>
 </div>
 
+
 &nbsp;
 
-[Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
-We provide hundreds of models, algorithms, and transformations that can be used as standard pipeline building blocks.
-You can use Towhee's Pythonic API to build a prototype of your pipeline and
-automatically optimize it for production-ready environments.
+[Towhee](https://towhee.io) is a cutting-edge framework designed to streamline the processing of unstructured data through the use of Large Language Model (LLM) based pipeline orchestration. It is uniquely positioned to extract invaluable insights from diverse unstructured data types, including lengthy text, images, audio and video files. Leveraging the capabilities of generative AI and the SOTA deep learning models, Towhee is capable of transforming this unprocessed data into specific formats such as text, image, or embeddings. These can then be efficiently loaded into an appropriate storage system like a vector database. Developers can initially build an intuitive data processing pipeline prototype with user friendly Pythonic APU, then optimize it for production environments.
 
-**Various Modalities:** Towhee supports data processing on a variety of modalities, including images, videos, text, audio, molecular structures, etc.
+🎨 Multi Modalities: Towhee is capable of handling a wide range of data types. Whether it's image data, video clips, text, audio files, or even molecular structures, Towhee can process them all. 
 
-**SOTA Models:** Towhee provides SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, and 140+ model architectures. These include BERT, CLIP, ViT, SwinTransformer, MAE, and data2vec, all pretrained and ready to use.
+📃    LLM Pipeline orchestration:  Towhee offers flexibility to adapt to different Large Language Models (LLMs). Additionally, it allows for hosting open-source large models locally. Moreover, Towhee provides features like prompt management and knowledge retrieval, making the interaction with these LLMs more efficient and effective.
 
-**Data Processing:** Towhee also provides traditional methods alongside neural network models to help you build practical data processing pipelines. We have a rich pool of operators available, such as video decoding, audio slicing, frame sampling, feature vector dimension reduction, ensembling, and database operations.
+🎓 Rich Operators: Towhee provides a wide range of ready-to-use state-of-the-art models across five domains: CV, NLP, multimodal, audio, and medical. With over 140 models like BERT and CLIP and rich functionalities like video decoding, audio slicing, frame sampling,  and dimensionality reduction, it assists in efficiently building data processing pipelines. 
 
-**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
+🔌   Prebuilt ETL Pipelines: Towhee offers ready-to-use ETL (Extract, Transform, Load) pipelines for common tasks such as Retrieval-Augmented Generation, Text Image search, and Video copy detection. This means you don't need to be an AI expert to build applications using these features. 
+⚡️  High performance backend: Leveraging the power of the Triton Inference Server, Towhee can speed up model serving on both CPU and GPU using platforms like TensorRT, Pytorch, and ONNX. Moreover, you can transform your Python pipeline into a high-performance docker container with just a few lines of code, enabling efficient deployment and scaling.
 
+🐍 Pythonic API: Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
-
-## Install
+## Getting started
 
 Towhee requires Python 3.6+. You can install Towhee via `pip`:
 
@@ -46,15 +47,39 @@ Towhee requires Python 3.6+. You can install Towhee via `pip`:
 pip install towhee towhee.models
 ```
 
-If you run into any pip-related install problems, please try to upgrade pip with `pip install -U pip`.
+### Pipeline
 
-Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline with only 15 lines of code.
+### Pre-defined Pipeline
+
+Towhee provides some pre-defined pipelines to help users quickly implement some functions. 
+Currently implemented are: 
+- [Sentence Embedding]()
+- [Image Embedding]()
+- [Video deduplication]()
+- [Question Answer with Docs]()
+
+All pipelines can be found on Towhee Hub. Here is an example of using the sentence_embedding pipeline: 
 
 ```python
-from glob import glob
+from towhee import AutoPipes, AutoConfig
+# get the built-in sentence_similarity pipeline
+config = AutoConfig.load_config('sentence_embedding')
+config.model = 'paraphrase-albert-small-v2'
+config.device = 0
+sentence_embedding = AutoPipes.pipeline('sentence_embedding', config=config)
+
+# generate embedding for one sentence
+embedding = sentence_embedding('how are you?').get()
+# batch generate embeddings for multi-sentences
+embeddings = sentence_embedding.batch(['how are you?', 'how old are you?'])
+embeddings = [e.get() for e in embeddings]
+```
+### Custom pipelines 
+
+If you can't find the pipeline you want in towhee hub, you can also implement custom pipelines through the towhee Python API. In the following example, we will create a cross-modal retrieval pipeline based on CLIP.
+```python
+
 from towhee import ops, pipe, DataCollection
-
-
 # create image embeddings and build index
 p = (
     pipe.input('file_name')
@@ -65,15 +90,14 @@ p = (
     .output()
 )
 
-for f_name in glob('./*.png'):
+for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog1.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog2.png',
+               'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
     p(f_name)
 
-# Delete the pipeline object, make sure the faiss data is written to disk. 
-del p
-
-
-# search image by text
-decode = ops.image_decode.cv2('rgb')
+# Flush faiss data into disk. 
+p.flush()
+# search image by textdecode = ops.image_decode.cv2('rgb')
 p = (
     pipe.input('text')
     .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
@@ -87,6 +111,7 @@ p = (
 DataCollection(p('a cat')).show()
 
 ```
+
 
 Learn more examples from the [Towhee examples](https://github.com/towhee-io/examples).
 

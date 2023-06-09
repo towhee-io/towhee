@@ -27,7 +27,10 @@
     <img src="https://img.shields.io/badge/license-apache2.0-green?style=flat" alt="license"/>
   </a>
   <a href="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml">
-    <img src="https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=flat" alt="github actions"/>
+    <img src="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml/badge.svg" alt="github actions"/>
+  </a>
+  <a href="https://pypi.org/project/towhee/">
+    <img src="https://img.shields.io/pypi/v/towhee?label=Release&color&logo=Python" alt="github actions"/>
   </a>
   <a href="https://app.codecov.io/gh/towhee-io/towhee">
     <img src="https://img.shields.io/codecov/c/github/towhee-io/towhee?style=flat" alt="coverage"/>
@@ -36,131 +39,18 @@
 
 &nbsp;
 
-[Towhee](https://towhee.io) makes it easy to build neural data processing pipelines for AI applications.
-We provide hundreds of models, algorithms, and transformations that can be used as standard pipeline building blocks.
-You can use Towhee's Pythonic API to build a prototype of your pipeline and
-automatically optimize it for production-ready environments.
+[Towhee](https://towhee.io) is a cutting-edge framework designed to streamline the processing of unstructured data through the use of Large Language Model (LLM) based pipeline orchestration. It is uniquely positioned to extract invaluable insights from diverse unstructured data types, including lengthy text, images, audio and video files. Leveraging the capabilities of generative AI and the SOTA deep learning models, Towhee is capable of transforming this unprocessed data into specific formats such as text, image, or embeddings. These can then be efficiently loaded into an appropriate storage system like a vector database. Developers can initially build an intuitive data processing pipeline prototype with user friendly Pythonic APU, then optimize it for production environments.
 
-:art:&emsp;**Various Modalities:** Towhee supports data processing on a variety of modalities, including images, videos, text, audio, molecular structures, etc.
+🎨 Multi Modalities: Towhee is capable of handling a wide range of data types. Whether it's image data, video clips, text, audio files, or even molecular structures, Towhee can process them all. 
 
-:mortar_board:&emsp;**SOTA Models:** Towhee provides SOTA models across 5 fields (CV, NLP, Multimodal, Audio, Medical), 15 tasks, and 140+ model architectures. These include BERT, CLIP, ViT, SwinTransformer, MAE, and data2vec, all pretrained and ready to use.
+📃    LLM Pipeline orchestration:  Towhee offers flexibility to adapt to different Large Language Models (LLMs). Additionally, it allows for hosting open-source large models locally. Moreover, Towhee provides features like prompt management and knowledge retrieval, making the interaction with these LLMs more efficient and effective.
 
-:package:&emsp;**Data Processing:** Towhee also provides traditional methods alongside neural network models to help you build practical data processing pipelines. We have a rich pool of operators available, such as video decoding, audio slicing, frame sampling, feature vector dimension reduction, ensembling, and database operations.
+🎓 Rich Operators: Towhee provides a wide range of ready-to-use state-of-the-art models across five domains: CV, NLP, multimodal, audio, and medical. With over 140 models like BERT and CLIP and rich functionalities like video decoding, audio slicing, frame sampling,  and dimensionality reduction, it assists in efficiently building data processing pipelines. 
 
-:snake:&emsp;**Pythonic API:** Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
+🔌   Prebuilt ETL Pipelines: Towhee offers ready-to-use ETL (Extract, Transform, Load) pipelines for common tasks such as Retrieval-Augmented Generation, Text Image search, and Video copy detection. This means you don't need to be an AI expert to build applications using these features. 
+⚡️  High performance backend: Leveraging the power of the Triton Inference Server, Towhee can speed up model serving on both CPU and GPU using platforms like TensorRT, Pytorch, and ONNX. Moreover, you can transform your Python pipeline into a high-performance docker container with just a few lines of code, enabling efficient deployment and scaling.
 
-## What's New
-**v1.0.0rc1 May. 4, 2023**
-* Add trainer to operators: 
-[*timm*](https://towhee.io/image-embedding/timm), [*isc*](https://towhee.io/image-embedding/isc), [*transformers*](https://towhee.io/text-embedding/transformers), [*clip*](https://towhee.io/image-text-embedding/clip)
-* Add GPU video decoder: 
-[*VPF*](https://towhee.io/video-decode/VPF)
-* All towhee pipelines can be converted into Nvidia Triton services.
-
-
-**v0.9.0 Dec. 2, 2022**
-* Added one video classification model:
-[*Vis4mer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/vis4mer)
-* Added three visual backbones:
-[*MCProp*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/mcprop), 
-[*RepLKNet*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/replknet), 
-[*Shunted Transformer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/shunted_transformer)
-* Add two code search operators:
-[*code_search.codebert*](https://towhee.io/code-search/codebert), 
-[*code_search.unixcoder*](https://towhee.io/code-search/unixcoder)
-* Add five image captioning operators: 
-[*image_captioning.expansionnet-v2*](https://towhee.io/image-captioning/expansionnet-v2), 
-[*image_captioning.magic*](https://towhee.io/image-captioning/magic),
-[*image_captioning.clip_caption_reward*](https://towhee.io/image-captioning/clip-caption-reward), 
-[*image_captioning.blip*](https://towhee.io/image-captioning/blip), 
-[*image_captioning.clipcap*](https://towhee.io/image-captioning/clipcap)
-* Add five image-text embedding operators: 
-[*image_text_embedding.albef*](https://towhee.io/image-text-embedding/albef), 
-[*image_text_embedding.ru_clip*](https://towhee.io/image-text-embedding/ru-clip), 
-[*image_text_embedding.japanese_clip*](https://towhee.io/image-text-embedding/japanese-clip),
-[*image_text_embedding.taiyi*](https://towhee.io/image-text-embedding/taiyi),
-[*image_text_embedding.slip*](https://towhee.io/image-text-embedding/slip)
-* Add one machine-translation operator: 
-[*machine_translation.opus_mt*](https://towhee.io/machine-translation/opus-mt)
-* Add one filter-tiny-segments operator:
-[*video-copy-detection.filter-tiny-segments*](https://towhee.io/video-copy-detection/filter-tiny-segments)
-* Add an advanced tutorial for audio fingerprinting: 
-[*Audio Fingerprint II: Music Detection with Temporal Localization*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_advanced.ipynb) (increased accuracy from 84% to 90%)
-
-**v0.8.1 Sep. 30, 2022**
-
-* Added four visual backbones:
-[*ISC*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/isc),
-[*MetaFormer*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/metaformer),
-[*ConvNext*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/convnext),
-[*HorNet*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/hornet)
-* Add two video de-copy operators:
-[*select-video*](https://towhee.io/video-copy-detection/select-video), 
-[*temporal-network*](https://towhee.io/video-copy-detection/temporal-network)
-* Add one image embedding operator specifically designed for image retrieval and video de-copy with SOTA performance on VCSL dataset:
-[*isc*](https://towhee.io/image-embedding/isc)
-* Add one audio embedding operator specified for audio fingerprint:
-[*audio_embedding.nnfp*](https://towhee.io/audio-embedding/nnfp) (with pretrained weights)
-* Add one tutorial for video de-copy: 
-[*How to Build a Video Segment Copy Detection System*](https://github.com/towhee-io/examples/blob/main/video/video_deduplication/segment_level/video_deduplication_at_segment_level.ipynb)
-* Add one beginner tutorial for audio fingerprint:
-[*Audio Fingerprint I: Build a Demo with Towhee & Milvus*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_beginner.ipynb)
-
-
-**v0.8.0 Aug. 16, 2022**
-
-* Towhee now supports generating an Nvidia Triton Server from a Towhee pipeline, with aditional support for GPU image decoding.
-* Added one audio fingerprinting model: 
-[*nnfp*](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
-* Added two image embedding models: 
-[*RepMLP*](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
-
-**v0.7.3 Jul. 27, 2022**
-* Added one multimodal (text/image) model:
-[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
-* Added two video models for grounded situation recognition & repetitive action counting:
-[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
-[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
-* Added two SoTA models for image tasks (image retrieval, image classification, etc.):
-[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
-[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
-
-**v0.7.1 Jul. 1, 2022**
-* Added one image embedding model:
-[*MPViT*](https://towhee.io/image-embedding/mpvit).
-* Added two video retrieval models:
-[*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
-[*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
-* Added FAISS-based ANNSearch operators: *to_faiss*, *faiss_search*.
-
-**v0.7.0 Jun. 24, 2022**
-
-* Added six video understanding/classification models:
-[*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
-[*TSM*](https://towhee.io/action-classification/tsm), 
-[*Uniformer*](https://towhee.io/action-classification/uniformer), 
-[*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
-[*TimeSformer*](https://towhee.io/action-classification/timesformer), 
-[*MoViNets*](https://towhee.io/action-classification/movinet).
-* Added four video retrieval models:
-[*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
-[*DRL*](https://towhee.io/video-text-embedding/drl), 
-[*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
-[*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
-
-**v0.6.1  May. 13, 2022**
-
-* Added three text-image retrieval models:
-[*CLIP*](https://towhee.io/image-text-embedding/clip),
-[*BLIP*](https://towhee.io/image-text-embedding/blip),
-[*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
-* Added six video understanding/classification models from PyTorchVideo:
-[*I3D*](https://towhee.io/action-classification/pytorchvideo),
-[*C2D*](https://towhee.io/action-classification/pytorchvideo),
-[*Slow*](https://towhee.io/action-classification/pytorchvideo),
-[*SlowFast*](https://towhee.io/action-classification/pytorchvideo),
-[*X3D*](https://towhee.io/action-classification/pytorchvideo),
-[*MViT*](https://towhee.io/action-classification/pytorchvideo).
+🐍 Pythonic API: Towhee includes a Pythonic method-chaining API for describing custom data processing pipelines. We also support schemas, which makes processing unstructured data as easy as handling tabular data.
 
 ## Getting started
 
@@ -170,18 +60,39 @@ Towhee requires Python 3.6+. You can install Towhee via `pip`:
 pip install towhee towhee.models
 ```
 
-If you run into any pip-related install problems, please try to upgrade pip with `pip install -U pip`.
+### Pipeline
 
-Let's try your first Towhee pipeline. Below is an example for how to create a CLIP-based cross modal retrieval pipeline.
+### Pre-defined Pipeline
 
-The example needs towhee 1.0.0, which can be installed with `pip install towhee==1.0.0`, The latest usage [documentation](https://towhee.readthedocs.io/en/main/index.html).
+Towhee provides some pre-defined pipelines to help users quickly implement some functions. 
+Currently implemented are: 
+- [Sentence Embedding](https://towhee.io/tasks/detail/pipeline/sentence-similarity)
+- [Image Embedding](https://towhee.io/tasks/detail/pipeline/text-image-search)
+- [Video deduplication](https://towhee.io/tasks/detail/pipeline/video-copy-detection)
+- [Question Answer with Docs](https://towhee.io/tasks/detail/pipeline/retrieval-augmented-generation)
+
+All pipelines can be found on Towhee Hub. Here is an example of using the sentence_embedding pipeline: 
 
 ```python
+from towhee import AutoPipes, AutoConfig
+# get the built-in sentence_similarity pipeline
+config = AutoConfig.load_config('sentence_embedding')
+config.model = 'paraphrase-albert-small-v2'
+config.device = 0
+sentence_embedding = AutoPipes.pipeline('sentence_embedding', config=config)
 
-from glob import glob
+# generate embedding for one sentence
+embedding = sentence_embedding('how are you?').get()
+# batch generate embeddings for multi-sentences
+embeddings = sentence_embedding.batch(['how are you?', 'how old are you?'])
+embeddings = [e.get() for e in embeddings]
+```
+### Custom pipelines 
+
+If you can't find the pipeline you want in towhee hub, you can also implement custom pipelines through the towhee Python API. In the following example, we will create a cross-modal retrieval pipeline based on CLIP.
+```python
+
 from towhee import ops, pipe, DataCollection
-
-
 # create image embeddings and build index
 p = (
     pipe.input('file_name')
@@ -197,12 +108,9 @@ for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/d
                'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
     p(f_name)
 
-# Delete the pipeline object, make sure the faiss data is written to disk. 
-del p
-
-
-# search image by text
-decode = ops.image_decode.cv2('rgb')
+# Flush faiss data into disk. 
+p.flush()
+# search image by textdecode = ops.image_decode.cv2('rgb')
 p = (
     pipe.input('text')
     .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
@@ -218,7 +126,6 @@ DataCollection(p('a cat')).show()
 ```
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
-Learn more examples from the [Towhee Examples](https://github.com/towhee-io/examples).
 
 ## Core Concepts
 
@@ -228,9 +135,14 @@ Towhee is composed of four main building blocks - `Operators`, `Pipelines`, `Dat
 
 - __Pipelines__: A pipeline is composed of several operators interconnected in the form of a DAG (directed acyclic graph). This DAG can direct complex functionalities, such as embedding feature extraction, data tagging, and cross modal data analysis.
 
-- __DataCollection API__: A Pythonic and method-chaining style API for building custom pipelines. A pipeline defined by the DataColltion API can be run locally on a laptop for fast prototyping and then be converted to a docker image, with end-to-end optimizations, for production-ready environments.
+- __DataCollection API__: A Pythonic and method-chaining style API for building custom pipelines, providing multiple data conversion interfaces: map, filter, flat_map, concat, window, time_window, and window_all. Through these interfaces, complex data processing pipelines can be built quickly to process unstructured data such as video, audio, text, images, etc.
 
 - __Engine__: The engine sits at Towhee's core. Given a pipeline, the engine will drive dataflow among individual operators, schedule tasks, and monitor compute resource usage (CPU/GPU/etc). We provide a basic engine within Towhee to run pipelines on a single-instance machine and a Triton-based engine for docker containers.
+
+## Resource
+- TowheeHub: https://towhee.io/
+- docs: https://towhee.readthedocs.io/en/latest/
+- examples: https://github.com/towhee-io/examples
 
 ## Contributing
 
