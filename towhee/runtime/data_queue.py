@@ -32,6 +32,7 @@ class DataQueue:
         self._queue_index = []
         self._scalar_index = []
         self._has_all_scalars = False
+        self._readed = False
         for index in range(len(self._schema.col_types)):
             col_type = self._schema.col_types[index]
             if col_type == ColumnType.QUEUE:
@@ -117,6 +118,7 @@ class DataQueue:
             for col in self._data:
                 ret.append(col.get())
             self._size -= 1
+            self._readed = True
             self._not_full.notify()
             return ret
 
@@ -178,7 +180,7 @@ class DataQueue:
                 return
 
             self._sealed = True
-            if self._queue_index:
+            if self._queue_index or not self._has_all_scalars:
                 self._size = self._get_size()
             self._not_empty.notify_all()
             self._not_full.notify_all()
@@ -218,17 +220,25 @@ class DataQueue:
         return self._schema.col_types
 
     def _get_size(self):
-        if not self._has_all_scalars:
+        if not self._sealed and not self._has_all_scalars:
             for index in self._scalar_index:
                 if not self._data[index].has_data():
                     return 0
             self._has_all_scalars = True
 
-        que_size = [self._data[index].size() for index in self._queue_index]
+        if self._queue_index:
+            que_size = [self._data[index].size() for index in self._queue_index]
+            if not self._sealed:
+                return min(que_size)
 
-        if que_size:
-            return max(que_size) if self._sealed else min(que_size)
-        return 1 if len(self._scalar_index) > 0 else 0
+            size = max(que_size)
+            if size > 0 or self._readed:
+                return size
+
+        for index in self._scalar_index:
+            if self._data[index].has_data():
+                return 1
+        return 0
 
     def col_type(self, col_name):
         return self.type_schema[self.schema.index(col_name)]
@@ -360,7 +370,7 @@ class _ScalarColumn:
     """
 
     def __init__(self):
-        self._data = None
+        self._data = Empty()
 
     def put(self, data):
         if data is Empty():
@@ -371,4 +381,4 @@ class _ScalarColumn:
         return self._data
 
     def has_data(self):
-        return self._data is not None
+        return self._data is not Empty()

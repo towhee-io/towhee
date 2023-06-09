@@ -132,7 +132,7 @@ class TestPerformanceProfiler(unittest.TestCase):
         pp1.dump(path1)
         with open(path1, encoding='utf-8') as f:
             json_tracing2 = json.load(f)
-        self.assertEqual(len(json_tracing2), 35)
+        self.assertEqual(len(json_tracing2), 43)
 
         path2 = public_path / 'pipe2.json'
         pp2.dump(path2)
