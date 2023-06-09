@@ -97,7 +97,8 @@ for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/d
 
 # Flush faiss data into disk. 
 p.flush()
-# search image by textdecode = ops.image_decode.cv2('rgb')
+# search image by text
+decode = ops.image_decode.cv2('rgb')
 p = (
     pipe.input('text')
     .map('text', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch32', modality='text'))
