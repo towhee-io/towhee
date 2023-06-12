@@ -62,6 +62,10 @@ res = p.debug('your_video_path', tracer=True, include=['embedding'])
 
 The tracer can be showed in two format, depends on the running enviroment:
 
+```python
+res.tracer.show()
+```
+
 - When showed in IPython enviroment:
 ![ipython](ipython.png)
 
@@ -72,10 +76,18 @@ The tracer can be showed in two format, depends on the running enviroment:
 
 Profiler records the performance of each node, including the total time, operator initialization time, data waiting time, operator execution time, etc..
 
+```python
+res.profiler.show()
+```
+
 ![profiler](profiler.png)
 
 ## get pipeline info
 
 Also, users can view the pipeline information in the form of a dict by property `v.nodes`:
+
+```python
+res.nodes
+```
 
 ![nodes](nodes.png)
