@@ -218,7 +218,7 @@ class TestPipeline(unittest.TestCase):
                 .filter('c', 'd', ('a', 'b'), filter_func)
                 .output('a', 'b', 'c', 'd'))
         res = pipe(5, 6, 7)
-        self.assertEqual(res.get(), None)
+        self.assertEqual(res.get(), [5, 6, 8, Empty()])
         res = pipe(15, 6, 7)
         self.assertEqual(res.get(), [15, 6, 8, 8])
 

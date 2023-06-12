@@ -359,8 +359,8 @@ class TestDataQueue(unittest.TestCase):
         input_que.put_dict({'url': 1})
         self.assertEqual(input_que.size, 0)
         input_que.seal()
-        self.assertEqual(input_que.size, 0)
-        self.assertEqual(input_que.get(), None)
+        self.assertEqual(input_que.size, 1)
+        self.assertEqual(input_que.get(), [1, Empty()])
         self.assertEqual(input_que.size, 0)
 
     def _internal_all_scalar_multithread(self, DataQueueClass):
@@ -474,6 +474,7 @@ class TestDataQueue(unittest.TestCase):
         ret[1].append(3)
         self.assertEqual(que.size, 0)
 
+        que.seal()
         que.reset_size()
         ret = que.get()
         self.assertEqual(ret[1], [1])
@@ -481,3 +482,61 @@ class TestDataQueue(unittest.TestCase):
         ret = que.get()
         self.assertEqual(ret[1], [2])
         self.assertEqual(que.size, 0)
+
+    def test_empty_scalar(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR)])
+        que.put(('http://towhee.io', Empty()))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 1)
+        self.assertEqual(que.to_list(), [['http://towhee.io', Empty()]])
+
+    def test_empty_scalar_with_ques(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR), ('vec', ColumnType.QUEUE)])
+        que.put(('http://towhee.io', Empty(), 1))
+        que.put(('http://towhee.io', Empty(), 2))
+        que.put(('http://towhee.io', Empty(), 3))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 3)
+        self.assertEqual(que.to_list(), [['http://towhee.io', Empty(), 1],
+                                         ['http://towhee.io', Empty(), 2],
+                                         ['http://towhee.io', Empty(), 3]])
+
+    def test_scalar_with_empty_ques(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('vec', ColumnType.QUEUE)])
+        que.put(('http://towhee.io', Empty()))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 1)
+        self.assertEqual(que.to_list(), [['http://towhee.io', Empty()]])
+
+    def test_with_empty_scalar_empty_ques(self):
+        que = DataQueue([('url', ColumnType.SCALAR), ('image', ColumnType.SCALAR), ('vec', ColumnType.QUEUE)])
+        que.put(('http://towhee.io', Empty(), Empty()))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 1)
+        self.assertEqual(que.to_list(), [['http://towhee.io', Empty(), Empty()]])
+
+    def test_with_empty_ques(self):
+        que = DataQueue([('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        que.put((Empty(), Empty()))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 0)
+
+    def test_one_empty_que(self):
+        que = DataQueue([ ('vec', ColumnType.QUEUE)])
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 0)
+
+    def test_queu_with_empty_ques(self):
+        que = DataQueue([('image', ColumnType.QUEUE), ('vec', ColumnType.QUEUE)])
+        que.put(('test', Empty()))
+        que.put(('test', Empty()))
+        self.assertEqual(que.size, 0)
+        que.seal()
+        self.assertEqual(que.size, 2)
+
