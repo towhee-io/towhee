@@ -20,3 +20,4 @@ scipy
 contextvars; python_version <= '3.6'
 tenacity
 pydantic
+httpx

@@ -30,6 +30,7 @@ sys.modules['towhee._types'] = sys.modules['towhee.types']
 
 datacollection = LazyImport('datacollection', globals(), 'towhee.datacollection')
 server_builder = LazyImport('server_builder', globals(), 'towhee.serve.server_builder')
+api_service = LazyImport('api_service', globals(), 'towhee.serve.api_service')
 
 
 __all__ = [
@@ -176,8 +177,3 @@ def dataset(name: str, *args, **kwargs) -> 'TorchDataSet':
     }
     torch_dataset = dataset_construct_map[name](*args, **kwargs)
     return TorchDataSet(torch_dataset)
-
-
-
-
-
