@@ -17,7 +17,7 @@ from typing import List
 
 import numpy as np
 from towhee.serve.triton.constant import PIPELINE_NAME
-from towhee.utils.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_json, from_json
 from towhee.utils.log import engine_log
 
 from towhee.utils.triton_httpclient import aio_httpclient
@@ -62,11 +62,11 @@ class Client:
         except Exception as e:  # pylint: disable=broad-except
             engine_log.error(str(e))
             return [None] * inputs[0].shape()[0]
-        return from_triton_data(response.as_numpy('OUTPUT0')[0])
+        return from_json(response.as_numpy('OUTPUT0')[0])
 
     async def _call(self, inputs):
         response = await self._client.infer(self._model_name, inputs)
-        return from_triton_data(response.as_numpy('OUTPUT0')[0])
+        return from_json(response.as_numpy('OUTPUT0')[0])
 
     async def _multi_call(self, caller, batch_inputs):
         fs = []
@@ -105,7 +105,7 @@ class Client:
         inputs = [aio_httpclient.InferInput('INPUT0', [batch_size, 1], 'BYTES')]
         batch = []
         for item in pipe_inputs:
-            batch.append([to_triton_data(item)])
+            batch.append([to_json(item)])
         data = np.array(batch, dtype=np.object_)
         inputs[0].set_data_from_numpy(data)
         return inputs

@@ -15,7 +15,7 @@ import unittest
 
 import numpy as np
 
-from towhee.utils.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_json, from_json
 
 
 class TestNPFormat(unittest.TestCase):
@@ -25,9 +25,9 @@ class TestNPFormat(unittest.TestCase):
     def test_normal(self):
         arr = np.random.rand(2, 4, 4)
         test_data = ['test', 1, arr, [1, 'a', [1, 2]], [arr] * 2, {'1': arr, 'b': [arr]}]
-        s = to_triton_data(test_data)
+        s = to_json(test_data)
 
-        ret = from_triton_data(s)
+        ret = from_json(s)
 
         self.assertTrue((ret[2] == arr).all())
         self.assertTrue((ret[-1]['1'] == arr).all())
@@ -36,4 +36,4 @@ class TestNPFormat(unittest.TestCase):
         arr = np.random.rand(2, 4, 4)
         arr = arr.astype(np.float128)
         with self.assertRaises(ValueError):
-            to_triton_data(arr)
+            to_json(arr)

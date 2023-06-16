@@ -17,7 +17,7 @@ import json
 
 import numpy as np
 from towhee.runtime.data_queue import Empty
-from towhee.utils.serializer import to_triton_data, from_triton_data
+from towhee.utils.serializer import to_json, from_json
 
 class TestSerializer(unittest.TestCase):
     """
@@ -34,11 +34,11 @@ class TestSerializer(unittest.TestCase):
 
     def test_np(self):
         arr = np.arange(4)
-        arr_json = to_triton_data(arr)
-        arr_deserialized = from_triton_data(arr_json)
+        arr_json = to_json(arr)
+        arr_deserialized = from_json(arr_json)
         self.assertTrue((arr==arr_deserialized).all())
 
     def test_empty(self):
-        empty_json = to_triton_data(Empty())
-        empty_deserialized = from_triton_data(empty_json)
+        empty_json = to_json(Empty())
+        empty_deserialized = from_json(empty_json)
         self.assertTrue(empty_deserialized is Empty())

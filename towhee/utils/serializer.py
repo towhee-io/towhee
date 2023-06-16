@@ -131,9 +131,9 @@ class TritonParser(json.JSONDecoder):
         return dct
 
 
-def to_triton_data(data):
+def to_json(data):
     return json.dumps(data, cls=TritonSerializer)
 
 
-def from_triton_data(data):
+def from_json(data):
     return json.loads(data, cls=TritonParser)
