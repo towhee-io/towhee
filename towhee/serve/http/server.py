@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Callable
+import inspect
+from functools import partial
 
 from towhee.utils.thirdparty.fastapi_utils import fastapi
 from towhee.utils.thirdparty.uvicorn_util import uvicorn
+
+from towhee.serve.io import JSON
 
 
 class HTTPServer:
@@ -24,16 +29,38 @@ class HTTPServer:
 
     def __init__(self, api_service: 'APIService'):
         self._app = fastapi.FastAPI()
-        for router in api_service.routers:
-            if router.methods is None:
-                methods = ['POST']
+
+        @self._app.get('/')
+        def index():
+            return api_service.desc
+
+        def func_wrapper(func: Callable, input_model: 'IOBase',
+                         output_model: 'IOBase',request: fastapi.Request):
+            if input_model is None:
+                input_model = JSON()
+
+            if output_model is None:
+                output_model = JSON()
+
+            values = input_model.from_http(request)
+            signature = inspect.signature(func)
+            if len(signature.parameters.keys()) > 1:
+                if isinstance(values, dict):
+                    ret = output_model.to_http(func(**values))
+                else:
+                    ret = output_model.to_http(func(*values))
             else:
-                methods = router.methods if isinstance(router, list) else [router.methods]
+                ret = output_model.to_http(func(values))
+            return ret
+
+        for router in api_service.routers:
+            wrapper = partial(func_wrapper, router.func, router.input_model, router.output_model)
+            wrapper.__name__ = wrapper.func.__name__
+            wrapper.__doc__ = wrapper.func.__doc__
             self._app.add_api_route(
-                router.path or '/',
-                router.func,
-                methods=methods,
-                response_model=router.output_model
+                router.path,
+                wrapper,
+                methods=['POST']
             )
 
     @property

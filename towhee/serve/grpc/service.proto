@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+
+import "google/protobuf/struct.proto";
+
+
+service PipelineServices {
+    rpc Predict(Request) returns (Response);
+}
+
+
+message Content {
+    oneof content {
+
+        string text = 1;
+
+        Tensor tensor = 2;
+
+        google.protobuf.Value json = 3;
+        
+        bytes content_bytes = 4;
+    }    
+}
+
+message Request {
+    string path = 1;
+    
+    Content content = 2;
+}
+
+
+message Response {
+
+    int32 code = 1;
+    
+    string msg = 2;
+    
+    Content content = 3;
+}
+
+message Tensor {
+    string dtype = 1;
+
+    repeated int32 shape = 2;
+
+    TensorContents data = 3;
+}
+
+
+message TensorContents
+{
+    repeated string string_values = 1;
+
+    repeated float float_values = 2 [packed = true];
+
+    repeated double double_values = 3 [packed = true];
+
+    repeated bool bool_values = 4 [packed = true];
+
+    repeated int32 int32_values = 5 [packed = true];
+
+    repeated int64 int64_values = 6 [packed = true];
+
+    repeated uint32 uint32_values = 7 [packed = true];
+
+    repeated uint64 uint64_values = 8 [packed = true];    
+}
