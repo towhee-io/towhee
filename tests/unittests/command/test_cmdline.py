@@ -17,9 +17,7 @@ import argparse
 import os
 from pathlib import Path
 
-from towhee.command.develop import SetupCommand, UninstallCommand
-from towhee.command.repo import RepoCommand
-
+from towhee.command.initialize import InitCommand
 
 public_path = Path(__file__).parent.parent.resolve()
 
@@ -28,40 +26,21 @@ class TestCmdline(unittest.TestCase):
     """
     Unittests for towhee cmdline.
     """
-
-    # @patch('sys.stdout', new_callable=StringIO)
-    # def test_cmd(self, stdout):
-    #     cmd.main()
-    #     self.assertEqual(stdout.getvalue()[0:13], 'usage: towhee')
-
-    def test_develop(self):
-        repo = 'add_operator'
-        repo_path = public_path / 'mock_operators' / repo
-        os.chdir(str(repo_path))
-        args_dev = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=True, user=True)
-        args_ins = argparse.Namespace(action='install', namespace='test', path=str(repo_path), develop=False, user=True)
-        args_unins = argparse.Namespace(action='uninstall', namespace='test', path=str(repo_path))
-
-        SetupCommand(args_ins)()
-        UninstallCommand(args_unins)()
-        SetupCommand(args_dev)()
-        UninstallCommand(args_unins)()
-
-    def test_create(self):
-        pyrepo = 'create_pyoperator'
-        nnrepo = 'cmd/create_nnoperator'
+    def test_init(self):
+        pyrepo = 'towhee/init-pyoperator'
+        nnrepo = 'towhee/init-nnoperator'
         repo_path = public_path / 'mock_operators'
         os.chdir(str(repo_path))
-        args_create_pyop = argparse.Namespace(action='create', type='pyop', dir=str(repo_path), uri=pyrepo, local=True)
-        args_create_nnop = argparse.Namespace(action='create', type='nnop', dir=str(repo_path), uri=nnrepo, local=True)
+        args_init_pyop = argparse.Namespace(action='init', type='pyop', dir=str(repo_path / 'init-pyoperator'), uri=pyrepo, local=True)
+        args_init_nnop = argparse.Namespace(action='init', type='nnop', dir=str(repo_path / 'init-nnoperator'), uri=nnrepo, local=True)
 
-        RepoCommand(args_create_pyop)()
-        RepoCommand(args_create_nnop)()
-        self.assertTrue((repo_path / pyrepo / 'create_pyoperator.py').is_file())
-        self.assertTrue((repo_path / 'create_nnoperator' / 'create_nnoperator.py').is_file())
+        InitCommand(args_init_pyop)()
+        InitCommand(args_init_nnop)()
+        self.assertTrue((repo_path / 'init-pyoperator' / 'init_pyoperator.py').is_file())
+        self.assertTrue((repo_path / 'init-nnoperator' / 'init_nnoperator.py').is_file())
 
-        shutil.rmtree(str(repo_path / pyrepo))
-        shutil.rmtree(str(repo_path / 'create_nnoperator'))
+        shutil.rmtree(str(repo_path / 'init-pyoperator'))
+        shutil.rmtree(str(repo_path / 'init-nnoperator'))
 
 
 if __name__ == '__main__':
