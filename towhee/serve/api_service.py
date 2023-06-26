@@ -17,14 +17,11 @@ from functools import partial
 
 from pydantic import BaseModel
 
-from towhee.utils.serializer import to_json
-
 
 class RouterConfig(BaseModel):
     func: Callable
     input_model: Optional[Any] = None
     output_model: Optional[Any] = None
-    methods:Optional[Union[str, List[str]]] = None
     path: Optional[str] = None
 
 
@@ -38,12 +35,8 @@ class APIService(BaseModel):
         from towhee import AutoPipes, api_service
         from towhee.utils.serializer import to_json
 
-        service = api_service.APIService()
+        service = api_service.APIService('Welcome')
         stn = AutoPipes.pipeline('sentence_embedding')
-
-        @server.api(path='/')
-        def hello():
-            return 'Welcome'
 
         @server.api(path='/embedding')
         def chat(params: List[Any]):
@@ -53,19 +46,18 @@ class APIService(BaseModel):
             from towhee.serve.http.server import HTTPServer
             HTTPServer(service).run('0.0.0.0', 8000)
     """
-
+    desc: str = ''
     routers: Optional[List[RouterConfig]] = None
 
     def api(
             self,
             input_model: Optional[Any] = None,
             output_model: Optional[Any] = None,
-            methods: Optional[Union[str, List[str]]] = None,
             path: Optional[str] = None,
     ):
 
         def decorator(func: Callable):
-            self.add_api(func, input_model, output_model, methods, path)
+            self.add_api(func, input_model, output_model, path)
             return func
 
         return decorator
@@ -75,7 +67,6 @@ class APIService(BaseModel):
             func: Callable,
             input_model: Optional[Any] = None,
             output_model: Optional[Any] = None,
-            methods: Optional[Union[str, List[str]]] = None,
             path: Optional[str] = None
     ):
         if self.routers is None:
@@ -85,10 +76,8 @@ class APIService(BaseModel):
             func=func,
             input_model=input_model,
             output_model=output_model,
-            methods=methods,
             path=path
         ))
-
 
 
 def build_service(pipelines: Union[Tuple['RuntimPipeline', str], List[Tuple['RuntimPipeline', str]]],
@@ -110,17 +99,23 @@ def build_service(pipelines: Union[Tuple['RuntimPipeline', str], List[Tuple['Run
             HTTPServer(service).run('0.0.0.0', 8000)
     """
 
-    service = APIService()
+    service = APIService(desc=desc)
 
-    @service.api(path='/', methods='GET')
-    def index():
-        return desc
-
-    def pipe_caller(p: Callable, params: List[Any]):
-        ret = p(*params)
+    def pipe_caller(p: Callable, params: Any):
+        ret = p(params)
         if hasattr(ret, 'to_list'):
             ret = ret.to_list()
-        return to_json(ret)
+        return ret
+
+    def batch(p: Callable, params: List[Any]):
+        ret_data = []
+        rets = p.batch(params)
+        for ret in rets:
+            if hasattr(ret, 'to_list'):
+                ret_data.append(ret.to_list())
+            else:
+                ret_data.append(ret)
+        return ret_data
 
     if not isinstance(pipelines, list):
         pipelines = [pipelines]
@@ -129,6 +124,13 @@ def build_service(pipelines: Union[Tuple['RuntimPipeline', str], List[Tuple['Run
         caller = partial(pipe_caller, p[0])
         caller.__name__ = caller.func.__name__
         caller.__doc__ = caller.func.__doc__
+        caller.__code__ = caller.func.__code__
         service.add_api(caller, path=p[1])
+        if hasattr(p[0], 'batch'):
+            batch_caller = partial(batch, p[0])
+            batch_caller.__name__ = batch_caller.func.__name__
+            batch_caller.__doc__ = batch_caller.func.__doc__
+            batch_caller.__code__ = batch_caller.func.__code__
+            service.add_api(batch_caller, path=p[1] + '/batch')
 
     return service

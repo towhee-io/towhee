@@ -139,7 +139,7 @@ class Node(ABC):
 
     def _set_end_status(self, status: NodeStatus):
         self._set_status(status)
-        engine_log.info('%s ends with status: %s', self.name, status)
+        engine_log.debug('%s ends with status: %s', self.name, status)
         for que in self._in_ques:
             que.seal()
         for out in self._output_ques:
@@ -164,7 +164,7 @@ class Node(ABC):
         raise NotImplementedError
 
     def process(self):
-        engine_log.info('Begin to run %s', str(self))
+        engine_log.debug('Begin to run %s', str(self))
         self._set_status(NodeStatus.RUNNING)
         while not self._need_stop and not NodeStatus.is_end(self.status):
             try:

@@ -13,12 +13,16 @@
 # limitations under the License.
 
 import unittest
-import json
+import typing as T
+from pydantic import BaseModel
 
+from towhee.utils.thirdparty.fastapi_utils import fastapi  # pylint: disable=unused-import
+from fastapi.testclient import TestClient
+
+# pylint: disable=ungrouped-imports
 from towhee import api_service, pipe
 from towhee.serve.http.server import HTTPServer
-
-from fastapi.testclient import TestClient
+from towhee.serve.io.json_io import JSON
 
 
 class TestHTTPServer(unittest.TestCase):
@@ -41,13 +45,64 @@ class TestHTTPServer(unittest.TestCase):
         response = client.get('/')
         assert response.status_code == 200
 
-        response = client.post('/echo', json=[1])
+        response = client.post('/echo', json=1)
         assert response.status_code == 200
-        self.assertEqual(json.loads(response.json()), 1)
+        self.assertEqual(response.json(), 1)
 
-        response = client.post('/add_one', json=[1])
+        response = client.post('/add_one', json=1)
         assert response.status_code == 200
-        self.assertEqual(json.loads(response.json()), 2)
+        self.assertEqual(response.json(), 2)
+
+    def test_with_model(self):
+        class Item(BaseModel):
+            url: str
+            ids: T.List[int]
+
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/test', input_model = JSON(Item), output_model=JSON(Item))
+        def test(item: Item):
+            return item
+
+        server = HTTPServer(service)
+        client = TestClient(server.app)
+        response = client.get('/')
+        assert response.status_code == 200
+
+        data = Item(
+            url='test_url',
+            ids=[1, 2, 3]
+        )
+
+        response = client.post('/test', json=data.dict())
+        assert response.status_code == 200
+        self.assertEqual(response.json(), data.dict())
+
+    def test_muilt_params(self):
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/test')
+        def test(url: str, ids: T.List[int]):
+            return {'url': url, 'ids': ids}
+
+        @service.api(path='/test_list')
+        def test_list(url: str, ids: T.List[int]):
+            return [url, ids]
+
+        server = HTTPServer(service)
+        client = TestClient(server.app)
+        response = client.get('/')
+        assert response.status_code == 200
+
+        data = {'url': 'my_test_url', 'ids': [2, 3, 4]}
+        response = client.post('/test', json=data)
+        assert response.status_code == 200
+        self.assertEqual(response.json(), data)
+
+        data = ['my_test_url', [2, 3, 4]]
+        response = client.post('/test_list', json=data)
+        assert response.status_code == 200
+        self.assertEqual(response.json(), data)
 
 
     def test_pipeline(self):
@@ -62,6 +117,12 @@ class TestHTTPServer(unittest.TestCase):
         response = client.get('/')
         assert response.status_code == 200
 
-        response = client.post('/sum', json=[[1, 2, 3]])
+        response = client.post('/sum', json=[1, 2, 3])
         assert response.status_code == 200
-        self.assertEqual(json.loads(response.json())[0][0], 6)
+        self.assertEqual(response.json()[0][0], 6)
+
+        response = client.post('/sum/batch', json=[[1, 2, 3], [2, 3, 4], [4, 5, 6]])
+        assert response.status_code == 200
+        self.assertEqual(response.json()[0][0][0], 6)
+        self.assertEqual(response.json()[1][0][0], 9)
+        self.assertEqual(response.json()[2][0][0], 15)
