@@ -15,10 +15,7 @@
 import sys
 import argparse
 
-from towhee.command.develop import SetupCommand, UninstallCommand
-from towhee.command.execute import PackageCommand, UploadCommand
-from towhee.command.user import UserCommand, WhoCommand, LogoutCommand
-from towhee.command.repo import RepoCommand
+from towhee.command.initialize import InitCommand
 
 
 def main_body(args):
@@ -26,14 +23,7 @@ def main_body(args):
     subparsers = parser.add_subparsers(dest='action', description='towhee command line tool.')
 
     actions = {
-        'upload': UploadCommand,
-        'package': PackageCommand,
-        'install': SetupCommand,
-        'uninstall': UninstallCommand,
-        'login': UserCommand,
-        'logout': LogoutCommand,
-        'whoami': WhoCommand,
-        'create': RepoCommand
+        'init': InitCommand,
     }
 
     for _, impl in actions.items():
