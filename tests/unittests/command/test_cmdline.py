@@ -11,16 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=consider-using-with
+import os
+import sys
+import json
 import shutil
+import time
 import unittest
 import argparse
-import os
+import requests
+import subprocess
+
 from pathlib import Path
-
 from towhee.command.initialize import InitCommand
+from towhee.serve.grpc.client import Client
+from towhee.utils.serializer import from_json
 
-public_path = Path(__file__).parent.parent.resolve()
-
+PUBLIC_PATH = Path(__file__).parent.parent.resolve()
+FILE_PATH = PUBLIC_PATH.parent.parent / 'towhee' / 'command' / 'cmdline.py'
+PYTHON_PATH = ':'.join(sys.path)
 
 class TestCmdline(unittest.TestCase):
     """
@@ -29,7 +39,7 @@ class TestCmdline(unittest.TestCase):
     def test_init(self):
         pyrepo = 'towhee/init-pyoperator'
         nnrepo = 'towhee/init-nnoperator'
-        repo_path = public_path / 'mock_operators'
+        repo_path = PUBLIC_PATH / 'mock_operators'
         os.chdir(str(repo_path))
         args_init_pyop = argparse.Namespace(action='init', type='pyop', dir=str(repo_path / 'init-pyoperator'), uri=pyrepo, local=True)
         args_init_nnop = argparse.Namespace(action='init', type='nnop', dir=str(repo_path / 'init-nnoperator'), uri=nnrepo, local=True)
@@ -41,6 +51,31 @@ class TestCmdline(unittest.TestCase):
 
         shutil.rmtree(str(repo_path / 'init-pyoperator'))
         shutil.rmtree(str(repo_path / 'init-nnoperator'))
+
+    def test_http_server(self):
+        p = subprocess.Popen(
+            [sys.executable, FILE_PATH, 'server', '--host', '0.0.0.0', '--port', '40001', '--python', 'main_test.py', '--http'],
+            cwd=__file__.rsplit('/', 1)[0],
+            env={'PYTHONPATH': PYTHON_PATH}
+        )
+        time.sleep(2)
+        res = requests.post(url='http://0.0.0.0:40001/echo', data=json.dumps(1), timeout=3).json()
+        p.terminate()
+
+        self.assertEqual(res, 1)
+
+    def test_grpc_server(self):
+        p = subprocess.Popen(
+            [sys.executable, FILE_PATH, 'server', '--host', '0.0.0.0', '--port', '50001', '--python', 'main_test.py', '--grpc'],
+            cwd=__file__.rsplit('/', 1)[0],
+            env={'PYTHONPATH': PYTHON_PATH}
+        )
+        time.sleep(2)
+        grpc_client = Client(host='0.0.0.0', port=50001)
+        res = grpc_client('/echo', 1)
+        p.terminate()
+
+        self.assertEqual(from_json(res.content), 1)
 
 
 if __name__ == '__main__':

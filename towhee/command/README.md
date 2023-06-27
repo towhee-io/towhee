@@ -24,13 +24,14 @@ $ towhee -h
 usage: towhee
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help     show this help message and exit
 
 subcommands:
   towhee command line tool.
 
-  {init}
-    init      Init operator and generate template file.
+  {init,server}
+    init         Init operator and generate template file.
+    server       Wrap and start pipelines as services.
 ```
 
 ## Usage
@@ -54,16 +55,44 @@ optional arguments:
                         optional, operator type, defaults to 'pyop'.
 ```
 
+### Start Pipeline Service
+#### `server`
+```bash
+$ towhee server -h
+usage: towhee server [-h] [-s HOST] [-p PORT] [-i INTERFACE] [--repo REPO] [--python PYTHON] [--http] [--grpc]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s HOST, --host HOST  The service host.
+  -p PORT, --port PORT  The service port.
+  -i INTERFACE, --interface INTERFACE
+                        The service interface, i.e. the APIService object defined in python file.
+  --repo REPO           Repo of the pipeline on towhee hub to start the service.
+  --python PYTHON       Path to the python file that define the pipeline.
+  --http                Start service by HTTP.
+  --grpc                Start service by GRPC.
+```
+
 ## Examples
 
 ### Init Operator
 
-- **Create Operator in Towhee hub**
+- **Initialize Operators**
 
-  Initialize operator from the [Towhee hub](https://towhee.io/operators).This command will clone the repository and initialize it according to different operator types.
+  Initialize operator from the [Towhee hub](https://towhee.io/operators). This command will clone the repository and initialize it according to different operator types.
 
   > There are two kinds of operator namely `pyop` and `nnop`, `pyop` is the operator that contains python processing function only, and `nnop` is the operator that involves neural networks.
 
   ```bash
   $ towhee init <repo-author>/<repo-name> -t <operator-type> -d <directory>
+  ```
+
+### Start Pipeline Service
+
+- **Start service**
+
+  Start pipelines as services. This command will start pipeline sevices according to the specified python file or pipeline repository.
+
+  ```bash
+  $ towhee server --host <host> --port <port> --interface <interface> --python <path-to-python-file> --http/--grpc
   ```
