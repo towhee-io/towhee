@@ -14,13 +14,14 @@
 
 import typing as T
 from pydantic import BaseModel
+import numpy as np
 
 from towhee.utils.thirdparty.grpc_utils import grpc
 
 from . import service_pb2
 from . import service_pb2_grpc
 
-from towhee.serve.io import JSON, TEXT
+from towhee.serve.io import JSON, TEXT, NDARRAY, BYTES
 
 
 class Response(BaseModel):
@@ -39,15 +40,21 @@ class Client:
         self._stub = service_pb2_grpc.PipelineServicesStub(self._channel)
 
     def _gen_input(self, name: str, params: T.Any, model: 'IOBase') -> 'Request':
+        if params is None:
+            return service_pb2.Request(path=name)
+
         return service_pb2.Request(path=name, content=model.to_proto(params))
 
     def _parse_output(self, content: 'service_pb2.Content'):
         field_name = content.WhichOneof('content')
-        if field_name == 'json':
-            return JSON().from_proto(content)
+        if field_name == 'content_bytes':
+            return BYTES().from_proto(content)
         elif field_name == 'text':
             return TEXT().from_proto(content)
-        return None
+        elif field_name == 'tensor':
+            return NDARRAY().from_proto(content)
+        else:
+            return JSON().from_proto(content)
 
     def __enter__(self):
         return self
@@ -55,9 +62,16 @@ class Client:
     def __exit__(self, *exc_details):
         self.close()
 
-    def __call__(self, name: str, params: T.Any, model: T.Optional['IOBase'] = None):
+    def __call__(self, name: str, params: T.Any = None, model: T.Optional['IOBase'] = None):
         if model is None:
-            model = JSON()
+            if isinstance(params, bytes):
+                model = BYTES()
+            elif isinstance(params, np.ndarray):
+                model = NDARRAY()
+            elif isinstance(params, str):
+                model = TEXT()
+            else:
+                model = JSON()
 
         msg = self._gen_input(name, params, model)
         response = self._stub.Predict(msg)

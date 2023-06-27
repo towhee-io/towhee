@@ -34,8 +34,10 @@ class HTTPServer:
         def index():
             return api_service.desc
 
-        def func_wrapper(func: Callable, input_model: 'IOBase',
-                         output_model: 'IOBase',request: fastapi.Request):
+        def func_wrapper(func: Callable,
+                         input_model: 'IOBase',
+                         output_model: 'IOBase',
+                         request: fastapi.Request):
             if input_model is None:
                 input_model = JSON()
 
@@ -49,8 +51,10 @@ class HTTPServer:
                     ret = output_model.to_http(func(**values))
                 else:
                     ret = output_model.to_http(func(*values))
-            else:
+            elif len(signature.parameters.keys()) == 1:
                 ret = output_model.to_http(func(values))
+            else:
+                ret = output_model.to_http(func())
             return ret
 
         for router in api_service.routers:

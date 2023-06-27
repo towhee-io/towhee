@@ -21,7 +21,7 @@ from towhee.utils.thirdparty.grpc_utils import grpc
 
 from . import service_pb2
 from . import service_pb2_grpc
-from towhee.serve.io import IOType, JSON, TEXT
+from towhee.serve.io import JSON, TEXT, BYTES, NDARRAY
 
 from towhee.utils.log import engine_log
 
@@ -37,18 +37,22 @@ class _PipelineImpl(service_pb2_grpc.PipelineServicesServicer):
             self._router_map[router.path] = router
 
     def parse_input(self, input_model: 'IOBase', content: 'service_pb2.Content'):
-        input_model = input_model or JSON()
+        if input_model is None:
+            field_name = content.WhichOneof('content')
+            if field_name == 'text':
+                input_model = TEXT()
+            elif field_name == 'tensor':
+                input_model = NDARRAY()
+            elif field_name == 'content_bytes':
+                input_model = BYTES()
+            else:
+                input_model = JSON()
         return input_model.from_proto(content)
 
     def gen_output(self, output_model, ret: T.Any):
         output_model = output_model or TEXT()
-        if output_model.data_type == IOType.JSON:
-            return service_pb2.Response(content=output_model.to_proto(ret),
-                                        code=0, msg='Succ')
-        elif output_model.data_type == IOType.TEXT:
-            return service_pb2.Response(content=output_model.to_proto(ret),
-                                        code=0, msg='Succ')
-        return service_pb2.Response(code=-1, msg='Unkown output model')
+        return service_pb2.Response(content=output_model.to_proto(ret),
+                                    code=0, msg='Succ')
 
     def _run_func(self, request):
         values = self.parse_input(self._router_map[request.path].input_model, request.content)
@@ -59,8 +63,10 @@ class _PipelineImpl(service_pb2_grpc.PipelineServicesServicer):
                 ret = func(**values)
             else:
                 ret = func(*values)
-        else:
+        elif len(signature.parameters.keys()) == 1:
             ret = func(values)
+        else:
+            ret = func()
         return self.gen_output(self._router_map[request.path].output_model, ret)
 
     def Predict(self, request, context):
