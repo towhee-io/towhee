@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from typing import Any
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
@@ -20,6 +20,8 @@ from enum import Enum, auto
 class IOType(Enum):
     JSON = auto()
     TEXT = auto()
+    NDARRAY = auto()
+    BYTES = auto()
 
 
 class IOBase(ABC):
@@ -32,11 +34,11 @@ class IOBase(ABC):
         cls._data_type = io_type
 
     @abstractmethod
-    def from_http(self, request):
+    def from_http(self, request: 'fastapi.Request'):
         raise NotImplementedError
 
     @abstractmethod
-    def to_http(self, obj, ctx):
+    def to_http(self, obj: Any):
         raise NotImplementedError
 
     @abstractmethod
@@ -44,7 +46,7 @@ class IOBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def to_proto(self, obj):
+    def to_proto(self, obj: Any) -> 'service_pb2.Content':
         raise NotImplementedError
 
     @property

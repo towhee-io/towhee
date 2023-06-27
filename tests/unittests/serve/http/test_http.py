@@ -15,6 +15,7 @@
 import unittest
 import typing as T
 from pydantic import BaseModel
+import numpy as np
 
 from towhee.utils.thirdparty.fastapi_utils import fastapi  # pylint: disable=unused-import
 from fastapi.testclient import TestClient
@@ -22,7 +23,8 @@ from fastapi.testclient import TestClient
 # pylint: disable=ungrouped-imports
 from towhee import api_service, pipe
 from towhee.serve.http.server import HTTPServer
-from towhee.serve.io.json_io import JSON
+from towhee.serve.io import JSON, NDARRAY, BYTES
+from towhee.utils.serializer import to_json, from_json
 
 
 class TestHTTPServer(unittest.TestCase):
@@ -126,3 +128,30 @@ class TestHTTPServer(unittest.TestCase):
         self.assertEqual(response.json()[0][0][0], 6)
         self.assertEqual(response.json()[1][0][0], 9)
         self.assertEqual(response.json()[2][0][0], 15)
+
+    def test_ndarray_io(self):
+        service = api_service.APIService(desc='test')
+
+        arr = np.random.rand(1024)
+
+        @service.api(path='/echo', output_model=NDARRAY())
+        def test(arr: 'ndarray'):
+            return arr
+
+        server = HTTPServer(service)
+        client = TestClient(server.app)
+        response = client.post('/echo', data=to_json(arr))
+        self.assertTrue(isinstance(from_json(response.content), np.ndarray))
+
+    def test_bytes_io(self):
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/echo', input_model=BYTES(), output_model=BYTES())
+        def test(b: bytes):
+            assert isinstance(b, bytes)
+            return b'welcome'
+
+        server = HTTPServer(service)
+        client = TestClient(server.app)
+        response = client.post('/echo', content=b'Hello Towhee')
+        self.assertTrue(isinstance(response.content, bytes))

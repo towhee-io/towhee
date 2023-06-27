@@ -20,7 +20,7 @@ import numpy as np
 from towhee import api_service, pipe
 from towhee.serve.grpc.server import GRPCServer
 from towhee.serve.grpc.client import Client
-from towhee.serve.io import JSON
+from towhee.serve.io import JSON, NDARRAY, BYTES
 from towhee.utils.serializer import from_json
 
 
@@ -153,3 +153,65 @@ class TestGRPC(unittest.TestCase):
             self.assertEqual(response.code, 0)
             content = from_json(response.content)
             self.assertEqual(content[0][0], 6)
+
+    def test_ndarray_io(self):
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/test', output_model=NDARRAY())
+        def test():
+            return np.random.rand(1024)
+
+        @service.api(path='/echo', input_model=NDARRAY(), output_model=NDARRAY())
+        def test2(arr: 'ndarray'):
+            return arr
+
+        @service.api(path='/unkown_model', output_model=NDARRAY())
+        def test3(arr: 'ndarray'):
+            return arr
+
+        self.server = GRPCServer(service)
+
+        self.server.start('localhost', 50001)
+        client = Client('localhost', 50001)
+        with Client('localhost', 50001) as client:
+            response = client('/test')
+            self.assertTrue(isinstance(response.content, np.ndarray))
+
+            arr = np.random.rand(1024)
+            response = client('/echo', arr, NDARRAY())
+            self.assertTrue(np.array_equal(arr, response.content))
+
+            response = client('/echo', arr)
+            self.assertTrue(np.array_equal(arr, response.content))
+
+            response = client('/unkown_model', arr)
+            self.assertTrue(np.array_equal(arr, response.content))
+
+            with self.assertRaises(AssertionError):
+                client('/echo', 'error_type', NDARRAY())
+
+    def test_bytes_io(self):
+        test_str = 'Hello towhee'
+        b = bytes(test_str, 'utf-8')
+
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/echo', input_model=BYTES(), output_model=BYTES())
+        def test2(b: bytes):
+            assert isinstance(b, bytes)
+            s = b.decode('utf-8')
+            assert s == test_str
+            return bytes('welcome', 'utf-8')
+
+        self.server = GRPCServer(service)
+        self.server.start('localhost', 50001)
+
+        with Client('localhost', 50001) as client:
+            response = client('/echo', b, BYTES())
+            self.assertEqual(b'welcome', response.content)
+
+            response = client('/echo', b)
+            self.assertEqual(b'welcome', response.content)
+
+            with self.assertRaises(AssertionError):
+                client('/echo', 'error_type', NDARRAY())

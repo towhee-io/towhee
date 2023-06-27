@@ -109,6 +109,3 @@ class Client:
         data = np.array(batch, dtype=np.object_)
         inputs[0].set_data_from_numpy(data)
         return inputs
-
-    def __del__(self):
-        self.close()
