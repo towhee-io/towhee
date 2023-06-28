@@ -155,3 +155,15 @@ class TestHTTPServer(unittest.TestCase):
         client = TestClient(server.app)
         response = client.post('/echo', content=b'Hello Towhee')
         self.assertTrue(isinstance(response.content, bytes))
+
+    def test_no_input(self):
+        service = api_service.APIService(desc='test')
+
+        @service.api(path='/no_input')
+        def test():
+            return 'No input'
+
+        server = HTTPServer(service)
+        client = TestClient(server.app)
+        response = client.post('/no_input')
+        self.assertEqual(from_json(response.content), 'No input')

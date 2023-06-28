@@ -52,7 +52,6 @@ class Client:
     """
 
     def __init__(self, url: str, model_name: str = PIPELINE_NAME):
-        self._loop = asyncio.get_event_loop()
         self._client = aio_httpclient.InferenceServerClient(url)
         self._model_name = model_name
 
@@ -78,12 +77,12 @@ class Client:
         if len(inputs) > 1:
             inputs = [inputs]
         inputs = self._solve_inputs(inputs)
-        return self._loop.run_until_complete(self._call(inputs))[0]
+        return asyncio.run(self._call(inputs))[0]
 
     def batch(self, pipe_inputs: List, batch_size=4, safe=False):
         batch_inputs = [self._solve_inputs(pipe_inputs[i: i + batch_size]) for i in range(0, len(pipe_inputs), batch_size)]
         caller = self._safe_call if safe else self._call
-        outputs = self._loop.run_until_complete(self._multi_call(caller, batch_inputs))
+        outputs = asyncio.run(self._multi_call(caller, batch_inputs))
         ret = []
         for batch in outputs:
             for single in batch:
@@ -97,7 +96,7 @@ class Client:
         self.close()
 
     def close(self):
-        self._loop.run_until_complete(self._client.close())
+        asyncio.run(self._client.close())
 
     @staticmethod
     def _solve_inputs(pipe_inputs):

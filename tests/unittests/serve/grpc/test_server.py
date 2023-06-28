@@ -14,12 +14,14 @@
 
 import unittest
 import typing as T
+import asyncio
+
 from pydantic import BaseModel
 import numpy as np
 
 from towhee import api_service, pipe
 from towhee.serve.grpc.server import GRPCServer
-from towhee.serve.grpc.client import Client
+from towhee.serve.grpc.client import Client, AsyncClient
 from towhee.serve.io import JSON, NDARRAY, BYTES
 from towhee.utils.serializer import from_json
 
@@ -48,6 +50,13 @@ class TestGRPC(unittest.TestCase):
 
         response = client('/add_one', 1)
         self.assertEqual(from_json(response.content), 2)
+        client.close()
+
+        async def run_async():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/add_one', 1)
+                self.assertEqual(from_json(response.content), 2)
+        asyncio.run(run_async())
 
     def test_with_model(self):
         class Item(BaseModel):
@@ -71,6 +80,12 @@ class TestGRPC(unittest.TestCase):
 
         response = client('/test', data.dict())
         self.assertEqual(response.content, data.dict())
+
+        async def run_async():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/test', data.dict())
+                self.assertEqual(response.content, data.dict())
+        asyncio.run(run_async())
 
     def test_muilt_params(self):
         service = api_service.APIService(desc='test')
@@ -99,6 +114,12 @@ class TestGRPC(unittest.TestCase):
         response = client('/not_exist', '')
         self.assertEqual(response.code, -1)
 
+        async def run_async():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/test_list', data)
+                self.assertEqual(response.content, data)
+        asyncio.run(run_async())
+
     def test_pipeline(self):
         self.server = GRPCServer(
             api_service.build_service(
@@ -116,6 +137,13 @@ class TestGRPC(unittest.TestCase):
         self.assertEqual(content[0][0][0], 6)
         self.assertEqual(content[1][0][0], 9)
         self.assertEqual(content[2][0][0], 15)
+
+        async def run_async():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/sum', [1, 2, 3])
+                content = from_json(response.content)
+                self.assertEqual(content[0][0], 6)
+        asyncio.run(run_async())
 
     def test_numpy(self):
         p = (
@@ -139,6 +167,17 @@ class TestGRPC(unittest.TestCase):
         self.assertEqual(content[0][1], 1)
         self.assertEqual(content[1][1], 2)
         self.assertEqual(content[2][1], 3)
+
+        async def run_async():
+            aclient = AsyncClient('localhost', 50001)
+            response = await aclient('/numpys', [1, 2, 3])
+            content = from_json(response.content)
+            self.assertEqual(content[0][1], 1)
+            self.assertEqual(content[1][1], 2)
+            self.assertEqual(content[2][1], 3)
+            await aclient.close()
+
+        asyncio.run(run_async())
 
     def test_with(self):
         self.server = GRPCServer(
@@ -172,7 +211,6 @@ class TestGRPC(unittest.TestCase):
         self.server = GRPCServer(service)
 
         self.server.start('localhost', 50001)
-        client = Client('localhost', 50001)
         with Client('localhost', 50001) as client:
             response = client('/test')
             self.assertTrue(isinstance(response.content, np.ndarray))
@@ -189,6 +227,30 @@ class TestGRPC(unittest.TestCase):
 
             with self.assertRaises(AssertionError):
                 client('/echo', 'error_type', NDARRAY())
+
+        # async client
+        async def call():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/test')
+                self.assertTrue(isinstance(response.content, np.ndarray))
+
+                arr = np.random.rand(1024)
+                response = await aclient('/echo', arr, NDARRAY())
+                self.assertTrue(np.array_equal(arr, response.content))
+
+                response = await aclient('/echo', arr)
+                self.assertTrue(np.array_equal(arr, response.content))
+
+                response = await aclient('/unkown_model', arr)
+                self.assertTrue(np.array_equal(arr, response.content))
+
+                with self.assertRaises(AssertionError):
+                    await aclient('/echo', 'error_type', NDARRAY())
+
+        async def run():
+            await asyncio.gather(call(), call(), call())
+
+        asyncio.run(run())
 
     def test_bytes_io(self):
         test_str = 'Hello towhee'
@@ -215,3 +277,16 @@ class TestGRPC(unittest.TestCase):
 
             with self.assertRaises(AssertionError):
                 client('/echo', 'error_type', NDARRAY())
+
+        async def run_async():
+            async with AsyncClient('localhost', 50001) as aclient:
+                response = await aclient('/echo', b, BYTES())
+                self.assertEqual(b'welcome', response.content)
+
+                response = await aclient('/echo', b)
+                self.assertEqual(b'welcome', response.content)
+
+                with self.assertRaises(AssertionError):
+                    await aclient('/echo', 'error_type', NDARRAY())
+
+        asyncio.run(run_async())
