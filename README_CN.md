@@ -127,7 +127,7 @@ p = (
     .output('text', 'images')
 )
 
-DataCollection(p('a cat')).show()
+DataCollection(p('puppy Corgi')).show()
 ```
 
 
