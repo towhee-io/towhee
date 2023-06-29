@@ -122,7 +122,7 @@ p = (
     .output('text', 'images')
 )
 
-DataCollection(p('a cat')).show()
+DataCollection(p('puppy Corgi')).show()
 
 ```
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
