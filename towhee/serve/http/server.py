@@ -28,7 +28,10 @@ class HTTPServer:
     """
 
     def __init__(self, api_service: 'APIService'):
-        self._app = fastapi.FastAPI()
+        self._app = fastapi.FastAPI(
+            docs_url=None,
+            redoc_url=None,
+        )
 
         @self._app.get('/')
         def index():
@@ -44,23 +47,24 @@ class HTTPServer:
             if output_model is None:
                 output_model = JSON()
 
-            values = input_model.from_http(request)
             signature = inspect.signature(func)
+            if len(signature.parameters.keys()) == 0:
+                return output_model.to_http(func())
+
+            values = input_model.from_http(request)
             if len(signature.parameters.keys()) > 1:
                 if isinstance(values, dict):
                     ret = output_model.to_http(func(**values))
                 else:
                     ret = output_model.to_http(func(*values))
-            elif len(signature.parameters.keys()) == 1:
-                ret = output_model.to_http(func(values))
             else:
-                ret = output_model.to_http(func())
+                ret = output_model.to_http(func(values))
             return ret
 
         for router in api_service.routers:
             wrapper = partial(func_wrapper, router.func, router.input_model, router.output_model)
-            wrapper.__name__ = wrapper.func.__name__
-            wrapper.__doc__ = wrapper.func.__doc__
+            wrapper.__name__ = router.func.__name__
+            wrapper.__doc__ = router.func.__doc__
             self._app.add_api_route(
                 router.path,
                 wrapper,
