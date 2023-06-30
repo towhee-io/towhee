@@ -16,6 +16,7 @@ import sys
 import argparse
 
 from towhee.command.initialize import InitCommand
+from towhee.command.service import ServerCommand
 
 
 def main_body(args):
@@ -24,6 +25,7 @@ def main_body(args):
 
     actions = {
         'init': InitCommand,
+        'server': ServerCommand
     }
 
     for _, impl in actions.items():
