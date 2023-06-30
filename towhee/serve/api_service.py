@@ -31,21 +31,51 @@ class APIService(BaseModel):
     After the definition is completed, you can use HTTPServer or the GRPCServer to started it.
 
     Example:
-        from typing import List, Any
+        import typing as T
+        from pydantic import BaseModel
         from towhee import AutoPipes, api_service
-        from towhee.utils.serializer import to_json
+        from towhee.serve.io import JSON
 
-        service = api_service.APIService('Welcome')
+        service = api_service.APIService(desc="Welcome")
         stn = AutoPipes.pipeline('sentence_embedding')
 
-        @server.api(path='/embedding')
-        def chat(params: List[Any]):
-            return to_json(stn(*params).to_list())
+        @service.api(path='/embedding')
+        def chat(params: T.List[T.Any]):
+            return stn(*params).to_list()
+
+        class Item(BaseModel):
+            url: str
+            ids: T.List[int]
+
+        @service.api(path='/echo', input_model = JSON(Item), output_model=JSON(Item))
+        def echo(item: Item):
+            return item
 
         if __name__ == '__main__':
-            from towhee.serve.http.server import HTTPServer
-            HTTPServer(service).run('0.0.0.0', 8000)
+            import sys
+            if sys.argv[1] == 'http':
+                from towhee.serve.http.server import HTTPServer
+                HTTPServer(service).run('0.0.0.0', 8000)
+            else:
+                import logging
+                from towhee.utils.log import engine_log
+                engine_log.setLevel(logging.INFO)
+                from towhee.serve.grpc.server import GRPCServer
+                GRPCServer(service).run('0.0.0.0', 8000)
+
+        Client Example:
+            http:
+                import requests
+                requests.post('http://127.0.0.1:8000/echo', json={'url': 1, 'ids': [1, 2]}).json()
+                requests.post('http://127.0.0.1:8000/embedding', json=['hello world']).json()
+
+            grpc:
+                from towhee.serve.grpc.client import Client
+                c = Client('0.0.0.0', 8000)
+                c('/echo', {'url': 1, 'ids': [1, 2]})
+                c('/embedding', ['hello'])
     """
+
     desc: str = ''
     routers: Optional[List[RouterConfig]] = None
 

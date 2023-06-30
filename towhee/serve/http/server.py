@@ -15,11 +15,13 @@
 from typing import Callable
 import inspect
 from functools import partial
+import traceback
 
 from towhee.utils.thirdparty.fastapi_utils import fastapi
 from towhee.utils.thirdparty.uvicorn_util import uvicorn
 
 from towhee.serve.io import JSON
+from towhee.utils.log import engine_log
 
 
 class HTTPServer:
@@ -28,10 +30,7 @@ class HTTPServer:
     """
 
     def __init__(self, api_service: 'APIService'):
-        self._app = fastapi.FastAPI(
-            docs_url=None,
-            redoc_url=None,
-        )
+        self._app = fastapi.FastAPI()
 
         @self._app.get('/')
         def index():
@@ -47,19 +46,24 @@ class HTTPServer:
             if output_model is None:
                 output_model = JSON()
 
-            signature = inspect.signature(func)
-            if len(signature.parameters.keys()) == 0:
-                return output_model.to_http(func())
+            try:
+                signature = inspect.signature(func)
+                if len(signature.parameters.keys()) == 0:
+                    return output_model.to_http(func())
 
-            values = input_model.from_http(request)
-            if len(signature.parameters.keys()) > 1:
-                if isinstance(values, dict):
-                    ret = output_model.to_http(func(**values))
+                values = input_model.from_http(request)
+                if len(signature.parameters.keys()) > 1:
+                    if isinstance(values, dict):
+                        ret = output_model.to_http(func(**values))
+                    else:
+                        ret = output_model.to_http(func(*values))
                 else:
-                    ret = output_model.to_http(func(*values))
-            else:
-                ret = output_model.to_http(func(values))
-            return ret
+                    ret = output_model.to_http(func(values))
+                return ret
+            except Exception as e:
+                err = traceback.format_exc()
+                engine_log.error(err)
+                raise RuntimeError(err) from e
 
         for router in api_service.routers:
             wrapper = partial(func_wrapper, router.func, router.input_model, router.output_model)

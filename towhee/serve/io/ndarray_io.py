@@ -45,8 +45,20 @@ dtype_to_type_str_map = {
 
 
 class NDARRAY(IOBase, io_type=IOType.NDARRAY):
-    """
-    numpy ndarray
+    """Numpy Ndarray
+
+    Example:
+        import typing as T
+        from pydantic import BaseModel
+        from towhee import AutoPipes, api_service
+        from towhee.serve.io import TEXT, NDARRAY
+
+        service = api_service.APIService(desc="Welcome")
+        stn = AutoPipes.pipeline('sentence_embedding')
+
+        @service.api(path='/embedding', input_model=TEXT(), output_model=NDARRAY())
+        def chat(text: str):
+            return stn(text).to_list()[0][0]
     """
 
     _mime_type = 'application/json'
