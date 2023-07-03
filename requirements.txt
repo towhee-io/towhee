@@ -5,4 +5,4 @@ numpy
 twine
 tenacity
 contextvars; python_version <= '3.6'
-pydantic
+pydantic<2
