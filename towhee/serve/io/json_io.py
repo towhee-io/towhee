@@ -23,8 +23,40 @@ from towhee.utils.serializer import to_json, from_json
 
 
 class JSON(IOBase, io_type=IOType.JSON):
-    """
-    JSON IO
+    """JSON IO
+
+    Example:
+        import typing as T
+        from pydantic import BaseModel
+        from towhee import AutoPipes, api_service
+        from towhee.serve.io import JSON
+
+        service = api_service.APIService(desc="Welcome")
+        stn = AutoPipes.pipeline('sentence_embedding')
+
+        @service.api(path='/embedding', input_model = JSON(), output_model=JSON())
+        def chat(params: T.List[T.Any]):
+            return stn(*params).to_list()
+
+        class Item(BaseModel):
+            url: str
+            ids: T.List[int]
+
+        @service.api(path='/echo', input_model = JSON(Item), output_model=JSON(Item))
+        def echo(item: Item):
+            return item
+
+        Client Example:
+            http:
+                import requests
+                requests.post('http://127.0.0.1:8000/echo', json={'url': 1, 'ids': [1, 2]}).json()
+                requests.post('http://127.0.0.1:8000/embedding', json=['hello world']).json()
+
+            grpc:
+                from towhee.serve.grpc.client import Client
+                c = Client('0.0.0.0', 8000)
+                c('/echo', {'url': 1, 'ids': [1, 2]})
+                c('/embedding', ['hello'])
     """
 
     _mime_type = 'application/json'
@@ -60,7 +92,6 @@ class JSON(IOBase, io_type=IOType.JSON):
         from google.protobuf import struct_pb2  # pylint: disable=import-outside-toplevel
 
         from towhee.serve.grpc import service_pb2 # pylint: disable=import-outside-toplevel
-
 
         msg = struct_pb2.Value()
 

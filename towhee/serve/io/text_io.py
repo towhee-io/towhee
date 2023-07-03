@@ -16,17 +16,36 @@ import asyncio
 from typing import Any
 
 from .base import IOBase, IOType
-from towhee.utils.serializer import to_json
+from towhee.utils.serializer import to_json, from_json
 
 
 class TEXT(IOBase, io_type=IOType.TEXT):
-    """
-    TEXT IO
+    """TEXT IO
+    Example:
+        from towhee import AutoPipes, api_service
+        from towhee.serve.io import TEXT, NDARRAY, JSON, BYTES
+
+        service = api_service.APIService(desc="Welcome")
+        stn = AutoPipes.pipeline('sentence_embedding')
+
+        @service.api(path='/embedding', input_model=TEXT(), output_model=NDARRAY())
+        def chat(text: str):
+            return stn(text).to_list()[0][0]
+
+    Client:
+        HTTP:
+            import requests
+            requests.post('http://127.0.0.1:8000/embedding', json='Hello, Towhee').json()
+
+        GRPC:
+            from towhee.serve.grpc.client import Client
+            c = Client('0.0.0.0', 8000)
+            print(c('/embedding', 'Hello, Towhee '))
     """
     _mime_type = 'application/json'
 
-    def from_http(self, request: 'fastapi.Request'):
-        return asyncio.run(request.body())
+    def from_http(self, request: 'fastapi.Request') -> str:
+        return from_json(asyncio.run(request.body()))
 
     def to_http(self, obj: Any) -> 'Response':
         from fastapi import Response  # pylint: disable=import-outside-toplevel

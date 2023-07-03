@@ -45,6 +45,7 @@ class TestGRPC(unittest.TestCase):
         self.server.start('localhost', 50001)
 
         client = Client('localhost', 50001)
+
         response = client('/echo', 1)
         self.assertEqual(from_json(response.content), 1)
 
@@ -72,6 +73,9 @@ class TestGRPC(unittest.TestCase):
         self.server = GRPCServer(service)
         self.server.start('localhost', 50001)
         client = Client('localhost', 50001)
+
+        response = client('/')
+        self.assertEqual(response.content, 'test')
 
         data = Item(
             url='test_url',

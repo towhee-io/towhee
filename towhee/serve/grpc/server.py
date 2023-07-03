@@ -22,7 +22,7 @@ from towhee.utils.thirdparty.grpc_utils import grpc
 from . import service_pb2
 from . import service_pb2_grpc
 from towhee.serve.io import JSON, TEXT, BYTES, NDARRAY
-
+from towhee.serve.api_service import RouterConfig
 from towhee.utils.log import engine_log
 
 
@@ -33,6 +33,9 @@ class _PipelineImpl(service_pb2_grpc.PipelineServicesServicer):
 
     def __init__(self, api_service: 'APIService'):
         self._router_map = {}
+        self._router_map['/'] = RouterConfig(
+            func=lambda : api_service.desc,
+        )
         for router in api_service.routers:
             self._router_map[router.path] = router
 
@@ -74,12 +77,14 @@ class _PipelineImpl(service_pb2_grpc.PipelineServicesServicer):
         if path not in self._router_map:
             err_msg = 'Unkown service path: %s, all paths is %s' % (path, list(self._router_map.keys()))
             engine_log.error(err_msg)
-            return service_pb2.Response(code=-1, msg=err_msg)
+            response = service_pb2.Response(code=-1, msg=err_msg)
         try:
-            return self._run_func(request)
+            response = self._run_func(request)
         except Exception as e:  # pylint: disable=broad-except
             engine_log.error(traceback.format_exc())
-            return service_pb2.Response(code=-1, msg=str(e))
+            response = service_pb2.Response(code=-1, msg=str(e))
+        engine_log.info('gRPC method called: %s, response code: %s', path, response.code)
+        return response
 
 
 class GRPCServer:
@@ -92,8 +97,10 @@ class GRPCServer:
         service_pb2_grpc.add_PipelineServicesServicer_to_server(_PipelineImpl(api_service), self._server)
 
     def start(self, host: str, port: int):
-        self._server.add_insecure_port(str(host) + ':' + str(port))
+        uri = str(host) + ':' + str(port)
+        self._server.add_insecure_port(uri)
         self._server.start()
+        engine_log.info('Start grpc server at %s.', uri)
 
     def run(self, host: str, port: int):
         self.start(host, port)

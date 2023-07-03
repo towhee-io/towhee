@@ -20,6 +20,28 @@ from .base import IOBase, IOType
 class BYTES(IOBase, io_type=IOType.BYTES):
     """
     BYTES IO.
+    Example:
+        from towhee import AutoPipes, api_service
+        from towhee.serve.io import TEXT, NDARRAY, JSON, BYTES
+
+        service = api_service.APIService(desc="Welcome")
+        img_emb = AutoPipes.pipeline('image-embedding')
+
+        @service.api(path='/embedding', input_model=BYTES(), output_model=NDARRAY())
+        def chat(image_bytes: bytes):
+            return img_emb(image_bytes).to_list()[0][0]
+
+    Client:
+        HTTP:
+            import requests
+            with open(image_path, 'rb') as f:
+                print(requests.post('http://127.0.0.1:8000/embedding', data=f.read()).json())
+
+        GRPC:
+            from towhee.serve.grpc.client import Client
+            c = Client('0.0.0.0', 8000)
+            with open('/home/junjie.jiangjjj/images/1.png', 'rb') as f:
+                c('/embedding', r.read())
     """
     _mime_type = 'application/json'
 
