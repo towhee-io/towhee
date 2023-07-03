@@ -32,10 +32,12 @@ PUBLIC_PATH = Path(__file__).parent.parent.resolve()
 FILE_PATH = PUBLIC_PATH.parent.parent / 'towhee' / 'command' / 'cmdline.py'
 PYTHON_PATH = ':'.join(sys.path)
 
+
 class TestCmdline(unittest.TestCase):
     """
     Unittests for towhee cmdline.
     """
+
     def test_init(self):
         pyrepo = 'towhee/init-pyoperator'
         nnrepo = 'towhee/init-nnoperator'
@@ -76,6 +78,39 @@ class TestCmdline(unittest.TestCase):
         p.terminate()
 
         self.assertEqual(from_json(res.content), 1)
+
+    def test_repo(self):
+        atp = 0
+        p = p = subprocess.Popen(
+            [
+                sys.executable,
+                FILE_PATH,
+                'server',
+                '--host', '0.0.0.0',
+                '--port', '40001',
+                '--repo', 'audio-embedding', 'image-embedding',
+                '--uri', '/emb/audio', '/emb/image',
+                '--param', 'none', 'model_name=resnet34',
+                '--http'
+            ],
+            cwd=__file__.rsplit('/', 1)[0],
+            env={'PYTHONPATH': PYTHON_PATH}
+        )
+
+        while atp < 50:
+            try:
+                time.sleep(10)
+                res = requests.post(
+                    url='http://0.0.0.0:40001/emb/image',
+                    data=json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'),
+                    timeout=None
+                ).json()
+                p.terminate()
+                break
+            except requests.exceptions.ConnectionError:
+                atp += 1
+
+        self.assertTrue(res[0][0]['_NP'])
 
 
 if __name__ == '__main__':

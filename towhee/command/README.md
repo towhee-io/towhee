@@ -59,15 +59,25 @@ optional arguments:
 #### `server`
 ```bash
 $ towhee server -h
-usage: towhee server [-h] [-s HOST] [-p PORT] [-i INTERFACE] [--repo REPO] [--python PYTHON] [--http] [--grpc]
+usage: towhee server [-h] [-s HOST] [-p PORT] [-i INTERFACE]
+                     [--repo [REPO [REPO ...]]] [--uri [URI [URI ...]]]
+                     [--params [PARAMS [PARAMS ...]]] [--python PYTHON]
+                     [--http] [--grpc]
 
 optional arguments:
   -h, --help            show this help message and exit
   -s HOST, --host HOST  The service host.
   -p PORT, --port PORT  The service port.
   -i INTERFACE, --interface INTERFACE
-                        The service interface, i.e. the APIService object defined in python file.
-  --repo REPO           Repo of the pipeline on towhee hub to start the service.
+                        The service interface, i.e. the APIService object
+                        defined in python file.
+  --repo [REPO [REPO ...]]
+                        Repo of the pipeline on towhee hub to start the
+                        service.
+  --uri [URI [URI ...]]
+                        The uri to the pipeline service
+  --params [PARAMS [PARAMS ...]]
+                        Parameters to initialize the pipeline.
   --python PYTHON       Path to the python file that define the pipeline.
   --http                Start service by HTTP.
   --grpc                Start service by GRPC.
@@ -94,5 +104,15 @@ optional arguments:
   Start pipelines as services. This command will start pipeline sevices according to the specified python file or pipeline repository.
 
   ```bash
-  $ towhee server --host <host> --port <port> --interface <interface> --python <path-to-python-file> --http/--grpc
+  $ towhee server --host <host> --port <port> --interface <interface> --python <path-to-python-file> --repo <pipeline-repo-names> --uri <uri-to-service> --params <params-for-pipelines> --http/--grpc
   ```
+
+  - Python File Example
+    ```bash
+    $ towhee server --host localhost --port 40001 --interface service --python my_pipeline_file.py --http
+    ```
+
+  - Repository Example
+    ```bash
+    $ towhee servr --repo audio-embedding image-embedding --uri /emb/audio /emb/image --params none model_name=resnet34,device=0 --grpc
+    ```
