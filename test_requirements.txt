@@ -19,4 +19,4 @@ onnx
 scipy
 contextvars; python_version <= '3.6'
 tenacity
-pydantic
+pydantic<2
