@@ -55,6 +55,14 @@ triton server
 
    triton/index
 
+serving(HTTP/gRPC)
+============
+
+.. toctree::
+   :maxdepth: 2
+
+   serving/index
+
 Funtuning
 ==========
 
