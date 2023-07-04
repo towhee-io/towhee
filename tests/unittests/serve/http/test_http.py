@@ -140,7 +140,7 @@ class TestHTTPServer(unittest.TestCase):
 
         server = HTTPServer(service)
         client = TestClient(server.app)
-        response = client.post('/echo', data=to_json(arr))
+        response = client.post('/echo', content=to_json(arr))
         self.assertTrue(isinstance(from_json(response.content), np.ndarray))
 
     def test_bytes_io(self):

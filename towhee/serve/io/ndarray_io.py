@@ -48,6 +48,9 @@ class NDARRAY(IOBase, io_type=IOType.NDARRAY):
     """Numpy Ndarray
 
     Example:
+
+    .. code-block:: python
+
         import typing as T
         from pydantic import BaseModel
         from towhee import AutoPipes, api_service

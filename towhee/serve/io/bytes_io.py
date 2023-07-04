@@ -21,6 +21,9 @@ class BYTES(IOBase, io_type=IOType.BYTES):
     """
     BYTES IO.
     Example:
+
+    .. code-block:: python
+
         from towhee import AutoPipes, api_service
         from towhee.serve.io import TEXT, NDARRAY, JSON, BYTES
 
@@ -33,11 +36,17 @@ class BYTES(IOBase, io_type=IOType.BYTES):
 
     Client:
         HTTP:
+
+        .. code-block:: python
+
             import requests
             with open(image_path, 'rb') as f:
                 print(requests.post('http://127.0.0.1:8000/embedding', data=f.read()).json())
 
         GRPC:
+
+        .. code-block:: python
+
             from towhee.serve.grpc.client import Client
             c = Client('0.0.0.0', 8000)
             with open('/home/junjie.jiangjjj/images/1.png', 'rb') as f:

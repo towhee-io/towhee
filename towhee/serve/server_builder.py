@@ -46,6 +46,9 @@ def build_docker_image(
             The inference server.
 
     Examples:
+
+    .. code-block:: python
+
         >>> import towhee
         >>> from towhee import pipe, ops
 

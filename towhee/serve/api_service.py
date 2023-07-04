@@ -31,6 +31,9 @@ class APIService(BaseModel):
     After the definition is completed, you can use HTTPServer or the GRPCServer to started it.
 
     Example:
+
+    .. code-block:: python
+
         import typing as T
         from pydantic import BaseModel
         from towhee import AutoPipes, api_service
@@ -116,6 +119,8 @@ def build_service(pipelines: Union[Tuple['RuntimPipeline', str], List[Tuple['Run
     Convert multiple pipelines into an APIService
 
     Examples:
+
+    .. code-block:: python
 
         from towhee import AutoPipes
         from towhee import api_service

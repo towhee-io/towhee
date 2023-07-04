@@ -26,6 +26,9 @@ class JSON(IOBase, io_type=IOType.JSON):
     """JSON IO
 
     Example:
+
+    .. code-block:: python
+
         import typing as T
         from pydantic import BaseModel
         from towhee import AutoPipes, api_service
@@ -48,11 +51,17 @@ class JSON(IOBase, io_type=IOType.JSON):
 
         Client Example:
             http:
+
+            .. code-block:: python
+
                 import requests
                 requests.post('http://127.0.0.1:8000/echo', json={'url': 1, 'ids': [1, 2]}).json()
                 requests.post('http://127.0.0.1:8000/embedding', json=['hello world']).json()
 
             grpc:
+
+            .. code-block:: python
+
                 from towhee.serve.grpc.client import Client
                 c = Client('0.0.0.0', 8000)
                 c('/echo', {'url': 1, 'ids': [1, 2]})
