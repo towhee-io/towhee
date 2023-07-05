@@ -29,12 +29,12 @@ parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('-s', '--host', default='localhost', help='The service host.')
 parser.add_argument('-p', '--port', default=8000, help='The service port.')
 parser.add_argument('-i', '--interface', default='service', help='The service interface, i.e. the APIService object defined in python file.')
-parser.add_argument('--repo', nargs='*', help='Repo of the pipeline on towhee hub to start the service.')
-parser.add_argument('--uri', nargs='*', help='The uri to the pipeline service')
-parser.add_argument('--params', nargs='*', help='Parameters to initialize the pipeline.')
-parser.add_argument('--python', help='Path to the python file that define the pipeline.')
-parser.add_argument('--http', action='store_true', help='Start service by HTTP.')
-parser.add_argument('--grpc', action='store_true', help='Start service by GRPC.')
+parser.add_argument('-r', '--repo', nargs='*', help='Repo of the pipeline on towhee hub to start the service.')
+parser.add_argument('-u', '--uri', nargs='*', help='The uri to the pipeline service')
+parser.add_argument('-a', '--params', nargs='*', help='Parameters to initialize the pipeline.')
+parser.add_argument('-f', '--python', help='Path to the python file that define the pipeline.')
+parser.add_argument('-t', '--http', action='store_true', help='Start service by HTTP.')
+parser.add_argument('-g', '--grpc', action='store_true', help='Start service by GRPC.')
 
 
 class ServerCommand:
