@@ -39,8 +39,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode'
+    # 'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel'
 ]
 
 myst_enable_extensions = [

@@ -14,7 +14,7 @@
 
 import unittest
 
-from towhee.runtime.factory import ops, register
+from towhee.runtime import ops, register
 
 
 class TestOps(unittest.TestCase):

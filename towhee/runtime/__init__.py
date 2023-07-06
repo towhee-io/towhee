@@ -13,13 +13,17 @@
 # limitations under the License.
 
 
-from .factory import ops, register
+from .hub_ops import ops
+from .operator_manager import OperatorRegistry
 from .pipeline import Pipeline as pipe
 from .auto_pipes import AutoPipes
 from .auto_config import AutoConfig
 
 from .runtime_conf import get_sys_config, accelerate
 from .node_config import AcceleratorConf
+
+
+register = OperatorRegistry.register
 
 
 __all__ = [

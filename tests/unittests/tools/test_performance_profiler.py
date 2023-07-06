@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 from towhee import pipe
-from towhee.runtime.factory import ops, register
+from towhee import ops, register
 from towhee.runtime.time_profiler import TimeProfiler
 from towhee.tools.profilers import PerformanceProfiler
 

@@ -1,13 +1,13 @@
 API
 ---------------
 
-.. automodule:: towhee.runtime.factory
-   :members: _OperatorParser
+.. automodule:: towhee.runtime.hub_ops
+   :members: Ops
    :show-inheritance:
-   :member-order: bysource
+   :member-order: bysource                  
 
 .. automodule:: towhee
-   :members: ops, register
+   :members: register
    :show-inheritance:
    :member-order: bysource
 
