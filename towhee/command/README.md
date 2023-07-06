@@ -34,13 +34,10 @@ subcommands:
     server       Wrap and start pipelines as services.
 ```
 
+
 ## Usage
 
-- Init Operator
-  - [`init`](#init)
-
 ### Init Operator
-#### `init`
 ```bash
 $ towhee init -h
 usage: towhee init [-h] [-d DIR] [-t {pyop,nnop}] uri
@@ -55,64 +52,98 @@ optional arguments:
                         optional, operator type, defaults to 'pyop'.
 ```
 
+
 ### Start Pipeline Service
-#### `server`
+
 ```bash
 $ towhee server -h
-usage: towhee server [-h] [-s HOST] [-p PORT] [-i INTERFACE]
-                     [--repo [REPO [REPO ...]]] [--uri [URI [URI ...]]]
-                     [--params [PARAMS [PARAMS ...]]] [--python PYTHON]
-                     [--http] [--grpc]
+usage: towhee server [-h] [--host HOST] [--http-port HTTP_PORT] [--grpc-port GRPC_PORT] [--uri [URI [URI ...]]] [--params [PARAMS [PARAMS ...]]]
+                     [source [source ...]]
+
+positional arguments:
+  source                The source of the pipeline, could be either in the form of `python_module:api_interface` or repository from Towhee hub.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s HOST, --host HOST  The service host.
-  -p PORT, --port PORT  The service port.
-  -i INTERFACE, --interface INTERFACE
-                        The service interface, i.e. the APIService object
-                        defined in python file.
-  --repo [REPO [REPO ...]]
-                        Repo of the pipeline on towhee hub to start the
-                        service.
+  --host HOST           The service host.
+  --http-port HTTP_PORT
+                        The http service port.
+  --grpc-port GRPC_PORT
+                        The grpc service port.
   --uri [URI [URI ...]]
                         The uri to the pipeline service
   --params [PARAMS [PARAMS ...]]
                         Parameters to initialize the pipeline.
-  --python PYTHON       Path to the python file that define the pipeline.
-  --http                Start service by HTTP.
-  --grpc                Start service by GRPC.
 ```
 
 ## Examples
 
 ### Init Operator
 
-- **Initialize Operators**
+Initialize operator from the [Towhee hub](https://towhee.io/operators). This command will clone the repository and initialize it according to different operator types.
 
-  Initialize operator from the [Towhee hub](https://towhee.io/operators). This command will clone the repository and initialize it according to different operator types.
+> There are two kinds of operator namely `pyop` and `nnop`, `pyop` is the operator that contains python processing function only, and `nnop` is the operator that involves neural networks.
 
-  > There are two kinds of operator namely `pyop` and `nnop`, `pyop` is the operator that contains python processing function only, and `nnop` is the operator that involves neural networks.
-
-  ```bash
-  $ towhee init <repo-author>/<repo-name> -t <operator-type> -d <directory>
-  ```
+```bash
+$ towhee init <repo-author>/<repo-name> -t <operator-type> -d <directory>
+```
 
 ### Start Pipeline Service
 
-- **Start service**
+Start pipelines as services. This command will start pipeline sevices according to the specified python file or pipeline repository.
 
-  Start pipelines as services. This command will start pipeline sevices according to the specified python file or pipeline repository.
+```bash
+$ towhee server <pipeline-source> --host <host> --http-port <http-port> --grpc-port <grpc-port> --uri <uri-to-service> --params <params-for-pipelines>
+```
 
-  ```bash
-  $ towhee server --host <host> --port <port> --interface <interface> --python <path-to-python-file> --repo <pipeline-repo-names> --uri <uri-to-service> --params <params-for-pipelines> --http/--grpc
+- Python File
+
+  There are two ways of defining pipeline in a python file:
+  ```python
+  from towhee import api_service, AutoPipes
+
+  service = api_service.APIService(desc='Welcome')
+  emb_pipe = AutoPipes.pipeline('image-embedding')
+
+  @service.api(path='/emb')
+  def embedding(src: str):
+    return emb_pipe(src).get()
+  ```
+  Or you can run `build_service` to build a service for you.
+  ```python
+  from towhee import AutoPipes
+  from towhee import api_service
+
+  img = AutoPipes.pipeline('image-embedding')
+  service = api_service.build_service([(img, '/emb')])
   ```
 
-  - Python File Example
-    ```bash
-    $ towhee server --host localhost --port 40001 --interface service --python my_pipeline_file.py --http
-    ```
+You can start a server either from a python file and interface or repositories from towhee hub. Now Towhee supports http and grpc service:
 
-  - Repository Example
-    ```bash
-    $ towhee servr --repo audio-embedding image-embedding --uri /emb/audio /emb/image --params none model_name=resnet34,device=0 --grpc
-    ```
+- Start http service from python file
+  ```bash
+  $ towhee server my_pipeline_file:service --host 0.0.0.0 --http-port 40001
+  ```
+
+- Start grpc service from Towhee hub repository
+  ```bash
+  $ towhee server audio-embedding image-embedding --grpc-port 50001 --uri /emb/audio /emb/image --params none model_name=resnet34,device=0
+  ```
+
+- Access to Towhee pipeline service
+
+  To access http service:
+  ```python
+  import requests
+  import json
+
+  res = requests.post('http://0.0.0.0:40001/emb', json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'))
+  ```
+
+  To access grpc service:
+  ```python
+  from towhee.serve.grpc.client import Client
+
+  grpc_client = Client(host='0.0.0.0', port=50001)
+  res = grpc_client('/emb/image', 1)
+  ```
