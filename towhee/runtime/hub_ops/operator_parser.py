@@ -17,6 +17,7 @@ from .image_embedding import ImageEmbedding
 from .image_decode import ImageDecode
 from .sentence_embedding import SentenceEmbedding
 from .data_source import DataSource
+from .ann_insert import AnnInsert
 
 
 class Ops:
@@ -65,6 +66,11 @@ class Ops:
     """
     `data_source <https://towhee.io/data-source?index=1&size=30&type=2>`_ load data from many different sources.
     Work with `DataLoader <https://towhee.readthedocs.io/en/latest/data_source/data_source.html>`_
+    """
+
+    ann_insert: AnnInsert = AnnInsert()
+    """
+    The ANN Insert Operator is used to insert embeddings and create ANN indexes for fast similarity searches.
     """
 
     @classmethod

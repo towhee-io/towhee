@@ -10,6 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 from towhee.runtime.factory import HubOp
@@ -33,7 +34,7 @@ class DataSource:
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
 
-    Args:
+    __init__(self, pathname, *, recursive=False):
         pathname(`str`):
             path pattern.
         recursive(`bool`):
@@ -65,7 +66,7 @@ class DataSource:
     `csv_reader <https://towhee.io/data-source/csv-reader>`_ Wrapper of python csv:
     https://docs.python.org/3.8/library/csv.html .
 
-    Args;
+    __init__(self, f_path: str, dialect='excel', **fmtparams):
         csvfile(`str`):
             csvfile path
 
@@ -95,7 +96,7 @@ class DataSource:
     """
     `sql <https://towhee.io/data-source/sql>` read data from sqlite or mysql.
 
-    Args:
+    __init__(self, sql_url: str, table_name:str, cols: str = '*', where: str = None, limit: int = 500):
         sql_url(`str`):
             the url of the sql database for cache, such as '<db_type>+<db_driver>://:@:/'
                 sqlite: sqlite:///./sqlite.db
@@ -142,7 +143,7 @@ class DataSource:
     """
     `readthedocs <https://towhee.io/data-source/readthedocs>`_ to get the list of documents for a single Read the Docs project.
 
-    Args:
+    __init__(self, page_prefix: str, index_page: str = None, include: Union[List[str], str] = '', exclude: Union[List[str], str] = None):
         page_prefix(`str`):
             The root path of the page. Generally, the crawled links are relative paths.
             The complete URL needs to be obtained by splicing the root path + relative path.
