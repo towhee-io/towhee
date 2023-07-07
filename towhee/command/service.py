@@ -18,23 +18,23 @@ import argparse
 from pathlib import Path
 from towhee.utils.lazy_import import LazyImport
 
-
 http_server = LazyImport('http_server', globals(), 'towhee.serve.http.server')
 grpc_server = LazyImport('grpc_server', globals(), 'towhee.serve.grpc.server')
 auto_pipes = LazyImport('auto_pipes', globals(), 'towhee.runtime.auto_pipes')
 auto_config = LazyImport('auto_config', globals(), 'towhee.runtime.auto_config')
 api_service = LazyImport('api_service', globals(), 'towhee.serve.api_service')
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('-s', '--host', default='localhost', help='The service host.')
-parser.add_argument('-p', '--port', default=8000, help='The service port.')
-parser.add_argument('-i', '--interface', default='service', help='The service interface, i.e. the APIService object defined in python file.')
-parser.add_argument('--repo', nargs='*', help='Repo of the pipeline on towhee hub to start the service.')
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    'source',
+    nargs='*',
+    help='The source of the pipeline, could be either in the form of `python_module:api_interface` or repository from Towhee hub.'
+)
+parser.add_argument('--host', default='0.0.0.0', help='The service host.')
+parser.add_argument('--http-port', default=8000, help='The http service port.')
+parser.add_argument('--grpc-port', help='The grpc service port.')
 parser.add_argument('--uri', nargs='*', help='The uri to the pipeline service')
 parser.add_argument('--params', nargs='*', help='Parameters to initialize the pipeline.')
-parser.add_argument('--python', help='Path to the python file that define the pipeline.')
-parser.add_argument('--http', action='store_true', help='Start service by HTTP.')
-parser.add_argument('--grpc', action='store_true', help='Start service by GRPC.')
 
 
 class ServerCommand:
@@ -46,40 +46,39 @@ class ServerCommand:
 
     @staticmethod
     def install(subparsers):
-        subparsers.add_parser('server', parents=[parser], help='Wrap and start pipelines as services.')
+        subparsers.add_parser('server', parents=[parser], help='Wrap and start pipelines as services.', add_help=False)
 
     def __call__(self):
-        if self._args.python:
-            service = self._pservice()
-        if self._args.repo:
-            service = self._rservice()
+        if ':' in self._args.source[0]:
+            module, interface = self._args.source[0].split(':')
+            file = module + '.py'
+            service = self._pservice(file, interface)
+        else:
+            service = self._rservice(self._args.source)
 
-        if self._args.http:
-            self._server = http_server.HTTPServer(service)
-            self._server.run(self._args.host, int(self._args.port))
-        elif self._args.grpc:
+        if self._args.grpc_port:
             self._server = grpc_server.GRPCServer(service)
-            self._server.run(self._args.host, int(self._args.port))
+            self._server.run(self._args.host, int(self._args.grpc_port))
+        else:
+            self._server = http_server.HTTPServer(service)
+            self._server.run(self._args.host, int(self._args.http_port))
 
-    def _pservice(self):
-        py_path = self._args.python
-
+    def _pservice(self, file, interface):
         # Add module path to sys path so that module can be found
-        rel_path = (Path.cwd() / py_path).resolve().parent
-        abs_path = Path(py_path).resolve().parent
+        rel_path = (Path.cwd() / file).resolve().parent
+        abs_path = Path(file).resolve().parent
         sys.path.insert(0, str(abs_path))
         sys.path.insert(0, str(rel_path))
 
         # Load api service from target python file
-        module_str = Path(py_path).stem
-        attr_str = self._args.interface
+        module_str = Path(file).stem
+        attr_str = interface
         module = importlib.import_module(module_str)
         service = getattr(module, attr_str)
 
         return service
 
-    def _rservice(self):
-
+    def _rservice(self, repos):
         def _to_digit(x):
             try:
                 float(x)
@@ -90,7 +89,6 @@ class ServerCommand:
                 return float(x)
             return int(x)
 
-        repos = self._args.repo
         paths = self._args.uri
         params = self._args.params
         configs = [auto_config.AutoConfig.load_config(i) for i in repos]

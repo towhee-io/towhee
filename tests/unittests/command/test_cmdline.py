@@ -56,7 +56,7 @@ class TestCmdline(unittest.TestCase):
 
     def test_http_server(self):
         p = subprocess.Popen(
-            [sys.executable, FILE_PATH, 'server', '--host', '0.0.0.0', '--port', '40001', '--python', 'main_test.py', '--http'],
+            [sys.executable, FILE_PATH, 'server', 'main_test:service', '--host', '0.0.0.0', '--http-port', '40001'],
             cwd=__file__.rsplit('/', 1)[0],
             env={'PYTHONPATH': PYTHON_PATH}
         )
@@ -68,7 +68,7 @@ class TestCmdline(unittest.TestCase):
 
     def test_grpc_server(self):
         p = subprocess.Popen(
-            [sys.executable, FILE_PATH, 'server', '--host', '0.0.0.0', '--port', '50001', '--python', 'main_test.py', '--grpc'],
+            [sys.executable, FILE_PATH, 'server', 'main_test:service', '--host', '0.0.0.0', '--grpc-port', '50001'],
             cwd=__file__.rsplit('/', 1)[0],
             env={'PYTHONPATH': PYTHON_PATH}
         )
@@ -81,30 +81,29 @@ class TestCmdline(unittest.TestCase):
 
     def test_repo(self):
         atp = 0
-        p = p = subprocess.Popen(
+        p = subprocess.Popen(
             [
                 sys.executable,
                 FILE_PATH,
                 'server',
-                '--host', '0.0.0.0',
-                '--port', '40001',
-                '--repo', 'audio-embedding', 'image-embedding',
+                'audio-embedding', 'image-embedding',
+                '--http-port', '40001',
                 '--uri', '/emb/audio', '/emb/image',
                 '--param', 'none', 'model_name=resnet34',
-                '--http'
             ],
             cwd=__file__.rsplit('/', 1)[0],
             env={'PYTHONPATH': PYTHON_PATH}
         )
 
-        while atp < 50:
+        while atp < 100:
             try:
-                time.sleep(10)
+                time.sleep(5)
                 res = requests.post(
                     url='http://0.0.0.0:40001/emb/image',
                     data=json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'),
                     timeout=None
-                ).json()
+                )
+                res = res.json()
                 p.terminate()
                 break
             except requests.exceptions.ConnectionError:

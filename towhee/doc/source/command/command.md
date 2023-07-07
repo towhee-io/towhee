@@ -1,23 +1,9 @@
-# Towhee Command Line Tool
+# Towhee Commandline Tools
 
-## Installation 
+Towhee now supports several commands:
+- `init`: Initialize existing operators from Towhee hub.
+- `server`: Start a server that provide the functionality of specified pielines.
 
-### Install with pip
-
-```bash
-$ pip3 install towhee
-```
-
-### Install from source code
-
-```bash
-$ git clone https://github.com/towhee-io/towhee.git
-$ python3 setup.py install
-```
-
-Once you have [installed Towhee](https://docs.towhee.io/get-started/install), you can use `towhee` with the following command:
-
-> You can use `python -m towhee` instead of `towhee` to troubleshoot.
 
 ```bash
 $ towhee -h

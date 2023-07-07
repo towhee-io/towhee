@@ -1,0 +1,6 @@
+Command
+=====================
+
+.. toctree::
+
+   command.md
