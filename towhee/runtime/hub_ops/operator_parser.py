@@ -16,6 +16,7 @@ from towhee.runtime.factory import ops_parse, _OperatorWrapper
 from .image_embedding import ImageEmbedding
 from .image_decode import ImageDecode
 from .sentence_embedding import SentenceEmbedding
+from .data_source import DataSource
 
 
 class Ops:
@@ -58,6 +59,12 @@ class Ops:
     `sentence_embedding <https://towhee.io/tasks/detail/operator?field_name=Natural-Language-Processing&task_name=Sentence-Embedding>`_
     is the extension of word or token embedding. Instead of generating a vector for each token or word,
     it represents semantic information of the whole text as a vector.
+    """
+
+    data_source: DataSource = DataSource()
+    """
+    `data_source <https://towhee.io/data-source?index=1&size=30&type=2>`_ load data from many different sources.
+    Work with `DataLoader <https://towhee.readthedocs.io/en/latest/data_source/data_source.html>`_
     """
 
     @classmethod

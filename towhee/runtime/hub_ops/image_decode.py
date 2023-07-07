@@ -32,7 +32,9 @@ class ImageDecode:
         BGR or RGB, default is BGR
 
     Examples:
-      .. code-block:: python
+
+    .. code-block:: python
+
         from towhee import pipe, ops, DataCollection
 
         # decode image, in bgr channel order
