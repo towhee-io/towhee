@@ -31,7 +31,7 @@ class ImageEmbedding:
     with pre-trained models provided by `Timm <https://github.com/huggingface/pytorch-image-models>`_.
     Visual models like VGG, Resnet, ViT and so on are all available here.
 
-    Args:
+    __init__(self, model_name: str = None, num_classes: int = 1000, skip_preprocess: bool = False, device: str = None, checkpoint_path: str = None)
       model_name(`str`):
          The model name in string. The default value is resnet34.
       num_classes(`int`):
@@ -42,6 +42,11 @@ class ImageEmbedding:
          Device id: cpu/cuda:{GPUID}, if not set, will try to find an available GPU device.
       checkpoint_path(`str`):
          Local weights path, if not set, will download remote weights.
+
+    __call__(self, data: Union[List['towhee.types.Image'], 'towhee.types.Image']) ->  Union[List[ndarray], ndarray]:
+      data('towhee.types.Image'):
+         decode by ops.image_decode.cv2 or ops.image_decode.nvjpeg
+
 
     Examples:
 
@@ -66,7 +71,10 @@ class ImageEmbedding:
     The default pretrained model weights are from The 1st Place Solution of ISC21
     `Descriptor Track <https://github.com/lyakaap/ISC21-Descriptor-Track-1st>`_.
 
-    Args:
+    __init__(self, timm_backbone: str = 'tf_efficientnetv2_m_in21ft1k', img_size: int = 512,
+             checkpoint_path: str = None,
+             skip_preprocess: bool = False,
+             device: str = None)
       timm_backbone(`str`):
          backbone of model, the default value is tf_efficientnetv2_m_in21ft1k.
       img_size(`int`):
@@ -77,6 +85,10 @@ class ImageEmbedding:
           Whether to skip image pre-process, Default value is False.
       device (`str`):
          Device id: cpu/cuda:{GPUID}, if not set, will try to find an available GPU device.
+
+    __call__(self, data: Union[List['towhee.types.Image'], 'towhee.types.Image']) ->  Union[List[ndarray], ndarray]
+      data('towhee.types.Image'):
+         decode by ops.image_decode.cv2 or ops.image_decode.nvjpeg
     """
 
     data2vec: HubOp = HubOp('image_embedding.data2vec')
@@ -86,13 +98,17 @@ class ImageEmbedding:
     The core idea is to predict latent representations of the full input data based
     on a masked view of the input in a self-distillation setup using a standard Transformer architecture.
 
-    Args:
+    __init__(self, model_name='facebook/data2vec-vision-base')
       model_name(`str`):
          The model name in string. The default value is "facebook/data2vec-vision-base-ft1k".
          Supported model name:
             facebook/data2vec-vision-base-ft1k
 
             facebook/data2vec-vision-large-ft1k
+
+    __call__(self, img: 'towhee.types.Image') -> numpy.ndarray:
+      data('towhee.types.Image'):
+         decode by ops.image_decode.cv2 or ops.image_decode.nvjpeg
 
     Example:
 
@@ -120,7 +136,7 @@ class ImageEmbedding:
     multiple paths and the resulting features are aggregated, enabling both fine and coarse
     feature representations at the same feature level.
 
-    Args:
+    __init__(self, model_name, num_classes: int = 1000, weights_path: str = None, device: str = None, skip_preprocess: bool = False)
       model_name(`str`):
         Pretrained model name include mpvit_tiny, mpvit_xsmall, mpvit_small or mpvit_base,
         all of which are pretrained on ImageNet-1K dataset,
@@ -133,6 +149,10 @@ class ImageEmbedding:
          The number of classes. The default value is 1000.
       skip_preprocess(`bool`):
           Whether to skip image pre-process, Default value is False.
+
+    __call__(self, data: Union[List['towhee.types.Image'], 'towhee.types.Image']) -> Union[List[ndarray], ndarray]
+      data('towhee.types.Image'):
+         decode by ops.image_decode.cv2 or ops.image_decode.nvjpeg
 
     Example:
 
@@ -157,12 +177,16 @@ class ImageEmbedding:
     of Visual Perception Models. To achieve higher accuracy in image classification,
     SWAG uses hashtags to perform weakly supervised learning instead of fully supervised pretraining with image class labels.
 
-    Args:
+    __init__(self, model_name: str, skip_preprocess: bool = False)
       model_name(`str`):
           The model name in string. The default value is "vit_b16_in1k". Supported model names:
           vit_b16_in1k, vit_l16_in1k, vit_h14_in1k, regnety_16gf_in1k, regnety_32gf_in1k,  regnety_128gf_in1k
       skip_preprocess(`bool`):
           Whether to skip image pre-process, Default value is False.
+
+    __call__(self, img: 'towhee.types.Image') -> ndarray:
+      data('towhee.types.Image'):
+         decode by ops.image_decode.cv2 or ops.image_decode.nvjpeg
 
     Example:
 

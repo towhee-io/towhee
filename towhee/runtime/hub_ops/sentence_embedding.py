@@ -30,7 +30,7 @@ class SentenceEmbedding:
     The embedding represents the semantic information of the whole input text as one vector.
     This operator is implemented with pre-trained models from Huggingface Transformers.
 
-    Args:
+    __init__(self, model_name: str = None, checkpoint_path: str = None, tokenizer: object = None, device: str = None):
         model_name(`str`):
             The model name in string, defaults to None.
             If None, the operator will be initialized without specified model.
@@ -50,6 +50,10 @@ class SentenceEmbedding:
 
         device (`str`):
             Device id: cpu/cuda:{GPUID}, if not set, will try to find an available GPU device.
+
+    __call__(self, data: Union[str, List[str]]) -> Union[ndarray, List[ndarray]]:
+        data(`Union[str, List[str]]`):
+            sentences
 
     Example:
 
@@ -74,7 +78,7 @@ class SentenceEmbedding:
     which captures the input sentence's core semantic elements.
     This operator is implemented with pre-trained models from Sentence Transformers.
 
-    Args:
+    __init__(self, model_name: str = None, device: str = None):
         model_name(`str`):
             The model name in string, defaults is all-MiniLM-L12-v2.
             Refer to `SBert Doc <https://www.sbert.net/docs/pretrained_models.html>`_.
@@ -83,6 +87,10 @@ class SentenceEmbedding:
 
         device (`str`):
             Device id: cpu/cuda:{GPUID}, if not set, will try to find an available GPU device.
+
+    __call__(self, data: Union[str, List[str]]) -> Union[ndarray, List[ndarray]]:
+        data(`Union[str, List[str]]`):
+            sentences
 
     Example:
 
@@ -106,11 +114,15 @@ class SentenceEmbedding:
     This operator is implemented with embedding models from OpenAI.
     Please note you need an OpenAI API key to access OpenAI.
 
-    Args:
+    __init__(self, model_name='text-embedding-ada-002', api_key=None):
         model_name(`str`):
             The model name in string, defaults to 'text-embedding-ada-002'
         api_key(`str`):
             The OpenAI API key in string, defaults to None.
+
+    __call__(self, data: str) -> List:
+        data(`str`):
+            sentences
 
     Example:
 

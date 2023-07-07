@@ -21,3 +21,8 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.ann_insert.AnnInsert
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+

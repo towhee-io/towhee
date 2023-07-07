@@ -25,11 +25,16 @@ class ImageDecode:
     cv2: HubOp = HubOp('image_decode.cv2')
     """
     `cv2 <https://towhee.io/image-decode/cv2>`_ is an image decode operator implementation with OpenCV.
-    Can decode images from local files/HTTP urls and image binaries.
+    Can decode images from local files/HTTP urls and image bytes.
 
-    Args:
+    __init__(self, mode: str = 'BGR'):
        mode(`str`):
         BGR or RGB, default is BGR
+
+    __call__(self, image_data: Union[str, bytes]) -> ndarray:
+        image_data(`Union[str, bytes]`):
+             file_path/HTTP_urls or image_bytes.
+
 
     Examples:
 
@@ -67,9 +72,13 @@ class ImageDecode:
 
     Can decode images from local files/HTTP urls and image binaries.
 
-    Args:
+    __init__(self, device: int=0)
         device(`int`):
             GPU ID, default is 0.
+
+    __call__(self, image_data: Union[str, bytes]) -> ndarray:
+        image_data(`Union[str, bytes]`):
+             file_path/HTTP_urls or image_bytes.
 
     Examples:
 
