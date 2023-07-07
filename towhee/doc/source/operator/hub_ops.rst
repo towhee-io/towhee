@@ -15,3 +15,9 @@ HubOps
    :members:
    :show-inheritance:
    :member-order: bysource
+
+.. autoclass:: towhee.runtime.hub_ops.data_source.DataSource
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
