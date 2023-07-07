@@ -14,7 +14,7 @@
 import unittest
 
 import towhee
-from towhee.runtime.factory import ops, register
+from towhee.runtime import ops, register
 
 
 #pylint: disable=protected-access

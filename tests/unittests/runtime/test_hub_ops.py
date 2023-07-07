@@ -11,3 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+import unittest
+
+from towhee import ops
+
+
+class TestHubOp(unittest.TestCase):
+    """
+    Test HubOp import
+    """
+
+    def test_import(self):
+        namespaces = [att for att in dir(ops) if not att.startswith('__')]
+
+        # test __call__
+        for n in namespaces:
+            getattr(ops, n)()
+
+        for ns in namespaces:
+            op_names = [op_name for op_name in dir(getattr(ops, ns)) if not op_name.startswith('__')]
+            for name in op_names:
+                getattr(getattr(ops, ns), name)

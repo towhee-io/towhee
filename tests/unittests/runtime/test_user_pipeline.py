@@ -18,7 +18,7 @@ from towhee.operator.nop import NOPNodeOperator
 from towhee.operator import PyOperator
 from towhee.runtime.pipeline import Pipeline
 from towhee.runtime.data_queue import Empty
-from towhee.runtime.factory import ops, register
+from towhee.runtime import ops, register
 from towhee.runtime.runtime_pipeline import RuntimePipeline
 
 # pylint: disable=protected-access

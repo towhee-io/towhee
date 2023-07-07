@@ -15,7 +15,8 @@
 # pylint: disable=unused-import
 # pylint: disable=dangerous-default-value
 
-from typing import Any, Dict, Tuple, Callable
+from typing import Any, Dict, Tuple, Callable, TypeVar
+from functools import partial
 
 from towhee.runtime.operator_manager import OperatorLoader, OperatorRegistry
 from towhee.utils.log import engine_log
@@ -130,33 +131,4 @@ class _OperatorWrapper:
         return _OperatorWrapper(name, args, kws)
 
 
-class _OperatorParser:
-    """
-    Class to loading operator with _OperatorWrapper.
-    An operator is usually referred to with its full name: namespace/name.
-
-    Examples:
-        >>> from towhee import ops
-        >>> op = ops.towhee.image_decode()
-        >>> img = op('./towhee_logo.png')
-
-        We can also specify the version of the operator on the hub via the `revision` method:
-
-        >>> op = ops.towhee.image_decode()
-
-        And the `latest` method is used to update the current version of the operator to the latest:
-
-        >>> op = ops.towhee.image_decode().latest()
-    """
-    @classmethod
-    def __getattr__(cls, name):
-        @ops_parse
-        def wrapper(name, *args, **kws):
-            return _OperatorWrapper.callback(name, *args, **kws)
-
-        return getattr(wrapper, name)
-
-
-ops = _OperatorParser()
-
-register = OperatorRegistry.register
+HubOp = partial(OpsParser, _OperatorWrapper.callback)
