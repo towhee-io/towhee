@@ -128,7 +128,7 @@ class AnnInsert:
 
         p = (
                 pipe.input('collection_name', 'vec')
-                .map(('collection_name', 'vec'), (), ops.ann_insert.osschat_milvus(host='127.0.0.1', port='19530'))
+                .map(('collection_name', 'vec'), (), ops.ann_insert.milvus_multi_collections(host='127.0.0.1', port='19530'))
                 .output()
                 )
 

@@ -18,6 +18,7 @@ from .image_decode import ImageDecode
 from .sentence_embedding import SentenceEmbedding
 from .data_source import DataSource
 from .ann_insert import AnnInsert
+from .ann_search import AnnSearch
 
 
 class Ops:
@@ -71,6 +72,12 @@ class Ops:
     ann_insert: AnnInsert = AnnInsert()
     """
     The ANN Insert Operator is used to insert embeddings and create ANN indexes for fast similarity searches.
+    """
+
+    ann_search: AnnSearch = AnnSearch()
+    """
+    The ANN search operator is used to find the closest (or most similar)
+    point to a given point in a given set, i.e. find similar embeddings.
     """
 
     @classmethod

@@ -52,4 +52,6 @@ RUN /opt/conda/bin/conda install -c "${INSTALL_CHANNEL}" -c "${CUDA_CHANNEL}" -y
 # ut image, build command: 
 # docker build --platform x86_64 --target towhee-ut  -t towhee/towhee-ut:latest .
 FROM towhee-conda as towhee-ut
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
+RUN pip install coverage pytest pytest-cov pytest-xdist
 WORKDIR /workspace

@@ -26,3 +26,8 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.ann_search.AnnSearch
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
