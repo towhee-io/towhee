@@ -32,6 +32,11 @@ PUBLIC_PATH = Path(__file__).parent.parent.resolve()
 FILE_PATH = PUBLIC_PATH.parent.parent / 'towhee' / 'command' / 'cmdline.py'
 PYTHON_PATH = ':'.join(sys.path)
 
+env = {
+    'PYTHONPATH': PYTHON_PATH,
+    'HOME': os.environ.get('HOME')
+}
+
 
 class TestCmdline(unittest.TestCase):
     """
@@ -58,7 +63,7 @@ class TestCmdline(unittest.TestCase):
         p = subprocess.Popen(
             [sys.executable, FILE_PATH, 'server', 'main_test:service', '--host', '0.0.0.0', '--http-port', '40001'],
             cwd=__file__.rsplit('/', 1)[0],
-            env={'PYTHONPATH': PYTHON_PATH}
+            env=env
         )
         time.sleep(2)
         res = requests.post(url='http://0.0.0.0:40001/echo', data=json.dumps(1), timeout=3).json()
@@ -70,7 +75,7 @@ class TestCmdline(unittest.TestCase):
         p = subprocess.Popen(
             [sys.executable, FILE_PATH, 'server', 'main_test:service', '--host', '0.0.0.0', '--grpc-port', '50001'],
             cwd=__file__.rsplit('/', 1)[0],
-            env={'PYTHONPATH': PYTHON_PATH}
+            env=env
         )
         time.sleep(2)
         grpc_client = Client(host='0.0.0.0', port=50001)
@@ -92,7 +97,7 @@ class TestCmdline(unittest.TestCase):
                 '--param', 'none', 'model_name=resnet34',
             ],
             cwd=__file__.rsplit('/', 1)[0],
-            env={'PYTHONPATH': PYTHON_PATH}
+            env=env
         )
 
         while atp < 100:
