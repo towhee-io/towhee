@@ -22,7 +22,7 @@ class AnnSearch:
     point to a given point in a given set, i.e. find similar embeddings.
     """
 
-    faiss_index: HubOp = HubOp('ops.ann_search.faiss')
+    faiss_index: HubOp = HubOp('ann_search.faiss_index')
     """
     Only for local test. If you want to use a vector database in a production environment,
     you can use Milvus(https://github.com/milvus-io/milvus).
@@ -45,7 +45,7 @@ class AnnSearch:
 
         p = (
                 pipe.input('vec')
-                .flat_map('vec', 'rows', ops.ann_search.faiss('./data_dir', 5))
+                .flat_map('vec', 'rows', ops.ann_search.faiss_index('./data_dir', 5))
                 .map('rows', ('id', 'score'), lambda x: (x[0], x[1]))
                 .output('id', 'score')
             )

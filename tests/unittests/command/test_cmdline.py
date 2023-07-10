@@ -65,7 +65,7 @@ class TestCmdline(unittest.TestCase):
             cwd=__file__.rsplit('/', 1)[0],
             env=env
         )
-        time.sleep(2)
+        time.sleep(1)
         res = requests.post(url='http://0.0.0.0:40001/echo', data=json.dumps(1), timeout=3).json()
         p.terminate()
 
@@ -77,7 +77,7 @@ class TestCmdline(unittest.TestCase):
             cwd=__file__.rsplit('/', 1)[0],
             env=env
         )
-        time.sleep(2)
+        time.sleep(1)
         grpc_client = Client(host='0.0.0.0', port=50001)
         res = grpc_client('/echo', 1)
         p.terminate()
@@ -101,8 +101,9 @@ class TestCmdline(unittest.TestCase):
         )
 
         while atp < 100:
+            res = None
             try:
-                time.sleep(5)
+                time.sleep(1)
                 res = requests.post(
                     url='http://0.0.0.0:40001/emb/image',
                     data=json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'),
@@ -113,7 +114,7 @@ class TestCmdline(unittest.TestCase):
                 break
             except requests.exceptions.ConnectionError:
                 atp += 1
-
+        self.assertIsNotNone(res)
         self.assertTrue(res[0][0]['_NP'])
 
 
