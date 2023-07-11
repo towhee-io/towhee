@@ -21,6 +21,8 @@ from .ann_insert import AnnInsert
 from .ann_search import AnnSearch
 from .image_text_embedding import ImageTextEmbedding
 from .audio_embedding import AudioEmbedding
+from .audio_decode import AudioDecode
+from .video_decode import VideoDecode
 
 
 class Ops:
@@ -71,6 +73,17 @@ class Ops:
     `image_decode <https://towhee.io/tasks/detail/operator?field_name=Computer-Vision&task_name=Image-Decode>`_
     operators convert an encoded image back to its uncompressed format.
     In most cases, image decoding is the first step of an image processing pipeline.
+    """
+
+    audio_decode: AudioDecode = AudioDecode()
+    """
+    Audio Decode converts the encoded audio back to uncompressed audio frames.
+    In most cases, audio decoding is the first step of an audio processing pipeline.
+    """
+
+    video_decode: VideoDecode = VideoDecode()
+    """
+    Video deocde, in most cases, video decode is the first step of an video processing pipeline.
     """
 
     sentence_embedding: SentenceEmbedding = SentenceEmbedding()

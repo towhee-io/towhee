@@ -24,7 +24,17 @@ HubOps
 .. autoclass:: towhee.runtime.hub_ops.image_decode.ImageDecode
    :members:
    :show-inheritance:
-   :member-order: bysource             
+   :member-order: bysource
+
+.. autoclass:: towhee.runtime.hub_ops.audio_decode.AudioDecode
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
+.. autoclass:: towhee.runtime.hub_ops.video_decode.VideoDecode
+   :members:
+   :show-inheritance:
+   :member-order: bysource
 
 .. autoclass:: towhee.runtime.hub_ops.data_source.DataSource
    :members:
