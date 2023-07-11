@@ -6,6 +6,11 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.image_text_embedding.ImageTextEmbedding
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
 .. autoclass:: towhee.runtime.hub_ops.image_decode.ImageDecode
    :members:
    :show-inheritance:

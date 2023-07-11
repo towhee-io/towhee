@@ -19,6 +19,7 @@ from .sentence_embedding import SentenceEmbedding
 from .data_source import DataSource
 from .ann_insert import AnnInsert
 from .ann_search import AnnSearch
+from .image_text_embedding import ImageTextEmbedding
 
 
 class Ops:
@@ -47,6 +48,14 @@ class Ops:
       and encode the image's semantics into a real vector.
       It is a fundamental task type that can be used in a variety of applications,
       including but not limited to reverse image search and image deduplication.
+    """
+
+    image_text_embedding: ImageTextEmbedding = ImageTextEmbedding()
+    """
+    `text_image_embedding <https://towhee.io/tasks/detail/operator?field_name=Multimodal&task_name=Image/Text-Embedding>`_
+    is a task that attempts to comprehend images and texts, and encode both image's and text's
+    semantics into a same embedding space. It is a fundamental task type that can be used in a variety
+    of applications, such as cross-modal retrieval.
     """
 
     image_decode: ImageDecode = ImageDecode()
