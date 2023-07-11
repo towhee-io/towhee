@@ -20,6 +20,7 @@ from .data_source import DataSource
 from .ann_insert import AnnInsert
 from .ann_search import AnnSearch
 from .image_text_embedding import ImageTextEmbedding
+from .audio_embedding import AudioEmbedding
 
 
 class Ops:
@@ -56,6 +57,13 @@ class Ops:
     is a task that attempts to comprehend images and texts, and encode both image's and text's
     semantics into a same embedding space. It is a fundamental task type that can be used in a variety
     of applications, such as cross-modal retrieval.
+    """
+
+    audio_embedding: AudioEmbedding = AudioEmbedding()
+    """
+    `Audio embedding <https://towhee.io/tasks/detail/operator?field_name=Audio&task_name=Audio-Embedding>`_
+    is a task that encodes audio's semantics into a set of real vectors. It is a fundamental task type that
+    can be used in a variety of applications, including but not limited to reverse audio search and audio deduplication.
     """
 
     image_decode: ImageDecode = ImageDecode()

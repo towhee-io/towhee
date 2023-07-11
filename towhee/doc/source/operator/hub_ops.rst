@@ -11,15 +11,20 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
-.. autoclass:: towhee.runtime.hub_ops.image_decode.ImageDecode
+.. autoclass:: towhee.runtime.hub_ops.audio_embedding.AudioEmbedding
    :members:
    :show-inheritance:
-   :member-order: bysource             
+   :member-order: bysource
 
 .. autoclass:: towhee.runtime.hub_ops.sentence_embedding.SentenceEmbedding
    :members:
    :show-inheritance:
    :member-order: bysource
+
+.. autoclass:: towhee.runtime.hub_ops.image_decode.ImageDecode
+   :members:
+   :show-inheritance:
+   :member-order: bysource             
 
 .. autoclass:: towhee.runtime.hub_ops.data_source.DataSource
    :members:
