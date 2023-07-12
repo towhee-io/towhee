@@ -23,6 +23,7 @@ from .image_text_embedding import ImageTextEmbedding
 from .audio_embedding import AudioEmbedding
 from .audio_decode import AudioDecode
 from .video_decode import VideoDecode
+from .object_detection import ObjectDetection
 
 
 class Ops:
@@ -108,6 +109,13 @@ class Ops:
     """
     The ANN search operator is used to find the closest (or most similar)
     point to a given point in a given set, i.e. find similar embeddings.
+    """
+
+    object_detetction: ObjectDetection = ObjectDetection()
+    """
+    `Object detection <https://towhee.io/tasks/detail/operator?field_name=Computer-Vision&task_name=Object-Detection>`_
+    is a computer vision technique that locates and identifies people, items, or other objects in an image. Object detection has applications
+    in many areas of computer vision, including image retrieval, image annotation, vehicle counting, object tracking, etc.
     """
 
     @classmethod
