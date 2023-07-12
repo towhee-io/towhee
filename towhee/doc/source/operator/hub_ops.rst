@@ -51,3 +51,8 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.object_detection.ObjectDetection
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
