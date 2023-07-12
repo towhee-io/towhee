@@ -14,6 +14,7 @@
 
 
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 from towhee import ops
 from towhee.utils.hub_utils import HubUtils
@@ -31,9 +32,14 @@ class TestHubOp(unittest.TestCase):
         for n in namespaces:
             getattr(ops, n)()
 
-        for ns in namespaces:
-            op_names = [op_name for op_name in dir(getattr(ops, ns)) if not op_name.startswith('__')]
-            for name in op_names:
-                op = getattr(getattr(ops, ns), name)()
-                author, repo = op.name.split('/')
-                self.assertIsNotNone(HubUtils(author, repo).branch_tree(op.tag))
+        futures = []
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            for ns in namespaces:
+                op_names = [op_name for op_name in dir(getattr(ops, ns)) if not op_name.startswith('__')]
+                for name in op_names:
+                    op = getattr(getattr(ops, ns), name)()
+                    author, repo = op.name.split('/')
+                    futures.append(pool.submit(HubUtils(author, repo).branch_tree, op.tag))
+
+        for f in futures:
+            self.assertIsNotNone(f.result())

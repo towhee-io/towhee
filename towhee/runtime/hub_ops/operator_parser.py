@@ -24,6 +24,8 @@ from .audio_embedding import AudioEmbedding
 from .audio_decode import AudioDecode
 from .video_decode import VideoDecode
 from .object_detection import ObjectDetection
+from .utils import Utils
+from .rerank import ReRank
 
 
 class Ops:
@@ -116,6 +118,16 @@ class Ops:
     `Object detection <https://towhee.io/tasks/detail/operator?field_name=Computer-Vision&task_name=Object-Detection>`_
     is a computer vision technique that locates and identifies people, items, or other objects in an image. Object detection has applications
     in many areas of computer vision, including image retrieval, image annotation, vehicle counting, object tracking, etc.
+    """
+
+    utils: Utils = Utils()
+    """
+    Some utils.
+    """
+
+    rerank: ReRank = ReRank()
+    """
+    Re-rank the search results based on relevance
     """
 
     @classmethod
