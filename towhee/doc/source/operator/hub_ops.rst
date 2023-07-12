@@ -56,3 +56,13 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.utils.Utils
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
+.. autoclass:: towhee.runtime.hub_ops.rerank.ReRank
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
