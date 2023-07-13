@@ -27,6 +27,7 @@ from .object_detection import ObjectDetection
 from .utils import Utils
 from .rerank import ReRank
 from .llm import LLM
+from .prompt import Prompt
 
 
 class Ops:
@@ -134,6 +135,11 @@ class Ops:
     LLM: LLM = LLM()  # pylint: disable=invalid-name
     """
     The LLM ops are designed to provide a standard interface for all of them.
+    """
+
+    prompt: Prompt = Prompt()
+    """
+    prompt template.
     """
 
     @classmethod
