@@ -71,3 +71,8 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.prompt.Prompt
+   :members:
+   :show-inheritance:
+   :member-order: bysource
+
