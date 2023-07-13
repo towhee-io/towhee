@@ -26,6 +26,7 @@ from .video_decode import VideoDecode
 from .object_detection import ObjectDetection
 from .utils import Utils
 from .rerank import ReRank
+from .llm import LLM
 
 
 class Ops:
@@ -128,6 +129,11 @@ class Ops:
     rerank: ReRank = ReRank()
     """
     Re-rank the search results based on relevance
+    """
+
+    LLM: LLM = LLM()  # pylint: disable=invalid-name
+    """
+    The LLM ops are designed to provide a standard interface for all of them.
     """
 
     @classmethod
