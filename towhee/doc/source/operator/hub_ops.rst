@@ -76,3 +76,7 @@ HubOps
    :show-inheritance:
    :member-order: bysource
 
+.. autoclass:: towhee.runtime.hub_ops.data_loader.DataLoader
+   :members:
+   :show-inheritance:
+   :member-order: bysource

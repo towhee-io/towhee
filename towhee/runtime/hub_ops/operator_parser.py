@@ -28,6 +28,7 @@ from .utils import Utils
 from .rerank import ReRank
 from .llm import LLM
 from .prompt import Prompt
+from .data_loader import DataLoader
 
 
 class Ops:
@@ -141,6 +142,12 @@ class Ops:
     """
     prompt template.
     """
+
+    data_loader: DataLoader = DataLoader()
+    """
+    Load data from various sources.
+    """
+
 
     @classmethod
     def __getattr__(cls, name):
