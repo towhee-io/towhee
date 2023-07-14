@@ -171,5 +171,38 @@ class DataLoader:
             p(file)
     """
 
+    html_loader: HubOp = HubOp('data_loader.html_loader')
+    """
+    Load text from html, either from local files or url.
+
+    __init__(self, encoding: str = None):
+        encoding(`str`):
+            The html encoding to use.
+
+    __call__(self, path: str, encoding: str = None):
+        path(`str`):
+            The path to the text file.
+        encoding(`str`):
+            The html encoding to use.
+
+    Example:
+
+    .. code-block:: python
+
+        from glob import glob
+        from towhee import ops, pipe
+
+        p = (
+            pipe.input('path')
+                .map('path', 'text', ops.data_loader.html_loader(encoding='utf-8'))
+                .output('text')
+        )
+
+        files = glob('./html/*.html')
+
+        for file in files:
+            p(file)
+    """
+
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return HubOp('towhee.data_loader')(*args, **kwds)
