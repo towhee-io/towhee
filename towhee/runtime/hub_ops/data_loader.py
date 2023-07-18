@@ -204,5 +204,36 @@ class DataLoader:
             p(file)
     """
 
+    notebook_loader: HubOp = HubOp('data_loader.notebook_loader')
+    """
+    Load text from jupyter notebook files.
+
+    __init__(self, max_output_length: int = None):
+        max_output_length(`str`):
+            The max length of cell outputs.
+
+    __call__(self, path: str):
+        path(`str`):
+            The path to the notebook file.
+
+    Example:
+
+    .. code-block:: python
+
+        from glob import glob
+        from towhee import ops, pipe
+
+        p = (
+            pipe.input('path')
+                .map('path', 'text', ops.data_loader.notebook_loader(max_output_length=100))
+                .output('text')
+        )
+
+        files = glob('./notebook/*.ipynb')
+
+        for file in files:
+            p(file)
+    """
+
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return HubOp('towhee.data_loader')(*args, **kwds)
