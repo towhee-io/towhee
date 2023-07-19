@@ -61,9 +61,9 @@ class TestPipeline(unittest.TestCase):
     def test_callable_func(self):
         def func(x):
             return x + 2
-        pipe = (Pipeline.input('a')
-                .map('a', 'c', func)
-                .output('c'))
+        pipe = (Pipeline.input('A')
+                .map('A', 'cRes', func)
+                .output('cRes'))
         res = pipe(1).get()
         self.assertEqual(res[0], 3)
 

@@ -35,7 +35,7 @@ class IntForm(BaseModel):
 
 class TupleForm(BaseModel):
     data: Optional[Tuple[str, ...]]
-    schema_data: Optional[Tuple[constr(regex='^[a-z][a-z0-9_]*$'), ...]]
+    schema_data: Optional[Tuple[constr(regex='^[a-zA-Z_][a-zA-Z_0-9]*$'), ...]]
 
     @validator('*', pre=True)
     def must_be_tuple(cls, v):
