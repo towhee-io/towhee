@@ -235,5 +235,34 @@ class DataLoader:
             p(file)
     """
 
+    powerpoint_loader: HubOp = HubOp('data_loader.powerpoint_loader')
+    """
+    Load text from powerpoint files.
+
+    __init__(self)
+
+    __call__(self, path: str):
+        path(`str`):
+            The path to the powerpoint file.
+
+    Example:
+
+    .. code-block:: python
+
+        from glob import glob
+        from towhee import ops, pipe
+
+        p = (
+            pipe.input('path')
+                .map('path', 'text', ops.data_loader.powerpoint_loader())
+                .output('text')
+        )
+
+        files = glob('./powerpoint/*.pptx')
+
+        for file in files:
+            p(file)
+    """
+
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return HubOp('towhee.data_loader')(*args, **kwds)
