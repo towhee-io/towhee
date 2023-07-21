@@ -54,7 +54,7 @@
 
 ## Getting started
 
-Towhee requires Python 3.6+. You can install Towhee via `pip`:
+Towhee requires Python 3.7+. You can install Towhee via `pip`:
 
 ```bash
 pip install towhee towhee.models

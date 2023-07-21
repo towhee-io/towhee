@@ -59,7 +59,7 @@
 
 ## 🎓 快速入门
 
-Towhee 需要 Python 3.6 及以上的运行环境，可以通过 `pip` 来完成快速安装：
+Towhee 需要 Python 3.7 及以上的运行环境，可以通过 `pip` 来完成快速安装：
 
 ```bash
 pip install towhee towhee.models
