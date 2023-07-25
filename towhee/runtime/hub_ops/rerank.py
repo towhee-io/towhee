@@ -27,7 +27,8 @@ class ReRank:
     `Cross-Encoders <https://www.sbert.net/docs/pretrained_cross-encoders.html#ms-marco>`
     model to get the relevant scores and then reorders the documents.
 
-    __init__(self, model_name: str = 'cross-encoder/ms-marco-MiniLM-L-6-v2', threshold: float = 0.6):
+    __init__(self, model_name: str = 'cross-encoder/ms-marco-MiniLM-L-6-v2', threshold: float = 0.6,
+    device: str = None, max_length=512, checkpoint_path=None):
         model_name(`str`):
             The model name of CrossEncoder, you can set it according to the
             `Model List <https://www.sbert.net/docs/pretrained-models/ce-msmarco.html#models-performance>`_.
@@ -35,6 +36,11 @@ class ReRank:
             The threshold for filtering with score
         device(`str`):
             Device id: cpu/cuda:{GPUID}, if not set, will try to find an available GPU device.
+        max_length(`int`):
+            Model max sequence length.
+        checkpoint_path(`str`):
+            You can use local model weights to initialize the operator, otherwise download the default weights from
+            Huggingface.
 
     __call__(self, query: str, docs: List) -> List[str], List[float]
         query(`str`):
