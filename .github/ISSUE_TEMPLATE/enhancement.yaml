@@ -3,7 +3,7 @@ description: As a Towhee user, I have some suggestions regarding documentation i
 title: "[Documentation]: "
 labels: [kind/documentation]
 assignees:
-- binbinlv
+- codingjaguar
 body:
 - type: markdown
   attributes:
