@@ -62,7 +62,7 @@ When the pipeline is running, data transformation in each node is illustrated be
 > - The data in the `img` and `object` columns are in the format of `towhee.types.Image`. These data represent the decoded images. For easier understanding, these data are displayed as images in the following figure.
 > - The data in the `box` column are in the format of `list`. These data are coordinates that represent the location of the objects in the images (Eg. `[448,153,663,375]`). For easier understanding, these data are displayed as the dotted squares in the images.
 
-![img](https://github.com/towhee-io/data/blob/main/image/docs/map_example_2.png?raw=true)
+![img](https://github.com/towhee-io/data/blob/main/image/docs/flat_map_example_2.png?raw=true)
 
 There are two flat map nodes in the pipeline. 
 
