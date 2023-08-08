@@ -82,14 +82,14 @@ In addition, we can create models from a pipeline. This is a step in the buildin
     ```python
     import towhee
     from towhee import pipe, ops, AutoConfig
-
+    
     p = (
         pipe.input('url')
             .map('url', 'image', ops.image_decode.cv2_rgb())
             .map('image', 'vec', ops.image_text_embedding.clip(model_name='clip_vit_base_patch16', modality='image'), config=AutoConfig.TritonGPUConfig())
             .output('vec')
     )
-
+    
     towhee.build_pipeline_model(
         dc_pipeline=p,
         model_root='models',
@@ -115,7 +115,7 @@ In addition, we can create models from a pipeline. This is a step in the buildin
     ```shell
     tritonserver --model-repository `pwd`/models
     ```
-Then we should see the same info as in the previous step.
+    Then we should see the same info as in the previous step.
 ```shell
 Started GRPCInferenceService at 0.0.0.0:8001
 Started HTTPService at 0.0.0.0:8000
@@ -157,7 +157,7 @@ When building the image, we need to specify the following parameters:
 
 ### Docker Configuration
 
-You can set the [Docker Command Options](https://docs.docker.com/engine/reference/commandline/run/) when start triton server, such as set gpus and she-size.
+You can set the [Docker Command Options](https://docs.docker.com/engine/reference/commandline/run/) when start triton server, such as set gpus and shm-size.
 
 ## Q&A
 
