@@ -10,7 +10,7 @@ The figure below shows the relationship between `size`, `step`, input rows, and 
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/time_window_intro_1.png?raw=true)
 
-This figure illustrates how `winodw` applies the transformation to the rows:
+This figure illustrates how `window` applies the transformation to the rows:
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/time_window_intro_2.png?raw=true)
 
