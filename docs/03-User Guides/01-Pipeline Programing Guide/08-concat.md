@@ -40,7 +40,7 @@ text = 'A dog looking at a computer in bed.'
 res = img_text_embedding(img, text)
 ```
 
-The DAG of the `img_text_embedding` pipeline is illustrated below.流水线的 DAG 如下图所示：
+The DAG of the `img_text_embedding` pipeline is illustrated below：
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/concat_example_1.png?raw=true)
 

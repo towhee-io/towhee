@@ -43,7 +43,7 @@ p = (pipe.input('d')
         .flat_map('d', ('n1', 'n2', 't'), lambda x: ((a, b, c) for a, b, c in x))
         .time_window(('n1', 'n2'), ('s1', 's2'), 't', 3, 3, lambda x, y: (sum(x), sum(y)))
         .output('s1', 's2'))
-data = [(i, i+1, i * 1000) for i in range(11) if i < 3 or i > 7] 
-res = p(data) #[(0, 1, 0), (1, 2, 1000), (2, 3, 2000), (8, 9, 8000), (9, 10, 9000), (10, 11, 10000)]
+data = [(i, i+1, i * 1000) for i in range(11) if i < 3 or i > 7]  # [(0, 1, 0), (1, 2, 1000), (2, 3, 2000), (8, 9, 8000), (9, 10, 9000), (10, 11, 10000)]
+res = p(data)
 res.to_list() # return [[3, 6], [8, 9], [19, 21]]
 ```

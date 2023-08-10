@@ -1,6 +1,6 @@
 # Triton in Towhee
 
-[Triton](https://github.com/triton-inference-server) is an inference serving software that streamlines AI inferencing, and Towhee uses Triton to provide model inference and acceleration. 
+[Triton](https://github.com/triton-inference-server) is an inference serving software that streamlines AI inferencing, and Towhee uses Triton to provide model inference and acceleration.
 
 For example, we tested the performance of two CLIP pipelines on the same machine (64 cores, GeForce RTX 3080), one based on HuggingFace and the other using Towhee&Triton, Towhee is 5x faster than Huggingface.
 
@@ -157,7 +157,7 @@ When building the image, we need to specify the following parameters:
 
 ### Docker Configuration
 
-You can set the [Docker Command Options](https://docs.docker.com/engine/reference/commandline/run/) when start triton server, such as set gpus and she-size.
+You can set the [Docker Command Options](https://docs.docker.com/engine/reference/commandline/run/) when start triton server, such as set gpus and shm-size.
 
 ## Q&A
 

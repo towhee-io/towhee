@@ -8,7 +8,7 @@ This figure shows the relationship between `size`, `step`, input rows, and windo
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/window_intro_1.png?raw=true)
 
-The figure below illustrates how `winodw` applies the transformation to the rows:
+The figure below illustrates how `window` applies the transformation to the rows:
 
 ![img](https://github.com/towhee-io/data/blob/main/image/docs/window_intro_2.png?raw=true)
 
