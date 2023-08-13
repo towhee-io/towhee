@@ -175,7 +175,7 @@ def download_operator(author: str, repo: str, tag: str, op_path: Path, install_r
     fs.symlink_files(latest)
 
     if install_reqs and fs.requirements:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', fs.requirements])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(fs.requirements)])
 
 
 def download_pipeline(author: str, repo: str, tag: str, pipe_path: Path, latest: bool = False):
