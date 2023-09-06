@@ -74,6 +74,7 @@ class TritonPythonModel:
                 batch_inputs.append(inputs)
 
             results = self.pipe.batch(batch_inputs)
+            batch_inputs = []
             outputs = []
             for q in results:
                 ret = self._get_result(q)

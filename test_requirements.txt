@@ -21,3 +21,5 @@ contextvars; python_version <= '3.6'
 tenacity
 pydantic<2
 httpx
+tritonclient[http]==2.32.0
+fastapi
