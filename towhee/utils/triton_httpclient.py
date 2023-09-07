@@ -20,7 +20,7 @@ try:
 except ModuleNotFoundError as moduleNotFound:
     try:
         from towhee.utils.dependency_control import prompt_install
-        prompt_install('tritonclient[http]')
+        prompt_install('tritonclient[http]==2.32.0')
         # pylint: disable=unused-import,ungrouped-imports
         import tritonclient.http as httpclient
         import tritonclient.http.aio as aio_httpclient
