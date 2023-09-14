@@ -24,6 +24,7 @@ from towhee.serve.triton import triton_client
 from towhee.utils.thirdparty.dill_util import dill as pickle
 import towhee.serve.triton.bls.pipeline_model as pipe_model
 from towhee.serve.triton.bls.python_backend_wrapper import pb_utils
+from towhee.utils.serializer import from_triton_data
 
 # pylint:disable=protected-access
 # pylint:disable=inconsistent-quotes
@@ -46,12 +47,12 @@ class MockInferenceServerClient:
             with open(pf, 'wb') as f:
                 pickle.dump(pipeline.dag_repr, f)
 
-            MockInferenceServerClient._PIPE = pipe_model.TritonPythonModel()
-            MockInferenceServerClient._PIPE._load_pipeline(pf)
+            MockInferenceServerClient.PIPE = pipe_model.TritonPythonModel()
+            MockInferenceServerClient.PIPE._load_pipeline(pf)
 
     async def infer(self, model_name, inputs: List['MockInferInput']):
         inputs = pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', inputs[0].data())], [], model_name)
-        res = MockInferenceServerClient._PIPE.execute([inputs])
+        res = MockInferenceServerClient.PIPE.execute([inputs])
         return MockRes(res[0])
 
     async def close(self):
@@ -164,3 +165,35 @@ class TestTritonClient(unittest.TestCase):
             # unsafe batch
             with self.assertRaises(Exception):
                 _ = client.batch([[in0, in1], [in0, in1], [in0, in1], [in0, in1], ['err']], batch_size=2, safe=False)
+
+    @mock.patch('towhee.utils.triton_httpclient.aio_httpclient.InferInput', new=MockInferInput)
+    def test_pipeline_model(self):
+        p = (
+            pipe.input('num')
+            .map('num', 'arr', lambda x: x*10)
+            .map(('num', 'arr'), 'ret', lambda x, y: x + y)
+            .output('ret')
+        )
+
+        with TemporaryDirectory(dir='./') as root:
+            pf = Path(root) / 'pipe.pickle'
+            with open(pf, 'wb') as f:
+                pickle.dump(p.dag_repr, f)
+            model = pipe_model.TritonPythonModel()
+            model._load_pipeline(pf)
+
+        #with triton_client.Client('localhost:8000') as client:
+        pipe_inputs = [1, 2, 3, 4, 5, 6, 7]
+        batch_size = 2
+        batch_inputs = [triton_client.Client._solve_inputs(pipe_inputs[i: i + batch_size]) for i in range(0, len(pipe_inputs), batch_size)]
+        inputs = []
+        for item in batch_inputs:
+            inputs.append(pb_utils.InferenceRequest([pb_utils.Tensor('INPUT0', item[0].data())], [], 'pipeline'))
+
+        res = model.execute(inputs)
+        result = []
+        expect = [[[11]], [[22]], [[33]], [[44]], [[55]], [[66]], [[77]]]
+        for r in res:
+            data = MockRes(r)
+            result.extend(from_triton_data(data.as_numpy('OUTPUT0')[0]))
+        self.assertEqual(result, expect)
