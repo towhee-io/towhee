@@ -165,12 +165,15 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 特别感谢下面的同学为 Towhee 社区做出的贡献 🌹：
 
 <br><!-- Do not remove start of hero-bot --><br>
-<img src="https://img.shields.io/badge/all--contributors-36-orange"><br>
+<img src="https://img.shields.io/badge/all--contributors-40-orange"><br>
+<a href="https://github.com/3270939387"><img src="https://avatars.githubusercontent.com/u/133976770?v=4" width="30px" /></a>
 <a href="https://github.com/AniTho"><img src="https://avatars.githubusercontent.com/u/34787227?v=4" width="30px" /></a>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
 <a href="https://github.com/GuoRentong"><img src="https://avatars.githubusercontent.com/u/57477222?v=4" width="30px" /></a>
+<a href="https://github.com/KizAE86"><img src="https://avatars.githubusercontent.com/u/146533028?v=4" width="30px" /></a>
 <a href="https://github.com/NicoYuan1986"><img src="https://avatars.githubusercontent.com/u/109071306?v=4" width="30px" /></a>
 <a href="https://github.com/Opdoop"><img src="https://avatars.githubusercontent.com/u/21202514?v=4" width="30px" /></a>
+<a href="https://github.com/Sharp-rookie"><img src="https://avatars.githubusercontent.com/u/62098006?v=4" width="30px" /></a>
 <a href="https://github.com/Tumao727"><img src="https://avatars.githubusercontent.com/u/20420181?v=4" width="30px" /></a>
 <a href="https://github.com/UncleLLD"><img src="https://avatars.githubusercontent.com/u/16642335?v=4" width="30px" /></a>
 <a href="https://github.com/YuDongPan"><img src="https://avatars.githubusercontent.com/u/88148730?v=4" width="30px" /></a>
@@ -188,6 +191,7 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 <a href="https://github.com/jinlingxu06"><img src="https://avatars.githubusercontent.com/u/106302799?v=4" width="30px" /></a>
 <a href="https://github.com/junjiejiangjjj"><img src="https://avatars.githubusercontent.com/u/14136703?v=4" width="30px" /></a>
 <a href="https://github.com/krishnakatyal"><img src="https://avatars.githubusercontent.com/u/37455387?v=4" width="30px" /></a>
+<a href="https://github.com/lrk612"><img src="https://avatars.githubusercontent.com/u/131778006?v=4" width="30px" /></a>
 <a href="https://github.com/omartarek206"><img src="https://avatars.githubusercontent.com/u/40853054?v=4" width="30px" /></a>
 <a href="https://github.com/oneseer"><img src="https://avatars.githubusercontent.com/u/28955741?v=4" width="30px" /></a>
 <a href="https://github.com/pravee42"><img src="https://avatars.githubusercontent.com/u/65100038?v=4" width="30px" /></a>
