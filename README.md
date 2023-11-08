@@ -151,7 +151,7 @@ Writing code is not the only way to contribute! Submitting issues, answering que
 
 Special thanks goes to these folks for contributing to Towhee, either on Github, our Towhee Hub, or elsewhere:
 <br><!-- Do not remove start of hero-bot --><br>
-<img src="https://img.shields.io/badge/all--contributors-40-orange"><br>
+<img src="https://img.shields.io/badge/all--contributors-41-orange"><br>
 <a href="https://github.com/3270939387"><img src="https://avatars.githubusercontent.com/u/133976770?v=4" width="30px" /></a>
 <a href="https://github.com/AniTho"><img src="https://avatars.githubusercontent.com/u/34787227?v=4" width="30px" /></a>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
@@ -182,6 +182,7 @@ Special thanks goes to these folks for contributing to Towhee, either on Github,
 <a href="https://github.com/oneseer"><img src="https://avatars.githubusercontent.com/u/28955741?v=4" width="30px" /></a>
 <a href="https://github.com/pravee42"><img src="https://avatars.githubusercontent.com/u/65100038?v=4" width="30px" /></a>
 <a href="https://github.com/reiase"><img src="https://avatars.githubusercontent.com/u/5417329?v=4" width="30px" /></a>
+<a href="https://github.com/sanbuphy"><img src="https://avatars.githubusercontent.com/u/96160062?v=4" width="30px" /></a>
 <a href="https://github.com/shiyu22"><img src="https://avatars.githubusercontent.com/u/53459423?v=4" width="30px" /></a>
 <a href="https://github.com/songxianj"><img src="https://avatars.githubusercontent.com/u/107831450?v=4" width="30px" /></a>
 <a href="https://github.com/soulteary"><img src="https://avatars.githubusercontent.com/u/1500781?v=4" width="30px" /></a>
