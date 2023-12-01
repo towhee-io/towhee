@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from typing import Dict, Any, Set, Tuple, Optional
-from pydantic import BaseModel, constr, validator
+import re
+from pydantic import BaseModel, validator
 
 from towhee.runtime.constants import (
     WindowConst,
@@ -34,13 +35,29 @@ class IntForm(BaseModel):
 
 
 class TupleForm(BaseModel):
+    """Check schema name
+    """
     data: Optional[Tuple[str, ...]]
-    schema_data: Optional[Tuple[constr(regex='^[a-zA-Z_][a-zA-Z_0-9]*$'), ...]]
+    schema_data: Optional[Tuple[str, ...]]
 
     @validator('*', pre=True)
     def must_be_tuple(cls, v):
         if isinstance(v, str):
             return (v,)
+        return v
+
+    @validator('schema_data', pre=True)
+    def check_schema(cls, v):
+        def _check_pattern(v: Tuple[str]):
+            pattern = '^[a-zA-Z_][a-zA-Z_0-9]*$'
+            for item in v:
+                if re.match(pattern, item) is None:
+                    raise ValueError(f'Schema can only consist of letters, numbers, and underscores, the error schema: [{item}]')
+
+        if isinstance(v, str):
+            _check_pattern((v, ))
+        elif isinstance(v, tuple):
+            _check_pattern(v)
         return v
 
 
