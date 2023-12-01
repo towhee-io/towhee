@@ -514,4 +514,4 @@ class Pipeline:
 
     @staticmethod
     def _check_schema(schema):
-        return TupleForm(schema_data=schema).schema_data
+        return TupleForm(data=None, schema_data=schema).schema_data
