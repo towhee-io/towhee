@@ -30,7 +30,9 @@ jobs:
       run: |
         export TOWHEE_WORKER=True
         rm -rf ./coverage.xml
+        pip install coverage pytest pytest-cov pytest-xdist
         pip install -r test_requirements.txt
+        apt-get update --fix-missing && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -y ffmpeg libsm6 libxext6
         coverage erase
         coverage run -m pytest
         coverage xml
