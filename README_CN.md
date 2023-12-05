@@ -27,7 +27,10 @@
     <img src="https://img.shields.io/badge/license-apache2.0-green?style=flat" alt="license"/>
   </a>
   <a href="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml">
-    <img src="https://img.shields.io/github/workflow/status/towhee-io/towhee/Workflow%20for%20pylint/main?label=pylint&style=flat" alt="github actions"/>
+    <img src="https://github.com/towhee-io/towhee/actions/workflows/pylint.yml/badge.svg" alt="github actions"/>
+  </a>
+  <a href="https://pypi.org/project/towhee/">
+    <img src="https://img.shields.io/pypi/v/towhee?label=Release&color&logo=Python" alt="github actions"/>
   </a>
   <a href="https://app.codecov.io/gh/towhee-io/towhee">
     <img src="https://img.shields.io/codecov/c/github/towhee-io/towhee?style=flat" alt="coverage"/>
@@ -36,154 +39,65 @@
 
 &nbsp;
 
-[Towhee](https://towhee.io) 可以让用户像搭积木一样，轻松地完成 AI 应用程序的构建和落地。
-
-通过使用神经网络数据处理流水线(neural data processing pipeline)的方式，我们可以将 Towhee 社区中数百个现成的模型、算法组合为标准的 AI 流水线。不仅如此，你还可以使用 Towhee 提供的 Pythonic API 来完成各种 AI 流水线和 AI 应用的原型设计，享受自动代码优化，低成本实现生产环境的应用性能优化。
+[Towhee](https://towhee.io) 可以让用户像搭积木一样，轻松地完成 AI 应用程序的构建和落地。通过使用大语言模型(LLM)以及其他SOTA深度学习模型，从各种未加工过的非结构化数据中（长文本、图像、音频和视频）提取信息，并将这些信息存储到合适的存储系统中,比如可以将提取出的向量数据存储到向量数据库中。开发人员能够通过Towhee提供的Pythonic API来完成各种 AI 流水线和 AI 应用的原型设计，享受自动代码优化，低成本实现生产环境的应用性能优化。
 
 
 ## ✨ 项目特点
 
-:art:&emsp;**多模态数据支持**：支持不同模态的数据处理，包括：图像、视频、文本、音频、分子结构等。
+🎨 **多模态** Towhee 能够处理各种数据类型。无论是图像数据、视频片段、文本、音频文件还是分子结构,Towhee 都可以处理。
 
-:mortar_board:&emsp;**SOTA 模型** 提供跨 5 个领域（CV、NLP、多模态、音频、医学）、15 种任务、140 个模型架构、700 个预训练的 SOTA 模型（例如：BERT、CLIP、ViT、SwinTransformer、MAE、data2vec 等）。
+📃 **LLM 管道编排** Towhee 具有灵活性,可以适应不同的大语言模型(LLM)。此外,它允许在本地托管开源大模型。此外,Towhee 提供了prompt管理和知识检索等功能,使与这些 LLM 的交互更加高效和有效。 
 
-:package:&emsp;**数据处理** 除了神经网络模型，Towhee 同时提供了丰富的传统数据处理算子，包括：视频解码（Video decoding）、音频切片（audio slicing）、帧采样（frame sampling）、特征向量降维（feature vector dimension reduction）、模型融合（model ensemble）、数据库操作（database operations）等。配合各种模型、算法、数据处理方法，用户可以构建端到端的数据处理流水线。
+🎓 **丰富的算子** Towhee 提供了五个领域内众多最先进的现成模型:计算机视觉、自然语言处理、多模态、音频和医疗领域。拥有超过 140 个模型,如 BERT 和 CLIP,以及丰富的功能,如视频解码、音频切片、帧采样和降维,它有助于高效地搭建数据处理流水线。
 
-:snake:&emsp;**Pythonic API:** 恪守 “Pythonic”，提供简洁、优雅、地道的 Python API。支持链式调用，能够快速定义富有表现力的数据处理流水线，让你处理非结构化数据和像处理表格数据一样简单。
+🔌 **预构建的 ETL 管道** Towhee 提供现成的 ETL(提取、转换、加载)管道用于常见任务,如增强生成检索、文本图像搜索和视频副本检测。这意味着您不需要成为 AI 专家即可使用这些功能构建应用程序。 
 
+⚡️ **高性能后端** 利用 Triton 推理服务器的计算能力,Towhee 可以使用 TensorRT、Pytorch 和 ONNX 等平台加速 CPU 和 GPU 上的模型服务。此外,您可以用几行代码将 Python 管道转换为高性能的 Docker 容器,实现高效部署和扩展。
 
-## 📰 近期动态
+🐍 **Python 风格的 API** Towhee 包含一个 Python 风格的方法链 API,用于描述自定义数据处理流水线。我们还支持模式,这使得处理非结构化数据就像处理表格数据一样简单。
 
-**v1.0.0rc1 2023年5月4日**
-* 新增一些模型支持微调。
-[*timm*](https://towhee.io/image-embedding/timm), [*isc*](https://towhee.io/image-embedding/isc), [*transformers*](https://towhee.io/text-embedding/transformers), [*clip*](https://towhee.io/image-text-embedding/clip)
-* 新增GPU视频解码算子: 
-[*VPF*](https://towhee.io/video-decode/VPF)
-* 所有的Pipeline均能够转换成Nvidia Triton 服务。
-
-**v0.9.0 2022年12月2日**
-* 新增一个视频分类模型:
-[*Vis4mer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/vis4mer)
-* 新增三个视觉骨干模型:
-[*MCProp*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/mcprop), 
-[*RepLKNet*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/replknet), 
-[*Shunted Transformer*](https://github.com/towhee-io/towhee/tree/branch0.9.0/towhee/models/shunted_transformer)
-* 新增两个代码检索算子:
-[*code_search.codebert*](https://towhee.io/code-search/codebert), 
-[*code_search.unixcoder*](https://towhee.io/code-search/unixcoder)
-* 新增五个图像描述生成算子: 
-[*image_captioning.expansionnet-v2*](https://towhee.io/image-captioning/expansionnet-v2), 
-[*image_captioning.magic*](https://towhee.io/image-captioning/magic),
-[*image_captioning.clip_caption_reward*](https://towhee.io/image-captioning/clip-caption-reward), 
-[*image_captioning.blip*](https://towhee.io/image-captioning/blip), 
-[*image_captioning.clipcap*](https://towhee.io/image-captioning/clipcap)
-* 新增五个图文跨模态特征提取算子: 
-[*image_text_embedding.albef*](https://towhee.io/image-text-embedding/albef), 
-[*image_text_embedding.ru_clip*](https://towhee.io/image-text-embedding/ru-clip), 
-[*image_text_embedding.japanese_clip*](https://towhee.io/image-text-embedding/japanese-clip),
-[*image_text_embedding.taiyi*](https://towhee.io/image-text-embedding/taiyi),
-[*image_text_embedding.slip*](https://towhee.io/image-text-embedding/slip)
-* 新增一个机器翻译算子: 
-[*machine_translation.opus_mt*](https://towhee.io/machine-translation/opus-mt)
-* 新增一个片段过滤算子:
-[*video-copy-detection.filter-tiny-segments*](https://towhee.io/video-copy-detection/filter-tiny-segments)
-* 新增一个音频指纹相关的进阶教程: 
-[*Audio Fingerprint II: Music Detection with Temporal Localization*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_advanced.ipynb) (increased accuracy from 84% to 90%)
-
-**v0.8.1 2022年9月30日**
-
-* 新增四个视觉骨干模型:
-[*ISC*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/isc),
-[*MetaFormer*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/metaformer),
-[*ConvNext*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/convnext),
-[*HorNet*](https://github.com/towhee-io/towhee/tree/branch0.8.1/towhee/models/hornet)
-* 新增两个视频去重算子:
-[*select-video*](https://towhee.io/video-copy-detection/select-video), 
-[*temporal-network*](https://towhee.io/video-copy-detection/temporal-network)
-* 新增一个针对图片检索和视频去重的图像特征提取算子（在VCSL数据集上获得先进结果）:
-[*isc*](https://towhee.io/image-embedding/isc)
-* 新增一个针对音频指纹的音频特征提取算子:
-[*audio_embedding.nnfp*](https://towhee.io/audio-embedding/nnfp) (with pretrained weights)
-* 新增一个视频去重教程: 
-[*How to Build a Video Segment Copy Detection System*](https://github.com/towhee-io/examples/blob/main/video/video_deduplication/segment_level/video_deduplication_at_segment_level.ipynb)
-* 新增一个音频指纹相关的初级教程:
-[*Audio Fingerprint I: Build a Demo with Towhee & Milvus*](https://github.com/towhee-io/examples/blob/main/audio/audio_fingerprint/audio_fingerprint_beginner.ipynb)
-
-
-**v0.8.0 2022年8月16日**
-
-* 支持“一键生成”基于 Nvidia Triton 的 Pipeline，快速构建适用于生产环节的 Docker Image，支持使用 GPU 对图片进行解码。
-  * 教程：[“从定义流水线到生成 Docker 镜像，再到启动服务并调用执行，一共不到30行代码”](https://zhuanlan.zhihu.com/p/552917095)
-* 新增一个音频指纹识别模型：[**nnfp**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/nnfp)
-* 新增两个图片嵌入模型：[**RepMLP**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/repmlp), [**WaveViT**](https://github.com/towhee-io/towhee/tree/branch0.8.0/towhee/models/wave_vit)
-
-**v0.7.3 2022年7月27日**
-
-* 新增一个多模态（文本/图片）模型 :
-[*CoCa*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coca).
-* 新增两个视频模型，用于“接地的态势感知（GSR）”和“智能计数重复动作”场景
-Add two video models for grounded situation recognition & repetitive action counting:
-[*CoFormer*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/coformer),
-[*TransRAC*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/transrac).
-* 新增两个图片任务（图像检索、图像分类等）的 SoTA 模型
-[*CVNet*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/cvnet),
-[*MaxViT*](https://github.com/towhee-io/towhee/tree/branch0.7.3/towhee/models/max_vit)
-
-**v0.7.1 2022年7月1日**
-* 新增一个图片嵌入模型（image embedding）:
-[*MPViT*](https://towhee.io/image-embedding/mpvit).
-* 新增两个视频检索模型（video retrieval）:
-[*BridgeFormer*](https://towhee.io/video-text-embedding/bridge-former),
-[*collaborative-experts*](https://towhee.io/video-text-embedding/collaborative-experts).
-* 新增 FAISS-based ANNSearch 算子: *to_faiss*, *faiss_search*.
-
-**v0.7.0 2022年6月24日**
-
-* 新增六个视频理解/分类模型（video understanding/classification）
-[*Video Swin Transformer*](https://towhee.io/action-classification/video-swin-transformer), 
-[*TSM*](https://towhee.io/action-classification/tsm), 
-[*Uniformer*](https://towhee.io/action-classification/uniformer), 
-[*OMNIVORE*](https://towhee.io/action-classification/omnivore), 
-[*TimeSformer*](https://towhee.io/action-classification/timesformer), 
-[*MoViNets*](https://towhee.io/action-classification/movinet).
-* 新增四个视频检索模型（video retrieval）
-[*CLIP4Clip*](https://towhee.io/video-text-embedding/clip4clip), 
-[*DRL*](https://towhee.io/video-text-embedding/drl), 
-[*Frozen in Time*](https://towhee.io/video-text-embedding/frozen-in-time), 
-[*MDMMT*](https://towhee.io/video-text-embedding/mdmmt).
-
-
-**v0.6.1 2022年5月13日**
-
-* 新增三个文本图像检索模型（text-image retrieval）：
-[*CLIP*](https://towhee.io/image-text-embedding/clip),
-[*BLIP*](https://towhee.io/image-text-embedding/blip),
-[*LightningDOT*](https://towhee.io/image-text-embedding/lightningdot).
-* 从 PyTorchVideo 添加六个视频理解/分类模型（video understanding/classification）：
-[*I3D*](https://towhee.io/action-classification/pytorchvideo),
-[*C2D*](https://towhee.io/action-classification/pytorchvideo),
-[*Slow*](https://towhee.io/action-classification/pytorchvideo),
-[*SlowFast*](https://towhee.io/action-classification/pytorchvideo),
-[*X3D*](https://towhee.io/action-classification/pytorchvideo),
-[*MViT*](https://towhee.io/action-classification/pytorchvideo).
 
 ## 🎓 快速入门
 
-Towhee 需要 Python 3.6 及以上的运行环境，可以通过 `pip` 来完成快速安装：
+Towhee 需要 Python 3.7 及以上的运行环境，可以通过 `pip` 来完成快速安装：
 
 ```bash
 pip install towhee towhee.models
 ```
 
-安装就绪后，就能够创建你的第一个 AI 流水线啦。下面示例中，我们来创建一个基于 CLIP 的跨模态检索流水线。
+## 流水线
 
-示例使用了towhee 1.0.0的接口，请使用`pip install towhee==1.0.0`安装. 最新的[使用文档](https://towhee.readthedocs.io/en/main/index.html).
+### 预定义流水线
+
+Towhee 提供了一些预定义流水线，可以帮助用户快速实现一些功能。
+目前已经实现的有：
+- [文本embedding](https://towhee.io/tasks/detail/pipeline/sentence-similarity)
+- [图像embedding](https://towhee.io/tasks/detail/pipeline/text-image-search)
+- [视频去重](https://towhee.io/tasks/detail/pipeline/video-copy-detection)
+- [基于大语言模型的知识库问答](https://towhee.io/tasks/detail/pipeline/retrieval-augmented-generation)
+
+所有的流水线均能在Towhee Hub上找到，下面是sentence_embedding流水线的使用示例:
 
 ```python
-from glob import glob
+from towhee import AutoPipes, AutoConfig
+# get the built-in sentence_similarity pipeline
+config = AutoConfig.load_config('sentence_embedding')
+config.model = 'paraphrase-albert-small-v2'
+config.device = 0
+sentence_embedding = AutoPipes.pipeline('sentence_embedding', config=config)
+
+# generate embedding for one sentence
+embedding = sentence_embedding('how are you?').get()
+# batch generate embeddings for multi-sentences
+embeddings = sentence_embedding.batch(['how are you?', 'how old are you?'])
+embeddings = [e.get() for e in embeddings]
+```
+### 自定义流水线
+
+通过Towhee python API，可以实现自定义的流水线, 下面示例中，我们来创建一个基于 CLIP 的跨模态检索流水线。
+
+```python
 from towhee import ops, pipe, DataCollection
-
-
 # create image embeddings and build index
 p = (
     pipe.input('file_name')
@@ -199,10 +113,8 @@ for f_name in ['https://raw.githubusercontent.com/towhee-io/towhee/main/assets/d
                'https://raw.githubusercontent.com/towhee-io/towhee/main/assets/dog3.png']:
     p(f_name)
 
-# Delete the pipeline object, make sure the faiss data is written to disk. 
-del p
-
-
+# Flush faiss data into disk. 
+p.flush()
 # search image by text
 decode = ops.image_decode.cv2('rgb')
 p = (
@@ -215,14 +127,12 @@ p = (
     .output('text', 'images')
 )
 
-DataCollection(p('a cat')).show()
+DataCollection(p('puppy Corgi')).show()
 ```
 
-程序执行完毕，结果如下：
 
 <img src="assets/towhee_example.png" style="width: 60%; height: 60%">
 
-不够过瘾，想要了解更多例子吗？那么来👉 [Towhee Examples](https://github.com/towhee-io/examples) 👈 看看吧！
 
 ## 🚀 核心概念
 
@@ -232,9 +142,15 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 
 - __流水线（Pipeline）__：流水线是由若干个算子组成的 DAG（有向无环图）。流水线可以实现比单个算子更复杂的功能，诸如特征向量提取、数据标记、跨模态数据理解等。
 
-- __数据处理 API（DataCollection）__: DataCollection API 是用于描述流水线的编程接口。基于 DataCollection 定义的流水线，既可以在 Jupyter Notebook 中本地运行，支持快速原型设计，也可以通过自动优化，一键构建出满足生产需要的高性能流水线服务，以及对应的 Docker 镜像。
+- __数据处理 API（DataCollection）__: DataCollection API 是用于描述流水线的编程接口。提供多种数据转换接口：map, filter, flat_map, concat, window, time_window以及window_all，通过这些接口，可以快速构建复杂的数据处理管道，处理视频，音频，文本，图像等非结构化数据。
 
 - __执行引擎（Engine）__: 执行引擎负责实例化流水线、任务调度、资源管理，以及运行期性能优化。面向快速原型构建，Towhee 提供了轻量级的本地执行引擎；面向生产环境需求，Towhee 提供了基于 Nvidia Triton 的高性能执行引擎。
+
+## 资源
+
+- TowheeHub: https://towhee.io/
+- 文档: https://towhee.readthedocs.io/en/latest/
+- 示例: https://github.com/towhee-io/examples
 
 ## 🏠 了解 & 加入社区
 
@@ -249,13 +165,17 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 特别感谢下面的同学为 Towhee 社区做出的贡献 🌹：
 
 <br><!-- Do not remove start of hero-bot --><br>
-<img src="https://img.shields.io/badge/all--contributors-33-orange"><br>
+<img src="https://img.shields.io/badge/all--contributors-41-orange"><br>
+<a href="https://github.com/3270939387"><img src="https://avatars.githubusercontent.com/u/133976770?v=4" width="30px" /></a>
 <a href="https://github.com/AniTho"><img src="https://avatars.githubusercontent.com/u/34787227?v=4" width="30px" /></a>
 <a href="https://github.com/Chiiizzzy"><img src="https://avatars.githubusercontent.com/u/72550076?v=4" width="30px" /></a>
 <a href="https://github.com/GuoRentong"><img src="https://avatars.githubusercontent.com/u/57477222?v=4" width="30px" /></a>
+<a href="https://github.com/KizAE86"><img src="https://avatars.githubusercontent.com/u/146533028?v=4" width="30px" /></a>
 <a href="https://github.com/NicoYuan1986"><img src="https://avatars.githubusercontent.com/u/109071306?v=4" width="30px" /></a>
 <a href="https://github.com/Opdoop"><img src="https://avatars.githubusercontent.com/u/21202514?v=4" width="30px" /></a>
+<a href="https://github.com/Sharp-rookie"><img src="https://avatars.githubusercontent.com/u/62098006?v=4" width="30px" /></a>
 <a href="https://github.com/Tumao727"><img src="https://avatars.githubusercontent.com/u/20420181?v=4" width="30px" /></a>
+<a href="https://github.com/UncleLLD"><img src="https://avatars.githubusercontent.com/u/16642335?v=4" width="30px" /></a>
 <a href="https://github.com/YuDongPan"><img src="https://avatars.githubusercontent.com/u/88148730?v=4" width="30px" /></a>
 <a href="https://github.com/binbinlv"><img src="https://avatars.githubusercontent.com/u/83755740?v=4" width="30px" /></a>
 <a href="https://github.com/derekdqc"><img src="https://avatars.githubusercontent.com/u/11754703?v=4" width="30px" /></a>
@@ -263,6 +183,7 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 <a href="https://github.com/filip-halt"><img src="https://avatars.githubusercontent.com/u/81822489?v=4" width="30px" /></a>
 <a href="https://github.com/fzliu"><img src="https://avatars.githubusercontent.com/u/6334158?v=4" width="30px" /></a>
 <a href="https://github.com/gexy185"><img src="https://avatars.githubusercontent.com/u/103474331?v=4" width="30px" /></a>
+<a href="https://github.com/huan415"><img src="https://avatars.githubusercontent.com/u/37132274?v=4" width="30px" /></a>
 <a href="https://github.com/hyf3513OneGO"><img src="https://avatars.githubusercontent.com/u/67197231?v=4" width="30px" /></a>
 <a href="https://github.com/jaelgu"><img src="https://avatars.githubusercontent.com/u/86251631?v=4" width="30px" /></a>
 <a href="https://github.com/jeffoverflow"><img src="https://avatars.githubusercontent.com/u/24581746?v=4" width="30px" /></a>
@@ -270,16 +191,19 @@ Towhee 由四个主要模块组成：“算子（Operators）”、“流水线�
 <a href="https://github.com/jinlingxu06"><img src="https://avatars.githubusercontent.com/u/106302799?v=4" width="30px" /></a>
 <a href="https://github.com/junjiejiangjjj"><img src="https://avatars.githubusercontent.com/u/14136703?v=4" width="30px" /></a>
 <a href="https://github.com/krishnakatyal"><img src="https://avatars.githubusercontent.com/u/37455387?v=4" width="30px" /></a>
+<a href="https://github.com/lrk612"><img src="https://avatars.githubusercontent.com/u/131778006?v=4" width="30px" /></a>
 <a href="https://github.com/omartarek206"><img src="https://avatars.githubusercontent.com/u/40853054?v=4" width="30px" /></a>
 <a href="https://github.com/oneseer"><img src="https://avatars.githubusercontent.com/u/28955741?v=4" width="30px" /></a>
 <a href="https://github.com/pravee42"><img src="https://avatars.githubusercontent.com/u/65100038?v=4" width="30px" /></a>
 <a href="https://github.com/reiase"><img src="https://avatars.githubusercontent.com/u/5417329?v=4" width="30px" /></a>
+<a href="https://github.com/sanbuphy"><img src="https://avatars.githubusercontent.com/u/96160062?v=4" width="30px" /></a>
 <a href="https://github.com/shiyu22"><img src="https://avatars.githubusercontent.com/u/53459423?v=4" width="30px" /></a>
 <a href="https://github.com/songxianj"><img src="https://avatars.githubusercontent.com/u/107831450?v=4" width="30px" /></a>
 <a href="https://github.com/soulteary"><img src="https://avatars.githubusercontent.com/u/1500781?v=4" width="30px" /></a>
 <a href="https://github.com/sre-ci-robot"><img src="https://avatars.githubusercontent.com/u/56469371?v=4" width="30px" /></a>
 <a href="https://github.com/sutcalag"><img src="https://avatars.githubusercontent.com/u/83750738?v=4" width="30px" /></a>
 <a href="https://github.com/wxywb"><img src="https://avatars.githubusercontent.com/u/5432721?v=4" width="30px" /></a>
+<a href="https://github.com/xychu"><img src="https://avatars.githubusercontent.com/u/936394?v=4" width="30px" /></a>
 <a href="https://github.com/zc277584121"><img src="https://avatars.githubusercontent.com/u/17022025?v=4" width="30px" /></a>
 <a href="https://github.com/zengxiang68"><img src="https://avatars.githubusercontent.com/u/68835157?v=4" width="30px" /></a>
 <a href="https://github.com/zhousicong"><img src="https://avatars.githubusercontent.com/u/7541863?v=4" width="30px" /></a>
