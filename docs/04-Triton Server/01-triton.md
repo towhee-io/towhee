@@ -151,7 +151,7 @@ When building the image, we need to specify the following parameters:
 
 - `dc_pipeline`: towhee pipeline
 - `image_name`: the name of the image
-- `cuda_verion`: the version of CUDA
+- `cuda_version`: the version of CUDA
 - `format_priority`: the priority list of the model, defaults to ['onnx']
 - `inference_server`: the inference server, defaults to 'triton'
 
