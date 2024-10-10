@@ -10,7 +10,7 @@ Layer blocks, referred to as `layers` in Towhee, are reusable and time-saving, t
 
 Such a network takes only **71** lines using Towhee's Layer subframework instead of **476** lines.
 
-[PatchEmbed2D](https://github.com/towhee-io/towhee/blob/main/towhee/models/swin_transformer/patch_embed2d.py), [PatchMerging](https://github.com/towhee-io/towhee/blob/main/towhee/models/swin_transformer/patch_merging.py), and [SwinTransformerBlock](https://github.com/towhee-io/towhee/blob/main/towhee/models/swin_transformer/swin_transformer_block.py) are used to create a Swin Transformer modal.
+[PatchEmbed2D](https://github.com/towhee-io/towhee/blob/main/towhee/models/layers/patch_embed2d.py), [PatchMerging](https://github.com/towhee-io/towhee/blob/main/towhee/models/layers/patch_merging.py), and [SwinTransformerBlock](https://github.com/towhee-io/towhee/blob/main/towhee/models/swin_transformer/swin_transformer_block.py) are used to create a Swin Transformer modal.
 
 **Architecture of Swin Transformer**
 
