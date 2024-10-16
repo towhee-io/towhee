@@ -110,7 +110,7 @@ class Node(ABC):
             self._op = self._node_repr.op_info.operator
             return True
         else:
-            err = 'Unkown callable type {}'.format(op_type)
+            err = 'Unknown callable type {}'.format(op_type)
             self._set_failed(err)
             return False
 

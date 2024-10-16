@@ -57,7 +57,7 @@ class AcceleratorConf(BaseModel):
     @classmethod
     def type_match(cls, v):
         if v not in ['triton', 'mock']:
-            raise ValueError(f'Unkown accelerator: {v}')
+            raise ValueError(f'Unknown accelerator: {v}')
         return v
 
     def is_triton(self):

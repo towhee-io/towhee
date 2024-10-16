@@ -75,7 +75,7 @@ class _PipelineImpl(service_pb2_grpc.PipelineServicesServicer):
     def Predict(self, request, context):
         path = request.path
         if path not in self._router_map:
-            err_msg = 'Unkown service path: %s, all paths is %s' % (path, list(self._router_map.keys()))
+            err_msg = 'Unknown service path: %s, all paths is %s' % (path, list(self._router_map.keys()))
             engine_log.error(err_msg)
             response = service_pb2.Response(code=-1, msg=err_msg)
         try:

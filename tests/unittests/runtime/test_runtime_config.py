@@ -50,7 +50,7 @@ class TestRuntimeConf(unittest.TestCase):
             'name': 'test',
             'device': 1,
             'acc_info': {
-                'type': 'unkown',
+                'type': 'Unknown',
                 'params': {
                     'model_name': 'resnet50',
                     'inputs': ['in'],
