@@ -208,7 +208,7 @@ class TestGRPC(unittest.TestCase):
         def test2(arr: 'ndarray'):
             return arr
 
-        @service.api(path='/unkown_model', output_model=NDARRAY())
+        @service.api(path='/Unknown_model', output_model=NDARRAY())
         def test3(arr: 'ndarray'):
             return arr
 
@@ -226,7 +226,7 @@ class TestGRPC(unittest.TestCase):
             response = client('/echo', arr)
             self.assertTrue(np.array_equal(arr, response.content))
 
-            response = client('/unkown_model', arr)
+            response = client('/Unknown_model', arr)
             self.assertTrue(np.array_equal(arr, response.content))
 
             with self.assertRaises(AssertionError):
@@ -245,7 +245,7 @@ class TestGRPC(unittest.TestCase):
                 response = await aclient('/echo', arr)
                 self.assertTrue(np.array_equal(arr, response.content))
 
-                response = await aclient('/unkown_model', arr)
+                response = await aclient('/Unknown_model', arr)
                 self.assertTrue(np.array_equal(arr, response.content))
 
                 with self.assertRaises(AssertionError):

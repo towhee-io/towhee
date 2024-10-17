@@ -414,7 +414,7 @@ class TestMapNode(unittest.TestCase):
         self.assertFalse(node.initialize())
 
         node_info = copy.deepcopy(self.node_info)
-        node_info['op_info']['type'] = 'unkown'
+        node_info['op_info']['type'] = 'Unknown'
         node_repr = NodeRepr(uid='test_node', **node_info)
         in_que = DataQueue([('num', ColumnType.QUEUE)])
         node = create_node(node_repr, self.op_pool, [in_que], [])

@@ -121,7 +121,7 @@ def _get_embedding_op(config):
         return True, ops.image_embedding.isc(img_size=config.img_size, device=device)
     elif config.model in model_list:
         return True, ops.image_embedding.timm(model_name=config.model, device=device)
-    raise RuntimeError(f'Unkown model: {config.model}, only support models in {model_list}.')
+    raise RuntimeError(f'Unknown model: {config.model}, only support models in {model_list}.')
 
 
 @AutoPipes.register
