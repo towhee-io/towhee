@@ -29,6 +29,7 @@ jobs:
     - name: Generate coverage report
       run: |
         export TOWHEE_WORKER=True
+        export HF_ENDPOINT=https://hf-mirror.com
         rm -rf ./coverage.xml
         pip install coverage pytest pytest-cov pytest-xdist
         pip install -r test_requirements.txt
@@ -36,9 +37,9 @@ jobs:
         coverage erase
         coverage run -m pytest
         coverage xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.0
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: /__w/towhee/towhee/coverage.xml
-        fail_ci_if_error: true    
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v3.1.0
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }}
+    #     files: /__w/towhee/towhee/coverage.xml
+    #     fail_ci_if_error: true    
