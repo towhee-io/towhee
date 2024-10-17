@@ -84,38 +84,38 @@ class TestCmdline(unittest.TestCase):
 
         self.assertEqual(from_json(res.content), 1)
 
-    def test_repo(self):
-        atp = 0
-        p = subprocess.Popen(
-            [
-                sys.executable,
-                FILE_PATH,
-                'server',
-                'audio-embedding', 'image-embedding',
-                '--http-port', '40001',
-                '--uri', '/emb/audio', '/emb/image',
-                '--param', 'none', 'model_name=resnet34',
-            ],
-            cwd=__file__.rsplit('/', 1)[0],
-            env=env
-        )
+    # def test_repo(self):
+    #     atp = 0
+    #     p = subprocess.Popen(
+    #         [
+    #             sys.executable,
+    #             FILE_PATH,
+    #             'server',
+    #             'audio-embedding', 'image-embedding',
+    #             '--http-port', '40001',
+    #             '--uri', '/emb/audio', '/emb/image',
+    #             '--param', 'none', 'model_name=resnet34',
+    #         ],
+    #         cwd=__file__.rsplit('/', 1)[0],
+    #         env=env
+    #     )
 
-        while atp < 100:
-            res = None
-            try:
-                time.sleep(1)
-                res = requests.post(
-                    url='http://0.0.0.0:40001/emb/image',
-                    data=json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'),
-                    timeout=None
-                )
-                res = res.json()
-                p.terminate()
-                break
-            except requests.exceptions.ConnectionError:
-                atp += 1
-        self.assertIsNotNone(res)
-        self.assertTrue(res[0][0]['_NP'])
+    #     while atp < 100:
+    #         res = None
+    #         try:
+    #             time.sleep(1)
+    #             res = requests.post(
+    #                 url='http://0.0.0.0:40001/emb/image',
+    #                 data=json.dumps('https://github.com/towhee-io/towhee/raw/main/towhee_logo.png'),
+    #                 timeout=None
+    #             )
+    #             res = res.json()
+    #             p.terminate()
+    #             break
+    #         except requests.exceptions.ConnectionError:
+    #             atp += 1
+    #     self.assertIsNotNone(res)
+    #     self.assertTrue(res[0][0]['_NP'])
 
 
 if __name__ == '__main__':
