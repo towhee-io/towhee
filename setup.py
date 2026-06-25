@@ -63,7 +63,10 @@ else:
           setup_requires=['setuptools_scm'],
           test_suite='setup.test_suite',
           install_requires=parse_requirements('requirements.txt'),
-          extras_require={':python_version<\'3.7\'': 'importlib-resources'},
+          extras_require={
+              ':python_version<\'3.7\'': 'importlib-resources',
+              'twelvelabs': ['twelvelabs>=1.2.8'],
+          },
           tests_require=parse_requirements('test_requirements.txt'),
           packages=find_packages(exclude=['*test*', 'towhee.models*']),
           namespace_package=['towhee'],
